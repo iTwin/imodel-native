@@ -20,6 +20,29 @@ const Utf8CP ContentDisplayType::List = "List";
 const Utf8CP ContentDisplayType::Graphics = "Graphics";
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::Field::TypeDescription::Create(ECPropertyCR prop)
+    {
+    if (prop.GetIsPrimitive() && nullptr != prop.GetAsPrimitiveProperty()->GetEnumeration())
+        return new PrimitiveTypeDescription("enum");
+
+    if (prop.GetIsNavigation())
+        return new PrimitiveTypeDescription("navigation");
+    
+    if (prop.GetIsPrimitiveArray())
+        return new ArrayTypeDescription(*new PrimitiveTypeDescription(prop.GetTypeName()));
+
+    if (prop.GetIsStructArray())
+        return new ArrayTypeDescription(*new StructTypeDescription(prop.GetAsStructArrayProperty()->GetStructElementType()));
+
+    if (prop.GetIsStruct())
+        return new StructTypeDescription(prop.GetAsStructProperty()->GetType());
+
+    return new PrimitiveTypeDescription(prop.GetTypeName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentDescriptor::Field::TypeDescription::_AsJson(rapidjson::Document::AllocatorType* allocator) const
@@ -579,32 +602,9 @@ rapidjson::Document ContentDescriptor::ECPropertiesField::_AsJson(rapidjson::Doc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECPropertiesField::CreateTypeDescription(ECPropertyCR prop)
-    {
-    if (prop.GetIsPrimitive() && nullptr != prop.GetAsPrimitiveProperty()->GetEnumeration())
-        return new PrimitiveTypeDescription("enum");
-
-    if (prop.GetIsNavigation())
-        return new PrimitiveTypeDescription("navigation");
-    
-    if (prop.GetIsPrimitiveArray())
-        return new ArrayTypeDescription(*new PrimitiveTypeDescription(prop.GetTypeName()));
-
-    if (prop.GetIsStructArray())
-        return new ArrayTypeDescription(*new StructTypeDescription(prop.GetAsStructArrayProperty()->GetStructElementType()));
-
-    if (prop.GetIsStruct())
-        return new StructTypeDescription(prop.GetAsStructProperty()->GetType());
-
-    return new PrimitiveTypeDescription(prop.GetTypeName());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECPropertiesField::_CreateTypeDescription() const
     {
-    return CreateTypeDescription(m_properties.front().GetProperty());
+    return TypeDescription::Create(m_properties.front().GetProperty());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -992,12 +992,12 @@ bool ContentSetItem::IsMerged(Utf8StringCR fieldName) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECInstanceKey> const& ContentSetItem::GetPropertyValueKeys(FieldProperty const& fp) const
+bvector<ECClassInstanceKey> const& ContentSetItem::GetPropertyValueKeys(FieldProperty const& fp) const
     {
     auto iter = m_fieldPropertyInstanceKeys.find(fp);
     if (m_fieldPropertyInstanceKeys.end() == iter)
         {
-        static bvector<ECInstanceKey> s_empty;
+        static bvector<ECClassInstanceKey> s_empty;
         return s_empty;
         }
     return iter->second;

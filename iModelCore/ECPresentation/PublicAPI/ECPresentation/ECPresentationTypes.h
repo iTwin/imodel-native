@@ -53,6 +53,47 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
+/*=================================================================================**//**
+* ECClass comparer which guarantees that classes in a sorted set always are in the same
+* order (as opposed to the default comparer which compares by pointers).
+* @bsiclass                                     Grigas.Petraitis                07/2015
++===============+===============+===============+===============+===============+======*/
+struct ECSchemaNameComparer
+    {
+    bool operator() (ECSchemaCP const& lhs, ECSchemaCP const& rhs) const {return lhs->GetSchemaKey() < rhs->GetSchemaKey();}
+    };
+
+/*=================================================================================**//**
+* ECClass comparer which guarantees that classes in a sorted set always are in the same
+* order (as opposed to the default comparer which compares by pointers).
+* @bsiclass                                     Grigas.Petraitis                07/2015
++===============+===============+===============+===============+===============+======*/
+struct ECClassNameComparer
+    {
+    bool operator() (ECClassCP const& lhs, ECClassCP const& rhs) const {return strcmp(lhs->GetFullName(), rhs->GetFullName()) < 0;}
+    };
+
+//=======================================================================================
+//! @ingroup GROUP_Presentation
+// @bsiclass                                    Grigas.Petraitis                04/2018
+//=======================================================================================
+struct ECClassInstanceKey
+{
+private:
+    ECClassCP m_class;
+    ECInstanceId m_id;
+public:
+    ECClassInstanceKey() : m_class(nullptr) {}
+    ECClassInstanceKey(ECClassCP cls, ECInstanceId id) : m_class(cls), m_id(id) {}
+    ECClassInstanceKey(ECClassCR cls, ECInstanceId id) : m_class(&cls), m_id(id) {}
+    bool IsValid() const {return (nullptr != m_class) && m_id.IsValid();}
+    bool operator==(ECClassInstanceKey const& other) const {return m_class == other.m_class && m_id == other.m_id;}
+    bool operator==(ECInstanceKeyCR other) const {return m_class->GetId() == other.GetClassId() && m_id == other.GetInstanceId();}
+    ECClassCP GetClass() const {return m_class;}
+    ECInstanceId GetId() const {return m_id;}
+};
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(ECClassInstanceKey);
+
 //=======================================================================================
 //! Sort direction.
 //! @ingroup GROUP_Presentation

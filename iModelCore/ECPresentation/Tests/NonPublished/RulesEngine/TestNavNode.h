@@ -28,10 +28,10 @@ friend struct TestNodesHelper;
 private:
     ECClassId m_classId;
 private:
-    TestNavNode(IConnectionP connection, Utf8CP type) {InitNode(connection, type);}
-    void InitNode(IConnectionP, Utf8CP);
+    TestNavNode(IConnectionCR connection, Utf8CP type) {InitNode(connection, type);}
+    void InitNode(IConnectionCR, Utf8CP);
 public:
-    static RefCountedPtr<TestNavNode> Create(IConnectionP connection = nullptr, Utf8CP type = nullptr) {return new TestNavNode(connection, type);}
+    static RefCountedPtr<TestNavNode> Create(IConnectionCR connection, Utf8CP type = nullptr) {return new TestNavNode(connection, type);}
     Utf8CP GetRulesetId() const {return NavNodeExtendedData(*this).GetRulesetId();}
     Utf8CP GetConnectionId() const {return NavNodeExtendedData(*this).GetConnectionId();}
 };
@@ -42,14 +42,14 @@ typedef RefCountedPtr<TestNavNode> TestNavNodePtr;
 +===============+===============+===============+===============+===============+======*/
 struct TestNodesHelper
     {
-    static TestNavNodePtr CreateTreeNode(uint64_t nodeId, uint64_t parentId);
-    static TestNavNodePtr CreateInstanceNode(ECClassCR ecClass, ECInstanceId instanceId = ECInstanceId((uint64_t)123));
-    static TestNavNodePtr CreateInstanceNode(IECInstanceR instance);
-    static TestNavNodePtr CreateClassGroupingNode(ECClassCR ecClass, Utf8CP label);
-    static TestNavNodePtr CreateRelationshipGroupingNode(ECRelationshipClassCR ecClass, Utf8CP label);
-    static TestNavNodePtr CreatePropertyGroupingNode(ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP label, RapidJsonValueCR groupingValue, bool isRangeGrouping);
-    static TestNavNodePtr CreateLabelGroupingNode(Utf8CP label);
-    static TestNavNodePtr CreateCustomNode(Utf8CP type, Utf8CP label, Utf8CP description);
+    //static TestNavNodePtr CreateTreeNode(uint64_t nodeId, uint64_t parentId);
+    static TestNavNodePtr CreateInstanceNode(IConnectionCR, ECClassCR ecClass, ECInstanceId instanceId = ECInstanceId((uint64_t)123));
+    static TestNavNodePtr CreateInstanceNode(IConnectionCR, IECInstanceR instance);
+    static TestNavNodePtr CreateClassGroupingNode(IConnectionCR, ECClassCR ecClass, Utf8CP label);
+    static TestNavNodePtr CreateRelationshipGroupingNode(IConnectionCR, ECRelationshipClassCR ecClass, Utf8CP label);
+    static TestNavNodePtr CreatePropertyGroupingNode(IConnectionCR, ECClassCR ecClass, ECPropertyCR ecProperty, Utf8CP label, RapidJsonValueCR groupingValue, bool isRangeGrouping);
+    static TestNavNodePtr CreateLabelGroupingNode(IConnectionCR, Utf8CP label);
+    static TestNavNodePtr CreateCustomNode(IConnectionCR, Utf8CP type, Utf8CP label, Utf8CP description);
     };
 
 /*=================================================================================**//**

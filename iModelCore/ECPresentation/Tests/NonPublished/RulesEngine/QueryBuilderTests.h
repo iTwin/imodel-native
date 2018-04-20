@@ -32,13 +32,12 @@ struct NavigationQueryBuilderTests : ECPresentationTest
     ChildNodeRuleP m_childNodeRule;
     NavigationQueryBuilder* m_builder;
     TestUserSettings m_settings;
-    TestConnectionManager m_connections;
     IConnectionCPtr m_connection;
     RuleSetLocaterManager m_locaterManager;
     TestNodesCache m_nodesCache;
 
     NavigationQueryBuilderTests() 
-        : m_builder(nullptr), m_locaterManager(ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections())
+        : m_builder(nullptr), m_locaterManager(ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections()), m_nodesCache(ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections())
         {}
     
     void SetUp() override;

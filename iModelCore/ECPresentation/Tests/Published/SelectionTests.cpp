@@ -87,19 +87,6 @@ struct SelectionTests : ECPresentationTest
         DELETE_AND_CLEAR(m_manager);
         }
 
-    static void AssertNavNodeKey(JsonValueCR keysJson, NavNodeKeyCR key)
-        {
-        EXPECT_TRUE(keysJson.isArray());
-        EXPECT_EQ(1, keysJson.size());
-        NavNodeKeyPtr keyFromJson = NavNodeKey::FromJson(keysJson[0]);
-        if (keyFromJson.IsNull())
-            {
-            FAIL();
-            return;
-            }
-        EXPECT_EQ(0, key.Compare(*keyFromJson));
-        }
-
     static rapidjson::Document CreateExtendedData()
         {
         rapidjson::Document json;

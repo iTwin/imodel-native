@@ -12,6 +12,7 @@
 #include <ECPresentation/DataSource.h>
 #include <ECPresentation/NavNode.h>
 #include <ECPresentation/Content.h>
+#include <ECPresentation/KeySet.h>
 #include <ECPresentation/Connection.h>
 #include <ECPresentation/IECPresentationSerializer.h>
 

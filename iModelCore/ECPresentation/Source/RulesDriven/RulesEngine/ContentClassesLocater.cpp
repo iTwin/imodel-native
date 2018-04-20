@@ -244,7 +244,7 @@ bvector<NavNodeKeyCPtr> ContentClassesLocater::GetClassKeys(bvector<ECClassCP> c
 
     bvector<NavNodeKeyCPtr> keys;
     for (ECClassCP ecClass : lookup)
-        keys.push_back(ECInstanceNodeKey::Create(ecClass->GetId(), ECInstanceId(), bvector<Utf8String>()));
+        keys.push_back(ECInstanceNodeKey::Create(ECClassInstanceKey(ecClass, ECInstanceId()), bvector<Utf8String>()));
     return keys;
     }
 

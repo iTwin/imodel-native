@@ -96,8 +96,8 @@
     <ClCompile Include="NonPublished\RulesEngine\OptimizedExpressionsEvaluationTests.cpp" />
     <ClCompile Include="Published\PresentationRules\InstanceLabelOverrideTests.cpp" />
     <ClCompile Include="Published\DefaultPropertyFormatterTests.cpp" />
-    <ClCompile Include="Published\DgnECPresentationSerializerTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentCacheTests.cpp" />
+    <ClCompile Include="Published\DefaultECPresentationSerializerTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\BackDoor.h" />

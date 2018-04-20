@@ -16,7 +16,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipOneRelatedLevel_WidgetToSprocket)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Widget"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Widget"));
     m_nodesCache.Cache(*parentNode, false);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false, 1, "", RequiredRelationDirection_Forward, "RulesEngineTest", "", "RulesEngineTest:Widget,Gadget,Sprocket");
@@ -37,7 +37,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipOneRelatedLevel_Wi
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipTooManyRelatedLevels_ReturnsNoQueries)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Widget"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Widget"));
     m_nodesCache.Cache(*parentNode, false);
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false, 2, "", RequiredRelationDirection_Forward, "RulesEngineTest", "", "");
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -49,7 +49,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipTooManyRelatedLeve
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipRelatedLevel_GroupsByECInstanceKey)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Widget"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Widget"));
     m_nodesCache.Cache(*parentNode, false);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, false, 1, "", 
@@ -71,7 +71,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_SkipRelatedLevel_Group
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RequiresRelatedClassesOrRelationshipClassNames)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Gadget"));
     m_nodesCache.Cache(*parentNode, false);
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Both, "Basic1", "", "");
     bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_childNodeRule, spec, *parentNode);
@@ -83,7 +83,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RequiresRelatedClasses
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelationshipClassNames_OnlyIncluded)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Gadget"));
     m_nodesCache.Cache(*parentNode, false);
     
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Both, "", "RulesEngineTest:WidgetHasGadget,GadgetHasSprockets", "");
@@ -104,7 +104,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelationshipClassNames
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelationshipAndClassNamesOverrideSupportedSchemas)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Gadget"));
     m_nodesCache.Cache(*parentNode, false);
     
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Both, "Basic1", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget");
@@ -125,7 +125,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelationshipAndClassNa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_OnlyIncluded)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Gadget"));
     m_nodesCache.Cache(*parentNode, false);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Both, "", "", "RulesEngineTest:Sprocket");
@@ -146,7 +146,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_OnlyInc
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClassesAndRelationships_OnlyIncluded)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Gadget"));
     m_nodesCache.Cache(*parentNode, false);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Both, "", "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Widget");
@@ -167,7 +167,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClassesAndRelat
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_AllDerivedClasses)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Sprocket"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Sprocket"));
     m_nodesCache.Cache(*parentNode, false);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Both, "", "", "RulesEngineTest:Gadget;E:RulesEngineTest:Gadget");
@@ -188,7 +188,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_AllDeri
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_PolymorphicExcludeInludedClass)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Sprocket"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Sprocket"));
     m_nodesCache.Cache(*parentNode, false);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Both, "", "", "RulesEngineTest:Gadget;PE:RulesEngineTest:Gadget");
@@ -201,7 +201,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_Polymor
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_GroupByClassWithExcluded)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Sprocket"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Sprocket"));
     m_nodesCache.Cache(*parentNode, false);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, true, false, false, true, 0, "", RequiredRelationDirection_Both, "", "", "RulesEngineTest:Gadget;E:RulesEngineTest:Gadget");
@@ -222,7 +222,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_GroupBy
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter)
     {    
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Sprocket"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Sprocket"));
     m_nodesCache.Cache(*parentNode, false);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "this.Description = \"2\"", RequiredRelationDirection_Both, "", "", "RulesEngineTest:Gadget");
@@ -243,7 +243,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_LikeOperator)
     {    
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Sprocket"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Sprocket"));
     m_nodesCache.Cache(*parentNode, false);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "this.Description ~ \"Test\"", RequiredRelationDirection_Both, "", "", "RulesEngineTest:Gadget");
@@ -264,7 +264,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_LikeOpe
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceFilter_IsOfClassFunction)
     {    
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Sprocket"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Sprocket"));
     m_nodesCache.Cache(*parentNode, false);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "this.IsOfClass(\"ClassName\", \"SchemaName\")", RequiredRelationDirection_Both, "", "", "RulesEngineTest:Gadget");
@@ -294,7 +294,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_ShowEmptyGroups)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_MultipleExcludedClasses)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "ClassD"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "ClassD"));
     m_nodesCache.Cache(*parentNode, false);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Both, 
@@ -316,7 +316,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_RelatedClasses_Multipl
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_ExcludedWithDifferentSorting)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "ClassD"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "ClassD"));
     m_nodesCache.Cache(*parentNode, false);
     
     SortingRuleP sortingRule1 = new SortingRule("", 1, "RulesEngineTest", "ClassE", "IntProperty", true, false, false);
@@ -344,7 +344,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_ExcludedWithDifferentS
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceLabelOverride_AppliedByPriority)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Gadget"));
     m_nodesCache.Cache(*parentNode, false);
 
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Backward, "", "RulesEngineTest:WidgetHasGadget", "");
@@ -368,7 +368,7 @@ TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceLabelOverride_
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, RelatedInstanceNodes_InstanceLabelOverride_OverrideOnlySpecifiedClassInstancesLabels)
     {
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Gadget"));
     m_nodesCache.Cache(*parentNode, false);
     
     RelatedInstanceNodesSpecification spec(1, false, false, false, false, false, false, true, 0, "", RequiredRelationDirection_Both, "", "RulesEngineTest:WidgetHasGadget,GadgetHasSprockets", "");

@@ -218,7 +218,7 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByClass)
 TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByClass_ChildrenQuery)
     {
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
-    TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*ecClass, "MyLabel");
+    TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClass, "MyLabel");
     m_nodesCache.Cache(*parentNode, false);
     
     AllInstanceNodesSpecification spec(1, false, false, false, true, false, "Basic1");
@@ -262,7 +262,7 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByLabel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByLabel_ChildrenQuery)
     {
-    JsonNavNodePtr parentNode = TestNodesHelper::CreateLabelGroupingNode("MyLabel");
+    JsonNavNodePtr parentNode = TestNodesHelper::CreateLabelGroupingNode(*m_connection, "MyLabel");
     m_nodesCache.Cache(*parentNode, false);
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, true, "Basic1");
@@ -290,7 +290,7 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByLabel_ChildrenQuery
 TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByClassAndLabel_ClassNodeChildrenQuery)
     {
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
-    TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*ecClass, "MyLabel");
+    TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClass, "MyLabel");
     m_nodesCache.Cache(*parentNode, false);
     
     AllInstanceNodesSpecification spec(1, false, false, false, true, true, "Basic1");
@@ -318,8 +318,8 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByClassAndLabel_Class
 TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_GroupByClassAndLabel_LabelNodeChildrenQuery)
     {
     ECClassCP ecClass = GetECClass("Basic1", "Class1A");
-    TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*ecClass, "Class Grouping Node");
-    JsonNavNodePtr labelGroupingNode = TestNodesHelper::CreateLabelGroupingNode("Label Grouping Node");
+    TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClass, "Class Grouping Node");
+    JsonNavNodePtr labelGroupingNode = TestNodesHelper::CreateLabelGroupingNode(*m_connection, "Label Grouping Node");
     m_nodesCache.Cache(*classGroupingNode, false);
     labelGroupingNode->SetParentNode(*classGroupingNode);
     m_nodesCache.Cache(*labelGroupingNode, false);
@@ -354,7 +354,7 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_RecursiveNodeRelationships
     ECClassCP ecClass = GetECClass("Basic3", "Class3");
     
     IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    TestNavNodePtr instanceNode = TestNodesHelper::CreateInstanceNode(*instance);
+    TestNavNodePtr instanceNode = TestNodesHelper::CreateInstanceNode(*m_connection, *instance);
     m_nodesCache.Cache(*instanceNode, false);
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, "Basic3");
@@ -388,7 +388,7 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_InstanceLabelOverride_Appl
     Utf8String schemaName = BeTest::GetNameOfCurrentTest();
     ECClassCP ecClass = GetECClass(schemaName.c_str(), "Class1");
     IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    TestNavNodePtr instanceNode = TestNodesHelper::CreateInstanceNode(*instance);
+    TestNavNodePtr instanceNode = TestNodesHelper::CreateInstanceNode(*m_connection, *instance);
     m_nodesCache.Cache(*instanceNode, false);
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, schemaName);
@@ -428,7 +428,7 @@ TEST_F (NavigationQueryBuilderTests, AllInstanceNodes_InstanceLabelOverride_Over
     Utf8String schemaName = BeTest::GetNameOfCurrentTest();
     ECClassCP ecClass = GetECClass(schemaName.c_str(), "Class1");
     IECInstancePtr instance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    TestNavNodePtr instanceNode = TestNodesHelper::CreateInstanceNode(*instance);
+    TestNavNodePtr instanceNode = TestNodesHelper::CreateInstanceNode(*m_connection, *instance);
     m_nodesCache.Cache(*instanceNode, false);
 
     AllInstanceNodesSpecification spec(1, false, false, false, false, false, schemaName);

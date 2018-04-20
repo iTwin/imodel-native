@@ -22,6 +22,7 @@ struct IECPresentationManagerTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     TestConnectionManager m_connections;
+    IConnectionPtr m_connection;
     TestECPresentationManager* m_manager;
     ECClassId m_widgetClassId;
     ECClassId m_gadgetClassId;
@@ -58,7 +59,7 @@ struct IECPresentationManagerTests : ECPresentationTest
         m_manager = new TestECPresentationManager(m_connections);
         IECPresentationManager::RegisterImplementation(m_manager);
 
-        m_connections.NotifyConnectionOpened(s_project->GetECDb());
+        m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
 
         m_widgetClassId = s_project->GetECDb().Schemas().GetClassId("RulesEngineTest", "Widget");
         m_gadgetClassId = s_project->GetECDb().Schemas().GetClassId("RulesEngineTest", "Gadget");
@@ -83,7 +84,7 @@ struct IECPresentationManagerTests : ECPresentationTest
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                08/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static TestNavNodePtr CreateInstanceNode(ECInstanceKey instanceKey, Utf8CP label)
+    TestNavNodePtr CreateInstanceNode(ECInstanceKey instanceKey, Utf8CP label)
         {
         ECClassCP ecClass = s_project->GetECDb().Schemas().GetClass(instanceKey.GetClassId());
         if (nullptr == ecClass)
@@ -91,9 +92,9 @@ struct IECPresentationManagerTests : ECPresentationTest
             BeAssert(false);
             return nullptr;
             }
-        TestNavNodePtr node = TestNodesHelper::CreateInstanceNode(*ecClass, instanceKey.GetInstanceId());
+        TestNavNodePtr node = TestNodesHelper::CreateInstanceNode(*m_connection, *ecClass, instanceKey.GetInstanceId());
         node->SetNodeId(CreateNodeId());
-        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*m_connection, *node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
         node->SetLabel(label);
         return node;
         }
@@ -101,13 +102,13 @@ struct IECPresentationManagerTests : ECPresentationTest
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Aidas.Vaisknoras                10/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static TestNavNodePtr CreateTreeNode(uint64_t nodeId, NavNodeCPtr parent)
+    TestNavNodePtr CreateTreeNode(uint64_t nodeId, NavNodeCPtr parent)
         {
-        TestNavNodePtr node = TestNavNode::Create();
+        TestNavNodePtr node = TestNavNode::Create(*m_connection);
         node->SetNodeId(nodeId);
         bvector<Utf8String> path = (parent.IsNull()) ? bvector<Utf8String>() : parent->GetKey()->GetPathFromRoot();
         path.push_back(std::to_string(node->GetNodeId()).c_str());
-        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, path));
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*m_connection, *node, path));
         if (parent.IsValid())
             node->SetParentNodeId(parent->GetNodeId());
         return node;
@@ -116,7 +117,7 @@ struct IECPresentationManagerTests : ECPresentationTest
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                08/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static TestNavNodePtr CreateInstanceNode(ECClassId classId, ECInstanceId instanceId, Utf8CP label)
+    TestNavNodePtr CreateInstanceNode(ECClassId classId, ECInstanceId instanceId, Utf8CP label)
         {
         return CreateInstanceNode(ECInstanceKey(classId, instanceId), label);
         }
@@ -124,7 +125,7 @@ struct IECPresentationManagerTests : ECPresentationTest
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                08/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static TestNavNodePtr CreateClassGroupingNode(ECClassId classId, Utf8CP label, bvector<ECInstanceKey> const& groupedKeys)
+    TestNavNodePtr CreateClassGroupingNode(ECClassId classId, Utf8CP label, bvector<ECInstanceKey> const& groupedKeys)
         {
         ECClassCP ecClass = s_project->GetECDb().Schemas().GetClass(classId);
         if (nullptr == ecClass)
@@ -132,9 +133,9 @@ struct IECPresentationManagerTests : ECPresentationTest
             BeAssert(false);
             return nullptr;
             }
-        TestNavNodePtr node = TestNodesHelper::CreateClassGroupingNode(*ecClass, label);
+        TestNavNodePtr node = TestNodesHelper::CreateClassGroupingNode(*m_connection, *ecClass, label);
         node->SetNodeId(CreateNodeId());
-        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*m_connection, *node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
         NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
         return node;
         }
@@ -142,7 +143,7 @@ struct IECPresentationManagerTests : ECPresentationTest
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                08/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static TestNavNodePtr CreatePropertyGroupingNode(ECClassId classId, Utf8CP propertyName, Utf8CP label, int rangeIndex, rapidjson::Value const* groupingValueP, bvector<ECInstanceKey> const& groupedKeys)
+    TestNavNodePtr CreatePropertyGroupingNode(ECClassId classId, Utf8CP propertyName, Utf8CP label, int rangeIndex, rapidjson::Value const* groupingValueP, bvector<ECInstanceKey> const& groupedKeys)
         {
         ECClassCP ecClass = s_project->GetECDb().Schemas().GetClass(classId);
         if (nullptr == ecClass)
@@ -161,9 +162,9 @@ struct IECPresentationManagerTests : ECPresentationTest
             groupingValue.CopyFrom(*groupingValueP, groupingValue.GetAllocator());
         else if (-1 != rangeIndex)
             groupingValue.SetInt(rangeIndex);
-        TestNavNodePtr node = TestNodesHelper::CreatePropertyGroupingNode(*ecClass, *ecProperty, label, groupingValue, -1 != rangeIndex);
+        TestNavNodePtr node = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *ecClass, *ecProperty, label, groupingValue, -1 != rangeIndex);
         node->SetNodeId(CreateNodeId());
-        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*m_connection, *node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
         NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
         return node;
         }
@@ -171,11 +172,11 @@ struct IECPresentationManagerTests : ECPresentationTest
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                08/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static TestNavNodePtr CreateLabelGroupingNode(Utf8CP label, bvector<ECInstanceKey> const& groupedKeys)
+    TestNavNodePtr CreateLabelGroupingNode(Utf8CP label, bvector<ECInstanceKey> const& groupedKeys)
         {
-        TestNavNodePtr node = TestNodesHelper::CreateLabelGroupingNode(label);
+        TestNavNodePtr node = TestNodesHelper::CreateLabelGroupingNode(*m_connection, label);
         node->SetNodeId(CreateNodeId());
-        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*m_connection, *node, bvector<Utf8String>{std::to_string(node->GetNodeId()).c_str()}));
         NavNodeExtendedData(*node).SetGroupedInstanceKeys(groupedKeys);
         return node;
         }

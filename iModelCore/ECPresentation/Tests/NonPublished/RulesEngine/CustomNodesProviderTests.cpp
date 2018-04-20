@@ -114,7 +114,7 @@ TEST_F(CustomNodesProviderTests, ReturnsValidNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomNodesProviderTests, ReturnsValidChildNode)
     {
-    TestNavNodePtr parent = TestNodesHelper::CreateCustomNode("parent_type", "parent_label", "parent_descr");
+    TestNavNodePtr parent = TestNodesHelper::CreateCustomNode(*m_connection, "parent_type", "parent_label", "parent_descr");
     m_nodesCache.Cache(*parent, true);
 
     ChildNodeRule rule;

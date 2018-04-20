@@ -89,9 +89,9 @@ public:
     //! Create a new key.
     static NavNodeKeyPtr Create(Utf8String type, bvector<Utf8String> path) {return new NavNodeKey(type, path);}
     //! Create a key from the supplied JSON.
-    ECPRESENTATION_EXPORT static NavNodeKeyPtr FromJson(JsonValueCR);
+    ECPRESENTATION_EXPORT static NavNodeKeyPtr FromJson(IConnectionCR connection, JsonValueCR);
     //! Create a key from the supplied JSON.
-    ECPRESENTATION_EXPORT static NavNodeKeyPtr FromJson(RapidJsonValueCR);
+    ECPRESENTATION_EXPORT static NavNodeKeyPtr FromJson(IConnectionCR connection, RapidJsonValueCR);
 };
 
 //=======================================================================================
@@ -131,10 +131,10 @@ typedef RefCountedPtr<ECInstanceNodeKey>  ECInstanceNodeKeyPtr;
 struct EXPORT_VTABLE_ATTRIBUTE ECInstanceNodeKey : NavNodeKey
 {
 private:
-    ECInstanceKey m_instanceKey;
+    ECClassInstanceKey m_instanceKey;
 private:
-    ECInstanceNodeKey(bvector<Utf8String> path, ECClassId classId, ECInstanceId instanceId) 
-        : NavNodeKey(NAVNODE_TYPE_ECInstanceNode, path), m_instanceKey(classId, instanceId)
+    ECInstanceNodeKey(bvector<Utf8String> path, ECClassInstanceKey key) 
+        : NavNodeKey(NAVNODE_TYPE_ECInstanceNode, path), m_instanceKey(key)
         {}
 protected:
     ECPRESENTATION_EXPORT bool _IsSimilar(NavNodeKey const& other) const override;
@@ -143,23 +143,15 @@ protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 public:
     //! Create an @ref ECInstanceNodeKey from a JSON object.
-    ECPRESENTATION_EXPORT static RefCountedPtr<ECInstanceNodeKey> Create(JsonValueCR);
+    ECPRESENTATION_EXPORT static RefCountedPtr<ECInstanceNodeKey> Create(IConnectionCR, JsonValueCR);
     //! Create an @ref ECInstanceNodeKey from a JSON object.
-    ECPRESENTATION_EXPORT static RefCountedPtr<ECInstanceNodeKey> Create(RapidJsonValueCR);
-    //! Create an @ref ECInstanceNodeKey using supplied parameters.
-    //! @param[in] classId The ID of the ECInstance class.
-    //! @param[in] instanceId The ECInstance ID.
-    //! @param[in] path The hashes which describe path from root node to this node.
-    static RefCountedPtr<ECInstanceNodeKey> Create(ECClassId classId, ECInstanceId instanceId, bvector<Utf8String> path)
-        {
-        return new ECInstanceNodeKey(path, classId, instanceId);
-        }
+    ECPRESENTATION_EXPORT static RefCountedPtr<ECInstanceNodeKey> Create(IConnectionCR, RapidJsonValueCR);
     //! Create an @ref ECInstanceNodeKey using supplied parameters.
     //! @param[in] key The ECInstance key.
     //! @param[in] path The hashes which describe path from root node to this node.
-    static RefCountedPtr<ECInstanceNodeKey> Create(ECInstanceKeyCR key, bvector<Utf8String> path)
+    static RefCountedPtr<ECInstanceNodeKey> Create(ECClassInstanceKeyCR key, bvector<Utf8String> path)
         {
-        return new ECInstanceNodeKey(path, key.GetClassId(), key.GetInstanceId());
+        return new ECInstanceNodeKey(path, key);
         }
     //! Create an @ref ECInstanceNodeKey using supplied parameters.
     //! @param[in] instance The ECInstance.
@@ -168,14 +160,18 @@ public:
         {
         ECInstanceId instanceId;
         ECInstanceId::FromString(instanceId, instance.GetInstanceId().c_str());
-        return Create(instance.GetClass().GetId(), instanceId, path);
+        return Create(ECClassInstanceKey(&instance.GetClass(), instanceId), path);
         }
-    //! Get the ECClass ID.
-    ECClassId GetECClassId() const {return m_instanceKey.GetClassId();}
-    //! Get the ECInstance ID.
-    ECInstanceId GetInstanceId() const {return m_instanceKey.GetInstanceId();}
-    //! Get the ECInstance key.
-    ECInstanceKeyCR GetInstanceKey() const {return m_instanceKey;}
+    //! Get the ECClass
+    ECClassCR GetECClass() const {return *m_instanceKey.GetClass();}
+    //! Get the ECClass ID
+    ECClassId GetECClassId() const {return m_instanceKey.GetClass()->GetId();}
+    //! Get the ECInstance ID
+    ECInstanceId GetInstanceId() const {return m_instanceKey.GetId();}
+    //! Get the ECInstance key
+    ECInstanceKey GetInstanceKey() const {return ECInstanceKey(m_instanceKey.GetClass()->GetId(), m_instanceKey.GetId());}
+    //! Get the ECClassInstance key
+    ECClassInstanceKeyCR GetClassInstanceKey() const {return m_instanceKey;}
 };
 
 typedef RefCountedPtr<ECClassGroupingNodeKey>  ECClassGroupingNodeKeyPtr;
@@ -187,30 +183,31 @@ typedef RefCountedPtr<ECClassGroupingNodeKey>  ECClassGroupingNodeKeyPtr;
 struct EXPORT_VTABLE_ATTRIBUTE ECClassGroupingNodeKey : NavNodeKey
 {
 private:
-    ECClassId m_classId;
+    ECClassCP m_class;
 private:
-    ECClassGroupingNodeKey(bvector<Utf8String> path, ECClassId classId) 
-        : NavNodeKey(NAVNODE_TYPE_ECClassGroupingNode, path), m_classId(classId)
+    ECClassGroupingNodeKey(bvector<Utf8String> path, ECClassCR ecClass) 
+        : NavNodeKey(NAVNODE_TYPE_ECClassGroupingNode, path), m_class(&ecClass)
         {}
 protected:
-    //ECPRESENTATION_EXPORT int _Compare(NavNodeKey const& other) const override;
     ECClassGroupingNodeKey const* _AsECClassGroupingNodeKey() const override {return this;}
     ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 public:
     //! Create an @ref ECClassGroupingNodeKey from a JSON object.
-    ECPRESENTATION_EXPORT static RefCountedPtr<ECClassGroupingNodeKey> Create(JsonValueCR);
+    ECPRESENTATION_EXPORT static RefCountedPtr<ECClassGroupingNodeKey> Create(IConnectionCR, JsonValueCR);
     //! Create an @ref ECClassGroupingNodeKey from a JSON object.
-    ECPRESENTATION_EXPORT static RefCountedPtr<ECClassGroupingNodeKey> Create(RapidJsonValueCR);
+    ECPRESENTATION_EXPORT static RefCountedPtr<ECClassGroupingNodeKey> Create(IConnectionCR, RapidJsonValueCR);
     //! Create an @ref ECClassGroupingNodeKey using supplied parameters.
-    //! @param[in] classId The ID of the class.
+    //! @param[in] ecClass The grouping ECClass
     //! @param[in] path The hashes which describe path from root node to this node.
-    static RefCountedPtr<ECClassGroupingNodeKey> Create(ECClassId classId, bvector<Utf8String> path = bvector<Utf8String>())
+    static RefCountedPtr<ECClassGroupingNodeKey> Create(ECClassCR ecClass, bvector<Utf8String> path = bvector<Utf8String>())
         {
-        return new ECClassGroupingNodeKey(path, classId);
+        return new ECClassGroupingNodeKey(path, ecClass);
         }
-    //! Get the ECClass ID.
-    ECClassId GetECClassId() const {return m_classId;}
+    //! Get the ECClass
+    ECClassCR GetECClass() const {return *m_class;}
+    //! Get the ECClass ID
+    ECClassId GetECClassId() const {return m_class->GetId();}
 };
 
 typedef RefCountedPtr<ECPropertyGroupingNodeKey>  ECPropertyGroupingNodeKeyPtr;
@@ -222,12 +219,12 @@ typedef RefCountedPtr<ECPropertyGroupingNodeKey>  ECPropertyGroupingNodeKeyPtr;
 struct EXPORT_VTABLE_ATTRIBUTE ECPropertyGroupingNodeKey : NavNodeKey
 {
 private:
-    ECClassId m_classId;
+    ECClassCP m_class;
     Utf8String m_propertyName;
     rapidjson::Document const* m_groupingValue;
 private:
-    ECPropertyGroupingNodeKey(bvector<Utf8String> path, ECClassId classId, Utf8String propertyName, rapidjson::Value const* groupingValue) 
-        : NavNodeKey(NAVNODE_TYPE_ECPropertyGroupingNode, path), m_classId(classId), m_propertyName(propertyName), m_groupingValue(nullptr)
+    ECPropertyGroupingNodeKey(bvector<Utf8String> path, ECClassCR ecClass, Utf8String propertyName, rapidjson::Value const* groupingValue) 
+        : NavNodeKey(NAVNODE_TYPE_ECPropertyGroupingNode, path), m_class(&ecClass), m_propertyName(propertyName), m_groupingValue(nullptr)
         {
         if (nullptr != groupingValue)
             {
@@ -243,19 +240,20 @@ protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 public:
     //! Create an @ref ECPropertyGroupingNodeKey from a JSON object.
-    ECPRESENTATION_EXPORT static RefCountedPtr<ECPropertyGroupingNodeKey> Create(JsonValueCR);
+    ECPRESENTATION_EXPORT static RefCountedPtr<ECPropertyGroupingNodeKey> Create(IConnectionCR, JsonValueCR);
     //! Create an @ref ECPropertyGroupingNodeKey from a JSON object.
-    ECPRESENTATION_EXPORT static RefCountedPtr<ECPropertyGroupingNodeKey> Create(RapidJsonValueCR);
+    ECPRESENTATION_EXPORT static RefCountedPtr<ECPropertyGroupingNodeKey> Create(IConnectionCR, RapidJsonValueCR);
     //! Create an @ref ECPropertyGroupingNodeKey using supplied parameters.
-    //! @param[in] classId The ID of the class.
+    //! @param[in] ecClass ECClass of the grouping property
     //! @param[in] propertyName Name of the grouping property
     //! @param[in] groupingValue The grouping value.
     //! @param[in] path The hashes which describe path from root node to this node.
-    static RefCountedPtr<ECPropertyGroupingNodeKey> Create(ECClassId classId, Utf8String propertyName, rapidjson::Value const* groupingValue, bvector<Utf8String> path = bvector<Utf8String>())
+    static RefCountedPtr<ECPropertyGroupingNodeKey> Create(ECClassCR ecClass, Utf8String propertyName, rapidjson::Value const* groupingValue, bvector<Utf8String> path = bvector<Utf8String>())
         {
-        return new ECPropertyGroupingNodeKey(path, classId, propertyName, groupingValue);
+        return new ECPropertyGroupingNodeKey(path, ecClass, propertyName, groupingValue);
         }
-    ECClassId GetECClassId() const {return m_classId;}
+    ECClassCR GetECClass() const {return *m_class;}
+    ECClassId GetECClassId() const {return m_class->GetId();}
     Utf8StringCR GetPropertyName() const {return m_propertyName;}
     rapidjson::Value const* GetGroupingValue() const {return m_groupingValue;}
 };
@@ -432,8 +430,7 @@ public:
     //! Is this node expanded.
     bool IsExpanded() const {return _IsExpanded();}
 
-    //! Serialize the node to JSON.
-    ECPRESENTATION_EXPORT static NavNodePtr FromJson(RapidJsonValueCR json);
+    //! Serialize the node to JSON
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
 };
 
@@ -623,95 +620,7 @@ public:
 };
 
 typedef bvector<ECInstanceKey> GroupedInstanceKeysList;
-typedef GroupedInstanceKeysList const&       GroupedInstanceKeysListCR;
-
-typedef bmap<ECClassId, bset<ECInstanceId>> InstanceKeyMap;
-//=======================================================================================
-//! Struct that describes ECInstanceKeys and NavNodeKeys set
-// @bsiclass                                    Saulius.Skliutas                01/2018
-//=======================================================================================
-struct KeySet : RefCountedBase
-{
-private:
-    InstanceKeyMap m_instances;
-    NavNodeKeySet m_nodes;
-    mutable INavNodeKeysContainerCPtr m_nodesContainer;
-
-private:
-    void InvalidateNodesContainer() {m_nodesContainer = nullptr;}
-
-protected:
-    KeySet(InstanceKeyMap instances, NavNodeKeySet nodes) : m_instances(instances), m_nodes(nodes) {}
-    KeySet(KeySetCR other) : m_instances(other.m_instances), m_nodes(other.m_nodes) {}
-
-public:
-    //! Creates empty key set.
-    static KeySetPtr Create() {return new KeySet(InstanceKeyMap(), NavNodeKeySet());}
-    //! Creates key set from supplied instance keys and node keys.
-    static KeySetPtr Create(InstanceKeyMap instances, NavNodeKeySet nodes) {return new KeySet(instances, nodes);}
-    //! Creates key set from supplied instance key map.
-    static KeySetPtr Create(InstanceKeyMap instances) {return new KeySet(instances, NavNodeKeySet());}
-    //! Creates key set from supplied nodes key set.
-    static KeySetPtr Create(NavNodeKeySet nodes) {return new KeySet(InstanceKeyMap(), nodes);}
-    //! Creates key set from supplied nodes key list.
-    ECPRESENTATION_EXPORT static KeySetPtr Create(NavNodeKeyList const& nodeKey);
-    //! Creates key set from supplied instance keys.
-    ECPRESENTATION_EXPORT static KeySetPtr Create(bvector<ECInstanceKey> const& instanceKeys);
-    //! Creates key set from supplied instances
-    ECPRESENTATION_EXPORT static KeySetPtr Create(bvector<IECInstancePtr> const& instaces);
-    //! Creates key set from supplied instance.
-    static KeySetPtr Create(IECInstanceR instance) {return KeySet::Create({&instance});}
-    //! Creates key set from supplied node key
-    static KeySetPtr Create(NavNodeKeyCR nodeKey) {return KeySet::Create({&nodeKey});}
-    //! Creates a copy of provided key set.
-    static KeySetPtr Create(KeySetCR other) {return new KeySet(other);}
-    //! Created key set from supplied classes.
-    ECPRESENTATION_EXPORT static KeySetPtr Create(bvector<ECClassCP> const& classes);
-
-    //! Returns whether this key set is equal to the supplied one.
-    bool Equals(KeySetCR other) const {return GetHash().Equals(other.GetHash());}
-    //! Equals operator override
-    bool operator==(KeySetCR other) const {return Equals(other);}
-    //! Get hash of this key set.
-    Utf8StringCR GetHash() const {return GetAllNavNodeKeys()->GetHash();}
-    //! Get NavNode keys contained in this key set.
-    NavNodeKeySetCR GetNavNodeKeys() const {return m_nodes;}
-    //! Get instance keys map.
-    InstanceKeyMap const& GetInstanceKeys() const {return m_instances;}
-    //! Get NavNode keys contained in this key set. (Creates node keys for instance keys too)
-    ECPRESENTATION_EXPORT INavNodeKeysContainerCPtr GetAllNavNodeKeys() const;
-    //! Get size of nav node keys.
-    size_t size() const {return GetAllNavNodeKeys()->size();}
-    //! Add instance key to this key set. (Returns true if key was added and false if key was in the set already)
-    bool Add(ECClassId classId, ECInstanceId instanceId) {InvalidateNodesContainer(); return m_instances[classId].insert(instanceId).second;}
-    //! Add instance ket to this key set. (Returns true if key was added and false if key was in the set already)
-    bool Add(ECInstanceKey instanceKey) {return Add(instanceKey.GetClassId(), instanceKey.GetInstanceId());}
-    //! Add NavNode key to this key set. (Returns true if key was added and false if key was in the set already)
-    bool Add(NavNodeKeyCR nodeKey) {InvalidateNodesContainer(); return m_nodes.insert(&nodeKey).second;}
-    //! Returns whether this key set contains supplied instance key.
-    ECPRESENTATION_EXPORT bool Contains(ECClassId classId, ECInstanceId instanceId) const;
-    //! Returns whether this key set contains supplied instance key.
-    bool Contains(ECInstanceKeyCR instanceKey) const {return Contains(instanceKey.GetClassId(), instanceKey.GetInstanceId());}
-    //! Return whether this key set contains supplied NavNode key.
-    bool Contains(NavNodeKeyCR nodeKey) const {return m_nodes.end() != m_nodes.find(&nodeKey);}
-    //! Clears this key set.
-    void Clear() {InvalidateNodesContainer(); m_instances.clear(); m_nodes.clear();}
-    //! Returns whether this key set is empty.
-    bool empty() const {return m_instances.empty() && m_nodes.empty();}
-    //! Merge supplied key set which this key set. Returns number of new keys added.
-    ECPRESENTATION_EXPORT uint64_t MergeWith(KeySetCR other);
-    //! Remove supplied keys from this key set. Return number of keys removed.
-    ECPRESENTATION_EXPORT uint64_t Remove(KeySetCR toRemove);
-    //! Remove supplied nav node key from this key set.
-    bool Remove(NavNodeKeyCR nodeKey) {return 0 != m_nodes.erase(&nodeKey);}
-    //! Remove supplied instance key from this key set.
-    ECPRESENTATION_EXPORT bool Remove(ECClassId classId, ECInstanceId instanceId);
-    //! Remove supplied instance ky from this key set.
-    bool Remove(ECInstanceKey instanceKey) {return Remove(instanceKey.GetClassId(), instanceKey.GetInstanceId());}
-
-    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
-    ECPRESENTATION_EXPORT static KeySetPtr FromJson(JsonValueCR json);
-};
+typedef GroupedInstanceKeysList const& GroupedInstanceKeysListCR;
 
 //=======================================================================================
 //! An interface for a @ref NavNode factory which can create different kinds of nodes.

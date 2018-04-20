@@ -653,15 +653,24 @@ bool NavNodesHelper::IsCustomNode(NavNodeCR node)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr NavNodesHelper::CreateNodeKey(JsonNavNodeCR node, bvector<Utf8String> const& path)
+NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNodeCR node, bvector<Utf8String> const& path)
     {
     NavNodeExtendedData extendedData(node);
     if (node.GetType().Equals(NAVNODE_TYPE_ECInstanceNode))
-        return ECInstanceNodeKey::Create(extendedData.GetECClassId(), ECInstanceId(node.GetInstanceId()), path);
+        {
+        ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(extendedData.GetECClassId());
+        return ECInstanceNodeKey::Create(ECClassInstanceKey(ecClass, ECInstanceId(node.GetInstanceId())), path);
+        }
     if (node.GetType().Equals(NAVNODE_TYPE_ECClassGroupingNode))
-        return ECClassGroupingNodeKey::Create(extendedData.GetECClassId(), path);
+        {
+        ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(extendedData.GetECClassId());
+        return ECClassGroupingNodeKey::Create(*ecClass, path);
+        }
     if (node.GetType().Equals(NAVNODE_TYPE_ECPropertyGroupingNode))
-        return ECPropertyGroupingNodeKey::Create(extendedData.GetECClassId(), extendedData.GetPropertyName(), extendedData.GetPropertyValue(), path);
+        {
+        ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(extendedData.GetECClassId());
+        return ECPropertyGroupingNodeKey::Create(*ecClass, extendedData.GetPropertyName(), extendedData.GetPropertyValue(), path);
+        }
     if (node.GetType().Equals(NAVNODE_TYPE_DisplayLabelGroupingNode))
         return LabelGroupingNodeKey::Create(node.GetLabel(), path);
     return NavNodeKey::Create(node.GetType(), path);
@@ -670,13 +679,12 @@ NavNodeKeyPtr NavNodesHelper::CreateNodeKey(JsonNavNodeCR node, bvector<Utf8Stri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr NavNodesHelper::CreateNodeKey(JsonNavNodeCR node, Utf8CP pathFromRootJsonString)
+NavNodeKeyPtr NavNodesHelper::CreateNodeKey(IConnectionCR connection, JsonNavNodeCR node, Utf8CP pathFromRootJsonString)
     {
     rapidjson::Document json;
     json.Parse(pathFromRootJsonString);
     bvector<Utf8String> path;
     for (RapidJsonValueCR pathElement : json.GetArray())
         path.push_back(pathElement.GetString());
-
-    return CreateNodeKey(node, path);
+    return CreateNodeKey(connection, node, path);
     }

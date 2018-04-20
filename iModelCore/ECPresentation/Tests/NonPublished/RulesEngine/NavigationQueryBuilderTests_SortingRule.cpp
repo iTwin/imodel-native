@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/NavigationQueryBuilderTests_SortingRule.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "QueryBuilderTests.h"
@@ -263,7 +263,7 @@ TEST_F(NavigationQueryBuilderTests, SortingRule_SortsByProperty_WhenUsingParentI
     SortingRuleP sortingRule = new SortingRule("", 1, "Basic3", "Class3", "SomeProperty", true, false, false);
     m_ruleset->AddPresentationRule(*sortingRule);
 
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("Basic3", "Class3"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("Basic3", "Class3"));
     m_nodesCache.Cache(*parentNode, false);
    
     InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "this.SomeProperty = parent.SomeProperty", "Basic3:Class3", false);

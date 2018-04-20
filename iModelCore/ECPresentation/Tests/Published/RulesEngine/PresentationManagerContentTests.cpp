@@ -44,7 +44,7 @@ struct RulesDrivenECPresentationManagerContentTests : RulesDrivenECPresentationM
 TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_ReturnsValidDescriptorBasedOnSelectedClasses)
     {
     // set up input
-    KeySetPtr input = KeySet::Create(bvector<ECInstanceKey>{ECInstanceKey(m_gadgetClass->GetId(), ECInstanceId()), ECInstanceKey(m_widgetClass->GetId(), ECInstanceId())});
+    KeySetPtr input = KeySet::Create(bvector<ECClassInstanceKey>{ECClassInstanceKey(m_gadgetClass, ECInstanceId()), ECClassInstanceKey(m_widgetClass, ECInstanceId())});
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -557,7 +557,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DescriptorOverride_WithFil
 TEST_F (RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_ReturnsValidDescriptorWhichDoesNotDependOnSelectedClasses)
     {    
     // set up input
-    KeySetPtr input = KeySet::Create({ECInstanceKey(m_gadgetClass->GetId(), ECInstanceId())});
+    KeySetPtr input = KeySet::Create({ECClassInstanceKey(m_gadgetClass, ECInstanceId())});
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -693,7 +693,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Re
     ECRelationshipClassCP rel6 = GetClass("RulesEngineTest", "GadgetHasSprockets")->GetRelationshipClassCP();
 
     // set up input
-    KeySetPtr input = KeySet::Create({ECInstanceKey(m_gadgetClass->GetId(), ECInstanceId())});
+    KeySetPtr input = KeySet::Create({ECClassInstanceKey(m_gadgetClass, ECInstanceId())});
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -1582,11 +1582,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *widgetHasGadgetsRelationship, *widget, *gadget);
 
-    ECInstanceId gadgetId, widgetId;
-    ECInstanceId::FromString(gadgetId, gadget->GetInstanceId().c_str());
-    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    ECInstanceKey gadgetKey(m_gadgetClass->GetId(), gadgetId);
-    ECInstanceKey widgetKey(m_widgetClass->GetId(), widgetId);
+    ECClassInstanceKey gadgetKey = RulesEngineTestHelpers::GetInstanceKey(*gadget);
+    ECClassInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -1619,27 +1616,27 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     ContentSetItemCPtr record = contentSet.Get(0);
 
     ContentSetItem::FieldProperty fp0(*descriptor->GetVisibleFields()[0]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp0);
+    bvector<ECClassInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp0);
     ASSERT_EQ(1, gadgetMyidFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetMyidFieldInstanceKeys[0]);
     
     ContentSetItem::FieldProperty fp1(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp1);
+    bvector<ECClassInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp1);
     ASSERT_EQ(1, gadgetDescriptionFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetDescriptionFieldInstanceKeys[0]);
 
     ContentSetItem::FieldProperty fp2(*descriptor->GetVisibleFields()[2]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp2);
+    bvector<ECClassInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp2);
     ASSERT_EQ(1, gadgetWidgetFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetWidgetFieldInstanceKeys[0]);
     
     ContentSetItem::FieldProperty fp3(*descriptor->GetVisibleFields()[3]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> widgetMyIdFieldInstanceKeys = record->GetPropertyValueKeys(fp3);
+    bvector<ECClassInstanceKey> widgetMyIdFieldInstanceKeys = record->GetPropertyValueKeys(fp3);
     ASSERT_EQ(1, widgetMyIdFieldInstanceKeys.size());
     EXPECT_EQ(widgetKey, widgetMyIdFieldInstanceKeys[0]);
     
     ContentSetItem::FieldProperty fp4(*descriptor->GetVisibleFields()[4]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> widgetIntpropertyFieldInstanceKeys = record->GetPropertyValueKeys(fp4);
+    bvector<ECClassInstanceKey> widgetIntpropertyFieldInstanceKeys = record->GetPropertyValueKeys(fp4);
     ASSERT_EQ(1, widgetIntpropertyFieldInstanceKeys.size());
     EXPECT_EQ(widgetKey, widgetIntpropertyFieldInstanceKeys[0]);
     }
@@ -1652,8 +1649,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     // set up the dataset
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass);
-    ECInstanceKey gadgetKey = RulesEngineTestHelpers::GetInstanceKey(*gadget);
-    ECInstanceKey sprocketKey = RulesEngineTestHelpers::GetInstanceKey(*sprocket);
+    ECClassInstanceKey gadgetKey = RulesEngineTestHelpers::GetInstanceKey(*gadget);
+    ECClassInstanceKey sprocketKey = RulesEngineTestHelpers::GetInstanceKey(*sprocket);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -1690,25 +1687,25 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
 
     ContentSetItemCPtr record0 = contentSet.Get(0); // gadget
 
-    bvector<ECInstanceKey> gadgetMyidFieldInstanceKeys = record0->GetPropertyValueKeys(fp00);
+    bvector<ECClassInstanceKey> gadgetMyidFieldInstanceKeys = record0->GetPropertyValueKeys(fp00);
     ASSERT_EQ(1, gadgetMyidFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetMyidFieldInstanceKeys[0]);
     
-    bvector<ECInstanceKey> sprocketMyidFieldInstanceKeys = record0->GetPropertyValueKeys(fp01);
+    bvector<ECClassInstanceKey> sprocketMyidFieldInstanceKeys = record0->GetPropertyValueKeys(fp01);
     EXPECT_TRUE(sprocketMyidFieldInstanceKeys.empty());
     
-    bvector<ECInstanceKey> gadgetDescriptionFieldInstanceKeys = record0->GetPropertyValueKeys(fp10);
+    bvector<ECClassInstanceKey> gadgetDescriptionFieldInstanceKeys = record0->GetPropertyValueKeys(fp10);
     ASSERT_EQ(1, gadgetDescriptionFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetDescriptionFieldInstanceKeys[0]);
     
-    bvector<ECInstanceKey> sprocketDescriptionFieldInstanceKeys = record0->GetPropertyValueKeys(fp11);
+    bvector<ECClassInstanceKey> sprocketDescriptionFieldInstanceKeys = record0->GetPropertyValueKeys(fp11);
     EXPECT_TRUE(sprocketDescriptionFieldInstanceKeys.empty());
 
-    bvector<ECInstanceKey> gadgetWidgetFieldInstanceKeys = record0->GetPropertyValueKeys(fp20);
+    bvector<ECClassInstanceKey> gadgetWidgetFieldInstanceKeys = record0->GetPropertyValueKeys(fp20);
     ASSERT_EQ(1, gadgetWidgetFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetWidgetFieldInstanceKeys[0]);
 
-    bvector<ECInstanceKey> sprocketGadgetFieldInstanceKeys = record0->GetPropertyValueKeys(fp30);
+    bvector<ECClassInstanceKey> sprocketGadgetFieldInstanceKeys = record0->GetPropertyValueKeys(fp30);
     EXPECT_TRUE(sprocketGadgetFieldInstanceKeys.empty());
     
     ContentSetItemCPtr record1 = contentSet.Get(1); // sprocket
@@ -1743,8 +1740,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     // set up the dataset
     IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
-    ECInstanceKey gadgetKey1 = RulesEngineTestHelpers::GetInstanceKey(*gadget1);
-    ECInstanceKey gadgetKey2 = RulesEngineTestHelpers::GetInstanceKey(*gadget2);
+    ECClassInstanceKey gadgetKey1 = RulesEngineTestHelpers::GetInstanceKey(*gadget1);
+    ECClassInstanceKey gadgetKey2 = RulesEngineTestHelpers::GetInstanceKey(*gadget2);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -1779,19 +1776,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     ContentSetItemCPtr record = contentSet.Get(0);
 
     ContentSetItem::FieldProperty fp0(*content->GetDescriptor().GetVisibleFields()[0]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp0);
+    bvector<ECClassInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp0);
     ASSERT_EQ(2, gadgetMyidFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey1, gadgetMyidFieldInstanceKeys[0]);
     EXPECT_EQ(gadgetKey2, gadgetMyidFieldInstanceKeys[1]);
     
     ContentSetItem::FieldProperty fp1(*content->GetDescriptor().GetVisibleFields()[1]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp1);
+    bvector<ECClassInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp1);
     ASSERT_EQ(2, gadgetDescriptionFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey1, gadgetDescriptionFieldInstanceKeys[0]);
     EXPECT_EQ(gadgetKey2, gadgetDescriptionFieldInstanceKeys[1]);
 
     ContentSetItem::FieldProperty fp2(*content->GetDescriptor().GetVisibleFields()[2]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp2);
+    bvector<ECClassInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp2);
     ASSERT_EQ(2, gadgetWidgetFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey1, gadgetWidgetFieldInstanceKeys[0]);
     EXPECT_EQ(gadgetKey2, gadgetWidgetFieldInstanceKeys[1]);
@@ -1805,8 +1802,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     // set up the dataset
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass);
-    ECInstanceKey gadgetKey = RulesEngineTestHelpers::GetInstanceKey(*gadget);
-    ECInstanceKey sprocketKey = RulesEngineTestHelpers::GetInstanceKey(*sprocket);
+    ECClassInstanceKey gadgetKey = RulesEngineTestHelpers::GetInstanceKey(*gadget);
+    ECClassInstanceKey sprocketKey = RulesEngineTestHelpers::GetInstanceKey(*sprocket);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -1841,32 +1838,32 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     ContentSetItemCPtr record = contentSet.Get(0);
 
     ContentSetItem::FieldProperty fp00(*content->GetDescriptor().GetVisibleFields()[0]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp00);
+    bvector<ECClassInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp00);
     ASSERT_EQ(1, gadgetMyidFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetMyidFieldInstanceKeys[0]);
     
     ContentSetItem::FieldProperty fp01(*content->GetDescriptor().GetVisibleFields()[0]->AsPropertiesField(), 1);
-    bvector<ECInstanceKey> sprocketMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp01);
+    bvector<ECClassInstanceKey> sprocketMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp01);
     ASSERT_EQ(1, sprocketMyidFieldInstanceKeys.size());
     EXPECT_EQ(sprocketKey, sprocketMyidFieldInstanceKeys[0]);
     
     ContentSetItem::FieldProperty fp10(*content->GetDescriptor().GetVisibleFields()[1]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp10);
+    bvector<ECClassInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp10);
     ASSERT_EQ(1, gadgetDescriptionFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetDescriptionFieldInstanceKeys[0]);
     
     ContentSetItem::FieldProperty fp11(*content->GetDescriptor().GetVisibleFields()[1]->AsPropertiesField(), 1);
-    bvector<ECInstanceKey> sprocketDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp11);
+    bvector<ECClassInstanceKey> sprocketDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp11);
     ASSERT_EQ(1, sprocketDescriptionFieldInstanceKeys.size());
     EXPECT_EQ(sprocketKey, sprocketDescriptionFieldInstanceKeys[0]);
 
     ContentSetItem::FieldProperty fp20(*content->GetDescriptor().GetVisibleFields()[2]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp20);
+    bvector<ECClassInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp20);
     ASSERT_EQ(1, gadgetWidgetFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetWidgetFieldInstanceKeys[0]);
 
     ContentSetItem::FieldProperty fp30(*content->GetDescriptor().GetVisibleFields()[3]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> sprocketGadgetFieldInstanceKeys = record->GetPropertyValueKeys(fp30);
+    bvector<ECClassInstanceKey> sprocketGadgetFieldInstanceKeys = record->GetPropertyValueKeys(fp30);
     ASSERT_EQ(1, sprocketGadgetFieldInstanceKeys.size());
     EXPECT_EQ(sprocketKey, sprocketGadgetFieldInstanceKeys[0]);
     }
@@ -1889,7 +1886,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [&](IECInstanceR instance)
         {
         instance.SetValue("MyID", ECValue("Sprocket"));
-        instance.SetValue("Gadget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetInstanceId(), rel));
+        instance.SetValue("Gadget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetId(), rel));
         });
 
     // create the rule set
@@ -1923,12 +1920,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     ContentSetItem::FieldProperty fp(*descriptor->GetVisibleFields()[8]->AsPropertiesField(), 0);
 
     ContentSetItemCPtr widgetRecord = contentSet.Get(0);
-    bvector<ECInstanceKey> widgetKeys = widgetRecord->GetPropertyValueKeys(fp);
+    bvector<ECClassInstanceKey> widgetKeys = widgetRecord->GetPropertyValueKeys(fp);
     EXPECT_TRUE(widgetKeys.empty());
     EXPECT_TRUE(widgetRecord->AsJson()["Values"][fp.GetField().GetName().c_str()].IsNull());
     
     ContentSetItemCPtr sprocketRecord = contentSet.Get(1);
-    bvector<ECInstanceKey> sprocketKeys = sprocketRecord->GetPropertyValueKeys(fp);
+    bvector<ECClassInstanceKey> sprocketKeys = sprocketRecord->GetPropertyValueKeys(fp);
     ASSERT_EQ(1, sprocketKeys.size());
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget), sprocketKeys[0]);
     EXPECT_STREQ("Gadget", sprocketRecord->AsJson()["Values"][fp.GetField().GetName().c_str()].GetString());
@@ -1996,7 +1993,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
 
     ContentSetItem::FieldProperty fp(*content->GetDescriptor().GetVisibleFields()[7]->AsPropertiesField(), 0);
     ContentSetItemCPtr record = contentSet.Get(0);
-    bvector<ECInstanceKey> keys = record->GetPropertyValueKeys(fp);
+    bvector<ECClassInstanceKey> keys = record->GetPropertyValueKeys(fp);
     ASSERT_EQ(2, keys.size());
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget1), keys[0]);
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget2), keys[1]);
@@ -2053,17 +2050,17 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyV
     ContentSetItem::FieldProperty fp(*descriptor->GetVisibleFields()[9]->AsPropertiesField(), 0);
 
     ContentSetItemCPtr widgetRecord = contentSet.Get(0);
-    bvector<ECInstanceKey> widgetKeys = widgetRecord->GetPropertyValueKeys(fp);
+    bvector<ECClassInstanceKey> widgetKeys = widgetRecord->GetPropertyValueKeys(fp);
     EXPECT_TRUE(widgetKeys.empty());
     
     ContentSetItemCPtr gadgetRecord = contentSet.Get(1);
-    bvector<ECInstanceKey> gadgetKeys = gadgetRecord->GetPropertyValueKeys(fp);
+    bvector<ECClassInstanceKey> gadgetKeys = gadgetRecord->GetPropertyValueKeys(fp);
     EXPECT_TRUE(gadgetKeys.empty());
 
     ContentSetItemCPtr sprocketRecord = contentSet.Get(2);
-    bvector<ECInstanceKey> sprocketKeys = sprocketRecord->GetPropertyValueKeys(fp);
+    bvector<ECClassInstanceKey> sprocketKeys = sprocketRecord->GetPropertyValueKeys(fp);
     ASSERT_EQ(1, sprocketKeys.size());
-    EXPECT_EQ(ECInstanceKey(m_gadgetClass->GetId(), ECInstanceId()), sprocketKeys[0]);
+    EXPECT_EQ(ECClassInstanceKey(m_gadgetClass, ECInstanceId()), sprocketKeys[0]);
     EXPECT_TRUE(sprocketRecord->AsJson()["Values"][fp.GetField().GetName().c_str()].IsNull());
     }
 
@@ -2141,7 +2138,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     ContentSetItem::FieldProperty fp(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 0);
         
     ContentSetItemCPtr record = contentSet.Get(0);
-    bvector<ECInstanceKey> keys = record->GetPropertyValueKeys(fp);
+    bvector<ECClassInstanceKey> keys = record->GetPropertyValueKeys(fp);
     ASSERT_EQ(2, keys.size());
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance1), keys[0]);
     EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance2), keys[1]);
@@ -2154,9 +2151,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     {
     // set up the dataset
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
-    ECInstanceId gadgetId;
-    ECInstanceId::FromString(gadgetId, gadget->GetInstanceId().c_str());
-    ECInstanceKey gadgetKey(m_gadgetClass->GetId(), gadgetId);
+    ECClassInstanceKey gadgetKey = RulesEngineTestHelpers::GetInstanceKey(*gadget);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -2189,22 +2184,22 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     ContentSetItemCPtr record = contentSet.Get(0);
 
     ContentSetItem::FieldProperty fp0(*descriptor->GetVisibleFields()[0]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp0);
+    bvector<ECClassInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp0);
     ASSERT_EQ(1, gadgetMyidFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetMyidFieldInstanceKeys[0]);
     
     ContentSetItem::FieldProperty fp1(*descriptor->GetVisibleFields()[1]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp1);
+    bvector<ECClassInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp1);
     ASSERT_EQ(1, gadgetDescriptionFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetDescriptionFieldInstanceKeys[0]);
 
     ContentSetItem::FieldProperty fp2(*descriptor->GetVisibleFields()[2]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp2);
+    bvector<ECClassInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp2);
     ASSERT_EQ(1, gadgetWidgetFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey, gadgetWidgetFieldInstanceKeys[0]);
     
     ContentSetItem::FieldProperty fp3(*descriptor->GetVisibleFields()[3]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> widgetMyIdFieldInstanceKeys = record->GetPropertyValueKeys(fp3);
+    bvector<ECClassInstanceKey> widgetMyIdFieldInstanceKeys = record->GetPropertyValueKeys(fp3);
     ASSERT_EQ(1, widgetMyIdFieldInstanceKeys.size());
     EXPECT_FALSE(widgetMyIdFieldInstanceKeys[0].IsValid());
     }
@@ -2218,13 +2213,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     IECInstancePtr gadget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
 
-    ECInstanceId gadgetId1;
-    ECInstanceId::FromString(gadgetId1, gadget1->GetInstanceId().c_str());
-    ECInstanceKey gadgetKey1(m_gadgetClass->GetId(), gadgetId1);
-    
-    ECInstanceId gadgetId2;
-    ECInstanceId::FromString(gadgetId2, gadget2->GetInstanceId().c_str());
-    ECInstanceKey gadgetKey2(m_gadgetClass->GetId(), gadgetId2);
+    ECClassInstanceKey gadgetKey1 = RulesEngineTestHelpers::GetInstanceKey(*gadget1);
+    ECClassInstanceKey gadgetKey2 = RulesEngineTestHelpers::GetInstanceKey(*gadget2);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -2262,25 +2252,25 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
     ContentSetItemCPtr record = contentSet.Get(0);
 
     ContentSetItem::FieldProperty fp0(*content->GetDescriptor().GetVisibleFields()[0]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp0);
+    bvector<ECClassInstanceKey> gadgetMyidFieldInstanceKeys = record->GetPropertyValueKeys(fp0);
     ASSERT_EQ(2, gadgetMyidFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey1, gadgetMyidFieldInstanceKeys[0]);
     EXPECT_EQ(gadgetKey2, gadgetMyidFieldInstanceKeys[1]);
     
     ContentSetItem::FieldProperty fp1(*content->GetDescriptor().GetVisibleFields()[1]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp1);
+    bvector<ECClassInstanceKey> gadgetDescriptionFieldInstanceKeys = record->GetPropertyValueKeys(fp1);
     ASSERT_EQ(2, gadgetDescriptionFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey1, gadgetDescriptionFieldInstanceKeys[0]);
     EXPECT_EQ(gadgetKey2, gadgetDescriptionFieldInstanceKeys[1]);
 
     ContentSetItem::FieldProperty fp2(*content->GetDescriptor().GetVisibleFields()[2]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp2);
+    bvector<ECClassInstanceKey> gadgetWidgetFieldInstanceKeys = record->GetPropertyValueKeys(fp2);
     ASSERT_EQ(2, gadgetWidgetFieldInstanceKeys.size());
     EXPECT_EQ(gadgetKey1, gadgetWidgetFieldInstanceKeys[0]);
     EXPECT_EQ(gadgetKey2, gadgetWidgetFieldInstanceKeys[1]);
     
     ContentSetItem::FieldProperty fp3(*content->GetDescriptor().GetVisibleFields()[3]->AsPropertiesField(), 0);
-    bvector<ECInstanceKey> widgetMyIdFieldInstanceKeys = record->GetPropertyValueKeys(fp3);
+    bvector<ECClassInstanceKey> widgetMyIdFieldInstanceKeys = record->GetPropertyValueKeys(fp3);
     ASSERT_EQ(2, widgetMyIdFieldInstanceKeys.size());
     EXPECT_FALSE(widgetMyIdFieldInstanceKeys[0].IsValid());
     EXPECT_FALSE(widgetMyIdFieldInstanceKeys[1].IsValid());
@@ -3079,9 +3069,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesSuppliedECPropertyForma
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsCachedWhenParametersEqual)
     {
     // set up input
-    KeySetPtr input = KeySet::Create(bvector<ECInstanceKey>{
-        ECInstanceKey(m_widgetClass->GetId(), ECInstanceId((uint64_t)1)),
-        ECInstanceKey(m_widgetClass->GetId(), ECInstanceId((uint64_t)2))
+    KeySetPtr input = KeySet::Create(bvector<ECClassInstanceKey>{
+        ECClassInstanceKey(m_widgetClass, ECInstanceId((uint64_t)1)),
+        ECClassInstanceKey(m_widgetClass, ECInstanceId((uint64_t)2))
         });
 
     // create the rule set
@@ -3214,15 +3204,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Keys)
     {
     // set up input 1
-    KeySetPtr input1 = KeySet::Create(bvector<ECInstanceKey>{
-        ECInstanceKey(m_widgetClass->GetId(), ECInstanceId((uint64_t)1)),
-        ECInstanceKey(m_widgetClass->GetId(), ECInstanceId((uint64_t)2))
+    KeySetPtr input1 = KeySet::Create(bvector<ECClassInstanceKey>{
+        ECClassInstanceKey(m_widgetClass, ECInstanceId((uint64_t)1)),
+        ECClassInstanceKey(m_widgetClass, ECInstanceId((uint64_t)2))
         });
     
     // set up input 2
-    KeySetPtr input2 = KeySet::Create(bvector<ECInstanceKey>{
-        ECInstanceKey(m_widgetClass->GetId(), ECInstanceId((uint64_t)3)),
-        ECInstanceKey(m_widgetClass->GetId(), ECInstanceId((uint64_t)4))
+    KeySetPtr input2 = KeySet::Create(bvector<ECClassInstanceKey>{
+        ECClassInstanceKey(m_widgetClass, ECInstanceId((uint64_t)3)),
+        ECClassInstanceKey(m_widgetClass, ECInstanceId((uint64_t)4))
         });
 
     // create the rule set
@@ -4571,7 +4561,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetNav
     EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4616,7 +4606,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetNav
     EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4664,13 +4654,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetOne
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), displayValues["ClassB_ClassC_A"].GetString());
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetInstanceId().GetValue(), values["ClassB_ClassC_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetId().GetValue(), values["ClassB_ClassC_A"].GetInt64());
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), displayValues1["ClassB_ClassC_A"].GetString());
     RapidJsonValueCR values1 = recordJson1["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetInstanceId().GetValue(), values1["ClassB_ClassC_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetId().GetValue(), values1["ClassB_ClassC_A"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4717,7 +4707,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*widgetInstance).c_str(), displayValues["Gadget_Widget"].GetString());
     EXPECT_TRUE(displayValues["Sprocket_Gadget"].IsNull());
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widgetInstance).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
     EXPECT_TRUE(values["Sprocket_Gadget"].IsNull());
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
@@ -4725,7 +4715,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*gadgetInstance).c_str(), displayValues1["Sprocket_Gadget"].GetString());
     EXPECT_TRUE(displayValues1["Gadget_Widget"].IsNull());
     RapidJsonValueCR values1 = recordJson1["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadgetInstance).GetInstanceId().GetValue(), values1["Sprocket_Gadget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadgetInstance).GetId().GetValue(), values1["Sprocket_Gadget"].GetInt64());
     EXPECT_TRUE(values1["Gadget_Widget"].IsNull());
     }
 
@@ -4747,6 +4737,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
     IECInstancePtr instanceB2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB2);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classAHasBAndC, *instanceA, *instanceB);
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *classA2HasB2, *instanceA2Base, *instanceB2);
+
+    /*
+    A ---ClassAHasBAndC---> B
+    A2Base ---ClassA2BaseHasB2---> B2
+    */
 
     // set up input
     KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instanceB, instanceB2});
@@ -4776,15 +4771,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
 
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA2Base).c_str(), displayValues["ClassB2_ClassB_A"].GetString());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), displayValues["ClassB_ClassB2_A"].GetString());
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA2Base).GetInstanceId().GetValue(), values["ClassB2_ClassB_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetId().GetValue(), values["ClassB_ClassB2_A"].GetInt64());
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
-    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA).c_str(), displayValues1["ClassB2_ClassB_A"].GetString());
+    EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA2Base).c_str(), displayValues1["ClassB_ClassB2_A"].GetString());
     RapidJsonValueCR values1 = recordJson1["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA).GetInstanceId().GetValue(), values1["ClassB2_ClassB_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA2Base).GetId().GetValue(), values1["ClassB_ClassB2_A"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4829,7 +4824,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDer
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*instanceA2).c_str(), displayValues["ClassB2_A"].GetString());
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA2).GetInstanceId().GetValue(), values["ClassB2_A"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*instanceA2).GetId().GetValue(), values["ClassB2_A"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4876,7 +4871,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
     EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4923,7 +4918,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetCor
     EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4968,7 +4963,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Get
     EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5013,7 +5008,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstances_Get
     EXPECT_STREQ("WidgetID", displayValues["Gadget_Widget"].GetString());
 
     RapidJsonValueCR values = recordJson["Values"];
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId().GetValue(), values["Gadget_Widget"].GetInt64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), values["Gadget_Widget"].GetInt64());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5058,7 +5053,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDerivedClassNavigationPr
     EXPECT_TRUE(recordJson1["DisplayValues"]["ClassG_D"].IsNull());
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance).GetInstanceId().GetValue(), recordJson2["Values"]["ClassG_D"].GetUint64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*relatedInstance).GetId().GetValue(), recordJson2["Values"]["ClassG_D"].GetUint64());
     EXPECT_STREQ(CommonTools::GetDefaultDisplayLabel(*relatedInstance).c_str(), recordJson2["DisplayValues"]["ClassG_D"].GetString());
     }
 
@@ -7493,7 +7488,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     IECInstancePtr parent = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *parentClass);
     IECInstancePtr child1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *childClass, [&](IECInstanceR instance)
         {
-        instance.SetValue("Parent", ECValue(RulesEngineTestHelpers::GetInstanceKey(*parent).GetInstanceId(), rel));
+        instance.SetValue("Parent", ECValue(RulesEngineTestHelpers::GetInstanceKey(*parent).GetId(), rel));
         instance.SetValue("IntProperty", ECValue(1));
         instance.SetValue("StringProperty", ECValue("111"));
         
@@ -7514,7 +7509,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         });
     IECInstancePtr child2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *childClass, [&](IECInstanceR instance)
         {
-        instance.SetValue("Parent", ECValue(RulesEngineTestHelpers::GetInstanceKey(*parent).GetInstanceId(), rel));
+        instance.SetValue("Parent", ECValue(RulesEngineTestHelpers::GetInstanceKey(*parent).GetId(), rel));
         instance.SetValue("IntProperty", ECValue(2));
         instance.SetValue("StringProperty", ECValue("222"));
         
@@ -7747,57 +7742,57 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         {
         instance.SetValue("IntProperty", ECValue(1));
         instance.SetValue("LongProperty", ECValue((int64_t)111));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetId(), rel));
         });
     IECInstancePtr instanceE12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(2));
         instance.SetValue("LongProperty", ECValue((int64_t)222));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetId(), rel));
         });
     IECInstancePtr instanceE13 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(3));
         instance.SetValue("LongProperty", ECValue((int64_t)333));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetId(), rel));
         });
     IECInstancePtr instanceD2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
     IECInstancePtr instanceE21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(1));
         instance.SetValue("LongProperty", ECValue((int64_t)111));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetId(), rel));
         });
     IECInstancePtr instanceE22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(2));
         instance.SetValue("LongProperty", ECValue((int64_t)222));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetId(), rel));
         });
     IECInstancePtr instanceE23 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(3));
         instance.SetValue("LongProperty", ECValue((int64_t)333));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetId(), rel));
         });
     IECInstancePtr instanceD3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
     IECInstancePtr instanceE31 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(1));
         instance.SetValue("LongProperty", ECValue((int64_t)111));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetId(), rel));
         });
     IECInstancePtr instanceE32 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(2));
         instance.SetValue("LongProperty", ECValue((int64_t)222));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetId(), rel));
         });
     IECInstancePtr instanceE33 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(3));
         instance.SetValue("LongProperty", ECValue((int64_t)333));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetId(), rel));
         });
 
     // create the rule set
@@ -7911,24 +7906,24 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     IECInstancePtr instanceD1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetId(), rel));
         });
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetId(), rel));
         });
     IECInstancePtr instanceD2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetId(), rel));
         });
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetId(), rel));
         });
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetId(), rel));
         });
 
     // create the rule set
@@ -7994,57 +7989,57 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         {
         instance.SetValue("IntProperty", ECValue(1));
         instance.SetValue("LongProperty", ECValue((int64_t)111));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetId(), rel));
         });
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(2));
         instance.SetValue("LongProperty", ECValue((int64_t)222));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetId(), rel));
         });
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(3));
         instance.SetValue("LongProperty", ECValue((int64_t)333));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD1).GetId(), rel));
         });
     IECInstancePtr instanceD2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(4));
         instance.SetValue("LongProperty", ECValue((int64_t)444));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetId(), rel));
         });
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(5));
         instance.SetValue("LongProperty", ECValue((int64_t)555));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetId(), rel));
         });
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(6));
         instance.SetValue("LongProperty", ECValue((int64_t)666));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD2).GetId(), rel));
         });
     IECInstancePtr instanceD3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD);
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(7));
         instance.SetValue("LongProperty", ECValue((int64_t)777));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetId(), rel));
         });
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(8));
         instance.SetValue("LongProperty", ECValue((int64_t)888));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetId(), rel));
         });
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classE, [&](IECInstanceR instance)
         {
         instance.SetValue("IntProperty", ECValue(9));
         instance.SetValue("LongProperty", ECValue((int64_t)999));
-        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetInstanceId(), rel));
+        instance.SetValue("ClassD", ECValue(RulesEngineTestHelpers::GetInstanceKey(*instanceD3).GetId(), rel));
         });
 
     // create the rule set
@@ -8105,11 +8100,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&](IECInstanceR instance)
         {
-        instance.SetValue("Widget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId(), rel_WG));
+        instance.SetValue("Widget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId(), rel_WG));
         });
     IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [&](IECInstanceR instance)
         {
-        instance.SetValue("Gadget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetInstanceId(), rel_GS));
+        instance.SetValue("Gadget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetId(), rel_GS));
         });
 
     // create the rule set
@@ -8198,11 +8193,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, [&](IECInstanceR instance)
         {
-        instance.SetValue("Widget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId(), rel_WG));
+        instance.SetValue("Widget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId(), rel_WG));
         });
     IECInstancePtr sprocket = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_sprocketClass, [&](IECInstanceR instance)
         {
-        instance.SetValue("Gadget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetInstanceId(), rel_GS));
+        instance.SetValue("Gadget", ECValue(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetId(), rel_GS));
         });
 
     // create the rule set
@@ -8272,7 +8267,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCl
     {    
     // set up input
     ECClassCP classF = GetClass("RulesEngineTest", "ClassF");
-    KeySetPtr input = KeySet::Create({ECInstanceKey(classF->GetId(), ECInstanceId())});
+    KeySetPtr input = KeySet::Create({ECClassInstanceKey(classF, ECInstanceId())});
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -8298,7 +8293,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RequestingDescriptorWithCla
     {
     // set up input
     NavNodeKeyList keys;
-    KeySetPtr input = KeySet::Create({ECInstanceKey(m_widgetClass->GetId(), ECInstanceId())});
+    KeySetPtr input = KeySet::Create({ECClassInstanceKey(m_widgetClass, ECInstanceId())});
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -8584,11 +8579,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNa
     ASSERT_EQ(2, contentSet.GetSize());
     
     RapidJsonValueCR jsonValues = contentSet.Get(0)->GetValues();
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetInstanceId().GetValue(), jsonValues["Gadget_Widget"].GetUint64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*widget).GetId().GetValue(), jsonValues["Gadget_Widget"].GetUint64());
     EXPECT_TRUE(jsonValues["Sprocket_Gadget"].IsNull());
 
     RapidJsonValueCR jsonValues2 = contentSet.Get(1)->GetValues();
-    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetInstanceId().GetValue(), jsonValues2["Sprocket_Gadget"].GetUint64());
+    EXPECT_EQ(RulesEngineTestHelpers::GetInstanceKey(*gadget).GetId().GetValue(), jsonValues2["Sprocket_Gadget"].GetUint64());
     EXPECT_TRUE(jsonValues2["Gadget_Widget"].IsNull());
     }
 
@@ -8649,11 +8644,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
-    ECInstanceId widgetId, widgetId1;
-    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    ECInstanceId::FromString(widgetId1, widget1->GetInstanceId().c_str());
-    ECInstanceKey widgetKey(m_widgetClass->GetId(), widgetId);
-    ECInstanceKey widgetKey1(m_widgetClass->GetId(), widgetId1);
+    ECClassInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
+    ECClassInstanceKey widgetKey1 = RulesEngineTestHelpers::GetInstanceKey(*widget1);
 
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetKeysForSelectedECClassGroupingNode_HierarchyIsCached", 1, 0, false, "", "", "", true);
@@ -8706,11 +8698,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
-    ECInstanceId widgetId, widgetId1;
-    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    ECInstanceId::FromString(widgetId1, widget1->GetInstanceId().c_str());
-    ECInstanceKey widgetKey(m_widgetClass->GetId(), widgetId);
-    ECInstanceKey widgetKey1(m_widgetClass->GetId(), widgetId1);
+    ECClassInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
+    ECClassInstanceKey widgetKey1 = RulesEngineTestHelpers::GetInstanceKey(*widget1);
 
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetKeysForSelectedECClassGroupingNode_HierarchyCacheIsClear", 1, 0, false, "", "", "", true);
@@ -8768,11 +8757,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
-    ECInstanceId widgetId, widgetId1;
-    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    ECInstanceId::FromString(widgetId1, widget1->GetInstanceId().c_str());
-    ECInstanceKey widgetKey(m_widgetClass->GetId(), widgetId);
-    ECInstanceKey widgetKey1(m_widgetClass->GetId(), widgetId1);
+    ECClassInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
+    ECClassInstanceKey widgetKey1 = RulesEngineTestHelpers::GetInstanceKey(*widget1);
 
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetKeysForSelectedECClassGroupingNode_SelectedNodeIsNotRootNode", 1, 0, false, "", "", "", true);
@@ -8852,10 +8838,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     {
     // prepare dataset
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-
-    ECInstanceId widgetId;
-    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    ECInstanceKey widgetKey(m_widgetClass->GetId(), widgetId);
+    ECClassInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
 
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetKeysForSelectedECClassGroupingNode_NewInstanceIsInsertedAndHierarchyCacheIsClear", 1, 0, false, "", "", "", true);
@@ -8886,9 +8869,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     
     // insert another widget
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
-    ECInstanceId widgetId1;
-    ECInstanceId::FromString(widgetId1, widget1->GetInstanceId().c_str());
-    ECInstanceKey widgetKey1(m_widgetClass->GetId(), widgetId1);
+    ECClassInstanceKey widgetKey1 = RulesEngineTestHelpers::GetInstanceKey(*widget1);
 
     RulesDrivenECPresentationManager::ContentOptions options(ruleSet->GetRuleSetId().c_str());
     // validate content descriptor
@@ -8917,9 +8898,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECClassGr
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
 
-    ECInstanceId widgetId;
-    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    ECInstanceKey widgetKey(m_widgetClass->GetId(), widgetId);
+    ECClassInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
 
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetKeysForSelectedECClassGroupingNode_OneInstanceIsDeletedAndHierarchyCacheIsClear", 1, 0, false, "", "", "", true);
@@ -8977,11 +8956,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedDisplayLa
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget"));});
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget"));});
 
-    ECInstanceId widgetId, widgetId1;
-    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    ECInstanceId::FromString(widgetId1, widget1->GetInstanceId().c_str());
-    ECInstanceKey widgetKey(m_widgetClass->GetId(), widgetId);
-    ECInstanceKey widgetKey1(m_widgetClass->GetId(), widgetId1);
+    ECClassInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
+    ECClassInstanceKey widgetKey1 = RulesEngineTestHelpers::GetInstanceKey(*widget1);
 
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetKeysForSelectedDisplayLabelGroupingNode_HierarchyIsCached", 1, 0, false, "", "", "", true);
@@ -9038,11 +9014,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedDisplayLa
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget"));});
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget"));});
 
-    ECInstanceId widgetId, widgetId1;
-    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    ECInstanceId::FromString(widgetId1, widget1->GetInstanceId().c_str());
-    ECInstanceKey widgetKey(m_widgetClass->GetId(), widgetId);
-    ECInstanceKey widgetKey1(m_widgetClass->GetId(), widgetId1);
+    ECClassInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
+    ECClassInstanceKey widgetKey1 = RulesEngineTestHelpers::GetInstanceKey(*widget1);
 
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetKeysForSelectedDisplayLabelGroupingNode_HierarchyCacheIsEmpty", 1, 0, false, "", "", "", true);
@@ -9102,9 +9075,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysWhenDisplayLabelGrou
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass);
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget"));});
 
-    ECInstanceId widgetId;
-    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    ECInstanceKey widgetKey(m_widgetClass->GetId(), widgetId);
+    ECClassInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
 
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetKeysForSelectedDisplayLabelGroupingNode_HierarchyCacheIsEmpty", 1, 0, false, "", "", "", true);
@@ -9163,9 +9134,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysWhenDisplayLabelGrou
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget"));});
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget"));});
 
-    ECInstanceId widgetId;
-    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    ECInstanceKey widgetKey(m_widgetClass->GetId(), widgetId);
+    ECClassInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
 
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetKeysForSelectedDisplayLabelGroupingNode_HierarchyCacheIsEmpty", 1, 0, false, "", "", "", true);
@@ -9226,11 +9195,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECPropert
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
 
-    ECInstanceId widgetId, widgetId1;
-    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    ECInstanceId::FromString(widgetId1, widget1->GetInstanceId().c_str());
-    ECInstanceKey widgetKey(m_widgetClass->GetId(), widgetId);
-    ECInstanceKey widgetKey1(m_widgetClass->GetId(), widgetId1);
+    ECClassInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
+    ECClassInstanceKey widgetKey1 = RulesEngineTestHelpers::GetInstanceKey(*widget1);
 
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetKeysForSelectedECPropertyGroupingNode_HierarchyIsCached", 1, 0, false, "", "", "", true);
@@ -9287,11 +9253,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetKeysForSelectedECPropert
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
     IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("IntProperty", ECValue(5));});
 
-    ECInstanceId widgetId, widgetId1;
-    ECInstanceId::FromString(widgetId, widget->GetInstanceId().c_str());
-    ECInstanceId::FromString(widgetId1, widget1->GetInstanceId().c_str());
-    ECInstanceKey widgetKey(m_widgetClass->GetId(), widgetId);
-    ECInstanceKey widgetKey1(m_widgetClass->GetId(), widgetId1);
+    ECClassInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
+    ECClassInstanceKey widgetKey1 = RulesEngineTestHelpers::GetInstanceKey(*widget1);
 
     // create a ruleset
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("GetKeysForSelectedECPropertyGroupingNode_HierarchyCacheIsEmpty", 1, 0, false, "", "", "", true);

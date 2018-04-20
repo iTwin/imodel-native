@@ -175,7 +175,7 @@ static JsonNavNodePtr CreateNodeFromStatement(Statement& stmt, JsonNavNodesFacto
     if (!stmt.IsColumnNull(2))
         extendedData.SetVirtualParentId(stmt.GetValueUInt64(2));
 
-    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, stmt.GetValueText(6)));
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(connection, *node, stmt.GetValueText(6)));
 
     return node;
     }
@@ -847,11 +847,12 @@ static Utf8String GetDataSourceDebugString(Utf8CP action, DataSourceInfo const& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String ComputeNodeHash(JsonNavNodeR node, IHierarchyCacheCR cache, Utf8StringCR dbGuid)
+static Utf8String ComputeNodeHash(JsonNavNodeR node, IHierarchyCacheCR cache, IConnectionCR connection)
     {
     MD5 h;
     NavNodeExtendedData extendedData(node);
     Utf8String type = node.GetType();
+    Utf8String dbGuid = connection.GetDb().GetDbGuid().ToString();
     Utf8CP specHash = extendedData.GetSpecificationHash();
     h.Add(type.c_str(), type.SizeInBytes());
     h.Add(specHash, strlen(specHash));
@@ -896,7 +897,7 @@ static Utf8String ComputeNodeHash(JsonNavNodeR node, IHierarchyCacheCR cache, Ut
     bvector<Utf8String> parentPath = parent.IsValid() ? parent->GetKey()->GetPathFromRoot() : bvector<Utf8String>();
     Utf8String nodeHash = h.GetHashString();
     parentPath.push_back(nodeHash);
-    node.SetNodeKey(*NavNodesHelper::CreateNodeKey(node, parentPath));
+    node.SetNodeKey(*NavNodesHelper::CreateNodeKey(connection, node, parentPath));
 
     // compute unique hash for this node
     h.Reset();
@@ -930,7 +931,7 @@ void NodesCache::CacheNode(DataSourceInfo const& datasourceInfo, NavNodeR node, 
 
     IConnectionPtr nodeConnection = m_connections.GetConnection(NavNodeExtendedData(jsonNode).GetConnectionId());
     BeAssert(nodeConnection.IsValid());
-    Utf8String hash = ComputeNodeHash(jsonNode, *this, nodeConnection->GetDb().GetDbGuid().ToString());
+    Utf8String hash = ComputeNodeHash(jsonNode, *this, *nodeConnection);
 
     Utf8String nodeStr = GetSerializedJson(jsonNode.GetJson());
     stmt->BindText(3, nodeStr.c_str(), Statement::MakeCopy::No);

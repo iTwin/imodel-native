@@ -75,7 +75,7 @@ TEST_F(NodesProviderTests, AbortsFinalizingNodesWhenCanceled)
         if (index > 0)
             isCanceled = true;
 
-        node = TestNodesHelper::CreateCustomNode("T", "L", "D");
+        node = TestNodesHelper::CreateCustomNode(*m_connection, "T", "L", "D");
         return true;
         });
     provider->FinalizeNodes();

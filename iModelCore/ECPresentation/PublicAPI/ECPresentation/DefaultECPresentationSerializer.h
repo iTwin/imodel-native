@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/ECPresentation/DgnECPresentationSerializer.h $
+|     $Source: PublicAPI/ECPresentation/DefaultECPresentationSerializer.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                     Mantas.Kontrimas                03/2018
 +===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE DgnECPresentationSerializer : IECPresentationSerializer
+struct EXPORT_VTABLE_ATTRIBUTE DefaultECPresentationSerializer : IECPresentationSerializer
 {
 protected:
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ConnectionEvent const& connectionEvent, rapidjson::Document::AllocatorType* allocator) const override;
@@ -56,37 +56,35 @@ protected:
 
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ContentSetItem const& contentSetItem, int flags, rapidjson::Document::AllocatorType* allocator) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECInstanceKeyCR key, rapidjson::Document::AllocatorType* allocator) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECClassInstanceKeyCR key, rapidjson::Document::AllocatorType* allocator) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(Content const& content, rapidjson::Document::AllocatorType* allocator) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECInstanceChangeResult const& ecInstanceChangeResult, rapidjson::Document::AllocatorType* allocator) const override;
 
     ECPRESENTATION_EXPORT virtual void _NavNodeKeyAsJson(NavNodeKey const& navNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
-    ECPRESENTATION_EXPORT virtual NavNodeKeyPtr _GetNavNodeKeyFromJsonPoly(JsonValueCR json) const override;
-    ECPRESENTATION_EXPORT virtual NavNodeKeyPtr _GetNavNodeKeyFromJsonPoly(RapidJsonValueCR json) const override;
-    ECPRESENTATION_EXPORT virtual NavNodeKeyPtr _GetNavNodeKeyFromJson(JsonValueCR json) const override;
-    ECPRESENTATION_EXPORT virtual NavNodeKeyPtr _GetNavNodeKeyFromJson(RapidJsonValueCR json) const override;
+    ECPRESENTATION_EXPORT virtual NavNodeKeyPtr _GetNavNodeKeyFromJson(IConnectionCR, JsonValueCR json) const override;
+    ECPRESENTATION_EXPORT virtual NavNodeKeyPtr _GetNavNodeKeyFromJson(IConnectionCR, RapidJsonValueCR json) const override;
+    ECPRESENTATION_EXPORT virtual NavNodeKeyPtr _GetBaseNavNodeKeyFromJson(JsonValueCR json) const override;
+    ECPRESENTATION_EXPORT virtual NavNodeKeyPtr _GetBaseNavNodeKeyFromJson(RapidJsonValueCR json) const override;
     ECPRESENTATION_EXPORT virtual void _AsJson(ECInstanceNodeKey const& ecInstanceNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
-    ECPRESENTATION_EXPORT virtual ECInstanceNodeKeyPtr _GetECInstanceNodeKeyFromJson(JsonValueCR json) const override;
-    ECPRESENTATION_EXPORT virtual ECInstanceNodeKeyPtr _GetECInstanceNodeKeyFromJson(RapidJsonValueCR json) const override;
+    ECPRESENTATION_EXPORT virtual ECInstanceNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR, JsonValueCR json) const override;
+    ECPRESENTATION_EXPORT virtual ECInstanceNodeKeyPtr _GetECInstanceNodeKeyFromJson(IConnectionCR, RapidJsonValueCR json) const override;
     ECPRESENTATION_EXPORT virtual void _AsJson(ECClassGroupingNodeKey const& groupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
-    ECPRESENTATION_EXPORT virtual ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(JsonValueCR json) const override;
-    ECPRESENTATION_EXPORT virtual ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(RapidJsonValueCR json) const override;
+    ECPRESENTATION_EXPORT virtual ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(IConnectionCR, JsonValueCR json) const override;
+    ECPRESENTATION_EXPORT virtual ECClassGroupingNodeKeyPtr _GetECClassGroupingNodeKeyFromJson(IConnectionCR, RapidJsonValueCR json) const override;
     ECPRESENTATION_EXPORT virtual void _AsJson(ECPropertyGroupingNodeKey const& propertyGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
-    ECPRESENTATION_EXPORT virtual ECPropertyGroupingNodeKeyPtr _GetECPropertyGroupingNodeKeyFromJson(JsonValueCR json) const override;
-    ECPRESENTATION_EXPORT virtual ECPropertyGroupingNodeKeyPtr _GetECPropertyGroupingNodeKeyFromJson(RapidJsonValueCR json) const override;
+    ECPRESENTATION_EXPORT virtual ECPropertyGroupingNodeKeyPtr _GetECPropertyGroupingNodeKeyFromJson(IConnectionCR, JsonValueCR json) const override;
+    ECPRESENTATION_EXPORT virtual ECPropertyGroupingNodeKeyPtr _GetECPropertyGroupingNodeKeyFromJson(IConnectionCR, RapidJsonValueCR json) const override;
     ECPRESENTATION_EXPORT virtual void _AsJson(LabelGroupingNodeKey const& labelGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const override;
     ECPRESENTATION_EXPORT virtual LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(JsonValueCR json) const override;
     ECPRESENTATION_EXPORT virtual LabelGroupingNodeKeyPtr _GetLabelGroupingNodeKeyFromJson(RapidJsonValueCR json) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(NavNode const& navNode, rapidjson::Document::AllocatorType* allocator) const override;
-    ECPRESENTATION_EXPORT virtual NavNodePtr _GetNavNodeFromJson(RapidJsonValueCR json) const override;
-
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(NodesPathElement const& navNodesPathElement, rapidjson::Document::AllocatorType* allocator) const override;
 
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(KeySet const& keySet, rapidjson::Document::AllocatorType* allocator) const override;
-    ECPRESENTATION_EXPORT virtual KeySetPtr _GetKeySetFromJson(JsonValueCR json) const override;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(KeySet const&, rapidjson::Document::AllocatorType*) const override;
+    ECPRESENTATION_EXPORT virtual KeySetPtr _GetKeySetFromJson(IConnectionCR, JsonValueCR json) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(SelectionChangedEvent const& selectionChangedEvent, rapidjson::Document::AllocatorType* allocator) const override;
     ECPRESENTATION_EXPORT virtual SelectionChangedEventPtr _GetSelectionChangedEventFromJson(IConnectionCacheCR connectionCache, JsonValueCR json) const override;
@@ -97,9 +95,6 @@ protected:
     ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(RelatedClassPathCR path, rapidjson::Document::AllocatorType& allocator) const override;
 
     ECPRESENTATION_EXPORT virtual rapidjson::Value _AsJson(SelectionInfo const& selectionInfo, rapidjson::Document::AllocatorType& allocator) const override;
-
-public:
-    ECPRESENTATION_EXPORT static DgnECPresentationSerializer const& Get();
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

@@ -26,17 +26,17 @@ Utf8String NavNodeKey::GetNodeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr NavNodeKey::FromJson(RapidJsonValueCR json)
+NavNodeKeyPtr NavNodeKey::FromJson(IConnectionCR connection, RapidJsonValueCR json)
     {
-    return IECPresentationManager::GetSerializer().GetNavNodeKeyFromJsonPoly(json);
+    return IECPresentationManager::GetSerializer().GetNavNodeKeyFromJson(connection, json);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr NavNodeKey::FromJson(JsonValueCR json)
+NavNodeKeyPtr NavNodeKey::FromJson(IConnectionCR connection, JsonValueCR json)
     {
-    return IECPresentationManager::GetSerializer().GetNavNodeKeyFromJsonPoly(json);
+    return IECPresentationManager::GetSerializer().GetNavNodeKeyFromJson(connection, json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -44,7 +44,7 @@ NavNodeKeyPtr NavNodeKey::FromJson(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeKeyPtr NavNodeKey::Create(JsonValueCR json)
     {
-    return IECPresentationManager::GetSerializer().GetNavNodeKeyFromJson(json);
+    return IECPresentationManager::GetSerializer().GetBaseNavNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,7 +52,7 @@ NavNodeKeyPtr NavNodeKey::Create(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeKeyPtr NavNodeKey::Create(RapidJsonValueCR json)
     {
-    return IECPresentationManager::GetSerializer().GetNavNodeKeyFromJson(json);
+    return IECPresentationManager::GetSerializer().GetBaseNavNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -104,17 +104,17 @@ int NavNodeKey::_Compare(NavNodeKey const& other) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECInstanceNodeKey> ECInstanceNodeKey::Create(JsonValueCR json)
+RefCountedPtr<ECInstanceNodeKey> ECInstanceNodeKey::Create(IConnectionCR connection, JsonValueCR json)
     {
-    return IECPresentationManager::GetSerializer().GetECInstanceNodeKeyFromJson(json);
+    return IECPresentationManager::GetSerializer().GetECInstanceNodeKeyFromJson(connection, json);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECInstanceNodeKey> ECInstanceNodeKey::Create(RapidJsonValueCR json)
+RefCountedPtr<ECInstanceNodeKey> ECInstanceNodeKey::Create(IConnectionCR connection, RapidJsonValueCR json)
     {
-    return IECPresentationManager::GetSerializer().GetECInstanceNodeKeyFromJson(json);
+    return IECPresentationManager::GetSerializer().GetECInstanceNodeKeyFromJson(connection, json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -151,17 +151,17 @@ MD5 ECInstanceNodeKey::_ComputeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECClassGroupingNodeKey> ECClassGroupingNodeKey::Create(JsonValueCR json)
+RefCountedPtr<ECClassGroupingNodeKey> ECClassGroupingNodeKey::Create(IConnectionCR connection, JsonValueCR json)
     {
-    return IECPresentationManager::GetSerializer().GetECClassGroupingNodeKeyFromJson(json);
+    return IECPresentationManager::GetSerializer().GetECClassGroupingNodeKeyFromJson(connection, json);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECClassGroupingNodeKey> ECClassGroupingNodeKey::Create(RapidJsonValueCR json)
+RefCountedPtr<ECClassGroupingNodeKey> ECClassGroupingNodeKey::Create(IConnectionCR connection, RapidJsonValueCR json)
     {
-    return IECPresentationManager::GetSerializer().GetECClassGroupingNodeKeyFromJson(json);
+    return IECPresentationManager::GetSerializer().GetECClassGroupingNodeKeyFromJson(connection, json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -178,24 +178,24 @@ rapidjson::Document ECClassGroupingNodeKey::_AsJson(rapidjson::Document::Allocat
 MD5 ECClassGroupingNodeKey::_ComputeHash() const
     {
     MD5 h = NavNodeKey::_ComputeHash();
-    h.Add(&m_classId, sizeof(ECClassId));
+    h.Add(m_class->GetFullName(), strlen(m_class->GetFullName()));
     return h;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::Create(JsonValueCR json)
+RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::Create(IConnectionCR connection, JsonValueCR json)
     {
-    return IECPresentationManager::GetSerializer().GetECPropertyGroupingNodeKeyFromJson(json);
+    return IECPresentationManager::GetSerializer().GetECPropertyGroupingNodeKeyFromJson(connection, json);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::Create(RapidJsonValueCR json)
+RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::Create(IConnectionCR connection, RapidJsonValueCR json)
     {
-    return IECPresentationManager::GetSerializer().GetECPropertyGroupingNodeKeyFromJson(json);
+    return IECPresentationManager::GetSerializer().GetECPropertyGroupingNodeKeyFromJson(connection, json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -212,7 +212,7 @@ rapidjson::Document ECPropertyGroupingNodeKey::_AsJson(rapidjson::Document::Allo
 MD5 ECPropertyGroupingNodeKey::_ComputeHash() const
     {
     MD5 h = NavNodeKey::_ComputeHash();
-    h.Add(&m_classId, sizeof(ECClassId));
+    h.Add(m_class->GetFullName(), strlen(m_class->GetFullName()));
     h.Add(m_propertyName.c_str(), m_propertyName.SizeInBytes());
     // wip: do we also absolutely need grouping value?
     return h;
@@ -250,183 +250,6 @@ MD5 LabelGroupingNodeKey::_ComputeHash() const
     MD5 h = NavNodeKey::_ComputeHash();
     h.Add(m_label.c_str(), m_label.SizeInBytes());
     return h;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-KeySetPtr KeySet::Create(NavNodeKeyList const& nodeKeys)
-    {
-    NavNodeKeySet set;
-    for (NavNodeKeyCPtr const& Key : nodeKeys)
-        set.insert(Key);
-    return new KeySet(InstanceKeyMap(), set);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-KeySetPtr KeySet::Create(bvector<ECInstanceKey> const& instanceKeys)
-    {
-    InstanceKeyMap map;
-    for (ECInstanceKey const& key : instanceKeys)
-        map[key.GetClassId()].insert(key.GetInstanceId());
-    return new KeySet(map, NavNodeKeySet());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-KeySetPtr KeySet::Create(bvector<IECInstancePtr> const& instances)
-    {
-    InstanceKeyMap map;
-    for (IECInstancePtr const& instance : instances)
-        {
-        ECClassId classId = instance->GetClass().GetId();
-        ECInstanceId instanceId;
-        ECInstanceId::FromString(instanceId, instance->GetInstanceId().c_str());
-        map[classId].insert(instanceId);
-        }
-    return new KeySet(map, NavNodeKeySet());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-KeySetPtr KeySet::Create(bvector<ECClassCP> const& classes)
-    {
-    InstanceKeyMap map;
-    for (ECClassCP ecClass : classes)
-        {
-        ECClassId classId = ecClass->GetId();
-        map[classId].insert(ECInstanceId());
-        }
-    return new KeySet(map, NavNodeKeySet());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-INavNodeKeysContainerCPtr KeySet::GetAllNavNodeKeys() const
-    {
-    if (m_nodesContainer.IsNull())
-        {
-        NavNodeKeyList keys;
-        std::copy(m_nodes.begin(), m_nodes.end(), std::back_inserter(keys));
-        for (auto& pair : m_instances)
-            {
-            ECClassId classId = pair.first;
-            for (ECInstanceId const& instanceId : pair.second)
-                keys.push_back(ECInstanceNodeKey::Create(classId, instanceId, bvector<Utf8String>()));
-            }
-        m_nodesContainer = NavNodeKeyListContainer::Create(keys);
-        }
-    return m_nodesContainer;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool KeySet::Contains(ECClassId classId, ECInstanceId instanceId) const
-    {
-    auto iter = m_instances.find(classId);
-    return m_instances.end() != iter && iter->second.end() != iter->second.find(instanceId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t KeySet::MergeWith(KeySetCR other)
-    {
-    if (Equals(other))
-        return 0;
-
-    uint64_t inserted = 0;
-    for (auto& pair : other.m_instances)
-        {
-        ECClassId classId = pair.first;
-        bset<ECInstanceId> const& instances = pair.second;
-        for (ECInstanceId instanceId : instances)
-            {
-            if (Add(classId, instanceId))
-                inserted++;
-            }
-        }
-
-    for (NavNodeKeyCPtr const& nodeKey : other.m_nodes)
-        {
-        if (Add(*nodeKey))
-            inserted++;
-        }
-
-    return inserted;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool KeySet::Remove(ECClassId classId, ECInstanceId instanceId)
-    {
-    auto classIter = m_instances.find(classId);
-    if (m_instances.end() == classIter)
-        return false;
-
-    bset<ECInstanceId>& instanceIds = classIter->second;
-    if (0 == instanceIds.erase(instanceId))
-        return false;
-
-    InvalidateNodesContainer();
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t KeySet::Remove(KeySetCR toRemove)
-    {
-    uint64_t removed = 0;
-    for (auto& pair : toRemove.m_instances)
-        {
-        ECClassId classId = pair.first;
-        bset<ECInstanceId> const& instances = pair.second;
-        for (ECInstanceId instanceId : instances)
-            {
-            if (Remove(classId, instanceId))
-                removed++;
-            }
-        }
-
-    for (NavNodeKeyCPtr const& nodeKey : toRemove.m_nodes)
-        {
-        if (Remove(*nodeKey))
-            removed++;
-        }
-
-    return removed;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document KeySet::AsJson(rapidjson::Document::AllocatorType* allocator) const
-    {
-    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-KeySetPtr KeySet::FromJson(JsonValueCR json)
-    {
-    return IECPresentationManager::GetSerializer().GetKeySetFromJson(json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mantas.Kontrimas                03/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-NavNodePtr NavNode::FromJson(RapidJsonValueCR json)
-    {
-    return IECPresentationManager::GetSerializer().GetNavNodeFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**

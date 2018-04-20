@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <ECPresentation/ECPresentationTypes.h>
-#include <ECPresentation/NavNode.h>
+#include <ECPresentation/KeySet.h>
 #include <ECPresentation/Connection.h>
 
 #define LOGGER_NAMESPACE_DGNCLIENTFX_SELECTION "DgnClientFx.Selection"
@@ -206,7 +206,7 @@ protected:
     //! Called to select ECInstances.
     //! @param[in] evt  The selection change event that resulted in this method being called.
     //! @param[in] keys The keys of ECInstances to select.
-    virtual void _SelectInstances(SelectionChangedEventCR evt, bvector<BeSQLite::EC::ECInstanceKey> const& keys) {}
+    virtual void _SelectInstances(SelectionChangedEventCR evt, bvector<ECClassInstanceKey> const& keys) {}
 
 //__PUBLISH_SECTION_END__
 protected:
@@ -303,6 +303,14 @@ public:
     //! @param[in] isSubSelection A flag indicating whether to add to the sub-selection or the main selection.
     //! @param[in] key The key to add to selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
+    ECPRESENTATION_EXPORT void AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value());
+    
+    //! Add to selection.
+    //! @param[in] db The ECDb to add the selection to.
+    //! @param[in] source The name of the selection source that is modifying the selection.
+    //! @param[in] isSubSelection A flag indicating whether to add to the sub-selection or the main selection.
+    //! @param[in] key The key to add to selection.
+    //! @param[in] extendedData The extended data that should be stored in the selection change event.
     ECPRESENTATION_EXPORT void AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value());
 
     //! Add to selection.
@@ -330,6 +338,14 @@ public:
     //! @param[in] isSubSelection A flag indicating whether to remove from the sub-selection or the main selection.
     //! @param[in] key The key to remove from selection.
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
+    ECPRESENTATION_EXPORT void RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value());
+    
+    //! Remove from selection.
+    //! @param[in] db The ECDb to remove the selection from.
+    //! @param[in] source The name of the selection source that is modifying the selection.
+    //! @param[in] isSubSelection A flag indicating whether to remove from the sub-selection or the main selection.
+    //! @param[in] key The key to remove from selection.
+    //! @param[in] extendedData The extended data that should be stored in the selection change event.
     ECPRESENTATION_EXPORT void RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value());
 
     //! Remove from selection.
@@ -351,6 +367,14 @@ public:
     //! @param[in] extendedData The extended data that should be stored in the selection change event.
     ECPRESENTATION_EXPORT void ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, NavNodeKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value());
 
+    //! Change selection.
+    //! @param[in] db The ECDb to change the selection in.
+    //! @param[in] source The name of the selection source that is modifying the selection.
+    //! @param[in] isSubSelection A flag indicating whether to change the sub-selection or the main selection.
+    //! @param[in] key The key indicating the new selection.
+    //! @param[in] extendedData The extended data that should be stored in the selection change event.
+    ECPRESENTATION_EXPORT void ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData = rapidjson::Value());
+    
     //! Change selection.
     //! @param[in] db The ECDb to change the selection in.
     //! @param[in] source The name of the selection source that is modifying the selection.

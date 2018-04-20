@@ -19,7 +19,7 @@ void NavigationQueryBuilderTests::SetUp()
     m_connection = &ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
     m_ruleset = PresentationRuleSet::CreateInstance("NavigationQueryBuilderTests", 1, 0, false, "", "", "", false);
     m_schemaHelper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr, nullptr);
-    m_builder = new NavigationQueryBuilder(NavigationQueryBuilderParameters(*m_schemaHelper, m_connections,
+    m_builder = new NavigationQueryBuilder(NavigationQueryBuilderParameters(*m_schemaHelper, ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections(),
         *m_connection, *m_ruleset, m_settings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesCache));
 
     m_rootNodeRule = new RootNodeRule();
@@ -99,7 +99,7 @@ TEST_F (NavigationQueryBuilderTests, NotifiesAboutUsedClassesInJoins)
     TestUsedClassesListener listener;
     GetBuilder().GetParameters().SetUsedClassesListener(&listener);
     
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*GetECClass("RulesEngineTest", "Gadget"));
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *GetECClass("RulesEngineTest", "Gadget"));
     m_nodesCache.Cache(*parentNode, false);
 
     ChildNodeRule rule("", 1000, false, TargetTree_MainTree);
