@@ -139,8 +139,6 @@ UIList UIUtils::GetAvailableTraits()
     traits.AddListEntry(UIListEntry((int) FormatTraits::ShowUnitLabel, UNITSL10N_GETSTRING(FormatTraits_ShowUnitLabel).c_str(), json_showUnitLabel()));
     traits.AddListEntry(UIListEntry((int)FormatTraits::Use1000Separator, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), json_use1000Separator()));
     traits.AddListEntry(UIListEntry((int) FormatTraits::TrailingZeroes, UNITSL10N_GETSTRING(FormatTraits_TrailingZeroes).c_str(), json_trailZeroes()));
-    // only used when width is set, so let's ignore for now since users won't likely be setting width.
-    //traits.AddListEntry(UIListEntry((int)FormatTraits::LeadingZeroes, UNITSL10N_GETSTRING(FormatTraits_LeadingZeroes).c_str(), json_LeadZeroes()));
 
     // the following trait does not seem to do anything.
     //traits.AddListEntry(UIListEntry((int)FormatTraits::KeepDecimalPoint, UNITSL10N_GETSTRING(FormatTraits_KeepDecimalPoint).c_str(), json_KeepDecPnt()));
@@ -153,7 +151,6 @@ UIList UIUtils::GetAvailableTraits()
    // DFR said not to show Rounding option to user
    // TraitsBitToJson(jTraits, json_ApplyRounding(), FormatTraits::ApplyRounding, &ref, verbose);
 
-   // TraitsBitToJson(jTraits, json_UseFractSymbol(), FormatTraits::UseFractSymbol, &ref, verbose);
    // TraitsBitToJson(jTraits, json_FractionDash(), FormatTraits::FractionDash, &ref, verbose);
 
     return traits;

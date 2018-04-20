@@ -66,7 +66,7 @@ TEST_F(NumericFormatSpecTest, LoadFromJson)
     Utf8CP jsonString = R"json({
         "type": "station",
         "signOption": "signAlways",
-        "formatTraits": "LeadZeroes|TrailZeroes",
+        "formatTraits": "TrailZeroes|KeepSingleZero",
         "precision": 4,
         "decSeparator": "-",
         "thousandSeparator": "+",
@@ -85,7 +85,7 @@ TEST_F(NumericFormatSpecTest, LoadFromJson)
     EXPECT_EQ(PresentationType::Station, testFormat.GetPresentationType());
     EXPECT_EQ(SignOption::SignAlways, testFormat.GetSignOption());
     EXPECT_EQ(DecimalPrecision::Precision4, testFormat.GetDecimalPrecision());
-    EXPECT_STREQ("LeadZeroes|TrailZeroes", testFormat.GetFormatTraitsString().c_str());
+    EXPECT_STREQ("TrailZeroes|KeepSingleZero", testFormat.GetFormatTraitsString().c_str());
     EXPECT_EQ('-', testFormat.GetDecimalSeparator());
     EXPECT_EQ('+', testFormat.GetThousandSeparator());
     EXPECT_STREQ("&", testFormat.GetUomSeparator());

@@ -204,11 +204,7 @@ TEST_F(FormatIntegerTest, FormatIntegerIndividualFormatTraitsTests)
     EXPECT_STREQ("100501", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-100501", nfs.Format(testValNeg).c_str());
 
-    // TODO: Documentation refers to leading zeros for "digital expression" but never
-    // defines what a digital expression means. So I don't actually know if this testing
-    // is correct.
     nfs.SetMinWidth(10);
-    nfs.SetFormatTraits(FormatTraits::LeadingZeroes);
     EXPECT_STREQ("0000000000", nfs.Format(0).c_str());
     EXPECT_STREQ("0000100501", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-0000100501", nfs.Format(testValNeg).c_str());
@@ -263,12 +259,6 @@ TEST_F(FormatIntegerTest, FormatIntegerIndividualFormatTraitsTests)
     EXPECT_STREQ("0", nfs.Format(0).c_str());
     EXPECT_STREQ("100501", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-100501", nfs.Format(testValNeg).c_str());
-
-    // Should only affect doubles.
-    //nfs.SetFormatTraits(FormatTraits::UseFractSymbol);
-    //EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
-    //EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
-    //EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
 
     // AppendUnitName should have no effect on the unitless Format.
     nfs.SetFormatTraits(FormatTraits::ShowUnitLabel);
@@ -538,10 +528,6 @@ TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests_IGNORED)
     {
     {
     NumericFormatSpec nfs;
-    nfs.SetFormatTraits(FormatTraits::LeadingZeroes);
-    // TODO: Documentation refers to leading zeros for "digital expression" but never
-    // defines what a digital expression means. So I don't actually know if this testing
-    // is correct.
     nfs.SetMinWidth(15);
     EXPECT_STREQ("000000000000000", nfs.Format((double) 0).c_str());
     EXPECT_STREQ("00000100501.125", nfs.Format(testValPos).c_str());
@@ -878,6 +864,9 @@ TEST_F(FormattingTestFixture, StdFormatting)
     numFmt.SetSignOption(Formatting::SignOption::SignAlways);
     numFmt.SetMinWidth(5);
     EXPECT_STREQ("+00152", numFmt.Format(152).c_str());
+    numFmt.SetSignOption(Formatting::SignOption::NegativeParentheses);
+    numFmt.SetMinWidth(8);
+    EXPECT_STREQ("(00000152)", numFmt.Format(-152).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

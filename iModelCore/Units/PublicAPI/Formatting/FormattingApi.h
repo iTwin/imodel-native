@@ -190,7 +190,7 @@ private:
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
     ScientificType      m_scientificType;
     SignOption          m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParentheses
-    FormatTraits        m_formatTraits;          // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
+    FormatTraits        m_formatTraits;          // NoZeroes, TrailingZeroes, BothZeroes
     DecimalPrecision    m_decPrecision;          // Precision0...12
     FractionalPrecision m_fractPrecision;
     uint32_t            m_stationSize;           // 10*stationSize = distance between stations
@@ -323,9 +323,6 @@ public:
 
     void SetExponentZero(bool setTo) {SetTraitsBit(FormatTraits::ExponentZero, setTo);}
     bool IsExponentZero() const {return GetTraitsBit(FormatTraits::ExponentZero);}
-
-    void SetUseLeadingZeroes(bool setTo) {SetTraitsBit(FormatTraits::LeadingZeroes, setTo);}
-    bool IsUseLeadingZeroes() const {return GetTraitsBit(FormatTraits::LeadingZeroes);}
 
     void SetKeepTrailingZeroes(bool setTo) {SetTraitsBit(FormatTraits::TrailingZeroes, setTo);}
     bool IsKeepTrailingZeroes() const { return GetTraitsBit(FormatTraits::TrailingZeroes);}

@@ -215,8 +215,6 @@ Utf8String NumericFormatSpec::GetFormatTraitsString() const
     {
     Utf8String ret;
     bvector<Utf8String> strings;
-    if (GetTraitsBit(FormatTraits::LeadingZeroes))
-        ret += FormatConstant::FPN_LeadZeroes() + "|";
     if (GetTraitsBit(FormatTraits::TrailingZeroes))
         ret += FormatConstant::FPN_TrailZeroes() + "|";
     if (GetTraitsBit(FormatTraits::KeepSingleZero))
@@ -281,9 +279,7 @@ bool NumericFormatSpec::SetFormatTraits(Utf8CP input)
     int numProcessed = 0;
     for (auto const& s : splitStrings)
         {
-        if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_LeadZeroes().c_str()) == 0)
-            this->SetTraitsBit(FormatTraits::LeadingZeroes, true);
-        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_TrailZeroes().c_str()) == 0)
+        if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_TrailZeroes().c_str()) == 0)
             this->SetTraitsBit(FormatTraits::TrailingZeroes, true);
         else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_KeepSingleZero().c_str()) == 0)
             this->SetTraitsBit(FormatTraits::KeepSingleZero, true);
@@ -331,9 +327,7 @@ bool NumericFormatSpec::SetFormatTraits(JsonValueCR jval)
         {
         paramName = iter.memberName();
         JsonValueCR val = *iter;
-        if (BeStringUtilities::StricmpAscii(paramName, json_leadZeroes()) == 0)
-            SetUseLeadingZeroes(val.asBool());
-        else if (BeStringUtilities::StricmpAscii(paramName, json_trailZeroes()) == 0)
+        if (BeStringUtilities::StricmpAscii(paramName, json_trailZeroes()) == 0)
             SetKeepTrailingZeroes(val.asBool());
         else if (BeStringUtilities::StricmpAscii(paramName, json_keepSingleZero()) == 0)
             SetKeepSingleZero(val.asBool());
@@ -365,7 +359,6 @@ Json::Value NumericFormatSpec::FormatTraitsToJson(bool verbose) const
     {
     Json::Value jTraits;
     FormatTraits ref = FormatConstant::DefaultFormatTraits();
-    TraitsBitToJson(jTraits, json_leadZeroes(),  FormatTraits::LeadingZeroes, &ref, verbose);
     TraitsBitToJson(jTraits, json_trailZeroes(), FormatTraits::TrailingZeroes, &ref, verbose);
     TraitsBitToJson(jTraits, json_keepSingleZero(), FormatTraits::KeepSingleZero, &ref, verbose);
     TraitsBitToJson(jTraits, json_zeroEmpty(), FormatTraits::ZeroEmpty, &ref, verbose);
@@ -602,16 +595,9 @@ int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
 
     if (bufLen < 2)  // if output buffer is too short make it empty and return
         {
-        if(nullptr == bufOut)
+        if(nullptr != bufOut)
             *bufOut = 0;
         return 0;
-        }
-
-    if (n == 0)  // the buffer is at least sufficient to take two bytes for the '0' value
-        {
-        bufOut[ind++] = '0';
-        bufOut[ind] = 0;
-        return ind;
         }
 
     if (n < 0)
@@ -626,6 +612,7 @@ int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
         buf[--ind] = ')';
 
     int digs = 0;
+    int numberLength = 0; // The number of digits + separators
     do {
         n1 = n / 10;
         buf[--ind] = (char)(n - 10 * n1) + '0';
@@ -637,7 +624,21 @@ int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
             digs = 0;
             buf[--ind] = m_thousandsSeparator;
             }
+        ++numberLength;
         } while (n > 0 && ind >= 0);
+
+    uint32_t minWidth;
+    if (GetMinWidth() > ind-3)
+        {
+        minWidth = ind - 3;
+        LOG.warningv("A minWidth of %d is too large. Setting min width to %d", GetMinWidth(), minWidth);
+        }
+
+    while (numberLength < GetMinWidth()) 
+        {
+        buf[--ind] = '0';
+        ++numberLength;
+        }
 
     if (IsSignAlways() || ((IsOnlyNegative() || IsNegativeParentheses()) && sign != '+'))
         buf[--ind] = sign;

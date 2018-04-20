@@ -594,7 +594,6 @@ bvector<TraitJsonKeyMap> TraitJsonKeyMap::TraitJsonKeySet()
     if (vec.size() == 0)
         {
         vec.push_back(TraitJsonKeyMap(FormatTraits::TrailingZeroes, json_trailZeroes()));
-        vec.push_back(TraitJsonKeyMap(FormatTraits::LeadingZeroes, json_leadZeroes()));
         vec.push_back(TraitJsonKeyMap(FormatTraits::KeepDecimalPoint, json_keepDecimalPrecision()));
         vec.push_back(TraitJsonKeyMap(FormatTraits::KeepSingleZero, json_keepSingleZero()));
         vec.push_back(TraitJsonKeyMap(FormatTraits::ZeroEmpty, json_zeroEmpty()));
