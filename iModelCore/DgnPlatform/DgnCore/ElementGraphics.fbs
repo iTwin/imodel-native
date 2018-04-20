@@ -24,6 +24,7 @@ struct RotMatrix {x00:double; x01:double; x02:double; x10:double; x11:double; x1
 struct Transform {x00:double; x01:double; x02:double; tx:double; x10:double; x11:double; x12:double; ty:double; x20:double; x21:double; x22:double; tz:double;}
 struct FaceSymbology {useColor:ubyte; useMaterial:ubyte; color:uint; materialId:long; transparency:double; uv:DPoint2d;}
 struct FaceSymbologyIndex {faceIndex:uint; symbIndex:uint;}
+struct DRange1d {low:double; high:double; }
 
 //=======================================================================================
 // @bsiclass                                                    
@@ -145,12 +146,7 @@ table Material
     yaw:double;
     pitch:double;
     roll:double;
-
     } // Material
-
-enum ThematicColorScheme : byte { BlueRed, RedBlue, Monochrome, Topographic, SeaMountain, Custom }
-enum ThematicMode : byte { Smooth, Stepped, SteppedWithDelimiter, Isolines }
-
 
 
 //=======================================================================================
@@ -161,8 +157,9 @@ table ThematicSettings
 	stepCount:uint;
 	margin:double;
     marginColor:uint;
-    mode:ThematicMode;
-	colorScheme:ThematicColorScheme;
+    mode:uint;
+	colorScheme:uint;
+	range:DRange1d;
 	}   // ThematicSettings
 
 

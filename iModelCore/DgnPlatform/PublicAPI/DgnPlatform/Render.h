@@ -1037,6 +1037,58 @@ enum class LineCap
 };
 
 //=======================================================================================
+// @bsiclass                                                    Ray.Bentley     04/2018
+//=======================================================================================
+struct ThematicGradientSettings : RefCountedBase
+    {
+    enum class ColorScheme
+        {
+        BlueRed     = 0,
+        RedBlue     = 1,
+        Monochrome  = 2,
+        Topographic = 3,
+        SeaMountain = 4,
+        Custom      = 5,
+        };
+    enum class Mode
+        {
+        Smooth,
+        Stepped,
+        SteppedWithDelimiter,
+        Isolines,
+        };
+
+    private:
+    uint32_t        m_stepCount = 10;
+    double          m_margin = .05;
+    ColorDef        m_marginColor = ColorDef(0x3f, 0x3f, 0x3f);
+    Mode            m_mode = Mode::Smooth;
+    ColorScheme     m_colorScheme = ColorScheme::BlueRed;
+    DRange1d        m_range = DRange1d::NullRange();
+
+    public:
+                    ThematicGradientSettings() {};
+                    ThematicGradientSettings(DRange1dCR range, ColorScheme colorScheme = ColorScheme::BlueRed, Mode mode = Mode::Smooth) : m_range(range), m_colorScheme(colorScheme), m_mode(mode) { }
+    Json::Value     ToJson() const;
+    void            FromJson(Json::Value const& value);
+    double          GetMargin() const { return m_margin; }
+    void            SetMargin(double margin) { m_margin = margin; }
+    uint32_t        GetStepCount() const { return m_stepCount; }
+    void            SetStepCount(uint32_t stepCount) { m_stepCount = stepCount; }
+    ColorDef        GetMarginColor() const { return m_marginColor; }
+    void            SetMarginColor (ColorDefCR color) { m_marginColor = color; }
+    Mode            GetMode() const { return m_mode; ; }
+    void            SetMode(Mode mode) { m_mode = mode; }
+    ColorScheme     GetColorScheme() const { return m_colorScheme; }
+    void            SetColorScheme(ColorScheme colorScheme) { m_colorScheme = colorScheme; }
+    DRange1dCR      GetRange() const { return m_range; }
+    void            SetRange(DRange1dCR range) { m_range = range; }
+
+    bool operator==(ThematicGradientSettings const& rhs) const;
+    bool operator<(ThematicGradientSettings const& rhs) const;
+    };
+
+//=======================================================================================
 //! Parameters defining a gradient
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
@@ -1065,51 +1117,7 @@ struct GradientSymb : RefCountedBase
         Hemispherical       = 5,
         Thematic            = 6,
     };
-
-    
-    struct ThematicSettings
-        {
-        enum class ColorScheme
-            {
-            BlueRed     = 0,
-            RedBlue     = 1,
-            Monochrome  = 2,
-            Topographic = 3,
-            SeaMountain = 4,
-            Custom      = 5,
-            };
-        enum class Mode
-            {
-            Smooth,
-            Stepped,
-            SteppedWithDelimiter,
-            Isolines,
-            };
-
-        private:
-        uint32_t        m_stepCount = 10;
-        double          m_margin = .05;
-        ColorDef        m_marginColor = ColorDef(0x3f, 0x3f, 0x3f);
-        Mode            m_mode = Mode::Smooth;
-        ColorScheme     m_colorScheme = ColorScheme::BlueRed;
-
-        public:
-        Json::Value ToJson() const;
-        void FromJson(Json::Value const& value);
-        double GetMargin() const { return m_margin; }
-        void SetMargin(double margin) { m_margin = margin; }
-        uint32_t GetStepCount() const { return m_stepCount; }
-        void SetStepCount(uint32_t stepCount) { m_stepCount = stepCount; }
-        ColorDef GetMarginColor() const { return m_marginColor; }
-        void SetMarginColor (ColorDefCR color) { m_marginColor = color; }
-        Mode GetMode() const { return m_mode; ; }
-        void SetMode(Mode mode) { m_mode = mode; }
-        ColorScheme GetColorScheme() const { return m_colorScheme; }
-        void SetColorScheme(ColorScheme colorScheme) { m_colorScheme = colorScheme; }
-        bool operator==(ThematicSettings const& rhs) const;
-        bool operator<(ThematicSettings const& rhs) const;
-
-        };
+  
 
 protected:
     Mode        m_mode = Mode::None;
@@ -1122,12 +1130,12 @@ protected:
     double      m_values[MAX_GRADIENT_KEYS];
 
     // For Thematic only...
-    ThematicSettings    m_thematicSettings;
+    ThematicGradientSettingsPtr m_thematicSettings;
 
 public:
     GradientSymb() {}
     // For thematic display....
-    DGNPLATFORM_EXPORT GradientSymb(ThematicSettings const& thematicSettings);
+    DGNPLATFORM_EXPORT GradientSymb(ThematicGradientSettingsR thematicSettings);
 
     DGNPLATFORM_EXPORT void CopyFrom(GradientSymbCR);
 
@@ -1160,8 +1168,9 @@ public:
     BentleyStatus GetKey(ColorDef& color, double& value, uint32_t iKey) const;
     // Thematic display.
     bool IsThematic() const { return m_mode == Mode::Thematic; } 
-    ThematicSettings const& GetThematicSettings() const { return m_thematicSettings; }
-    ThematicSettings& GetThematicSettingsR() { return m_thematicSettings; }
+    ThematicGradientSettingsCPtr GetThematicSettings() const { return m_thematicSettings; }
+    ThematicGradientSettingsPtr GetThematicSettingsR() { return m_thematicSettings; }
+    void SetThematicSettings (ThematicGradientSettingsR settings) { m_thematicSettings = &settings; }
 };
 
 
