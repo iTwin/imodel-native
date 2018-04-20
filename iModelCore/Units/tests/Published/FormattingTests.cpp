@@ -1040,7 +1040,7 @@ TEST_F(FormattingTestFixture, Simple)
     dval1 = 0.000012345;
     EXPECT_STREQ ("0.000012345", numFmt.Format(dval1).c_str());
     numFmt.SetPrecision(DecimalPrecision::Precision8);
-    EXPECT_STREQ ("0.00001235", numFmt.Format(dval1, 8).c_str());
+    EXPECT_STREQ ("0.00001235", numFmt.Format(dval1).c_str());
     numFmt.SetPrecision(DecimalPrecision::Precision10);
     EXPECT_STREQ ("-0.000012345", numFmt.Format(-dval1).c_str());
     numFmt.SetKeepTrailingZeroes(true);

@@ -217,7 +217,7 @@ private:
 
     // TODO: Attempt to remove these methods from the private API===============
     int FormatInt(int n, Utf8P bufOut, int bufLen) const;
-    size_t FormatDouble(double dval, Utf8P buf, size_t bufLen, double round) const;
+    size_t FormatDouble(double dval, Utf8P buf, size_t bufLen) const;
     int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
     Utf8String FormatToString(int n, int minSize) const;
     bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
@@ -365,9 +365,8 @@ public:
     UNITS_EXPORT Utf8String Format(int32_t ival) const;
     //! Format a double using this NumericFormatSpec's format settings.
     //! @param[in] dval Double to format.
-    //! @param[in] round A rounding factor to use when formatting the given double.
     //! @return dval as a formatted string.
-    UNITS_EXPORT Utf8String Format(double dval, double round = -1.0) const;
+    UNITS_EXPORT Utf8String Format(double dval) const;
     //! Format a double using the format settings of numericFormatSpec.
     //! @param[in] nfs  NumericFormatSpec used for formatting.
     //! @param[in] dval Double to format.
@@ -688,9 +687,9 @@ public:
     Utf8String GetProblemDescription() const {return m_problem.GetProblemDescription();}
     PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
 
-    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", double round = -1.0);
+    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="");
     Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const {return Format::StdFormatQuantity(*this, qty.ConvertTo(m_compositeSpec.GetMajorUnit()), nullptr, space);}
-    UNITS_EXPORT static Utf8String StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr);
 
     //! Parse a Format from the provided format string. A format string takes the form,
     //! <code>

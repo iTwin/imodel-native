@@ -395,10 +395,10 @@ Json::Value NumericFormatSpec::FormatTraitsToJson(bool verbose) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::Format(double dval, double round) const
+Utf8String NumericFormatSpec::Format(double dval) const
     {
     char buf[64];
-    FormatDouble(dval, buf, sizeof(buf), round);
+    FormatDouble(dval, buf, sizeof(buf));
     return Utf8String(buf);
     }
 
@@ -652,7 +652,7 @@ int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen, double round) const
+size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) const
     {
     double ival;
     Utf8Char sign = '+';
@@ -675,8 +675,8 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen, do
     bool fractional = (!decimal && m_presentationType == PresentationType::Fractional);
     bool stops = m_presentationType == PresentationType::Station;
 
-    if (IsApplyRounding() || !FormatConstant::IsIgnored(round))
-        dval = RoundDouble(dval, EffectiveRoundFactor(round));
+    if (IsApplyRounding() || !FormatConstant::IsIgnored(m_roundFactor))
+        dval = RoundDouble(dval, EffectiveRoundFactor(m_roundFactor));
 
     if (sci)
         {
@@ -753,8 +753,8 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen, do
             char expBuf[32];
             int expLen = FormatSimple ((int)expInt, expBuf, sizeof(expBuf), true, (IsExponentZero() ? true : false));
             locBuf[ind++] = 'e';
-            //if (IsExponentZero())
-            //    locBuf[ind++] = '0';
+            if (IsExponentZero())
+                locBuf[ind++] = '0';
             memcpy(&locBuf[ind], expBuf, expLen);
             ind += expLen;
             }
@@ -799,7 +799,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen, do
         } // end fractional
     else if (stops) // we assume that stopping value is always positive 
         {
-        int denom = 10*m_stationSize;
+        int denom = static_cast<int>(pow(10, m_stationSize));
         int tval = static_cast<int>(dval); // this is the integer part only
         int hiPart = tval / denom;
         int loPart = tval - hiPart * denom;
