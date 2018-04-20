@@ -363,11 +363,11 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT StatusInt          GetBoundary(bvector<DPoint3d>& boundary);
 
-        BENTLEY_SM_EXPORT int                    GenerateSubResolutions();
+                          int                    GenerateSubResolutions();
 
-        BENTLEY_SM_EXPORT __int64                GetBreaklineCount() const;
+                          __int64                GetBreaklineCount() const;
             
-        BENTLEY_SM_EXPORT ScalableMeshCompressionType   GetCompressionType() const;
+                   ScalableMeshCompressionType   GetCompressionType() const;
 
         BENTLEY_SM_EXPORT int                    GetNbResolutions() const;    
 
@@ -482,9 +482,9 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT int                    SaveAs(const WString& destination, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips = nullptr, IScalableMeshProgressPtr progress = nullptr);
 
-        BENTLEY_SM_EXPORT void                   ImportTerrainSM(WString terrainPath);
+                          void                   ImportTerrainSM(WString terrainPath);
 
-        BENTLEY_SM_EXPORT IScalableMeshPtr       GetTerrainSM();
+                          IScalableMeshPtr       GetTerrainSM();
 
         BENTLEY_SM_EXPORT SMStatus          DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, GeoCoordinates::BaseGCSCPtr destinationGcs = nullptr, bool limitResolutions = false);
 
