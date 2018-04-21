@@ -572,7 +572,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(m_connections, paths));
         IECPresentationManager::RegisterImplementation(m_presentationManager.get());
         m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
-        m_connections.NotifyConnectionOpened(*m_dgndb);
         }
 
     void TearDownPresentationManager()
@@ -930,6 +929,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         if ( m_presentationManager == nullptr)
             return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
 
+        m_connections.NotifyConnectionOpened(GetDgnDb());
         ContentDescriptorCPtr descriptor = m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, *input, nullptr, options.GetJson()).get();
         if (descriptor.IsNull())
             return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
