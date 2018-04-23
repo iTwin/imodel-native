@@ -17,7 +17,7 @@ BuildContext        = $(OutBuildContexts)geomlibs/
 MySrc               = $(SrcRoot)GeomLibs/serialization/src/
 MyPublicApi         = $(SrcRoot)GeomLibs/PublicAPI/GeomSerialization/
 
-o                   = $(OutputRootDir)build/GeomLibs/Serialization/
+o                   = $(PartBuildDir)
 ContextDelivery     = $(BuildContext)Delivery/
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------

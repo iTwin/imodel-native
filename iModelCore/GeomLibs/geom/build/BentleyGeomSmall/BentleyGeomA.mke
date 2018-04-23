@@ -2,7 +2,7 @@
 #
 #     $Source: geom/build/BentleyGeomSmall/BentleyGeomA.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include    mdl.mki
@@ -16,7 +16,7 @@ CompileOptionsMki   = $(_MakeFilePath)BentleyGeom.mki
 
 srcGeomLibs         = $(SrcRoot)GeomLibs/
 baseGeom_build      = $(geomlibs_build)basegeom/geom_dll/
-o                   = $(geomObj)
+o                   = $(PartBuildDir)
 
 #-------------------------------------------------
 # Make Directories
