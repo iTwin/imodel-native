@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildContext
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
+    >
+
+    <!--
+        The true purpose of iModelNativeCore is to be the dependencies of iModelJsNodeAddon. As
+        such, this should closely mirror iModelJsNodeAddon:iModelJsNodeAddonLibCommon.
+     -->
+    <Part Name="iModelNativeCore" PrgOutputDir="iModelNativeCore">
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="ECObjectsNative" PartFile="ECObjects" Repository="ecobjects"/>
+    </Part>
+
+</BuildContext>

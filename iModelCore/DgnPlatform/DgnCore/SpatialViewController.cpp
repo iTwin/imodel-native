@@ -284,6 +284,20 @@ BentleyStatus SpatialViewController::CreateThumbnailScene(SceneContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewController::CloseMe SpatialViewController::_OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db)
+    {
+    if (&GetDgnDb() != &db)
+        return CloseMe::No;
+
+    for (auto const& modelId : deletedIds)
+        ChangeModelDisplay(modelId, false);
+
+    return GetSpatialViewDefinition().GetModelSelector().GetModels().empty() ? CloseMe::Yes : CloseMe::No;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)

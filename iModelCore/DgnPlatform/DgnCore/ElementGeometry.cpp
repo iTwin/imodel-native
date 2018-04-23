@@ -1554,16 +1554,17 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
             auto colors = fbb.CreateVector(keyColors);
             auto values = fbb.CreateVector(keyValues);
             flatbuffers::Offset<FB::ThematicSettings>   thematicSettingsOffset = 0;
-            if (gradient.GetMode() == GradientSymb::Mode::Thematic)
+            if (gradient.GetMode() == GradientSymb::Mode::Thematic && gradient.GetThematicSettings().IsValid())
                 {
-                auto& thematicSettings = gradient.GetThematicSettings();
+                auto& thematicSettings = *gradient.GetThematicSettings(); 
 
                 thematicSettingsOffset = FB::CreateThematicSettings(fbb,
                                                                    thematicSettings.GetStepCount(), 
                                                                    thematicSettings.GetMargin(),
                                                                    thematicSettings.GetMarginColor().GetValue(),
-                                                                   (FB::ThematicMode) thematicSettings.GetMode(),
-                                                                   (FB::ThematicColorScheme) thematicSettings.GetColorScheme());
+                                                                   (uint32_t) thematicSettings.GetMode(),
+                                                                   (uint32_t) thematicSettings.GetColorScheme(),
+                                                                   (FB::DRange1d*) &thematicSettings.GetRange());
                 }
 
             auto mloc = FB::CreateAreaFill(fbb, (FB::FillDisplay) elParams.GetFillDisplay(),
@@ -2145,14 +2146,16 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     if (0 != ppfb->thematicSettings())
                         {
                         BeAssert (mode == GradientSymb::Mode::Thematic);
-                        auto&   thematicSettings = gradientPtr->GetThematicSettingsR();
+                        auto    thematicSettings = new ThematicGradientSettings();
                         auto    fbThematicSettings = ppfb->thematicSettings();
 
-                        thematicSettings.SetStepCount(fbThematicSettings->stepCount());
-                        thematicSettings.SetMargin(fbThematicSettings->margin());
-                        thematicSettings.SetMarginColor(ColorDef(fbThematicSettings->marginColor()));
-                        thematicSettings.SetMode((GradientSymb::ThematicSettings::Mode) fbThematicSettings->mode());
-                        thematicSettings.SetColorScheme((GradientSymb::ThematicSettings::ColorScheme) fbThematicSettings->colorScheme());
+                        thematicSettings->SetStepCount(fbThematicSettings->stepCount());
+                        thematicSettings->SetMargin(fbThematicSettings->margin());
+                        thematicSettings->SetMarginColor(ColorDef(fbThematicSettings->marginColor()));
+                        thematicSettings->SetMode((ThematicGradientSettings::Mode) fbThematicSettings->mode());
+                        thematicSettings->SetColorScheme((ThematicGradientSettings::ColorScheme) fbThematicSettings->colorScheme());
+                        thematicSettings->SetRange(*((DRange1dCP) fbThematicSettings->range()));
+                        gradientPtr->SetThematicSettings(*thematicSettings);
                         }
 
                     elParams.SetGradient(gradientPtr.get());
@@ -4520,14 +4523,16 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
 
                         if (GradientSymb::Mode::Thematic == gradientPtr->GetMode() && 0 != ppfb->thematicSettings())
                             {
-                            auto&   thematicSettings = gradientPtr->GetThematicSettingsR();
+                            auto    thematicSettings = new ThematicGradientSettings();
                             auto    fbThematicSettings = ppfb->thematicSettings();
 
-                            thematicSettings.SetStepCount(fbThematicSettings->stepCount());
-                            thematicSettings.SetMargin(fbThematicSettings->margin());
-                            thematicSettings.SetMarginColor(ColorDef(fbThematicSettings->marginColor()));
-                            thematicSettings.SetMode((GradientSymb::ThematicSettings::Mode) fbThematicSettings->mode());
-                            thematicSettings.SetColorScheme((GradientSymb::ThematicSettings::ColorScheme) fbThematicSettings->colorScheme());
+                            thematicSettings->SetStepCount(fbThematicSettings->stepCount());
+                            thematicSettings->SetMargin(fbThematicSettings->margin());
+                            thematicSettings->SetMarginColor(ColorDef(fbThematicSettings->marginColor()));
+                            thematicSettings->SetMode((ThematicGradientSettings::Mode) fbThematicSettings->mode());
+                            thematicSettings->SetColorScheme((ThematicGradientSettings::ColorScheme) fbThematicSettings->colorScheme());
+                            thematicSettings->SetRange(*((DRange1dCP) fbThematicSettings->range()));
+                            gradientPtr->SetThematicSettings(*thematicSettings);
                             }
 
                         value["gradient"] = gradientPtr->ToJson();

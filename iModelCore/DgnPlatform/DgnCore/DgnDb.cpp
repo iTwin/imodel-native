@@ -213,6 +213,12 @@ DbResult DgnDb::_OnDbOpening()
 //--------------------------------------------------------------------------------------
 DbResult DgnDb::_OnBeforeSetAsMaster(BeSQLite::BeGuid guid)
     {
+    if (Revisions().HasReversedRevisions())
+        {
+        BeAssert(false && "A briefcase that has reversed changesets cannot be set as the master copy");
+        return BE_SQLITE_ERROR;
+        }
+
     DbResult result = T_Super::_OnBeforeSetAsMaster(guid);
     if (result != BE_SQLITE_OK)
         return result;
@@ -223,7 +229,16 @@ DbResult DgnDb::_OnBeforeSetAsMaster(BeSQLite::BeGuid guid)
     if (GetDbGuid() == guid)
         BackupParentChangeSetIds();
     else
+        {
+        // Flush the Txn table if we are turning the briefcase into a new master copy
+        DgnRevisionPtr changeSet = Revisions().StartCreateRevision();
+        if (changeSet.IsValid())
+            {
+            if (RevisionStatus::Success != Revisions().FinishCreateRevision())
+                return DbResult::BE_SQLITE_ERROR;
+            }
         InitParentChangeSetIds();
+        }
     return BE_SQLITE_OK;
     }
 
