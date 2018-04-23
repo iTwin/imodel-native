@@ -326,7 +326,7 @@ public:
     //! @param[in] traits The traits to compare against.
     //! @param[in] compareTraits The traits to check if they exist in the other set.
     //! @return True if all the format traits are from the compare traits exist. Otherwise, false.
-    static bool IsTraitSet(FormatTraits traits, FormatTraits compareTraits) {return 0 != (static_cast<std::underlying_type<FormatTraits>::type>(traits) & static_cast<std::underlying_type<FormatTraits>::type>(compareTraits));}
+    static bool AreTraitsSet(FormatTraits traits, FormatTraits compareTraits) {return 0 != (static_cast<std::underlying_type<FormatTraits>::type>(traits) & static_cast<std::underlying_type<FormatTraits>::type>(compareTraits));}
 
     //! Sets the provided traits as either off or on based on the supplied boolean.
     //! @param[in] traits The traits to set/unset on this NumericFormatSpec.
@@ -336,7 +336,7 @@ public:
     //! Determine whether the supplied FormatTraits are set on this NumericFormatSpec.
     //! @param[in] traits The traits to check if they are set.
     //! @return True if all the supplied FormatTraits are set. Otherwise, false.
-    bool GetTraitBit(FormatTraits traitBit) const {return NumericFormatSpec::IsTraitSet(m_formatTraits, traitBit);}
+    bool GetTraitBit(FormatTraits traitBit) const {return NumericFormatSpec::AreTraitsSet(m_formatTraits, traitBit);}
 
     void SetKeepTrailingZeroes(bool setTo) {SetTraitsBit(FormatTraits::TrailingZeroes, setTo);}
     bool IsKeepTrailingZeroes() const { return GetTraitBit(FormatTraits::TrailingZeroes);}

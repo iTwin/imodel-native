@@ -66,15 +66,15 @@ TEST_F(NumericFormatSpecTest, FormatTraitsSet)
     {
     FormatTraits traits = NumericFormatSpec::SetTraitsBit(FormatTraits::None, FormatTraits::ApplyRounding, true);
     traits = NumericFormatSpec::SetTraitsBit(traits, FormatTraits::ExponenentOnlyNegative, true);
-    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(traits, FormatTraits::ApplyRounding));
-    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(traits, FormatTraits::ExponenentOnlyNegative));
-    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(traits, traits));
+    EXPECT_TRUE(NumericFormatSpec::AreTraitsSet(traits, FormatTraits::ApplyRounding));
+    EXPECT_TRUE(NumericFormatSpec::AreTraitsSet(traits, FormatTraits::ExponenentOnlyNegative));
+    EXPECT_TRUE(NumericFormatSpec::AreTraitsSet(traits, traits));
 
     FormatTraits partialTraits = NumericFormatSpec::SetTraitsBit(traits, FormatTraits::PrependUnitLabel, true);
-    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(partialTraits, FormatTraits::ApplyRounding));
-    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(partialTraits, FormatTraits::ExponenentOnlyNegative));
-    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(partialTraits, FormatTraits::PrependUnitLabel));
-    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(partialTraits, traits));
+    EXPECT_TRUE(NumericFormatSpec::AreTraitsSet(partialTraits, FormatTraits::ApplyRounding));
+    EXPECT_TRUE(NumericFormatSpec::AreTraitsSet(partialTraits, FormatTraits::ExponenentOnlyNegative));
+    EXPECT_TRUE(NumericFormatSpec::AreTraitsSet(partialTraits, FormatTraits::PrependUnitLabel));
+    EXPECT_TRUE(NumericFormatSpec::AreTraitsSet(partialTraits, traits));
     }
 
 //--------------------------------------------------------------------------------------
