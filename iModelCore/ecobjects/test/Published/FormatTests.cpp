@@ -273,13 +273,13 @@ TEST_F(FormatRequiredAttributesTest, VerifyAllowedPresentationTypes)
     {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="scientific" scientificType="standard" precision="4"/>
+            <Format typeName="AmerMYFI4" type="scientific" scientificType="normalized" precision="4"/>
         </ECSchema>)xml";
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
     EXPECT_EQ(Formatting::PresentationType::Scientific, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetPresentationType());
-    EXPECT_EQ(Formatting::ScientificType::Standard, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetScientificType());
+    EXPECT_EQ(Formatting::ScientificType::Normalized, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetScientificType());
     }
     {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -329,32 +329,22 @@ TEST_F(FormatRequiredAttributesTest, ScientificTypeShouldBeRequiredWhenTypeIsSci
     {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="scientific" scientificType="normal" precision="4"/>
+            <Format typeName="AmerMYFI4" type="scientific" scientificType="zeroNormalized" precision="4"/>
         </ECSchema>)xml";
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::ScientificType::Normal, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetScientificType());
+    EXPECT_EQ(Formatting::ScientificType::ZeroNormalized, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetScientificType());
     }
     {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="scientific" scientificType="engineering" precision="4"/>
+            <Format typeName="AmerMYFI4" type="scientific" scientificType="normalized" precision="4"/>
         </ECSchema>)xml";
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::ScientificType::Engineering, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetScientificType());
-    }
-    {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="scientific" scientificType="standard" precision="4"/>
-        </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::ScientificType::Standard, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetScientificType());
+    EXPECT_EQ(Formatting::ScientificType::Normalized, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetScientificType());
     }
     }
 
@@ -538,16 +528,16 @@ TEST_F(FormatOptionalAttributesTest, VerifyValidFormatTraits)
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
     auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
-    EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::TrailingZeroes));
-    EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::KeepSingleZero));
-    EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::ZeroEmpty));
-    EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::KeepDecimalPoint));
-    EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::ApplyRounding));
-    EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::FractionDash));
-    EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::ShowUnitLabel));
-    EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::PrependUnitLabel));
-    EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::Use1000Separator));
-    EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::ExponenentOnlyNegative));
+    EXPECT_TRUE(nfs->GetTraitBit(Formatting::FormatTraits::TrailingZeroes));
+    EXPECT_TRUE(nfs->GetTraitBit(Formatting::FormatTraits::KeepSingleZero));
+    EXPECT_TRUE(nfs->GetTraitBit(Formatting::FormatTraits::ZeroEmpty));
+    EXPECT_TRUE(nfs->GetTraitBit(Formatting::FormatTraits::KeepDecimalPoint));
+    EXPECT_TRUE(nfs->GetTraitBit(Formatting::FormatTraits::ApplyRounding));
+    EXPECT_TRUE(nfs->GetTraitBit(Formatting::FormatTraits::FractionDash));
+    EXPECT_TRUE(nfs->GetTraitBit(Formatting::FormatTraits::ShowUnitLabel));
+    EXPECT_TRUE(nfs->GetTraitBit(Formatting::FormatTraits::PrependUnitLabel));
+    EXPECT_TRUE(nfs->GetTraitBit(Formatting::FormatTraits::Use1000Separator));
+    EXPECT_TRUE(nfs->GetTraitBit(Formatting::FormatTraits::ExponenentOnlyNegative));
     }
 
 //---------------------------------------------------------------------------------------

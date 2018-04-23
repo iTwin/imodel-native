@@ -470,7 +470,7 @@ enum class ECRelatedInstanceDirection
 //! The various strengths supported on a relationship class.
 enum class StrengthType
     {
-    //!  'Referencing' relationships imply no ownership and no cascading deletes when the
+    //! 'Referencing' relationships imply no ownership and no cascading deletes when the
     //! object on either end of the relationship is deleted.  For example, a document
     //! object may have a reference to the User that last modified it.
     //! This is like "Association" in UML.
