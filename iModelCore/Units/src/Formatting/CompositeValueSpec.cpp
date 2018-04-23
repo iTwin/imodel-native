@@ -249,42 +249,6 @@ Utf8CP CompositeValueSpec::GetUnitName(size_t indx, Utf8CP substitute) const
     Utf8CP name = proxy->GetName();
     return Utf8String::IsNullOrEmpty(name) ? substitute : name;
     }
-//--------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  04/2018
-//--------------------------------------------------------------------------------------
-bool CompositeValueSpec::SetUnit(BEU::UnitCP unit, int indx)
-    {
-    if (!IsIndexValid(indx))
-        return false;
-    auto p = GetProxyP(indx);
-    if (m_problem.GetProblemCode() == FormatProblemCode::NotInitialized)
-        m_problem.Reset();
-    return p->SetUnit(unit);
-    }
-//--------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  04/2018
-//--------------------------------------------------------------------------------------
-bool CompositeValueSpec::SetUnitLabel(Utf8StringCR label, int indx)
-    {
-    if (!IsIndexValid(indx))
-        return false;
-    switch (indx)
-        {
-        case indxMajor:
-            SetMajorLabel(label);
-            break;
-        case indxMiddle:
-            SetMiddleLabel(label);
-            break;
-        case indxMinor:
-            SetMinorLabel(label);
-            break;
-        case indxSub:
-            SetSubLabel(label);
-            break;
-        }
-    return true;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17

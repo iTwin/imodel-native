@@ -521,7 +521,6 @@ public:
 
     size_t GetUnitCount() const {return m_proxys.size();}
 
-    UNITS_EXPORT bool SetUnit(BEU::UnitCP unit, int indx);
     BEU::UnitCP GetMajorUnit()  const {return GetUnit(indxMajor);}
     BEU::UnitCP GetMiddleUnit() const {return GetUnit(indxMiddle);}
     BEU::UnitCP GetMinorUnit()  const {return GetUnit(indxMinor);}
@@ -542,7 +541,6 @@ public:
     void SetMiddleLabel(Utf8StringCR label) {SetUnitLabel(indxMiddle, label.c_str());}
     void SetMinorLabel(Utf8StringCR label) {SetUnitLabel(indxMinor, label.c_str());}
     void SetSubLabel(Utf8StringCR label) {SetUnitLabel(indxSub, label.c_str());}
-    UNITS_EXPORT bool SetUnitLabel(Utf8StringCR label, int indx);
 
     bool HasMajorLabel()    const {return HasMajorUnit() && GetProxy(indxMajor)->HasLabel();} //!< Determine whether this composite value has a major unit label override.
     bool HasMiddleLabel()   const {return HasMiddleUnit() && GetProxy(indxMiddle)->HasLabel();} //!< Determine whether this composite value has a middle unit label override.
