@@ -54,14 +54,38 @@ static FPoint2d    computeTextureParam (double value, double margin)
     return point;
     }
 
+#ifdef TEST_JSON
+#include <GeomSerialization/GeomSerializationApi.h>
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void  ElementTileTree::ThematicMeshBuilder::InitThematicDisplay(PolyfaceHeaderR mesh, Render::Primitives::DisplayParamsCR displayParams)
     {
     // TBD -- Active channel selection - for now any scalar.
+
+
     if (mesh.GetAuxDataCP().IsValid())
         {
+#ifdef TEST_JSON
+        IGeometryPtr            geometry = IGeometry::Create(&mesh);
+        bvector<IGeometryPtr>   roundTrippedGeometries;
+        Utf8String              string;
+
+        if (IModelJson::TryGeometryToIModelJsonString(string, *geometry))
+            {
+            FILE*    testFile = std::fopen("d:\\tmp\\AuxData.json", "w");
+
+            fwrite(string.c_str(), string.size(), 1, testFile);
+            fclose(testFile);
+
+            bvector<IGeometryPtr>   geometries;
+            if (IModelJson::TryIModelJsonStringToGeometry(string, roundTrippedGeometries))
+                mesh = *roundTrippedGeometries.front()->GetAsPolyfaceHeader();
+            }
+#endif
+
         for (auto& channel : mesh.GetAuxDataCP()->GetChannels())    
             {
             if (channel->IsScalar() && nullptr != displayParams.GetGradient() && displayParams.GetGradient()->IsThematic())
@@ -74,15 +98,15 @@ void  ElementTileTree::ThematicMeshBuilder::InitThematicDisplay(PolyfaceHeaderR 
                 mesh.ParamIndex().resize(mesh.PointIndex().size());
                 memcpy (mesh.ParamIndex().data(), mesh.GetAuxDataCP()->GetIndices().data(), mesh.PointIndex().size() * sizeof(int32_t));
 
-                auto& values = channel->GetData().front()->GetValues(); 
+                auto& values = channel->GetData().at(1)->GetValues(); 
 
                 mesh.Param().reserve(values.size());
                 mesh.Param().SetActive(true);
 
-                ThematicCookedRange  cookedRange(DRange1d::From(values.data(), values.size()));
+                ThematicCookedRange  cookedRange(displayParams.GetGradient()->GetThematicSettings()->GetRange());
 
                 for (auto value : values)
-                    mesh.Param().push_back(DPoint2d::From(computeTextureParam(cookedRange.GetNormalizedValueFromRaw((double) value), displayParams.GetGradient()->GetThematicSettings().GetMargin())));
+                    mesh.Param().push_back(DPoint2d::From(computeTextureParam(cookedRange.GetNormalizedValueFromRaw((double) value), displayParams.GetGradient()->GetThematicSettings()->GetMargin())));
                  }
             }
         }
@@ -109,20 +133,14 @@ void   ElementTileTree::ThematicMeshBuilder::BuildMeshAuxData(MeshAuxDataR auxDa
 
                 auto&                               inDataVector = channel->GetData();
                 bvector<AuxParamChannel::DataPtr>   outDataVector;
-
-                DRange1d        range = DRange1d::NullRange();
-
-                for (auto inData : inDataVector)
-                    range.Extend (inData->GetValues().data(), inData->GetValues().size());
-                    
-                ThematicCookedRange         cookedRange(range);
+                ThematicCookedRange                 cookedRange(displayParams.GetGradient()->GetThematicSettings()->GetRange());
 
                 for (auto inData : inDataVector)
                     {
                     bvector<FPoint2d>   params;
 
                     for (auto& value : inData->GetValues())
-                        params.push_back(computeTextureParam(cookedRange.GetNormalizedValueFromRaw(value),  displayParams.GetGradient()->GetThematicSettings().GetMargin()));
+                        params.push_back(computeTextureParam(cookedRange.GetNormalizedValueFromRaw(value),  displayParams.GetGradient()->GetThematicSettings()->GetMargin()));
                     
                     outDataVector.push_back(new AuxParamChannel::Data((float) inData->GetInput(), std::move(params)));
                     }

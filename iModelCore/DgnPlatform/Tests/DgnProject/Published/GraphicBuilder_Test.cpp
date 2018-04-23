@@ -123,7 +123,7 @@ protected:
 
     void Process(IndexedPolylineArgsCR args) override
         {
-        if (args.m_disjoint)
+        if (args.m_flags.IsDisjoint())
             ++m_numDisjoint;
         else
             ++m_numContinuous;

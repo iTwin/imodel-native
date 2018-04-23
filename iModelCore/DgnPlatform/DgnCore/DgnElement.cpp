@@ -255,7 +255,7 @@ Utf8String DgnElement::_GetInfoString(Utf8CP delimiter) const
         {
         DgnCategoryCPtr category = DgnCategory::Get(GetDgnDb(), geom->GetCategoryId());
         if (category.IsValid())
-            out += DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category()) + category->GetCode().GetValue().GetUtf8() + delimiter;
+            out += DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category()) + category->GetDisplayLabel() + delimiter;
         }
 
     return out + DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()) + GetModel()->GetName();

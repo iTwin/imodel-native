@@ -777,7 +777,7 @@ bool FeatureSymbologyOverrides::GetAppearance(Appearance& app, FeatureCR feat, D
 
         alwaysDrawn = m_alwaysDrawn.end() != m_alwaysDrawn.find(elemId);
         if (!alwaysDrawn && m_alwaysDrawnExclusive)
-                return false;
+            return false;
 
         // Element overrides take precedence
         auto elemIter = m_elementOverrides.find(elemId);

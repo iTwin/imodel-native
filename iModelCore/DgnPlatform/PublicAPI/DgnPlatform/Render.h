@@ -64,6 +64,7 @@ private:
     uint32_t m_noGeometryMap:1;    //!< ignore geometry maps
     uint32_t m_hLineMaterialColors:1; //!< use material colors for hidden lines
     uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
+    uint32_t m_animate:1;          //!< Animate view (render continously).
 
 public:
     BE_JSON_NAME(acs);
@@ -88,6 +89,7 @@ public:
     BE_JSON_NAME(hlMatColors);
     BE_JSON_NAME(monochrome);
     BE_JSON_NAME(edgeMask);
+    BE_JSON_NAME(animate);
 
     ViewFlags()
         {
@@ -113,6 +115,7 @@ public:
         m_noGeometryMap = 0;
         m_hLineMaterialColors = 0;
         m_edgeMask = 0;
+        m_animate = 0;
         }
 
     bool ShowDimensions() const {return m_dimensions;}
@@ -159,8 +162,10 @@ public:
     bool UseHlineMaterialColors() const {return m_hLineMaterialColors;}
     int GetEdgeMask() const {return m_edgeMask;}
     void SetEdgeMask(int val) {m_edgeMask = val;}
+    bool GetAnimate() const { return m_animate; }
+    void SetAnimate(bool val) {m_animate = val;}
     
-    RenderMode GetRenderMode() const {return m_renderMode;}
+    RenderMode GetRenderMode() const {return m_renderMode; }
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
 
     bool HiddenEdgesVisible() const
@@ -1032,6 +1037,58 @@ enum class LineCap
 };
 
 //=======================================================================================
+// @bsiclass                                                    Ray.Bentley     04/2018
+//=======================================================================================
+struct ThematicGradientSettings : RefCountedBase
+    {
+    enum class ColorScheme
+        {
+        BlueRed     = 0,
+        RedBlue     = 1,
+        Monochrome  = 2,
+        Topographic = 3,
+        SeaMountain = 4,
+        Custom      = 5,
+        };
+    enum class Mode
+        {
+        Smooth,
+        Stepped,
+        SteppedWithDelimiter,
+        Isolines,
+        };
+
+    private:
+    uint32_t        m_stepCount = 10;
+    double          m_margin = .05;
+    ColorDef        m_marginColor = ColorDef(0x3f, 0x3f, 0x3f);
+    Mode            m_mode = Mode::Smooth;
+    ColorScheme     m_colorScheme = ColorScheme::BlueRed;
+    DRange1d        m_range = DRange1d::NullRange();
+
+    public:
+                    ThematicGradientSettings() {};
+                    ThematicGradientSettings(DRange1dCR range, ColorScheme colorScheme = ColorScheme::BlueRed, Mode mode = Mode::Smooth) : m_range(range), m_colorScheme(colorScheme), m_mode(mode) { }
+    Json::Value     ToJson() const;
+    void            FromJson(Json::Value const& value);
+    double          GetMargin() const { return m_margin; }
+    void            SetMargin(double margin) { m_margin = margin; }
+    uint32_t        GetStepCount() const { return m_stepCount; }
+    void            SetStepCount(uint32_t stepCount) { m_stepCount = stepCount; }
+    ColorDef        GetMarginColor() const { return m_marginColor; }
+    void            SetMarginColor (ColorDefCR color) { m_marginColor = color; }
+    Mode            GetMode() const { return m_mode; ; }
+    void            SetMode(Mode mode) { m_mode = mode; }
+    ColorScheme     GetColorScheme() const { return m_colorScheme; }
+    void            SetColorScheme(ColorScheme colorScheme) { m_colorScheme = colorScheme; }
+    DRange1dCR      GetRange() const { return m_range; }
+    void            SetRange(DRange1dCR range) { m_range = range; }
+
+    bool operator==(ThematicGradientSettings const& rhs) const;
+    bool operator<(ThematicGradientSettings const& rhs) const;
+    };
+
+//=======================================================================================
 //! Parameters defining a gradient
 // @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
@@ -1060,48 +1117,7 @@ struct GradientSymb : RefCountedBase
         Hemispherical       = 5,
         Thematic            = 6,
     };
-
-    
-    struct ThematicSettings
-        {
-        enum class ColorScheme
-            {
-            BlueRed     = 0,
-            RedBlue     = 1,
-            Monochrome  = 2,
-            Topographic = 3,
-            SeaMountain = 4,
-            Custom      = 5,
-            };
-        enum class Mode
-            {
-            Smooth,
-            Stepped,
-            SteppedWithDelimiter,
-            Isolines,
-            };
-
-        private:
-        uint32_t        m_stepCount = 10;
-        double          m_margin = .05;
-        ColorDef        m_marginColor = ColorDef(0x3f, 0x3f, 0x3f);
-        Mode            m_mode = Mode::Smooth;
-        ColorScheme     m_colorScheme = ColorScheme::BlueRed;
-
-        public:
-        Json::Value ToJson() const;
-        void FromJson(Json::Value const& value);
-        double GetMargin() const { return m_margin; }
-        void SetMargin(double margin) { m_margin = margin; }
-        uint32_t GetStepCount() const { return m_stepCount; }
-        void SetStepCount(uint32_t stepCount) { m_stepCount = stepCount; }
-        ColorDef GetMarginColor() const { return m_marginColor; }
-        void SetMarginColor (ColorDefCR color) { m_marginColor = color; }
-        Mode GetMode() const { return m_mode; ; }
-        void SetMode(Mode mode) { m_mode = mode; }
-        ColorScheme GetColorScheme() const { return m_colorScheme; }
-        void SetColorScheme(ColorScheme colorScheme) { m_colorScheme = colorScheme; }
-        };
+  
 
 protected:
     Mode        m_mode = Mode::None;
@@ -1114,12 +1130,12 @@ protected:
     double      m_values[MAX_GRADIENT_KEYS];
 
     // For Thematic only...
-    ThematicSettings    m_thematicSettings;
+    ThematicGradientSettingsPtr m_thematicSettings;
 
 public:
     GradientSymb() {}
     // For thematic display....
-    DGNPLATFORM_EXPORT GradientSymb(ThematicSettings const& thematicSettings);
+    DGNPLATFORM_EXPORT GradientSymb(ThematicGradientSettingsR thematicSettings);
 
     DGNPLATFORM_EXPORT void CopyFrom(GradientSymbCR);
 
@@ -1152,8 +1168,9 @@ public:
     BentleyStatus GetKey(ColorDef& color, double& value, uint32_t iKey) const;
     // Thematic display.
     bool IsThematic() const { return m_mode == Mode::Thematic; } 
-    ThematicSettings const& GetThematicSettings() const { return m_thematicSettings; }
-    ThematicSettings& GetThematicSettingsR() { return m_thematicSettings; }
+    ThematicGradientSettingsCPtr GetThematicSettings() const { return m_thematicSettings; }
+    ThematicGradientSettingsPtr GetThematicSettingsR() { return m_thematicSettings; }
+    void SetThematicSettings (ThematicGradientSettingsR settings) { m_thematicSettings = &settings; }
 };
 
 
@@ -2406,6 +2423,56 @@ enum class FillFlags : uint8_t
 ENUM_IS_FLAGS(FillFlags);
 
 //=======================================================================================
+//! Describes the semantics of an indexed polyline primitive.
+// @bsistruct                                                   Paul.Connelly   04/18
+//=======================================================================================
+struct PolylineFlags
+{
+private:
+    enum { kType_Normal, kType_Edge, kType_Outline };
+
+    struct Bits
+    {
+        uint8_t m_disjoint: 1;
+        uint8_t m_planar: 1;
+        uint8_t m_2d: 1;
+        uint8_t m_type: 2;
+    };
+
+    union
+    {
+        uint8_t m_value;
+        Bits    m_bits;
+    };
+
+    explicit PolylineFlags(uint8_t value) { m_value = value; }
+public:
+    PolylineFlags() : PolylineFlags(0) { }
+    PolylineFlags(bool is2d, bool isPlanar) : PolylineFlags()
+        {
+        if (is2d)       SetIs2d();
+        if (isPlanar)   SetIsPlanar();
+        }
+
+    bool IsDisjoint() const { return m_bits.m_disjoint; }
+    bool IsPlanar() const { return m_bits.m_planar; }
+    bool Is2d() const { return m_bits.m_2d; }
+    bool IsOutlineEdge() const { return kType_Outline == m_bits.m_type; }
+    bool IsNormalEdge() const { return kType_Edge == m_bits.m_type; }
+    bool IsAnyEdge() const { return kType_Normal != m_bits.m_type; }
+
+    uint8_t GetValue() const { return m_value; }
+
+    void SetIsDisjoint() { m_bits.m_disjoint = 1; }
+    void SetIsPlanar() { m_bits.m_planar = 1; }
+    void SetIs2d() { m_bits.m_2d = 1; }
+    void SetIsNormalEdge() { m_bits.m_type = kType_Edge; }
+    void SetIsOutlineEdge() { m_bits.m_type = kType_Outline; }
+
+    static PolylineFlags FromValue(uint8_t value) { return PolylineFlags(value); }
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct MeshPolyline
@@ -2462,13 +2529,11 @@ struct IndexedPolylineArgs
     QPoint3d::Params    m_pointParams;
     uint32_t            m_width = 0;
     LinePixels          m_linePixels = LinePixels::Solid;
-    bool                m_disjoint = false;
-    bool                m_is2d = false;
-    bool                m_isPlanar = false;
+    PolylineFlags       m_flags;
 
     IndexedPolylineArgs() { }
     IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams, bool is2d, bool isPlanar)
-        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines), m_pointParams(pointParams), m_is2d(is2d), m_isPlanar(isPlanar) { }
+        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines), m_pointParams(pointParams), m_flags(is2d, isPlanar) { }
 };
 
 //=======================================================================================
@@ -2542,6 +2607,7 @@ private:
 
 public:
         AuxChannel( bvector<DataPtr>&& data) : m_data(std::move(data)) { }
+        bool IsAnimatable() const { return m_data.size() > 1; }
         void AppendDataByIndex(RefCountedPtr<AuxChannel>& output, size_t index)
             {
             if (!output.IsValid())
@@ -2582,6 +2648,7 @@ struct MeshAuxData
     AuxParamChannelPtr              m_paramChannel;
 
     bool IsValid() const { return m_displacementChannel.IsValid() || m_paramChannel.IsValid(); }
+    bool IsAnimatable() const { return (m_displacementChannel.IsValid() && m_displacementChannel->IsAnimatable()) || (m_paramChannel.IsValid() && m_paramChannel->IsAnimatable()); }
 };  
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshAuxData);
@@ -3095,9 +3162,9 @@ public:
 //! Overrides applied to elements take priority over those applied to subcategories.
 //! The rules for determining visibility and symbology follow a priority:
 //! Visibility:
-//!     If an element is in the "always drawn" list, it is visible.
+//!     If an element is in the "never drawn" list, it is invisible.
+//!     Else, if an element is in the "always drawn" list, it is visible.
 //!     Else, if the "always drawn" list is exclusive, it is invisible.
-//!     Else, if it is in the "never drawn" list, it is invisible.
 //!     Else, any geometry not in the "visible subcategories" list is invisible
 //!     Else, any geometry of a DgnGeometryClass marked as invisible is invisible.
 //!     Else, it is visible.

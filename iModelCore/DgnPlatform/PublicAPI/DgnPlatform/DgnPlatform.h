@@ -19,7 +19,7 @@
 #include "ExportMacros.h"
 #include <Geom/GeomApi.h>
 #include <Bentley/NonCopyableClass.h>
-#include <Bentley/bvector.h>
+#include <Bentley/bvector.h>                                                          
 #include "DgnPlatform.r.h"
 #include "DgnPlatformErrors.h"
 #include "DgnHost.h"
@@ -418,6 +418,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(FeatureSymbologyOverrides)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(PixelData);
     DEFINE_POINTER_SUFFIX_TYPEDEFS(IPixelDataBuffer);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(ThematicGradientSettings);
 
     DEFINE_REF_COUNTED_PTR(Device)
     DEFINE_REF_COUNTED_PTR(GradientSymb)
@@ -434,6 +435,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_REF_COUNTED_PTR(MeshEdges);
     DEFINE_REF_COUNTED_PTR(IPixelDataBuffer);
     DEFINE_REF_COUNTED_PTR(FeatureSymbologyOverrides);
+    DEFINE_REF_COUNTED_PTR(ThematicGradientSettings);
 END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
