@@ -1,16 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Grids/PublicApi/gridsApi.h $
+|     $Source: Grids/Handlers/PublicApi/GridHandlersAPI.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Grids/Domain/GridsDomain.h>
-#include <Grids/Domain/GridsMacros.h>
 #include <Grids/Elements/GridElementsAPI.h>
-#include <Grids/Handlers/GridHandlersAPI.h>
-#include <Grids/Strategies/GridStrategies.h>
 
-
+#include "GridArcSurfaceHandler.h"
+#include "GridPlaneSurfaceHandler.h"
+#include "IntersectionCurveHandlers.h"
+#include "PortionHandlers.h"
+#include "GridHandlers.h"
