@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/IntegrationTests/IntegrationTests.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
@@ -18,7 +18,7 @@ baseDir = $(_MakeFilePath)
 BEGTEST_NAME = BeHttpIntegrationTests
 BEGTEST_INPUT = $(baseDir)
 BEGTEST_OUTPUT = $(OutputRootDir)build/BeHttp/IntegrationTests/
-o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/Objects/
+o = $(PartBuildDir)$(BEGTEST_NAME)/Objects/
 
 dirToSearch = $(beHttpUnitTestsDir)
 %include cincapnd.mki
@@ -69,7 +69,7 @@ $(BuildContext)Delivery/BeHttpIntegrationTests/Objects : ${o}
 #   Deliver assets
 #---------------------------------------------------------------------------------------+
 
-o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/Assets/
+o = $(PartBuildDir)$(BEGTEST_NAME)/Assets/
 
 $(o)Scripts/Executables:
     @CreateSymLinks.py -d"$(o)Scripts/Executables=$(baseDir)Scripts/Executables"

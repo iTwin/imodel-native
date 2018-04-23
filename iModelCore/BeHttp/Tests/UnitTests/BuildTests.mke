@@ -2,7 +2,7 @@
 #
 #  $Source: Tests/UnitTests/BuildTests.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 # ***
@@ -22,7 +22,7 @@ BEGTEST_NAME  = $(TestDir)BeHttp
 BEGTEST_INPUT = $(baseDir)$(TestDir)/
 BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/BeHttp/UnitTests/
-o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+o = $(PartBuildDir)$(BEGTEST_NAME)/
 
 %ifdef UsePublishedApi
     BEGTEST_API = $(BuildContext)SubParts/PublishedApi/BeHttp

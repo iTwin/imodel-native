@@ -2,7 +2,7 @@
 #
 #     $Source: BeHttp.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 CompileOptionsMki = $(_MakeFilePath)BeHttpCompileOptions.mki
@@ -19,7 +19,7 @@ BeHttpPublicApiDir          = $(baseDir)PublicAPI/BeHttp/
 BuildContext                = $(OutputRootDir)BuildContexts/BeHttp/
 BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
 
-o = $(OutputRootDir)build/BeHttp/
+o = $(PartBuildDir)
 always:
     !~@mkdir $(o)
 
