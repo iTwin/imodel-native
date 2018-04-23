@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdrange3d.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1561,5 +1561,47 @@ DPoint3d DRange3d::LocalToGlobal (double xFraction, double yFraction, double zFr
         DoubleOps::Interpolate (low.z, zFraction, high.z));
     }
 
+//!
+//!
+//! Generates 6 planes for the faces of the box.
+//!
+//! @param [out] planes array of 6 planes
+//! @param [in] normalLength scale factor for plane normals.  1.0 is outward unit normals, -1.0 is inward unit normals
+//!
+void DRange3d::Get6Planes (DPlane3d planes[6], double normalLength) const
+    {
+    planes[0] = DPlane3d::FromOriginAndNormal (low.x, low.y, low.z, -normalLength, 0, 0);
+    planes[1] = DPlane3d::FromOriginAndNormal (low.x, low.y, low.z, 0, -normalLength, 0);
+    planes[2] = DPlane3d::FromOriginAndNormal (low.x, low.y, low.z, 0, 0, -normalLength);
+    planes[3] = DPlane3d::FromOriginAndNormal (high.x, high.y, high.z, normalLength, 0, 0);
+    planes[4] = DPlane3d::FromOriginAndNormal (high.x, high.y, high.z, 0, normalLength, 0);
+    planes[5] = DPlane3d::FromOriginAndNormal (high.x, high.y, high.z, 0, 0, normalLength);
+    }
 
+//!
+//!
+//! Generates 12 edges.
+//!
+void DRange3d::GetEdges (bvector<DSegment3d> &edges) const
+    {
+    edges.clear ();
+    if (IsNull ())
+        return;
+    DPoint3d corners[8];
+    Get8Corners (corners);
+    edges.push_back (DSegment3d::From (corners[0], corners[1]));
+    edges.push_back (DSegment3d::From (corners[2], corners[3]));
+    edges.push_back (DSegment3d::From (corners[4], corners[5]));
+    edges.push_back (DSegment3d::From (corners[6], corners[7]));
+
+    edges.push_back (DSegment3d::From (corners[0], corners[2]));
+    edges.push_back (DSegment3d::From (corners[1], corners[3]));
+    edges.push_back (DSegment3d::From (corners[4], corners[6]));
+    edges.push_back (DSegment3d::From (corners[5], corners[7]));
+
+    edges.push_back (DSegment3d::From (corners[0], corners[4]));
+    edges.push_back (DSegment3d::From (corners[1], corners[5]));
+    edges.push_back (DSegment3d::From (corners[2], corners[6]));
+    edges.push_back (DSegment3d::From (corners[3], corners[7]));
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE
