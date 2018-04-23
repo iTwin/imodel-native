@@ -1076,12 +1076,21 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
         comp = nfp->GetCompositeSpecP();
         }
 
-    for (int i = 0; i < input.size(); ++i)
+    switch (input.size())
         {
-        if (nullptr != input[i].second)
-            comp->SetUnitLabel(input[i].second, i);
+        case 4:
+            if (nullptr != input[3].second)
+                comp->SetSubLabel(input[3].second);
+        case 3:
+            if (nullptr != input[2].second)
+                comp->SetMinorLabel(input[2].second);
+        case 2:
+            if (nullptr != input[1].second)
+                comp->SetMiddleLabel(input[1].second);
+        case 1:
+            if (nullptr != input[0].second)
+                comp->SetMajorLabel(input[0].second);
         }
-
     return ECObjectsStatus::Success;
     }
 
