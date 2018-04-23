@@ -706,8 +706,13 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
             }
 
         expInt = floor(exp);
-        if (m_presentationType == PresentationType::Scientific && m_scientificType == ScientificType::ZeroNormalized)
-            expInt += 1.0;
+        if (m_presentationType == PresentationType::Scientific)
+            {
+            if (m_scientificType == ScientificType::ZeroNormalized && dval > 1.0)
+                expInt += 1.0;
+            else if (m_scientificType == ScientificType::Normalized && dval < 1.0)
+                expInt += 1.0;
+            }
         if (negativeExp)
             expInt = -expInt;
         double factor = pow(10.0, -expInt);

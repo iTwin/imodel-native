@@ -1038,12 +1038,12 @@ TEST_F(FormattingTestFixture, Simple)
     numFmt.SetSignOption(SignOption::OnlyNegative);
     numFmt.SetPrecision(DecimalPrecision::Precision10);
     numFmt.SetPresentationType(PresentationType::Scientific);
-    EXPECT_STREQ ("-0.2718281828e-2", numFmt.Format(-0.0027182818284590).c_str());
-    EXPECT_STREQ ("-0.2718281828e+0", numFmt.Format(-0.2718281828459045).c_str());
-    numFmt.SetPresentationType(PresentationType::Scientific);
-    numFmt.SetScientificType(ScientificType::ZeroNormalized);
     EXPECT_STREQ ("-2.7182818285e-3", numFmt.Format(-0.0027182818284590).c_str());
     EXPECT_STREQ ("-2.7182818285e-1", numFmt.Format(-0.2718281828459045).c_str());
+    numFmt.SetPresentationType(PresentationType::Scientific);
+    numFmt.SetScientificType(ScientificType::ZeroNormalized);
+    EXPECT_STREQ ("-0.2718281828e-2", numFmt.Format(-0.0027182818284590).c_str());
+    EXPECT_STREQ ("-0.2718281828e+0", numFmt.Format(-0.2718281828459045).c_str());
     EXPECT_STREQ ("-0.2718281828e+4", numFmt.Format(-2718.2818284590).c_str());
     EXPECT_STREQ ("0.2718281828e+4", numFmt.Format(2718.2818284590).c_str());    
     }
@@ -1055,7 +1055,6 @@ TEST_F(FormattingTestFixture, LargeNumbers)
     {
     NumericFormatSpec spec = NumericFormatSpec(NumericFormatSpec::DefaultFormat());
     spec.SetPrecision(DecimalPrecision::Precision4);
-    //TODO Go through and check these and fill in the expects
     EXPECT_STREQ("1.0", spec.Format(1.0).c_str());
     EXPECT_STREQ("1000.0", spec.Format(1000.0).c_str());
     EXPECT_STREQ("1234567.0", spec.Format(1234567.0).c_str());
