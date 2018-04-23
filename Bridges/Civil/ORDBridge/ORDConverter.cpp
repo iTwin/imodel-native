@@ -1107,6 +1107,28 @@ void ORDConverter::CreatePathways(bset<DgnCategoryId>& additionalCategoriesForSe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+void setGeneratedAlignmentLabel(Dgn::DgnElementId alignmentId, RoadRailBim::ThruwayPortionCR travelPortion,
+    RoadRailBim::SignificantPointDefinitionCR significantPointDef)
+    {
+    auto portionAlignmentCPtr = travelPortion.GetMainLinearElementAs<RoadRailAlignment::Alignment>();
+
+    Utf8String genAlgLabel;
+    if (!Utf8String::IsNullOrEmpty(portionAlignmentCPtr->GetUserLabel()))
+        {
+        genAlgLabel = portionAlignmentCPtr->GetUserLabel();
+        genAlgLabel.append("/");
+        }
+
+    genAlgLabel.append(significantPointDef.GetCode().GetValueUtf8CP());
+
+    auto alignmentPtr = RoadRailAlignment::Alignment::GetForEdit(travelPortion.GetDgnDb(), alignmentId);
+    alignmentPtr->SetUserLabel(genAlgLabel.c_str());
+    alignmentPtr->Update();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void ORDConverter::AssociateGeneratedAlignments()
     {
     auto roadwayStandardsModelPtr = RoadRailPhysical::RoadwayStandardsModel::Query(GetJobSubject());
@@ -1155,9 +1177,13 @@ void ORDConverter::AssociateGeneratedAlignments()
             if (!travelPortionId.IsValid())
                 continue;
 
-            auto portionCPtr = RoadRailBim::PathwayPortionElement::Get(GetDgnDb(), travelPortionId);
+            auto portionCPtr = RoadRailBim::ThruwayPortion::Get(GetDgnDb(), travelPortionId);
             if (portionCPtr.IsValid())
+                {
                 RoadRailBim::ILinearElementUtilities::SetRelatedPathwayPortion(*bimAlignmentCPtr, *portionCPtr, *pointDefCPtr);
+                if (Utf8String::IsNullOrEmpty(bimAlignmentCPtr->GetUserLabel()))
+                    setGeneratedAlignmentLabel(bimAlignmentCPtr->GetElementId(), *portionCPtr, *pointDefCPtr);
+                }
             }
         }
     }
