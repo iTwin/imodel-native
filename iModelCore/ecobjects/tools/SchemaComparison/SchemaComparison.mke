@@ -2,7 +2,7 @@
 #
 #  $Source: tools/SchemaComparison/SchemaComparison.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 appName = SchemaComparison
@@ -12,7 +12,7 @@ SrcDir = $(_MakeFilePath)
 %include mdl.mki
 #%include $(SrcRoot)ecobjects/mki/ECObjects.mki
 
-o = $(OutputRootDir)Build/SchemaComparison/
+o = $(PartBuildDir)
 always:
     ~mkdir $(o)
 

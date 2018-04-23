@@ -2,7 +2,7 @@
 |
 |     $Source: tools/SchemaComparison/SchemaComparison.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -92,6 +92,17 @@ static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& option
     return allInputFilesDefined;
     }
 
+static void LogError(Utf8String message)
+    {
+    size_t offset = 0;
+    Utf8String m;
+    while ((offset = message.GetNextToken (m, "\n\r", offset)) != Utf8String::npos)
+        {
+        if(!Utf8String::IsNullOrEmpty(m.c_str()))
+            s_logger->infov("%s", m.c_str());
+        }
+    }
+
 int CompareSchemas(SchemaComparisonOptions& options)
     {
     ECN::ECSchemaReadContextPtr contexts[NSCHEMAS];
@@ -108,25 +119,21 @@ int CompareSchemas(SchemaComparisonOptions& options)
             }
         contexts[i]->AddSchemaPath(options.InFileNames[i].GetDirectoryName().GetName());
 
-        Utf8String fullname(options.InFileNames[i].GetFileNameAndExtension());
-        ECN::SchemaKey key;
-        ECN::SchemaKey::ParseSchemaFullName(key, fullname.c_str());
-
-        schemas[i] = contexts[i]->LocateSchema(key, ECN::SchemaMatchType::Latest);
+        schemas[i] = ECN::ECSchema::LocateSchema(options.InFileNames[i].c_str(), *contexts[i]);
         if (!schemas[i].IsValid())
             {
             Utf8String err("Failed to read schema ");
-            err += key.GetName();
+            err += schemas[i]->GetName().c_str();
             s_logger->fatal(err.c_str());
             return SCHEMA_COMPARISON_EXIT_FAILURE;
             }
-        s_logger->infov("Located schema: %s\n", key.GetName().c_str());
+        s_logger->infov("Located schema: %s\n", schemas[i]->GetName().c_str());
         }
 
     bvector<ECN::ECSchemaCP> cpSchemas[NSCHEMAS] = {{schemas[0].get()}, {schemas[1].get()}};
     ECN::SchemaComparer comparer;
     ECN::SchemaChanges changes;
-    ECN::SchemaComparer::Options comparerOptions(ECN::SchemaComparer::AppendDetailLevel::Partial, ECN::SchemaComparer::AppendDetailLevel::Partial);
+    ECN::SchemaComparer::Options comparerOptions(ECN::SchemaComparer::AppendDetailLevel::Full, ECN::SchemaComparer::AppendDetailLevel::Full);
     if (ERROR == comparer.Compare(changes, cpSchemas[0], cpSchemas[1], comparerOptions))
         {
         s_logger->error("Failed to compare schemas");
@@ -140,10 +147,10 @@ int CompareSchemas(SchemaComparisonOptions& options)
     for (size_t i = 0; i < changes.Count(); ++i)
         {
         Utf8String s;
-        changes.WriteToString(s);
-        s_logger->error(s.c_str());
+        changes.At(i).WriteToString(s);
+        LogError(s);
         }
-    std::printf("The schemas are different (see log)");
+    s_logger->info("The schemas are different (see log)");
     return SCHEMA_COMPARISON_EXIT_DIFFERENCES_DETECTED;
     }
 
