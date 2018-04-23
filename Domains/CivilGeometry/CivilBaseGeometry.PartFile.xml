@@ -36,6 +36,14 @@
     </Bindings>
   </Part>
 
+
+  <Part Name="CivilBaseGeometryPublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
+    <SubPart PartName="CivilBaseGeometry" />
+    <Bindings>
+      <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/CivilBaseGeometry" ProductDirectoryName="PublishedApi" Required="false" />
+    </Bindings>
+  </Part>
+
   <!-- ********************************************************************************************** -->
   <!-- Unit tests -->
   <!-- ********************************************************************************************** -->

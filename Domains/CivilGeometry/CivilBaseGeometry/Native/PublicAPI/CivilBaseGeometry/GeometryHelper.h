@@ -45,9 +45,11 @@ public:
 
     CIVILBASEGEOMETRY_EXPORT static bool IsOdd (size_t n);
 
+    //__PUBLISH_SECTION_END__
     // Debug method, just useful to capture curvevectors in a form where we can send them to Earlin
     CIVILBASEGEOMETRY_EXPORT static Utf8String SerializeCurveVector(CurveVectorPtr curveVector);
     CIVILBASEGEOMETRY_EXPORT static CurveVectorPtr DeserializeCurveVector(Utf8CP serializedJson);
+    //__PUBLISH_SECTION_START__
 
     CIVILBASEGEOMETRY_EXPORT static CurveVectorPtr CloneOffsetCurvesXYNoBSpline (CurveVectorPtr originarlCurve, CurveOffsetOptions options);
 
