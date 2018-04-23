@@ -42,7 +42,15 @@ bool NumericFormatSpec::ImbueLocaleProperties(LocalePropertiesCR locProp)
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 NumericFormatSpec::NumericFormatSpec()
-    : m_roundFactor(FormatConstant::DefaultRoundingFactor())
+    : m_explicitlyDefinedDecimalSeparator(false)
+    , m_explicitlyDefinedMinWidth(false)
+    , m_explicitlyDefinedPrecision(false)
+    , m_explicitlyDefinedRoundFactor(false)
+    , m_explicitlyDefinedShowSign(false)
+    , m_explicitlyDefinedStatSeparator(false)
+    , m_explicitlyDefinedThousandsSeparator(false)
+    , m_explicitlyDefinedUOMSeparator(false)
+    , m_roundFactor(FormatConstant::DefaultRoundingFactor())
     , m_presentationType(FormatConstant::DefaultPresentaitonType())
     , m_signOption(FormatConstant::DefaultSignOption())
     , m_formatTraits(FormatConstant::DefaultFormatTraits())
@@ -592,6 +600,10 @@ size_t NumericFormatSpec::InsertChar(Utf8P buf, size_t index, char c, int num) c
 //---------------------------------------------------------------------------------------
 int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
     {
+    // If the type is scientific, we're going to get a double out
+    if (PresentationType::Scientific == GetPresentationType())
+        return static_cast<int>(FormatDouble(n, bufOut, bufLen));
+
     char sign = '+';
     char buf[64];
     int n1;
@@ -601,6 +613,12 @@ int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
         {
         if(nullptr != bufOut)
             *bufOut = 0;
+        return 0;
+        }
+
+    if (IsZeroEmpty() && n == 0)
+        { 
+        *bufOut = 0;
         return 0;
         }
 
@@ -703,7 +721,6 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
             expInt += 1.0;
         if (negativeExp)
             expInt = -expInt;
-        //double expFract = modf(exp, &expInt);
         double factor = pow(10.0, -expInt);
         dval *= factor;
         }
@@ -737,18 +754,9 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
             }
         else
             {
-           /* if (fract < 0.0)
-                fract = -fract;
-            fract = fract * precScale + 0.501;*/
             int fLen = IntPartToText(fract, fractBuf, sizeof(fractBuf), false);
-
             locBuf[ind++] = m_decimalSeparator;
             ind = InsertChar(locBuf, ind, '0', totFractLen - fLen);
-           /* while (fLen < totFractLen)
-            {
-                locBuf[ind++] = '0';
-                fLen++;
-            }*/
             memcpy(&locBuf[ind], fractBuf, fLen);
             ind += fLen;
             // handling trailing zeroes

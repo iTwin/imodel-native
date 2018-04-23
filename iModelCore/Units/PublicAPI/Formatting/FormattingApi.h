@@ -178,14 +178,14 @@ public:
 struct NumericFormatSpec
 {
 private:
-    bool m_explicitlyDefinedMinWidth = false;
-    bool m_explicitlyDefinedRoundFactor = false;
-    bool m_explicitlyDefinedShowSign = false;
-    bool m_explicitlyDefinedPrecision = false;
-    bool m_explicitlyDefinedDecimalSeparator = false;
-    bool m_explicitlyDefinedThousandsSeparator = false;
-    bool m_explicitlyDefinedUOMSeparator = false;
-    bool m_explicitlyDefinedStatSeparator = false;
+    uint8_t m_explicitlyDefinedMinWidth:1;
+    uint8_t m_explicitlyDefinedRoundFactor:1;
+    uint8_t m_explicitlyDefinedShowSign:1;
+    uint8_t m_explicitlyDefinedPrecision:1;
+    uint8_t m_explicitlyDefinedDecimalSeparator:1;
+    uint8_t m_explicitlyDefinedThousandsSeparator:1;
+    uint8_t m_explicitlyDefinedUOMSeparator:1;
+    uint8_t m_explicitlyDefinedStatSeparator:1;
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
     ScientificType      m_scientificType;

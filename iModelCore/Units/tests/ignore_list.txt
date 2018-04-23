@@ -6,18 +6,7 @@
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 
-# Since the std formats might get reworked anyway, we'll ignore this failing
-# test for now.
-FormatParsingSetTest.TestParseToStd
-
-# Parsing implementation is bugged.
 FormatParsingSetTest.IdentityIncorrectLeadingPlusAndMinus
 FormatParsingSetTest.FractionCanUseUnderscoreBetweenIntegerAndFractionalComponent
-
 FormatParsingSetTest.CompositeFormats_IGNORED
-
-FormatIntegerTest.FormatIntegerPresentationTypeTests
-FormatIntegerTest.FormatIntegerIndividualFormatTraitsTests
-FormatDoubleTest.FormatDoublePresentationTypeTests_IGNORED
-FormatDoubleTest.FormatDoubleWithDifferentMinWidths
-FormatDoubleTest.FormatDoubleIndividualFormatTraitsTests_IGNORED
+FormatParsingSetTest.TestParseToStd

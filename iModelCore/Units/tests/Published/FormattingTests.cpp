@@ -166,10 +166,6 @@ TEST_F(FormatIntegerTest, FormatIntegerPresentationTypeTests)
     EXPECT_STREQ("-100501", nfs.Format(testValNeg).c_str());
     }
 
-    // TODO: The below Scientific and Scientific Norm tests fail since the testVal integer does not
-    // ever get formatted as a value with a decimal point. Since it is not obvious to the user
-    // how the scientific notation affects formatting of integers.
-    // Scientific
     {
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Scientific);
@@ -210,13 +206,12 @@ TEST_F(FormatIntegerTest, FormatIntegerIndividualFormatTraitsTests)
     EXPECT_STREQ("-0000100501", nfs.Format(testValNeg).c_str());
     nfs.SetMinWidth(0);
 
-    // TODO: It isn't defined in the spec what the behavior of trailing zeros should
-    // be for integer formatting. This testing is likely also incorrect.
+    // Trailing zeroes only affect integers
     nfs.SetMinWidth(10);
     nfs.SetFormatTraits(FormatTraits::TrailingZeroes);
-    EXPECT_STREQ("0", nfs.Format(0).c_str());
-    EXPECT_STREQ("100501", nfs.Format(testValPos).c_str());
-    EXPECT_STREQ("-100501", nfs.Format(testValNeg).c_str());
+    EXPECT_STREQ("0000000000", nfs.Format(0).c_str());
+    EXPECT_STREQ("0000100501", nfs.Format(testValPos).c_str());
+    EXPECT_STREQ("-0000100501", nfs.Format(testValNeg).c_str());
     nfs.SetMinWidth(0);
 
     // Should only affect doubles.
@@ -232,7 +227,7 @@ TEST_F(FormatIntegerTest, FormatIntegerIndividualFormatTraitsTests)
     EXPECT_STREQ("-100501", nfs.Format(testValNeg).c_str());
 
     nfs.SetPresentationType(PresentationType::Scientific);
-    EXPECT_STREQ("0e+0", nfs.Format(0).c_str());
+    EXPECT_STREQ("0.0e+0", nfs.Format(0).c_str());
     EXPECT_STREQ("1.00501e+5", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-1.00501e+5", nfs.Format(testValNeg).c_str());
     nfs.SetPresentationType(PresentationType::Decimal);
@@ -385,15 +380,8 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests)
     EXPECT_STREQ("0.100501125e+6", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-0.100501125e+6", nfs.Format(testValNeg).c_str());
     }
-    }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests_IGNORED)
-    {
-    // Scientific & ScientificNorm incorrectly format values with magnitude less than 1.
+    // TODO Scientific & ScientificNorm incorrectly format values with magnitude less than 1.
     // At the time of writing this comment, values with magnitude less than 1 are formatted
     // like ScientificNorm when the presentation type is Scientific, and are formatted like
     // Scientific when the value is ScientificNorm.
@@ -425,16 +413,16 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests_IGNORED)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatDoubleTest, FormatDoubleWithDifferentMinWidths)
     {
-    NumericFormatSpec nfs;
+    NumericFormatSpec nfs(NumericFormatSpec::DefaultFormat());
 
     nfs.SetMinWidth(0);
-    EXPECT_STREQ("1000.0", nfs.Format(1000).c_str());
+    EXPECT_STREQ("1000.0", nfs.Format(double(1000)).c_str());
 
     nfs.SetMinWidth(6);
-    EXPECT_STREQ("1000.0", nfs.Format(1000).c_str());
+    EXPECT_STREQ("1000.0", nfs.Format(double(1000)).c_str());
 
     nfs.SetMinWidth(8);
-    EXPECT_STREQ("001000.0", nfs.Format(1000).c_str());
+    EXPECT_STREQ("001000.0", nfs.Format(double(1000)).c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -753,9 +741,9 @@ TEST_F(FormatParsingSetTest, TestParseToStd)
 
     // Format real = Format();
 
-    TestValidParseToQuantityUsingStdFmt("5:6", inch, 5.5, &fi8);
-    TestValidParseToQuantityUsingStdFmt("5:", inch, 5.0, &fi8);
-    TestValidParseToQuantityUsingStdFmt(":6", inch, 0.5, &fi8);
+    TestValidParseToQuantityUsingStdFmt("5:6", foot, 5.5, &fi8);
+    TestValidParseToQuantityUsingStdFmt("5:", foot, 5.0, &fi8);
+    TestValidParseToQuantityUsingStdFmt(":6", foot, 0.5, &fi8);
 
     /*TestValidParseToQuantityUsingStdFmt("135:23:11", arcDeg, 1, &dms8);
     TestValidParseToQuantityUsingStdFmt("3  1/5 FT", inch, 3.2, &real);*/
