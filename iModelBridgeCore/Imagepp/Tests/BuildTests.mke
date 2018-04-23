@@ -2,7 +2,7 @@
 #
 #  $Source: Tests/BuildTests.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -19,7 +19,7 @@ BEGTEST_NAME  = $(TestDir)ImagePP
 BEGTEST_INPUT = $(baseDir)$(TestDir)/
 BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/ImagePP/UnitTests/
-o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+o = $(PartBuildDir)$(BEGTEST_NAME)/
 
 # we do not have a publishedApi
 #%ifdef UsePublishedApi

@@ -2,7 +2,7 @@
 #
 #     $Source: mki/imageppdirs.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__ImagePPDirs_mki__)
@@ -34,7 +34,7 @@ ippGraPrivateAPISrc = $(SrcImagepp)PrivateApi/ImagePPInternal/gra/
 # Output directories
 # ------------------------------------
 OutImagePP          = $(OutBuildDir)ImagePP/
-o                   = $(OutImagePP)$(appName)/
+o                   = $(PartBuildDir)
 
 ippOutPrivateLibs   = $(OutImagePP)PrivateLibs/
 ippOutPrivateApi    = $(OutImagePP)PrivateApi/
