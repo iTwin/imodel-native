@@ -9,7 +9,7 @@
 
 
 baseDir             = $(_MakeFilePath)
-o                   = $(OutBuildDir)ECDb/
+o                   = $(PartBuildDir)
 
 
 CompileOptionsMki   = $(baseDir)ECDbCompileOptions.mki

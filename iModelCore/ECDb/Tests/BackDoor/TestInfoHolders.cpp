@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/BackDoor/TestInfoHolders.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/TestInfoHolders.h"
@@ -28,64 +28,70 @@ JsonValue::JsonValue(Utf8CP json)
 //---------------------------------------------------------------------------------------
 bool JsonValue::operator==(JsonValue const& rhs) const
     {
-    if (m_value.type() != rhs.m_value.type())
-        return false;
+    if (m_value.isNull())
+        return rhs.m_value.isNull();
 
-    switch (m_value.type())
+    if (m_value.isArray())
         {
-            case Json::ValueType::arrayValue:
+        if (!rhs.m_value.isArray() || m_value.size() != rhs.m_value.size())
+            return false;
+
+        for (Json::ArrayIndex i = 0; i < m_value.size(); i++)
             {
-            if (m_value.size() != rhs.m_value.size())
+            if (JsonValue(m_value[i]) != JsonValue(rhs.m_value[i]))
                 return false;
-
-            for (Json::ArrayIndex i = 0; i < m_value.size(); i++)
-                {
-                if (JsonValue(m_value[i]) != JsonValue(rhs.m_value[i]))
-                    return false;
-                }
-
-            return true;
-            }
-            case Json::ValueType::booleanValue:
-                return m_value.asBool() == rhs.m_value.asBool();
-
-            case Json::ValueType::intValue:
-                return m_value.asInt64() == rhs.m_value.asInt64();
-
-            case Json::ValueType::nullValue:
-                return m_value.isNull() == rhs.m_value.isNull();
-
-            case Json::ValueType::objectValue:
-            {
-            bvector<Utf8String> lhsMemberNames = m_value.getMemberNames();
-            if (lhsMemberNames.size() != rhs.m_value.size())
-                return false;
-
-            for (Utf8StringCR memberName : lhsMemberNames)
-                {
-                if (!rhs.m_value.isMember(memberName))
-                    return false;
-
-                if (JsonValue(m_value[memberName]) != JsonValue(rhs.m_value[memberName]))
-                    return false;
-                }
-
-            return true;
             }
 
-            case Json::ValueType::realValue:
-                return TestUtilities::Equals(m_value.asDouble(), rhs.m_value.asDouble());
-
-            case Json::ValueType::stringValue:
-                return strcmp(m_value.asCString(), rhs.m_value.asCString()) == 0;
-
-            case Json::ValueType::uintValue:
-                return m_value.asUInt64() == rhs.m_value.asUInt64();
-
-            default:
-                BeAssert(false && "Unhandled JsonCPP value type. This method needs to be adjusted");
-                return false;
+        return true;
         }
+
+    if (m_value.isObject())
+        {
+        if (!rhs.m_value.isObject())
+            return false;
+
+        bvector<Utf8String> lhsMemberNames = m_value.getMemberNames();
+        if (lhsMemberNames.size() != rhs.m_value.size())
+            return false;
+
+        for (Utf8StringCR memberName : lhsMemberNames)
+            {
+            if (!rhs.m_value.isMember(memberName))
+                return false;
+
+            if (JsonValue(m_value[memberName]) != JsonValue(rhs.m_value[memberName]))
+                return false;
+            }
+
+        return true;
+        }
+
+    if (m_value.isIntegral())
+        {
+        if (!rhs.m_value.isIntegral())
+            return false;
+
+        if (m_value.isBool())
+            return rhs.m_value.isBool() && m_value.asBool() == rhs.m_value.asBool();
+
+        if (m_value.isInt())
+            return rhs.m_value.isConvertibleTo(Json::intValue) && m_value.asInt64() == rhs.m_value.asInt64();
+
+        if (m_value.isUInt())
+            return rhs.m_value.isConvertibleTo(Json::uintValue) && m_value.asUInt64() == rhs.m_value.asUInt64();
+
+        BeAssert(false && "Should not end up here");
+        return false;
+        }
+
+    if (m_value.isDouble())
+        return rhs.m_value.isDouble() && TestUtilities::Equals(m_value.asDouble(), rhs.m_value.asDouble());
+
+    if (m_value.isString())
+        return rhs.m_value.isString() && strcmp(m_value.asCString(), rhs.m_value.asCString()) == 0;
+
+    BeAssert(false && "Unhandled JsonCPP value type. This method needs to be adjusted");
+    return false;
     }
 
 
