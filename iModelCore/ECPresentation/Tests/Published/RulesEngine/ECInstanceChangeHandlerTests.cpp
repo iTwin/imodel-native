@@ -43,12 +43,10 @@ struct DefaultECInstanceChangeHandlerTests : ECPresentationTest
         m_handler = DefaultECInstanceChangeHandler::Create();
         }
 
-    ECValue GetInstanceValue(ECInstanceKeyCR key, Utf8CP propertyAccessor)
+    ECValue GetInstanceValue(ECClassInstanceKeyCR key, Utf8CP propertyAccessor)
         {
-        ECClassCP ecClass = m_db.Schemas().GetClass(key.GetClassId());
-
         ECSqlStatement stmt;
-        stmt.Prepare(m_db, Utf8String("SELECT * FROM ").append(ecClass->GetECSqlName()).c_str());
+        stmt.Prepare(m_db, Utf8String("SELECT * FROM ").append(key.GetClass()->GetECSqlName()).c_str());
         stmt.Step();
 
         ECInstanceECSqlSelectAdapter adapter(stmt);
@@ -72,7 +70,7 @@ TEST_F(DefaultECInstanceChangeHandlerTests, ChangesPrimaryInstanceValue)
     
     // insert an empty widget
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *widgetClass);
-    ECInstanceKey key = RulesEngineTestHelpers::GetInstanceKey(*widget);
+    ECClassInstanceKey key = RulesEngineTestHelpers::GetInstanceKey(*widget);
 
     // verify the value is null
     Utf8CP propertyAccessor = "IntProperty";
@@ -80,7 +78,7 @@ TEST_F(DefaultECInstanceChangeHandlerTests, ChangesPrimaryInstanceValue)
 
     // change the value
     ECValue valueAfter(123);
-    ECInstanceChangeResult result = m_handler->Change(m_db, ChangedECInstanceInfo(*widgetClass, key.GetInstanceId()), propertyAccessor, valueAfter);
+    ECInstanceChangeResult result = m_handler->Change(m_db, ChangedECInstanceInfo(*widgetClass, key.GetId()), propertyAccessor, valueAfter);
 
     // verify
     EXPECT_EQ(SUCCESS, result.GetStatus());
@@ -104,8 +102,8 @@ TEST_F(DefaultECInstanceChangeHandlerTests, ChangesRelatedInstanceValue)
     IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *widgetClass);
     IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *gadgetClass);
     RulesEngineTestHelpers::InsertRelationship(m_db, *rel, *widget, *gadget);
-    ECInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
-    ECInstanceKey gadgetKey = RulesEngineTestHelpers::GetInstanceKey(*gadget);
+    ECClassInstanceKey widgetKey = RulesEngineTestHelpers::GetInstanceKey(*widget);
+    ECClassInstanceKey gadgetKey = RulesEngineTestHelpers::GetInstanceKey(*gadget);
 
     // verify the value is null
     Utf8CP propertyAccessor = "IntProperty";
@@ -113,7 +111,7 @@ TEST_F(DefaultECInstanceChangeHandlerTests, ChangesRelatedInstanceValue)
 
     // change the value
     ECValue valueAfter(123);
-    ChangedECInstanceInfo changeInfo(*gadgetClass, gadgetKey.GetInstanceId(), *widgetClass, widgetKey.GetInstanceId(), relationshipPath);
+    ChangedECInstanceInfo changeInfo(*gadgetClass, gadgetKey.GetId(), *widgetClass, widgetKey.GetId(), relationshipPath);
     ECInstanceChangeResult result = m_handler->Change(m_db, changeInfo, propertyAccessor, valueAfter);
 
     // verify

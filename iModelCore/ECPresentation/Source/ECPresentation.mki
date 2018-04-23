@@ -13,6 +13,8 @@ $(o)NavNode$(oext)                  : $(SourceDirectory)NavNode.cpp $(ECPresenta
 
 $(o)Content$(oext)                  : $(SourceDirectory)Content.cpp $(ECPresentationDependencies)
 
+$(o)KeySet$(oext)                   : $(SourceDirectory)KeySet.cpp $(ECPresentationDependencies)
+
 $(o)Connection$(oext)               : $(SourceDirectory)Connection.cpp $(ECPresentationDependencies)
 
 $(o)Selection$(oext)                : $(SourceDirectory)Selection.cpp $(ECPresentationDependencies)
@@ -27,7 +29,7 @@ $(o)ContentFieldEditors$(oext)      : $(SourceDirectory)ContentFieldEditors.cpp 
 
 $(o)IECPresentationSerializer$(oext): $(SourceDirectory)IECPresentationSerializer.cpp $(ECPresentationDependencies)
 
-$(o)DgnECPresentationSerializer$(oext) : $(SourceDirectory)DgnECPresentationSerializer.cpp $(ECPresentationDependencies)
+$(o)DefaultECPresentationSerializer$(oext) : $(SourceDirectory)DefaultECPresentationSerializer.cpp $(ECPresentationDependencies)
 
 %include MultiCppCompileGo.mki
 

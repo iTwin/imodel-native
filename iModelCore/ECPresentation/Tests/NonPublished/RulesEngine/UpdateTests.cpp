@@ -5290,8 +5290,8 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceInsert)
     // expect 2 records
     content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_EQ(2, content->GetContentSet().GetSize());
-    ASSERT_STREQ(widget1->GetInstanceId().c_str(), content->GetContentSet()[0]->GetKeys()[0].GetInstanceId().ToString().c_str());
-    ASSERT_STREQ(widget2->GetInstanceId().c_str(), content->GetContentSet()[1]->GetKeys()[0].GetInstanceId().ToString().c_str());
+    ASSERT_STREQ(widget1->GetInstanceId().c_str(), content->GetContentSet()[0]->GetKeys()[0].GetId().ToString().c_str());
+    ASSERT_STREQ(widget2->GetInstanceId().c_str(), content->GetContentSet()[1]->GetKeys()[0].GetId().ToString().c_str());
 
     // expect one full update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetFullUpdateRecords().size());
@@ -5330,7 +5330,7 @@ TEST_F (ContentUpdateTests, UpdatesContentAfterECInstanceUpdate)
     // expect 1 record
     content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_EQ(1, content->GetContentSet().GetSize());
-    ASSERT_STREQ(widget->GetInstanceId().c_str(), content->GetContentSet()[0]->GetKeys()[0].GetInstanceId().ToString().c_str());
+    ASSERT_STREQ(widget->GetInstanceId().c_str(), content->GetContentSet()[0]->GetKeys()[0].GetId().ToString().c_str());
 
     // expect one full update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetFullUpdateRecords().size());
@@ -5372,7 +5372,7 @@ TEST_F(ContentUpdateTests, UpdatesContentAfterECInstanceDeleteWhenMoreInstancesE
     // expect 1 record
     content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
     ASSERT_EQ(1, content->GetContentSet().GetSize());
-    ASSERT_STREQ(widget2->GetInstanceId().c_str(), content->GetContentSet()[0]->GetKeys()[0].GetInstanceId().ToString().c_str());
+    ASSERT_STREQ(widget2->GetInstanceId().c_str(), content->GetContentSet()[0]->GetKeys()[0].GetId().ToString().c_str());
 
     // expect one full update record
     ASSERT_EQ(1, m_updateRecordsHandler->GetFullUpdateRecords().size());

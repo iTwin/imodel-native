@@ -13,26 +13,6 @@
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 /*=================================================================================**//**
-* ECClass comparer which guarantees that classes in a sorted set always are in the same
-* order (as opposed to the default comparer which compares by pointers).
-* @bsiclass                                     Grigas.Petraitis                07/2015
-+===============+===============+===============+===============+===============+======*/
-struct ECSchemaNameComparer
-    {
-    bool operator() (ECSchemaCP const& lhs, ECSchemaCP const& rhs) const {return lhs->GetSchemaKey() < rhs->GetSchemaKey();}
-    };
-
-/*=================================================================================**//**
-* ECClass comparer which guarantees that classes in a sorted set always are in the same
-* order (as opposed to the default comparer which compares by pointers).
-* @bsiclass                                     Grigas.Petraitis                07/2015
-+===============+===============+===============+===============+===============+======*/
-struct ECClassNameComparer
-    {
-    bool operator() (ECClassCP const& lhs, ECClassCP const& rhs) const {return strcmp(lhs->GetFullName(), rhs->GetFullName()) < 0;}
-    };
-
-/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                01/2017
 +===============+===============+===============+===============+===============+======*/
 enum SupportedClassFlags

@@ -1,19 +1,19 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Source/DgnECPresentationSerializer.cpp $
+|     $Source: Source/DefaultECPresentationSerializer.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
-#include <ECPresentation/DgnECPresentationSerializer.h>
+#include <ECPresentation/DefaultECPresentationSerializer.h>
 #include "ValueHelpers.h"
 #include "RulesDriven/RulesEngine/JsonNavNode.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(ConnectionEvent const& connectionEvent,
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ConnectionEvent const& connectionEvent,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
@@ -35,7 +35,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(ConnectionEvent const& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(ContentFieldEditor const& contentFieldEditor,
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentFieldEditor const& contentFieldEditor,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
@@ -60,7 +60,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(ContentFieldEditor cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(ContentDescriptor::Category const& category,
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentDescriptor::Category const& category,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
@@ -76,7 +76,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(ContentDescriptor::Cate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(ContentDescriptor::Property const& property,
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentDescriptor::Property const& property,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
@@ -114,7 +114,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(ContentDescriptor::Prop
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_FieldAsJson(ContentDescriptor::Field const& field, RapidJsonDocumentR fieldBaseJson) const
+void DefaultECPresentationSerializer::_FieldAsJson(ContentDescriptor::Field const& field, RapidJsonDocumentR fieldBaseJson) const
     {
     fieldBaseJson.SetObject();
     fieldBaseJson.AddMember("Category", field.GetCategory().AsJson(&fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
@@ -131,7 +131,7 @@ void DgnECPresentationSerializer::_FieldAsJson(ContentDescriptor::Field const& f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(ContentDescriptor::ECPropertiesField const& ecPropertiesField, RapidJsonDocumentR fieldBaseJson) const
+void DefaultECPresentationSerializer::_AsJson(ContentDescriptor::ECPropertiesField const& ecPropertiesField, RapidJsonDocumentR fieldBaseJson) const
     {
     rapidjson::Value propertiesJson(rapidjson::kArrayType);
     for (ContentDescriptor::Property const& prop : ecPropertiesField.GetProperties())
@@ -142,7 +142,7 @@ void DgnECPresentationSerializer::_AsJson(ContentDescriptor::ECPropertiesField c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(ContentDescriptor::NestedContentField const& nestedContentField, RapidJsonDocumentR fieldBaseJson) const
+void DefaultECPresentationSerializer::_AsJson(ContentDescriptor::NestedContentField const& nestedContentField, RapidJsonDocumentR fieldBaseJson) const
     {
     fieldBaseJson.AddMember("ContentClassInfo", _AsJson(nestedContentField.GetContentClass(), &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
     fieldBaseJson.AddMember("PathToPrimary", _AsJson(nestedContentField.GetRelationshipPath(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
@@ -156,7 +156,7 @@ void DgnECPresentationSerializer::_AsJson(ContentDescriptor::NestedContentField 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(UpdateRecord const& updateRecord, rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(UpdateRecord const& updateRecord, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -204,7 +204,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(UpdateRecord const& upd
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(FieldEditorJsonParams const& jsonParams, RapidJsonDocumentR paramsBaseJson) const
+void DefaultECPresentationSerializer::_AsJson(FieldEditorJsonParams const& jsonParams, RapidJsonDocumentR paramsBaseJson) const
     {
     paramsBaseJson.CopyFrom(jsonParams.GetJson(), paramsBaseJson.GetAllocator());
     }
@@ -212,7 +212,7 @@ void DgnECPresentationSerializer::_AsJson(FieldEditorJsonParams const& jsonParam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(FieldEditorMultilineParams const& multilineParams, RapidJsonDocumentR paramsBaseJson) const
+void DefaultECPresentationSerializer::_AsJson(FieldEditorMultilineParams const& multilineParams, RapidJsonDocumentR paramsBaseJson) const
     {
     paramsBaseJson.SetObject();
     paramsBaseJson.AddMember("HeightInRows", multilineParams.GetParameters().GetHeightInRows(), paramsBaseJson.GetAllocator());
@@ -221,7 +221,7 @@ void DgnECPresentationSerializer::_AsJson(FieldEditorMultilineParams const& mult
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(FieldEditorRangeParams const& rangeParams, RapidJsonDocumentR paramsBaseJson) const
+void DefaultECPresentationSerializer::_AsJson(FieldEditorRangeParams const& rangeParams, RapidJsonDocumentR paramsBaseJson) const
     {
     paramsBaseJson.SetObject();
 
@@ -239,7 +239,7 @@ void DgnECPresentationSerializer::_AsJson(FieldEditorRangeParams const& rangePar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(FieldEditorSliderParams const& sliderParams, RapidJsonDocumentR paramsBaseJson) const
+void DefaultECPresentationSerializer::_AsJson(FieldEditorSliderParams const& sliderParams, RapidJsonDocumentR paramsBaseJson) const
     {
     paramsBaseJson.SetObject();
     paramsBaseJson.AddMember("Minimum", sliderParams.GetParameters().GetMinimumValue(), paramsBaseJson.GetAllocator());
@@ -252,7 +252,7 @@ void DgnECPresentationSerializer::_AsJson(FieldEditorSliderParams const& sliderP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_TypeDescriptionAsJson(ContentDescriptor::Field::TypeDescription const& typeDescription, RapidJsonDocumentR typeDescriptionBaseJson) const
+void DefaultECPresentationSerializer::_TypeDescriptionAsJson(ContentDescriptor::Field::TypeDescription const& typeDescription, RapidJsonDocumentR typeDescriptionBaseJson) const
     {
     typeDescriptionBaseJson.SetObject();
     typeDescriptionBaseJson.AddMember("TypeName", rapidjson::Value(typeDescription.GetTypeName().c_str(), typeDescriptionBaseJson.GetAllocator()), typeDescriptionBaseJson.GetAllocator());
@@ -261,7 +261,7 @@ void DgnECPresentationSerializer::_TypeDescriptionAsJson(ContentDescriptor::Fiel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(ContentDescriptor::Field::PrimitiveTypeDescription const&,
+void DefaultECPresentationSerializer::_AsJson(ContentDescriptor::Field::PrimitiveTypeDescription const&,
     RapidJsonDocumentR typeDescriptionBaseJson) const
     {
     typeDescriptionBaseJson.AddMember("ValueFormat", "Primitive", typeDescriptionBaseJson.GetAllocator());
@@ -270,7 +270,7 @@ void DgnECPresentationSerializer::_AsJson(ContentDescriptor::Field::PrimitiveTyp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(ContentDescriptor::Field::ArrayTypeDescription const& arrayTypeDescription,
+void DefaultECPresentationSerializer::_AsJson(ContentDescriptor::Field::ArrayTypeDescription const& arrayTypeDescription,
     RapidJsonDocumentR typeDescriptionBaseJson) const
     {
     typeDescriptionBaseJson.AddMember("ValueFormat", "Array", typeDescriptionBaseJson.GetAllocator());
@@ -280,7 +280,7 @@ void DgnECPresentationSerializer::_AsJson(ContentDescriptor::Field::ArrayTypeDes
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(ContentDescriptor::Field::StructTypeDescription const& structTypeDescription,
+void DefaultECPresentationSerializer::_AsJson(ContentDescriptor::Field::StructTypeDescription const& structTypeDescription,
     RapidJsonDocumentR typeDescriptionBaseJson) const
     {
     typeDescriptionBaseJson.AddMember("ValueFormat", "Struct", typeDescriptionBaseJson.GetAllocator());
@@ -290,7 +290,7 @@ void DgnECPresentationSerializer::_AsJson(ContentDescriptor::Field::StructTypeDe
         rapidjson::Value member(rapidjson::kObjectType);
         member.AddMember("Name", rapidjson::StringRef(prop->GetName().c_str()), typeDescriptionBaseJson.GetAllocator());
         member.AddMember("Label", rapidjson::StringRef(prop->GetDisplayLabel().c_str()), typeDescriptionBaseJson.GetAllocator());
-        member.AddMember("Type", ContentDescriptor::ECPropertiesField::CreateTypeDescription(*prop)->AsJson(&typeDescriptionBaseJson.GetAllocator()), typeDescriptionBaseJson.GetAllocator());
+        member.AddMember("Type", ContentDescriptor::ECPropertiesField::TypeDescription::Create(*prop)->AsJson(&typeDescriptionBaseJson.GetAllocator()), typeDescriptionBaseJson.GetAllocator());
         members.PushBack(member, typeDescriptionBaseJson.GetAllocator());
         }
     typeDescriptionBaseJson.AddMember("Members", members, typeDescriptionBaseJson.GetAllocator());
@@ -299,7 +299,7 @@ void DgnECPresentationSerializer::_AsJson(ContentDescriptor::Field::StructTypeDe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(ContentDescriptor::Field::NestedContentTypeDescription const& nestedContentTypeDescription,
+void DefaultECPresentationSerializer::_AsJson(ContentDescriptor::Field::NestedContentTypeDescription const& nestedContentTypeDescription,
     RapidJsonDocumentR typeDescriptionBaseJson) const
     {
     typeDescriptionBaseJson.AddMember("ValueFormat", "Struct", typeDescriptionBaseJson.GetAllocator());
@@ -318,7 +318,7 @@ void DgnECPresentationSerializer::_AsJson(ContentDescriptor::Field::NestedConten
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(ECClassCR ecClass,
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ECClassCR ecClass,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
@@ -332,7 +332,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(ECClassCR ecClass,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(ContentDescriptor const& contentDescriptor,
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentDescriptor const& contentDescriptor,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
@@ -374,7 +374,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(ContentDescriptor const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(ContentSetItem const& contentSetItem, int flags,
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ContentSetItem const& contentSetItem, int flags,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
@@ -398,7 +398,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(ContentSetItem const& c
     if (0 != (ContentSetItem::SerializationFlags::SERIALIZE_PrimaryKeys & flags))
         {
         rapidjson::Value primaryKeys(rapidjson::kArrayType);
-        for (ECInstanceKeyCR key : contentSetItem.GetKeys())
+        for (ECClassInstanceKeyCR key : contentSetItem.GetKeys())
             primaryKeys.PushBack(_AsJson(key, &json.GetAllocator()), json.GetAllocator());
         json.AddMember("PrimaryKeys", primaryKeys, json.GetAllocator());
         }
@@ -422,7 +422,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(ContentSetItem const& c
             rapidjson::Value& fieldProperties = fieldValueKeys[fieldName];
 
             rapidjson::Value propertyKeys(rapidjson::kArrayType);
-            for (ECInstanceKeyCR key : pair.second)
+            for (ECClassInstanceKeyCR key : pair.second)
                 propertyKeys.PushBack(_AsJson(key, &json.GetAllocator()), json.GetAllocator());
 
             rapidjson::Value fieldProperty(rapidjson::kObjectType);
@@ -439,20 +439,20 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(ContentSetItem const& c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(ECInstanceKeyCR key,
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ECClassInstanceKeyCR key,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
-    json.AddMember("ECClassId", rapidjson::Value(key.GetClassId().ToString().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("ECInstanceId", rapidjson::Value(key.GetInstanceId().ToString().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("ECClassId", rapidjson::Value(key.GetClass()->GetId().ToString().c_str(), json.GetAllocator()), json.GetAllocator());
+    json.AddMember("ECInstanceId", rapidjson::Value(key.GetId().ToString().c_str(), json.GetAllocator()), json.GetAllocator());
     return json;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(Content const& content,
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(Content const& content,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
@@ -475,7 +475,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(Content const& content,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(ECInstanceChangeResult const& ecInstanceChangeResult,
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(ECInstanceChangeResult const& ecInstanceChangeResult,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
@@ -502,7 +502,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(ECInstanceChangeResult 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_NavNodeKeyAsJson(NavNodeKey const& navNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
+void DefaultECPresentationSerializer::_NavNodeKeyAsJson(NavNodeKey const& navNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
     navNodeKeyBaseJson.SetObject();
     navNodeKeyBaseJson.AddMember("Type", rapidjson::Value(navNodeKey.GetType().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
@@ -539,7 +539,7 @@ static bvector<Utf8String> ParseNodeKeyHashPath(RapidJsonValueCR pathJson)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr DgnECPresentationSerializer::_GetNavNodeKeyFromJsonPoly(JsonValueCR json) const
+NavNodeKeyPtr DefaultECPresentationSerializer::_GetNavNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
     {
     if (!json.isObject() || json.isNull())
         {
@@ -553,20 +553,20 @@ NavNodeKeyPtr DgnECPresentationSerializer::_GetNavNodeKeyFromJsonPoly(JsonValueC
         return nullptr;
         }
     if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type))
-        return _GetECInstanceNodeKeyFromJson(json);
+        return _GetECInstanceNodeKeyFromJson(connection, json);
     if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type))
-        return _GetECClassGroupingNodeKeyFromJson(json);
+        return _GetECClassGroupingNodeKeyFromJson(connection, json);
     if (0 == strcmp(NAVNODE_TYPE_ECPropertyGroupingNode, type))
-        return _GetECPropertyGroupingNodeKeyFromJson(json);
+        return _GetECPropertyGroupingNodeKeyFromJson(connection, json);
     if (0 == strcmp(NAVNODE_TYPE_DisplayLabelGroupingNode, type))
         return _GetLabelGroupingNodeKeyFromJson(json);
-    return _GetNavNodeKeyFromJson(json);
+    return _GetBaseNavNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr DgnECPresentationSerializer::_GetNavNodeKeyFromJsonPoly(RapidJsonValueCR json) const
+NavNodeKeyPtr DefaultECPresentationSerializer::_GetNavNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
     {
     if (!json.IsObject() || json.IsNull())
         {
@@ -580,20 +580,20 @@ NavNodeKeyPtr DgnECPresentationSerializer::_GetNavNodeKeyFromJsonPoly(RapidJsonV
         return nullptr;
         }
     if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type))
-        return _GetECInstanceNodeKeyFromJson(json);
+        return _GetECInstanceNodeKeyFromJson(connection, json);
     if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type))
-        return _GetECClassGroupingNodeKeyFromJson(json);
+        return _GetECClassGroupingNodeKeyFromJson(connection, json);
     if (0 == strcmp(NAVNODE_TYPE_ECPropertyGroupingNode, type))
-        return _GetECPropertyGroupingNodeKeyFromJson(json);
+        return _GetECPropertyGroupingNodeKeyFromJson(connection, json);
     if (0 == strcmp(NAVNODE_TYPE_DisplayLabelGroupingNode, type))
         return _GetLabelGroupingNodeKeyFromJson(json);
-    return _GetNavNodeKeyFromJson(json);
+    return _GetBaseNavNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr DgnECPresentationSerializer::_GetNavNodeKeyFromJson(JsonValueCR json) const
+NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(JsonValueCR json) const
     {
     Utf8CP type = json["Type"].asCString();
     return NavNodeKey::Create(type, ParseNodeKeyHashPath(json["PathFromRoot"]));
@@ -602,7 +602,7 @@ NavNodeKeyPtr DgnECPresentationSerializer::_GetNavNodeKeyFromJson(JsonValueCR js
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyPtr DgnECPresentationSerializer::_GetNavNodeKeyFromJson(RapidJsonValueCR json) const
+NavNodeKeyPtr DefaultECPresentationSerializer::_GetBaseNavNodeKeyFromJson(RapidJsonValueCR json) const
     {
     Utf8CP type = json["Type"].GetString();
     return NavNodeKey::Create(type, ParseNodeKeyHashPath(json["PathFromRoot"]));
@@ -611,7 +611,7 @@ NavNodeKeyPtr DgnECPresentationSerializer::_GetNavNodeKeyFromJson(RapidJsonValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(ECInstanceNodeKey const& ecInstanceNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
+void DefaultECPresentationSerializer::_AsJson(ECInstanceNodeKey const& ecInstanceNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
     navNodeKeyBaseJson.AddMember("ECClassId", rapidjson::Value(ecInstanceNodeKey.GetECClassId().ToString().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
     navNodeKeyBaseJson.AddMember("ECInstanceId", rapidjson::Value(ecInstanceNodeKey.GetInstanceId().ToString().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
@@ -620,27 +620,29 @@ void DgnECPresentationSerializer::_AsJson(ECInstanceNodeKey const& ecInstanceNod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceNodeKeyPtr DgnECPresentationSerializer::_GetECInstanceNodeKeyFromJson(JsonValueCR json) const
+ECInstanceNodeKeyPtr DefaultECPresentationSerializer::_GetECInstanceNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
     {
     ECClassId classId(BeJsonUtilities::UInt64FromValue(json["ECClassId"]));
+    ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
     ECInstanceId instanceId(BeJsonUtilities::UInt64FromValue(json["ECInstanceId"]));
-    return ECInstanceNodeKey::Create(classId, instanceId, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    return ECInstanceNodeKey::Create(ECClassInstanceKey(*ecClass, instanceId), ParseNodeKeyHashPath(json["PathFromRoot"]));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceNodeKeyPtr DgnECPresentationSerializer::_GetECInstanceNodeKeyFromJson(RapidJsonValueCR json) const
+ECInstanceNodeKeyPtr DefaultECPresentationSerializer::_GetECInstanceNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
     {
     ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(json["ECClassId"]));
+    ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
     ECInstanceId instanceId(BeRapidJsonUtilities::UInt64FromValue(json["ECInstanceId"]));
-    return ECInstanceNodeKey::Create(classId, instanceId, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    return ECInstanceNodeKey::Create(ECClassInstanceKey(*ecClass, instanceId), ParseNodeKeyHashPath(json["PathFromRoot"]));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(ECClassGroupingNodeKey const& groupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
+void DefaultECPresentationSerializer::_AsJson(ECClassGroupingNodeKey const& groupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
     navNodeKeyBaseJson.AddMember("ECClassId", rapidjson::Value(groupingNodeKey.GetECClassId().ToString().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
     }
@@ -648,25 +650,27 @@ void DgnECPresentationSerializer::_AsJson(ECClassGroupingNodeKey const& grouping
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassGroupingNodeKeyPtr DgnECPresentationSerializer::_GetECClassGroupingNodeKeyFromJson(JsonValueCR json) const
+ECClassGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
     {
     ECClassId classId(BeJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    return ECClassGroupingNodeKey::Create(classId, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
+    return ECClassGroupingNodeKey::Create(*ecClass, ParseNodeKeyHashPath(json["PathFromRoot"]));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassGroupingNodeKeyPtr DgnECPresentationSerializer::_GetECClassGroupingNodeKeyFromJson(RapidJsonValueCR json) const
+ECClassGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetECClassGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
     {
     ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    return ECClassGroupingNodeKey::Create(classId, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
+    return ECClassGroupingNodeKey::Create(*ecClass, ParseNodeKeyHashPath(json["PathFromRoot"]));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(ECPropertyGroupingNodeKey const& propertyGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
+void DefaultECPresentationSerializer::_AsJson(ECPropertyGroupingNodeKey const& propertyGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
     navNodeKeyBaseJson.AddMember("ECClassId", rapidjson::Value(propertyGroupingNodeKey.GetECClassId().ToString().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
     navNodeKeyBaseJson.AddMember("PropertyName", rapidjson::Value(propertyGroupingNodeKey.GetPropertyName().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
@@ -677,35 +681,37 @@ void DgnECPresentationSerializer::_AsJson(ECPropertyGroupingNodeKey const& prope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyGroupingNodeKeyPtr DgnECPresentationSerializer::_GetECPropertyGroupingNodeKeyFromJson(JsonValueCR json) const
+ECPropertyGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, JsonValueCR json) const
     {
     ECClassId classId(BeJsonUtilities::UInt64FromValue(json["ECClassId"]));
+    ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
     Utf8CP propertyName = json["PropertyName"].asCString();
     if (!json.isMember("GroupingValue"))
-        return ECPropertyGroupingNodeKey::Create(classId, propertyName, nullptr, ParseNodeKeyHashPath(json["PathFromRoot"]));
+        return ECPropertyGroupingNodeKey::Create(*ecClass, propertyName, nullptr, ParseNodeKeyHashPath(json["PathFromRoot"]));
 
     rapidjson::Document groupingValue;
     groupingValue.Parse(Json::FastWriter().write(json["GroupingValue"]).c_str());
-    return ECPropertyGroupingNodeKey::Create(classId, propertyName, &groupingValue, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    return ECPropertyGroupingNodeKey::Create(*ecClass, propertyName, &groupingValue, ParseNodeKeyHashPath(json["PathFromRoot"]));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyGroupingNodeKeyPtr DgnECPresentationSerializer::_GetECPropertyGroupingNodeKeyFromJson(RapidJsonValueCR json) const
+ECPropertyGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetECPropertyGroupingNodeKeyFromJson(IConnectionCR connection, RapidJsonValueCR json) const
     {
     ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(json["ECClassId"]));
+    ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(classId);
     Utf8CP propertyName = json["PropertyName"].GetString();
     rapidjson::Value const* groupingValue = nullptr;
     if (json.HasMember("GroupingValue"))
         groupingValue = &json["GroupingValue"];
-    return ECPropertyGroupingNodeKey::Create(classId, propertyName, groupingValue, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    return ECPropertyGroupingNodeKey::Create(*ecClass, propertyName, groupingValue, ParseNodeKeyHashPath(json["PathFromRoot"]));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECPresentationSerializer::_AsJson(LabelGroupingNodeKey const& labelGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
+void DefaultECPresentationSerializer::_AsJson(LabelGroupingNodeKey const& labelGroupingNodeKey, RapidJsonDocumentR navNodeKeyBaseJson) const
     {
     navNodeKeyBaseJson.AddMember("Label", rapidjson::Value(labelGroupingNodeKey.GetLabel().c_str(), navNodeKeyBaseJson.GetAllocator()), navNodeKeyBaseJson.GetAllocator());
     }
@@ -713,7 +719,7 @@ void DgnECPresentationSerializer::_AsJson(LabelGroupingNodeKey const& labelGroup
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-LabelGroupingNodeKeyPtr DgnECPresentationSerializer::_GetLabelGroupingNodeKeyFromJson(JsonValueCR json) const
+LabelGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetLabelGroupingNodeKeyFromJson(JsonValueCR json) const
     {
     Utf8CP label = json["Label"].asCString();
     return LabelGroupingNodeKey::Create(label, ParseNodeKeyHashPath(json["PathFromRoot"]));
@@ -722,7 +728,7 @@ LabelGroupingNodeKeyPtr DgnECPresentationSerializer::_GetLabelGroupingNodeKeyFro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-LabelGroupingNodeKeyPtr DgnECPresentationSerializer::_GetLabelGroupingNodeKeyFromJson(RapidJsonValueCR json) const
+LabelGroupingNodeKeyPtr DefaultECPresentationSerializer::_GetLabelGroupingNodeKeyFromJson(RapidJsonValueCR json) const
     {
     Utf8CP label = json["Label"].GetString();
     return LabelGroupingNodeKey::Create(label, ParseNodeKeyHashPath(json["PathFromRoot"]));
@@ -731,7 +737,7 @@ LabelGroupingNodeKeyPtr DgnECPresentationSerializer::_GetLabelGroupingNodeKeyFro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(NavNode const& navNode, rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(NavNode const& navNode, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();
@@ -770,55 +776,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(NavNode const& navNode,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodePtr DgnECPresentationSerializer::_GetNavNodeFromJson(RapidJsonValueCR json) const
-    {
-    JsonNavNodePtr navNode = JsonNavNode::Create();
-    if (json.HasMember("ECInstanceId"))
-        navNode->SetInstanceId(BeRapidJsonUtilities::UInt64FromValue(json["ECInstanceId"]));
-    if (json.HasMember("NodeId"))
-        navNode->SetNodeId(BeRapidJsonUtilities::UInt64FromValue(json["NodeId"]));
-    if (json.HasMember("ParentNodeId"))
-        navNode->SetParentNodeId(BeRapidJsonUtilities::UInt64FromValue(json["ParentNodeId"]));
-    if (json.HasMember("Key"))
-        navNode->SetNodeKey(*_GetNavNodeKeyFromJsonPoly(json["Key"]));
-    if (json.HasMember("Label"))
-        navNode->SetLabel(json["Label"].GetString());
-    if (json.HasMember("Description"))
-        navNode->SetDescription(json["Description"].GetString());
-    if (json.HasMember("ExpandedImageId"))
-        navNode->SetExpandedImageId(json["ExpandedImageId"].GetString());
-    if (json.HasMember("CollapsedImageId"))
-        navNode->SetCollapsedImageId(json["CollapsedImageId"].GetString());
-    if (json.HasMember("ForeColor"))
-        navNode->SetForeColor(json["ForeColor"].GetString());
-    if (json.HasMember("BackColor"))
-        navNode->SetBackColor(json["BackColor"].GetString());
-    if (json.HasMember("FontStyle"))
-        navNode->SetFontStyle(json["FontStyle"].GetString());
-    if (json.HasMember("Type"))
-        navNode->SetType(json["Type"].GetString());
-    if (json.HasMember("HasChildren"))
-        navNode->SetHasChildren(json["HasChildren"].GetBool());
-    if (json.HasMember("IsSelectable"))
-        navNode->SetIsSelectable(json["IsSelectable"].GetBool());
-    if (json.HasMember("IsEditable"))
-        navNode->SetIsEditable(json["IsEditable"].GetBool());
-    if (json.HasMember("IsChecked"))
-        navNode->SetIsChecked(json["IsChecked"].GetBool());
-    if (json.HasMember("IsCheckboxVisible"))
-        navNode->SetIsCheckboxVisible(json["IsCheckboxVisible"].GetBool());
-    if (json.HasMember("IsCheckboxEnabled"))
-        navNode->SetIsCheckboxEnabled(json["IsCheckboxEnabled"].GetBool());
-    if (json.HasMember("IsExpanded"))
-        navNode->SetIsExpanded(json["IsExpanded"].GetBool());
-
-    return navNode;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mantas.Kontrimas                03/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(NodesPathElement const& navNodesPathElement,
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(NodesPathElement const& navNodesPathElement,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
@@ -843,18 +801,18 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(NodesPathElement const&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(KeySet const& keySet, rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(KeySet const& keySet, rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
     json.SetObject();  
     rapidjson::Value instances(rapidjson::kObjectType);
-    for (auto& pair : keySet.GetInstanceKeys())
+    for (auto const& pair : keySet.GetInstanceKeys())
         {
-        ECClassId classId = pair.first;
+        ECClassCP ecClass = pair.first;
         rapidjson::Value instanceIds(rapidjson::kArrayType);
         for (ECInstanceId const& instanceId : pair.second)
             instanceIds.PushBack(instanceId.GetValueUnchecked(), json.GetAllocator());
-        instances.AddMember(rapidjson::Value(classId.ToString().c_str(), json.GetAllocator()), instanceIds, json.GetAllocator());
+        instances.AddMember(rapidjson::Value(ecClass->GetId().ToString().c_str(), json.GetAllocator()), instanceIds, json.GetAllocator());
         }
 
     rapidjson::Value nodeKeys(rapidjson::kArrayType);
@@ -870,27 +828,33 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(KeySet const& keySet, r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-KeySetPtr DgnECPresentationSerializer::_GetKeySetFromJson(JsonValueCR json) const
+KeySetPtr DefaultECPresentationSerializer::_GetKeySetFromJson(IConnectionCR connection, JsonValueCR json) const
     {
     InstanceKeyMap instanceKeys;
     JsonValueCR instanceKey = json["InstanceKeys"];
     bvector<Utf8String> classIds = instanceKey.getMemberNames();
     for (Utf8StringCR classIdString : classIds)
         {
+        ECClassId ecClassId;
+        ECClassId::FromString(ecClassId, classIdString.c_str());
+        ECClassCP ecClass = connection.GetECDb().Schemas().GetClass(ecClassId);
+        if (nullptr == ecClass)
+            {
+            BeAssert(false);
+            continue;
+            }
         bset<ECInstanceId> instanceIdSet;
         for (JsonValueCR instanceIdJson : instanceKey[classIdString.c_str()])
             {
             uint64_t instanceId = BeJsonUtilities::UInt64FromValue(instanceIdJson);
             instanceIdSet.insert(ECInstanceId(instanceId));
             }
-        ECClassId ecClassId;
-        ECClassId::FromString(ecClassId, classIdString.c_str());
-        instanceKeys[ecClassId] = instanceIdSet;
+        instanceKeys[ecClass] = instanceIdSet;
         }
 
     NavNodeKeySet nodeKeys;
     for (JsonValueCR nodeKeyJson : json["NodeKeys"])
-        nodeKeys.insert(_GetNavNodeKeyFromJsonPoly(nodeKeyJson));
+        nodeKeys.insert(_GetNavNodeKeyFromJson(connection, nodeKeyJson));
 
     return KeySet::Create(instanceKeys, nodeKeys);
     }
@@ -898,7 +862,7 @@ KeySetPtr DgnECPresentationSerializer::_GetKeySetFromJson(JsonValueCR json) cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DgnECPresentationSerializer::_AsJson(SelectionChangedEvent const& selectionChangedEvent,
+rapidjson::Document DefaultECPresentationSerializer::_AsJson(SelectionChangedEvent const& selectionChangedEvent,
     rapidjson::Document::AllocatorType* allocator) const
     {
     rapidjson::Document json(allocator);
@@ -920,7 +884,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(SelectionChangedEvent c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-SelectionChangedEventPtr DgnECPresentationSerializer::_GetSelectionChangedEventFromJson(IConnectionCacheCR connectionCache, JsonValueCR json) const
+SelectionChangedEventPtr DefaultECPresentationSerializer::_GetSelectionChangedEventFromJson(IConnectionCacheCR connectionCache, JsonValueCR json) const
     {
     if (!(json.isMember("ConnectionId") && json["ConnectionId"].isString()) ||
         !(json.isMember("Source") && json["Source"].isString()) ||
@@ -946,7 +910,7 @@ SelectionChangedEventPtr DgnECPresentationSerializer::_GetSelectionChangedEventF
     bool isSubSelection = json["IsSubSelection"].asBool();
     uint64_t timestamp = BeJsonUtilities::UInt64FromValue(json["Timestamp"]);
     JsonValueCR keysJson = json["Keys"];
-    KeySetPtr keys = _GetKeySetFromJson(keysJson);
+    KeySetPtr keys = KeySet::FromJson(*connection, keysJson);
 
     SelectionChangedEventPtr evt = SelectionChangedEvent::Create(*connection, sourceName, changeType, isSubSelection, *keys, timestamp);
 
@@ -964,7 +928,7 @@ SelectionChangedEventPtr DgnECPresentationSerializer::_GetSelectionChangedEventF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Value DgnECPresentationSerializer::_AsJson(ECEnumerationCR enumeration,
+rapidjson::Value DefaultECPresentationSerializer::_AsJson(ECEnumerationCR enumeration,
     rapidjson::Document::AllocatorType& allocator) const
     {
     rapidjson::Value json(rapidjson::kArrayType);
@@ -985,7 +949,7 @@ rapidjson::Value DgnECPresentationSerializer::_AsJson(ECEnumerationCR enumeratio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Value DgnECPresentationSerializer::_AsJson(KindOfQuantityCR koq,
+rapidjson::Value DefaultECPresentationSerializer::_AsJson(KindOfQuantityCR koq,
     rapidjson::Document::AllocatorType& allocator) const
     {
     rapidjson::Value json(rapidjson::kObjectType);
@@ -999,7 +963,7 @@ rapidjson::Value DgnECPresentationSerializer::_AsJson(KindOfQuantityCR koq,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Value DgnECPresentationSerializer::_AsJson(RelatedClassPathCR path,
+rapidjson::Value DefaultECPresentationSerializer::_AsJson(RelatedClassPathCR path,
     rapidjson::Document::AllocatorType& allocator) const
     {
     rapidjson::Value json(rapidjson::kArrayType);
@@ -1024,7 +988,7 @@ rapidjson::Value DgnECPresentationSerializer::_AsJson(RelatedClassPathCR path,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Value DgnECPresentationSerializer::_AsJson(SelectionInfo const& selectionInfo,
+rapidjson::Value DefaultECPresentationSerializer::_AsJson(SelectionInfo const& selectionInfo,
     rapidjson::Document::AllocatorType& allocator) const
     {
     rapidjson::Value info(rapidjson::kObjectType);
@@ -1032,13 +996,4 @@ rapidjson::Value DgnECPresentationSerializer::_AsJson(SelectionInfo const& selec
     info.AddMember("IsSubSelection", selectionInfo.IsSubSelection(), allocator);
     info.AddMember("Timestamp", rapidjson::Value(std::to_string(selectionInfo.GetTimestamp()).c_str(), allocator), allocator);
     return info;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mantas.Kontrimas                03/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnECPresentationSerializer const& DgnECPresentationSerializer::Get()
-    {
-    static DgnECPresentationSerializer s_provider;
-    return s_provider;
     }

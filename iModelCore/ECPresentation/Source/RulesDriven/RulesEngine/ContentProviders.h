@@ -171,7 +171,7 @@ struct NestedContentProvider : ContentProvider
 {
 private:
     ContentDescriptor::NestedContentField const& m_field;
-    bvector<BeSQLite::EC::ECInstanceKey> m_primaryInstanceKeys;
+    bvector<ECClassInstanceKey> m_primaryInstanceKeys;
     mutable ContentQueryCPtr m_query;
     mutable ContentQueryCPtr m_adjustedQuery;
     bool m_mergedResults;
@@ -190,8 +190,8 @@ public:
         return new NestedContentProvider(context, nestedContentField);
         }
     ContentDescriptor::NestedContentField const& GetContentField() const {return m_field;}
-    void SetPrimaryInstanceKeys(bvector<BeSQLite::EC::ECInstanceKey> const&);
-    void SetPrimaryInstanceKey(BeSQLite::EC::ECInstanceKeyCR);
+    void SetPrimaryInstanceKeys(bvector<ECClassInstanceKey> const&);
+    void SetPrimaryInstanceKey(ECClassInstanceKeyCR);
     void SetIsResultsMerged(bool mergedResults);
 };
 

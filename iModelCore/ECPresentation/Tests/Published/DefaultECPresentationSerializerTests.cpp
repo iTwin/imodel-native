@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/DgnECPresentationSerializerTests.cpp $
+|     $Source: Tests/Published/DefaultECPresentationSerializerTests.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -55,14 +55,15 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Mantas.Kontrimas                03/2018
 +===============+===============+===============+===============+===============+======*/
-struct DgnECPresentationSerializerTests : ECPresentationTest
+struct DefaultECPresentationSerializerTests : ECPresentationTest
 {
     static ECDbTestProject* s_project;
+    RefCountedPtr<TestConnection> m_connection;
 
     static void SetUpTestCase()
         {
         s_project = new ECDbTestProject();
-        s_project->Create("DgnECPresentationSerializerTests");
+        s_project->Create("DefaultECPresentationSerializerTests");
 
         ECSchemaPtr schema;
         ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
@@ -84,22 +85,24 @@ struct DgnECPresentationSerializerTests : ECPresentationTest
         {
         return s_project->GetECDb().Schemas().GetClass("TestSchema", className);
         }
+    ECClassCP GetClassA() {return GetClass("PropertyTestClassA");}
+    ECClassCP GetClassB() {return GetClass("PropertyTestClassB");}
 
     virtual void SetUp() override
         {
         ECPresentationTest::SetUp();
         Localization::Init();
+        m_connection = new TestConnection(s_project->GetECDb());
         }
 };
-ECDbTestProject* DgnECPresentationSerializerTests::s_project = nullptr;
+ECDbTestProject* DefaultECPresentationSerializerTests::s_project = nullptr;
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ConnectionEventSerializationWithOpenedConnectionEventType)
+TEST_F(DefaultECPresentationSerializerTests, ConnectionEventSerializationWithOpenedConnectionEventType)
     {
-    IConnectionPtr connection = new TestConnection(s_project->GetECDb());
-    ConnectionEvent evt(*connection, true, ConnectionEventType::Opened);
+    ConnectionEvent evt(*m_connection, true, ConnectionEventType::Opened);
     rapidjson::Document actual = evt.AsJson();
 
     rapidjson::Document expected;
@@ -111,8 +114,8 @@ TEST_F(DgnECPresentationSerializerTests, ConnectionEventSerializationWithOpenedC
             "IsProjectPrimary": true
             }
         })");
-    expected["Connection"]["ConnectionId"].SetString(connection->GetId().c_str(), expected.GetAllocator());
-    expected["Connection"]["ConnectionGuid"].SetString(connection->GetECDb().GetDbGuid().ToString().c_str(), expected.GetAllocator());
+    expected["Connection"]["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
+    expected["Connection"]["ConnectionGuid"].SetString(m_connection->GetECDb().GetDbGuid().ToString().c_str(), expected.GetAllocator());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -122,10 +125,9 @@ TEST_F(DgnECPresentationSerializerTests, ConnectionEventSerializationWithOpenedC
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ConnectionEventSerializationWithClosedConnectionEventType)
+TEST_F(DefaultECPresentationSerializerTests, ConnectionEventSerializationWithClosedConnectionEventType)
     {
-    IConnectionPtr connection = new TestConnection(s_project->GetECDb());
-    ConnectionEvent evt(*connection, true, ConnectionEventType::Closed);
+    ConnectionEvent evt(*m_connection, true, ConnectionEventType::Closed);
     rapidjson::Document actual = evt.AsJson();
 
     rapidjson::Document expected;
@@ -137,8 +139,8 @@ TEST_F(DgnECPresentationSerializerTests, ConnectionEventSerializationWithClosedC
             "IsProjectPrimary": false
             }
         })");
-    expected["Connection"]["ConnectionId"].SetString(connection->GetId().c_str(), expected.GetAllocator());
-    expected["Connection"]["ConnectionGuid"].SetString(connection->GetECDb().GetDbGuid().ToString().c_str(), expected.GetAllocator());
+    expected["Connection"]["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
+    expected["Connection"]["ConnectionGuid"].SetString(m_connection->GetECDb().GetDbGuid().ToString().c_str(), expected.GetAllocator());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -148,7 +150,7 @@ TEST_F(DgnECPresentationSerializerTests, ConnectionEventSerializationWithClosedC
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ContentFieldEditorSerializationNoParams)
+TEST_F(DefaultECPresentationSerializerTests, ContentFieldEditorSerializationNoParams)
     {
     ContentFieldEditor contentFieldEditor("contentFieldEditor");
     rapidjson::Document actual = contentFieldEditor.AsJson();
@@ -194,7 +196,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnECPresentationSerializerTests, ContentFieldEditorsSerializationWithOneParam)
+TEST_F(DefaultECPresentationSerializerTests, ContentFieldEditorsSerializationWithOneParam)
     {
     ContentFieldEditor editor("editor_name");
     editor.GetParams().push_back(new TestEditorParams("test_params"));
@@ -216,7 +218,7 @@ TEST_F(DgnECPresentationSerializerTests, ContentFieldEditorsSerializationWithOne
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, CategorySerialization)
+TEST_F(DefaultECPresentationSerializerTests, CategorySerialization)
     {
     ContentDescriptor::Category category("categoryName", "categoryLabel", "categoryDescription", 10, true);
     rapidjson::Document actual = category.AsJson();
@@ -238,7 +240,7 @@ TEST_F(DgnECPresentationSerializerTests, CategorySerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, PropertySerializationSimplePrimitiveProperty)
+TEST_F(DefaultECPresentationSerializerTests, PropertySerializationSimplePrimitiveProperty)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
     ContentDescriptor::Property property("this", *testClass, *testClass->GetPropertyP("String"));
@@ -273,7 +275,7 @@ TEST_F(DgnECPresentationSerializerTests, PropertySerializationSimplePrimitivePro
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, PropertySerializationSimplePrimitivePropertyIsRelated)
+TEST_F(DefaultECPresentationSerializerTests, PropertySerializationSimplePrimitivePropertyIsRelated)
     {
     ECClassCP testClassA = GetClass("PropertyTestClassA");
     ECClassCP testClassB = GetClass("PropertyTestClassB");
@@ -334,7 +336,7 @@ TEST_F(DgnECPresentationSerializerTests, PropertySerializationSimplePrimitivePro
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, PropertySerializationEnumInt)
+TEST_F(DefaultECPresentationSerializerTests, PropertySerializationEnumInt)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
     ContentDescriptor::Property property("this", *testClass, *testClass->GetPropertyP("EnumProperty"));
@@ -380,7 +382,7 @@ TEST_F(DgnECPresentationSerializerTests, PropertySerializationEnumInt)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, PropertySerializationEnumString)
+TEST_F(DefaultECPresentationSerializerTests, PropertySerializationEnumString)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
     ContentDescriptor::Property property("this", *testClass, *testClass->GetPropertyP("EnumStringProperty"));
@@ -426,7 +428,7 @@ TEST_F(DgnECPresentationSerializerTests, PropertySerializationEnumString)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, PropertySerializationWithKOQ)
+TEST_F(DefaultECPresentationSerializerTests, PropertySerializationWithKOQ)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
     ContentDescriptor::Property property("this", *testClass, *testClass->GetPropertyP("KOQProperty"));
@@ -467,9 +469,9 @@ TEST_F(DgnECPresentationSerializerTests, PropertySerializationWithKOQ)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, UpdateRecordCSerializationhangeTypeDelete)
+TEST_F(DefaultECPresentationSerializerTests, UpdateRecordCSerializationhangeTypeDelete)
     {
-    TestNavNodePtr node = TestNavNode::Create();
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     UpdateRecord updateRecord(*node);
     rapidjson::Document actual = updateRecord.AsJson();
 
@@ -511,9 +513,9 @@ TEST_F(DgnECPresentationSerializerTests, UpdateRecordCSerializationhangeTypeDele
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, UpdateRecordSerializationChangeTypeInsert)
+TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeTypeInsert)
     {
-    TestNavNodePtr node = TestNavNode::Create();
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     UpdateRecord updateRecord(*node, 10);
     rapidjson::Document actual = updateRecord.AsJson();
 
@@ -556,9 +558,9 @@ TEST_F(DgnECPresentationSerializerTests, UpdateRecordSerializationChangeTypeInse
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, UpdateRecordSerializationChangeTypeUpdate)
+TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeTypeUpdate)
     {
-    TestNavNodePtr node = TestNavNode::Create();
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     bvector<JsonChange> changes;
     changes.push_back(JsonChange("PropertyName", rapidjson::Value("oldValue"), rapidjson::Value("newValue")));
     UpdateRecord updateRecord(*node, std::move(changes));
@@ -609,9 +611,9 @@ TEST_F(DgnECPresentationSerializerTests, UpdateRecordSerializationChangeTypeUpda
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, UpdateRecordSerializationChangeTypeUpdateMoreThanOneChange)
+TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeTypeUpdateMoreThanOneChange)
     {
-    TestNavNodePtr node = TestNavNode::Create();
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     bvector<JsonChange> changes;
     changes.push_back(JsonChange("PropertyName", rapidjson::Value("oldValue"), rapidjson::Value("newValue")));
     changes.push_back(JsonChange("PropertyName2", rapidjson::Value("oldValue2"), rapidjson::Value("newValue2")));
@@ -668,9 +670,9 @@ TEST_F(DgnECPresentationSerializerTests, UpdateRecordSerializationChangeTypeUpda
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, UpdateRecordSerializationChangeTypeDeleteNoRulesetId)
+TEST_F(DefaultECPresentationSerializerTests, UpdateRecordSerializationChangeTypeDeleteNoRulesetId)
     {
-    TestNavNodePtr node = TestNavNode::Create();
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     node->GetExtendedDataR().RemoveAllMembers();
     UpdateRecord updateRecord(*node);
     rapidjson::Document actual = updateRecord.AsJson();
@@ -712,7 +714,7 @@ TEST_F(DgnECPresentationSerializerTests, UpdateRecordSerializationChangeTypeDele
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, DisplayLabelFieldSerialization)
+TEST_F(DefaultECPresentationSerializerTests, DisplayLabelFieldSerialization)
     {
     ContentDescriptor::DisplayLabelField field("Label", 10);
     rapidjson::Document actual = field.AsJson();
@@ -744,7 +746,7 @@ TEST_F(DgnECPresentationSerializerTests, DisplayLabelFieldSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, CalculatedPropertyFieldSerialization)
+TEST_F(DefaultECPresentationSerializerTests, CalculatedPropertyFieldSerialization)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
     ContentDescriptor::CalculatedPropertyField field("10", "FieldName", "ValueExpression", testClass, 10);
@@ -777,7 +779,7 @@ TEST_F(DgnECPresentationSerializerTests, CalculatedPropertyFieldSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ECPropertiesFieldSerialization)
+TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerialization)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
     ContentDescriptor::ECPropertiesField field(*testClass, ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
@@ -831,7 +833,7 @@ TEST_F(DgnECPresentationSerializerTests, ECPropertiesFieldSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ECPropertiesFieldSerializationWithMoreThanOneProperty)
+TEST_F(DefaultECPresentationSerializerTests, ECPropertiesFieldSerializationWithMoreThanOneProperty)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
     ContentDescriptor::ECPropertiesField field(*testClass, ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
@@ -905,7 +907,7 @@ TEST_F(DgnECPresentationSerializerTests, ECPropertiesFieldSerializationWithMoreT
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ECInstanceKeyFieldSerialization)
+TEST_F(DefaultECPresentationSerializerTests, ECInstanceKeyFieldSerialization)
     {
     ContentDescriptor::ECInstanceKeyField field;
     rapidjson::Document actual = field.AsJson();
@@ -937,7 +939,7 @@ TEST_F(DgnECPresentationSerializerTests, ECInstanceKeyFieldSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ECNavigationInstanceIdFieldSerialization)
+TEST_F(DefaultECPresentationSerializerTests, ECNavigationInstanceIdFieldSerialization)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
     ContentDescriptor::ECNavigationInstanceIdField field(ContentDescriptor::ECPropertiesField(*testClass, ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String"))));
@@ -970,7 +972,7 @@ TEST_F(DgnECPresentationSerializerTests, ECNavigationInstanceIdFieldSerializatio
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, NestedContentFieldSerialization)
+TEST_F(DefaultECPresentationSerializerTests, NestedContentFieldSerialization)
     {
     ECClassCP testClassA = GetClass("PropertyTestClassA");
     ECClassCP testClassB = GetClass("PropertyTestClassB");
@@ -1117,7 +1119,7 @@ TEST_F(DgnECPresentationSerializerTests, NestedContentFieldSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, DisplayLabelFieldSerializationHasContentFieldEditor)
+TEST_F(DefaultECPresentationSerializerTests, DisplayLabelFieldSerializationHasContentFieldEditor)
     {
     ContentFieldEditor contentFieldEditor("ContentFieldEditorName");
     ContentDescriptor::DisplayLabelField field("Label", 10);
@@ -1155,7 +1157,7 @@ TEST_F(DgnECPresentationSerializerTests, DisplayLabelFieldSerializationHasConten
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnECPresentationSerializerTests, FieldEditorJsonParamsSerialization)
+TEST_F(DefaultECPresentationSerializerTests, FieldEditorJsonParamsSerialization)
     {
     Json::Value json;
     json["Test1"] = 1;
@@ -1179,7 +1181,7 @@ TEST_F(DgnECPresentationSerializerTests, FieldEditorJsonParamsSerialization)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnECPresentationSerializerTests, FieldEditorMultilineParamsSerialization)
+TEST_F(DefaultECPresentationSerializerTests, FieldEditorMultilineParamsSerialization)
     {
     PropertyEditorMultilineParameters spec(999);
     FieldEditorMultilineParams params(spec);
@@ -1198,7 +1200,7 @@ TEST_F(DgnECPresentationSerializerTests, FieldEditorMultilineParamsSerialization
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnECPresentationSerializerTests, FieldEditorRangeParamsSerialization)
+TEST_F(DefaultECPresentationSerializerTests, FieldEditorRangeParamsSerialization)
     {
     PropertyEditorRangeParameters spec(123.33, 456.66);
     FieldEditorRangeParams params(spec);
@@ -1218,7 +1220,7 @@ TEST_F(DgnECPresentationSerializerTests, FieldEditorRangeParamsSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, FieldEditorRangeParamsNoMinOrMaxSetSerialization)
+TEST_F(DefaultECPresentationSerializerTests, FieldEditorRangeParamsNoMinOrMaxSetSerialization)
     {
     PropertyEditorRangeParameters spec;
     FieldEditorRangeParams params(spec);
@@ -1238,7 +1240,7 @@ TEST_F(DgnECPresentationSerializerTests, FieldEditorRangeParamsNoMinOrMaxSetSeri
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnECPresentationSerializerTests, FieldEditorSliderParamsSerialization)
+TEST_F(DefaultECPresentationSerializerTests, FieldEditorSliderParamsSerialization)
     {
     PropertyEditorSliderParameters spec(123.33, 456.66, 5, 100, true);
     FieldEditorSliderParams params(spec);
@@ -1261,25 +1263,7 @@ TEST_F(DgnECPresentationSerializerTests, FieldEditorSliderParamsSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, TypeDescriptionSerialization)
-    {
-    ContentDescriptor::Field::TypeDescriptionPtr typeDescription = new ContentDescriptor::Field::TypeDescription("TypeDescriptionName");
-    rapidjson::Document actual = typeDescription->AsJson();
-
-    rapidjson::Document expected;
-    expected.Parse(R"({
-        "TypeName": "TypeDescriptionName"
-        })");
-
-    EXPECT_EQ(expected, actual)
-        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Mantas.Kontrimas                03/2018
-//---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, PrimitiveTypeDescriptionSerialization)
+TEST_F(DefaultECPresentationSerializerTests, PrimitiveTypeDescriptionSerialization)
     {
     ContentDescriptor::Field::TypeDescriptionPtr typeDescription = new ContentDescriptor::Field::PrimitiveTypeDescription("TypeDescriptionName");
     rapidjson::Document actual = typeDescription->AsJson();
@@ -1298,7 +1282,7 @@ TEST_F(DgnECPresentationSerializerTests, PrimitiveTypeDescriptionSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ArrayTypeDescriptionSerialization)
+TEST_F(DefaultECPresentationSerializerTests, ArrayTypeDescriptionSerialization)
     {
     ContentDescriptor::Field::TypeDescriptionPtr primitiveTypeDescription = new ContentDescriptor::Field::PrimitiveTypeDescription("PrimitiveTypeDescriptionName");
     ContentDescriptor::Field::TypeDescriptionPtr typeDescription = new ContentDescriptor::Field::ArrayTypeDescription(*primitiveTypeDescription);
@@ -1322,7 +1306,7 @@ TEST_F(DgnECPresentationSerializerTests, ArrayTypeDescriptionSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, StructTypeDescriptionSerialization)
+TEST_F(DefaultECPresentationSerializerTests, StructTypeDescriptionSerialization)
     {
     ECStructClassCP testStruct = GetClass("TestStruct")->GetStructClassCP();
     ContentDescriptor::Field::TypeDescriptionPtr typeDescription = new ContentDescriptor::Field::StructTypeDescription(*testStruct);
@@ -1360,7 +1344,7 @@ TEST_F(DgnECPresentationSerializerTests, StructTypeDescriptionSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, NestedContentTypeDescriptionSerialization)
+TEST_F(DefaultECPresentationSerializerTests, NestedContentTypeDescriptionSerialization)
     {
     ECClassCP testClassA = GetClass("PropertyTestClassA");
     ECClassCP testClassB = GetClass("PropertyTestClassB");
@@ -1407,7 +1391,7 @@ TEST_F(DgnECPresentationSerializerTests, NestedContentTypeDescriptionSerializati
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ECInstanceChangeResultSerializationSuccess)
+TEST_F(DefaultECPresentationSerializerTests, ECInstanceChangeResultSerializationSuccess)
     {
     ECInstanceChangeResult changeResult = ECInstanceChangeResult::Success(ECValue(456));
     rapidjson::Document actual = changeResult.AsJson();
@@ -1426,7 +1410,7 @@ TEST_F(DgnECPresentationSerializerTests, ECInstanceChangeResultSerializationSucc
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ECInstanceChangeResultSerializationSuccessValueUninitialized)
+TEST_F(DefaultECPresentationSerializerTests, ECInstanceChangeResultSerializationSuccessValueUninitialized)
     {
     ECInstanceChangeResult changeResult = ECInstanceChangeResult::Success(ECValue());
     rapidjson::Document actual = changeResult.AsJson();
@@ -1445,7 +1429,7 @@ TEST_F(DgnECPresentationSerializerTests, ECInstanceChangeResultSerializationSucc
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ECInstanceChangeResultSerializationIgnore)
+TEST_F(DefaultECPresentationSerializerTests, ECInstanceChangeResultSerializationIgnore)
     {
     ECInstanceChangeResult changeResult = ECInstanceChangeResult::Ignore("IgnoreMessage");
     rapidjson::Document actual = changeResult.AsJson();
@@ -1464,7 +1448,7 @@ TEST_F(DgnECPresentationSerializerTests, ECInstanceChangeResultSerializationIgno
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, NavNodeKeySerialization)
+TEST_F(DefaultECPresentationSerializerTests, NavNodeKeySerialization)
     {
     NavNodeKeyPtr key = NavNodeKey::Create("TypeName", {"123", "abc"});
     // Serialize
@@ -1484,7 +1468,7 @@ TEST_F(DgnECPresentationSerializerTests, NavNodeKeySerialization)
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
 
     // Deserialize RapidJson
-    NavNodeKeyPtr deserializedKey = NavNodeKey::FromJson(actual);
+    NavNodeKeyPtr deserializedKey = NavNodeKey::FromJson(*m_connection, actual);
 
     EXPECT_EQ(key->GetType(), deserializedKey->GetType());
     EXPECT_EQ(key->GetPathFromRoot(), deserializedKey->GetPathFromRoot());
@@ -1492,7 +1476,7 @@ TEST_F(DgnECPresentationSerializerTests, NavNodeKeySerialization)
     // Deserialize JsonValue
     Json::Value expectedJsonValue;
     Json::Reader::Parse(BeRapidJsonUtilities::ToString(actual), expectedJsonValue);
-    NavNodeKeyPtr deserializedKey2 = NavNodeKey::FromJson(expectedJsonValue);
+    NavNodeKeyPtr deserializedKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
 
     EXPECT_EQ(key->GetType(), deserializedKey2->GetType());
     EXPECT_EQ(key->GetPathFromRoot(), deserializedKey2->GetPathFromRoot());
@@ -1501,29 +1485,27 @@ TEST_F(DgnECPresentationSerializerTests, NavNodeKeySerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ECInstanceNodeKeySerialization)
+TEST_F(DefaultECPresentationSerializerTests, ECInstanceNodeKeySerialization)
     {
-    ECInstanceNodeKeyPtr key = ECInstanceNodeKey::Create(ECClassId((uint64_t)456), ECInstanceId(BeInt64Id(123)), {"123", "abc"});
+    ECInstanceNodeKeyPtr key = ECInstanceNodeKey::Create(ECClassInstanceKey(GetClassA(), ECInstanceId((uint64_t)123)), {"123", "abc"});
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
     rapidjson::Document expected;
     expected.Parse(R"({
         "Type": "ECInstanceNode",
-        "PathFromRoot": [
-            "123",
-            "abc"
-            ],
-        "ECClassId": "456",
+        "PathFromRoot": ["123", "abc"],
+        "ECClassId": "",
         "ECInstanceId": "123"
         })");
+    expected["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
 
     ASSERT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
 
     // Deserialize RapidJson
-    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(actual);
+    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(*m_connection, actual);
     ASSERT_TRUE(navNodeKey.IsValid());
     ECInstanceNodeKey const* deserializedKey = navNodeKey->AsECInstanceNodeKey();
     ASSERT_NE(nullptr, deserializedKey);
@@ -1535,7 +1517,7 @@ TEST_F(DgnECPresentationSerializerTests, ECInstanceNodeKeySerialization)
     // Deserialize JsonValue
     Json::Value expectedJsonValue;
     Json::Reader::Parse(BeRapidJsonUtilities::ToString(actual), expectedJsonValue);
-    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(expectedJsonValue);
+    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
     ASSERT_TRUE(navNodeKey2.IsValid());
     ECInstanceNodeKey const* deserializedKey2 = navNodeKey2->AsECInstanceNodeKey();
     ASSERT_NE(nullptr, deserializedKey2);
@@ -1547,28 +1529,26 @@ TEST_F(DgnECPresentationSerializerTests, ECInstanceNodeKeySerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ECClassGroupingNodeKeySerialization)
+TEST_F(DefaultECPresentationSerializerTests, ECClassGroupingNodeKeySerialization)
     {
-    ECClassGroupingNodeKeyPtr key = ECClassGroupingNodeKey::Create(ECClassId((uint64_t) 456), {"123", "abc"});
+    ECClassGroupingNodeKeyPtr key = ECClassGroupingNodeKey::Create(*GetClassA(), {"123", "abc"});
     //Serialize
     rapidjson::Document actual = key->AsJson();
 
     rapidjson::Document expected;
     expected.Parse(R"({
         "Type": "ECClassGroupingNode",
-        "PathFromRoot": [
-            "123",
-            "abc"
-            ],
-        "ECClassId": "456"
+        "PathFromRoot": ["123", "abc"],
+        "ECClassId": ""
         })");
+    expected["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
 
     ASSERT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
 
     // Deserialiaze RapidJson
-    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(actual);
+    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(*m_connection, actual);
     ASSERT_TRUE(navNodeKey.IsValid());
     ECClassGroupingNodeKey const* deserializedKey = navNodeKey->AsECClassGroupingNodeKey();
     ASSERT_NE(nullptr, deserializedKey);
@@ -1580,7 +1560,7 @@ TEST_F(DgnECPresentationSerializerTests, ECClassGroupingNodeKeySerialization)
     // Deserialize JsonValue
     Json::Value expectedJsonValue;
     Json::Reader::Parse(BeRapidJsonUtilities::ToString(actual), expectedJsonValue);
-    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(expectedJsonValue);
+    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
     ASSERT_TRUE(navNodeKey2.IsValid());
     ECClassGroupingNodeKey const* deserializedKey2 = navNodeKey2->AsECClassGroupingNodeKey();
     ASSERT_NE(nullptr, deserializedKey2);
@@ -1593,29 +1573,27 @@ TEST_F(DgnECPresentationSerializerTests, ECClassGroupingNodeKeySerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializationNoGroupingValue)
+TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializationNoGroupingValue)
     {
-    ECPropertyGroupingNodeKeyPtr key = ECPropertyGroupingNodeKey::Create(ECClassId((uint64_t) 456), "PropertyNameText", nullptr, {"123", "abc"});
+    ECPropertyGroupingNodeKeyPtr key = ECPropertyGroupingNodeKey::Create(*GetClassA(), "PropertyNameText", nullptr, {"123", "abc"});
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
     rapidjson::Document expected;
     expected.Parse(R"({
         "Type": "ECPropertyGroupingNode",
-        "PathFromRoot": [
-            "123",
-            "abc"
-            ],
-        "ECClassId": "456",
+        "PathFromRoot": ["123", "abc"],
+        "ECClassId": "",
         "PropertyName": "PropertyNameText"
         })");
+    expected["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
 
     ASSERT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
 
     // Deserialiaze RapidJson
-    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(actual);
+    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(*m_connection, actual);
     ASSERT_TRUE(navNodeKey.IsValid());
     ECPropertyGroupingNodeKey const* deserializedKey = navNodeKey->AsECPropertyGroupingNodeKey();
     ASSERT_NE(nullptr, deserializedKey);
@@ -1629,7 +1607,7 @@ TEST_F(DgnECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializationN
     // Deserialize JsonValue
     Json::Value expectedJsonValue;
     Json::Reader::Parse(BeRapidJsonUtilities::ToString(actual), expectedJsonValue);
-    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(expectedJsonValue);
+    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
     ASSERT_TRUE(navNodeKey2.IsValid());
     ECPropertyGroupingNodeKey const* deserializedKey2 = navNodeKey2->AsECPropertyGroupingNodeKey();
     ASSERT_NE(nullptr, deserializedKey2);
@@ -1644,32 +1622,30 @@ TEST_F(DgnECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializationN
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializationWithGroupingValue)
+TEST_F(DefaultECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializationWithGroupingValue)
     {
     rapidjson::Document groupingValue;
     groupingValue.SetString("GroupingValueText");
-    ECPropertyGroupingNodeKeyPtr key = ECPropertyGroupingNodeKey::Create(ECClassId((uint64_t) 456), "PropertyNameText", &groupingValue, {"123", "abc"});
+    ECPropertyGroupingNodeKeyPtr key = ECPropertyGroupingNodeKey::Create(*GetClassA(), "PropertyNameText", &groupingValue, {"123", "abc"});
     // Serialize
     rapidjson::Document actual = key->AsJson();
 
     rapidjson::Document expected;
     expected.Parse(R"({
         "Type": "ECPropertyGroupingNode",
-        "PathFromRoot": [
-            "123",
-            "abc"
-            ],
-        "ECClassId": "456",
+        "PathFromRoot": ["123", "abc"],
+        "ECClassId": "",
         "PropertyName": "PropertyNameText",
         "GroupingValue": "GroupingValueText"
         })");
+    expected["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
 
     ASSERT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
 
     // Deserialiaze
-    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(actual);
+    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(*m_connection, actual);
     ASSERT_TRUE(navNodeKey.IsValid());
     ECPropertyGroupingNodeKey const* deserializedKey = navNodeKey->AsECPropertyGroupingNodeKey();
     ASSERT_NE(nullptr, deserializedKey);
@@ -1683,7 +1659,7 @@ TEST_F(DgnECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializationW
     // Deserialize JsonValue
     Json::Value expectedJsonValue;
     Json::Reader::Parse(BeRapidJsonUtilities::ToString(actual), expectedJsonValue);
-    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(expectedJsonValue);
+    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
     ASSERT_TRUE(navNodeKey2.IsValid());
     ECPropertyGroupingNodeKey const* deserializedKey2 = navNodeKey2->AsECPropertyGroupingNodeKey();
     ASSERT_NE(nullptr, deserializedKey2);
@@ -1698,7 +1674,7 @@ TEST_F(DgnECPresentationSerializerTests, ECPropertyGroupingNodeKeySerializationW
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
+TEST_F(DefaultECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
     {
     LabelGroupingNodeKeyPtr key = LabelGroupingNodeKey::Create("LabelText", {"123", "abc"});
     // Serialize
@@ -1719,7 +1695,7 @@ TEST_F(DgnECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
 
     // Deserialiaze
-    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(actual);
+    NavNodeKeyPtr navNodeKey = NavNodeKey::FromJson(*m_connection, actual);
     ASSERT_TRUE(navNodeKey.IsValid());
     LabelGroupingNodeKey const* deserializedKey = navNodeKey->AsLabelGroupingNodeKey();
     ASSERT_NE(nullptr, deserializedKey);
@@ -1731,7 +1707,7 @@ TEST_F(DgnECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
     // Deserialize JsonValue
     Json::Value expectedJsonValue;
     Json::Reader::Parse(BeRapidJsonUtilities::ToString(actual), expectedJsonValue);
-    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(expectedJsonValue);
+    NavNodeKeyPtr navNodeKey2 = NavNodeKey::FromJson(*m_connection, expectedJsonValue);
     ASSERT_TRUE(navNodeKey2.IsValid());
     LabelGroupingNodeKey const* deserializedKey2 = navNodeKey2->AsLabelGroupingNodeKey();
     ASSERT_NE(nullptr, deserializedKey2);
@@ -1744,7 +1720,7 @@ TEST_F(DgnECPresentationSerializerTests, LabelGroupingNodeKeySerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, NodesPathElementSerializationNoNavNode)
+TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationNoNavNode)
     {
     NodesPathElement nodesPathElement;
     rapidjson::Document actual = nodesPathElement.AsJson();
@@ -1760,11 +1736,11 @@ TEST_F(DgnECPresentationSerializerTests, NodesPathElementSerializationNoNavNode)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, NodesPathElementSerializationWithNode)
+TEST_F(DefaultECPresentationSerializerTests, NodesPathElementSerializationWithNode)
     {
-    TestNavNodePtr node = TestNavNode::Create();
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NodesPathElement nodesPathElement(*node, 10);
-    TestNavNodePtr nodeChild = TestNavNode::Create();
+    TestNavNodePtr nodeChild = TestNavNode::Create(*m_connection);
     nodeChild->SetLabel("ChildTestLabeld");
     NodesPathElement nodesPathElementChild(*nodeChild, 9);
     nodesPathElementChild.SetIsMarked(true);
@@ -1840,11 +1816,11 @@ TEST_F(DgnECPresentationSerializerTests, NodesPathElementSerializationWithNode)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, KeySetSerialization)
+TEST_F(DefaultECPresentationSerializerTests, KeySetSerialization)
     {
-    KeySetPtr keySet = KeySet::Create(bvector<ECInstanceKey>{
-        ECInstanceKey(ECClassId((uint64_t) 55), ECInstanceId((uint64_t) 1)),
-        ECInstanceKey(ECClassId((uint64_t) 56), ECInstanceId((uint64_t) 2))
+    KeySetPtr keySet = KeySet::Create(bvector<ECClassInstanceKey>{
+        ECClassInstanceKey(*GetClassA(), ECInstanceId((uint64_t)1)),
+        ECClassInstanceKey(*GetClassB(), ECInstanceId((uint64_t)2))
         });
     keySet->Add(*NavNodeKey::Create("TypeName", {"123", "abc"}));
 
@@ -1853,24 +1829,16 @@ TEST_F(DgnECPresentationSerializerTests, KeySetSerialization)
 
     rapidjson::Document expected;
     expected.Parse(R"({
-        "InstanceKeys": {
-            "55": [
-                1
-                ],
-            "56": [
-                2
-                ]
-            },
-        "NodeKeys": [
-            {
+        "InstanceKeys": {},
+        "NodeKeys": [{
             "Type": "TypeName",
-            "PathFromRoot": [
-                "123",
-                "abc"
-                ]
-            }
-            ]
+            "PathFromRoot": ["123", "abc"]
+            }]
         })");
+    expected["InstanceKeys"].AddMember(rapidjson::Value(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator()), rapidjson::Value(rapidjson::kArrayType), expected.GetAllocator());
+    expected["InstanceKeys"][GetClassA()->GetId().ToString().c_str()].PushBack(1, expected.GetAllocator());
+    expected["InstanceKeys"].AddMember(rapidjson::Value(GetClassB()->GetId().ToString().c_str(), expected.GetAllocator()), rapidjson::Value(rapidjson::kArrayType), expected.GetAllocator());
+    expected["InstanceKeys"][GetClassB()->GetId().ToString().c_str()].PushBack(2, expected.GetAllocator());
 
     ASSERT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -1879,7 +1847,7 @@ TEST_F(DgnECPresentationSerializerTests, KeySetSerialization)
     //Deserialize
     Json::Value expectedJson;
     Json::Reader::Parse(BeRapidJsonUtilities::ToString(actual), expectedJson);
-    KeySetPtr deserializedKeySet = KeySet::FromJson(expectedJson);
+    KeySetPtr deserializedKeySet = KeySet::FromJson(*m_connection, expectedJson);
 
     EXPECT_EQ(keySet->GetInstanceKeys(), deserializedKeySet->GetInstanceKeys());
     EXPECT_EQ(keySet->GetNavNodeKeys().size(), deserializedKeySet->GetNavNodeKeys().size());
@@ -1890,11 +1858,12 @@ TEST_F(DgnECPresentationSerializerTests, KeySetSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventSerialization)
+TEST_F(DefaultECPresentationSerializerTests, SelectionChangedEventSerialization)
     {
-    RefCountedPtr<TestConnection> connection = new TestConnection(s_project->GetECDb());
-    KeySetPtr keySet = KeySet::Create(bvector<ECInstanceKey>{ECInstanceKey(ECClassId((uint64_t) 55), ECInstanceId((uint64_t) 1))});
-    SelectionChangedEventPtr selectionChangedEvent = SelectionChangedEvent::Create(*connection, "SourceNameText", SelectionChangeType::Add, false, *keySet, 123);
+    KeySetPtr keySet = KeySet::Create({
+        ECClassInstanceKey(*GetClassA(), ECInstanceId((uint64_t)1))
+        });
+    SelectionChangedEventPtr selectionChangedEvent = SelectionChangedEvent::Create(*m_connection, "SourceNameText", SelectionChangeType::Add, false, *keySet, 123);
     selectionChangedEvent->GetExtendedDataR().AddMember("ExtendedDataPropertyName", "ExtendedDataProperty", selectionChangedEvent->GetExtendedDataAllocator());
     // Serialize
     rapidjson::Document actual = selectionChangedEvent->AsJson();
@@ -1907,16 +1876,16 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventSerialization)
         "ChangeType": 0,
         "Timestamp": "123",
         "Keys": {
-            "InstanceKeys": {
-                "55": [1]
-                },
+            "InstanceKeys": {},
             "NodeKeys": []
             },
         "ExtendedData": {
             "ExtendedDataPropertyName": "ExtendedDataProperty"
             }
         })");
-    expected["ConnectionId"].SetString(connection->GetId().c_str(), expected.GetAllocator());
+    expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
+    expected["Keys"]["InstanceKeys"].AddMember(rapidjson::Value(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator()), rapidjson::Value(rapidjson::kArrayType), expected.GetAllocator());
+    expected["Keys"]["InstanceKeys"][GetClassA()->GetId().ToString().c_str()].PushBack(1, expected.GetAllocator());
 
     ASSERT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -1924,7 +1893,7 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventSerialization)
 
     //Deserialize
     TestConnectionCache cache;
-    cache.m_connections.Insert(connection->GetId(), connection);
+    cache.m_connections.Insert(m_connection->GetId(), m_connection);
     Json::Value expectedJson;
     Json::Reader::Parse(BeRapidJsonUtilities::ToString(actual), expectedJson);
     SelectionChangedEventPtr deserializedChangedEvent = SelectionChangedEvent::FromJson(cache, expectedJson);
@@ -1940,9 +1909,8 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationNoExtendedData)
+TEST_F(DefaultECPresentationSerializerTests, SelectionChangedEventDeserializationNoExtendedData)
     {
-    RefCountedPtr<TestConnection> connection = new TestConnection(s_project->GetECDb());
     rapidjson::Document expected;
     expected.Parse(R"({
         "ConnectionId": "",
@@ -1957,16 +1925,16 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationNoE
             "NodeKeys": []
             }
         })");
-    expected["ConnectionId"].SetString(connection->GetId().c_str(), expected.GetAllocator());
+    expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
 
     //Deserialize
     TestConnectionCache cache;
-    cache.m_connections.Insert(connection->GetId(), connection);
+    cache.m_connections.Insert(m_connection->GetId(), m_connection);
     Json::Value expectedJson;
     Json::Reader::Parse(BeRapidJsonUtilities::ToString(expected), expectedJson);
     SelectionChangedEventPtr deserializedChangedEvent = SelectionChangedEvent::FromJson(cache, expectedJson);
 
-    EXPECT_EQ(connection->GetId(), deserializedChangedEvent->GetConnection().GetId());
+    EXPECT_EQ(m_connection->GetId(), deserializedChangedEvent->GetConnection().GetId());
     EXPECT_EQ("SourceNameText", deserializedChangedEvent->GetSourceName());
     EXPECT_EQ(SelectionChangeType::Add, deserializedChangedEvent->GetChangeType());
     EXPECT_EQ(false, deserializedChangedEvent->IsSubSelection());
@@ -1978,9 +1946,8 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationNoE
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationExtendedDataIsArray)
+TEST_F(DefaultECPresentationSerializerTests, SelectionChangedEventDeserializationExtendedDataIsArray)
     {
-    RefCountedPtr<TestConnection> connection = new TestConnection(s_project->GetECDb());
     rapidjson::Document expected;
     expected.Parse(R"({
         "ConnectionId": "",
@@ -1996,16 +1963,16 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationExt
             },
         "ExtendedData": []
         })");
-    expected["ConnectionId"].SetString(connection->GetId().c_str(), expected.GetAllocator());
+    expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
 
     //Deserialize
     TestConnectionCache cache;
-    cache.m_connections.Insert(connection->GetId(), connection);
+    cache.m_connections.Insert(m_connection->GetId(), m_connection);
     Json::Value expectedJson;
     Json::Reader::Parse(BeRapidJsonUtilities::ToString(expected), expectedJson);
     SelectionChangedEventPtr deserializedChangedEvent = SelectionChangedEvent::FromJson(cache, expectedJson);
 
-    EXPECT_EQ(connection->GetId(), deserializedChangedEvent->GetConnection().GetId());
+    EXPECT_EQ(m_connection->GetId(), deserializedChangedEvent->GetConnection().GetId());
     EXPECT_EQ("SourceNameText", deserializedChangedEvent->GetSourceName());
     EXPECT_EQ(SelectionChangeType::Add, deserializedChangedEvent->GetChangeType());
     EXPECT_EQ(false, deserializedChangedEvent->IsSubSelection());
@@ -2017,9 +1984,8 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationExt
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationExtendedDataIsEmptyObject)
+TEST_F(DefaultECPresentationSerializerTests, SelectionChangedEventDeserializationExtendedDataIsEmptyObject)
     {
-    RefCountedPtr<TestConnection> connection = new TestConnection(s_project->GetECDb());
     rapidjson::Document expected;
     expected.Parse(R"({
         "ConnectionId": "",
@@ -2035,16 +2001,16 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationExt
             },
         "ExtendedData": {}
         })");
-    expected["ConnectionId"].SetString(connection->GetId().c_str(), expected.GetAllocator());
+    expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
 
     //Deserialize
     TestConnectionCache cache;
-    cache.m_connections.Insert(connection->GetId(), connection);
+    cache.m_connections.Insert(m_connection->GetId(), m_connection);
     Json::Value expectedJson;
     Json::Reader::Parse(BeRapidJsonUtilities::ToString(expected), expectedJson);
     SelectionChangedEventPtr deserializedChangedEvent = SelectionChangedEvent::FromJson(cache, expectedJson);
 
-    EXPECT_EQ(connection->GetId(), deserializedChangedEvent->GetConnection().GetId());
+    EXPECT_EQ(m_connection->GetId(), deserializedChangedEvent->GetConnection().GetId());
     EXPECT_EQ("SourceNameText", deserializedChangedEvent->GetSourceName());
     EXPECT_EQ(SelectionChangeType::Add, deserializedChangedEvent->GetChangeType());
     EXPECT_EQ(false, deserializedChangedEvent->IsSubSelection());
@@ -2056,18 +2022,17 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationExt
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ContentDescriptorSerializationNoSelectionInfo)
+TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSelectionInfo)
     {
     ECClassCP testClassA = GetClass("PropertyTestClassA");
     ECClassCP testClassB = GetClass("PropertyTestClassB");
     ECRelationshipClassCP relClassAClassB = GetClass("TestClassAHasTestClassB")->GetRelationshipClassCP();
-    IConnectionPtr connection = new TestConnection(s_project->GetECDb());
     RulesDrivenECPresentationManager::ContentOptions options("rulesetIdText");
     INavNodeKeysContainerCPtr container = NavNodeKeyListContainer::Create(bvector<NavNodeKeyCPtr>{
         NavNodeKey::Create("TypeName", {"123", "abc"}),
         NavNodeKey::Create("TypeName2", {"456", "def"})
         });
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*connection, options.GetJson(), *container, "DisplayTypeText");
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *container, "DisplayTypeText");
     SelectClassInfo selectClassInfo(*testClassA, false);
     selectClassInfo.SetPathToPrimaryClass({RelatedClass(*testClassA, *testClassB, *relClassAClassB, false)});
     selectClassInfo.SetRelatedPropertyPaths({{RelatedClass(*testClassA, *testClassB, *relClassAClassB, false)}});
@@ -2166,7 +2131,7 @@ TEST_F(DgnECPresentationSerializerTests, ContentDescriptorSerializationNoSelecti
             }
         })");
 
-    expected["ConnectionId"].SetString(connection->GetId().c_str(), expected.GetAllocator());
+    expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
     expected["InputKeysHash"].SetString(container->GetHash().c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["SelectClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
     expected["SelectClasses"][0]["PathToPrimaryClass"][0]["SourceClassInfo"]["Id"].SetString(testClassA->GetId().ToString().c_str(), expected.GetAllocator());
@@ -2184,15 +2149,14 @@ TEST_F(DgnECPresentationSerializerTests, ContentDescriptorSerializationNoSelecti
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ContentDescriptorSerializationWithSelectionInfo)
+TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationWithSelectionInfo)
     {
-    IConnectionPtr connection = new TestConnection(s_project->GetECDb());
     RulesDrivenECPresentationManager::ContentOptions options("rulesetIdText");
     INavNodeKeysContainerCPtr container = NavNodeKeyListContainer::Create(bvector<NavNodeKeyCPtr>{
         NavNodeKey::Create("TypeName", {"123", "abc"}),
         NavNodeKey::Create("TypeName2", {"456", "def"})
         });
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*connection, options.GetJson(), *container, "DisplayTypeText");
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *container, "DisplayTypeText");
     descriptor->SetSelectionInfo(*SelectionInfo::Create("ProviderNameText", true, 123));
     rapidjson::Document actual = descriptor->AsJson();
 
@@ -2216,7 +2180,7 @@ TEST_F(DgnECPresentationSerializerTests, ContentDescriptorSerializationWithSelec
             "Timestamp": "123"
             }
         })");
-    expected["ConnectionId"].SetString(connection->GetId().c_str(), expected.GetAllocator());
+    expected["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
     expected["InputKeysHash"].SetString(container->GetHash().c_str(), expected.GetAllocator());
 
     EXPECT_EQ(expected, actual)
@@ -2227,13 +2191,13 @@ TEST_F(DgnECPresentationSerializerTests, ContentDescriptorSerializationWithSelec
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ContentSetSerializationItemWithClassSet)
+TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClassSet)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
     ContentDescriptor::ECPropertiesField field(*testClass, ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
-    bvector<ECInstanceKey> keys {
-        ECInstanceKey(ECClassId((uint64_t) 55), ECInstanceId((uint64_t) 1)),
-        ECInstanceKey(ECClassId((uint64_t) 56), ECInstanceId((uint64_t) 2))
+    bvector<ECClassInstanceKey> keys {
+        ECClassInstanceKey(*GetClassA(), ECInstanceId((uint64_t)1)),
+        ECClassInstanceKey(*GetClassB(), ECInstanceId((uint64_t)2))
         };
     rapidjson::Document values(rapidjson::kObjectType);
     values.AddMember("FieldName", "FieldValue", values.GetAllocator());
@@ -2265,54 +2229,47 @@ TEST_F(DgnECPresentationSerializerTests, ContentSetSerializationItemWithClassSet
             "Name": "TestSchema:PropertyTestClassA",
             "Label": "PropertyTestClassA"
             },
-        "PrimaryKeys": [
-            {
-            "ECClassId": "55",
+        "PrimaryKeys": [{
+            "ECClassId": "",
             "ECInstanceId": "1"
-            },
-            {
-            "ECClassId": "56",
+            }, {
+            "ECClassId": "",
             "ECInstanceId": "2"
-            }
-            ],
+            }],
         "MergedFieldNames": [
             "MergedField1",
             "MergedField2"
             ],
         "FieldValueKeys": {
-            "PropertyTestClassA_String": [
-                {
+            "PropertyTestClassA_String": [{
                 "PropertyIndex": 0,
-                "Keys": [
-                    {
-                    "ECClassId": "55",
+                "Keys": [{
+                    "ECClassId": "",
                     "ECInstanceId": "1"
-                    },
-                    {
-                    "ECClassId": "56",
+                    }, {
+                    "ECClassId": "",
                     "ECInstanceId": "2"
-                    }
-                    ]
-                }
-                ],
-            "PropertyTestClassA_Int": [
-                {
+                    }]
+                }],
+            "PropertyTestClassA_Int": [{
                 "PropertyIndex": 1,
-                "Keys": [
-                    {
-                    "ECClassId": "55",
+                "Keys": [{
+                    "ECClassId": "",
                     "ECInstanceId": "1"
-                    },
-                    {
-                    "ECClassId": "56",
+                    }, {
+                    "ECClassId": "",
                     "ECInstanceId": "2"
-                    }
-                    ]
-                }
-                ]
+                    }]
+                }]
             }
         })");
     expected["ClassInfo"]["Id"].SetString(testClass->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["PrimaryKeys"][0]["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["PrimaryKeys"][1]["ECClassId"].SetString(GetClassB()->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["FieldValueKeys"]["PropertyTestClassA_String"][0]["Keys"][0]["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["FieldValueKeys"]["PropertyTestClassA_String"][0]["Keys"][1]["ECClassId"].SetString(GetClassB()->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["FieldValueKeys"]["PropertyTestClassA_Int"][0]["Keys"][0]["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
+    expected["FieldValueKeys"]["PropertyTestClassA_Int"][0]["Keys"][1]["ECClassId"].SetString(GetClassB()->GetId().ToString().c_str(), expected.GetAllocator());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -2322,12 +2279,12 @@ TEST_F(DgnECPresentationSerializerTests, ContentSetSerializationItemWithClassSet
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ContentSetItemSerializationNoClassSet)
+TEST_F(DefaultECPresentationSerializerTests, ContentSetItemSerializationNoClassSet)
     {
     rapidjson::Document values(rapidjson::kObjectType);
     rapidjson::Document displayValues(rapidjson::kObjectType);
-    ContentSetItemPtr contentSetItem = ContentSetItem::Create({ECInstanceKey()}, "", "", std::move(values), std::move(displayValues),
-                                                              bvector<Utf8String>(), bmap<ContentSetItem::FieldProperty, bvector<ECInstanceKey>>());
+    ContentSetItemPtr contentSetItem = ContentSetItem::Create({ECClassInstanceKey()}, "", "", std::move(values), std::move(displayValues),
+                                                              bvector<Utf8String>(), bmap<ContentSetItem::FieldProperty, bvector<ECClassInstanceKey>>());
     rapidjson::Document actual = contentSetItem->AsJson(ContentSetItem::SerializationFlags::SERIALIZE_ClassInfo);
 
     rapidjson::Document expected;
@@ -2342,17 +2299,18 @@ TEST_F(DgnECPresentationSerializerTests, ContentSetItemSerializationNoClassSet)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ContentSerialization)
+TEST_F(DefaultECPresentationSerializerTests, ContentSerialization)
     {
-    IConnectionPtr connection = new TestConnection(s_project->GetECDb());
+    ECClassInstanceKey primaryKey(GetClassA(), ECInstanceId((uint64_t)1));
+
     RulesDrivenECPresentationManager::ContentOptions options("rulesetIdText");
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*connection, options.GetJson(),
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(),
                                                                 *NavNodeKeyListContainer::Create(bvector<NavNodeKeyCPtr>{}), "DisplayTypeText");
 
     rapidjson::Document values(rapidjson::kObjectType);
     rapidjson::Document displayValues(rapidjson::kObjectType);
-    ContentSetItemPtr contentSetItem = ContentSetItem::Create({ECInstanceKey()}, "", "", std::move(values), std::move(displayValues),
-                                                              bvector<Utf8String>(), bmap<ContentSetItem::FieldProperty, bvector<ECInstanceKey>>());
+    ContentSetItemPtr contentSetItem = ContentSetItem::Create({primaryKey}, "", "", std::move(values), std::move(displayValues),
+                                                              bvector<Utf8String>(), bmap<ContentSetItem::FieldProperty, bvector<ECClassInstanceKey>>());
     RefCountedPtr<TestDataSource> dataSource = TestDataSource::Create();
     dataSource->AddContentSetItem(contentSetItem);
 
@@ -2375,24 +2333,21 @@ TEST_F(DgnECPresentationSerializerTests, ContentSerialization)
                 "RulesetId": "rulesetIdText"
                 }
             },
-        "ContentSet": [
-            {
+        "ContentSet": [{
             "DisplayLabel": "",
             "ImageId": "",
             "Values": {},
             "DisplayValues": {},
-            "PrimaryKeys": [
-                {
+            "PrimaryKeys": [{
                 "ECClassId": "0",
-                "ECInstanceId": "0"
-                }
-            ],
+                "ECInstanceId": "1"
+                }],
             "MergedFieldNames": [],
             "FieldValueKeys": {}
-            }
-            ]
+            }]
         })");
-    expected["Descriptor"]["ConnectionId"].SetString(connection->GetId().c_str(), expected.GetAllocator());
+    expected["Descriptor"]["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
+    expected["ContentSet"][0]["PrimaryKeys"][0]["ECClassId"].SetString(GetClassA()->GetId().ToString().c_str(), expected.GetAllocator());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
@@ -2402,11 +2357,10 @@ TEST_F(DgnECPresentationSerializerTests, ContentSerialization)
 //---------------------------------------------------------------------------------------
 // @betest                                      Mantas.Kontrimas                03/2018
 //---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, ContenteSerializationContentSetItemNotValid)
+TEST_F(DefaultECPresentationSerializerTests, ContenteSerializationContentSetItemNotValid)
     {
-    IConnectionPtr connection = new TestConnection(s_project->GetECDb());
     RulesDrivenECPresentationManager::ContentOptions options("rulesetIdText");
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*connection, options.GetJson(),
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(),
                                                                 *NavNodeKeyListContainer::Create(bvector<NavNodeKeyCPtr>{}), "DisplayTypeText");
 
     ContentSetItemPtr contentSetItem = nullptr;
@@ -2434,95 +2388,9 @@ TEST_F(DgnECPresentationSerializerTests, ContenteSerializationContentSetItemNotV
             },
         "ContentSet": []
         })");
-    expected["Descriptor"]["ConnectionId"].SetString(connection->GetId().c_str(), expected.GetAllocator());
+    expected["Descriptor"]["ConnectionId"].SetString(m_connection->GetId().c_str(), expected.GetAllocator());
 
     EXPECT_EQ(expected, actual)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Mantas.Kontrimas                03/2018
-//---------------------------------------------------------------------------------------
-TEST_F(DgnECPresentationSerializerTests, NavNodeSerialization)
-    {
-    IConnectionPtr connection = new TestConnection(s_project->GetECDb());
-    TestNavNodePtr navNode = TestNavNode::Create(connection.get());
-    navNode->SetNodeId(10);
-    navNode->SetParentNodeId(12);
-    navNode->SetNodeKey(*NavNodeKey::Create("TypeName", {"123", "abc"}));
-    navNode->SetLabel("TestNodeLabel");
-    navNode->SetDescription("TestNodeDescription");
-    navNode->SetExpandedImageId("EImageId");
-    navNode->SetCollapsedImageId("CImageId");
-    navNode->SetForeColor("FColor");
-    navNode->SetBackColor("BColor");
-    navNode->SetFontStyle("FStyle");
-    navNode->SetType("CustomTestNode");
-    navNode->SetHasChildren(false);
-    navNode->SetIsSelectable(true);
-    navNode->SetIsEditable(false);
-    navNode->SetIsChecked(false);
-    navNode->SetIsCheckboxVisible(false);
-    navNode->SetIsCheckboxEnabled(false);
-    navNode->SetIsExpanded(true);
-    navNode->SetInstanceId(132);
-    // Serialize
-    rapidjson::Document actual = navNode->AsJson();
-
-    rapidjson::Document expected;
-    expected.Parse(R"({
-        "NodeId": "10",
-        "ParentNodeId": "12",
-        "Key": {
-            "Type": "TypeName",
-            "PathFromRoot": [
-                "123",
-                "abc"
-            ]
-            },
-        "Label": "TestNodeLabel",
-        "Description": "TestNodeDescription",
-        "ExpandedImageId": "EImageId",
-        "CollapsedImageId": "CImageId",
-        "ForeColor": "FColor",
-        "BackColor": "BColor",
-        "FontStyle": "FStyle",
-        "Type": "CustomTestNode",
-        "HasChildren": false,
-        "IsSelectable": true,
-        "IsEditable": false,
-        "IsChecked": false,
-        "IsCheckboxVisible": false,
-        "IsCheckboxEnabled": false,
-        "IsExpanded": true,
-        "ECInstanceId": "132"
-        })");
-
-    ASSERT_EQ(expected, actual)
-        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expected) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actual);
-
-    //Deserialize
-    NavNodePtr deserializedNavNode = NavNode::FromJson(actual);
-
-    EXPECT_EQ(navNode->GetInstanceId(), deserializedNavNode->GetInstanceId());
-    EXPECT_EQ(navNode->GetNodeId(), deserializedNavNode->GetNodeId());
-    EXPECT_EQ(navNode->GetParentNodeId(), deserializedNavNode->GetParentNodeId());
-    EXPECT_EQ(*navNode->GetKey(), *deserializedNavNode->GetKey());
-    EXPECT_EQ(navNode->GetLabel(), deserializedNavNode->GetLabel());
-    EXPECT_EQ(navNode->GetDescription(), deserializedNavNode->GetDescription());
-    EXPECT_EQ(navNode->GetExpandedImageId(), deserializedNavNode->GetExpandedImageId());
-    EXPECT_EQ(navNode->GetCollapsedImageId(), deserializedNavNode->GetCollapsedImageId());
-    EXPECT_EQ(navNode->GetForeColor(), deserializedNavNode->GetForeColor());
-    EXPECT_EQ(navNode->GetBackColor(), deserializedNavNode->GetBackColor());
-    EXPECT_EQ(navNode->GetFontStyle(), deserializedNavNode->GetFontStyle());
-    EXPECT_EQ(navNode->GetType(), deserializedNavNode->GetType());
-    EXPECT_EQ(navNode->HasChildren(), deserializedNavNode->HasChildren());
-    EXPECT_EQ(navNode->IsSelectable(), deserializedNavNode->IsSelectable());
-    EXPECT_EQ(navNode->IsEditable(), deserializedNavNode->IsEditable());
-    EXPECT_EQ(navNode->IsChecked(), deserializedNavNode->IsChecked());
-    EXPECT_EQ(navNode->IsCheckboxEnabled(), deserializedNavNode->IsCheckboxEnabled());
-    EXPECT_EQ(navNode->IsExpanded(), deserializedNavNode->IsExpanded());
-    EXPECT_EQ(navNode->GetExtendedData().ObjectEmpty(), deserializedNavNode->GetExtendedData().ObjectEmpty());
     }

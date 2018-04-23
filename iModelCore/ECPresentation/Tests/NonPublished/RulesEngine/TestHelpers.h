@@ -69,7 +69,7 @@ struct RulesEngineTestHelpers
     static void DeleteInstance(ECDbTestProject& project, ECInstanceKeyCR key, bool commit = false);
     static void DeleteInstance(ECDbTestProject& project, IECInstanceCR instance, bool commit = false);
     static IECInstancePtr GetInstance(ECDbR& project, ECClassCR ecClass, ECInstanceId id);
-    static ECInstanceKey GetInstanceKey(IECInstanceCR);
+    static ECClassInstanceKey GetInstanceKey(IECInstanceCR);
 
     static NavigationQueryPtr CreateECInstanceNodesQueryForClasses(ECClassSet const& classes, Utf8CP alias, ComplexQueryHandler handler = nullptr);
     static ComplexNavigationQueryPtr CreateECInstanceNodesQueryForClass(ECEntityClassCR ecClass, bool polymorphic, Utf8CP alias, bvector<RelatedClass> const& = bvector<RelatedClass>());
@@ -234,7 +234,7 @@ private:
     bmap<DataSourceInfo, bvector<JsonNavNode*>> m_virtualHierarchy;
 
     INodesProviderContextFactory* m_nodesProviderContextFactory;
-    IConnectionCacheCP m_connections;
+    IConnectionCacheCR m_connections;
 
     GetNodeHandler m_getNodeHandler;
     GetHierarchyDataSourceHandler m_getHierarchyDataSourceHandler;
@@ -276,10 +276,10 @@ protected:
         if (m_getHierarchyDataSourceHandler)
             return m_getHierarchyDataSourceHandler(info);
 
-        if (nullptr == m_nodesProviderContextFactory || nullptr == m_connections)
+        if (nullptr == m_nodesProviderContextFactory)
             return nullptr;
 
-        IConnectionPtr connection = m_connections->GetConnection(info.GetConnectionId().c_str());
+        IConnectionPtr connection = m_connections.GetConnection(info.GetConnectionId().c_str());
         if (connection.IsNull())
             {
             BeAssert(false);
@@ -295,10 +295,10 @@ protected:
         if (m_getVirtualDataSourceHandler)
             return m_getVirtualDataSourceHandler(info);
 
-        if (nullptr == m_nodesProviderContextFactory || nullptr == m_connections)
+        if (nullptr == m_nodesProviderContextFactory)
             return nullptr;
         
-        IConnectionPtr connection = m_connections->GetConnection(info.GetConnectionId().c_str());
+        IConnectionPtr connection = m_connections.GetConnection(info.GetConnectionId().c_str());
         if (connection.IsNull())
             {
             BeAssert(false);
@@ -338,7 +338,8 @@ protected:
         uint64_t const* parentId = dsInfo.GetVirtualParentNodeId();
         bvector<Utf8String> pathFromRoot = (nullptr == parentId || 0 == *parentId) ? bvector<Utf8String>() : m_nodes[*parentId]->GetKey()->GetPathFromRoot();
         pathFromRoot.push_back(std::to_string(nodeId).c_str());
-        node.SetNodeKey(*NavNodesHelper::CreateNodeKey(node, pathFromRoot));
+        IConnectionPtr connection = m_connections.GetConnection(dsInfo.GetConnectionId().c_str());
+        node.SetNodeKey(*NavNodesHelper::CreateNodeKey(*connection, node, pathFromRoot));
         m_physicalHierarchy[GetHierarchyLevelInfo(node)].push_back(&node);
         m_virtualHierarchy[dsInfo].push_back(&node);
 
@@ -376,7 +377,7 @@ protected:
     IHierarchyCache::SavepointPtr _CreateSavepoint() override {return new Savepoint(*this);}
 
 public:
-    TestNodesCache(INodesProviderContextFactory* nodesProviderContextFactory = nullptr, IConnectionCacheCP connections = nullptr) 
+    TestNodesCache(IConnectionCacheCR connections, INodesProviderContextFactory* nodesProviderContextFactory = nullptr) 
         : m_nodesProviderContextFactory(nodesProviderContextFactory), m_connections(connections)
         {}
     void SetGetNodeHandler(GetNodeHandler handler) {m_getNodeHandler = handler;}
@@ -584,7 +585,7 @@ protected:
 
 public:
     TestNodesProviderContextFactory(IConnectionManagerCR connections) 
-        : m_connections(connections), m_statementsCache(10), m_nodesCache(nullptr), m_customFunctions(connections)
+        : m_connections(connections), m_statementsCache(10), m_testNodesCache(connections), m_nodesCache(nullptr), m_customFunctions(connections)
         {}
     void SetNodesCache(IHierarchyCacheP cache) {m_nodesCache = cache;}
     void SetRuleset(PresentationRuleSetCP ruleset) {m_ruleset = ruleset;}

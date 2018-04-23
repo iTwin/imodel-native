@@ -314,10 +314,10 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentSet
         return;
         }
 
-    ECInstanceKeyCR itemKey = item.GetKeys().front();
-    JsonNavNodePtr node = context.GetNodesFactory().CreateECInstanceNode(context.GetConnection(), itemKey.GetClassId(), itemKey.GetInstanceId(), "");
+    ECClassInstanceKeyCR itemKey = item.GetKeys().front();
+    JsonNavNodePtr node = context.GetNodesFactory().CreateECInstanceNode(context.GetConnection(), itemKey.GetClass()->GetId(), itemKey.GetId(), "");
     // create temporary key
-    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+    node->SetNodeKey(*NavNodesHelper::CreateNodeKey(context.GetConnection(), *node, bvector<Utf8String>()));
     ContentSetItemPropertiesSetter setter(item);
     NavNodeCustomizer customizer(context, *node, nullptr, setter);
     customizer.ApplyImageIdOverride();

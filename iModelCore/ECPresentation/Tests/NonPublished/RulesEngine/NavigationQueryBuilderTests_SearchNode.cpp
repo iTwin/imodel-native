@@ -78,7 +78,7 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClass)
 TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClass_ChildrenQuery)
     {
     ECClassCP widget = GetECClass("RulesEngineTest", "Widget");
-    TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*widget, "MyLabel");
+    TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *widget, "MyLabel");
     m_nodesCache.Cache(*parentNode, false);
     
     SearchResultInstanceNodesSpecification spec(1, false, false, false, true, false);
@@ -124,7 +124,7 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByLabel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByLabel_ChildrenQuery)
     {
-    JsonNavNodePtr parentNode = TestNodesHelper::CreateLabelGroupingNode("MyLabel");
+    JsonNavNodePtr parentNode = TestNodesHelper::CreateLabelGroupingNode(*m_connection, "MyLabel");
     m_nodesCache.Cache(*parentNode, false);
 
     SearchResultInstanceNodesSpecification spec(1, false, false, false, false, true);
@@ -153,7 +153,7 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByLabel_Chil
 TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClassAndLabel_ClassNodeChildrenQuery)
     {
     ECClassCP widget = GetECClass("RulesEngineTest", "Widget");
-    TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*widget, "MyLabel");
+    TestNavNodePtr parentNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *widget, "MyLabel");
     m_nodesCache.Cache(*parentNode, false);
     
     SearchResultInstanceNodesSpecification spec(1, false, false, false, true, true);
@@ -181,8 +181,8 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClassAndLa
 TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_GroupByClassAndLabel_LabelNodeChildrenQuery)
     {
     ECClassCP widget = GetECClass("RulesEngineTest", "Widget");
-    TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*widget, "Class Grouping Node");
-    JsonNavNodePtr labelGroupingNode = TestNodesHelper::CreateLabelGroupingNode("Label Grouping Node");
+    TestNavNodePtr classGroupingNode = TestNodesHelper::CreateClassGroupingNode(*m_connection, *widget, "Class Grouping Node");
+    JsonNavNodePtr labelGroupingNode = TestNodesHelper::CreateLabelGroupingNode(*m_connection, "Label Grouping Node");
     m_nodesCache.Cache(*classGroupingNode, false);
     labelGroupingNode->SetParentNode(*classGroupingNode);
     m_nodesCache.Cache(*labelGroupingNode, false);
@@ -220,7 +220,7 @@ TEST_F (NavigationQueryBuilderTests, SearchResultInstanceNodes_UsesParentPropert
         {
         instance.SetValue("Description", ECValue(SEARCH_NODE_QUERY));
         });
-    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*instance);
+    TestNavNodePtr parentNode = TestNodesHelper::CreateInstanceNode(*m_connection, *instance);
     m_nodesCache.Cache(*parentNode, false);
 
     SearchResultInstanceNodesSpecification spec(1, false, false, false, false, false);

@@ -11,7 +11,7 @@
 #include <ECPresentation/ECPresentationTypes.h>
 #include <ECPresentation/DataSource.h>
 #include <ECPresentation/ExtendedData.h>
-#include <ECPresentation/NavNode.h>
+#include <ECPresentation/KeySet.h>
 #include <ECPresentation/RulesDriven/Rules/RelatedPropertiesSpecification.h>
 
 #include <ECDb/ECInstanceId.h>
@@ -371,10 +371,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         private:
             Utf8String m_typeName;
         protected:
+            TypeDescription(Utf8String typeName) : m_typeName(typeName) {}
             ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const;
         public:
-            TypeDescription(Utf8String typeName) : m_typeName(typeName) {}
-            virtual ~TypeDescription() {}
+            ECPRESENTATION_EXPORT static RefCountedPtr<TypeDescription> Create(ECPropertyCR);
             Utf8StringCR GetTypeName() const {return m_typeName;}
             rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(allocator);}
         };
@@ -732,9 +732,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! Find properties that match the supplied class. If nullptr is supplied, 
         //! all properties are returned.
         bvector<Property const*> const& FindMatchingProperties(ECClassCP) const;
-
-        //! Create type description for property
-        static TypeDescriptionPtr CreateTypeDescription(ECPropertyCR prop);
     };
     
     //===================================================================================
@@ -1104,11 +1101,11 @@ struct ContentSetItem : RefCountedBase, RapidJsonExtendedDataHolder<>
         ContentDescriptor::Property const& GetProperty() const {return m_field->GetProperties()[m_propertyIndex];}
         size_t GetPropertyIndex() const {return m_propertyIndex;}
     };
-    typedef bmap<FieldProperty, bvector<BeSQLite::EC::ECInstanceKey>> FieldPropertyInstanceKeyMap;
+    typedef bmap<FieldProperty, bvector<ECClassInstanceKey>> FieldPropertyInstanceKeyMap;
 
 private:
     ECClassCP m_class;
-    bvector<BeSQLite::EC::ECInstanceKey> m_keys;
+    bvector<ECClassInstanceKey> m_keys;
     Utf8String m_displayLabel;
     Utf8String m_imageId;
     rapidjson::Document m_values;
@@ -1117,7 +1114,7 @@ private:
     bvector<Utf8String> m_mergedFieldNames;
 
 private:
-    ContentSetItem(bvector<BeSQLite::EC::ECInstanceKey> keys, Utf8String displayLabel, Utf8String imageId, rapidjson::Document&& values, 
+    ContentSetItem(bvector<ECClassInstanceKey> keys, Utf8String displayLabel, Utf8String imageId, rapidjson::Document&& values, 
         rapidjson::Document&& displayValues, bvector<Utf8String> mergedFieldNames, FieldPropertyInstanceKeyMap&& fieldPropertyInstanceKeys)
         : m_class(nullptr), m_keys(keys), m_displayLabel(displayLabel), m_imageId(imageId), 
         m_values(std::move(values)), m_displayValues(std::move(displayValues)), 
@@ -1130,7 +1127,7 @@ public:
     rapidjson::Document const& GetDisplayValues() const {return m_displayValues;}
     rapidjson::Document& GetDisplayValues() {return m_displayValues;}
     bvector<Utf8String>& GetMergedFieldNames() {return m_mergedFieldNames;}
-    bvector<BeSQLite::EC::ECInstanceKey>& GetKeys() {return m_keys;}
+    bvector<ECClassInstanceKey>& GetKeys() {return m_keys;}
     FieldPropertyInstanceKeyMap const& GetFieldInstanceKeys() const {return m_fieldPropertyInstanceKeys;}
 //__PUBLISH_SECTION_START__
 
@@ -1142,8 +1139,8 @@ public:
     //! @param[in] values The values map.
     //! @param[in] displayValues The display values map.
     //! @param[in] mergedFieldNames Names of merged fields in this record.
-    //! @param[in] fieldPropertyInstanceKeys ECInstanceKeys of related instances for each field in this record.
-    static ContentSetItemPtr Create(bvector<BeSQLite::EC::ECInstanceKey> keys, Utf8String displayLabel, Utf8String imageId, 
+    //! @param[in] fieldPropertyInstanceKeys ECClassInstanceKeys of related instances for each field in this record.
+    static ContentSetItemPtr Create(bvector<ECClassInstanceKey> keys, Utf8String displayLabel, Utf8String imageId, 
         rapidjson::Document&& values, rapidjson::Document&& displayValues, bvector<Utf8String> mergedFieldNames,
         FieldPropertyInstanceKeyMap&& fieldPropertyInstanceKeys)
         {
@@ -1155,7 +1152,7 @@ public:
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(int flags = SERIALIZE_All, rapidjson::Document::AllocatorType* allocator = nullptr) const;
 
     //! Get keys of ECInstances whose values this item contains.
-    bvector<BeSQLite::EC::ECInstanceKey> const& GetKeys() const {return m_keys;}
+    bvector<ECClassInstanceKey> const& GetKeys() const {return m_keys;}
     
     //! Get names of merged fields in this record.
     bvector<Utf8String> const& GetMergedFieldNames() const {return m_mergedFieldNames;}
@@ -1164,7 +1161,7 @@ public:
     ECPRESENTATION_EXPORT bool IsMerged(Utf8StringCR fieldName) const;
 
     //! Get the ECInstance keys whose values are contained in the field with the specified name.
-    ECPRESENTATION_EXPORT bvector<BeSQLite::EC::ECInstanceKey> const& GetPropertyValueKeys(FieldProperty const&) const;
+    ECPRESENTATION_EXPORT bvector<ECClassInstanceKey> const& GetPropertyValueKeys(FieldProperty const&) const;
 
     //! Get the ECClass whose values are contained in this record.
     //! @note May be null when the record contains multiple merged values of different classes.

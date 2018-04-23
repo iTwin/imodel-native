@@ -410,9 +410,9 @@ public:
         if (node.IsNull() && nullptr != m_key && nullptr != m_key->AsECInstanceNodeKey())
             {
             ECInstanceNodeKey const* instanceKey = m_key->AsECInstanceNodeKey();
-            node = JsonNavNodesFactory().CreateECInstanceNode(m_connection, instanceKey->GetECClassId(), instanceKey->GetInstanceId(), "");
-            // create temporary key
-            const_cast<JsonNavNodeP>(node.get())->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, bvector<Utf8String>()));
+            JsonNavNodePtr temp = JsonNavNodesFactory().CreateECInstanceNode(m_connection, instanceKey->GetECClassId(), instanceKey->GetInstanceId(), "");
+            temp->SetNodeKey(*NavNodesHelper::CreateNodeKey(m_connection, *temp, bvector<Utf8String>()));
+            node = temp;
             }
 
         NodeSymbolsProvider nodeSymbols(m_rootContext.AddContext(*new NodeSymbolsProvider::Context(m_connection, node.get())));

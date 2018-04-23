@@ -514,7 +514,12 @@ void IECPresentationManager::RegisterImplementation(IECPresentationManager* impl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IECPresentationManager::SetSerializer(IECPresentationSerializer const* serializer) {s_serializer = serializer;}
+void IECPresentationManager::SetSerializer(IECPresentationSerializer const* serializer)
+    {
+    if (nullptr != s_serializer)
+        DELETE_AND_CLEAR(s_serializer);
+    s_serializer = serializer;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mantas.Kontrimas                03/2018

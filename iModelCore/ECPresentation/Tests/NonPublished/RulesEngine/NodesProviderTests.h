@@ -38,7 +38,7 @@ struct NodesProviderTests : ECPresentationTest
     TestECDbUsedClassesListener m_usedClassesListener;
     
     NodesProviderTests() 
-        : m_statementCache(10), m_providerContextFactory(m_connections), m_nodesCache(&m_providerContextFactory, &m_connections)
+        : m_statementCache(10), m_providerContextFactory(m_connections), m_nodesCache(m_connections, &m_providerContextFactory)
         {}
 
     static void SetUpTestCase();

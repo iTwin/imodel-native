@@ -2,7 +2,7 @@
 #
 #     $Source: ECPresentation.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -15,7 +15,7 @@ SourceDirectory             = $(RootDirectory)Source/
 XliffsDirectory             = $(RootDirectory)Localization/Xliffs/
 PublicApiDirectory          = $(RootDirectory)PublicAPI/ECPresentation/
 BuildContextLibsDirectory   = $(BuildContext)SubParts/Libs/
-OutputDirectory             = $(OutputRootDir)build/ECPresentation/Lib/
+OutputDirectory             = $(PartBuildDir)
 CompileOptionsMki           = $(SourceDirectory)CompileOptions.mki
 ECPresentationMakefiles     = $(_MakeFileSpec)
 

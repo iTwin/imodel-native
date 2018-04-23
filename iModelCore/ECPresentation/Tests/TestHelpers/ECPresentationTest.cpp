@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECPresentationTest.h"
 #include <ECPresentation/IECPresentationManager.h>
-#include <ECPresentation/DgnECPresentationSerializer.h>
+#include <ECPresentation/DefaultECPresentationSerializer.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
@@ -19,5 +19,5 @@ bool BeAssertIgnoreContext::s_value = true;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECPresentationTest::SetUp()
     {
-    IECPresentationManager::SetSerializer(&DgnECPresentationSerializer::Get());
+    IECPresentationManager::SetSerializer(new DefaultECPresentationSerializer());
     }

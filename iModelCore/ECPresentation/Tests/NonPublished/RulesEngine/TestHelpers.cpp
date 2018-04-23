@@ -261,11 +261,11 @@ IECInstancePtr RulesEngineTestHelpers::GetInstance(ECDbR db, ECClassCR ecClass, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKey RulesEngineTestHelpers::GetInstanceKey(IECInstanceCR instance)
+ECClassInstanceKey RulesEngineTestHelpers::GetInstanceKey(IECInstanceCR instance)
     {
     ECInstanceId instanceId;
     ECInstanceId::FromString(instanceId, instance.GetInstanceId().c_str());
-    return ECInstanceKey(instance.GetClass().GetId(), instanceId);
+    return ECClassInstanceKey(instance.GetClass(), instanceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -481,9 +481,9 @@ void RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP> instances
             }
         else
             {
-            bvector<ECInstanceKey> const& itemKeys = item->GetKeys();
+            bvector<ECClassInstanceKey> const& itemKeys = item->GetKeys();
             bset<Utf8String> itemInstanceIds;
-            std::transform(itemKeys.begin(), itemKeys.end(), std::inserter(itemInstanceIds, itemInstanceIds.end()), [](ECInstanceKeyCR key){return key.GetInstanceId().ToString();});
+            std::transform(itemKeys.begin(), itemKeys.end(), std::inserter(itemInstanceIds, itemInstanceIds.end()), [](ECClassInstanceKeyCR key){return key.GetId().ToString();});
             auto iter = std::find_if(instances.begin(), instances.end(),
                 [&itemInstanceIds](IECInstanceCP instance){return itemInstanceIds.end() != itemInstanceIds.find(instance->GetInstanceId());});
             ASSERT_TRUE(instances.end() != iter);

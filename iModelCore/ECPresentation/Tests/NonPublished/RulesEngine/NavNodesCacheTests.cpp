@@ -124,7 +124,7 @@ bvector<JsonNavNodeCPtr> NodesCacheTests::FillWithNodes(DataSourceInfo const& in
     bvector<JsonNavNodeCPtr> nodes;
     for (size_t i = 0; i < count; ++i)
         {
-        TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+        TestNavNodePtr node = TestNavNode::Create(*m_connection);
         if (nullptr != info.GetPhysicalParentNodeId())
             node->SetParentNodeId(*info.GetPhysicalParentNodeId());
         NavNodeExtendedData extendedData(*node);
@@ -155,7 +155,7 @@ TEST_F(NodesCacheTests, Clear_Full)
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
-    TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr rootNode = TestNavNode::Create(*m_connection);
     NavNodeExtendedData rootExtendedData(*rootNode);
     rootExtendedData.SetConnectionId(m_connection->GetId());
     rootExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
@@ -167,7 +167,7 @@ TEST_F(NodesCacheTests, Clear_Full)
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache child node
-    TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
     NavNodeExtendedData childExtendedData(*childNode);
     childExtendedData.SetConnectionId(m_connection->GetId());
     childExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
@@ -219,7 +219,7 @@ TEST_F(NodesCacheTests, Clear_ByConnection)
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
-    TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr rootNode = TestNavNode::Create(*m_connection);
     NavNodeExtendedData rootExtendedData(*rootNode);
     rootExtendedData.SetConnectionId(m_connection->GetId());
     rootExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
@@ -231,7 +231,7 @@ TEST_F(NodesCacheTests, Clear_ByConnection)
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache child node
-    TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
     NavNodeExtendedData childExtendedData(*childNode);
     childExtendedData.SetConnectionId(m_connection->GetId());
     childExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
@@ -276,7 +276,7 @@ TEST_F(NodesCacheTests, Clear_ByRulesetId)
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
-    TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr rootNode = TestNavNode::Create(*m_connection);
     NavNodeExtendedData rootExtendedData(*rootNode);
     rootExtendedData.SetConnectionId(m_connection->GetId());
     rootExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
@@ -288,7 +288,7 @@ TEST_F(NodesCacheTests, Clear_ByRulesetId)
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache child node
-    TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
     NavNodeExtendedData childExtendedData(*childNode);
     childExtendedData.SetConnectionId(m_connection->GetId());
     childExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
@@ -350,7 +350,7 @@ TEST_F(NodesCacheTests, RemovesChildDataSource)
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
@@ -382,7 +382,7 @@ TEST_F(NodesCacheTests, RemovesChildNodesWhenParentDataSourceIsRemoved)
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     
     // cache node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
@@ -409,7 +409,7 @@ TEST_F(NodesCacheTests, RemovesChildDataSourcesWhenParentDataSourceIsRemoved)
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     
     // cache node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
@@ -441,7 +441,7 @@ TEST_F(NodesCacheTests, MakePhysical)
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(info.GetConnectionId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
@@ -469,7 +469,7 @@ TEST_F(NodesCacheTests, MakeVirtual)
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(info.GetConnectionId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
@@ -497,7 +497,7 @@ TEST_F(NodesCacheTests, UpdateNode)
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     node->SetLabel("A");
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(info.GetConnectionId());
@@ -668,12 +668,12 @@ TEST_F(NodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual)
 TEST_F(NodesCacheTests, GetFilteredNodes)
     {
     // create the root node
-    TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode(*m_connection, "test type", "test label", "test descr");
     NavNodeExtendedData extendedData1(*node1);
     extendedData1.SetConnectionId(m_connection->GetId());
     extendedData1.SetRulesetId("ruleset_id");
 
-    TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode("test type", "label", "test descr");
+    TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode(*m_connection, "test type", "label", "test descr");
     NavNodeExtendedData extendedData2(*node2);
     extendedData2.SetConnectionId(m_connection->GetId());
     extendedData2.SetRulesetId("ruleset_id");
@@ -701,7 +701,7 @@ TEST_F(NodesCacheTests, Updates_IsExpandedFlag)
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(info.GetConnectionId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
@@ -727,13 +727,13 @@ TEST_F(NodesCacheTests, Updates_IsExpandedFlag)
 TEST_F(NodesCacheTests, ResetIsExpandedFlag)
     {
     // create the root node
-    TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode(*m_connection, "test type", "test label", "test descr");
     NavNodeExtendedData extendedData1(*node1);
     extendedData1.SetConnectionId(m_connection->GetId());
     extendedData1.SetRulesetId("ruleset_id");
     node1->SetIsExpanded(true);
 
-    TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode("test type", "label", "test descr");
+    TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode(*m_connection, "test type", "label", "test descr");
     NavNodeExtendedData extendedData2(*node2);
     extendedData2.SetConnectionId(m_connection->GetId());
     extendedData2.SetRulesetId("ruleset_id");
@@ -763,7 +763,7 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnow
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create node
-    TestNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    TestNavNodePtr node = TestNodesHelper::CreateCustomNode(*m_connection, "test type", "test label", "test descr");
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId("ruleset_id");
@@ -794,7 +794,7 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChi
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create node
-    TestNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    TestNavNodePtr node = TestNodesHelper::CreateCustomNode(*m_connection, "test type", "test label", "test descr");
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId("ruleset_id");
@@ -854,7 +854,7 @@ TEST_F(NodesCacheTests, ReturnsCachedRootNode)
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create the root node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
@@ -887,7 +887,7 @@ TEST_F(NodesCacheTests, ReturnsCachedRootNodeDataSource)
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create the root node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
@@ -914,7 +914,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildDataSource)
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
@@ -945,7 +945,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNode)
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
-    TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr rootNode = TestNavNode::Create(*m_connection);
     NavNodeExtendedData rootExtendedData(*rootNode);
     rootExtendedData.SetConnectionId(m_connection->GetId());
     rootExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
@@ -962,7 +962,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNode)
     EXPECT_EQ(0, cachedProvider->GetNodesCount());
 
     // cache child node
-    TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
     NavNodeExtendedData childExtendedData(*childNode);
     childExtendedData.SetConnectionId(m_connection->GetId());
     childExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
@@ -989,7 +989,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNodeDataSource)
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
-    TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr rootNode = TestNavNode::Create(*m_connection);
     NavNodeExtendedData rootExtendedData(*rootNode);
     rootExtendedData.SetConnectionId(m_connection->GetId());
     rootExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
@@ -1001,7 +1001,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNodeDataSource)
     m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create child node
-    TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr childNode = TestNavNode::Create(*m_connection);
     NavNodeExtendedData childExtendedData(*childNode);
     childExtendedData.SetConnectionId(m_connection->GetId());
     childExtendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
@@ -1029,7 +1029,7 @@ TEST_F(NodesCacheTests, ReturnsRequestedNodeTypeWhenNodeIsPhysical)
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create the node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
@@ -1053,7 +1053,7 @@ TEST_F(NodesCacheTests, ReturnsRequestedNodeTypeWhenNodeIsVirtual)
     m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create the node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(info.GetRulesetId().c_str());
@@ -1268,14 +1268,14 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode)
     project.Create("LocateNode_LocatesECInstanceNode", "RulesEngineTest.01.00.ecschema.xml");
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
     ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    TestNavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*widgetClass2);
+    TestNavNodePtr node2 = TestNodesHelper::CreateInstanceNode(*m_connection, *widgetClass2);
     CacheNode(*m_cache, *connection2, *node2);
     m_connections.NotifyConnectionClosed(*connection2);
     project.GetECDb().CloseDb();
 
     // create a node in an open connection
     ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    TestNavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*widgetClass1);
+    TestNavNodePtr node1 = TestNodesHelper::CreateInstanceNode(*m_connection, *widgetClass1);
     CacheNode(*m_cache, *m_connection, *node1);
 
     // verify the node is found successfully with valid key
@@ -1284,8 +1284,8 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECInstanceNode)
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when key is invalid
-    ECInstanceKey invalidKey(
-        ECClassId(node1->GetKey()->AsECInstanceNodeKey()->GetECClassId().GetValue() + 100),
+    ECClassInstanceKey invalidKey(
+        node1->GetKey()->AsECInstanceNodeKey()->GetECClass(),
         ECInstanceId(node1->GetKey()->AsECInstanceNodeKey()->GetInstanceId().GetValue() + 100));
     locatedNode = m_cache->LocateNode(*m_connection, *ECInstanceNodeKey::Create(invalidKey, { "wrong hash" }));
     ASSERT_TRUE(locatedNode.IsNull());
@@ -1301,14 +1301,14 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECClassGroupingNode)
     project.Create("LocateNode_LocatesECClassGroupingNode", "RulesEngineTest.01.00.ecschema.xml");
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
     ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    TestNavNodePtr node2 = TestNodesHelper::CreateClassGroupingNode(*widgetClass2, "test label");
+    TestNavNodePtr node2 = TestNodesHelper::CreateClassGroupingNode(*m_connection, *widgetClass2, "test label");
     CacheNode(*m_cache, *connection2, *node2);
     m_connections.NotifyConnectionClosed(*connection2);
     project.GetECDb().CloseDb();
 
     // create a node in an open connection
     ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
-    TestNavNodePtr node1 = TestNodesHelper::CreateClassGroupingNode(*widgetClass1, "test label");
+    TestNavNodePtr node1 = TestNodesHelper::CreateClassGroupingNode(*m_connection, *widgetClass1, "test label");
     CacheNode(*m_cache, *m_connection, *node1);
     
     // verify the node is found successfully with valid key
@@ -1317,7 +1317,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECClassGroupingNode)
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, *ECClassGroupingNodeKey::Create(widgetClass1->GetId(), {"different hash"}));
+    locatedNode = m_cache->LocateNode(*m_connection, *ECClassGroupingNodeKey::Create(*widgetClass1, {"different hash"}));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1335,7 +1335,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyValueGroupingNode)
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
     ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
     ECPropertyCP groupingProperty2 = widgetClass2->GetPropertyP("IntProperty");
-    TestNavNodePtr node2 = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass2, *groupingProperty2, "test label", groupingValue, false);
+    TestNavNodePtr node2 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *widgetClass2, *groupingProperty2, "test label", groupingValue, false);
     CacheNode(*m_cache, *connection2, *node2);
     m_connections.NotifyConnectionClosed(*connection2);
     project.GetECDb().CloseDb();
@@ -1343,7 +1343,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyValueGroupingNode)
     // create a node in an open connection
     ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
     ECPropertyCP groupingProperty1 = widgetClass1->GetPropertyP("IntProperty");
-    TestNavNodePtr node1 = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass1, *groupingProperty1, "test label", groupingValue, false);
+    TestNavNodePtr node1 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *widgetClass1, *groupingProperty1, "test label", groupingValue, false);
     CacheNode(*m_cache, *m_connection, *node1);
 
     // verify the node is found successfully with valid key
@@ -1352,7 +1352,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyValueGroupingNode)
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, *ECPropertyGroupingNodeKey::Create(widgetClass1->GetId(), "IntProperty", &groupingValue, {"different hash"}));
+    locatedNode = m_cache->LocateNode(*m_connection, *ECPropertyGroupingNodeKey::Create(*widgetClass1, "IntProperty", &groupingValue, {"different hash"}));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1370,7 +1370,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyRangeGroupingNode)
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
     ECClassCP widgetClass2 = project.GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
     ECPropertyCP groupingProperty2 = widgetClass2->GetPropertyP("IntProperty");
-    TestNavNodePtr node2 = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass2, *groupingProperty2, "test label", groupingValue, true);
+    TestNavNodePtr node2 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *widgetClass2, *groupingProperty2, "test label", groupingValue, true);
     CacheNode(*m_cache, *connection2, *node2);
     m_connections.NotifyConnectionClosed(*connection2);
     project.GetECDb().CloseDb();
@@ -1378,7 +1378,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyRangeGroupingNode)
     // create a node in an open connection
     ECClassCP widgetClass1 = GetDb().Schemas().GetClass("RulesEngineTest", "Widget");
     ECPropertyCP groupingProperty1 = widgetClass1->GetPropertyP("IntProperty");
-    TestNavNodePtr node1 = TestNodesHelper::CreatePropertyGroupingNode(*widgetClass1, *groupingProperty1, "test label", groupingValue, true);
+    TestNavNodePtr node1 = TestNodesHelper::CreatePropertyGroupingNode(*m_connection, *widgetClass1, *groupingProperty1, "test label", groupingValue, true);
     CacheNode(*m_cache, *m_connection, *node1);
     
     // verify the node is found successfully with valid key
@@ -1387,7 +1387,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesECPropertyRangeGroupingNode)
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
     // verify the node is not found when node hash doesnt match
-    locatedNode = m_cache->LocateNode(*m_connection, *ECPropertyGroupingNodeKey::Create(widgetClass1->GetId(), "IntProperty", &groupingValue, {"different hash"}));
+    locatedNode = m_cache->LocateNode(*m_connection, *ECPropertyGroupingNodeKey::Create(*widgetClass1, "IntProperty", &groupingValue, {"different hash"}));
     ASSERT_TRUE(locatedNode.IsNull());
     }
 
@@ -1400,13 +1400,13 @@ TEST_F(NodesCacheTests, LocateNode_LocatesLabelGroupingNode)
     ECDbTestProject project;
     project.Create("LocateNode_LocatesLabelGroupingNode");
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
-    TestNavNodePtr node2 = TestNodesHelper::CreateLabelGroupingNode("test label");
+    TestNavNodePtr node2 = TestNodesHelper::CreateLabelGroupingNode(*m_connection, "test label");
     CacheNode(*m_cache, *connection2, *node2);
     m_connections.NotifyConnectionClosed(*connection2);
     project.GetECDb().CloseDb();
 
     // create a node in an open connection
-    TestNavNodePtr node1 = TestNodesHelper::CreateLabelGroupingNode("test label");
+    TestNavNodePtr node1 = TestNodesHelper::CreateLabelGroupingNode(*m_connection, "test label");
     CacheNode(*m_cache, *m_connection, *node1);
 
     // verify the node is found successfully with valid key
@@ -1428,13 +1428,13 @@ TEST_F(NodesCacheTests, LocateNode_LocatesCustomNode)
     ECDbTestProject project;
     project.Create("LocateNode_LocatesCustomNode");
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
-    TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    TestNavNodePtr node2 = TestNodesHelper::CreateCustomNode(*m_connection, "test type", "test label", "test descr");
     CacheNode(*m_cache, *connection2, *node2);
     m_connections.NotifyConnectionClosed(*connection2);
     project.GetECDb().CloseDb();
 
     // create a node in an open connection
-    TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
+    TestNavNodePtr node1 = TestNodesHelper::CreateCustomNode(*m_connection, "test type", "test label", "test descr");
     CacheNode(*m_cache, *m_connection, *node1);
     
     // verify the node is found successfully with valid key
@@ -1862,7 +1862,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
     
     // create a node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId("ruleset_id");
@@ -1885,7 +1885,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
     
     // create a node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId("ruleset_id");
@@ -1908,7 +1908,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
     
     // create a node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId("ruleset_id");
@@ -1940,7 +1940,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
     // create a node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId("ruleset_id");
@@ -2038,7 +2038,7 @@ TEST_F(NodesCacheTests, ClearChildDatasourceCacheIfRelatedSettingsValuesHasChang
     m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
-    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    TestNavNodePtr node = TestNavNode::Create(*m_connection);
     NavNodeExtendedData extendedData(*node);
     extendedData.SetConnectionId(m_connection->GetId());
     extendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());

@@ -533,9 +533,9 @@ struct FieldValueInstanceKeyReader
 {
 private:
     ECDbCR m_db;
-    bmap<ContentDescriptor::ECPropertiesField const*, bvector<ECInstanceKey>> m_relatedFieldKeys;
+    bmap<ContentDescriptor::ECPropertiesField const*, bvector<ECClassInstanceKey>> m_relatedFieldKeys;
     bmap<ContentDescriptor::ECPropertiesField const*, int> m_fieldProperties;
-    bvector<ECInstanceKey> const& m_primaryKeys;
+    bvector<ECClassInstanceKey> const& m_primaryKeys;
 
 private:
     /*---------------------------------------------------------------------------------**//**
@@ -545,7 +545,8 @@ private:
         {
         ECClassId classId(json["ECClassId"].GetUint64());
         ECInstanceId instanceId(json["ECInstanceId"].GetUint64());
-        ECInstanceKey key(classId, instanceId);
+        ECClassCP ecClass = m_db.Schemas().GetClass(classId);
+        ECClassInstanceKey key(ecClass, instanceId);
         for (ContentDescriptor::ECPropertiesField const* field : keyFields)
             m_relatedFieldKeys[field].push_back(key);
         }
@@ -554,7 +555,7 @@ public:
     /*---------------------------------------------------------------------------------**//**
     // @bsimethod                                    Grigas.Petraitis               06/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
-    FieldValueInstanceKeyReader(ECDbCR db, bvector<ECInstanceKey> const& primaryKeys)
+    FieldValueInstanceKeyReader(ECDbCR db, bvector<ECClassInstanceKey> const& primaryKeys)
         : m_db(db), m_primaryKeys(primaryKeys) 
         {}
 
@@ -623,7 +624,7 @@ public:
                 {
                 // note: -1 means any property - in this case we iterate through all field properties and 
                 // see whether any ECInstaceKey matches that property
-                bvector<ECInstanceKey> const* sourceVector = &m_primaryKeys;
+                bvector<ECClassInstanceKey> const* sourceVector = &m_primaryKeys;
                 auto relatedFieldKeyIter = m_relatedFieldKeys.find(pair.first);
                 if (m_relatedFieldKeys.end() != relatedFieldKeyIter)
                     sourceVector = &relatedFieldKeyIter->second;
@@ -632,10 +633,9 @@ public:
                 for (ContentDescriptor::Property const& p : pair.first->GetProperties())
                     {
                     ContentSetItem::FieldProperty fieldProperty(*pair.first, propertyIndex++);
-                    for (ECInstanceKeyCR key : *sourceVector)
+                    for (ECClassInstanceKeyCR key : *sourceVector)
                         {
-                        ECClassCP keyClass = m_db.Schemas().GetClass(key.GetClassId());
-                        if (keyClass->Is(&p.GetPropertyClass()))
+                        if (key.GetClass()->Is(&p.GetPropertyClass()))
                             keys[fieldProperty].push_back(key);
                         }
                     }
@@ -645,7 +645,7 @@ public:
                 // here we know exactly which property was changed, so just copy all ECInstanceKeys in that field
                 // to the output map
                 ContentSetItem::FieldProperty fieldProperty(*pair.first, pair.second);
-                bvector<ECInstanceKey> const* sourceVector = &m_primaryKeys;
+                bvector<ECClassInstanceKey> const* sourceVector = &m_primaryKeys;
                 auto relatedFieldKeyIter = m_relatedFieldKeys.find(&fieldProperty.GetField());
                 if (m_relatedFieldKeys.end() != relatedFieldKeyIter)
                     sourceVector = &relatedFieldKeyIter->second;
@@ -667,18 +667,23 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
     int columnIndex = 0;
     uint64_t contractId = 0;
 
-    bvector<ECInstanceKey> primaryRecordKeys;
+    bvector<ECClassInstanceKey> primaryRecordKeys;
     if (!descriptor.OnlyDistinctValues())
         {
         contractId = statement.GetValueUInt64(columnIndex++);
-        primaryRecordKeys = ValueHelpers::GetECInstanceKeysFromSerializedJson(statement.GetValueText(columnIndex++));
-        BeAssert(1 == primaryRecordKeys.size() || resultsMerged);
+        bvector<ECInstanceKey> ecInstanceKeys = ValueHelpers::GetECInstanceKeysFromSerializedJson(statement.GetValueText(columnIndex++));
+        BeAssert(1 == ecInstanceKeys.size() || resultsMerged);
         if (!resultsMerged)
             {
-            auto readKeysIter = m_readKeys.find(primaryRecordKeys[0]);
+            auto readKeysIter = m_readKeys.find(ecInstanceKeys.front());
             if (m_readKeys.end() != readKeysIter)
                 return;
-            m_readKeys.insert(readKeysIter, primaryRecordKeys[0]);
+            m_readKeys.insert(readKeysIter, ecInstanceKeys.front());
+            }
+        for (ECInstanceKeyCR key : ecInstanceKeys)
+            {
+            ECClassCP keyClass = GetConnection().GetECDb().Schemas().GetClass(key.GetClassId());
+            primaryRecordKeys.push_back(ECClassInstanceKey(keyClass, key.GetInstanceId()));
             }
         }
     
@@ -688,11 +693,11 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
     ECClassCP recordClass = nullptr;
     if (0 == ((int)ContentFlags::KeysOnly & descriptor.GetContentFlags()))
         {
-        for (ECInstanceKeyCR primaryKey : primaryRecordKeys)
+        for (ECClassInstanceKeyCR primaryKey : primaryRecordKeys)
             {
             if (nullptr == recordClass)
-                recordClass = statement.GetECDb()->Schemas().GetClass(primaryKey.GetClassId());
-            else if (recordClass->GetId() != primaryKey.GetClassId())
+                recordClass = primaryKey.GetClass();
+            else if (recordClass != primaryKey.GetClass())
                 {
                 recordClass = nullptr;
                 break;

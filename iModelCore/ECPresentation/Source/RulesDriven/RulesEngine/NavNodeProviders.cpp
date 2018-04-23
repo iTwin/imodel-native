@@ -1389,7 +1389,7 @@ void SQLiteCacheNodesProvider::InitializeNodes()
         if (!statement->IsColumnNull(1))
             NavNodeExtendedData(*node).SetVirtualParentId(statement->GetValueUInt64(1));
 
-        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(*node, statement->GetValueText(4)));
+        node->SetNodeKey(*NavNodesHelper::CreateNodeKey(GetContext().GetConnection(), *node, statement->GetValueText(4)));
 
         m_nodes->push_back(node);
         }

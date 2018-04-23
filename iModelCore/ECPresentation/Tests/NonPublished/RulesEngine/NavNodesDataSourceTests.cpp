@@ -28,11 +28,14 @@ struct NavNodesDataSourceTests : ECPresentationTest, IECExpressionsCacheProvider
     RefCountedPtr<TestNodesProvider> m_provider;
     NavNodesDataSourcePtr m_source;
     TestUserSettings m_settings;
+    TestConnectionManager m_connections;
     TestNodesCache m_nodesCache;
     ECExpressionsCache m_expressionsCache;
     RelatedPathsCache m_relatedPathsCache;
     PolymorphicallyRelatedClassesCache m_polymorphicallyRelatedClassesCache;
     
+    NavNodesDataSourceTests() : m_nodesCache(m_connections) {}
+
     void SetUp() override
         {
         ECPresentationTest::SetUp();

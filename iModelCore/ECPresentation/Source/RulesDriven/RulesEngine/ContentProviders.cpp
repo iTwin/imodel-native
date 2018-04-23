@@ -212,8 +212,8 @@ static void MergePrimaryKeys(bvector<ContentSetItemPtr> const& targetSetItems, b
     BeAssert(targetSetItems.size() == sourceSetItems.size());
     for (size_t i = 0; i < sourceSetItems.size(); ++i)
         {
-        bvector<ECInstanceKey>& sourceKeys = sourceSetItems[i]->GetKeys();
-        bvector<ECInstanceKey>& targetKeys = targetSetItems[i]->GetKeys();
+        bvector<ECClassInstanceKey>& sourceKeys = sourceSetItems[i]->GetKeys();
+        bvector<ECClassInstanceKey>& targetKeys = targetSetItems[i]->GetKeys();
         for (size_t j = 0; j < sourceKeys.size(); ++j)
             targetKeys.push_back(sourceKeys[j]);
         }
@@ -347,9 +347,9 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
         bvector<ContentSetItemPtr> targetSetitems;
         bool mergeAllField = false;
         bool firstPass = true;
-        for (ECInstanceKeyCR key : item.GetKeys())
+        for (ECClassInstanceKeyCR key : item.GetKeys())
             {
-            if (!isRelatedContent && field.GetContentClass().GetId() != key.GetClassId())
+            if (!isRelatedContent && &field.GetContentClass() != key.GetClass())
                 continue;
 
             provider->SetPrimaryInstanceKey(key);
@@ -448,14 +448,13 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
     if (nullptr == item.GetClass())
         {
         // item may have no class if it's created from multiple different classes (merged rows case)
-        bset<ECClassId> handledClassIds;
-        for (ECInstanceKeyCR key : item.GetKeys())
+        bset<ECClassCP> handledClasses;
+        for (ECClassInstanceKeyCR key : item.GetKeys())
             {
-            if (handledClassIds.end() != handledClassIds.find(key.GetClassId()))
+            if (handledClasses.end() != handledClasses.find(key.GetClass()))
                 continue;
 
-            ECClassCP keyClass = GetContext().GetConnection().GetECDb().Schemas().GetClass(key.GetClassId());
-            bvector<ContentDescriptor::Property const*> const& matchingProperties = field.FindMatchingProperties(keyClass);
+            bvector<ContentDescriptor::Property const*> const& matchingProperties = field.FindMatchingProperties(key.GetClass());
             BeAssert(matchingProperties.size() <= 1);
             if (matchingProperties.size() == 0)
                 {
@@ -470,9 +469,9 @@ void ContentProvider::LoadCompositePropertiesFieldValue(ContentSetItemR item, Co
                     BeAssert(false);
                     continue;
                     }
-                propertiesPerItemClass[keyClass] = matchingProperty;
+                propertiesPerItemClass[key.GetClass()] = matchingProperty;
                 }
-            handledClassIds.insert(key.GetClassId());
+            handledClasses.insert(key.GetClass());
             }
         }
     else
@@ -1070,7 +1069,7 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
         Utf8StringCR idFieldAlias = m_field.GetRelationshipPath().empty() ? m_field.GetContentClassAlias() : m_field.GetRelationshipPath().front().GetTargetClassAlias();
         Utf8String idSelector = Utf8String("[").append(idFieldAlias).append("].[ECInstanceId]");
         bvector<ECInstanceId> ids;
-        std::transform(m_primaryInstanceKeys.begin(), m_primaryInstanceKeys.end(), std::back_inserter(ids), [](ECInstanceKeyCR key){return key.GetInstanceId();});
+        std::transform(m_primaryInstanceKeys.begin(), m_primaryInstanceKeys.end(), std::back_inserter(ids), [](ECClassInstanceKeyCR key){return key.GetId();});
         IdsFilteringHelper<bvector<ECInstanceId>> idsFilteringHelper(ids);
         ContentQueryPtr query = m_query->Clone();
         QueryBuilderHelpers::Where(query, idsFilteringHelper.CreateWhereClause(idSelector.c_str()).c_str(), idsFilteringHelper.CreateBoundValues());
@@ -1081,7 +1080,7 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
         {
         if (m_adjustedQuery.IsNull())
             {
-            BoundQueryValuesList bindings = {new BoundQueryId(m_primaryInstanceKeys[0].GetInstanceId())};
+            BoundQueryValuesList bindings = {new BoundQueryId(m_primaryInstanceKeys[0].GetId())};
             ContentQueryPtr query = m_query->Clone();
             Utf8StringCR idFieldAlias = m_field.GetRelationshipPath().empty() ? m_field.GetContentClassAlias() : m_field.GetRelationshipPath().front().GetTargetClassAlias();
             Utf8String whereClause;
@@ -1091,7 +1090,7 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
             }
         else
             {
-            BoundQueryValuesList bindings = {new BoundQueryId(m_primaryInstanceKeys[0].GetInstanceId())};
+            BoundQueryValuesList bindings = {new BoundQueryId(m_primaryInstanceKeys[0].GetId())};
             const_cast<ContentQuery*>(m_adjustedQuery.get())->AsComplexQuery()->SetBoundValues(bindings);
             }
         }
@@ -1102,7 +1101,7 @@ ContentQueryCPtr NestedContentProvider::_GetQuery() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NestedContentProvider::SetPrimaryInstanceKeys(bvector<ECInstanceKey> const& keys)
+void NestedContentProvider::SetPrimaryInstanceKeys(bvector<ECClassInstanceKey> const& keys)
     {
     m_primaryInstanceKeys = keys;
     _Reset();
@@ -1111,7 +1110,7 @@ void NestedContentProvider::SetPrimaryInstanceKeys(bvector<ECInstanceKey> const&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NestedContentProvider::SetPrimaryInstanceKey(ECInstanceKeyCR key)
+void NestedContentProvider::SetPrimaryInstanceKey(ECClassInstanceKeyCR key)
     {
     SetPrimaryInstanceKeys({key});
     }

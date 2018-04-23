@@ -23,6 +23,15 @@ void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSel
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData)
     {
+    ECClassCP keyClass = ecdb.Schemas().GetClass(key.GetClassId());
+    AddToSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ISelectionManager::AddToSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData)
+    {
     AddToSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData);
     }
 
@@ -39,6 +48,15 @@ void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isS
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData)
     {
+    ECClassCP keyClass = ecdb.Schemas().GetClass(key.GetClassId());
+    RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ISelectionManager::RemoveFromSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData)
+    {
     RemoveFromSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData);
     }
 
@@ -54,6 +72,15 @@ void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSe
 // @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECInstanceKeyCR key, RapidJsonValueCR extendedData)
+    {
+    ECClassCP keyClass = ecdb.Schemas().GetClass(key.GetClassId());
+    ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create({ECClassInstanceKey(keyClass, key.GetInstanceId())}), extendedData);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Grigas.Petraitis                02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ISelectionManager::ChangeSelection(ECDbCR ecdb, Utf8CP source, bool isSubSelection, ECClassInstanceKeyCR key, RapidJsonValueCR extendedData)
     {
     ChangeSelection(ecdb, source, isSubSelection, *KeySet::Create({key}), extendedData);
     }
@@ -475,7 +502,7 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     // create the selection info
     SelectionInfoCPtr selectionInfo = SelectionInfo::Create(evt.GetSourceName(), evt.IsSubSelection());
     KeySetCPtr inputKeys = evt.IsSubSelection() ? m_manager->GetSubSelection(evt.GetConnection().GetECDb()) : m_manager->GetSelection(evt.GetConnection().GetECDb());
-    bvector<ECInstanceKey> selectedKeys;
+    bvector<ECClassInstanceKey> selectedKeys;
 
     // get the default content descriptor
     ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(), contentDisplayType, *inputKeys, selectionInfo.get(), contentOptions).get();
