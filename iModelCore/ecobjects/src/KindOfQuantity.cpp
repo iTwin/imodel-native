@@ -1068,7 +1068,9 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
         }
     else
         {
-        if (!nfp->SetCompositeSpec(Formatting::CompositeValueSpec(newUnits)))
+        Formatting::CompositeValueSpec localComp;
+        bool compStatus = Formatting::CompositeValueSpec::CreateCompositeSpec(localComp, newUnits);
+        if (!compStatus || !nfp->SetCompositeSpec(localComp))
             {
             LOG.errorv("On KOQ '%s' failed to set composite spec", GetFullName().c_str());
             return ECObjectsStatus::Error;

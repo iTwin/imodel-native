@@ -286,7 +286,12 @@ SchemaReadStatus ECFormat::ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSche
         }
 
     bvector<Units::UnitCP> unitsVector(units.begin(), units.end());
-    auto comp = Formatting::CompositeValueSpec(unitsVector);
+    Formatting::CompositeValueSpec comp;
+    if (!Formatting::CompositeValueSpec::CreateCompositeSpec(comp, unitsVector))
+        {
+        LOG.errorv("%s node on %s failed to create composite value spec", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str());
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
     if (labels[0].IsValid())
         comp.SetMajorLabel(labels[0].Value());
     if (labels.size() > 1 && labels[1].IsValid())
