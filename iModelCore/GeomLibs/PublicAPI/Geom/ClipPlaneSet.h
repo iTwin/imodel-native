@@ -199,6 +199,15 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
         bvector<DPoint3d> &work         //!< [inout] extra polygon
         ) const;
 
+    //! Return the (polygon) of intersection
+    GEOMDLLIMPEXP void ConvexPolygonClip
+        (
+        bvector<DPoint3d> const &input, //!< [in] points of a convex polygon
+        bvector<DPoint3d> &output,      //!< [out] clipped polygon
+        bvector<DPoint3d> &work,         //!< [inout] extra polygon
+        int onPlaneHandling              //!< [in] 0 (1: all ON is IN) (-1: all ON is OUT) (0 no special handling for all ON.)
+        ) const;
+
     //! Enumerate the "in" intervals .. the array is NOT cleared
     //! If the intervals array is nullptr, returns true immediately when any interior interval is found.
     GEOMDLLIMPEXP bool AppendIntervals(DEllipse3dCR arc, bvector<DSegment1d> *intervals, double planeSign = 1.0) const;
@@ -359,6 +368,22 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     PolyfaceQueryCR polyface,
     ClipPlaneSetCR clipSet,
     ClipPlaneSetCP maskSet,
+    PolyfaceHeaderPtr *inside,
+    PolyfaceHeaderPtr *outside
+    );
+
+    //! Clip a polyface to a a postive ClipPlaneSet.  This produces cut faces where the clipSet is inside the polyface.
+    //! If the polyface is not closed, cut faces may be produced where sections are closed loops.
+    //! @param polyface [in] polyface to test
+    //! @param clipSet [in] the positive clip set
+    //! @param constructNewFacetsOnClipSetPlanes [in] true to construct new faces where clip planes are inside the facet.
+    //! @param inside [out] (optional) "inside" parts
+    //! @param outside [out] (optional) "outside" parts
+    GEOMDLLIMPEXP void static ClipPlaneSetIntersectPolyface
+    (
+    PolyfaceQueryCR polyface,
+    ClipPlaneSetCR clipSet,
+    bool constructNewFacetsOnClipSetPlanes,
     PolyfaceHeaderPtr *inside,
     PolyfaceHeaderPtr *outside
     );

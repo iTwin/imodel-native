@@ -777,7 +777,8 @@ void ConvexClipPlaneSet::ConvexPolygonClip
 (
 bvector<DPoint3d> const &input, //!< [in] points of a convex polygon
 bvector<DPoint3d> &output,      //!< [out] clipped polygon
-bvector<DPoint3d> &work         //!< [inout] extra polygon
+bvector<DPoint3d> &work,         //!< [inout] extra polygon
+int onPlaneHandling
 ) const
     {
     output = input;
@@ -785,9 +786,20 @@ bvector<DPoint3d> &work         //!< [inout] extra polygon
         {
         if (output.empty ())
             break;
-        plane.ConvexPolygonClipInPlace (output, work);
+        plane.ConvexPolygonClipInPlace (output, work, onPlaneHandling);
         }
     }
+// DEPRECATED SHORT ARG LIST
+void ConvexClipPlaneSet::ConvexPolygonClip
+(
+bvector<DPoint3d> const &input, //!< [in] points of a convex polygon
+bvector<DPoint3d> &output,      //!< [out] clipped polygon
+bvector<DPoint3d> &work         //!< [inout] extra polygon
+) const
+    {
+    return ConvexPolygonClip (input, output, work, 0);
+    }
+
 #define CheckAreaXY_not
 // EDL Dec 7 2016.
 // superficially bad area split observed when a vertical facet (edge on from above) is split.
@@ -1346,6 +1358,31 @@ static void AddPolygonsToMesh (PolyfaceHeaderPtr *mesh, BVectorCache<DPoint3d> &
             (*mesh)->AddPolygon (shard);
         }
     }
+
+static void AddTrianglesToMesh(PolyfaceHeaderPtr *mesh, bvector<DTriangle3d> &triangles, bool reverse, bvector<DPoint3d> &work)
+    {
+    if (mesh != nullptr)
+        {
+        for (auto &t : triangles)
+            {
+            work.clear ();
+            if (reverse)
+                {
+                work.push_back (t.point[2]);
+                work.push_back (t.point[1]);
+                work.push_back (t.point[0]);
+                }
+            else
+                {
+                work.push_back (t.point[0]);
+                work.push_back (t.point[1]);
+                work.push_back (t.point[2]);
+                }
+            (*mesh)->AddPolygon (work);
+            }
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz     11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1397,5 +1434,89 @@ PolyfaceHeaderPtr *outside
     if (outside != nullptr)
         (*outside)->Compress ();
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClipPlaneSet::ClipPlaneSetIntersectPolyface
+(
+PolyfaceQueryCR polyface,
+ClipPlaneSetCR clipSet,
+bool constructNewFacetsOnClipSetPlanes,
+PolyfaceHeaderPtr *inside,
+PolyfaceHeaderPtr *outside
+)
+    {
+    if (inside != nullptr)
+        *inside = PolyfaceHeader::CreateVariableSizeIndexed ();
+    if (outside != nullptr)
+        *outside = PolyfaceHeader::CreateVariableSizeIndexed ();
+    auto visitor = PolyfaceVisitor::Attach (polyface);
+    PolyfaceClipContext context (clipSet, nullptr);
+    BVectorCache<DPoint3d> insideA;
+    BVectorCache<DPoint3d> outsideA;
+
+    // the mesh contributes faces, clipped in a direct way by the clip plane set . . .
+    for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+        {
+        insideA.ClearToCache ();
+        outsideA.ClearToCache ();
+        context.ClipAndCollect (visitor->Point (), clipSet, insideA, outsideA);
+        AddPolygonsToMesh (outside, outsideA);
+        AddPolygonsToMesh (inside, insideA);
+        }
+    if (constructNewFacetsOnClipSetPlanes)
+        {
+        // Each infinite plane of the clip plane set creates a section with the mesh,
+        // and the sections are clipped by the other clip planes.
+        DRange3d range = polyface.PointRange ();
+        bvector<DPoint3d> work;
+        bvector<DPoint3d> clippedXYZ;
+        for (auto &convexSet : clipSet)
+            {
+            for (auto &plane : convexSet)
+                {
+                if (plane.IsVisible ())
+                    {
+                    auto dplane = plane.GetDPlane3d ();
+                    auto localToWorld = plane.GetLocalToWorldTransform (false);
+                    Transform worldToLocal;
+                    worldToLocal.InverseOf (localToWorld);
+                    auto section = polyface.PlaneSlice (dplane, true);
+                    if (section.IsValid ())
+                        {
+                        bvector<bvector<bvector<DPoint3d>>> regions;
+                        bvector<bvector<DPoint3d>> clippedLoopsXYZ;
+                        section->CollectLinearGeometry (regions);
+                        auto parityRegion = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+                        for (auto &region : regions)
+                            {
+                            for (auto &loop : region)
+                                {
+                                convexSet.ConvexPolygonClip (loop, clippedXYZ, work, 1);
+                                clippedLoopsXYZ.push_back (clippedXYZ);
+                                }
+                            }
+                        if (clippedLoopsXYZ.size () > 0)
+                            {
+                            bvector<DTriangle3d> triangles;
+    //                        PolygonOps::FixupAndTriangulateSpaceLoops (clippedLoopsXYZ, triangles);
+                            PolygonOps::FixupAndTriangulateProjectedLoops (clippedLoopsXYZ, localToWorld, worldToLocal, triangles);
+                            AddTrianglesToMesh (inside, triangles, true, work);
+                            AddTrianglesToMesh (outside, triangles, false, work);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    if (inside != nullptr)
+        (*inside)->Compress ();
+    if (outside != nullptr)
+        (*outside)->Compress ();
+    }
+
 
 END_BENTLEY_GEOMETRY_NAMESPACE

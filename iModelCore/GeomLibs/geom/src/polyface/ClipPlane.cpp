@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/ClipPlane.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -310,18 +310,28 @@ void ClipPlane::OffsetDistance (double offset) { m_distance += offset; }
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    ClipPlane::ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPoint3d> &work) const
     {
+    return ConvexPolygonClipInPlace (xyz, work, 0);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ClipPlane::ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPoint3d> &work, int onPlaneHandling) const
+    {
     work.clear ();
     size_t numNegative = 0;
+    DRange1d range;
     static double s_fractionTol = 1.0e-8;
     if (xyz.size () > 2)
         {
         DPoint3d xyz0 = xyz.back ();
         double a0 = EvaluatePoint (xyz0);
+        range.Extend (a0);
 //        if (a0 >= 0.0)
 //            work.push_back (xyz0);
         for (auto &xyz1 : xyz)
             {
             double a1 = EvaluatePoint (xyz1);
+            range.Extend (a1);
             if (a1 < 0)
                 numNegative++;
             if (a0 * a1 < 0.0)
@@ -341,7 +351,21 @@ void    ClipPlane::ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPo
             a0 = a1;
             }
         }
-
+    if (onPlaneHandling != 0)
+        {
+        double tol = Angle::SmallAngle () * (1.0 + fabs (m_distance));
+        if (range.High () < tol && range.Low () >= -tol)
+            {
+            // all "ON" -- last arg determines in or out ...
+            if (onPlaneHandling > 0)
+                {
+                // leave xyz alone.
+                }
+            else
+                xyz.clear ();
+            return;
+            }
+        }
     if (work.size () <= 2)
         xyz.clear ();
     else if (numNegative > 0)
@@ -466,6 +490,50 @@ void ClipPlane::AppendCrossings (ICurvePrimitiveCR curve, bvector<CurveLocationD
         DPlane3d plane = GetDPlane3d ();
         curve.AppendCurvePlaneIntersections (plane, crossings);
         }
+    }
+
+Transform ClipPlane::GetLocalToWorldTransform (bool zPointsOut) const
+    {
+    auto plane = GetDPlane3d ();
+    auto planeAxes = RotMatrix::From1Vector (plane.normal, 2, true);
+    if (zPointsOut)
+        planeAxes.ScaleColumns (1,-1,-1);
+    return Transform::From (planeAxes, plane.origin);
+    }
+void ClipPlane::ClipPlaneToRange (DRange3dCR range, DPlane3dCR plane, bvector<DPoint3d> &clippedPoints, bvector<DPoint3d> *largeRectangle)
+    {
+    clippedPoints.clear ();
+    if (largeRectangle != nullptr)
+        largeRectangle->clear ();
+    if (range.IsNull ())
+        return;
+    // Build a rectangle certain to be larger than the projection of the range on the plane
+    DPoint3d rangeCenter = DPoint3d::FromInterpolate (range.low, 0.5, range.high);
+    DPoint3d projectionOfRangeCenter;
+     if (!plane.ProjectPoint (projectionOfRangeCenter, rangeCenter))
+        return;
+    double a = range.low.Distance (range.high);
+    auto planeAxes = RotMatrix::From1Vector (plane.normal, 2, true);
+    bvector<DPoint3d> workPoints;
+    bvector<DPoint3d> points {
+        DPoint3d::From (a,a,0),
+        DPoint3d::From (-a,a,0),
+        DPoint3d::From (-a,-a,0),
+        DPoint3d::From (a,-a,0),
+        DPoint3d::From (a,a,0)
+        };
+    Transform transform = Transform::From (planeAxes, projectionOfRangeCenter);
+    transform.Multiply (points, points);
+    if (largeRectangle != nullptr)
+        *largeRectangle = points;
+    DPlane3d planes[6];
+    range.Get6Planes (planes, -1.0);
+    for (int i = 0; i < 6; i++)
+        {
+        ClipPlane clipper (planes[i]);
+        clipper.ConvexPolygonClipInPlace (points, workPoints, 1);
+        }
+    clippedPoints = points;
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

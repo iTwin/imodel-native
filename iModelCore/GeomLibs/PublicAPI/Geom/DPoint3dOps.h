@@ -46,8 +46,11 @@ static GEOMDLLIMPEXP size_t Size (bvector<T> *dest);
 static GEOMDLLIMPEXP size_t Append (bvector<T> *dest, T const &data);
 
 //! append a disconnect.
-
 static GEOMDLLIMPEXP void AppendDisconnect (bvector<T> *dest);
+
+//! Append an exact closure point (if not already present)
+// If already closed within tolerance, enforce exact-bitwise equality
+static GEOMDLLIMPEXP void AppendClosure (bvector<T> &dest, double tolerance = 1.0e-14);
 
 //! Set with checked array pointer and index 
 static GEOMDLLIMPEXP bool Set (bvector<T> *dest, T const &data, size_t index);
@@ -1362,6 +1365,19 @@ double                  xyTolerance,
 bool                    bSignedOneBasedIndices
 );
 
+//! <ul>
+//! <li>Apply worldToLocal transform.
+//! <li>Triangulate as viewed in that plane
+//! <li>Apply localToWorld transform to the triangles.
+//! </ul>
+//! @return false if triangulation issues.
+static GEOMDLLIMPEXP bool FixupAndTriangulateProjectedLoops
+(
+bvector<bvector<DPoint3d>> const &loops,    //!< [in] array of loops
+TransformCR localToWorld,                   //!< [in] transform for converting xy data to world
+TransformCR worldToLocal,                   //!< [in] transform for converting world data to xy
+bvector<DTriangle3d> &triangles             //!< [out] triangle coordinates.
+);
 //!
 //! Triangulate a single space polygon.  Best effort to handle non-planar polygons.  Optionally handle self-intersecting polygons.
 //! @param [out] pIndices  array of output indices.  The value of bSignedOneBasedIndices determines the separator of each face loop
@@ -1390,7 +1406,7 @@ bool                    bSignedOneBasedIndices
 );
 
 //!
-//! Triangulate a single space polygon.  Best effort to handle non-planar polygons.  Optionally handle self-intersecting polygons.
+//! Triangulate a multiple space loops as viewed in an internally-chosen xy plane.
 //! @param [out] pIndices  array of output indices.  The value of bSignedOneBasedIndices determines the separator of each face loop
 //!                                   and whether or not interior edges are negated.
 //! @param [out] triangleIndices array giving vertex sequence for each exterior loop.
@@ -1408,10 +1424,15 @@ bvector<int>        &exteriorLoopIndices,
 bvector<DPoint3d>   &xyzOut,
 TransformR              localToWorld,
 TransformR              worldToLocal,
-bvector<bvector<DPoint3d>> &loops
+bvector<bvector<DPoint3d>> const &loops
 );
 
-
+//! Triangulate a multiple space loops as viewed in an internally-chosen xy plane.
+static GEOMDLLIMPEXP bool FixupAndTriangulateSpaceLoops
+(
+bvector<bvector<DPoint3d>> const &loops,
+bvector<DTriangle3d> &triangles
+);
 //!
 //! Compute a local to world transformation for a polygon (disconnects allowed)
 //! Favor first polygon CCW for upwards normal.

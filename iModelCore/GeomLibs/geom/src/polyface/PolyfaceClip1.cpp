@@ -1042,6 +1042,37 @@ GEOMDLLIMPEXP void PolyfaceCoordinateMap::AddClippedPolyface (PolyfaceQueryR sou
                 clipPlanes, formNewFacesOnClipPlanes, cutLoops, cutChains);
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+//! Visit each face of source. Clip to chain and capture the clipped residual.
+GEOMDLLIMPEXP void PolyfaceQuery::ClipPolyfaceToClipPlanes (
+    PolyfaceHeaderPtr &insideClip,
+    PolyfaceHeaderPtr *outsideClip,
+    bool &resultHasIncompleteCutPlaneFaces,
+    PolyfaceQueryCR targetMesh,
+    ClipPlaneSetR clipPlanes,
+    bool formNewFacesOnClipPlanes,
+    IPolyfaceVisitorFilter *filter,
+    bvector<bvector<DPoint3d>> *cutLoops,
+    bvector<bvector<DPoint3d>> *cutChains
+    )
+    {
+    insideClip = PolyfaceHeader::CreateVariableSizeIndexed ();
+    PolyfaceCoordinateMapPtr insideMap  = PolyfaceCoordinateMap::Create (*insideClip);
+
+    PolyfaceCoordinateMapPtr outsideMap = nullptr;
+    if (outsideClip != nullptr)
+        {
+        *outsideClip = PolyfaceHeader::CreateVariableSizeIndexed ();
+        outsideMap  = PolyfaceCoordinateMap::Create (**outsideClip);
+        }
+    PolyfaceCoordinateMap::AddClippedPolyface (
+            const_cast <PolyfaceQueryR> (targetMesh),
+            insideMap.get (), outsideMap.get (), resultHasIncompleteCutPlaneFaces,
+            &clipPlanes, formNewFacesOnClipPlanes,
+                filter, cutLoops, cutChains);
+    }
 
 double PolyfaceQuery::BuildConvexClipPlaneSet (ConvexClipPlaneSetR planes)
     {

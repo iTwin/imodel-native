@@ -124,6 +124,9 @@ public:
     //! Return the plane as origin and normal.
     GEOMDLLIMPEXP DPlane3d GetDPlane3d () const;
 
+    //! Return the plane as a transform with origin on plane, z vector perpendicular.
+    GEOMDLLIMPEXP Transform GetLocalToWorldTransform (bool zPointsOut = false) const;
+
     //! Return the plane for use as h = [ax,ay,az,aw] DOT [x,y,z,1]
     GEOMDLLIMPEXP DPoint4d GetDPlane4d () const;
     GEOMDLLIMPEXP void     SetDPlane4d (DPoint4dCR plane);
@@ -144,6 +147,16 @@ public:
 
     //! Flip the normal direction.
     GEOMDLLIMPEXP void      Negate ();
+
+    //! Clip a convex polygon.
+    //! caller supplies work and altitude arrays as works space.
+    //! result is written inplace to xyz.
+    //! <ul>
+    //! <li>onPlaneHandling=0 means no special handling for all-oin.
+    //! <li>onPlaneHandling=1 means treat all-on as IN
+    //! <li>onPlaneHandling= -1 means treat all-on as OUT
+    //! </ul>
+    GEOMDLLIMPEXP void ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPoint3d> &work, int onPlaneHandling) const;
 
     //! Clip a convex polygon.
     //! caller supplies work and altitude arrays as works space.
@@ -185,6 +198,15 @@ public:
     // have been done.
     // optionally clear the count.
     GEOMDLLIMPEXP static size_t GetEvaluationCount (bool clear = false);
+
+    // Return the (possibly empty) polygon of intersection between a DRange3d and an (unbounded) plane.
+    GEOMDLLIMPEXP static void ClipPlaneToRange
+        (
+        DRange3dCR range,       //!< [in] range
+        DPlane3dCR plane,       //!< [in] unbounded plane
+        bvector<DPoint3d> &clippedPoints,    //!< [out] (convex) intersection polygon.
+        bvector<DPoint3d> *largeRectangle = nullptr   //!, [out] (optional) large rectangle which is in the plane and contains the projection of the range onto the plane.  Must be distinct from clippedPoints
+        );
     };
 
 
