@@ -334,7 +334,7 @@ public:
     void SetTraitsBit(FormatTraits traits, bool setTo) {m_formatTraits = NumericFormatSpec::SetTraitsBit(m_formatTraits, traits, setTo);}
 
     //! Determine whether the supplied FormatTraits are set on this NumericFormatSpec.
-    //! @param[in] traits The traits to check if they are set.
+    //! @param[in] traitBit The traits to check if they are set.
     //! @return True if all the supplied FormatTraits are set. Otherwise, false.
     bool GetTraitBit(FormatTraits traitBit) const {return NumericFormatSpec::AreTraitsSet(m_formatTraits, traitBit);}
 
