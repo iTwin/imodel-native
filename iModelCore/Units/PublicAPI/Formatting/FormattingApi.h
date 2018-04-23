@@ -504,6 +504,7 @@ private:
     bool IsIndexValid(size_t indx) const { return indx < m_proxys.size(); }
 
     UNITS_EXPORT void SetUnitLabel(size_t index, Utf8CP label);
+    UNITS_EXPORT CompositeValueSpec(bvector<BEU::UnitCP> const& units);
 public:
     UNITS_EXPORT CompositeValueSpec();
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit);
@@ -511,9 +512,7 @@ public:
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit, BEU::UnitCR subUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit);
-    UNITS_EXPORT CompositeValueSpec(bvector<BEU::UnitCP> const& units);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
-
     UNITS_EXPORT Json::Value ToJson() const;
     UNITS_EXPORT void FromJson(JsonValueCR jval, BEU::IUnitsContextCP context);
 
@@ -571,6 +570,11 @@ public:
     //! @param[in] uom The Unit of the value provided.
     //! @return
     UNITS_EXPORT CompositeValue DecomposeValue(double value, BEU::UnitCP uom = nullptr) const;
+    //! Given a vector of 0-4 units, create a composite spec from them. They must be non-null
+    //! @param[out] Output CompositeValueSpec
+    //! @param[in]  Vector of 0-4 non-null units to be added to the composite
+    //! @return true on success false on error (too many units, null units, etc).
+    UNITS_EXPORT static bool CreateCompositeSpec(CompositeValueSpecR out, bvector<BEU::UnitCP> const& units);
 };
 
 //=======================================================================================

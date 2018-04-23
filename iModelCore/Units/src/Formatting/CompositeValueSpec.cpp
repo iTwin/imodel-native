@@ -317,7 +317,25 @@ CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom) 
         }
     return cv;
     }
-
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 04/2018
+//--------------------------------------------------------------------------------------
+//static
+bool CompositeValueSpec::CreateCompositeSpec(CompositeValueSpecR out, bvector<BEU::UnitCP> const& units)
+    {
+    if (units.size() > 4)
+        {
+        LOG.errorv("Cannot create a composite spec with more than 4 units");
+        return false;
+        }
+    for (auto unit : units)
+        {
+        if (nullptr == unit)
+            return false;
+        }
+    out = CompositeValueSpec(units);
+    return true;
+    }
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------

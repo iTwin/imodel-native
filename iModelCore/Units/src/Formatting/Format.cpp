@@ -308,7 +308,15 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
             }
         auto compSpec = nfs.GetCompositeSpecP();
         if (nullptr == compSpec)
-            nfs.SetCompositeSpec(CompositeValueSpec(units));
+            {
+            CompositeValueSpec comp;
+            if (!CompositeValueSpec::CreateCompositeSpec(comp, units))
+                {
+                LOG.errorv("Failed to create composite value spec for format string %s", formatString.c_str());
+                return BentleyStatus::ERROR;
+                }
+            nfs.SetCompositeSpec(comp);
+            }
         if (nfs.GetCompositeSpec()->IsProblem())
             {
             LOG.errorv("Invalid format string, %s. %s ", formatString.c_str(), compSpec->GetProblemDescription().c_str());
