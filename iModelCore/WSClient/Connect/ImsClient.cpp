@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ImsClient.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -101,7 +101,7 @@ AsyncTaskPtr<SamlTokenResult> ImsClient::RequestToken(SamlTokenCR parentToken, U
     params["AppliesToBootstrapToken"] = rpUri;
 
     Utf8String stsUrl = UrlProvider::Urls::ImsActiveStsDelegationService.Get() + "/json/IssueEx";
-    Utf8String username = ConnectSignInManager::GetUserInfo(parentToken).username;
+    Utf8String username = ConnectSignInManager::ReadUserInfo(parentToken).username;
 
     return RequestToken(authorization, params, rpUri, stsUrl, lifetime, username);
     }
@@ -160,7 +160,7 @@ Utf8StringCR pastUsername
         auto tokenStr = body["RequestedSecurityToken"].asString();
         auto token = std::make_shared<SamlToken>(tokenStr);
 
-        Utf8String newUsername = ConnectSignInManager::GetUserInfo(*token).username;
+        Utf8String newUsername = ConnectSignInManager::ReadUserInfo(*token).username;
         if (pastUsername.empty() || !newUsername.EqualsI(pastUsername))
             return SamlTokenResult::Error({});
 
