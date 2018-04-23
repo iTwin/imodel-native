@@ -24,9 +24,15 @@
     <ClCompile Include="log4cxx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CustomAppenders\androidlogprintappender.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="log4cxx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomAppenders\androidlogprintappender.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
