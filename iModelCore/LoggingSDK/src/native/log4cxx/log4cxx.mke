@@ -47,9 +47,7 @@ CCompPDBName = $(appName)
 #-----------------------------------------------------------------------
 #       Include Files
 #-----------------------------------------------------------------------
-Includes    =   $(baseDir)PublicAPI/log4cxx.h \
-                $(baseDir)CustomAppenders/androidlogprintappender.h \
-                $(BuildContext)PublicApi/Logging/bentleylogging.h
+Includes    =   $(baseDir)PublicAPI/log4cxx.h $(BuildContext)PublicApi/Logging/bentleylogging.h
 
 #-----------------------------------------------------------------------
 #       Compile Source
@@ -63,10 +61,6 @@ $(o)log4cxx$(oext)     : $(baseDir)log4cxx.cpp       ${MultiCompileDepends}
 $(o)cinterface$(oext)  : $(baseDir)cinterface.cpp    ${MultiCompileDepends}
 
 $(o)dllmain$(oext)     : $(baseDir)dllmain.cpp       ${MultiCompileDepends}
-%endif
-
-%if $(TARGET_PLATFORM)=="Android"
-$(o)androidlogprintappender$(oext) : $(baseDir)CustomAppenders/androidlogprintappender.cpp ${MultiCompileDepends}
 %endif
 
 %include MultiCppCompileGo.mki
