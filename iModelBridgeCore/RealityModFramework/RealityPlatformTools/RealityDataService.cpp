@@ -913,13 +913,13 @@ RealityDataCreateRequest::RealityDataCreateRequest(RealityDataCR realityData)
     m_id = realityData.GetIdentifier(); 
     m_validRequestString = false;
 
-    Utf8String formatedProps = RealityConversionTools::RealityDataToJson(realityData);
+    Utf8String formattedProps = RealityConversionTools::RealityDataToJson(realityData);
 
     m_requestType = HttpRequestType::POST_Request;
     m_requestPayload = "{\"instance\":{\"instanceId\":\"";
     m_requestPayload.append(m_id);
     m_requestPayload.append("\", \"className\": \"RealityData\",\"schemaName\":\"S3MX\", \"properties\": {");
-    m_requestPayload.append(formatedProps);
+    m_requestPayload.append(formattedProps);
     m_requestPayload.append("}}}");
     }
 
@@ -958,13 +958,13 @@ RealityDataChangeRequest::RealityDataChangeRequest(RealityDataCR realityData)
     m_id = realityData.GetIdentifier(); 
     m_validRequestString = false;
 
-    Utf8String formatedProps = RealityConversionTools::RealityDataToJson(realityData);
+    Utf8String formattedProps = RealityConversionTools::RealityDataToJson(realityData, false, false, false);
 
     m_requestType = HttpRequestType::POST_Request;
     m_requestPayload = "{\"instance\":{\"instanceId\":\"";
     m_requestPayload.append(m_id);
     m_requestPayload.append("\", \"className\": \"RealityData\",\"schemaName\":\"S3MX\", \"properties\": {");
-    m_requestPayload.append(formatedProps);
+    m_requestPayload.append(formattedProps);
     m_requestPayload.append("}}}");
     }
 

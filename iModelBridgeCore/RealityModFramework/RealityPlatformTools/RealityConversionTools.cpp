@@ -458,11 +458,11 @@ void RealityConversionTools::JsonToRealityData(RealityDataPtr realityData, Json:
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Alain.Robert                            03/2017
 +-----------------+------------------+-------------------+-----------------+------------*/
-Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, bool includeUnsetProps, bool includeROProps)
+Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, bool includeUnsetProps, bool includeROProps, bool includeIds)
     {
     bvector<RealityDataField> properties;
 
-    if (includeUnsetProps || (realityData.GetIdentifier().size() != 0))
+    if (includeIds && (includeUnsetProps || (realityData.GetIdentifier().size() != 0)))
         properties.push_back(RealityDataField::Id);
 
     if (includeROProps && (includeUnsetProps || (realityData.GetOrganizationId().size() != 0)))
@@ -507,10 +507,10 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
     if (includeUnsetProps || (realityData.GetMetadataUrl().size() != 0))
         properties.push_back(RealityDataField::MetadataUrl);
 
-    if (includeUnsetProps || (realityData.GetUltimateId().size() != 0))
+    if (includeIds && (includeUnsetProps || (realityData.GetUltimateId().size() != 0)))
         properties.push_back(RealityDataField::UltimateId);
 
-    if (includeUnsetProps || (realityData.GetUltimateSite().size() != 0))
+    if (includeIds && (includeUnsetProps || (realityData.GetUltimateSite().size() != 0)))
         properties.push_back(RealityDataField::UltimateSite);
 
     if (includeUnsetProps || (realityData.GetCopyright().size() != 0))

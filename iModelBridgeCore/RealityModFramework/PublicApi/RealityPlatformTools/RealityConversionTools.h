@@ -53,7 +53,8 @@ public:
     //! the two bool control the insertion of properties not always required
     //! The includeUnsetProps indicates if empty properties must be added to the JSON fragment.
     //! The includeROProps indicates that properties that cannot be set but are computed by the service be included or not.
-    REALITYDATAPLATFORM_EXPORT static Utf8String RealityDataToJson(RealityDataCR realityData, bool includeUnsetProps = false, bool includeROProps = false);
+    //! The includeIds indicates if the RealityData's Id should be included (it should not being included for change requests)
+    REALITYDATAPLATFORM_EXPORT static Utf8String RealityDataToJson(RealityDataCR realityData, bool includeUnsetProps = false, bool includeROProps = false, bool includeIds = true);
 
     //! Converts a reality data instance to a JSON fragment appropriate for the RealityData Service. Only properties listed
     //! are inserted.
