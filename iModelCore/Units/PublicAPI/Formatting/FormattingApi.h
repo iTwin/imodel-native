@@ -571,8 +571,8 @@ public:
     //! @return
     UNITS_EXPORT CompositeValue DecomposeValue(double value, BEU::UnitCP uom = nullptr) const;
     //! Given a vector of 0-4 units, create a composite spec from them. They must be non-null
-    //! @param[out] Output CompositeValueSpec
-    //! @param[in]  Vector of 0-4 non-null units to be added to the composite
+    //! @param[out] out Output CompositeValueSpec
+    //! @param[in]  units Vector of 0-4 non-null units to be added to the composite
     //! @return true on success false on error (too many units, null units, etc).
     UNITS_EXPORT static bool CreateCompositeSpec(CompositeValueSpecR out, bvector<BEU::UnitCP> const& units);
 };
