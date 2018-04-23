@@ -1188,6 +1188,18 @@ BentleyStatus BisJson1ExporterImpl::ExportSchemas(Json::Value& out) const
                         nonConstClass->RenameConflictProperty(prop, true);
                         }
                     prop->RemoveCustomAttribute("PropertyMap");
+                    if (prop->GetCustomAttributeLocal("EditorCustomAttributes", "StandardValues").IsValid())
+                        {
+                        ECN::PrimitiveECPropertyP primProp = prop->GetAsPrimitivePropertyP();
+                        if (nullptr != primProp && primProp->GetType() == ECN::PrimitiveType::PRIMITIVETYPE_String)
+                            primProp->RemoveCustomAttribute("EditorCustomAttributes", "StandardValues");
+                        else
+                            {
+                            ECN::ArrayECPropertyP arrayProp = prop->GetAsArrayPropertyP();
+                            if (nullptr != arrayProp && arrayProp->GetIsPrimitiveArray() && arrayProp->GetPrimitiveElementType() == ECN::PrimitiveType::PRIMITIVETYPE_String)
+                                arrayProp->RemoveCustomAttribute("EditorCustomAttributes", "StandardValues");
+                            }
+                        }
                     }
 
                 nonConstClass->RemoveCustomAttribute("ForeignKeyRelationshipMap");

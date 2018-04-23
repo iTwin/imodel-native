@@ -14,23 +14,36 @@ USING_NAMESPACE_DWGDB
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DwgFileEditor::CreateFile (BeFileNameCR infile)
+DwgFileEditor::DwgFileEditor (BeFileNameCR infile, FileShareMode openMode)
     {
-    if (infile.DoesPathExist());
-        infile.BeDeleteFile ();
-    m_dwgdb = new DwgDbDatabase ();
-    ASSERT_FALSE (m_dwgdb.IsNull());
-    DwgImportHost::SetWorkingDatabase (m_dwgdb.get());
-    m_fileName = infile;
+    // check if a DwgImporter has been instantiated.
+    BeAssert (DwgImportHost::GetHost()._IsValid());
+    OpenFile (infile, openMode);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DwgFileEditor::OpenFile (BeFileNameCR infile)
+void DwgFileEditor::CreateFile (BeFileNameCR infile)
     {
-    EXPECT_PRESENT (infile);
-    m_dwgdb = DwgImportHost::GetHost().ReadFile (infile, false, false, FileShareMode::DenyNo);
+    if (infile.DoesPathExist());
+        infile.BeDeleteFile ();
+    m_dwgdb = new DwgDbDatabase (true, true);
+    ASSERT_FALSE (m_dwgdb.IsNull());
+    DwgImportHost::SetWorkingDatabase (m_dwgdb.get());
+    m_fileName = infile;
+    m_openMode = FileShareMode::DenyNo;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgFileEditor::OpenFile (BeFileNameCR infile, FileShareMode openMode)
+    {
+    EXPECT_PRESENT (infile.c_str());
+
+    m_openMode = openMode;
+    m_dwgdb = DwgImportHost::GetHost().ReadFile (infile, false, false, m_openMode);
     ASSERT_TRUE (m_dwgdb.IsValid());
 
     DwgImportHost::SetWorkingDatabase (m_dwgdb.get());
@@ -55,7 +68,9 @@ void DwgFileEditor::SaveFile ()
         }
     else
         {
-        // saving DWG back into an existing file:
+        // saving DWG back into an existing file, but only when the file was opened for write!
+        ASSERT_GT (m_openMode, FileShareMode::DenyWrite) << "DWG file was not opened for write!";
+
         BeFileName  tempFile = originalFile;
         tempFile.AppendExtension (L"tmp");
 
@@ -272,6 +287,7 @@ void    DwgFileEditor::FindXrefInsert (DwgStringCR blockName)
             continue;
         DwgDbBlockTableRecordPtr    block(insert->GetBlockTableRecordId(), DwgDbOpenMode::ForRead);
         ASSERT_DWGDBSUCCESS (block.OpenStatus()) << "Unable to xRef block!";
+        EXPECT_PRESENT (block->GetPath().c_str());
 
         DwgDbXrefStatus status = block->GetXrefStatus ();
         EXPECT_TRUE (status==DwgDbXrefStatus::Resolved || status==DwgDbXrefStatus::Unresolved) << "An invalid xRef block!";
@@ -281,5 +297,24 @@ void    DwgFileEditor::FindXrefInsert (DwgStringCR blockName)
             m_currentObjectId = insert->GetObjectId ();
             return;
             }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgFileEditor::FindXrefBlock (DwgStringCR blockName)
+    {
+    m_currentObjectId.SetNull ();
+
+    DwgDbBlockTablePtr  blockTable(m_dwgdb->GetBlockTableId(), DwgDbOpenMode::ForRead);
+    ASSERT_DWGDBSUCCESS (blockTable.OpenStatus()) << "Unable to open DWG's block table!";
+
+    m_currentObjectId = blockTable->GetByName (blockName.c_str(), false);
+    if (m_currentObjectId.IsValid())
+        {
+        DwgDbBlockTableRecordPtr    block(m_currentObjectId, DwgDbOpenMode::ForRead);
+        ASSERT_DWGDBSUCCESS (block.OpenStatus()) << "Unable to open nested xRef block!";
+        EXPECT_PRESENT (block->GetPath().c_str());
         }
     }

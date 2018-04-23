@@ -39,7 +39,10 @@ struct KnownDesktopLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     //---------------------------------------------------------------------------------------
     KnownDesktopLocationsAdmin(BeFileName tempPath, BeFileName assetsPath) : m_tempDirectory(tempPath)
         {
-        m_assetsDirectory = assetsPath.GetDirectoryName();
+        WString tmpStr;
+        BeFileName::FixPathName(tmpStr, assetsPath.GetName(), false);
+        BeFileName tmp(tmpStr);
+        m_assetsDirectory = tmp.GetDirectoryName();
         m_assetsDirectory.AppendToPath(L"Assets06");
         }
     };
