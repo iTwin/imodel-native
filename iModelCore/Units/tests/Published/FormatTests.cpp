@@ -74,10 +74,7 @@ TEST_F(FormatTest, Constructors)
     ASSERT_NE(nullptr, namedFmtSpec.GetNumericSpec());
     EXPECT_TRUE(namedFmtSpec.GetNumericSpec()->IsIdentical(numFmtSpec));
     ASSERT_NE(nullptr, namedFmtSpec.GetCompositeSpec());
-    // TODO: CompositeValueSpec::IsIdentical has a hacky unit proxy work around for now.
-    //       Until that's cleaned up there's no point in testing the method or testing methods that
-    //       call the method.
-    //EXPECT_TRUE(namedFmtSpec.GetCompositeSpec()->IsIdentical(compValSpec));
+    EXPECT_TRUE(namedFmtSpec.GetCompositeSpec()->IsIdentical(compValSpec));
     }
     }
 
@@ -100,22 +97,15 @@ TEST_F(FormatTest, IsIdentical)
     // Identity checks.
     EXPECT_TRUE(namedFmtSpecUndefined.IsIdentical(namedFmtSpecUndefined))  << "Format is not identical to itself.";
     EXPECT_TRUE(namedFmtSpecNumeric.IsIdentical(namedFmtSpecNumeric)) << "Format is not identical to itself.";
-    // TODO: CompositeValueSpec::IsIdentical has a hacky unit proxy work around for now.
-    //       Until that's cleaned up there's no point in testing the method or testing methods that
-    //       call the method.
-    //EXPECT_TRUE(namedFmtSpecComposite.IsIdentical(namedFmtSpecComposite)) << "Format is not identical to itself.";;
+    EXPECT_TRUE(namedFmtSpecComposite.IsIdentical(namedFmtSpecComposite)) << "Format is not identical to itself.";;
 
     EXPECT_FALSE(namedFmtSpecUndefined.IsIdentical(namedFmtSpecNumeric));
     EXPECT_FALSE(namedFmtSpecUndefined.IsIdentical(namedFmtSpecComposite));
 
     EXPECT_FALSE(namedFmtSpecNumeric.IsIdentical(namedFmtSpecUndefined));
     EXPECT_FALSE(namedFmtSpecNumeric.IsIdentical(namedFmtSpecComposite));
-
-    // TODO: CompositeValueSpec::IsIdentical has a hacky unit proxy work around for now.
-    //       Until that's cleaned up there's no point in testing the method or testing methods that
-    //       call the method.
-    //EXPECT_FALSE(namedFmtSpecComposite.IsIdentical(namedFmtSpecUndefined));
-    //EXPECT_FALSE(namedFmtSpecComposite.IsIdentical(namedFmtSpecNumeric));
+    EXPECT_FALSE(namedFmtSpecComposite.IsIdentical(namedFmtSpecUndefined));
+    EXPECT_FALSE(namedFmtSpecComposite.IsIdentical(namedFmtSpecNumeric));
     }
 
     // Formats with differing NumericFormatSpecs.

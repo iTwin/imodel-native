@@ -366,4 +366,20 @@ TEST_F(NumericFormatSpecJsonTest, SerializeFractional)
     }
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                   04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(NumericFormatSpecTest, FormatTraitsStringTest)
+    {
+    NumericFormatSpec format;
+    EXPECT_TRUE(format.SetFormatTraits(""));
+    EXPECT_STREQ("", format.GetFormatTraitsString().c_str());
+
+    EXPECT_FALSE(format.SetFormatTraits("Banana"));
+    EXPECT_STREQ("", format.GetFormatTraitsString().c_str());
+
+    EXPECT_TRUE(format.SetFormatTraits("trailZeroes|keepSingleZero|zeroEmpty|keepDecimalPoint|applyRounding|fractionDash|showUnitLabel|prependUnitLabel|use1000Separator|exponentOnlyNegative"));
+    EXPECT_STRCASEEQ("trailZeroes|keepSingleZero|zeroEmpty|keepDecimalPoint|applyRounding|fractionDash|showUnitLabel|prependUnitLabel|use1000Separator|exponentOnlyNegative", format.GetFormatTraitsString().c_str());
+    }
+
 END_BENTLEY_FORMATTEST_NAMESPACE

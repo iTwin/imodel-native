@@ -394,6 +394,10 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests)
 
     EXPECT_STREQ("1.25e-4", nfs.Format(testValMagnitudeLt1Pos).c_str());
     EXPECT_STREQ("-1.25e-4", nfs.Format(testValMagnitudeLt1Neg).c_str());
+    EXPECT_STREQ("1.25e-3", nfs.Format(0.00125).c_str());
+    EXPECT_STREQ("1.25e-2", nfs.Format(0.0125).c_str());
+    EXPECT_STREQ("1.25e-1", nfs.Format(0.125).c_str());
+    EXPECT_STREQ("1.25e+0", nfs.Format(1.25).c_str());
     }
 
     // ScientificNorm
