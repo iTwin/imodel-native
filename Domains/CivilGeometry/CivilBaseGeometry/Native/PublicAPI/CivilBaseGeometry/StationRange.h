@@ -171,6 +171,7 @@ public:
 
 }; // StationRange
 
+//__PUBLISH_SECTION_END__
 //=======================================================================================
 //! A StationRangeEdit is a context object carrying information about a 
 //! station change in a section of a RoadRange alignment
@@ -190,5 +191,5 @@ public:
     double Ratio() const { return (0.0 == preEditRange.Length()) ? 1.0 : postEditRange.Length() / preEditRange.Length(); }
 
 }; // StationRangeEdit
-
+//__PUBLISH_SECTION_START__
 END_BENTLEY_CIVILGEOMETRY_NAMESPACE

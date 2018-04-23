@@ -79,7 +79,7 @@ public:
 
     bool IsValidHorizontal() const { return m_horizontalCurveVector.IsValid(); }
     bool IsValidVertical() const { return m_verticalCurveVector.IsValid(); }
-
+    //! Returns true if the AlignmentPair has spirals
     CIVILBASEGEOMETRY_EXPORT bool HasSpirals() const;
     //! Returns the length of the hz alignment
     CIVILBASEGEOMETRY_EXPORT double LengthXY() const;
@@ -93,9 +93,15 @@ public:
     CIVILBASEGEOMETRY_EXPORT bool GetStartEnd(DPoint3dR startPt, DPoint3dR endPt, bool extendVertical = true) const;
     //! Returns the start and end station of the hz alignment
     CIVILBASEGEOMETRY_EXPORT bool GetStartAndEndDistancesAlong(double& startDistanceAlong, double& endDistanceAlong) const;
-
+    //! Get the point at a given distance along an alignment
+    //! @param[in] Distance along the AlignmentPair, in meters
     CIVILBASEGEOMETRY_EXPORT ValidatedDPoint3d GetPointAt(double distanceAlongFromStart) const;
+
     CIVILBASEGEOMETRY_EXPORT ValidatedDPoint3d GetPointAtAndOffset(double distanceAlongFromStart, double offset) const;
+    //! Get the point and tangent at the given distance along the AligmentPair
+    //! @param[out] hzPoint The point at a given distance along the AlignmentPair
+    //! @param[out] hzTangent The horizontal tangent at the point a given distance along the AlignmentPair
+    //! @param[in] distanceAlongFromStart The distance along the alignment, in meters
     CIVILBASEGEOMETRY_EXPORT bool GetPointAndTangentAt(DPoint3dR hzPoint, DVec3dR hzTangent, double distanceAlongFromStart) const;
 
     //! Returns the 3D point at the given distance from start.
@@ -137,11 +143,15 @@ public:
     CIVILBASEGEOMETRY_EXPORT ValidatedPathLocationDetail GetPathLocationDetailAtStation(double distanceAlongFromStart) const;
 
     // partial alignments
+    //! Get a curve representing a partial horizontal alignment between the \p fromPt and \p toPt
     CIVILBASEGEOMETRY_EXPORT CurveVectorPtr GetPartialHorizontalAlignment(DPoint3dCR fromPt, DPoint3dCR toPt) const;
+    //! Get a curve representing a partial horizontal alignment between the \p startDistanceAlongFromStart and \p endDistanceAlongFromStart
     CIVILBASEGEOMETRY_EXPORT CurveVectorPtr GetPartialHorizontalAlignment(double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
+    //! Get a curve representing a partial vertical alignment between \p startDistanceAlongFromStart and \p endDistanceAlongFromStart
     CIVILBASEGEOMETRY_EXPORT CurveVectorPtr GetPartialVerticalAlignment(double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
-
+    //! Get a partial AlignmentPairPtr created between \p fromPt and \p toPt
     CIVILBASEGEOMETRY_EXPORT AlignmentPairPtr GetPartialAlignment(DPoint3dCR fromPt, DPoint3dCR toPt) const;
+    //! Get a partial AlignmentPairPtr created between \p startDistanceAlongFromStart and \p endDistanceAlongFromStart
     CIVILBASEGEOMETRY_EXPORT AlignmentPairPtr GetPartialAlignment(double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
 
     //! Returns a deep copy of the Horizontal, optionally converted in a different unit

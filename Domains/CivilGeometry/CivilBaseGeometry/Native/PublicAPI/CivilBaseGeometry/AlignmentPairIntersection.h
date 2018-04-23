@@ -33,6 +33,7 @@ protected:
     bool m_isExit;
 
 protected:
+    //! @private
     CIVILBASEGEOMETRY_EXPORT AlignmentPairIntersection(AlignmentPairP primary, AlignmentPairP secondary)
         : m_primaryRoad (primary), m_secondaryRoad (secondary)
         {
@@ -40,6 +41,7 @@ protected:
         }
 
     // return (if possible) a DEllipse3d which starts at pointA, with initial tangent vector towards pointB, ends on the line containing pointB and pointC
+    //! @private
     static ValidatedDEllipse3d _ArcFromStartShoulderTarget
         (
         DPoint3dCR pointA, // Start point of arc
@@ -47,6 +49,7 @@ protected:
         DPoint3dCR pointC  // target point for outbound tangent
         );
 
+    //! @private
     bool ComputeIntersectionPointImpl(DPoint3dR pt, DPoint3dCP checkPoint, double * primaryStation = nullptr, double * secondaryStation = nullptr, bool allowExtension = true);
 
 protected:
@@ -73,6 +76,7 @@ public:
     CIVILBASEGEOMETRY_EXPORT void UpdateSecondaryRoad (CurveVectorCR hz, CurveVectorCP vt);
 
 public:
+    //! Create a new AlignmentPairIntersectionPtr 
     CIVILBASEGEOMETRY_EXPORT static AlignmentPairIntersectionPtr Create (AlignmentPairCP primary, AlignmentPairCP secondary);
 
     // Construct two arcs and a line segment such that:
@@ -100,7 +104,7 @@ struct AlignmentIntersectionInfo
 public:
     enum class ExtensionType { None, PrimaryStart, PrimaryEnd, SecondaryStart, SecondaryEnd };
 
-    protected:
+protected:
     DPoint3d m_point;
     DVec3d m_secondaryTangentAtIntersect;
     ExtensionType m_extensionType;

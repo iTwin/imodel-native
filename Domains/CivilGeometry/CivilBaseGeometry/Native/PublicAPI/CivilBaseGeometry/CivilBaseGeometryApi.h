@@ -20,7 +20,6 @@
 #include "CivilBaseGeometry.h"
 #include "StationRange.h"
 #include "AlignmentPair.h"
-
 #include "GeometryHelper.h"
 
 //__PUBLISH_SECTION_END__
