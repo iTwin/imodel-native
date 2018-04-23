@@ -65,7 +65,6 @@ enum class FormatTraits : int32_t
     PrependUnitLabel = 0x080, // Indicates the position of the Unit name shifts from the right side of the value to the left.
     Use1000Separator = 0x100, // Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
     ExponenentOnlyNegative   = 0x200, // Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
-    ExponentZero     = 0x400,
     };
 
 //=======================================================================================

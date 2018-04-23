@@ -321,9 +321,6 @@ public:
     bool GetTraitsBit(FormatTraits bit) const {return NumericFormatSpec::GetTraitsBit(m_formatTraits, bit);}
     UNITS_EXPORT void TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits* ref, bool verbose=false) const;
 
-    void SetExponentZero(bool setTo) {SetTraitsBit(FormatTraits::ExponentZero, setTo);}
-    bool IsExponentZero() const {return GetTraitsBit(FormatTraits::ExponentZero);}
-
     void SetKeepTrailingZeroes(bool setTo) {SetTraitsBit(FormatTraits::TrailingZeroes, setTo);}
     bool IsKeepTrailingZeroes() const { return GetTraitsBit(FormatTraits::TrailingZeroes);}
 

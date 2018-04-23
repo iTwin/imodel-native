@@ -232,10 +232,9 @@ TEST_F(FormatIntegerTest, FormatIntegerIndividualFormatTraitsTests)
     EXPECT_STREQ("-100501", nfs.Format(testValNeg).c_str());
 
     nfs.SetPresentationType(PresentationType::Scientific);
-    nfs.SetFormatTraits(FormatTraits::ExponentZero);
-    EXPECT_STREQ("0e+00", nfs.Format(0).c_str());
-    EXPECT_STREQ("1.00501e+05", nfs.Format(testValPos).c_str());
-    EXPECT_STREQ("-1.00501e+05", nfs.Format(testValNeg).c_str());
+    EXPECT_STREQ("0e+0", nfs.Format(0).c_str());
+    EXPECT_STREQ("1.00501e+5", nfs.Format(testValPos).c_str());
+    EXPECT_STREQ("-1.00501e+5", nfs.Format(testValNeg).c_str());
     nfs.SetPresentationType(PresentationType::Decimal);
 
     nfs.SetFormatTraits(FormatTraits::ZeroEmpty);
@@ -519,19 +518,13 @@ TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests)
     EXPECT_STREQ("100501.125", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-100501.125", nfs.Format(testValNeg).c_str());
     }
-    }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests_IGNORED)
-    {
     {
     NumericFormatSpec nfs;
     nfs.SetMinWidth(15);
     EXPECT_STREQ("000000000000000", nfs.Format((double) 0).c_str());
     EXPECT_STREQ("00000100501.125", nfs.Format(testValPos).c_str());
-    EXPECT_STREQ("-0000100501.125", nfs.Format(testValNeg).c_str());
+    EXPECT_STREQ("-00000100501.125", nfs.Format(testValNeg).c_str());
 
     nfs.SetMinWidth(0);
     EXPECT_STREQ("0", nfs.Format((double) 0).c_str());
@@ -544,24 +537,23 @@ TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests_IGNORED)
     nfs.SetFormatTraits(FormatTraits::TrailingZeroes);
 
     nfs.SetMinWidth(15);
-    EXPECT_STREQ("0000000000000000", nfs.Format((double) 0).c_str());
-    EXPECT_STREQ("100501.125000000", nfs.Format(testValPos).c_str());
-    EXPECT_STREQ("-100501.12500000", nfs.Format(testValNeg).c_str());
+    EXPECT_STREQ("00000000.000000", nfs.Format((double) 0).c_str());
+    EXPECT_STREQ("00100501.125000", nfs.Format(testValPos).c_str());
+    EXPECT_STREQ("-00100501.125000", nfs.Format(testValNeg).c_str());
 
     nfs.SetMinWidth(0);
-    EXPECT_STREQ("0000000000000000", nfs.Format((double)0).c_str());
-    EXPECT_STREQ("100501.125", nfs.Format(testValPos).c_str());
-    EXPECT_STREQ("-100501.125", nfs.Format(testValNeg).c_str());
+    EXPECT_STREQ("0.000000", nfs.Format((double)0).c_str());
+    EXPECT_STREQ("100501.125000", nfs.Format(testValPos).c_str());
+    EXPECT_STREQ("-100501.125000", nfs.Format(testValNeg).c_str());
     }
 
     {
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Scientific);
     nfs.SetPrecision(DecimalPrecision::Max);
-    nfs.SetFormatTraits(FormatTraits::ExponentZero);
-    EXPECT_STREQ("0e+00", nfs.Format((double) 0).c_str());
-    EXPECT_STREQ("1.00501125e+05", nfs.Format(testValPos).c_str());
-    EXPECT_STREQ("-1.00501125e+05", nfs.Format(testValNeg).c_str());
+    EXPECT_STREQ("0e+0", nfs.Format((double) 0).c_str());
+    EXPECT_STREQ("1.00501125e+5", nfs.Format(testValPos).c_str());
+    EXPECT_STREQ("-1.00501125e+5", nfs.Format(testValNeg).c_str());
     }
 
     {
@@ -579,16 +571,8 @@ TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests_IGNORED)
     EXPECT_STREQ("0", nfs.Format((double) 0).c_str());
     EXPECT_STREQ("100501-1/8", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-100501-1/8", nfs.Format(testValNeg).c_str());
-    nfs.SetPresentationType(PresentationType::Decimal);
     }
 
-    //{
-    //NumericFormatSpec nfs;
-    //nfs.SetFormatTraits(FormatTraits::UseFractSymbol);
-    //EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
-    //EXPECT_STREQ(u8"100501 \x21\x5B", nfs.FormatDouble(testValPos).c_str());
-    //EXPECT_STREQ(u8"-100501 \x21\x5B", nfs.FormatDouble(testValNeg).c_str());
-    //}
     }
 
 //---------------------------------------------------------------------------------------
@@ -1063,15 +1047,13 @@ TEST_F(FormattingTestFixture, Simple)
     numFmt.SetPrecision(DecimalPrecision::Precision10);
     numFmt.SetPresentationType(PresentationType::Scientific);
     EXPECT_STREQ ("-0.2718281828e-2", numFmt.Format(-0.0027182818284590).c_str());
-    numFmt.SetExponentZero(true);
-    EXPECT_STREQ ("-0.2718281828e-02", numFmt.Format(-0.0027182818284590).c_str());
-    EXPECT_STREQ ("-0.2718281828", numFmt.Format(-0.2718281828459045).c_str());
+    EXPECT_STREQ ("-0.2718281828e+0", numFmt.Format(-0.2718281828459045).c_str());
     numFmt.SetPresentationType(PresentationType::Scientific);
     numFmt.SetScientificType(ScientificType::Normal);
-    EXPECT_STREQ ("-2.7182818285e-03", numFmt.Format(-0.0027182818284590).c_str());
-    EXPECT_STREQ ("-2.7182818285e-01", numFmt.Format(-0.2718281828459045).c_str());
-    EXPECT_STREQ ("-0.2718281828e+04", numFmt.Format(-2718.2818284590).c_str());
-    EXPECT_STREQ ("0.2718281828e+04", numFmt.Format(2718.2818284590).c_str());    
+    EXPECT_STREQ ("-2.7182818285e-3", numFmt.Format(-0.0027182818284590).c_str());
+    EXPECT_STREQ ("-2.7182818285e-1", numFmt.Format(-0.2718281828459045).c_str());
+    EXPECT_STREQ ("-0.2718281828e+4", numFmt.Format(-2718.2818284590).c_str());
+    EXPECT_STREQ ("0.2718281828e+4", numFmt.Format(2718.2818284590).c_str());    
     }
 
 /*---------------------------------------------------------------------------------**//**

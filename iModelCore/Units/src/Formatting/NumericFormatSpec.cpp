@@ -507,18 +507,22 @@ int NumericFormatSpec::FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSi
     int n1;
     int ind = 0;
 
-    if (n == 0)  // the buffer is at least sufficient to take two bytes for the '0' value
-        {
-        *bufOut++= '0';
-        *bufOut = 0;
-        return ind;
-        }
-
     if (n < 0)
         {
         n = -n;
         sign = '-';
         }
+
+    if (n == 0)  // the buffer is at least sufficient to take two bytes for the '0' value
+        {
+        if (showSign)
+            *bufOut++= sign;
+        *bufOut++= '0';
+        *bufOut = 0;
+        return 2;
+        }
+
+
 
     ind = sizeof(buf);
     memset(buf, 0, ind--);
@@ -529,18 +533,18 @@ int NumericFormatSpec::FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSi
         n = n1;
         } while (n > 0 && ind >= 0);
 
-        if (showSign || sign != '+')
-            {
-            if (extraZero)
-                buf[--ind] = '0';
-            buf[--ind] = sign;
-            }
+    if (showSign || sign != '+')
+        {
+        if (extraZero)
+            buf[--ind] = '0';
+        buf[--ind] = sign;
+        }
 
-        int textLen = sizeof(buf) - ind;
-        if (textLen > (--bufLen))
-            textLen = bufLen;
-        memcpy(bufOut, &buf[ind], textLen--);
-        return textLen;
+    int textLen = sizeof(buf) - ind;
+    if (textLen > (--bufLen))
+        textLen = bufLen;
+    memcpy(bufOut, &buf[ind], textLen--);
+    return textLen;
     }
 
 
@@ -665,6 +669,11 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
     char fractBuf[64];
     char locBuf[128];
     size_t ind = 0;
+    if (IsZeroEmpty() && (abs(dval - 0.0) < 0.0001))
+        { 
+        *buf = 0;
+        return 0;
+        }
     memset(locBuf, 0, sizeof(locBuf));
     if (dval < 0.0)
         {
@@ -679,7 +688,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
     if (IsApplyRounding() || !FormatConstant::IsIgnored(m_roundFactor))
         dval = RoundDouble(dval, EffectiveRoundFactor(m_roundFactor));
 
-    if (sci)
+    if (sci && dval > 0.0001)
         {
         double exp = log10(dval);
         bool negativeExp = false;
@@ -714,9 +723,6 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
             }
 
         int iLen = IntPartToText(ival, intBuf, sizeof(intBuf), true);
-        if (m_signOption == SignOption::SignAlways || 
-            ((m_signOption == SignOption::OnlyNegative || m_signOption == SignOption::NegativeParentheses) && sign != '+'))
-            locBuf[ind++] = sign;
 
         memcpy(&locBuf[ind], intBuf, iLen);
         ind += iLen;
@@ -749,24 +755,50 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
             if (!IsKeepTrailingZeroes() && locBuf[ind - 1] == '0')
                 ind = TrimTrailingZeroes(locBuf, static_cast<int>(ind)-1);
             }
-        if (sci && expInt != 0)
+        if (sci)
             {
             char expBuf[32];
-            int expLen = FormatSimple ((int)expInt, expBuf, sizeof(expBuf), true, (IsExponentZero() ? true : false));
+            int expLen = FormatSimple ((int)expInt, expBuf, sizeof(expBuf), true, (expInt == 0));
             locBuf[ind++] = 'e';
-            //if (IsExponentZero())
-            //    locBuf[ind++] = '0';
             memcpy(&locBuf[ind], expBuf, expLen);
             ind += expLen;
             }
-        // closing formatting
-        if ('(' == sign)
-            locBuf[ind++] = ')';
+
         locBuf[ind++] = FormatConstant::EndOfLine();
 
         if (ind > bufLen)
             ind = bufLen;
-        memcpy(buf, locBuf, ind);
+
+        auto charCountsTowardsMinWidth = [](Utf8Char c)
+            {
+            return ((c >= '0' && c <= '9') || c == ',' || c == '.');
+            };
+
+        int curWidth = 0;
+        for (int i = 0; i < ind; i++)
+            {
+            if(charCountsTowardsMinWidth(locBuf[i]))
+                ++curWidth;
+            }
+        auto* bufView = buf;
+        memset(buf, 0, bufLen);
+        if (m_signOption == SignOption::SignAlways || 
+            ((m_signOption == SignOption::OnlyNegative || m_signOption == SignOption::NegativeParentheses) && sign != '+'))
+            { 
+            *bufView = sign;
+            ++bufView;
+            }
+        if (curWidth < GetMinWidth())
+            {
+            uint32_t missingZeroes = GetMinWidth() - curWidth;
+            memset(bufView, '0', missingZeroes);
+            bufView+= missingZeroes;
+            }
+        memcpy(bufView, locBuf, ind);
+        bufView+=ind;
+        // closing formatting
+        if ('(' == sign)
+            strcat(buf, ")");
         } // decimal
     else if (fractional)
         {
@@ -782,7 +814,9 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
         ind = StringUtils::AppendText(locBuf, locBufL, ind, fn.GetIntegralString().c_str());
         if (fn.HasFractionPart())
             {
-            if (ind < locBufL)
+            if (ind < locBufL && IsFractionDash())
+                ind = StringUtils::AppendText(locBuf, locBufL, ind, "-");
+            else
                 ind = StringUtils::AppendText(locBuf, locBufL, ind, " ");
             if (ind < locBufL)
                 ind = StringUtils::AppendText(locBuf, locBufL, ind, fn.GetNumeratorString().c_str());
