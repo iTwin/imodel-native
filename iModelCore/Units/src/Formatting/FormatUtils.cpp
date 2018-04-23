@@ -309,12 +309,10 @@ Utf8String Utils::GetScientificTypeString(ScientificType type)
     {
     switch(type)
         {
-        case ScientificType::Engineering:
-            return FormatConstant::FPN_ScientificEngineering();
-        case ScientificType::Normal:
-            return FormatConstant::FPN_ScientificNormal();
-        case ScientificType::Standard:
-            return FormatConstant::FPN_ScientificStandard();
+        case ScientificType::ZeroNormalized:
+            return FormatConstant::FPN_ScientificZeroNormalized();
+        case ScientificType::Normalized:
+            return FormatConstant::FPN_ScientificNormalized();
         }
     return "";
     }
@@ -324,9 +322,10 @@ Utf8String Utils::GetScientificTypeString(ScientificType type)
 // static
 bool Utils::ParseScientificType(ScientificType& out, Utf8StringCR name)
     {
-    if (BeStringUtilities::StricmpAscii(name.c_str(), FormatConstant::FPN_ScientificStandard().c_str()) == 0) out = ScientificType::Standard;
-    else if (BeStringUtilities::StricmpAscii(name.c_str(), FormatConstant::FPN_ScientificNormal().c_str()) == 0) out = ScientificType::Normal;
-    else if (BeStringUtilities::StricmpAscii(name.c_str(), FormatConstant::FPN_ScientificEngineering().c_str()) == 0) out = ScientificType::Engineering;
+    if (BeStringUtilities::StricmpAscii(name.c_str(), FormatConstant::FPN_ScientificNormalized().c_str()) == 0)
+        out = ScientificType::Normalized;
+    else if (BeStringUtilities::StricmpAscii(name.c_str(), FormatConstant::FPN_ScientificZeroNormalized().c_str()) == 0)
+        out = ScientificType::ZeroNormalized;
     else
         return false;
     return true;

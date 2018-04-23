@@ -61,7 +61,7 @@ void FormattingTestFixture::CreateStdFormats()
 
     Format scientific = defaultReal;
     scientific.GetNumericSpecP()->SetPresentationType(PresentationType::Scientific);
-    scientific.GetNumericSpecP()->SetScientificType(ScientificType::Standard);
+    scientific.GetNumericSpecP()->SetScientificType(ScientificType::Normalized);
     s_stdFormats["Scientific"] = scientific;
 
     Format signedScientific = scientific;
@@ -69,7 +69,7 @@ void FormattingTestFixture::CreateStdFormats()
     s_stdFormats["SignedScientific"] = signedScientific;
 
     Format scientificNormal = scientific;
-    scientificNormal.GetNumericSpecP()->SetScientificType(ScientificType::Normal);
+    scientificNormal.GetNumericSpecP()->SetScientificType(ScientificType::ZeroNormalized);
     s_stdFormats["ScientificNormal"] = scientificNormal;
 
     Format station100 = defaultReal;

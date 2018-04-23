@@ -12,7 +12,6 @@
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatProblemDetail)
 //===================================================
 // Enumerations
 //===================================================
@@ -22,10 +21,10 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatProblemDetail)
 //=======================================================================================
 enum class SignOption
     { 
-    NoSign = 0,              // indicates that sign should not be used at all (like absolute value)
-    OnlyNegative = 1,        // indicates that only "-" will be used for negative numbers
-    SignAlways = 2,          // indicates that sign symbol should explicitly shown even for positive numbers
-    NegativeParentheses = 3  // indicates that negative numbers shoul be enclosed in parenthesis instead of using a negative sign
+    NoSign,             //!< indicates that sign should not be used at all (like absolute value)
+    OnlyNegative,       //!< indicates that only "-" will be used for negative numbers
+    SignAlways,         //!< indicates that sign symbol should explicitly shown even for positive numbers
+    NegativeParentheses //!< indicates that negative numbers shoul be enclosed in parenthesis instead of using a negative sign
     };
 
 //=======================================================================================
@@ -33,10 +32,10 @@ enum class SignOption
 //=======================================================================================
 enum class PresentationType
     {
-    Decimal = 1,
-    Fractional = 2,
-    Scientific = 3,      // scientific with 1 digit presenting the integer part
-    Station = 4,
+    Decimal,
+    Fractional,
+    Scientific, // scientific with 1 digit presenting the integer part
+    Station,
     };
 
 //=======================================================================================
@@ -44,9 +43,8 @@ enum class PresentationType
 //=======================================================================================
 enum class ScientificType
     {
-    Standard        = 1,
-    Normal          = 2,
-    Engineering     = 3,
+    Normalized,
+    ZeroNormalized,
     };
 
 //=======================================================================================
@@ -55,16 +53,16 @@ enum class ScientificType
 enum class FormatTraits : int32_t
     {
     None             = 0x000,
-    TrailingZeroes   = 0x001, // Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
-    KeepSingleZero   = 0x002, // Indicates that the fractional part of the number is required when the fraction is zero.
-    ZeroEmpty        = 0x004, // Indicates that zero value should be presented by an empty string.
-    KeepDecimalPoint = 0x008, // Indicates that the decimal point is should be presented when the fraction is zero.
-    ApplyRounding    = 0x010, // Use the rounding factor.
-    FractionDash     = 0x020, // Use a dash between integer and fraction instead of a space: 3-1/4 rather than 3 1/4.
-    ShowUnitLabel    = 0x040, // Indicates that the numeric expression should be followed by the unit name.
-    PrependUnitLabel = 0x080, // Indicates the position of the Unit name shifts from the right side of the value to the left.
-    Use1000Separator = 0x100, // Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
-    ExponenentOnlyNegative   = 0x200, // Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
+    TrailingZeroes   = 0x001, //!< Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
+    KeepSingleZero   = 0x002, //!< Indicates that the fractional part of the number is required when the fraction is zero.
+    ZeroEmpty        = 0x004, //!< Indicates that zero value should be presented by an empty string.
+    KeepDecimalPoint = 0x008, //!< Indicates that the decimal point is should be presented when the fraction is zero.
+    ApplyRounding    = 0x010, //!< Use the rounding factor.
+    FractionDash     = 0x020, //!< Use a dash between integer and fraction instead of a space: 3-1/4 rather than 3 1/4.
+    ShowUnitLabel    = 0x040, //!< Indicates that the numeric expression should be followed by the unit name.
+    PrependUnitLabel = 0x080, //!< Indicates the position of the Unit name shifts from the right side of the value to the left.
+    Use1000Separator = 0x100, //!< Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
+    ExponenentOnlyNegative = 0x200, //!< Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
     };
 
 //=======================================================================================
@@ -115,10 +113,10 @@ enum class FractionalPrecision
 //=======================================================================================
 enum class ScannerCursorStatus
     {
-    Success = 0,
-    InvalidSymbol = 1,
-    IncompleteSequence = 2,
-    NoEnclosure = 3
+    Success,
+    InvalidSymbol,
+    IncompleteSequence,
+    NoEnclosure
     };
 
 //=======================================================================================
@@ -179,13 +177,13 @@ enum class FormatProblemLevel
 //=======================================================================================
 // @bsienum
 //=======================================================================================
-enum class FormatSpecType : int32_t
+enum class FormatSpecType
     {
-    None   = 0, //!< NumericFormatSpec only.
-    Single = 1, //!< NumericFormatSpec and CompositeValueSpec with 1 UOM : Major.
-    Double = 2, //!< NumericFormatSpec and CompositeValueSpec with 2 UOMs: Major and Middle.
-    Triple = 3, //!< NumericFormatSpec and CompositeValueSpec with 3 UOMs: Major, Middle, and Minor.
-    Quad   = 4  //!< NumericFormatSpec and CompositeValueSpec with 4 UOMs: Major, Middle, Minor, and Sub.
+    None,   //!< NumericFormatSpec only.
+    Single, //!< NumericFormatSpec and CompositeValueSpec with 1 UOM : Major.
+    Double, //!< NumericFormatSpec and CompositeValueSpec with 2 UOMs: Major and Middle.
+    Triple, //!< NumericFormatSpec and CompositeValueSpec with 3 UOMs: Major, Middle, and Minor.
+    Quad    //!< NumericFormatSpec and CompositeValueSpec with 4 UOMs: Major, Middle, Minor, and Sub.
     };
 
 //=======================================================================================
@@ -224,7 +222,7 @@ enum class FormatSpecialCodes
     SignatureN = 1,
     SignatureF = 2,
     SignatureNF = 3,
-    SignatureNU =4,
+    SignatureNU = 4,
     SignatureNFU = 5,
     SignatureNUNU = 6,
     SignatureNUNFU = 7,
@@ -342,9 +340,8 @@ public:
     static Utf8String FPN_SignAlways() { return "SignAlways"; }
     static Utf8String FPN_NegativeParenths() { return "NegativeParentheses"; }
 
-    static Utf8String FPN_ScientificStandard() {return "Standard";}
-    static Utf8String FPN_ScientificNormal() {return "Normal";}
-    static Utf8String FPN_ScientificEngineering() {return "Engineering";}
+    static Utf8String FPN_ScientificNormalized() {return "Normalized";}
+    static Utf8String FPN_ScientificZeroNormalized() {return "ZeroNormalized";}
 
     static Utf8String FPN_Decimal() { return "Decimal"; }
     static Utf8String FPN_Fractional() { return "Fractional"; }

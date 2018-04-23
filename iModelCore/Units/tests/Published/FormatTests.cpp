@@ -253,7 +253,7 @@ TEST_F(FormatStringTest, ParseFormatString)
     NumericFormatSpec exampleNumericFmtSpecSciNorm;
     exampleNumericFmtSpecSciNorm.SetPrecision(DecimalPrecision::Precision7);
     exampleNumericFmtSpecSciNorm.SetPresentationType(PresentationType::Scientific);
-    exampleNumericFmtSpecSciNorm.SetScientificType(ScientificType::Normal);
+    exampleNumericFmtSpecSciNorm.SetScientificType(ScientificType::ZeroNormalized);
     Format const exampleNamedFmtSpecSciNorm(exampleNumericFmtSpecSciNorm);
 
     NumericFormatSpec exampleNumericFmtSpecStation;

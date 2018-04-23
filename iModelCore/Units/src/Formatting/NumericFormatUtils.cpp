@@ -221,7 +221,7 @@ Utf8String FactorPower::ToText(Utf8Char pref)
         {
         if (n > 0)
             buf[i++] = 'x';
-        i += NumericFormatSpec::FormatSimple(static_cast<int>(m_divisor), buf + i, static_cast<int>(sizeof(buf)) - i, false, false);
+        i += NumericFormatSpec::FormatSimple(static_cast<int>(m_divisor), buf + i, static_cast<int>(sizeof(buf)) - i, false);
         }
     return Utf8String(buf);
     }

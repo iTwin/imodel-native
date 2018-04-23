@@ -12,7 +12,9 @@
 USING_BENTLEY_FORMATTING
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
-struct NumericFormatSpecTest : FormattingTestFixture 
+struct NumericFormatSpecTest : FormattingTestFixture {};
+
+struct NumericFormatSpecJsonTest : NumericFormatSpecTest
 {
     static void ValidateJson_Type(JsonValueCR jval, PresentationType expectedType);
     //! Searches for and validates all common attributes between all presentation types against their expected default values.
@@ -38,7 +40,6 @@ TEST_F(NumericFormatSpecTest, DefaultConstructorValues)
     EXPECT_EQ(FormatConstant::DefaultUomSeparator(), nfs.GetUomSeparator());
     EXPECT_EQ(FormatConstant::DefaultStationSeparator(), nfs.GetStationSeparator());
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
-    EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
     }
 
 //---------------------------------------------------------------------------------------
@@ -61,42 +62,25 @@ TEST_F(NumericFormatSpecTest, IsIdentical)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    04/2018
 //--------------------------------------------------------------------------------------
-TEST_F(NumericFormatSpecTest, LoadFromJson)
+TEST_F(NumericFormatSpecTest, FormatTraitsSet)
     {
-    Utf8CP jsonString = R"json({
-        "type": "station",
-        "signOption": "signAlways",
-        "formatTraits": "TrailZeroes|KeepSingleZero",
-        "precision": 4,
-        "decSeparator": "-",
-        "thousandSeparator": "+",
-        "uomSeparator": "&",
-        "stationSeparator": "-",
-        "stationOffsetSize": "3"
-    })json";
+    FormatTraits traits = NumericFormatSpec::SetTraitsBit(FormatTraits::None, FormatTraits::ApplyRounding, true);
+    traits = NumericFormatSpec::SetTraitsBit(traits, FormatTraits::ExponenentOnlyNegative, true);
+    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(traits, FormatTraits::ApplyRounding));
+    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(traits, FormatTraits::ExponenentOnlyNegative));
+    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(traits, traits));
 
-    Json::Value jval(Json::objectValue);
-    ASSERT_TRUE(Json::Reader::Parse(jsonString, jval));
-
-    NumericFormatSpec testFormat;
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, testFormat.FromJson(jval));
-
-    EXPECT_EQ(PresentationType::Station, testFormat.GetPresentationType());
-    EXPECT_EQ(SignOption::SignAlways, testFormat.GetSignOption());
-    EXPECT_EQ(DecimalPrecision::Precision4, testFormat.GetDecimalPrecision());
-    EXPECT_STREQ("TrailZeroes|KeepSingleZero", testFormat.GetFormatTraitsString().c_str());
-    EXPECT_EQ('-', testFormat.GetDecimalSeparator());
-    EXPECT_EQ('+', testFormat.GetThousandSeparator());
-    EXPECT_STREQ("&", testFormat.GetUomSeparator());
-    EXPECT_EQ('-', testFormat.GetStationSeparator());
-    EXPECT_EQ(3, testFormat.GetStationOffsetSize());
+    FormatTraits partialTraits = NumericFormatSpec::SetTraitsBit(traits, FormatTraits::PrependUnitLabel, true);
+    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(partialTraits, FormatTraits::ApplyRounding));
+    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(partialTraits, FormatTraits::ExponenentOnlyNegative));
+    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(partialTraits, FormatTraits::PrependUnitLabel));
+    EXPECT_TRUE(NumericFormatSpec::IsTraitSet(partialTraits, traits));
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    04/2018
 //--------------------------------------------------------------------------------------
-void NumericFormatSpecTest::ValidateJson_Type(JsonValueCR jval, PresentationType expectedType)
+void NumericFormatSpecJsonTest::ValidateJson_Type(JsonValueCR jval, PresentationType expectedType)
     {
     EXPECT_EQ(Json::stringValue, jval.type());
     PresentationType presType;
@@ -107,7 +91,7 @@ void NumericFormatSpecTest::ValidateJson_Type(JsonValueCR jval, PresentationType
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    04/2018
 //--------------------------------------------------------------------------------------
-void NumericFormatSpecTest::ValidateJson_DefaultCommonAttributes(JsonValueCR jval)
+void NumericFormatSpecJsonTest::ValidateJson_DefaultCommonAttributes(JsonValueCR jval)
     {
     // Sign Option
     JsonValueCR signOptJson = jval[json_signOption()];
@@ -146,12 +130,153 @@ void NumericFormatSpecTest::ValidateJson_DefaultCommonAttributes(JsonValueCR jva
     EXPECT_STREQ(FormatConstant::DefaultUomSeparator().c_str(), uomSeparator.asCString());
 
     // Format Traits
+    JsonValueCR formatTraits = jval[json_formatTraits()];
+    EXPECT_EQ(Json::stringValue, formatTraits.type());
+    // EXPECT_EQ(FormatConstant::DefaultFormatTraits())
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    04/2018
 //--------------------------------------------------------------------------------------
-TEST_F(NumericFormatSpecTest, SerializeDecimalTypeToJson)
+TEST_F(NumericFormatSpecJsonTest, DeserializeStation)
+    {
+    Utf8CP jsonString = R"json({
+        "type": "station",
+        "signOption": "signAlways",
+        "formatTraits": "TrailZeroes|KeepSingleZero",
+        "precision": 4,
+        "decSeparator": "-",
+        "thousandSeparator": "+",
+        "uomSeparator": "&",
+        "stationSeparator": "-",
+        "stationOffsetSize": "3",
+        "minWidth": 50
+    })json";
+
+    Json::Value jval(Json::objectValue);
+    ASSERT_TRUE(Json::Reader::Parse(jsonString, jval));
+
+    NumericFormatSpec testFormat;
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, testFormat.FromJson(jval));
+
+    EXPECT_EQ(PresentationType::Station, testFormat.GetPresentationType());
+    EXPECT_EQ(SignOption::SignAlways, testFormat.GetSignOption());
+    EXPECT_EQ(DecimalPrecision::Precision4, testFormat.GetDecimalPrecision());
+    EXPECT_STREQ("TrailZeroes|KeepSingleZero", testFormat.GetFormatTraitsString().c_str());
+    EXPECT_EQ('-', testFormat.GetDecimalSeparator());
+    EXPECT_EQ('+', testFormat.GetThousandSeparator());
+    EXPECT_STREQ("&", testFormat.GetUomSeparator());
+    EXPECT_EQ('-', testFormat.GetStationSeparator());
+    EXPECT_EQ(3, testFormat.GetStationOffsetSize());
+    EXPECT_EQ(50, testFormat.GetMinWidth());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(NumericFormatSpecJsonTest, DeserializeDecimal)
+    {
+    Utf8CP jsonString = R"json({
+        "type": "decimal",
+        "signOption": "signAlways",
+        "formatTraits": "TrailZeroes|KeepSingleZero",
+        "precision": 4,
+        "decSeparator": "-",
+        "thousandSeparator": "+",
+        "uomSeparator": "&",
+        "minWidth": 50
+    })json";
+
+    Json::Value jval(Json::objectValue);
+    ASSERT_TRUE(Json::Reader::Parse(jsonString, jval));
+
+    NumericFormatSpec testFormat;
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, testFormat.FromJson(jval));
+
+    EXPECT_EQ(PresentationType::Decimal, testFormat.GetPresentationType());
+    EXPECT_EQ(SignOption::SignAlways, testFormat.GetSignOption());
+    EXPECT_EQ(DecimalPrecision::Precision4, testFormat.GetDecimalPrecision());
+    EXPECT_STREQ("TrailZeroes|KeepSingleZero", testFormat.GetFormatTraitsString().c_str());
+    EXPECT_EQ('-', testFormat.GetDecimalSeparator());
+    EXPECT_EQ('+', testFormat.GetThousandSeparator());
+    EXPECT_STREQ("&", testFormat.GetUomSeparator());
+    EXPECT_EQ(50, testFormat.GetMinWidth());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(NumericFormatSpecJsonTest, DeserializeFractional)
+    {
+    Utf8CP jsonString = R"json({
+        "type": "fractional",
+        "signOption": "signAlways",
+        "formatTraits": "TrailZeroes|KeepSingleZero",
+        "precision": 4,
+        "decSeparator": "-",
+        "thousandSeparator": "+",
+        "uomSeparator": "&",
+        "minWidth": 50
+    })json";
+
+    Json::Value jval(Json::objectValue);
+    ASSERT_TRUE(Json::Reader::Parse(jsonString, jval));
+
+    NumericFormatSpec testFormat;
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, testFormat.FromJson(jval));
+
+    EXPECT_EQ(PresentationType::Fractional, testFormat.GetPresentationType());
+    EXPECT_EQ(SignOption::SignAlways, testFormat.GetSignOption());
+    EXPECT_EQ(FractionalPrecision::Quarter, testFormat.GetFractionalPrecision());
+    EXPECT_STREQ("TrailZeroes|KeepSingleZero", testFormat.GetFormatTraitsString().c_str());
+    EXPECT_EQ('-', testFormat.GetDecimalSeparator());
+    EXPECT_EQ('+', testFormat.GetThousandSeparator());
+    EXPECT_STREQ("&", testFormat.GetUomSeparator());
+    EXPECT_EQ(50, testFormat.GetMinWidth());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(NumericFormatSpecJsonTest, DeserializeScientific)
+    {
+    Utf8CP jsonString = R"json({
+        "type": "scientific",
+        "scientificType": "normalized",
+        "signOption": "signAlways",
+        "formatTraits": "TrailZeroes|KeepSingleZero",
+        "precision": 4,
+        "decSeparator": "-",
+        "thousandSeparator": "+",
+        "uomSeparator": "&",
+        "minWidth": 50
+    })json";
+
+    Json::Value jval(Json::objectValue);
+    ASSERT_TRUE(Json::Reader::Parse(jsonString, jval));
+
+    NumericFormatSpec testFormat;
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, testFormat.FromJson(jval));
+
+    EXPECT_EQ(PresentationType::Scientific, testFormat.GetPresentationType());
+    EXPECT_EQ(ScientificType::Normalized, testFormat.GetScientificType());
+    EXPECT_EQ(SignOption::SignAlways, testFormat.GetSignOption());
+    EXPECT_EQ(DecimalPrecision::Precision4, testFormat.GetDecimalPrecision());
+    EXPECT_STREQ("TrailZeroes|KeepSingleZero", testFormat.GetFormatTraitsString().c_str());
+    EXPECT_EQ('-', testFormat.GetDecimalSeparator());
+    EXPECT_EQ('+', testFormat.GetThousandSeparator());
+    EXPECT_STREQ("&", testFormat.GetUomSeparator());
+    EXPECT_EQ(50, testFormat.GetMinWidth());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(NumericFormatSpecJsonTest, SerializeDecimalType)
     {
     NumericFormatSpec format;
 
@@ -173,7 +298,7 @@ TEST_F(NumericFormatSpecTest, SerializeDecimalTypeToJson)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    04/2018
 //--------------------------------------------------------------------------------------
-TEST_F(NumericFormatSpecTest, SerializeScientificToJson)
+TEST_F(NumericFormatSpecJsonTest, SerializeScientific)
     {
     NumericFormatSpec format;
     format.SetPresentationType(PresentationType::Scientific);
@@ -196,7 +321,7 @@ TEST_F(NumericFormatSpecTest, SerializeScientificToJson)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    04/2018
 //--------------------------------------------------------------------------------------
-TEST_F(NumericFormatSpecTest, SerializeStationToJson)
+TEST_F(NumericFormatSpecJsonTest, SerializeStation)
     {
     NumericFormatSpec format;
     format.SetPresentationType(PresentationType::Station);
@@ -204,14 +329,18 @@ TEST_F(NumericFormatSpecTest, SerializeStationToJson)
     {
     Json::Value basicJson = format.ToJson(false);
     EXPECT_FALSE(basicJson.empty());
-    EXPECT_EQ(1, (uint32_t)basicJson.size()) << "Incorrect number of default Station attributes.";
+    EXPECT_EQ(2, (uint32_t)basicJson.size()) << "Incorrect number of default Station attributes.";
     JsonValueCR firstValue = basicJson[json_type()];
     ValidateJson_Type(firstValue, PresentationType::Station);
+
+    JsonValueCR offsetSize = basicJson[json_stationOffsetSize()];
+    EXPECT_EQ(Json::uintValue, offsetSize.type());
+    EXPECT_EQ(0, offsetSize.asUInt());
     }
     {
     Json::Value verboseJson = format.ToJson(true);
     EXPECT_FALSE(verboseJson.empty());
-    EXPECT_EQ(10, (uint32_t)verboseJson.size()) << "Incorrect number of Station attributes.";
+    EXPECT_EQ(11, (uint32_t)verboseJson.size()) << "Incorrect number of Station attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);
     }
     }
@@ -219,7 +348,7 @@ TEST_F(NumericFormatSpecTest, SerializeStationToJson)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    04/2018
 //--------------------------------------------------------------------------------------
-TEST_F(NumericFormatSpecTest, SerializeFractionalToJson)
+TEST_F(NumericFormatSpecJsonTest, SerializeFractional)
     {
     NumericFormatSpec format;
     format.SetPresentationType(PresentationType::Fractional);

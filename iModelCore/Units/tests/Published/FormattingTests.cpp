@@ -178,7 +178,7 @@ TEST_F(FormatIntegerTest, FormatIntegerPresentationTypeTests)
     {
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Scientific);
-    nfs.SetScientificType(ScientificType::Normal);
+    nfs.SetScientificType(ScientificType::ZeroNormalized);
     nfs.SetPrecision(DecimalPrecision::Max);
     EXPECT_STREQ("0.100501e+6", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-0.100501e+6", nfs.Format(testValNeg).c_str());
@@ -374,7 +374,7 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests)
     {
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Scientific);
-    nfs.SetScientificType(ScientificType::Normal);
+    nfs.SetScientificType(ScientificType::ZeroNormalized);
     nfs.SetPrecision(DecimalPrecision::Max);
 
     EXPECT_STREQ("0.100501125e+6", nfs.Format(testValPos).c_str());
@@ -400,7 +400,7 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests)
     {
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Scientific);
-    nfs.SetScientificType(ScientificType::Normal);
+    nfs.SetScientificType(ScientificType::ZeroNormalized);
     nfs.SetPrecision(DecimalPrecision::Max);
 
     EXPECT_STREQ("0.125e-3", nfs.Format(testValMagnitudeLt1Pos).c_str());
@@ -1037,7 +1037,7 @@ TEST_F(FormattingTestFixture, Simple)
     EXPECT_STREQ ("-0.2718281828e-2", numFmt.Format(-0.0027182818284590).c_str());
     EXPECT_STREQ ("-0.2718281828e+0", numFmt.Format(-0.2718281828459045).c_str());
     numFmt.SetPresentationType(PresentationType::Scientific);
-    numFmt.SetScientificType(ScientificType::Normal);
+    numFmt.SetScientificType(ScientificType::ZeroNormalized);
     EXPECT_STREQ ("-2.7182818285e-3", numFmt.Format(-0.0027182818284590).c_str());
     EXPECT_STREQ ("-2.7182818285e-1", numFmt.Format(-0.2718281828459045).c_str());
     EXPECT_STREQ ("-0.2718281828e+4", numFmt.Format(-2718.2818284590).c_str());

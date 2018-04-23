@@ -62,7 +62,7 @@ NumericFormatSpec::NumericFormatSpec()
     , m_statSeparator(FormatConstant::DefaultStationSeparator())
     , m_minWidth(FormatConstant::DefaultMinWidth())
     , m_stationSize(0)
-    , m_scientificType(ScientificType::Standard)
+    , m_scientificType(ScientificType::Normalized)
     {
     }
 
@@ -141,9 +141,10 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
 
     if (PresentationType::Station == GetPresentationType())
         {
+        // Always serialize offsetSize for station.
+        jNFC[json_stationOffsetSize()] = GetStationOffsetSize();
         if (verbose || HasStationSeparator())
             jNFC[json_stationSeparator()] = GetStationSeparator();
-        // TODO missing StationOffsetSize
         }
 
     // Common between all Types
@@ -177,6 +178,9 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
         jNFC[json_uomSeparator()] = GetUomSeparator();
     if (verbose || HasMinWidth())
         jNFC[json_minWidth()] = GetMinWidth();
+
+    if (verbose || HasFormatTraits())
+        jNFC[json_formatTraits()] = GetFormatTraitsString();
 
     return jNFC;
     }
@@ -223,25 +227,25 @@ Utf8String NumericFormatSpec::GetFormatTraitsString() const
     {
     Utf8String ret;
     bvector<Utf8String> strings;
-    if (GetTraitsBit(FormatTraits::TrailingZeroes))
+    if (GetTraitBit(FormatTraits::TrailingZeroes))
         ret += FormatConstant::FPN_TrailZeroes() + "|";
-    if (GetTraitsBit(FormatTraits::KeepSingleZero))
+    if (GetTraitBit(FormatTraits::KeepSingleZero))
         ret += FormatConstant::FPN_KeepSingleZero() + "|";
-    if (GetTraitsBit(FormatTraits::ZeroEmpty))
+    if (GetTraitBit(FormatTraits::ZeroEmpty))
         ret += FormatConstant::FPN_ZeroEmpty() + "|";
-    if (GetTraitsBit(FormatTraits::KeepDecimalPoint))
+    if (GetTraitBit(FormatTraits::KeepDecimalPoint))
         ret += FormatConstant::FPN_KeepDecimalPoint() + "|";
-    if (GetTraitsBit(FormatTraits::ApplyRounding))
+    if (GetTraitBit(FormatTraits::ApplyRounding))
         ret += FormatConstant::FPN_ApplyRounding() + "|";
-    if (GetTraitsBit(FormatTraits::FractionDash))
+    if (GetTraitBit(FormatTraits::FractionDash))
         ret += FormatConstant::FPN_FractionDash() + "|";
-    if (GetTraitsBit(FormatTraits::ShowUnitLabel))
+    if (GetTraitBit(FormatTraits::ShowUnitLabel))
         ret += FormatConstant::FPN_ShowUnitLabel() + "|";
-    if (GetTraitsBit(FormatTraits::PrependUnitLabel))
+    if (GetTraitBit(FormatTraits::PrependUnitLabel))
         ret += FormatConstant::FPN_PrependUnitLabel() + "|";
-    if (GetTraitsBit(FormatTraits::Use1000Separator))
+    if (GetTraitBit(FormatTraits::Use1000Separator))
         ret += FormatConstant::FPN_Use1000Separator() + "|";
-    if (GetTraitsBit(FormatTraits::ExponenentOnlyNegative))
+    if (GetTraitBit(FormatTraits::ExponenentOnlyNegative))
         ret += FormatConstant::FPN_ExponentOnlyNegative() + "|";
     if ('|' == *(ret.end() - 1))
         ret = ret.substr(0, ret.size()-1);
@@ -261,17 +265,6 @@ FormatTraits NumericFormatSpec::SetTraitsBit(FormatTraits traits, FormatTraits b
     else
         traitsBitField &= ~static_cast<std::underlying_type<FormatTraits>::type>(bit);
     return static_cast<FormatTraits>(traitsBitField);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    David Fox-Rabinovitz
-//---------------+---------------+---------------+---------------+---------------+-------
-void NumericFormatSpec::TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits* ref, bool verbose) const
-    {
-    if (ref == nullptr)
-        verbose = true;
-    if ((nullptr == ref) || !FormatConstant::IsBoolEqual(GetTraitsBit(bit), GetTraitsBit(*ref, bit)))  //.IsKeepTrailingZeroes())
-        outValue[bitIndex] = FormatConstant::BoolText(GetTraitsBit(bit));
     }
 
 //---------------------------------------------------------------------------------------
@@ -366,8 +359,8 @@ bool NumericFormatSpec::SetFormatTraits(JsonValueCR jval)
 Json::Value NumericFormatSpec::FormatTraitsToJson(bool verbose) const
     {
     Json::Value jTraits;
-    FormatTraits ref = FormatConstant::DefaultFormatTraits();
-    TraitsBitToJson(jTraits, json_trailZeroes(), FormatTraits::TrailingZeroes, &ref, verbose);
+    //FormatTraits ref = FormatConstant::DefaultFormatTraits();
+    /*TraitsBitToJson(jTraits, json_trailZeroes(), FormatTraits::TrailingZeroes, &ref, verbose);
     TraitsBitToJson(jTraits, json_keepSingleZero(), FormatTraits::KeepSingleZero, &ref, verbose);
     TraitsBitToJson(jTraits, json_zeroEmpty(), FormatTraits::ZeroEmpty, &ref, verbose);
     TraitsBitToJson(jTraits, json_keepDecimalPrecision(), FormatTraits::KeepDecimalPoint, &ref, verbose);
@@ -376,7 +369,7 @@ Json::Value NumericFormatSpec::FormatTraitsToJson(bool verbose) const
     TraitsBitToJson(jTraits, json_showUnitLabel(), FormatTraits::ShowUnitLabel, &ref, verbose);
     TraitsBitToJson(jTraits, json_prependUnitLabel(), FormatTraits::PrependUnitLabel, &ref, verbose);
     TraitsBitToJson(jTraits, json_use1000Separator(), FormatTraits::Use1000Separator, &ref, verbose);
-    TraitsBitToJson(jTraits, json_exponentOnlyNegative(), FormatTraits::ExponenentOnlyNegative, &ref, verbose);
+    TraitsBitToJson(jTraits, json_exponentOnlyNegative(), FormatTraits::ExponenentOnlyNegative, &ref, verbose);*/
 
     return jTraits;
     }
@@ -508,7 +501,7 @@ Utf8String NumericFormatSpec::FormatToString(int n, int minSize) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-int NumericFormatSpec::FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero)
+int NumericFormatSpec::FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSign)
     {
     char sign = '+';
     char buf[64];
@@ -542,11 +535,7 @@ int NumericFormatSpec::FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSi
         } while (n > 0 && ind >= 0);
 
     if (showSign || sign != '+')
-        {
-        if (extraZero)
-            buf[--ind] = '0';
         buf[--ind] = sign;
-        }
 
     int textLen = sizeof(buf) - ind;
     if (textLen > (--bufLen))
@@ -717,7 +706,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
             }
 
         expInt = floor(exp);
-        if (m_presentationType == PresentationType::Scientific && m_scientificType == ScientificType::Normal)
+        if (m_presentationType == PresentationType::Scientific && m_scientificType == ScientificType::ZeroNormalized)
             expInt += 1.0;
         if (negativeExp)
             expInt = -expInt;
@@ -766,7 +755,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
         if (sci)
             {
             char expBuf[32];
-            int expLen = FormatSimple ((int)expInt, expBuf, sizeof(expBuf), true, (expInt == 0));
+            int expLen = FormatSimple ((int)expInt, expBuf, sizeof(expBuf), true);
             locBuf[ind++] = 'e';
             memcpy(&locBuf[ind], expBuf, expLen);
             ind += expLen;

@@ -315,41 +315,59 @@ public:
     //======================================
     // Format Traits Bit Setters/Getters
     //======================================
-    UNITS_EXPORT static FormatTraits SetTraitsBit(FormatTraits traits, FormatTraits bit, bool setTo);
-    static bool GetTraitsBit(FormatTraits traits, FormatTraits bit) {return 0 != (static_cast<std::underlying_type<FormatTraits>::type>(traits) & static_cast<std::underlying_type<FormatTraits>::type>(bit));}
-    void SetTraitsBit(FormatTraits bit, bool setTo) {m_formatTraits = NumericFormatSpec::SetTraitsBit(m_formatTraits, bit, setTo);}
-    bool GetTraitsBit(FormatTraits bit) const {return NumericFormatSpec::GetTraitsBit(m_formatTraits, bit);}
-    UNITS_EXPORT void TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits* ref, bool verbose=false) const;
+    //! Given a starting traits can set/unset any of the format traits using the provided new traits.
+    //! @param[in] startTraits The traits to update.
+    //! @param[in] newTraits The traits to use to update the starting traits.
+    //! @param[in] setTo Used to determine whether to set/unset the the startTraits with the newTraits.
+    //! @return The FormatTraits that result from applying the new traits, with whether to set/unset, to the starting traits.
+    UNITS_EXPORT static FormatTraits SetTraitsBit(FormatTraits startTraits, FormatTraits newTraits, bool setTo);
+
+    //! Determine whether the supplied FormatTraits are set in the on this NumericFormatSpec.
+    //! @param[in] traits The traits to compare against.
+    //! @param[in] compareTraits The traits to check if they exist in the other set.
+    //! @return True if all the format traits are from the compare traits exist. Otherwise, false.
+    static bool IsTraitSet(FormatTraits traits, FormatTraits compareTraits) {return 0 != (static_cast<std::underlying_type<FormatTraits>::type>(traits) & static_cast<std::underlying_type<FormatTraits>::type>(compareTraits));}
+
+    //! Sets the provided traits as either off or on based on the supplied boolean.
+    //! @param[in] traits The traits to set/unset on this NumericFormatSpec.
+    //! @param[in] setTo Used to determine whether to set/unset the provided traits.
+    void SetTraitsBit(FormatTraits traits, bool setTo) {m_formatTraits = NumericFormatSpec::SetTraitsBit(m_formatTraits, traits, setTo);}
+
+    //! Determine whether the supplied FormatTraits are set on this NumericFormatSpec.
+    //! @param[in] traits The traits to check if they are set.
+    //! @return True if all the supplied FormatTraits are set. Otherwise, false.
+    bool GetTraitBit(FormatTraits traitBit) const {return NumericFormatSpec::IsTraitSet(m_formatTraits, traitBit);}
 
     void SetKeepTrailingZeroes(bool setTo) {SetTraitsBit(FormatTraits::TrailingZeroes, setTo);}
-    bool IsKeepTrailingZeroes() const { return GetTraitsBit(FormatTraits::TrailingZeroes);}
+    bool IsKeepTrailingZeroes() const { return GetTraitBit(FormatTraits::TrailingZeroes);}
 
     void SetKeepDecimalPoint(bool setTo) { SetTraitsBit(FormatTraits::KeepDecimalPoint, setTo);}
-    bool IsKeepDecimalPoint() const { return GetTraitsBit(FormatTraits::KeepDecimalPoint); }
+    bool IsKeepDecimalPoint() const { return GetTraitBit(FormatTraits::KeepDecimalPoint); }
 
     void SetKeepSingleZero(bool setTo) { SetTraitsBit(FormatTraits::KeepSingleZero, setTo);}
-    bool IsKeepSingleZero() const { return GetTraitsBit(FormatTraits::KeepSingleZero); }
+    bool IsKeepSingleZero() const { return GetTraitBit(FormatTraits::KeepSingleZero); }
 
     void SetExponentOnlyNegative(bool setTo) { SetTraitsBit(FormatTraits::ExponenentOnlyNegative, setTo); }
-    bool IsExponenentOnlyNegative() const { return GetTraitsBit(FormatTraits::ExponenentOnlyNegative); }
+    bool IsExponenentOnlyNegative() const { return GetTraitBit(FormatTraits::ExponenentOnlyNegative); }
 
     void SetZeroEmpty(bool setTo) { SetTraitsBit(FormatTraits::ZeroEmpty, setTo); }
-    bool IsZeroEmpty() const { return GetTraitsBit(FormatTraits::ZeroEmpty); }
+    bool IsZeroEmpty() const { return GetTraitBit(FormatTraits::ZeroEmpty); }
 
     void SetUse1000Separator(bool setTo) { SetTraitsBit(FormatTraits::Use1000Separator, setTo); }
-    bool IsUse1000Separator() const { return GetTraitsBit(FormatTraits::Use1000Separator); }
+    bool IsUse1000Separator() const { return GetTraitBit(FormatTraits::Use1000Separator); }
 
     void SetApplyRounding(bool setTo) { SetTraitsBit(FormatTraits::ApplyRounding, setTo); }
-    bool IsApplyRounding() const { return GetTraitsBit(FormatTraits::ApplyRounding); }
+    bool IsApplyRounding() const { return GetTraitBit(FormatTraits::ApplyRounding); }
 
     void SetFractionDash(bool setTo) { SetTraitsBit(FormatTraits::FractionDash, setTo); }
-    bool IsFractionDash() const { return GetTraitsBit(FormatTraits::FractionDash); }
+    bool IsFractionDash() const { return GetTraitBit(FormatTraits::FractionDash); }
 
     void SetShowUnitLabel(bool setTo) { SetTraitsBit(FormatTraits::ShowUnitLabel, setTo); }
-    bool IsShowUnitLabel() const { return GetTraitsBit(FormatTraits::ShowUnitLabel); }
+    bool IsShowUnitLabel() const { return GetTraitBit(FormatTraits::ShowUnitLabel); }
 
-    void SetPrependUnitLabel(bool setTo) { SetTraitsBit(FormatTraits::ShowUnitLabel, setTo); }
-    bool IsPrependUnitLabel() const { return GetTraitsBit(FormatTraits::ShowUnitLabel); }
+    void SetPrependUnitLabel(bool setTo) { SetTraitsBit(FormatTraits::PrependUnitLabel, setTo); }
+    bool IsPrependUnitLabel() const { return GetTraitBit(FormatTraits::PrependUnitLabel); }
+
     //======================================
     // Formatting Methods
     //======================================
@@ -372,7 +390,7 @@ public:
     //! parenthesis for indicating negative numbers However it uses other ShowSign options
     //! the calling function.
     //! The main purpose of this methind is to form exponent value.
-    UNITS_EXPORT int static FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
+    UNITS_EXPORT int static FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSign);
     // !TODO====================================================================
 };
 
