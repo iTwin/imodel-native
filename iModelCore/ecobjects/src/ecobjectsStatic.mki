@@ -2,13 +2,13 @@
 #
 #     $Source: src/ecobjectsStatic.mki $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 nameToDefine=__ECOBJECTS_BUILD__
 %include cdefapnd.mki
 
 oBase       =% ${o}
-o           = $(oBase)Static/
+o           = $(PartBuildDir)Static/
 
 CCompPDBName = ECObjectsStatic

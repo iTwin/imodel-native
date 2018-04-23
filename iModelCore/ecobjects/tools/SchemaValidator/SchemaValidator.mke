@@ -12,7 +12,7 @@ SrcDir = $(_MakeFilePath)
 %include mdl.mki
 #%include $(SrcRoot)ecobjects/mki/ECObjects.mki
 
-o = $(OutputRootDir)Build/SchemaValidator/
+o = $(PartBuildDir)
 always:
     ~mkdir $(o)
 

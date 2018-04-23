@@ -2,7 +2,7 @@
 #
 #  $Source: test/BuildTests.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 # *** NEEDS WORK: Must turn off clang warnings until we can clean up these tests
@@ -22,7 +22,7 @@ BEGTEST_NAME    = $(TestDir)ECObjects
 BEGTEST_INPUT   = $(baseDir)$(TestDir)/
 BEGTEST_IGNORE  = $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT  = $(OutputRootDir)build/ECObjects/UnitTests/
-o               = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+o               = $(PartBuildDir)$(BEGTEST_NAME)/
 
 %ifdef UsePublishedApi
     BEGTEST_API = $(BuildContext)SubParts/PublishedApi/ECObjects/
