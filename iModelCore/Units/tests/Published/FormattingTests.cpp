@@ -1073,4 +1073,44 @@ TEST_F(FormattingTestFixture, LargeNumbers)
     }
 
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                            Kyle.Abramowitz                         04/18
+//--------------------------------------------------------------------------------------
+TEST_F(FormattingTestFixture, TestParseUnitFormatDescriptor) 
+    {
+    Utf8String unitName;
+    Utf8String formatString;
+
+    Utf8String input = "(N*M)/DEG";
+    Utf8String input2 = "(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)";
+    Utf8String input3 = "(N*M)/DEG(real)";
+    Utf8String input4 = "(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)(real)";
+    Utf8String input5 = "W/(SQ.M*K)";
+    Utf8String input6 = "W/(SQ.M*K)(real)";
+
+    Format::ParseUnitFormatDescriptor(unitName, formatString, input.c_str());
+    EXPECT_STREQ("(N*M)/DEG", unitName.c_str());
+    EXPECT_TRUE(formatString.empty());
+
+    Format::ParseUnitFormatDescriptor(unitName, formatString, input2.c_str());
+    EXPECT_STREQ("(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)", unitName.c_str());
+    EXPECT_TRUE(formatString.empty());
+
+    Format::ParseUnitFormatDescriptor(unitName, formatString, input3.c_str());
+    EXPECT_STREQ("(N*M)/DEG", unitName.c_str());
+    EXPECT_STREQ("real", formatString.c_str());
+
+    Format::ParseUnitFormatDescriptor(unitName, formatString, input4.c_str());
+    EXPECT_STREQ("(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)", unitName.c_str());
+    EXPECT_STREQ("real", formatString.c_str());
+
+    Format::ParseUnitFormatDescriptor(unitName, formatString, input5.c_str());
+    EXPECT_STREQ("W/(SQ.M*K)", unitName.c_str());
+    EXPECT_TRUE(formatString.empty());
+
+    Format::ParseUnitFormatDescriptor(unitName, formatString, input6.c_str());
+    EXPECT_STREQ("W/(SQ.M*K)", unitName.c_str());
+    EXPECT_STREQ("real", formatString.c_str());
+    }
+
 END_BENTLEY_FORMATTEST_NAMESPACE
