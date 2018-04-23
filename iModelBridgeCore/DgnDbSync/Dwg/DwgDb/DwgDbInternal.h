@@ -274,13 +274,18 @@ END_DWGDB_NAMESPACE
         rs = OdResult::eOk;                                                                                             \
     m_openStatus = ToDwgDbStatus(rs);
 
-// DwgDbXxxTable::NewIterator
-#define DWGDB_DEFINE_SYMBOLTABLE_NEWITERATOR(_tableName_)                                                               \
+// implement common DwgDbXxxTable methods
+#define DWGDB_DEFINE_SYMBOLTABLE_MEMBERS(_tableName_)                                                                   \
     DwgDbSymbolTableIterator DwgDb##_tableName_##::NewIterator(bool atBeginning,bool skipErased) const                  \
         {                                                                                                               \
         OdDbSymbolTableIteratorPtr odIter = this->newIterator(atBeginning, skipErased);                                 \
         return  odIter.get();                                                                                           \
-        };
+        };                                                                                                              \
+    DwgDbObjectId DwgDb##_tableName_##::GetByName(WStringCR name, bool erased) const                                    \
+        {                                                                                                               \
+        return T_Super::getAt (OdString(name.c_str()), erased);                                                         \
+        }
+
 
 // DwgDb psuedo-database object sub-classed from a toolkit's database object
 #define DWGDB_PSEUDO_DEFINE_MEMBERS(_classSuffix_)                                                                      \
@@ -349,8 +354,8 @@ END_DWGDB_NAMESPACE
 #define IMPLEMENT_SMARTPTR_ACQUIREOBJECT(_toBeAcquired_)                                                                \
         m_openStatus = ToDwgDbStatus(this->acquire(_toBeAcquired_));
 
-// DwgDbXxxTable::NewIterator
-#define DWGDB_DEFINE_SYMBOLTABLE_NEWITERATOR(_tableName_)                                                                   \
+// implement common DwgDbXxxTable methods
+#define DWGDB_DEFINE_SYMBOLTABLE_MEMBERS(_tableName_)                                                                       \
     DwgDbSymbolTableIterator DwgDb##_tableName_##::NewIterator(bool atBeginning,bool skipErased) const                      \
         {                                                                                                                   \
         AcDb##_tableName_##Iterator* acIter = nullptr;                                                                      \
@@ -358,7 +363,13 @@ END_DWGDB_NAMESPACE
             return DwgDbSymbolTableIterator(acIter);                                                                        \
         else                                                                                                                \
             return DwgDbSymbolTableIterator();                                                                              \
-        };
+        };                                                                                                                  \
+    DwgDbObjectId DwgDb##_tableName_##::GetByName(WStringCR name, bool includeErased) const                                 \
+        {                                                                                                                   \
+        AcDbObjectId    id;                                                                                                 \
+        if (T_Super::getAt(name.c_str(), id, includeErased) != Acad::eOk) id.setNull();                                     \
+        return  id;                                                                                                         \
+        }
 
 // DwgDb psuedo-database object sub-classed from a toolkit's database object
 #define DWGDB_PSEUDO_DEFINE_MEMBERS(_classSuffix_)                                                                          \

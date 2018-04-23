@@ -1044,6 +1044,24 @@ BentleyStatus BisJson1ExporterImpl::ExportViews(Json::Value& out)
 BentleyStatus BisJson1ExporterImpl::ExportCategories(Json::Value& out)
     {
     bvector<DgnCategoryId> duplicateIds;
+    // First, need to create a definition model for each Namespace used in the Categories for those categories that are in the default DictionaryModel
+    Utf8PrintfString("select DISTINCT Code.Namespace from [dgn].[Category] WHERE ModelId = %" PRIu64, m_dgndb->GetDictionaryModel().GetModelId().GetValue());
+    CachedECSqlStatementPtr statement = m_dgndb->GetPreparedECSqlStatement("select DISTINCT Code.Namespace from [dgn].[Category] WHERE ModelId = 1");
+    if (!statement.IsValid())
+        {
+        LogMessage(TeleporterLoggingSeverity::LOG_FATAL, "Unable to get cached statement ptr.");
+        return ERROR;
+        }
+
+    while (BE_SQLITE_ROW == statement->Step())
+        {
+        Utf8String ns = statement->GetValueText(0);
+        if (Utf8String::IsNullOrEmpty(ns.c_str()))
+            continue;
+        DgnElementId modelId = CreateDefinitionModel(out, ns.c_str());
+        m_namespaceDefinitionModels[ns] = modelId;
+        }
+
     ExportCategories(out, "dgn_GeometricElement3d", "BisCore.SpatialCategory", m_authorityIds["bis:SpatialCategory"].c_str(), duplicateIds);
 
     Utf8PrintfString sql("select DISTINCT g.CategoryId FROM dgn_GeometricElement3d g INTERSECT select DISTINCT g2.CategoryId FROM dgn_GeometricElement2d g2");
@@ -1170,6 +1188,18 @@ BentleyStatus BisJson1ExporterImpl::ExportSchemas(Json::Value& out) const
                         nonConstClass->RenameConflictProperty(prop, true);
                         }
                     prop->RemoveCustomAttribute("PropertyMap");
+                    if (prop->GetCustomAttributeLocal("EditorCustomAttributes", "StandardValues").IsValid())
+                        {
+                        ECN::PrimitiveECPropertyP primProp = prop->GetAsPrimitivePropertyP();
+                        if (nullptr != primProp && primProp->GetType() == ECN::PrimitiveType::PRIMITIVETYPE_String)
+                            primProp->RemoveCustomAttribute("EditorCustomAttributes", "StandardValues");
+                        else
+                            {
+                            ECN::ArrayECPropertyP arrayProp = prop->GetAsArrayPropertyP();
+                            if (nullptr != arrayProp && arrayProp->GetIsPrimitiveArray() && arrayProp->GetPrimitiveElementType() == ECN::PrimitiveType::PRIMITIVETYPE_String)
+                                arrayProp->RemoveCustomAttribute("EditorCustomAttributes", "StandardValues");
+                            }
+                        }
                     }
 
                 nonConstClass->RemoveCustomAttribute("ForeignKeyRelationshipMap");
@@ -1268,11 +1298,11 @@ BentleyStatus BisJson1ExporterImpl::InitSheetListModel(Json::Value& out)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2018
+// @bsimethod                                   Carole.MacDonald            04/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::InitJobDefinitionModel(Json::Value& out)
+DgnElementId BisJson1ExporterImpl::CreateDefinitionModel(Json::Value& out, Utf8CP modelName)
     {
-    m_jobDefinitionModelId = CreatePartitionElement("Job Definition Model", "DocumentPartition", m_jobSubjectId, out);
+    DgnElementId definitionModelId = CreatePartitionElement(modelName, "DocumentPartition", m_jobSubjectId, out);
     auto& entry = out.append(Json::ValueType::objectValue);
     entry[JSON_TYPE_KEY] = JSON_TYPE_Model;
     entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
@@ -1281,14 +1311,24 @@ BentleyStatus BisJson1ExporterImpl::InitJobDefinitionModel(Json::Value& out)
     obj.clear();
     obj[JSON_CLASSNAME] = "BisCore.DefinitionModel";
 
-    MakeNavigationProperty(obj, BIS_MODEL_PROP_ModeledElement, m_jobDefinitionModelId.GetValue());
-    m_insertedModels[DgnModelId(m_jobDefinitionModelId.GetValue())] = m_jobDefinitionModelId;
+    MakeNavigationProperty(obj, BIS_MODEL_PROP_ModeledElement, definitionModelId.GetValue());
+    m_insertedModels[DgnModelId(definitionModelId.GetValue())] = definitionModelId;
 
     m_nextAvailableId = DgnElementId(m_nextAvailableId.GetValue() + 1);
-    obj[JSON_INSTANCE_ID] = IdToString(m_jobDefinitionModelId.GetValue()).c_str();
+    obj[JSON_INSTANCE_ID] = IdToString(definitionModelId.GetValue()).c_str();
     (QueueJson) (entry.toStyledString().c_str());
-    return SUCCESS;
+    return definitionModelId;
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus BisJson1ExporterImpl::InitJobDefinitionModel(Json::Value& out)
+    {
+    m_jobDefinitionModelId = CreateDefinitionModel(out, "Job Definition Model");
+    if (m_jobDefinitionModelId.IsValid())
+        return SUCCESS;
+    return ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1625,7 +1665,17 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
             obj[JSON_CLASSNAME] = "BisCore.SpatialCategory";
             obj[BIS_ELEMENT_PROP_CodeSpec]["id"] = m_authorityIds["bis:SpatialCategory"].c_str();
             obj.removeMember("Scope");
-            MakeNavigationProperty(obj, BIS_ELEMENT_PROP_Model, m_jobDefinitionModelId);
+            Utf8String ns = obj["Code"]["Namespace"].asString();
+            if (Utf8String::IsNullOrEmpty(ns.c_str()))
+                {
+                MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeScope, m_jobDefinitionModelId);
+                MakeNavigationProperty(obj, BIS_ELEMENT_PROP_Model, m_jobDefinitionModelId);
+                }
+            else
+                {
+                MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeScope, m_namespaceDefinitionModels[ns]);
+                MakeNavigationProperty(obj, BIS_ELEMENT_PROP_Model, m_namespaceDefinitionModels[ns]);
+                }
             }
         else if (element->IsGeometricElement())
             {
@@ -1730,11 +1780,11 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
                 bvector<Utf8String> ns;
                 BeStringUtilities::Split(obj["Code"]["Namespace"].asCString(), "/", ns);
                 Utf8String discipline = ns[0];
-                if (m_discplineIds.find(discipline) != m_discplineIds.end())
-                    MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeScope, m_discplineIds[discipline]);
+                if (m_disciplineIds.find(discipline) != m_disciplineIds.end())
+                    MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeScope, m_disciplineIds[discipline]);
                 }
             else
-                m_discplineIds[obj["Code"]["Value"].asString()] = element->GetElementId();
+                m_disciplineIds[obj["Code"]["Value"].asString()] = element->GetElementId();
             }
 
         if (obj.isMember("Data"))

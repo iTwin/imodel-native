@@ -477,3 +477,58 @@ DwgDbStatus DwgDbDatabase::ResolveXrefs (bool useThreadEngine, bool newXrefsOnly
 #endif
     return  status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectId   DwgDbDatabase::CreateXrefBlock (DwgStringCR xrefPath, DwgStringCR blockName)
+    {
+    DwgDbObjectId   blockId;
+#if DWGTOOLKIT_OpenDwg
+    OdDbBlockTableRecordPtr block = OdDbXRefManExt::addNewXRefDefBlock (this, xrefPath, blockName, false);
+    if (!block.isNull())
+        blockId = block->objectId ();
+
+#elif DWGTOOLKIT_RealDwg
+    Acad::ErrorStatus es = ::acdbAttachXref (this, xrefPath.c_str(), blockName.c_str(), blockId);
+    if (Acad::eOk == es)
+        {
+        // attempt to fix path names of nested xref blocks created from above call, due to likely a RealDWG bug!
+        AcDbBlockTableIterator* iter = nullptr;
+        AcDbBlockTablePointer   table(T_Super::blockTableId(), AcDb::kForRead);
+        if (table.openStatus() == Acad::eOk && table->newIterator(iter) == Acad::eOk)
+            {
+            for (iter->start(); !iter->done(); iter->step())
+                {
+                AcDbObjectId    currId;
+                if (iter->getRecordId(currId) != Acad::eOk || currId == blockId)
+                    continue;
+
+                ACHAR*  path = nullptr;
+                AcDbBlockTableRecordPointer block(currId, AcDb::kForWrite);
+                if (block.openStatus() != Acad::eOk || !block->isFromExternalReference() || block->pathName(path) != Acad::eOk && nullptr != path)
+                    continue;
+                
+                auto size = ::wcslen (path);
+                if (size < 4)
+                    continue;
+
+                // check if the end of the path has been appended by bad characters!
+                AcString str(path);
+                str.makeLower ();
+                auto extra = size - (str.findRev(L".dwg") + 4);
+                if (extra > 0)
+                    {
+                    // remove the bad characters:
+                    path[size-extra] = 0;
+                    // reset the xref path:
+                    block->setPathName (path);
+                    }
+                acdbFree (path);
+                }
+            delete iter;
+            }
+        }
+#endif  // TOOLKIT
+    return  blockId;
+    }

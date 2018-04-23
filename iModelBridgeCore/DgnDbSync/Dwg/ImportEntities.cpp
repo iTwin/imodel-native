@@ -3368,16 +3368,16 @@ BentleyStatus   DwgImporter::_ImportXReference (DwgDbBlockReferenceCR xrefInsert
     // save currentXref before recurse into a nested xref:
     DwgXRefHolder   savedCurrentXref = m_currentXref;
 
-    auto found = std::find_if (m_loadedXrefFiles.begin(), m_loadedXrefFiles.end(), [&](DwgXRefHolder const& xh){ return xrefblockId==xh.GetBlockIdInParentFile(); });
-    if (found != m_loadedXrefFiles.end())
+    auto found = this->FindXRefHolder (*xrefBlock);
+    if (found != nullptr)
         {
         // this xref has been previously loaded - set it as current:
         m_currentXref = *found;
         }
     else
         {
-        // the xref file has not been be loaded in block section - skip it!
-        m_currentXref = savedCurrentXref;
+        // the xref file has not been be loaded in block section - error out!
+        this->ReportError (IssueCategory::UnexpectedData(), Issue::ModelFilteredOut(), Utf8PrintfString("%ls, INSERT ID=%ls", xrefBlock->GetPath().c_str(), xrefInsert.GetObjectId().ToAscii().c_str()).c_str());
         return  BSIERROR;
         }
 
@@ -3432,19 +3432,20 @@ BentleyStatus   DwgImporter::_ImportXReference (DwgDbBlockReferenceCR xrefInsert
             }
         }
 
-    // and or update the model in current as well as the loaded xref cache:
-    m_currentXref.AddDgnModelId (model->GetModelId());
-    if (found != m_loadedXrefFiles.end())
-        found->AddDgnModelId (model->GetModelId());
+    // and or update the loaded xref cache:
+    if (m_currentspaceId == m_modelspaceId)
+        m_modelspaceXrefs.insert (model->GetModelId());
+    else
+        m_paperspaceXrefs.push_back (DwgXRefInPaperspace(xrefInsert.GetObjectId(), m_currentspaceId, model->GetModelId()));
 
     this->SetTaskName (ProgressMessage::TASK_IMPORTING_MODEL(), model->GetName().c_str());
     this->Progress ();
 
     // get the modelspace block from the xRef DwgDb
     DwgDbBlockTableRecordPtr    xModelspace (m_currentXref.GetModelspaceId(), DwgDbOpenMode::ForRead);
-    if (xModelspace.IsNull())
+    if (xModelspace.OpenStatus() != DwgDbStatus::Success)
         {
-        this->ReportError (IssueCategory::CorruptData(), Issue::CantOpenObject(), Utf8PrintfString("modelspace of the xref %s", m_currentXref.GetPath().c_str()).c_str());
+        this->ReportError (IssueCategory::CorruptData(), Issue::CantOpenObject(), Utf8PrintfString("modelspace of the xref %s", m_currentXref.GetResolvedPath().c_str()).c_str());
         m_currentXref = savedCurrentXref;
         return  BSIERROR;
         }
@@ -3503,48 +3504,46 @@ BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xr
     {
     if (xrefBlock.IsExternalReference())
         {
-        m_path.assign (xrefBlock.GetPath().c_str());
+        DwgImportHost&  host = DwgImportHost::GetHost ();
+        BeFileName      found;
 
-        // try to use existing xRef DwgDb
-        m_xrefDatabase = xrefBlock.GetXrefDatabase ();
-        
-        if (m_xrefDatabase.IsNull())
+        // save originally stored path:
+        m_savedPath.assign (xrefBlock.GetPath().c_str());
+        // will start the search from originally stored path:
+        m_resolvedPath.assign (m_savedPath);
+        // try resolving the file path
+        if (!m_resolvedPath.DoesPathExist() && DwgDbStatus::Success == host._FindFile(found, m_resolvedPath.c_str(), xrefBlock.GetDatabase().get(), AcadFileType::XRefDrawing))
+            m_resolvedPath = found;
+
+        if (m_resolvedPath.DoesPathExist())
             {
-            DwgImportHost&  host = DwgImportHost::GetHost ();
-            BeFileName      found;
+            // if the DWG file has been previously loaded, use it
+            m_xrefDatabase = importer.FindLoadedXRef (m_resolvedPath);
 
-            // try resolving the file path
-            if (!m_path.DoesPathExist() && DwgDbStatus::Success == host._FindFile(found, m_path.c_str(), xrefBlock.GetDatabase().get(), AcadFileType::XRefDrawing))
-                m_path = found;
+            DwgFileVersion  version = DwgFileVersion::Invalid;
 
-            if (m_path.DoesPathExist())
+            // try creating a new DwgDb for the xref, but do not allow circular referencing:
+            if (!m_xrefDatabase.IsValid() && !m_resolvedPath.EqualsI(importer.GetRootDwgFileName()) && DwgHelper::SniffDwgFile (m_resolvedPath, &version))
                 {
-                // if the DWG file has been previously loaded, use it
-                m_xrefDatabase = importer.FindLoadedXRef (m_path);
-
-                // try creating a new DwgDb for the xref, but do not allow circular referencing:
-                if (!m_xrefDatabase.IsValid() && !m_path.EqualsI(importer.GetRootDwgFileName()))
-                    {
-                    importer.SetStepName (DwgImporter::ProgressMessage::STEP_OPENINGFILE(), m_path.c_str());
-                    m_xrefDatabase = host.ReadFile (m_path, false, false, FileShareMode::DenyNo);
-                    }
+                Utf8String  verstr = DwgHelper::GetStringFromDwgVersion (version);
+                importer.SetStepName (DwgImporter::ProgressMessage::STEP_OPENINGFILE(), m_resolvedPath.c_str(), verstr.c_str());
+                m_xrefDatabase = host.ReadFile (m_resolvedPath, false, false, FileShareMode::DenyNo);
                 }
             }
 
         if (m_xrefDatabase.IsValid())
             {
-            // the nested block name should propagated into root file
+            // the nested block name should be propagated into the root file
             m_prefixInRootFile = xrefBlock.GetName().GetWCharCP ();
-            m_blockIdInParentFile = xrefBlock.GetObjectId ();
-            m_spaceIdInRootFile = importer.GetCurrentSpaceId ();
+            m_blockIdInRootFile = xrefBlock.GetObjectId ();
             return  BSISUCCESS;
             }
         }
 
-    m_path.clear ();
+    m_resolvedPath.clear ();
+    m_savedPath.clear ();
     m_prefixInRootFile.clear ();
-    m_blockIdInParentFile.SetNull ();
-    m_spaceIdInRootFile.SetNull ();
+    m_blockIdInRootFile.SetNull ();
 
     return  BSIERROR;
     }
@@ -3554,17 +3553,41 @@ BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xr
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbDatabaseP  DwgImporter::FindLoadedXRef (BeFileNameCR path)
     {
+    // find DwgDbDatabase from m_loadedXrefFiles by resolved file path:
     struct FindXrefPredicate
         {
         BeFileName  m_filePath;
         FindXrefPredicate (BeFileNameCR inPath) : m_filePath (inPath) {}
-        bool operator () (DwgXRefHolder const& xh) { return m_filePath.CompareTo(xh.GetPath()) == 0; }
+        bool operator () (DwgXRefHolder const& xh) { return m_filePath.CompareTo(xh.GetResolvedPath()) == 0; }
         };
 
     FindXrefPredicate   pred(path);
     auto found = std::find_if (m_loadedXrefFiles.begin(), m_loadedXrefFiles.end(), pred);
 
     return found == m_loadedXrefFiles.end() ? nullptr : found->GetDatabaseP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgImporter::DwgXRefHolder* DwgImporter::FindXRefHolder (DwgDbBlockTableRecordCR xrefBlock)
+    {
+    // find an entry in m_loadedXrefFiles by either blockId or saved file name:
+    struct FindXrefPredicate
+        {
+        DwgDbObjectId   m_blockId;
+        DwgString       m_savedPath;
+        FindXrefPredicate (DwgDbObjectIdCR blockId, DwgStringCR savedPath) : m_blockId(blockId), m_savedPath(savedPath) {}
+        bool operator () (DwgXRefHolder const& xh)
+            {
+            // either directly attached block (matching by block ID), or nested xref (matching by name):
+            return (m_blockId.IsValid() && m_blockId == xh.GetBlockIdInRootFile()) || (!m_savedPath.IsEmpty() && m_savedPath.EqualsI(xh.GetSavedPath()));
+            }
+        };  // FindXrefPredicate
+
+    FindXrefPredicate  pred (xrefBlock.GetObjectId(), xrefBlock.GetPath());
+    auto found = std::find_if (m_loadedXrefFiles.begin(), m_loadedXrefFiles.end(), pred);
+    return found == m_loadedXrefFiles.end() ? nullptr : found;
     }
 
 /*---------------------------------------------------------------------------------**//**
