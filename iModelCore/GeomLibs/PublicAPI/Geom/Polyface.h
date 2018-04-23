@@ -3434,6 +3434,7 @@ public:
     //! Find or add a param.  Return the (0-based) index.
     GEOMDLLIMPEXP size_t FindOrAddParam (DPoint2dCR param);
 
+
     //! Add a point index, adjusted to 1-based indexing with visibility in sign. 
     GEOMDLLIMPEXP void AddPointIndex (size_t zeroBasedIndex, bool visible);
 
@@ -3442,6 +3443,9 @@ public:
 
     //! Add a param index, adjusted to 1-based indexing  
     GEOMDLLIMPEXP void AddParamIndex (size_t zeroBasedIndex);
+
+    //! Add terminators.
+    GEOMDLLIMPEXP void AddIndexTerminators();
 
     //! Add a terminator to the point index table.  
     GEOMDLLIMPEXP void AddPointIndexTerminator ( );
@@ -3460,6 +3464,9 @@ public:
 
     //! Finalize data for the current face.
     GEOMDLLIMPEXP void EndFace ();
+
+    //! Add aux channel data at index.
+    GEOMDLLIMPEXP void AddAuxDataByIndex (PolyfaceAuxData::ChannelsCR channels, size_t index);
 
 };  //  LightweightPolyfaceBuilder
 

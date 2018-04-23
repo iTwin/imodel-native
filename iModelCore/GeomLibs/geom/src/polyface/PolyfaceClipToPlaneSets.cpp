@@ -544,6 +544,9 @@ void   AddToPolyface  (LightweightPolyfaceBuilder& builder, OutputChainMap& outp
             
         if (!m_params.empty())
             builder.AddParamIndex (builder.FindOrAddParam (m_params[i]));
+
+        if (!m_auxChannels.empty())
+            builder.AddAuxDataByIndex (m_auxChannels, i);
         }
          
 #ifdef DO_EDGE_CHAINS
@@ -554,13 +557,7 @@ void   AddToPolyface  (LightweightPolyfaceBuilder& builder, OutputChainMap& outp
 #endif
 
 
-    builder.AddPointIndexTerminator();
-                                                                                                                                         
-    if (!m_normals.empty())
-        builder.AddNormalIndexTerminator();
-            
-    if (!m_params.empty())
-        builder.AddParamIndexTerminator();
+    builder.AddIndexTerminators();
     }
 
 }; // PolyfaceClipFacet
@@ -571,7 +568,7 @@ void   AddToPolyface  (LightweightPolyfaceBuilder& builder, OutputChainMap& outp
 +===============+===============+===============+===============+===============+======*/
 struct PolyfaceClipToPlaneSetContext
 {
-    LightweightPolyfaceBuilder&     m_builder;
+    LightweightPolyfaceBuilder&         m_builder;
     bool                                m_triangulate;
     double                              m_tolerance;
     double                              m_areaTolerance;
@@ -738,7 +735,6 @@ StatusInt   finishClipping (LightweightPolyfaceBuilder& outputBuilder,  OutputCh
     return output._ProcessClippedPolyface (clippedMesh);
     }
 
-//static const double s_builderMatchPointTolerance = 1.0E-8;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -770,7 +766,7 @@ StatusInt   PolyfaceQuery::ClipToPlaneSetIntersection (T_ClipPlaneSets const& pl
         return output._ProcessUnclippedPolyface (*this);
 
     PolyfaceHeaderPtr                   outputPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
-    LightweightPolyfaceBuilderPtr   outputBuilder = LightweightPolyfaceBuilder::Create (*outputPolyface);
+    LightweightPolyfaceBuilderPtr       outputBuilder = LightweightPolyfaceBuilder::Create (*outputPolyface);
     PolyfaceClipFacet                   facet (index);
     OutputChainMap                      outputChainMap (*this);
     PolyfaceClipToPlaneSetContext       clipContext (planeSets, *outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);

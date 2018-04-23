@@ -136,15 +136,49 @@ void LightweightPolyfaceBuilder::AddPointIndex(size_t zeroBasedIndex, bool visib
     m_polyface->PointIndex().push_back(visible ? index : - index); 
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 void LightweightPolyfaceBuilder::EndFace ()
     {
     m_polyface->SetNewFaceData (&m_currentFaceData);
     m_currentFaceData.Init ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void LightweightPolyfaceBuilder::AddAuxDataByIndex (PolyfaceAuxData::ChannelsCR channels, size_t index)
+    {
+    PolyfaceAuxDataPtr        auxData;
+    
+    if (m_polyface->GetAuxDataCP().IsValid())
+        {
+        auxData = const_cast <PolyfaceAuxDataP> (m_polyface->GetAuxDataCP().get());
+        }
+    else
+        {
+        auxData = new PolyfaceAuxData();
+        m_polyface->SetAuxData(auxData);
+        }
+    auxData->AppendDataByIndex(channels, index);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void  LightweightPolyfaceBuilder::AddIndexTerminators()
+    {
+    AddPointIndexTerminator();
+    if (!m_polyface->Normal().empty())
+        AddNormalIndexTerminator();
+
+    if (!m_polyface->Param().empty())
+        AddParamIndexTerminator();
+
+    if (m_polyface->GetAuxDataCP().IsValid())
+        (const_cast <PolyfaceAuxDataP> (m_polyface->GetAuxDataCP().get()))->AddIndexTerminator();
+    }
             
 
 void LightweightPolyfaceBuilder::AddNormalIndex(size_t zeroBasedIndex)  { m_polyface->NormalIndex().push_back((int32_t) zeroBasedIndex + 1); }

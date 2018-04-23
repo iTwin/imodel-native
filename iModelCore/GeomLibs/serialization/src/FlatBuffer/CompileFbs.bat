@@ -2,7 +2,7 @@ rem @ECHO OFF
 
 rem ------------------------------------------------------------------------------------
 rem      $Source: serialization/src/FlatBuffer/CompileFbs.bat $
-rem   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+rem   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 rem ------------------------------------------------------------------------------------
 
 SET BaseName=allcg
@@ -16,10 +16,15 @@ SET OutFile=%OutDir%%BaseName%.fb.h
 SET TempFile=%OutDir%%BaseName%.fbs
 SET OutNetDir=%SrcRoot%BentleyGeometryNet\src\FlatBuffers\gensrc\
 
-SET CompileCmd=%SrcRoot%libsrc\flatbuffers\bin\beflatc.exe -c
-SET CompileNETCmd=%SrcRoot%libsrc\flatbuffers\bin\beflatc.exe -n -o %OutNetDir%
+REM flatbuffers comes from nuget now... just use the latest we can find:
+for /f %%i IN ('dir "%SrcRoot%nuget\FlatBuffersNuget_x64*" /ad /b /on') DO (
+set latestFBNugetDir=%SrcRoot%nuget\%%i
+)
 
-SET CompileNETCmd=%SrcRoot%libsrc\flatbuffers\bin\beflatc.exe -n -o %OutNetDir%
+SET CompileExe=%latestFBNugetDir%\native\bin\beflatc.exe
+
+SET CompileCmd=%CompileExe% -c
+SET CompileNETCmd=%CompileExe% -n -o %OutNetDir%
 SET libsrcFBCSDir=%SrcRoot%libsrc\flatbuffers\source\net\FlatBuffers\
 SET BGNetFBCSDir=%SrcRoot%BentleyGeometryNet\src\FlatBuffers\srcFromLibsrcFlatbuffers\
 

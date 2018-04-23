@@ -162,5 +162,13 @@ PolyfaceAuxChannelCPtr PolyfaceAuxData::GetChannel(Utf8CP name) const
     return nullptr;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      03/2018
++--------------------------------------------------------------------------------------*/
+void PolyfaceAuxData::AppendDataByIndex(ChannelsCR input, size_t index)
+    {
+    m_indices.push_back((int32_t) m_channels.GetValueCount()+1);
+    m_channels.AppendDataByIndex(input, index);
+    }
 
 END_BENTLEY_GEOMETRY_NAMESPACE
