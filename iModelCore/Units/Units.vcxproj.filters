@@ -74,6 +74,9 @@
     <ClCompile Include="src\Formatting\FormatMappings.cpp">
       <Filter>Source Files\Formatting</Filter>
     </ClCompile>
+    <ClCompile Include="src\Formatting\FormatMappings.cpp">
+      <Filter>Source Files\Formatting</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="mki\Units.mki" />
@@ -128,6 +131,9 @@
     </ClInclude>
     <ClInclude Include="PublicAPI\Units\UnitsContext.h">
       <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Formatting\AliasMappings.h">
+      <Filter>Header Files\Formatting</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\Formatting\AliasMappings.h">
       <Filter>Header Files\Formatting</Filter>

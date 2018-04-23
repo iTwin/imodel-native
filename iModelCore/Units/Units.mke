@@ -13,6 +13,13 @@ programName         = Units
 srcDir              = $(baseDir)src/
 formatSrcDir        = $(baseDir)src/Formatting/
 formatHeaderDir     = $(baseDir)PublicAPI/Formatting/
+o                   = $(PartBuildDir)
+
+#----------------------------------------------------------------------
+# Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
 
 # include the compile options mki file.
 CompileOptionsMki   = $(baseDir)mki/UnitsCompileOpts.mki

@@ -18,7 +18,7 @@ buildDir = $(OutUnits)
     programName = $(ASSEMBLY_NAME)
 %endif
 
-o = $(OutUnits)$(programName)/
+o                           = $(PartBuildDir)
 
 always:
     !~@mkdir $(o)
