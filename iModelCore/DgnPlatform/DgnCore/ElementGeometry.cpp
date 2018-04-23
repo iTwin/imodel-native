@@ -4531,6 +4531,7 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                             thematicSettings->SetMarginColor(ColorDef(fbThematicSettings->marginColor()));
                             thematicSettings->SetMode((ThematicGradientSettings::Mode) fbThematicSettings->mode());
                             thematicSettings->SetColorScheme((ThematicGradientSettings::ColorScheme) fbThematicSettings->colorScheme());
+                            thematicSettings->SetRange(*((DRange1dCP) fbThematicSettings->range()));
                             gradientPtr->SetThematicSettings(*thematicSettings);
                             }
 
