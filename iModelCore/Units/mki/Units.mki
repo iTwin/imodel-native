@@ -2,7 +2,7 @@
 #
 #     $Source: mki/Units.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__Units_mki__)
@@ -18,7 +18,7 @@ buildDir                    = $(OutECObjects)
     programName             = $(ASSEMBLY_NAME)
 %endif
 
-o                           = $(OutECObjects)$(programName)/
+o                           = $(PartBuildDir)
 
 always:
     !~@mkdir $(o)

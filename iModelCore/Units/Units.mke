@@ -13,7 +13,7 @@ programName         = Units
 srcDir              = $(baseDir)src/
 formatSrcDir        = $(baseDir)src/Formatting/
 formatHeaderDir     = $(baseDir)PublicAPI/Formatting/
-o                   = $(OutBuildDir)Units/
+o                   = $(PartBuildDir)
 
 #----------------------------------------------------------------------
 # Create output directories
