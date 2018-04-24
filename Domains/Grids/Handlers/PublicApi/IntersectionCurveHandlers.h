@@ -2,14 +2,10 @@
 |
 |     $Source: Grids/Handlers/PublicApi/IntersectionCurveHandlers.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-#include <Grids/gridsApi.h>
-#include <DgnPlatform/ElementHandler.h>
-#include <DgnPlatform/ViewController.h>
 
 BEGIN_GRIDS_NAMESPACE
 
