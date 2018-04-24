@@ -49,10 +49,14 @@ struct FormatStringTest : FormatTest
 
     // Invalid format strings.
     Utf8String const fmtStrBasicNoOverridesButStillHasBrackets = Utf8String("ExampleFmt()");
+    Utf8String const fmtStringBasicHasBananaForPrecision = Utf8String("ExampleFmt(banana)");
     Utf8String const fmtStrBasicNoOverridesButStillHasBracketsWithCommas = Utf8String("ExampleFmt(,,,,)");
     Utf8String const fmtStrWithEmptySqBrackets = Utf8String("ExampleFmt[]");
     Utf8String const fmtStrWithOnlyEmptySqBrackets = Utf8String("ExampleFmt[|]");
     Utf8String const fmtStrUnit5Overrides = Utf8String("ExampleFmt[M|label][DM|label2][CM|label3][MM|label4][UM|label5]");
+    Utf8String const fmtStrInvalidUnit = Utf8String("ExampleFmt[banana|label]");
+    Utf8String const fmtStringWrongOrderOfUnits = Utf8String("ExampleFmt[FT][Mile]");
+    Utf8String const fmtStringEmptyUnit = Utf8String("ExampleFmt[|banana]");
 };
 
 //---------------------------------------------------------------------------------------
@@ -94,6 +98,23 @@ TEST_F(FormatTest, Constructors)
     EXPECT_TRUE(namedFmtSpec.GetNumericSpec()->IsIdentical(numFmtSpec));
     ASSERT_NE(nullptr, namedFmtSpec.GetCompositeSpec());
     EXPECT_TRUE(namedFmtSpec.GetCompositeSpec()->IsIdentical(compValSpec));
+    }
+
+    // Copy constructor
+    {
+    NumericFormatSpec numFmtSpec;
+    CompositeValueSpec compValSpec(*s_unitsContext->LookupUnit("MILE"));
+    Format namedFmtSpec(numFmtSpec, compValSpec);
+
+    EXPECT_EQ(FormatSpecType::Single, namedFmtSpec.GetSpecType());
+    EXPECT_FALSE(namedFmtSpec.IsProblem()) << namedFmtSpec.GetProblemDescription();
+    ASSERT_NE(nullptr, namedFmtSpec.GetNumericSpec());
+    EXPECT_TRUE(namedFmtSpec.GetNumericSpec()->IsIdentical(numFmtSpec));
+    ASSERT_NE(nullptr, namedFmtSpec.GetCompositeSpec());
+    EXPECT_TRUE(namedFmtSpec.GetCompositeSpec()->IsIdentical(compValSpec));
+
+    Format copied = Format(namedFmtSpec);
+    EXPECT_TRUE(copied.IsIdentical(namedFmtSpec));
     }
     }
 
@@ -236,6 +257,14 @@ TEST_F(FormatStringTest, FailWithInvalidOverride)
     EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBracketsWithCommas, mapper));
     EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
     EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrUnit5Overrides, mapper));
+    EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrInvalidUnit, mapper, s_unitsContext));
+    EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStringWrongOrderOfUnits, mapper, s_unitsContext));
+    EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStringBasicHasBananaForPrecision, mapper));
+    EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStringEmptyUnit, mapper));
     EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
     }
 

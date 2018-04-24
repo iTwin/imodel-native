@@ -41,8 +41,9 @@ public:
     BEU::UnitCP foot;
     BEU::UnitCP inch;
     BEU::UnitCP arcDeg;
-    void SetUp()
+    void SetUp() override
         {
+        FormattingTestFixture::SetUp();
         ASSERT_NE(nullptr, mile = s_unitsContext->LookupUnit("MILE"));
         ASSERT_NE(nullptr, yard = s_unitsContext->LookupUnit("YRD"));
         ASSERT_NE(nullptr, foot = s_unitsContext->LookupUnit("FT"));

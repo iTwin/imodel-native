@@ -37,8 +37,6 @@ private:
     void AddBaseSystems();
     void AddBaseUnits();
     void AddBasePhenomena();
-
-    void InsertUnique(bvector<Utf8String> &vec, Utf8String &str);
     
     void AddSystem(UnitSystemR unitSystem); // Used for creating the static definitions.
     

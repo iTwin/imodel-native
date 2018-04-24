@@ -24,7 +24,8 @@ TEST_F(UnitRegistryTests, AddAndRetrieveConstant)
     ASSERT_NE(nullptr, phen) << "The Phenomenon 'Length' does not exist in the registry";
     UnitCP createdConstant = registry->AddConstant(phen->GetName().c_str(), "SI", "TestConstant", "NUMBER", 42.0);
     ASSERT_NE(nullptr, createdConstant);
-
+    EXPECT_STRCASEEQ("TestConstant", createdConstant->GetInvariantLabel().c_str());
+    EXPECT_STRCASEEQ("", createdConstant->GetDescription());
     EXPECT_TRUE(registry->HasUnit("TestConstant"));
 
     UnitCP retreivedConstant = registry->LookupConstant("TestConstant");
@@ -218,6 +219,26 @@ TEST_F(UnitRegistryTests, TestAddingNewBasePhenomenonAndUnit)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, AddDummyUnit)
+    {
+    UnitRegistry* registry = new UnitRegistry();
+    UnitCP testDummy = registry->AddDummyUnit(nullptr);
+    EXPECT_EQ(nullptr, testDummy);
+    testDummy = registry->AddDummyUnit("");
+    EXPECT_EQ(nullptr, testDummy);
+    testDummy = registry->AddDummyUnit("M");
+    ASSERT_NE(nullptr, testDummy);
+    EXPECT_STRCASEEQ("M", testDummy->GetName().c_str());
+    testDummy = registry->AddDummyUnit("banana");
+    ASSERT_NE(nullptr, testDummy);
+    EXPECT_STRCASEEQ("DUMMY", testDummy->GetUnitSystem()->GetName().c_str());
+    EXPECT_STRCASEEQ("DUMMY_banana", testDummy->GetPhenomenon()->GetName().c_str());
+    EXPECT_STRCASEEQ("banana", testDummy->GetName().c_str());
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
 TEST_F(UnitRegistryTests, RemovePhenomenon)
@@ -247,6 +268,54 @@ TEST_F(UnitRegistryTests, RemoveUnitSystem)
     ASSERT_FALSE(registry->HasSystem("TestSystem"));
 
     EXPECT_STREQ("TestSystem", removedSystem->GetName().c_str());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, RemoveUnits)
+    {
+    UnitRegistry* registry = new UnitRegistry();
+    UnitCP testUnit = registry->AddUnit("LENGTH", "SI", "banana", "M");
+    ASSERT_NE(nullptr, testUnit);
+
+    UnitCP removedUnit = registry->RemoveUnit("banana");
+    ASSERT_EQ(testUnit, removedUnit);
+    ASSERT_FALSE(registry->HasUnit("banana"));
+
+    EXPECT_STREQ("banana", removedUnit->GetName().c_str());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, RemoveInvertedUnits)
+    {
+    UnitRegistry* registry = new UnitRegistry();
+    UnitCP testUnit = registry->AddInvertedUnit("M", "banana", "SI");
+    ASSERT_NE(nullptr, testUnit);
+
+    UnitCP removedUnit = registry->RemoveInvertedUnit("banana");
+    ASSERT_EQ(testUnit, removedUnit);
+    ASSERT_FALSE(registry->HasUnit("banana"));
+
+    EXPECT_STREQ("banana", removedUnit->GetName().c_str());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, RemoveConstant)
+    {
+    UnitRegistry* registry = new UnitRegistry();
+    UnitCP testUnit = registry->AddConstant("LENGTH", "SI", "banana", "M", 1.0);
+    ASSERT_NE(nullptr, testUnit);
+
+    UnitCP removedUnit = registry->RemoveConstant("banana");
+    ASSERT_EQ(testUnit, removedUnit);
+    ASSERT_FALSE(registry->HasUnit("banana"));
+
+    EXPECT_STREQ("banana", removedUnit->GetName().c_str());
     }
 
 //--------------------------------------------------------------------------------------

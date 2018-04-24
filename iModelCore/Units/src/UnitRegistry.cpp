@@ -26,19 +26,6 @@ UnitRegistry::UnitRegistry()
     AddDefaultConstants();
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::InsertUnique(bvector<Utf8String> &vec, Utf8String &str)
-    {
-    // Don't insert duplicates.
-    auto iter = find (vec.begin(), vec.end(), str);
-    if (iter != vec.end())
-        return;
-
-    vec.push_back(str);
-    }
-
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           11/17
 //+---------------+---------------+---------------+---------------+---------------+------//
@@ -56,7 +43,7 @@ UnitCP UnitRegistry::CreateDummyUnit(Utf8CP unitName)
     LOG.warningv("Creating Dummy unit with name '%s'", unitName);
     Utf8PrintfString dummyPhenName("%s_%s", "DUMMY", unitName);
     AddPhenomenon(dummyPhenName.c_str(), "ONE");
-    auto dummy = AddUnitInternal(dummyPhenName.c_str(), DUMMY, unitName, "ONE", 1.0, 0.0, 0.0, false);
+    auto dummy = AddUnitInternal(dummyPhenName.c_str(), DUMMY, unitName, "ONE", 1.0, 1.0, 0.0, false);
     dummy->m_dummyUnit = true;
     return dummy;
     }

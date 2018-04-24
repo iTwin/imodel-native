@@ -19,12 +19,9 @@ Format::Format(FormatCR other)
     : m_specType(other.m_specType), m_explicitlyDefinedComposite(false), m_problem(other.m_problem)
     {
     if (other.HasNumeric())
-        m_numericSpec = other.m_numericSpec;
+        SetNumericSpec(other.m_numericSpec);
     if (other.HasComposite())
-        { 
-        m_explicitlyDefinedComposite = true;
-        m_compositeSpec = other.m_compositeSpec;
-        }
+        SetCompositeSpec(other.m_compositeSpec);
     }
 
 //---------------------------------------------------------------------------------------
@@ -314,16 +311,13 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
         if (nullptr == compSpec)
             {
             CompositeValueSpec comp;
-            if (!CompositeValueSpec::CreateCompositeSpec(comp, units))
-                {
-                LOG.errorv("Failed to create composite value spec for format string %s", formatString.c_str());
-                return BentleyStatus::ERROR;
-                }
+            CompositeValueSpec::CreateCompositeSpec(comp, units);
             nfs.SetCompositeSpec(comp);
             }
-        if (nfs.GetCompositeSpec()->IsProblem())
+        compSpec = nfs.GetCompositeSpecP();
+        if (nullptr == compSpec || compSpec->IsProblem())
             {
-            LOG.errorv("Invalid format string, %s. %s ", formatString.c_str(), compSpec->GetProblemDescription().c_str());
+            LOG.errorv("Invalid format string, %s. Failed to create composite spec ", formatString.c_str());
             return BentleyStatus::ERROR;
             }
         }
