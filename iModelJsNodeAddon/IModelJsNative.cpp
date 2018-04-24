@@ -785,6 +785,40 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return CreateBentleyReturnObject(result, Napi::String::New(Env(), codes.ToString().c_str()));
         }
 
+    Napi::Value ExtractCodesFromFile(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, changeSetToken, Env().Undefined());
+        Json::Value jsonChangeSetToken = Json::Value::From(changeSetToken);
+        Json::Value codes;
+        DbResult result = JsInterop::ExtractCodesFromFile(codes, *m_dgndb, jsonChangeSetToken);
+        return CreateBentleyReturnObject(result, Napi::String::New(Env(), codes.ToString().c_str()));
+        }
+
+    Napi::Value GetPendingChangeSets(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        Json::Value changeSets;
+        DbResult result = JsInterop::GetPendingChangeSets(changeSets, *m_dgndb);
+        return CreateBentleyReturnObject(result, Napi::String::New(Env(), changeSets.ToString().c_str()));
+        }
+
+    Napi::Value AddPendingChangeSet(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, changeSetId, Env().Undefined());
+        DbResult result = JsInterop::AddPendingChangeSet(*m_dgndb, changeSetId);
+        return Napi::Number::New(Env(), (int) result);
+        }
+
+    Napi::Value RemovePendingChangeSet(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, changeSetId, Env().Undefined());
+        DbResult result = JsInterop::RemovePendingChangeSet(*m_dgndb, changeSetId);
+        return Napi::Number::New(Env(), (int) result);
+        }
+
     Napi::Value GetCachedBriefcaseInfos(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, cachePath, Env().Undefined());
@@ -1401,6 +1435,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         Napi::Function t = DefineClass(env, "NativeDgnDb", {
             InstanceMethod("abandonChanges", &NativeDgnDb::AbandonChanges),
             InstanceMethod("abandonCreateChangeSet", &NativeDgnDb::AbandonCreateChangeSet),
+            InstanceMethod("addPendingChangeSet", &NativeDgnDb::AddPendingChangeSet),
             InstanceMethod("appendBriefcaseManagerResourcesRequest", &NativeDgnDb::AppendBriefcaseManagerResourcesRequest),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
             InstanceMethod("briefcaseManagerEndBulkOperation", &NativeDgnDb::BriefcaseManagerEndBulkOperation),
@@ -1419,6 +1454,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("extractBulkResourcesRequest", &NativeDgnDb::ExtractBulkResourcesRequest),
             InstanceMethod("extractChangeSummary", &NativeDgnDb::ExtractChangeSummary),
             InstanceMethod("extractCodes", &NativeDgnDb::ExtractCodes),
+            InstanceMethod("extractCodesFromFile", &NativeDgnDb::ExtractCodesFromFile),
             InstanceMethod("finishCreateChangeSet", &NativeDgnDb::FinishCreateChangeSet),
             InstanceMethod("getBriefcaseId", &NativeDgnDb::GetBriefcaseId),
             InstanceMethod("getCachedBriefcaseInfos", &NativeDgnDb::GetCachedBriefcaseInfos),
@@ -1429,6 +1465,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getIModelProps", &NativeDgnDb::GetIModelProps),
             InstanceMethod("getModel", &NativeDgnDb::GetModel),
             InstanceMethod("getParentChangeSetId", &NativeDgnDb::GetParentChangeSetId),
+            InstanceMethod("getPendingChangeSets", &NativeDgnDb::GetPendingChangeSets),
             InstanceMethod("getReversedChangeSetId", &NativeDgnDb::GetReversedChangeSetId),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
@@ -1442,6 +1479,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryNextAvailableFileProperty", &NativeDgnDb::QueryNextAvailableFileProperty),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
+            InstanceMethod("removePendingChangeSet", &NativeDgnDb::RemovePendingChangeSet),
             InstanceMethod("embedFont", &NativeDgnDb::EmbedFont),
             InstanceMethod("saveChanges", &NativeDgnDb::SaveChanges),
             InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
