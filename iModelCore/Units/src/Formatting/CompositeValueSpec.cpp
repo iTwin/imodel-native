@@ -366,34 +366,22 @@ bool CompositeValueSpec::IsIdentical(CompositeValueSpecCR other) const
 //--------------------------------------------------------------------------------------
 Json::Value CompositeValueSpec::ToJson() const
     {
+    if (IsProblem()) // TODO log error;
+        return Json::Value();
     Json::Value jCVS;
     bool valid = false;
-    bvector<Utf8CP> keyNames;
     UnitProxyCP proxP;
-    switch (GetUnitCount())
+    jCVS[json_units()] = Json::arrayValue;
+    for (int i = 0; i < GetUnitCount(); i++)
         {
-        case 4:
-            proxP = GetProxy(indxSub);
-            if(!proxP->IsEmpty())
-                jCVS[json_SubUnit()] = proxP->ToJson();
-        case 3:
-            proxP = GetProxy(indxMinor);
-            if (!proxP->IsEmpty())
-                jCVS[json_MinorUnit()] = proxP->ToJson();
-        case 2:
-            proxP = GetProxy(indxMiddle);
-            if (!proxP->IsEmpty())
-                jCVS[json_MiddleUnit()] = proxP->ToJson();
-        case 1: // smallQ already has the converted value
-            proxP = GetProxy(indxMajor);
-            if (!proxP->IsEmpty())
-                {
-                jCVS[json_MajorUnit()] = proxP->ToJson();
+        proxP = GetProxy(i);
+        if(!proxP->IsEmpty())
+            {
+            if (0 == i) // Major unit
                 valid = true;
-                }
-            break;
+            jCVS[json_units()].append(proxP->ToJson());
+            }
         }
-
     if (valid)
         {
         jCVS[json_includeZero()] = IsIncludeZero();
@@ -407,49 +395,52 @@ Json::Value CompositeValueSpec::ToJson() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-void CompositeValueSpec::FromJson(JsonValueCR jval, BEU::IUnitsContextCP context)
+BentleyStatus CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context)
     {
     Utf8CP paramName;
     Utf8String str;
     if (jval.empty())
-        return;
-
-    m_proxys.resize(4);
-    
+        return ERROR;
+    bool includeZero = false;
+    Utf8String spacer;
     Utf8String input;
-    UnitProxyP upp;
+    bvector<Units::UnitCP> units;
+    bvector<Utf8String> labels;
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
         paramName = iter.memberName();
         JsonValueCR val = *iter;
         str = val.ToString();
-        if (BeStringUtilities::StricmpAscii(paramName, json_MajorUnit()) == 0)
+        if (BeStringUtilities::StricmpAscii(paramName, "units") == 0)
             {
-            upp = GetProxyP(indxMajor);
-            upp->LoadJson(val, context);
-            }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_MiddleUnit()) == 0)
-            {
-            upp = GetProxyP(indxMiddle);
-            upp->LoadJson(val, context);
-            }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_MinorUnit()) == 0)
-            {
-            upp = GetProxyP(indxMinor);
-            upp->LoadJson(val, context);
-            }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_SubUnit()) == 0)
-            {
-            upp = GetProxyP(indxSub);
-            upp->LoadJson(val, context);
+            for (Json::ValueIterator iter = val.begin(); iter != val.end(); iter++)
+                {
+                UnitProxy upp;
+                upp.LoadJson(*iter, context);
+                units.push_back(upp.GetUnit());
+                labels.push_back(upp.GetLabel());
+                }
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_includeZero()) == 0)
-            m_includeZero = val.asBool();
+            includeZero = val.asBool();
         else if (BeStringUtilities::StricmpAscii(paramName, json_spacer()) == 0)
-            m_spacer = val.asString();
+            spacer = val.asString();
         }
-
-    CalculateUnitRatios();
+    out = CompositeValueSpec(units);
+    out.SetIncludeZero(includeZero);
+    out.SetSpacer(spacer.c_str());
+    switch (labels.size())
+        {
+        case 4:
+            out.SetSubLabel(labels[3]);
+        case 3:
+            out.SetMinorLabel(labels[2]);
+        case 2:
+            out.SetMiddleLabel(labels[1]);
+        case 1:
+            out.SetMajorLabel(labels[0]);
+        }
+    return SUCCESS;
     }
 
 //===================================================
@@ -464,9 +455,9 @@ Json::Value UnitProxy::ToJson() const
     Json::Value jUP;
 
     if(nullptr != m_unit)
-        jUP[json_unitName()] = m_unit->GetName().c_str();
+        jUP[json_name()] = m_unit->GetName().c_str();
     if (!m_unitLabel.empty())
-        jUP[json_unitLabel()] = m_unitLabel.c_str();
+        jUP[json_label()] = m_unitLabel.c_str();
     return jUP;
     }
 
@@ -485,13 +476,13 @@ void UnitProxy::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
         {
         paramName = iter.memberName();
         JsonValueCR val = *iter;
-        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
+        if (BeStringUtilities::StricmpAscii(paramName, json_name()) == 0)
             {
             Utf8CP str = val.asCString();
             if (nullptr != str)
                 m_unit = context->LookupUnit(str);
             }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_unitLabel()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_label()) == 0)
             m_unitLabel = val.asString().c_str();
         }
     }

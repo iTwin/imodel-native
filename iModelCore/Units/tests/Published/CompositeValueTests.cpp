@@ -34,6 +34,7 @@ struct CompositeValueSpecTest : FormattingTestFixture
             s_inch = s_unitsContext->LookupUnit("IN");
         }
     };
+struct CompositeValueSpecJsonTest : CompositeValueSpecTest {};
 struct CompositeValueTest : FormattingTestFixture {};
 struct FormatCompositeStringTest : CompositeValueSpecTest {};
 
@@ -303,6 +304,67 @@ TEST_F(FormatCompositeStringTest, CompositeValueUsesThousandSeparatorForLastUnit
     // 1500.5 miles == 1,500 miles and 31,680 inches
     BEU::Quantity quantity(1500.5, *compositeValueSpec.GetMajorUnit());
     EXPECT_STREQ("1500 31'680.0", Format::StdFormatQuantity(format, quantity).c_str());
+    }
+
+//===================================================
+// CompositeValueSpecJsonTest
+//===================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+static Utf8String JsonComparisonString(Json::Value const& created, Json::Value const& test)
+    {
+    return "Created   (minified): " + created.ToString() + '\n' +
+           "Test Data (minified): " + test.ToString() + '\n' +
+           "Created   (pretty):\n"  + created.toStyledString() + '\n' +
+           "Test Data (pretty):\n"  + test.toStyledString();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                      04/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(CompositeValueSpecJsonTest, JsonTest)
+    {
+    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    spec.SetMajorLabel("apple");
+    spec.SetMiddleLabel("banana");
+    spec.SetMinorLabel("cactus pear");
+    spec.SetSubLabel("dragonfruit");
+    spec.SetSpacer("-");
+    auto json = spec.ToJson();
+
+    auto expectedJson = R"json({
+                                "includeZero": true,
+                                "spacer": "-",
+                                "units": [
+                                        {
+                                        "name": "MILE",
+                                        "label": "apple"
+                                        },
+                                        {
+                                        "name": "YRD",
+                                        "label": "banana"
+                                        },
+                                        {
+                                        "name": "FT",
+                                        "label": "cactus pear"
+                                        },
+                                        {
+                                        "name": "IN",
+                                        "label": "dragonfruit"
+                                        }
+                                    ]
+                                })json";
+    Json::Value root;
+    Json::Reader::Parse(expectedJson, root);
+    EXPECT_TRUE(root.ToString() == spec.ToJson().ToString()) << JsonComparisonString(spec.ToJson(), root);
+
+    //FromJson
+    CompositeValueSpec comp;
+    CompositeValueSpec::FromJson(comp, root, s_unitsContext);
+
+    EXPECT_TRUE(comp.ToJson().ToString() == root.ToString()) << JsonComparisonString(comp.ToJson(), root);
     }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

@@ -58,14 +58,11 @@ BE_JSON_NAME(CompositeFormat)
 BE_JSON_NAME(NumericFormat)
 
 //UnitProxy
-BE_JSON_NAME(unitName)
-BE_JSON_NAME(unitLabel)
+BE_JSON_NAME(name)
+BE_JSON_NAME(label)
 
 //CompositeValueSpec
-BE_JSON_NAME(MajorUnit)
-BE_JSON_NAME(MiddleUnit)
-BE_JSON_NAME(MinorUnit)
-BE_JSON_NAME(SubUnit)
+BE_JSON_NAME(units)
 BE_JSON_NAME(includeZero)
 BE_JSON_NAME(spacer)
 
@@ -514,7 +511,7 @@ public:
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
     UNITS_EXPORT Json::Value ToJson() const;
-    UNITS_EXPORT void FromJson(JsonValueCR jval, BEU::IUnitsContextCP context);
+    UNITS_EXPORT static BentleyStatus FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context);
 
     UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
 

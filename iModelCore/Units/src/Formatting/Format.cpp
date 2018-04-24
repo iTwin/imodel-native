@@ -124,7 +124,7 @@ void Format::FromJson(Json::Value jval, BEU::IUnitsContextCP context)
         if (BeStringUtilities::StricmpAscii(paramName, json_NumericFormat()) == 0)
             m_numericSpec = NumericFormatSpec(val);
         else if (BeStringUtilities::StricmpAscii(paramName, json_CompositeFormat()) == 0)
-            m_compositeSpec.FromJson(val, context);
+            CompositeValueSpec::FromJson(m_compositeSpec, val, context);
         }
     }
 
