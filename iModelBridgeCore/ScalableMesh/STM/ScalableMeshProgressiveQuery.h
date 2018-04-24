@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:07:12 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -101,11 +101,7 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
 
         void ComputeOverview();
 
-        //Inherited from ScalableMeshProgressiveQueryEngine
-        virtual BentleyStatus _ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr);
-
-        virtual BentleyStatus _ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr);
-
+        //Inherited from ScalableMeshProgressiveQueryEngine        
         virtual void          _SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr);
 
         virtual void          _GetActiveClips(bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr);

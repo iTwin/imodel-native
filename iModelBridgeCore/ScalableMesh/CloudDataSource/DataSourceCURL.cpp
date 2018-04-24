@@ -3,7 +3,7 @@
 #include "DataSourceAccountCURL.h"
 #include <assert.h>
 
-DataSourceCURL::DataSourceCURL(DataSourceAccount * sourceAccount) : DataSourceCloud(sourceAccount)
+DataSourceCURL::DataSourceCURL(DataSourceAccount * sourceAccount, const SessionName &session) : DataSourceCloud(sourceAccount, session)
 {
     setBuffer(nullptr);
 }

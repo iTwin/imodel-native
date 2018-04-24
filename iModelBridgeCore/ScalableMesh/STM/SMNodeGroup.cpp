@@ -25,6 +25,15 @@ uint32_t s_max_group_common_ancestor = 2;
 mutex SMNodeGroup::s_mutex;
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConvertToJsonFromBytes(Json::Value & outputJson, std::unique_ptr<DataSource::Buffer[]>& bufferPtr, DataSource::DataSize bufferSize)
+    {
+    char* jsonBlob = reinterpret_cast<char *>(bufferPtr.get());
+    return Json::Reader().parse(jsonBlob, jsonBlob + bufferSize, outputJson);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SMNodeGroupMasterHeader::SaveToFile(const WString pi_pOutputDirPath) const
@@ -276,18 +285,18 @@ StatusInt SMNodeGroup::SaveTileToCache(Json::Value & tile, uint64_t tileID)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DataSource * SMNodeGroup::InitializeDataSource(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize destSize)
     {
-    assert(this->GetDataSourceAccount() != nullptr); // The data source account must be set
+    assert(GetDataSourceAccount() != nullptr);      // The data source account must be set
 
                                                      // Get the thread's DataSource or create a new one
-    DataSource *dataSource = nullptr;
-    if ((dataSource = this->GetDataSourceAccount()->getOrCreateThreadDataSource()) == nullptr)
+    DataSource *dataSource;
+    if ((dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*GetDataSourceAccount(), GetDataSourceSessionName())) == nullptr)
         {
         assert(!"Could not initialize data source");
         return nullptr;
         }
 
     // Make sure caching is enabled for this DataSource
-    dataSource->setCachingEnabled(s_stream_enable_caching);
+//  dataSource->setCachingEnabled(s_stream_enable_caching);
 
     dest.reset(new unsigned char[destSize]);
 
@@ -621,6 +630,14 @@ DataSourceAccount * SMNodeGroup::GetDataSourceAccount(void)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Lee.Bull         02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+const DataSource::SessionName &SMNodeGroup::GetDataSourceSessionName(void)
+    {
+    return m_parametersPtr->GetDataSourceSessionName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNodeGroup::DownloadCesiumTileset(const DataSourceURL & url, Json::Value & tileset)
@@ -629,8 +646,7 @@ bool SMNodeGroup::DownloadCesiumTileset(const DataSourceURL & url, Json::Value &
     DataSource::DataSize                        readSize;
     if (this->DownloadBlob(dest, readSize, url))
         {
-        char* jsonBlob = reinterpret_cast<char *>(dest.get());
-        return Json::Reader().parse(jsonBlob, jsonBlob + readSize, tileset);
+        return ConvertToJsonFromBytes(tileset, dest, readSize);
         }
 
     assert(!"A problem occured while downloading a group.");
@@ -644,10 +660,66 @@ bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, Data
     {
     DataSource*                           dataSource;
     DataSourceBuffer::BufferSize          destSize = 5 * 1024 * 1024;
-    return ((dataSource = this->InitializeDataSource(dest, destSize)) != nullptr &&
-             dataSource->open(url, DataSourceMode_Read).isOK()                   &&
-             dataSource->read(dest.get(), destSize, readSize, 0).isOK()          &&
-             dataSource->close().isOK());
+
+    bool readOK = (dataSource = this->InitializeDataSource(dest, destSize)) != nullptr &&
+                   dataSource->open(url, DataSourceMode_Read).isOK() &&
+                   dataSource->read(dest.get(), destSize, readSize, 0).isOK() &&
+                   dataSource->close().isOK();
+    if (!readOK) return false;
+    if (m_isRoot && dataSource->isFromCache())
+        { // Must download so that we can check timestamp and clear cache if necessary
+        bool cacheEnabled = dataSource->getCachingEnabled();
+        dataSource->setCachingEnabled(false);
+        std::unique_ptr<DataSource::Buffer[]> newDest;
+        DataSourceBuffer::BufferSize newSize;
+        if ((dataSource = this->InitializeDataSource(newDest, destSize)) != nullptr &&
+            dataSource->open(url, DataSourceMode_Read).isOK() &&
+            dataSource->read(newDest.get(), destSize, newSize, 0).isOK())
+            {
+            // Compare timestamps
+            Json::Value cachedTileset, networkTileset;
+            if (ConvertToJsonFromBytes(cachedTileset, dest, readSize) &&
+                ConvertToJsonFromBytes(networkTileset, newDest, newSize) &&
+                !cachedTileset.isNull() && !networkTileset.isNull())
+                {
+                DateTime cachedTimestamp;
+                DateTime networkTimestamp;
+
+                if (BentleyStatus::SUCCESS == DateTime::FromString(cachedTimestamp, cachedTileset["root"]["SMMasterHeader"]["LastModifiedDateTime"].asCString()) &&
+                    BentleyStatus::SUCCESS == DateTime::FromString(networkTimestamp, networkTileset["root"]["SMMasterHeader"]["LastModifiedDateTime"].asCString()) &&
+                    DateTime::CompareResult::EarlierThan == DateTime::Compare(cachedTimestamp, networkTimestamp))
+                    {
+                    // Construct path to tempory folder
+                    BeFileName tempPath;
+                    if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
+                        BeAssert(false); // Couldn't retrieve the temporary path
+                    tempPath.AppendToPath(L"RealityDataCache");
+                    auto accountName = m_parametersPtr->GetDataSourceAccount()->getAccountName();
+                    tempPath.AppendToPath(accountName.c_str());
+                    DataSourceURL cachedDataSourcePath;
+                    dataSource->getURL(cachedDataSourcePath);
+                    tempPath.AppendToPath(cachedDataSourcePath.c_str());
+
+                    // Clear cache
+                    if (BeFileNameStatus::Success != BeFileName::EmptyAndRemoveDirectory(BeFileName::GetDirectoryName(tempPath.c_str()).c_str()))
+                        {
+                        BeAssert(false); // Couldn't remove temp directory
+                        }
+
+                    // Update data
+                    dest = std::move(newDest);
+
+                    // Recreate cache with updated data
+                    dataSource->setForceWriteToCache();
+                    }
+                }
+            }
+        dataSource->setCachingEnabled(cacheEnabled);
+
+        // Closing the DataSource will write to cache if need be
+        dataSource->close();
+        }
+    return readOK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -800,6 +872,11 @@ void SMNodeGroup::MergeChild(SMNodeGroupPtr child)
 
     // Replace tile in the parent tile
     parentTileChildren[childIndex] = childTileTreeNode;
+    auto childID = childTileTreeNode["SMHeader"]["id"].asUInt();
+    child->m_tileTreeMap[childID] = &parentTileChildren[childIndex];
+
+    // No longer need child tile tree node
+    childTileTreeNode = Json::Value();
 
     this->m_tileTreeMap.insert(child->m_tileTreeMap.begin(), child->m_tileTreeMap.end());
     }
@@ -874,9 +951,10 @@ SMGroupCache::Ptr SMGroupCache::Create(node_header_cache* nodeCache)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SMGroupGlobalParameters::SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account)
+SMGroupGlobalParameters::SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account, const DataSource::SessionName &session)
     : m_strategyType(strategy),
-      m_account(account)
+      m_dataSourceAccount(account),
+      m_dataSourceSessionName(session)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -884,14 +962,22 @@ SMGroupGlobalParameters::SMGroupGlobalParameters(StrategyType strategy, DataSour
 +---------------+---------------+---------------+---------------+---------------+------*/
 DataSourceAccount * SMGroupGlobalParameters::GetDataSourceAccount()
     {
-    return m_account;
+    return m_dataSourceAccount;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Lee.Bull        02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+const DataSource::SessionName &SMGroupGlobalParameters::GetDataSourceSessionName()
+    {
+    return m_dataSourceSessionName;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SMGroupGlobalParameters::Ptr SMGroupGlobalParameters::Create(StrategyType strategy, DataSourceAccount * account)
+SMGroupGlobalParameters::Ptr SMGroupGlobalParameters::Create(StrategyType strategy, DataSourceAccount * account, const DataSource::SessionName &session)
     {
-    return new SMGroupGlobalParameters(strategy, account);
+    return new SMGroupGlobalParameters(strategy, account, session);
     }
 

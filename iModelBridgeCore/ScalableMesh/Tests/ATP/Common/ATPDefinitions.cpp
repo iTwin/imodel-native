@@ -408,8 +408,12 @@ void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         WPrintfString groundOutputName(L"%s\\groundArea%i.3sm", outputDir.c_str(), areaInd);
 
         if (BeFileName::DoesPathExist(groundOutputName.c_str()))
-            {
+            {            
+#ifdef VANCOUVER_API      
             BeFileNameStatus status = BeFileName::BeDeleteFile(groundOutputName.c_str(), true);
+#else 
+            BeFileNameStatus status = BeFileName::BeDeleteFile(groundOutputName.c_str());
+#endif
             if (status != BeFileNameStatus::Success)
                 {
                 printf("ERROR : Cannot delete ground extration 3sm file : %ls ", groundOutputName.c_str());
@@ -484,6 +488,7 @@ void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     fflush(pResultFile);
     }
 
+#ifdef VANCOUVER_API      
 int CollectAllElmsCallback(ElementRefP elemRef, CallbackArgP callbackArg, ScanCriteriaP scP)
     {
     //DgnModelRefP modelP(mdlScanCriteria_getModel(scP));
@@ -491,6 +496,7 @@ int CollectAllElmsCallback(ElementRefP elemRef, CallbackArgP callbackArg, ScanCr
     agendaP->Insert(elemRef, scP->GetModelRef());
     return SUCCESS;
     }
+#endif
 
 void PerformDrapeTestLnsFileCreation(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
@@ -806,14 +812,17 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         }
                     });
 
+                
                 StatusInt status = creatorPtr->Create(isSingleFile);
                 importInProgress = false;
                 mythread.join();
+                
+                creatorPtr->SaveToFile();
+                creatorPtr = nullptr;
 
                 t = clock() - t;
                 double delay = (double)t / CLOCKS_PER_SEC;
-                creatorPtr->SaveToFile();
-                creatorPtr = nullptr;
+
                 if (status == SUCCESS)
                     {
                     StatusInt status;
@@ -867,8 +876,14 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         StatusInt stat;
                         IScalableMeshCreatorPtr meshCreator = IScalableMeshCreator::GetFor(stmFile, stat);                        
                         WString url = WString(streamingRasterUrl.c_str(), true);
+
+                        t = clock();
                         if (stat == SUCCESS)
                             meshCreator->SetTextureStreamFromUrl(url);
+
+                        t = clock() - t;
+
+                        delay += (double)t / CLOCKS_PER_SEC;
                         }
 
                     stmFile = 0;

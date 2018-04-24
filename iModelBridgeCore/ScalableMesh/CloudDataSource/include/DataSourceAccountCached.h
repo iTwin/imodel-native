@@ -11,24 +11,21 @@ protected:
 
     DataSourceAccount        *      m_cacheAccount;
     DataSourceURL                   m_cacheRoot;
-    DataSource               *      m_cacheDataSource;
 
 protected:
 
-        void                        setCacheDataSource            (DataSource *dataSource);
-        DataSource           *      getCacheDataSource            (void);
 
 public:
 
-                                    DataSourceAccountCached       (void);
-                                   ~DataSourceAccountCached       (void);
+                                    DataSourceAccountCached         (void);
+                                   ~DataSourceAccountCached         (void);
 
-        DataSourceStatus            setCaching                    (DataSourceAccount &cacheAccount, const DataSourceURL &cachingRootPath);
+        DataSourceStatus            setCaching                      (DataSourceAccount &cacheAccount, const DataSourceURL &cachingRootPath);
 
-        void                        setCacheAccount               (DataSourceAccount *account);
-        DataSourceAccount    *      getCacheAccount               (void);
+        void                        setCacheAccount                 (DataSourceAccount *account);
+        DataSourceAccount    *      getCacheAccount                 (void);
 
-        DataSourceStatus            getFormattedCacheURL          (const DataSourceURL & sourceURL, DataSourceURL & cacheURL);
+        DataSourceStatus            getFormattedCacheURL            (const DataSourceURL & sourceURL, DataSourceURL & cacheURL);
         
-        unsigned int                getDefaultNumTransferTasks(void);
+        unsigned int                getDefaultNumTransferTasks      (void);
 };

@@ -12,7 +12,7 @@ VANCOUVER=1
 OPTIMIZE_FOR_SPEED=1
 
 %include  mdl.mki
-%include $(baseDir)mki/ScalableMeshPolicy.mki
+%include $(baseDir)mki/ScalableMeshPolicy_Bim.mki
 %include $(baseDir)CloudDataSource/CloudDataSourcePolicy_Bim.mki
 
 

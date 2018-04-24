@@ -214,6 +214,20 @@ void TilePublisher::WriteBoundingVolume(Json::Value& val, DRange3dCR range)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::WriteBoundingVolume(Json::Value& val, DPoint3dCR center, RotMatrixCR halfAxes)
+    {
+    auto& volume = val[JSON_BoundingVolume];
+    auto& box = volume[JSON_Box];
+
+    AppendPoint(box, center);
+    AppendPoint(box, DPoint3d::FromXYZ (halfAxes.form3d[0][0], halfAxes.form3d[0][1], halfAxes.form3d[0][2]));
+    AppendPoint(box, DPoint3d::FromXYZ (halfAxes.form3d[1][0], halfAxes.form3d[1][1], halfAxes.form3d[1][2]));
+    AppendPoint(box, DPoint3d::FromXYZ (halfAxes.form3d[2][0], halfAxes.form3d[2][1], halfAxes.form3d[2][2]));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::WriteJsonToFile (WCharCP fileName, Json::Value& value)

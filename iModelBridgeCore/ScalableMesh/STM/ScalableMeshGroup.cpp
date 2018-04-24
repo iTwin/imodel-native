@@ -393,6 +393,18 @@ bool                               ScalableMeshGroup::_GetClip(uint64_t clipID, 
     return false;
 }
 
+bool                               ScalableMeshGroup::_IsInsertingClips()
+    {
+    bool isInsertingClips = false;
+    for (auto& member : m_members)
+        {
+        bool memberIsInsertingClips = member->IsInsertingClips();
+        BeAssert(!isInsertingClips || memberIsInsertingClips); // If one member is inserting clips, all of them should be adding clips
+        isInsertingClips = memberIsInsertingClips;
+        }
+    return isInsertingClips;
+    }
+
 void                               ScalableMeshGroup::_SetIsInsertingClips(bool toggleInsertMode)
     {
     for (auto& member : m_members)
@@ -491,6 +503,15 @@ bool                               ScalableMeshGroup::_AddSkirt(const bvector<bv
             }
         }
     return false;
+    }
+
+bool                               ScalableMeshGroup::_GetSkirt(uint64_t skirtID, bvector<bvector<DPoint3d>>& skirt)
+    {
+    for (auto& member : m_members)
+        {
+        if (member->GetSkirt(skirtID, skirt)) break;
+        }
+    return !skirt.empty();
     }
 
 bool                               ScalableMeshGroup::_RemoveSkirt(uint64_t skirtID)

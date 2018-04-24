@@ -310,8 +310,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual const GeoCoords::GCS&  _GetGCS() const override;
         virtual StatusInt              _SetGCS(const GeoCoords::GCS& sourceGCS) override;        
-        virtual ScalableMeshState             _GetState() const override;     
-        virtual bool                   _IsProgressive() const override;    
+        virtual ScalableMeshState             _GetState() const override;             
         virtual bool                   _IsReadOnly() const override;
         virtual bool                   _IsShareable() const override;
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
@@ -324,6 +323,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
         virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override;
+        virtual bool                               _IsInsertingClips() override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
 
         virtual bool                               _ShouldInvertClips() override;
@@ -343,6 +343,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
 		virtual void                               _WriteExtraFiles() override;
 
+        virtual bool                               _GetSkirt(uint64_t skirtID, bvector<bvector<DPoint3d>>& skirt) override;
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
@@ -406,8 +407,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
-        virtual bool                   _LastSynchronizationCheck(time_t& last) const override;        
-        virtual int                    _SynchWithSources() override;           
+        virtual bool                   _LastSynchronizationCheck(time_t& last) const override;                
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -523,8 +523,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         const GeoCoords::GCS&          _GetGCS() const override;
         StatusInt                      _SetGCS(const GeoCoords::GCS& sourceGCS) override;
-        virtual ScalableMeshState             _GetState() const override;   
-        virtual bool                   _IsProgressive() const override;       
+        virtual ScalableMeshState             _GetState() const override;           
         virtual bool                   _IsReadOnly() const override;
         virtual bool                   _IsShareable() const override;
 
@@ -542,6 +541,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override { return false; }
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
+        virtual bool                               _IsInsertingClips() override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
         virtual void                               _ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions) override;
         virtual void                               _GetAllClipsIds(bvector<uint64_t>& allClipIds) override;
@@ -577,8 +577,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
-        virtual bool                   _LastSynchronizationCheck(time_t& last) const override;        
-        virtual int                    _SynchWithSources() override;
+        virtual bool                   _LastSynchronizationCheck(time_t& last) const override;                
 
         virtual void                               _GetExtraFileNames(bvector<BeFileName>& extraFileNames) const override { assert(!"Should not be called"); }
         

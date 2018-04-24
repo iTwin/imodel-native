@@ -219,3 +219,13 @@ void SMSQLiteDiffsetFile::GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffse
     uncompressedSize = stmt->GetValueInt64(2);
     memcpy(&diffsetData[0], stmt->GetValueBlob(0), diffsetData.size());
     }
+
+void SMSQLiteDiffsetFile::DeleteDiffSet(int64_t diffsetID)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "DELETE FROM SMDiffSets WHERE DiffsetId=?");
+    stmt->BindInt64(1, diffsetID);
+    stmt->Step();
+    }
+

@@ -18,7 +18,6 @@ baseDir         = $(_MakeFilePath)
 #this means we can use CGAL with the modules that were licensed to us
 %include $(BuildContext)SubParts/Files/LicensedComponents.mki
 
-DgnPlatformV8LibDir = ${BuildContext}/SubParts/DgnV8Libs/
 
 dirToSearch=$(BuildContext)VendorAPI/Boost_1_5_7_0
 %include cincapnd.mki
@@ -33,15 +32,10 @@ always:
 #   Symlink APIs
 #----------------------------------------------------------------------
 always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
-
-#always:
-#   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/DgnV8Api=$(BuildContext)SdkSources/V8_InternalSDK/PublicAPI"
-
-always:
-   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
-   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
-   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
+   ~linkdir "$(BuildContext)PublicAPI/ScalableMesh=${SCMPublicAPISrc}/ScalableMesh"
+   ~linkfile $(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
+   ~linkfile "$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
+   ~linkfile "$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
 
 
 CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
@@ -74,12 +68,14 @@ CCompOpts + -wd4172
 
 CCompOpts + -wd4002
 
+CCompOpts + -wd4091
+
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
+PchExtraOptions    = -Zm180 -openmp $(PublicApiIncludes) -D__BENTLEYSTM_BUILD__ -D__BENTLEYSTMIMPORT_BUILD__ -DSCALABLE_MESH_DGN -DNOMINMAX 
 CompileOptionsMki =  $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
 %include $(SharedMki)PreCompileHeader.mki
 
@@ -498,6 +494,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
     $(ContextSubpartsLibs)wastorage.lib \
     $(ContextSubpartsLibs)BeCurl.lib \
+    $(ContextSubpartsLibs)RealityPlatform.lib \
     $(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)CCApi.lib\
     $(ContextSubpartsLibs)BeCurl.lib

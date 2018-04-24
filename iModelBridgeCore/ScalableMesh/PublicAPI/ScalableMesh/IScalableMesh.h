@@ -45,6 +45,12 @@ namespace BENTLEY_NAMESPACE_NAME
 #define DGN_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
 #endif
 
+#ifdef VANCOUVER_API
+#define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME
+#else
+#define CLIP_VECTOR_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
+#endif
+
 //ADD_BENTLEY_TYPEDEFS (BENTLEY_NAMESPACE_NAME::ScalableMesh, IDTMVolume)
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -200,9 +206,7 @@ struct IScalableMesh abstract:  IRefCounted
         virtual StatusInt                           _SetGCS(const GeoCoords::GCS& sourceGCS) = 0;
 
         virtual ScalableMeshState                          _GetState() const = 0;
-                       
-        virtual bool                                _IsProgressive() const = 0;
-
+                               
         virtual bool                                _IsReadOnly() const = 0;
 
         virtual bool                                _IsShareable() const = 0;
@@ -210,15 +214,13 @@ struct IScalableMesh abstract:  IRefCounted
         //Synchonization with data sources functions
         virtual bool                                _InSynchWithSources() const = 0; 
 
-        virtual bool                                _LastSynchronizationCheck(time_t& last) const = 0;        
-
-        virtual int                                 _SynchWithSources() = 0;  
+        virtual bool                                _LastSynchronizationCheck(time_t& last) const = 0;                
 
         virtual int                                 _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const = 0;
 
-        virtual int                                 _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress = nullptr, ClipVectorPtr clips = nullptr, uint64_t coverageId = (uint64_t)-1) const = 0;
+        virtual int                                 _Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress = nullptr, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips = nullptr, uint64_t coverageId = (uint64_t)-1) const = 0;
 
-        virtual int                                 _SaveAs(const WString& destination, ClipVectorPtr clips = nullptr, IScalableMeshProgressPtr progress = nullptr) = 0;
+        virtual int                                 _SaveAs(const WString& destination, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips = nullptr, IScalableMeshProgressPtr progress = nullptr) = 0;
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, const double& newGeometricErrorValue = 0.0) const = 0;
@@ -243,11 +245,15 @@ struct IScalableMesh abstract:  IRefCounted
         virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) = 0;
 
 
+        virtual bool                               _GetSkirt(uint64_t skirtID, bvector<bvector<DPoint3d>>& skirt) = 0;
+
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) = 0;
 
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) = 0;
 
         virtual bool                               _RemoveSkirt(uint64_t skirtID) = 0;
+
+        virtual bool                               _IsInsertingClips() = 0;
 
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) = 0;
 
@@ -357,11 +363,11 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT StatusInt          GetBoundary(bvector<DPoint3d>& boundary);
 
-        BENTLEY_SM_EXPORT int                    GenerateSubResolutions();
+                          int                    GenerateSubResolutions();
 
-        BENTLEY_SM_EXPORT __int64                GetBreaklineCount() const;
+                          __int64                GetBreaklineCount() const;
             
-        BENTLEY_SM_EXPORT ScalableMeshCompressionType   GetCompressionType() const;
+                   ScalableMeshCompressionType   GetCompressionType() const;
 
         BENTLEY_SM_EXPORT int                    GetNbResolutions() const;    
 
@@ -369,7 +375,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType queryType) const;
 
-        BENTLEY_SM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType                queryType,                                                              
+        IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType                queryType,                                                              
                                                                                BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                                                const DRange3d&                      extentInTargetGCS) const;
 
@@ -403,9 +409,7 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void                   GetExtraFileNames(bvector<BeFileName>& extraFileNames) const;
 
         BENTLEY_SM_EXPORT ScalableMeshState      GetState() const;
-
-        BENTLEY_SM_EXPORT bool                   IsProgressive() const;
-
+        
         BENTLEY_SM_EXPORT bool                   IsReadOnly() const;
 
         BENTLEY_SM_EXPORT bool                   IsShareable() const;                        
@@ -416,9 +420,7 @@ struct IScalableMesh abstract:  IRefCounted
         // Deprecated. Remove.
         bool                                     InSynchWithDataSources() const { return InSynchWithSources(); }
 
-        BENTLEY_SM_EXPORT bool                   LastSynchronizationCheck(time_t& last) const;        
-
-        BENTLEY_SM_EXPORT int                    SynchWithSources(); 
+        BENTLEY_SM_EXPORT bool                   LastSynchronizationCheck(time_t& last) const;                
 
         BENTLEY_SM_EXPORT IScalableMeshNodePtr  GetRootNode();
 
@@ -443,12 +445,15 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void                   SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts);
 
 
+        BENTLEY_SM_EXPORT bool                   GetSkirt(uint64_t skirtID, bvector<bvector<DPoint3d>>& skirtData);
 
         BENTLEY_SM_EXPORT bool                   ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
 
         BENTLEY_SM_EXPORT bool                   AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
 
         BENTLEY_SM_EXPORT bool                   RemoveSkirt(uint64_t skirtID);
+
+        BENTLEY_SM_EXPORT bool                   IsInsertingClips();
 
         BENTLEY_SM_EXPORT void                   SetIsInsertingClips(bool toggleInsertMode);
 
@@ -473,13 +478,13 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
 
-        BENTLEY_SM_EXPORT int                    Generate3DTiles(const WString& outContainerName, WString outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, IScalableMeshProgressPtr progress = nullptr, ClipVectorPtr clips = nullptr) const;
+        BENTLEY_SM_EXPORT int                    Generate3DTiles(const WString& outContainerName, WString outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, IScalableMeshProgressPtr progress = nullptr, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips = nullptr) const;
 
-        BENTLEY_SM_EXPORT int                    SaveAs(const WString& destination, ClipVectorPtr clips = nullptr, IScalableMeshProgressPtr progress = nullptr);
+        BENTLEY_SM_EXPORT int                    SaveAs(const WString& destination, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips = nullptr, IScalableMeshProgressPtr progress = nullptr);
 
-        void                   ImportTerrainSM(WString terrainPath);
+                          void                   ImportTerrainSM(WString terrainPath);
 
-        IScalableMeshPtr       GetTerrainSM();
+                          IScalableMeshPtr       GetTerrainSM();
 
         BENTLEY_SM_EXPORT SMStatus          DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, GeoCoordinates::BaseGCSCPtr destinationGcs = nullptr, bool limitResolutions = false);
 

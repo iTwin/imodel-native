@@ -477,7 +477,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual IScalableMeshMeshPtr _GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const = 0;
 
-        virtual IScalableMeshMeshPtr _GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const = 0;
+        virtual IScalableMeshMeshPtr _GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const = 0;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const = 0;
 
@@ -495,8 +495,6 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual IScalableMeshNodePtr _GetParentNode() const = 0;
         
-        virtual void     _ApplyAllExistingClips(Transform tr) const = 0;
-
         virtual void     _RefreshMergedClip(Transform tr) const = 0;
 
         virtual bool     _AddClip(uint64_t id, bool isVisible) const = 0;
@@ -516,9 +514,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         virtual size_t  _GetPointCount() const = 0;                
 
         virtual bool _IsHeaderLoaded() const = 0;
-
-        virtual bool _IsMeshLoaded() const = 0;        
-
+        
         virtual void _LoadHeader() const = 0;
 
         virtual bool _HasClip(uint64_t id) const = 0;
@@ -561,7 +557,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags,uint64_t clip) const;
 
-        BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const;
+        BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, CLIP_VECTOR_NAMESPACE::ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const;
 
         BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshByParts(bset<uint64_t>& clipsToShow) const;
 
@@ -580,17 +576,18 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT IScalableMeshNodePtr GetParentNode() const;
 
-        BENTLEY_SM_EXPORT void     ApplyAllExistingClips(Transform tr) const;
+        // Deprecated, use _RefreshMergedClip instead
+        //BENTLEY_SM_EXPORT void     ApplyAllExistingClips(Transform tr) const;
 
         BENTLEY_SM_EXPORT void     RefreshMergedClip(Transform tr) const;
 
-        BENTLEY_SM_EXPORT bool     AddClip(uint64_t id, bool isVisible=true) const;
+        bool     AddClip(uint64_t id, bool isVisible=true) const;
 
-        BENTLEY_SM_EXPORT bool     AddClipAsync(uint64_t id, bool isVisible = true) const;
+        bool     AddClipAsync(uint64_t id, bool isVisible = true) const;
 
-        BENTLEY_SM_EXPORT bool     ModifyClip(uint64_t id,bool isVisible=true) const;
+        bool     ModifyClip(uint64_t id,bool isVisible=true) const;
 
-        BENTLEY_SM_EXPORT bool     DeleteClip(uint64_t id, bool isVisible=true) const;
+        bool     DeleteClip(uint64_t id, bool isVisible=true) const;
 
         BENTLEY_SM_EXPORT DRange3d GetNodeExtent() const;
 
@@ -603,9 +600,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT size_t GetPointCount() const;        
 
         BENTLEY_SM_EXPORT bool IsHeaderLoaded() const;
-
-        BENTLEY_SM_EXPORT bool IsMeshLoaded() const;
-
+        
         BENTLEY_SM_EXPORT void LoadNodeHeader() const;
 
         BENTLEY_SM_EXPORT bool HasClip(uint64_t id) const;
@@ -646,7 +641,7 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         virtual StatusInt _GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const = 0;
 
-        virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const = 0;
+        virtual StatusInt _GetDisplayClipVectors(bvector<CLIP_VECTOR_NAMESPACE::ClipVectorPtr>& clipVectors) const = 0;
 
         virtual void      _SetIsInVideoMemory(bool isInVideoMemory) = 0;
 
@@ -657,7 +652,7 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         BENTLEY_SM_EXPORT StatusInt GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const;
 
-        StatusInt GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const;
+         StatusInt GetDisplayClipVectors(bvector<CLIP_VECTOR_NAMESPACE::ClipVectorPtr>& clipVectors) const;
 
         BENTLEY_SM_EXPORT void      SetIsInVideoMemory(bool isInVideoMemory);
 
@@ -764,7 +759,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
                
         virtual const double*       _GetRootToViewMatrix() const = 0;
 
-        virtual const ClipVectorPtr _GetViewClipVector() const = 0;
+        virtual const CLIP_VECTOR_NAMESPACE::ClipVectorPtr _GetViewClipVector() const = 0;
 
         virtual bool                _IsProgressiveDisplay() const = 0;
 
@@ -778,7 +773,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
 
         virtual StatusInt       _SetStopQueryCallback(StopQueryCallbackFP stopQueryCallbackFP) = 0;
         
-        virtual void            _SetViewClipVector(ClipVectorPtr& viewClipVector) = 0;
+        virtual void            _SetViewClipVector(CLIP_VECTOR_NAMESPACE::ClipVectorPtr& viewClipVector) = 0;
                                                   
     public : 
 
@@ -789,17 +784,11 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
 
         double              GetMaxPixelError() const;
 
-        StopQueryCallbackFP GetStopQueryCallback() const;
-
-        bool                GetUseSameResolutionWhenCameraIsOff() const;
-
-        bool                GetUseSplitThresholdForLevelSelection() const;
-
-        bool                GetUseSplitThresholdForTileSelection() const;
+        StopQueryCallbackFP GetStopQueryCallback() const;        
 
         const double*       GetRootToViewMatrix() const;
 
-        const ClipVectorPtr GetViewClipVector() const;
+        const CLIP_VECTOR_NAMESPACE::ClipVectorPtr GetViewClipVector() const;
 
         bool                IsProgressiveDisplay() const;
     
@@ -816,13 +805,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
 
         BENTLEY_SM_EXPORT StatusInt SetStopQueryCallback(StopQueryCallbackFP stopQueryCallbackFP);
 
-        BENTLEY_SM_EXPORT void      SetUseSameResolutionWhenCameraIsOff(bool useSameResolution);        
-
-        BENTLEY_SM_EXPORT void      SetUseSplitThresholdForLevelSelection(bool useSplitThreshold);        
-
-        BENTLEY_SM_EXPORT void      SetUseSplitThresholdForTileSelection(bool useSplitThreshold);    
-
-        BENTLEY_SM_EXPORT void      SetViewClipVector(ClipVectorPtr& viewClipVector);
+        BENTLEY_SM_EXPORT void      SetViewClipVector(CLIP_VECTOR_NAMESPACE::ClipVectorPtr& viewClipVector);
         
         BENTLEY_SM_EXPORT static    IScalableMeshViewDependentMeshQueryParamsPtr CreateParams();       
     };

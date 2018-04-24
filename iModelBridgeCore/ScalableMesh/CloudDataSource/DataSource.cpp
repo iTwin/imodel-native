@@ -3,11 +3,13 @@
 #include "include\DataSource.h"
 #include "DataSourceAccount.h"
 
-DataSource::DataSource(DataSourceAccount *sourceAccount)
+DataSource::DataSource(DataSourceAccount *sourceAccount, const SessionName &session)
 {
     setService(nullptr);
 
     setAccount(sourceAccount);
+
+    setSessionName(session);
 
     setTimeout(DataSource::Timeout(0));
 
@@ -47,6 +49,11 @@ bool DataSource::isValid(void)
 bool DataSource::isEmpty(void)
     {
     return true;
+    }
+
+bool DataSource::isFromCache(void)
+    {
+    return m_isFromCache;
     }
 
 void DataSource::setTimeout(Timeout timeMilliseconds)

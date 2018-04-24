@@ -100,16 +100,6 @@ BentleyStatus IScalableMeshProgressiveQueryEngine::GetRequiredTextureTiles(bvect
     return _GetRequiredTextureTiles(rasterTiles, queryId);
     }
 
-BentleyStatus IScalableMeshProgressiveQueryEngine::ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr)
-    {
-    return _ClearCaching(clearRanges, scalableMeshPtr);
-    }
-
-BentleyStatus IScalableMeshProgressiveQueryEngine::ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr)
-    {
-    return _ClearCaching(clipIds, scalableMeshPtr);
-    }
-
 void IScalableMeshProgressiveQueryEngine::SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr)
     {
     return _SetActiveClips(activeClips, scalableMeshPtr);
@@ -530,7 +520,7 @@ private:
             if ((meshNode->IsLoaded(displayCacheManagerPtr.get(), loadTexture) == false && meshNode->IsLoadedInVRAM(displayCacheManagerPtr.get(), loadTexture) == false) || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities))
                 {
                 if (!meshNode->IsDataUpToDate()) meshNode->UpdateData();
-                meshNode->ApplyAllExistingClips(scalableMeshPtr->GetReprojectionTransform());
+                meshNode->RefreshMergedClip(scalableMeshPtr->GetReprojectionTransform());
                 meshNode->RemoveDisplayDataFromCache();                    
                 meshNode->LoadMesh(false, clipVisibilities, displayCacheManagerPtr, loadTexture, scalableMeshPtr->ShouldInvertClips());
                 assert(meshNode->HasCorrectClipping(clipVisibilities));                 
@@ -1032,7 +1022,7 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
         
         if (!node->IsClippingUpToDate() || !node->HasCorrectClipping(m_activeClips) || node->HasInvertedClips() != m_smOverviews[&node - &m_overviewNodes[0]]->ShouldInvertClips())
             {
-            node->ApplyAllExistingClips(m_smOverviews[&node - &m_overviewNodes[0]]->GetReprojectionTransform());
+            node->RefreshMergedClip(m_smOverviews[&node - &m_overviewNodes[0]]->GetReprojectionTransform());
             node->RemoveDisplayDataFromCache();                    
             node->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, m_loadTexture, m_smOverviews[&node - &m_overviewNodes[0]]->ShouldInvertClips());
             assert(node->HasCorrectClipping(m_activeClips));                 
@@ -1049,7 +1039,7 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
     TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_OVR_PRELOAD, node->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNode.get(), -1)
 
 
-    meshNode->ApplyAllExistingClips(sMesh->GetReprojectionTransform());
+    meshNode->RefreshMergedClip(sMesh->GetReprojectionTransform());
     meshNode->RemoveDisplayDataFromCache();                    
     meshNode->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, m_loadTexture, sMesh->ShouldInvertClips());
     assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get(), m_loadTexture) == false || meshNode->HasCorrectClipping(m_activeClips));
@@ -1602,22 +1592,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
     
     s_queryProcessor.AddQuery(newQuery.m_queryId, queryObjectP, searchingNodes, toLoadNodes, newQuery.m_loadTexture, m_activeClips, newQuery.m_meshToQuery, m_displayCacheManagerPtr);
     }
-      
-BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr)
-    {
-    //NEEDS_WORK_SM : What to do 
-    //CachedDisplayNodeManager::GetManager().ClearCachedNodes(clearRanges, scalableMeshPtr);
 
-    return SUCCESS;
-    }
-
-BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr)
-    {
-    //NEEDS_WORK_SM : What to do 
-    //CachedDisplayNodeManager::GetManager().ClearCachedNodes(clipIds, scalableMeshPtr);
-
-    return SUCCESS;
-    }
 
 void ScalableMeshProgressiveQueryEngine::_SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr)
     {

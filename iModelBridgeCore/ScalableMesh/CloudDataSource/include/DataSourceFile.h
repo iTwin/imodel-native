@@ -2,6 +2,7 @@
 #include "DataSourceDefs.h"
 #include "DataSource.h"
 #include <fstream>
+#include <Bentley/BeFile.h>
 
 class DataSourceFile : public DataSource
 {
@@ -11,15 +12,17 @@ public:
 
 protected:
 
-        std::fstream                stream;
+        //std::fstream                stream;
+        BeFile                        stream;
 
 protected:
 
-        std::fstream    &            getStream              (void);
+        //std::fstream    &            getStream              (void);
+    BeFile            &           getStream(void);
 
 public:
 
-                                    DataSourceFile          (DataSourceAccount *sourceAccount);
+                                    DataSourceFile          (DataSourceAccount *sourceAccount, const SessionName &session);
                                    ~DataSourceFile          (void);
 
         DataSourceStatus            open                    (const DataSourceURL &sourceURL, DataSourceMode mode);
@@ -33,9 +36,12 @@ public:
         DataSourceStatus            move                    (DataPtr position);
 };
 
-
-
-inline std::fstream &DataSourceFile::getStream(void)
-{
+inline BeFile &DataSourceFile::getStream(void)
+    {
     return stream;
-}
+    }
+
+//inline std::fstream &DataSourceFile::getStream(void)
+//{
+//    return stream;
+//}

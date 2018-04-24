@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/GTests/SMUnitTestDisplayQuery.h $
+|     $Source: Tests/GTests/SMUnitTestGroundDetection.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,16 +16,21 @@
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-class DisplayQueryTester
+class GroundDetectionTester
     {
     private : 
 
+        IScalableMeshPtr  m_smPtr;
+        bvector<DPoint3d> m_groundArea;
+        uint64_t          m_expectedGroundPts;
+
+/*
         double           m_minScreenPixelsPerPoint = 800;
         double           m_maxPixelError = 1;
         double           m_rootToViewMatrix[4][4];
         ClipVectorPtr    m_clipVector;
         bool             m_displayTexture;
-        IScalableMeshPtr m_smPtr;
+        
         bool             m_waitQueryComplete = true;        
         bvector<double>  m_expectedResults;
 
@@ -37,47 +42,46 @@ class DisplayQueryTester
 
         void VerifyDisplayNodeFunctions(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes) const;
         void VerifyCurrentlyViewedNodesFunctions(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes);
-
+*/
     public : 
 
-        DisplayQueryTester();
+        GroundDetectionTester();
 
-        virtual ~DisplayQueryTester();
+        virtual ~GroundDetectionTester();
 
-        bool SetQueryParams(const BeFileName& smFileName, const DMatrix4d& rootToView, const bvector<DPoint4d>& clipPlanes, const bvector<double>& expectedResults);
+        bool SetQueryParams(const BeFileName& smFileName, const bvector<DPoint3d>& groundArea, uint64_t expectedGroundPts);
 
-        void DoQuery();
-
+        void DoDetection();
+/*
         void SetActiveClips(const bset<uint64_t>& clips);
         void GetActiveClips(bset<uint64_t>& clips);
+*/
 
     };
 
-class ScalableMeshTestDisplayQuery : public ::testing::TestWithParam<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>>
+class ScalableMeshTestGroundDetection : public ::testing::TestWithParam<std::tuple<BeFileName, bvector<DPoint3d>, uint64_t>>
     {
     protected:
-        BeFileName        m_filename;
-        DMatrix4d         m_rootToViewMatrix;
-        bvector<DPoint4d> m_clipPlanes;
-        bvector<double>   m_expectedResults;
 
+        BeFileName        m_filename;
+        bvector<DPoint3d> m_groundArea;
+        uint64_t          m_expectedGroundPts;
+        
     public:
 
         virtual void SetUp() {
             auto paramList = GetParam();
             m_filename = std::get<0>(paramList);
-            m_rootToViewMatrix = std::get<1>(paramList);
-            m_clipPlanes = std::get<2>(paramList);
-            m_expectedResults = std::get<3>(paramList);
+            m_groundArea = std::get<1>(paramList);
+            m_expectedGroundPts = std::get<2>(paramList);            
             }
 
         virtual void TearDown() { }
         BeFileName GetFileName() { return m_filename; }
-        const DMatrix4d& GetRootToViewMatrix() { return m_rootToViewMatrix; }
-        const bvector<DPoint4d>& GetClipPlanes() { return m_clipPlanes; }
-        bvector<double>& GetExpectedResults() { return m_expectedResults; }
+        const bvector<DPoint3d>& GetGroundArea() { return m_groundArea; }
+        uint64_t GetExpectedGroundPts() { return m_expectedGroundPts; }
 
-        ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
+        //ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
 
 
     };

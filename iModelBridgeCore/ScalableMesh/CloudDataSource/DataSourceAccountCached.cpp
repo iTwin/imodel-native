@@ -12,28 +12,22 @@ DataSourceAccountCached::~DataSourceAccountCached(void)
                                                             // Note: cache DataSource objects are deleted by the DataSourceManager recursively
 }
 
-void DataSourceAccountCached::setCacheDataSource(DataSource * dataSource)
-{
-    m_cacheDataSource = dataSource;
-}
-
-DataSource *DataSourceAccountCached::getCacheDataSource(void)
-{
-    return m_cacheDataSource;
-}
-
 DataSourceStatus DataSourceAccountCached::getFormattedCacheURL(const DataSourceURL & sourceURL, DataSourceURL & cacheURL)
 {
                                                             // Construct cache path based on <CacheRootPath>\\<AccountName>\\<SourceURL>
     DataSourceURL    dataPath;
     DataSourceURL    dataPathCollapsed;
-
+                                                            // <ServiceName>
+    //dataPath = getServiceName();
+                                                            // <AccountName>
     dataPath = getAccountName();
+                                                            // <SourceURL>
     dataPath.append(getPrefixPath());
     dataPath.append(sourceURL);
-    dataPath.collapseDirectories(dataPathCollapsed);
+                                                            // Format path as a single cache file name
+    //dataPath.collapseDirectories(dataPathCollapsed);
 
-    cacheURL = dataPathCollapsed;
+    cacheURL = dataPath;
 
     return DataSourceStatus();
 }
@@ -42,17 +36,10 @@ DataSourceStatus DataSourceAccountCached::getFormattedCacheURL(const DataSourceU
 DataSourceStatus DataSourceAccountCached::setCaching(DataSourceAccount & cacheAccount, const DataSourceURL & rootPath)
 {
     (void) rootPath;
-
-    DataSource *dataSource;
                                                             // Set account used to create cache DataSource
     setCacheAccount(&cacheAccount);
                                                             // Set the root path used to cache this account
-//    setCacheRootURL(rootPath);
-                                                            // Get a DataSource for caching from the given caching account
-    if ((dataSource = cacheAccount.createDataSource()) == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Create_DataSource);
-                                                            // Set the cache DataSource
-    setCacheDataSource(dataSource);
+//  setCacheRootURL(rootPath);
                                                             // Return OK
     return DataSourceStatus();
 }
@@ -69,5 +56,5 @@ DataSourceAccount * DataSourceAccountCached::getCacheAccount(void)
 
 unsigned int DataSourceAccountCached::getDefaultNumTransferTasks(void)
     {
-    return DATA_SOURCE_SERVICE_DEFAULT_TRANSFER_TASKS;
+    return DATA_SOURCE_ACCOUNT_DEFAULT_TRANSFER_TASKS;
     }

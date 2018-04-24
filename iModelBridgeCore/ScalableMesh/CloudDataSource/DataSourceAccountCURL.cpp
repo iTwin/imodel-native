@@ -45,9 +45,9 @@ OpenSSLMutexes * OpenSSLMutexes::Instance()
     return s_instance;
     }
 
-DataSourceAccountCURL::DataSourceAccountCURL(const ServiceName & name, const AccountIdentifier & identifier, const AccountKey & key)
+DataSourceAccountCURL::DataSourceAccountCURL(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
 {
-    setAccount(name, identifier, key);
+    setAccount(account, identifier, key);
                                                             // Default size is set by Service on creation
     setDefaultSegmentSize(0);
 
@@ -73,12 +73,12 @@ void DataSourceAccountCURL::setCertificateAuthoritiesUrl(const Utf8String& certi
     certificateAuthoritiesUrl = certificateAuthoritiesUrlIn;
     }
 
-DataSource * DataSourceAccountCURL::createDataSource(void)
+DataSource * DataSourceAccountCURL::createDataSource(const SessionName &session)
 {
                                                             // NOTE: This method is for internal use only, don't call this directly.
     DataSourceCURL *   dataSourceCURL;
                                                             // Create a new DataSourceAzure
-    dataSourceCURL = new DataSourceCURL(this);
+    dataSourceCURL = new DataSourceCURL(this, session);
     if (dataSourceCURL == nullptr)
         return nullptr;
                                                             // Set the timeout from the account's default (which comes from the Service's default)
@@ -152,10 +152,10 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSource &dataSource,
 
     dataSource.getURL(url);
 
-    return downloadBlobSync(url, dest, readSize, destSize);
+    return downloadBlobSync(url, dest, readSize, destSize, dataSource.getSessionName());
 }
 
-DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session)
     {
     DataSourceStatus status;
     if (isLocalOrNetworkAccount)
@@ -174,6 +174,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
 
     CURL* curl = curl_handle->get();
     curl_easy_setopt(curl, CURLOPT_URL, utf8URL.c_str());
+    curl_easy_setopt(curl, CURLOPT_UPLOAD, 0L); // Make sure the upload flag is set to false
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CURLHandle::CURLWriteDataCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);

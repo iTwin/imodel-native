@@ -8,7 +8,9 @@
 #include <ScalableMeshPCH.h>
 #include "ImagePPHeaders.h"
 
+#ifdef VANCOUVER_API
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#endif
 
 #include <ScalableMesh\ScalableMeshLib.h>
 //#include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>
@@ -23,10 +25,15 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include <ImagePP/all/h/ImageppLib.h>
 #include <curl/curl.h>
 
-#include <CCApi\CCPublic.h>
+
+#include    <CCApi\CCPublic.h>
 #include <Logging\bentleylogging.h>
 
 #include <DgnPlatform\DgnPlatformLib.h>
+
+
+#include <CCApi\CCPublic.h>
+#include <curl\curl.h>
 
 
 #ifndef VANCOUVER_API
@@ -218,18 +225,20 @@ WebServiceKey GetBingKey()
     {    
 
     Utf8String readBuffer;    
-
     BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger*   logger = BENTLEY_NAMESPACE_NAME::NativeLogging::LoggingManager::GetLogger("Bing");
+
     logger->debug("Retrieving Bing Key from CC");
 
     WString serverUrl;
+
+    WString buddiUrl;
     UINT32 bufLen;
     CallStatus status = APIERR_SUCCESS;
     try
         {
         char tempBuffer[100000];
 
-        CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
+    CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
 
         bool sessionActive = false;
         status = CCApi_IsUserSessionActive(api, &sessionActive);
@@ -283,7 +292,7 @@ WebServiceKey GetBingKey()
 
     Utf8String bingKeyUrl(contextServiceURL);
     bingKeyUrl.append("v2.4/repositories/ContextKeyService--Server/ContextKeyServiceSchema/BingApiKey?$filter=productId+eq+");
-    bingKeyUrl.append(productIdStr);
+    bingKeyUrl.append(productIdStr.c_str());
 
     logger->debug("Perform curl using");
     logger->debug(bingKeyUrl.c_str());
@@ -498,7 +507,7 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     t_scalableTerrainModelHost = NULL;
     TerminateProgressiveQueries();
 
-    //DataSourceManager::Shutdown();
+    DataSourceManager::Shutdown();
 
     }
 

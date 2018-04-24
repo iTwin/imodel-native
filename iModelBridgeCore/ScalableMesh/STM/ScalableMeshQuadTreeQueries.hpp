@@ -1146,7 +1146,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         IsCorrect = screenPixelsPerPoint > m_meanScreenPixelsPerPoint;                                                       
         } 
     else
-    if (node->m_nodeHeader.m_totalCount > 0)
+    if ((node->m_nodeHeader.m_totalCountDefined && node->m_nodeHeader.m_totalCount > 0) || !node->IsEmpty())
         {            
         IsCorrect = true;
         }
@@ -1388,7 +1388,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
     if (!m_is2d ? m_target.ClipToRange(range, segment, fraction) : (bsiDRange2d_intersectRay(&range2d, &par, &par2, &intersect2d, NULL, &origin2d, &dest2d) && (par2 > 0 || par > 0))) //ray intersects the node
         {
         if (m_is2d && m_depth != -1 && (m_depth<par)) return false;
-        if (node->m_nodeHeader.m_totalCount == 0) return false;
+        if (node->m_nodeHeader.m_totalCountDefined && node->m_nodeHeader.m_totalCount == 0) return false;
 
         if ((node->m_nodeHeader.m_balanced && node->GetLevel() == m_requestedLevel) || (!node->m_nodeHeader.m_balanced && (node->IsLeaf() || node->GetLevel() == m_requestedLevel)) && (!m_is2d || par > 0))
                 {
@@ -1431,7 +1431,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
         if (m_is2d && m_depth != -1 && (m_depth < par)) return false;
         if (!m_is2d && m_depth != -1 && ((m_depth < fraction.low) || (fraction.high < 0 && m_depth < fabs(fraction.high)))) return false;
         if (!m_is2d && !m_useUnboundedRay && fraction.high < 1e-6) return false;
-        if (node->m_nodeHeader.m_totalCount == 0) return false;
+        if (node->m_nodeHeader.m_totalCountDefined && node->m_nodeHeader.m_totalCount == 0) return false;
 
         if ((node->m_nodeHeader.m_balanced && node->GetLevel() == m_requestedLevel) || (!node->m_nodeHeader.m_balanced && (node->GetLevel() == m_requestedLevel || node->IsLeaf())) && (!m_is2d || (par > 0||par2 > 0)))
             {
@@ -1466,7 +1466,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPlaneIntersect
         }
     if (!boxIsOut)
         {
-        if (node->m_nodeHeader.m_totalCount == 0) return false;
+        if (node->m_nodeHeader.m_totalCountDefined && node->m_nodeHeader.m_totalCount == 0) return false;
         if ((node->m_nodeHeader.m_balanced && node->GetLevel() == m_requestedLevel) || (!node->m_nodeHeader.m_balanced && node->IsLeaf()))
             {
             //if (isnan(m_bestHitScore) || (m_intersect == RaycastOptions::LAST_INTERSECT && m_bestHitScore < (!m_is2d ? fraction.high : par))
@@ -1507,7 +1507,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPlaneIntersect
         }
     if (!boxIsOut)
         {
-        if (node->m_nodeHeader.m_totalCount == 0) return false;
+        if (node->m_nodeHeader.m_totalCountDefined && node->m_nodeHeader.m_totalCount == 0) return false;
         if ((node->GetLevel() == m_requestedLevel) || (!node->m_nodeHeader.m_balanced && node->IsLeaf()))
             {
             //if (isnan(m_bestHitScore) || (m_intersect == RaycastOptions::LAST_INTERSECT && m_bestHitScore < (!m_is2d ? fraction.high : par))

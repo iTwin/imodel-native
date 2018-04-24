@@ -2305,8 +2305,8 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                     memcpy(&width, texPtr->GetData(), sizeof(int));
                     memcpy(&height, texPtr->GetData() + sizeof(int), sizeof(int));
 
-                    size_t usedMemInBytes;
-                    bool isStoredOnGpu;
+                    size_t usedMemInBytes = 0;
+                    bool isStoredOnGpu = false;
 
                     SmCachedDisplayTexture* cachedDisplayTexture;
 
@@ -2917,7 +2917,7 @@ template <class POINT> DRange3d ScalableMeshNode<POINT>::_GetContentExtent() con
     {
     LOAD_NODE        
 
-    if (!m_node->m_nodeHeader.m_totalCountDefined)
+    if (m_node->m_nodeHeader.m_totalCountDefined && m_node->m_nodeHeader.m_totalCount == 0)
         { 
         return DRange3d::NullRange();
         }
@@ -2948,16 +2948,6 @@ template <class POINT> size_t ScalableMeshNode<POINT>::_GetPointCount() const
 template <class POINT> bool ScalableMeshNode<POINT>::_IsHeaderLoaded() const
     {            
     return m_node->IsLoaded();
-    }
-
-template <class POINT> bool ScalableMeshNode<POINT>::_IsMeshLoaded() const
-    {   
-    LOAD_NODE
-
-    //NEEDS_WORK_SM : Only good for points, not whole mesh.
-    assert(!"Only good for points, not whole mesh.");
-    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr(false));
-    return pointsPtr.IsValid();    
     }
 
 template <class POINT> void ScalableMeshNode<POINT>::_LoadHeader() const
@@ -3045,12 +3035,6 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsClippingUpToDate() const
     if (m_meshNode == nullptr) return true;
     if (m_meshNode->m_nbClips == 0) return true;
     else return m_meshNode->IsClippingUpToDate();
-    }
-
-template <class POINT> void ScalableMeshNode<POINT>::_ApplyAllExistingClips(Transform tr) const
-    {
-       
-    _RefreshMergedClip(tr);    
     }
 
 template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip(Transform tr) const
@@ -3482,14 +3466,6 @@ template <class POINT> ScalableMeshNodeEdit<POINT>::ScalableMeshNodeEdit(HFCPtr<
 template <class POINT> bool ScalableMeshNodeEdit<POINT>::_IsHeaderLoaded() const
     {    
     return m_node->IsLoaded();
-    }
-
-template <class POINT> bool ScalableMeshNodeEdit<POINT>::_IsMeshLoaded() const
-    {        
-    //NEEDS_WORK_SM : Only good for points, not whole mesh.
-    assert(!"Only good for points, not whole mesh.");
-    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr(false));
-    return pointsPtr.IsValid();        
     }
 
 template <class POINT> void ScalableMeshNodeEdit<POINT>::_LoadHeader() const

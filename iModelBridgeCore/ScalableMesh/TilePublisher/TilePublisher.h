@@ -238,6 +238,7 @@ public:
     //void         SetDataDirectory() { m_context->GetDataDirectory}
     WStringCR GetPrefix() const { return m_context->GetRootName(); }
     TILEPUBLISHER_EXPORT static void WriteBoundingVolume(Json::Value&, DRange3dCR);
+    TILEPUBLISHER_EXPORT static void WriteBoundingVolume(Json::Value& val, DPoint3dCR center, RotMatrixCR halfAxes);
     TILEPUBLISHER_EXPORT static void WriteJsonToFile (WCharCP fileName, Json::Value& value);
 };
 

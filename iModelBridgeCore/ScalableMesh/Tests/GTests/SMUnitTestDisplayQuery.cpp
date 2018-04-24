@@ -2,12 +2,11 @@
 |
 |     $Source: Tests/GTests/SMUnitTestDisplayQuery.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "SMUnitTestDisplayQuery.h"
-#include <Bentley/BeTest.h>
 #include <Bentley\BeThread.h>
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 
@@ -314,13 +313,16 @@ void DisplayQueryTester::VerifyDisplayNodeFunctions(bvector<IScalableMeshCachedD
     {    
     for (auto& node : meshNodes)
         { 
+        node->LoadNodeHeader();
+        ASSERT_EQ(node->IsHeaderLoaded(), true);
+
         bvector<SmCachedDisplayMesh*>  cachedMeshes;
         bvector<bpair<bool, uint64_t>> textureIds;
-        
+                
         StatusInt status = node->GetCachedMeshes(cachedMeshes, textureIds);
         
-        ASSERT_EQ(status == SUCCESS || node->GetPointCount() == 0, true);
-
+        ASSERT_EQ(status == SUCCESS || node->GetPointCount() == 0, true);        
+                
         if (textureIds.size() > 0)
             {
             bvector<SmCachedDisplayTexture*> cachedTextures; 
@@ -376,8 +378,29 @@ void DisplayQueryTester::VerifyCurrentlyViewedNodesFunctions(bvector<IScalableMe
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                 03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayQueryTester::SetActiveClips(const bset<uint64_t>& clips)
+    {
+    GetProgressiveQueryEngine()->SetActiveClips(clips, m_smPtr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                 03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayQueryTester::GetActiveClips(bset<uint64_t>& clips)
+    {
+    GetProgressiveQueryEngine()->GetActiveClips(clips, m_smPtr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.St-Pierre                 11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool StopQueryCallback()
+    {
+    return false;
+    }
+
 void DisplayQueryTester::DoQuery()
     {
 
@@ -389,6 +412,12 @@ void DisplayQueryTester::DoQuery()
     viewDependentQueryParams->SetMaxPixelError(m_maxPixelError);
     viewDependentQueryParams->SetRootToViewMatrix(m_rootToViewMatrix);
     viewDependentQueryParams->SetViewClipVector(m_clipVector);
+
+    DPoint3d dummyViewBox[8]; 
+    viewDependentQueryParams->SetViewBox(dummyViewBox);
+    viewDependentQueryParams->SetProgressiveDisplay(true);    
+    viewDependentQueryParams->SetStopQueryCallback(&StopQueryCallback);
+
 
     int queryId = 0;
     bvector<bool> clips;
@@ -431,7 +460,7 @@ void DisplayQueryTester::DoQuery()
     
     status = GetProgressiveQueryEngine()->GetOverviewNodes(overviewMeshNodes, queryId);
     EXPECT_EQ(status == SUCCESS, true);
-                            
+                                
     int nbReturnedNodes = (int)meshNodes.size();
 
     VerifyDisplayNodeFunctions(meshNodes);
@@ -444,6 +473,8 @@ void DisplayQueryTester::DoQuery()
     status = GetProgressiveQueryEngine()->StopQuery(queryId);
     EXPECT_EQ(status == SUCCESS, true);
 
+    GetProgressiveQueryEngine()->ClearOverviews(m_smPtr.get());
+        
     status = GetProgressiveQueryEngine()->GetRequiredNodes(meshNodes, queryId);
     EXPECT_EQ(status != SUCCESS, true);
 
@@ -482,6 +513,7 @@ void DisplayQueryTester::DoQuery()
 
     EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedVideoMesh() == 0, true);
     EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedVideoTexture() == 0, true);    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -527,3 +559,48 @@ bool DisplayQueryTester::SetQueryParams(const BeFileName& smFileName, const DMat
         
 
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Mathieu.St-Pierre   11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
+    {
+    DisplayQueryTester queryTester;
+
+    bool result = queryTester.SetQueryParams(GetFileName(), GetRootToViewMatrix(), GetClipPlanes(), GetExpectedResults());
+
+    EXPECT_EQ(result == true, true);
+
+    if (result)
+        queryTester.DoQuery();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Richard.Bois   03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery_SetGetActiveClips)
+    {
+    DisplayQueryTester queryTester;
+
+    bool result = queryTester.SetQueryParams(GetFileName(), GetRootToViewMatrix(), GetClipPlanes(), GetExpectedResults());
+
+    EXPECT_EQ(result == true, true);
+
+    if (result)
+        {
+        bset<uint64_t> activeClips;
+        activeClips.insert(0);
+        activeClips.insert(1);
+        activeClips.insert(2);
+        activeClips.insert(3);
+        queryTester.SetActiveClips(activeClips);
+
+        bset<uint64_t> storedClips;
+        queryTester.GetActiveClips(storedClips);
+
+        EXPECT_TRUE(std::equal(storedClips.begin(), storedClips.end(), activeClips.begin()));
+        }
+    }
+
+INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDisplayQuery, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfDisplayQueryValues(BeFileName(SM_DISPLAY_QUERY_TEST_CASES))));

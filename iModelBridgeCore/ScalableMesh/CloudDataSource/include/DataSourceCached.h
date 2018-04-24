@@ -37,10 +37,11 @@ protected:
     DataSource                *     getCacheDataSource      (void);
 
 public:
-                                    DataSourceCached        (DataSourceAccount *account);
+                                    DataSourceCached        (DataSourceAccount *account, const SessionName &session);
 
     void                            setCachingEnabled       (bool enabled);
     bool                            getCachingEnabled       (void);
+    void                            setForceWriteToCache    (void);
 
     DataSourceStatus                open                    (const DataSourceURL & sourceURL, DataSourceMode sourceMode);
     DataSourceStatus                close                   (void);

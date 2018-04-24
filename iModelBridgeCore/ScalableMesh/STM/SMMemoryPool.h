@@ -1177,7 +1177,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
 
         virtual ~SMStoredMemoryPoolGenericVectorItem()
             {
-            if (m_dirty)
+            if (m_dirty && m_nbItems > 0)
                 {
                 HPMBlockID blockID(m_nodeId);
                 m_dataStore->StoreBlock((DataType*)m_data, m_nbItems, blockID);                                
