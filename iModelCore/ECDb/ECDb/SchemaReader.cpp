@@ -1049,7 +1049,8 @@ BentleyStatus SchemaReader::ReadFormat(ECN::ECFormatCP& format, Context& ctx, EC
         if (!Json::Reader::Parse(numericSpecJsonStr, numericSpecJson))
             return ERROR;
 
-        numSpec.FromJson(numericSpecJson);
+        if (SUCCESS != Formatting::NumericFormatSpec::FromJson(numSpec, numericSpecJson))
+            return ERROR;
         }
 
     Utf8CP compositeSpacer = stmt->IsColumnNull(compositeSpacerColIx) ? nullptr : stmt->GetValueText(compositeSpacerColIx);
