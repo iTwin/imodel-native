@@ -13,3 +13,4 @@
 #include <BuildingShared/DgnUtils/BuildingDgnUtilsApi.h>
 #include <BuildingShared/GeometryManipulationStrategies/GeometryManipulationStrategiesApi.h>
 #include <BuildingShared/DgnElementManipulationStrategies/DgnElementManipulationStrategiesApi.h>
+#include <BuildingShared/StrategyPlatform/StrategyPlatformAPI.h>
