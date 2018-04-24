@@ -44,7 +44,8 @@ struct LineGridSurfaceManipulationStrategy : public GridPlanarSurfaceManipulatio
         virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() override { return *m_geometryManipulationStrategy; }
 
     public:
-        GRIDSTRATEGIES_EXPORT static LineGridSurfaceManipulationStrategyPtr Create() { return new LineGridSurfaceManipulationStrategy(); }
+        static LineGridSurfaceManipulationStrategyPtr Create() { return new LineGridSurfaceManipulationStrategy(); }
+        GRIDSTRATEGIES_EXPORT static LineGridSurfaceManipulationStrategyPtr Create(SketchLineGridSurfaceR surface);
         static LineGridSurfaceManipulationStrategyPtr Create(BBS::LinePlacementStrategyType linePlacementStrategyType);
     };
 

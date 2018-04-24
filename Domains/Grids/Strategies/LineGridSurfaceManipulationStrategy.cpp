@@ -11,6 +11,28 @@ USING_NAMESPACE_BUILDING_SHARED
 USING_NAMESPACE_GRIDS
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LineGridSurfaceManipulationStrategyPtr LineGridSurfaceManipulationStrategy::Create
+(
+    SketchLineGridSurfaceR surface
+)
+    {
+    LineGridSurfaceManipulationStrategyPtr strategy = Create();
+    strategy->m_surface = &surface;
+    DPoint2d start2d, end2d;
+    surface.GetBaseLine(start2d, end2d);
+    DPoint3d start = DPoint3d::From(start2d.x, start2d.y, 0);
+    DPoint3d end = DPoint3d::From(end2d.x, end2d.y, 0);
+    strategy->m_geometryManipulationStrategy = LineManipulationStrategy::Create(start, end);
+    strategy->m_axis = GridAxis::Get(surface.GetDgnDb(), surface.GetAxisId());
+    strategy->m_bottomElevation = surface.GetStartElevation();
+    strategy->m_topElevation = surface.GetEndElevation();
+
+    return strategy;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 LineGridSurfaceManipulationStrategy::LineGridSurfaceManipulationStrategy()
