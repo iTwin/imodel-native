@@ -681,7 +681,7 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8Strin
             return ERROR;
             }
 
-        Utf8StringCR formatStr = format.GetName();
+        Utf8StringCR formatStr = format.GetQualifiedName(koq.GetSchema());
         if (formatStr.empty())
             {
             BeAssert(!formatStr.empty());
