@@ -122,6 +122,24 @@ void FormattingTestFixture::CreateStdFormats()
     stationz10003.GetNumericSpecP()->SetStationOffsetSize(3);
     stationz10003.GetNumericSpecP()->SetMinWidth(3);
     s_stdFormats["StationZ_1000_3"] = stationz10003;
+
+    Format AngleDMS = fractional;
+    AngleDMS.GetNumericSpecP()->SetPrecision(FractionalPrecision::Whole);
+    auto comp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    AngleDMS.SetCompositeSpec(comp);
+    s_stdFormats["AngleDMS"] = AngleDMS;
+
+    Format AmerFI = fractional;
+    AmerFI.GetNumericSpecP()->SetPrecision(FractionalPrecision::Eighth);
+    comp = CompositeValueSpec(*s_unitsContext->LookupUnit("FT"), *s_unitsContext->LookupUnit("IN"));
+    AmerFI.SetCompositeSpec(comp);
+    s_stdFormats["AmerFI"] = AmerFI;
+
+    Format HMS = defaultReal;
+    HMS.GetNumericSpecP()->SetPrecision(DecimalPrecision::Precision2);
+    comp = CompositeValueSpec(*s_unitsContext->LookupUnit("HR"), *s_unitsContext->LookupUnit("MIN"), *s_unitsContext->LookupUnit("S"));
+    HMS.SetCompositeSpec(comp);
+    s_stdFormats["HMS"] = HMS;
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                  Bill Steinbock 12/17

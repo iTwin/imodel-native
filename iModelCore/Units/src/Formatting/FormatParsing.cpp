@@ -1584,7 +1584,9 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
         if(nullptr != refUnit)  // before looking into the registry we can try to find Unit in the Phenomenon
             {
             BEU::PhenomenonCP ph = refUnit->GetPhenomenon();
-            m_unit = ph->LookupUnit(m_name.c_str());
+            auto const& units = ph->GetUnits();
+            m_unit = *std::find_if(units.begin(), units.end(), 
+                [&](BEU::UnitCP unit) {return ((unit->GetName() == m_name) || (unit->GetLabel() == m_name));});
             }
          }
     }
