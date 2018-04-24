@@ -749,16 +749,24 @@ TEST_P(ScalableMeshTestDrapePoints, IntersectRayMultipleHits)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestDrapePoints, DrapeAlongVector)
 {
+    auto myScalableMesh = OpenMesh();
+    for (size_t i = 0; i < GetData().size(); ++i)
+    {
+        DPoint3d sourcePt = GetData()[i];
+        DPoint3d result = sourcePt;
+
+        DPoint3d expectedResult = GetResult().front();
+        for (auto&pt : GetResult())
+            if (fabs(pt.x - sourcePt.x) < 1e-6 && fabs(pt.y - sourcePt.y)< 1e-6)
+                expectedResult = pt;
+        int drapedType = 0;
+        ASSERT_EQ(true, myScalableMesh->GetDTMInterface()->GetDTMDraping()->DrapeAlongVector(&result, nullptr, nullptr, nullptr, &drapedType, sourcePt, 0, 1e6));
+        EXPECT_EQ(fabs(result.z - expectedResult.z) < 0.01, true);
+        EXPECT_EQ(drapedType == 1 || drapedType == 3, true);
+    }
 }
 
 #if 0
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Elenie.Godzaridis  02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(ScalableMeshTestProjectPoints, ProjectPoint)
-{
-}
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Elenie.Godzaridis  02/2018
@@ -1409,8 +1417,8 @@ TEST_P(ScalableMeshTestWithParams, GetSkirtMeshes)
                         double param;
                         if (!foundLine[j])
                         {
-                            foundLine[j] = seg.ProjectPointXY(project, param, tri[j]) && param > -1e-6 &&
-                                param < 1+1e-6 && abs(project.x - tri[j].x) < 1e-6 && abs(project.y - tri[j].y) < 1e-6;
+                            foundLine[j] = seg.ProjectPointXY(project, param, tri[j]) && param > -1e-4 &&
+                                param < 1+1e-4 && abs(project.x - tri[j].x) < 1e-4 && abs(project.y - tri[j].y) < 1e-4;
                         }
                     }
                 }
@@ -1424,6 +1432,7 @@ TEST_P(ScalableMeshTestWithParams, GetSkirtMeshes)
         ASSERT_TRUE(meshes.empty());
     }
 }
+
 
 
 // Wrap Google's ASSERT_TRUE macro into a lambda because it returns a "success" error code.
