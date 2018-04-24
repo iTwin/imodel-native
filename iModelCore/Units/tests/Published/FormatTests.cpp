@@ -264,6 +264,8 @@ TEST_F(FormatStringTest, FailWithInvalidOverride)
     EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
     EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStringBasicHasBananaForPrecision, mapper));
     EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "", mapper));
+    EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
     EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStringEmptyUnit, mapper));
     EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
     }
@@ -323,6 +325,8 @@ TEST_F(FormatStringTest, ParseFormatString)
     EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecSci));
     ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExSciNorm(7)", mapper));
     EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecSciNorm));
+    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExStation(9)", mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecStation));
     ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExStation(9)", mapper));
     EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecStation));
     }
