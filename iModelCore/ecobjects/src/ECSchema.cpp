@@ -1267,16 +1267,16 @@ ECObjectsStatus ECSchema::CreateFormat(ECFormatP& unitFormat, Utf8CP name, Utf8C
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     unitFormat = new ECFormat(*this, name);
-    ECObjectsStatus status;
-
-    if (ECObjectsStatus::Success != (status = unitFormat->SetDisplayLabel(label)))
+    ECObjectsStatus status = unitFormat->SetDisplayLabel(label);
+    if (ECObjectsStatus::Success != status)
         {
         delete unitFormat;
         unitFormat = nullptr;
         return status;
         }
 
-    if (ECObjectsStatus::Success != (status = unitFormat->SetDescription(description)))
+    status = unitFormat->SetDescription(description);
+    if (ECObjectsStatus::Success != status)
         {
         delete unitFormat;
         unitFormat = nullptr;
@@ -1288,10 +1288,12 @@ ECObjectsStatus ECSchema::CreateFormat(ECFormatP& unitFormat, Utf8CP name, Utf8C
     if (nullptr != composite)
         unitFormat->SetCompositeSpec(*composite);
 
-    if (ECObjectsStatus::Success != (status = AddSchemaChildToMap<ECFormat, FormatMap>(unitFormat, &m_formatMap, ECSchemaElementType::Format)))
+    status = AddSchemaChildToMap<ECFormat, FormatMap>(unitFormat, &m_formatMap, ECSchemaElementType::Format);
+    if (ECObjectsStatus::Success != status)
         {
         delete unitFormat;
         unitFormat = nullptr;
+        return status;
         }
 
     return ECObjectsStatus::Success;
