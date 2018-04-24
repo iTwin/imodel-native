@@ -8,6 +8,7 @@
 #pragma once
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
+#include <Bentley/RefCounted.h>
 
 #define GRIDS_NAMESPACE_NAME  Grids
 #define BEGIN_GRIDS_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace GRIDS_NAMESPACE_NAME {
@@ -54,6 +55,13 @@
 #else
 #define GRIDSDOMAIN_EXPORT IMPORT_ATTRIBUTE
 #endif
+
+#if defined (__GRIDSMANIPULATORS_BUILD__)
+#define GRIDSMANIPULATORS_EXPORT EXPORT_ATTRIBUTE
+#else
+#define GRIDSMANIPULATORS_EXPORT IMPORT_ATTRIBUTE
+#endif
+
 
 #define DEFINE_GRIDS_ELEMENT_BASE_METHODS(__name__) \
     __name__##CPtr __name__::Get       (DgnDbR db, DgnElementId id) { return db.Elements().Get< __name__ >(id); } \
