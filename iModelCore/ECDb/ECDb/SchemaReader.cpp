@@ -1108,8 +1108,11 @@ BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, 
     const size_t labelCount = labels.size();
 
     BeAssert(labelCount <= 4 && units.size() <= 4);
+	Formatting::CompositeValueSpec spec;
+	bool compStatus = Formatting::CompositeValueSpec::CreateCompositeSpec(spec, units);
+	if (!compStatus)
+		return ERROR;
 
-    Formatting::CompositeValueSpec spec(units);
     if (!Utf8String::IsNullOrEmpty(compositeSpacer))
         spec.SetSpacer(compositeSpacer);
 
