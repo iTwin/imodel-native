@@ -32,8 +32,12 @@ IMODELJS_SERVICES_TIER_TYPEDEFS (Host)
 IMODELJS_SERVICES_TIER_TYPEDEFS (UvHost)
 IMODELJS_SERVICES_TIER_TYPEDEFS (NodeHost)
 IMODELJS_SERVICES_TIER_TYPEDEFS (Utilities)
+IMODELJS_SERVICES_TIER_TYPEDEFS (Uv)
+IMODELJS_SERVICES_TIER_TYPEDEFS (WebSockets)
+IMODELJS_SERVICES_TIER_TYPEDEFS (MobileGateway)
 
 IMODELJS_SERVICES_TIER_REF_COUNTED_PTR (Extension)
+IMODELJS_SERVICES_TIER_REF_COUNTED_PTR (MobileGateway)
 
 BEGIN_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
 
@@ -202,6 +206,7 @@ protected:
     IMODELJS_EXPORT Js::RuntimeR SupplyJsRuntime() override;
     IMODELJS_EXPORT Napi::Function SupplyJsRequireHandler (Napi::Env& env, Napi::Object initParams) override;
     IMODELJS_EXPORT void SupplyJsInfoValues (Napi::Env& env, Napi::Object info) override;
+    IMODELJS_EXPORT void OnStop() override;
 
 public:
     IMODELJS_EXPORT UvHost();
@@ -284,6 +289,421 @@ protected:
 
 public:
     IMODELJS_EXPORT JsPrototypesCR GetPrototypes() const { return m_prototypes; }
+    };
+
+//=======================================================================================
+// @bsiclass                                                    Steve.Wilson   7/17
+//=======================================================================================
+struct WebSockets
+    {
+public:
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (ServerEndpoint)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (ClientConnection)
+    DEFINE_REF_COUNTED_PTR (ServerEndpoint)
+    DEFINE_REF_COUNTED_PTR (ClientConnection)
+
+    enum class Event { Open, Error, Message };
+    typedef websocketpp::server<websocketpp::config::core> websocketpp_server_t;
+    typedef websocketpp::connection<websocketpp::config::core> websocketpp_connection_t;
+    typedef std::shared_ptr<websocketpp_connection_t> websocketpp_connection_ptr_t;
+    typedef std::function<void(Event, websocketpp_server_t::message_ptr)> EventCallback_T;
+    typedef std::function<std::streamsize(const std::streambuf::char_type*, std::streamsize)> TransportHandler_T;
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct ServerEndpoint : public RefCountedBase
+        {
+    private:
+        websocketpp_server_t m_server;
+
+    public:
+        IMODELJS_EXPORT static ServerEndpointPtr Create();
+
+        IMODELJS_EXPORT ServerEndpoint();
+        IMODELJS_EXPORT websocketpp_server_t const& GetServer() const { return m_server; }
+        IMODELJS_EXPORT websocketpp_server_t& GetServer() { return m_server; }
+        IMODELJS_EXPORT ClientConnectionPtr CreateConnection (EventCallback_T const& callback, TransportHandler_T const& handler);
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct ClientConnection : public RefCountedBase
+        {
+        friend struct ServerEndpoint;
+
+    private:
+        //=======================================================================================
+        // @bsiclass                                                    Steve.Wilson   7/17
+        //=======================================================================================
+        struct Relay : public std::streambuf
+            {
+        private:
+            ClientConnectionR m_connection;
+
+        protected:
+            std::streamsize xsputn (const char_type* s, std::streamsize count) override;
+
+        public:
+            Relay (ClientConnectionR connection) : m_connection (connection) { ; }
+            };
+
+        //=======================================================================================
+        // @bsiclass                                                    Steve.Wilson   7/17
+        //=======================================================================================
+        struct Forwarder
+            {
+        private:
+            ClientConnectionR m_connection;
+
+        public:
+            Forwarder (ClientConnectionR connection) : m_connection (connection) { ; }
+
+            void operator() (websocketpp::connection_hdl handle);
+            void operator() (websocketpp::connection_hdl handle, websocketpp_server_t::message_ptr message);
+            };
+
+        EventCallback_T m_callback;
+        TransportHandler_T m_handler;
+        websocketpp_connection_ptr_t m_connection;
+        Relay m_relay;
+        std::ostream m_output;
+
+        ClientConnection (websocketpp_connection_ptr_t const& connection, EventCallback_T const& callback, TransportHandler_T const& handler);
+
+    public:
+        IMODELJS_EXPORT websocketpp_connection_t const& GetConnection() const { return *m_connection; }
+        IMODELJS_EXPORT websocketpp_connection_t& GetConnection() { return *m_connection; }
+
+        IMODELJS_EXPORT bool Process (Utf8CP input, size_t offset, size_t length);
+        IMODELJS_EXPORT bool Send (Utf8CP message, size_t length, websocketpp::frame::opcode::value code);
+        };
+
+    WebSockets() = delete;
+    };
+
+//=======================================================================================
+// @bsiclass                                                    Steve.Wilson   7/17
+//=======================================================================================
+struct Uv
+    {
+public:
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (Handle)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (AddressDescriptor)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (IoStream)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (Request)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (WriteRequest)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (ConnectRequest)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (ShutdownRequest)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (TcpHandle)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (Status)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (BindResult)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (ConnectResult)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (WriteResult)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (ShutdownResult)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (Server)
+
+    DEFINE_REF_COUNTED_PTR (WriteRequest)
+    DEFINE_REF_COUNTED_PTR (ConnectRequest)
+    DEFINE_REF_COUNTED_PTR (ShutdownRequest)
+    DEFINE_REF_COUNTED_PTR (TcpHandle)
+    DEFINE_REF_COUNTED_PTR (Server)
+
+    enum class IP { V4, V6 };
+    typedef std::function<void(StatusCR, TcpHandlePtr)> ConnectCallback_T;
+    typedef std::function<bool(StatusCR, uv_buf_t const&, size_t nread)> Read_Callback_T;
+    typedef std::function<void(StatusCR)> Write_Callback_T;
+    typedef std::function<void(StatusCR)> Shutdown_Callback_T;
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct AddressDescriptor
+        {
+    private:
+        IP m_protocol;
+        struct sockaddr_in m_addr4;
+        struct sockaddr_in6 m_addr6;
+
+    public:
+        IMODELJS_EXPORT AddressDescriptor (Utf8CP address, uint16_t port, Uv::IP protocol, int& status);
+
+        IMODELJS_EXPORT IP GetProtocol() const { return m_protocol; }
+        IMODELJS_EXPORT const sockaddr* GetPointer() const;
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct Handle : public RefCountedBase
+        {
+    private:
+        uv_handle_t* m_handle;
+
+        static void CloseHandler (uv_handle_t* handle);
+
+        Handle (HandleCR other) = delete;
+        HandleR operator= (HandleCR other) = delete;
+
+    protected:
+        template <typename T>
+        T* GetPointerUnchecked() const { return reinterpret_cast<T*>(m_handle); }
+
+    public:
+        IMODELJS_EXPORT explicit Handle (uv_handle_t* handle);
+        IMODELJS_EXPORT Handle (Handle&& other);
+        IMODELJS_EXPORT ~Handle();
+
+        IMODELJS_EXPORT uv_handle_t* GetPointer() const { return m_handle; }
+        IMODELJS_EXPORT void Close();
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct Request : public RefCountedBase
+        {
+    private:
+        uv_req_t* m_request;
+
+        Request (RequestCR other) = delete;
+        RequestR operator= (RequestCR other) = delete;
+
+    protected:
+        IMODELJS_EXPORT Request (uv_req_t* request);
+        IMODELJS_EXPORT Request (Request&& other);
+
+        template <typename T>
+        T* GetPointerUnchecked() const { return reinterpret_cast<T*>(m_request); }
+
+    public:
+        IMODELJS_EXPORT ~Request();
+
+        IMODELJS_EXPORT uv_req_t* GetPointer() const { return m_request; }
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct WriteRequest : public Request
+        {
+    private:
+        Write_Callback_T m_callback;
+
+        static void Handler (uv_write_t* req, int status);
+
+        WriteRequest (IoStreamCR handle, unsigned char* data, size_t length, Write_Callback_T const& callback, int& status);
+
+    public:
+        IMODELJS_EXPORT static WriteRequestPtr Create (IoStreamCR handle, unsigned char* data, size_t length, Write_Callback_T const& callback, int& status);
+
+        IMODELJS_EXPORT uv_write_t* GetPointer() const;
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct IoStream : public Handle
+        {
+    private:
+        Read_Callback_T m_callback;
+
+        static void ReadHandler (uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
+        static void AllocHandler (uv_handle_t* handle, size_t suggestedSize, uv_buf_t* buf);
+
+    public:
+        IMODELJS_EXPORT explicit IoStream (uv_stream_t* handle) : Handle (reinterpret_cast<uv_handle_t*>(handle)) { ; }
+        IMODELJS_EXPORT IoStream (IoStream&& other) : Handle (std::move (other)) { ; }
+
+        IMODELJS_EXPORT uv_stream_t* GetPointer() const;
+        IMODELJS_EXPORT uv_handle_t* GetHandlePointer() const;
+        IMODELJS_EXPORT Status Read (Read_Callback_T const& callback);
+        IMODELJS_EXPORT WriteResult Write (unsigned char* data, size_t length, Write_Callback_T const& callback);
+        IMODELJS_EXPORT WriteResult Write (const char* data, size_t length, Write_Callback_T const& callback);
+        IMODELJS_EXPORT ShutdownResult Shutdown();
+        IMODELJS_EXPORT bool IsReadable() const;
+        IMODELJS_EXPORT bool IsWritable() const;
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct ShutdownRequest : public Request
+        {
+    private:
+        Shutdown_Callback_T m_callback;
+
+        static void Handler (uv_shutdown_t* req, int status);
+
+        ShutdownRequest (IoStreamCR handle, int& status);
+
+    public:
+        IMODELJS_EXPORT static ShutdownRequestPtr Create (IoStreamCR handle, int& status);
+
+        IMODELJS_EXPORT uv_shutdown_t* GetPointer() const;
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct TcpHandle : public IoStream
+        {
+    public:
+        IMODELJS_EXPORT TcpHandle (int& status);
+        IMODELJS_EXPORT explicit TcpHandle (uv_tcp_t* handle) : IoStream (reinterpret_cast<uv_stream_t*>(handle)) { ; }
+        IMODELJS_EXPORT TcpHandle (TcpHandle&& other) : IoStream (std::move (other)) { ; }
+
+        IMODELJS_EXPORT uv_tcp_t* GetPointer() const;
+        IMODELJS_EXPORT uv_stream_t* GetStreamPointer() const;
+        IMODELJS_EXPORT Status SetKeepAlive (bool enable, uint32_t delay);
+        IMODELJS_EXPORT Status SetSimultaneousAccepts (bool enable);
+        IMODELJS_EXPORT Status SetNoDelay (bool enable);
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct ConnectRequest : public Request
+        {
+    private:
+        TcpHandlePtr m_handle;
+        ConnectCallback_T m_callback;
+        
+        static void Handler (uv_connect_t* req, int status);
+
+        ConnectRequest (AddressDescriptorCR address, TcpHandle&& handle, int& status, ConnectCallback_T const& callback);
+
+    public:
+        IMODELJS_EXPORT static ConnectRequestPtr Create (AddressDescriptorCR address, TcpHandle&& handle, int& status, ConnectCallback_T const& callback);
+
+        IMODELJS_EXPORT uv_connect_t* GetPointer() const;
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct Status
+        {
+    private:
+        int m_code;
+
+    public:
+        IMODELJS_EXPORT Status (int code) : m_code (code) { ; }
+
+        IMODELJS_EXPORT int GetCode() const { return m_code; }
+        IMODELJS_EXPORT bool IsError() const { return GetCode() < 0; }
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct Server : public TcpHandle
+        {
+    public:
+        typedef std::function<void(StatusCR, TcpHandlePtr)> ListenCallback_T;
+
+    private:
+        ListenCallback_T m_callback;
+
+        static void ListenHandler (uv_stream_t* server, int status);
+
+    public:
+        IMODELJS_EXPORT Server (TcpHandle&& handle) : TcpHandle (std::move (handle)) { ; }
+
+        IMODELJS_EXPORT Status Listen (uint32_t backlog, ListenCallback_T const& callback);
+        IMODELJS_EXPORT Status Accept (TcpHandleR connection);
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct BindResult : public Status
+        {
+    private:
+        ServerPtr m_server;
+        uint16_t m_port;
+
+    public:
+        IMODELJS_EXPORT BindResult (int status, ServerP server, uint16_t port) : Status (status), m_server (server), m_port (port) { ; }
+
+        IMODELJS_EXPORT ServerPtr GetServer() const { return m_server; }
+        IMODELJS_EXPORT uint16_t GetPort() const { return m_port; }
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct ConnectResult : public Status
+        {
+    private:
+        ConnectRequestPtr m_request;
+
+    public:
+        IMODELJS_EXPORT ConnectResult (int status, ConnectRequestP request) : Status (status), m_request (request) { ; }
+
+        IMODELJS_EXPORT ConnectRequestCP GetRequest() const { return m_request.get(); }
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct WriteResult : public Status
+        {
+    private:
+        WriteRequestPtr m_request;
+
+    public:
+        IMODELJS_EXPORT WriteResult (int status, WriteRequestP request) : Status (status), m_request (request) { ; }
+
+        IMODELJS_EXPORT WriteRequestCP GetRequest() const { return m_request.get(); }
+        };
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   7/17
+    //=======================================================================================
+    struct ShutdownResult : public Status
+        {
+    private:
+        ShutdownRequestPtr m_request;
+
+    public:
+        IMODELJS_EXPORT ShutdownResult (int status, ShutdownRequestP request) : Status (status), m_request (request) { ; }
+
+        IMODELJS_EXPORT ShutdownRequestP GetRequest() const { return m_request.get(); }
+        };
+
+    Uv() = delete;
+
+    IMODELJS_EXPORT static BindResult Bind (Utf8CP address, uint16_t port, IP protocol);
+    IMODELJS_EXPORT static ConnectResult Connect (Utf8CP address, uint16_t port, IP protocol, ConnectCallback_T const& callback);
+    };
+
+//=======================================================================================
+// @bsiclass                                                    Steve.Wilson   7/17
+//=======================================================================================
+struct MobileGateway : public Extension
+    {
+private:
+    static MobileGatewayPtr s_instance;
+
+    WebSockets::ServerEndpoint m_endpoint;
+    Uv::ServerPtr m_server;
+    Uv::TcpHandlePtr m_client;
+    WebSockets::ClientConnectionPtr m_connection;
+    uint16_t m_port;
+    Napi::ObjectReference m_exports;
+
+protected:
+    IMODELJS_EXPORT Utf8CP SupplyName() const override { return "@bentley/imodeljs-mobilegateway"; }
+    IMODELJS_EXPORT Napi::Value ExportJsModule (Js::RuntimeR) override;
+
+public:
+    IMODELJS_EXPORT static MobileGatewayR GetInstance();
+    IMODELJS_EXPORT static void Terminate();
+
+    IMODELJS_EXPORT MobileGateway();
+    IMODELJS_EXPORT uint16_t GetPort() const { return m_port; }
     };
 
 END_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE

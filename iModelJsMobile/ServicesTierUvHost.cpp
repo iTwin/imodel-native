@@ -21,6 +21,16 @@ UvHost::UvHost()
 
     auto createdThread = uv_thread_create (&m_thread, &EventLoopThreadEntry, this);
     BeAssert (createdThread >= 0);
+
+    Extension::Install ([]() { return &MobileGateway::GetInstance(); });
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Steve.Wilson                    7/2017
+//---------------------------------------------------------------------------------------
+void UvHost::OnStop()
+    {
+    MobileGateway::Terminate();
     }
 
 //---------------------------------------------------------------------------------------

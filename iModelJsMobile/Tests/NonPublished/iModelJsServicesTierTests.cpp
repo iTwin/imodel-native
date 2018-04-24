@@ -375,6 +375,92 @@ private:
         OnTestFinished();
         }
 
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (TestMobileClient)
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                Steve.Wilson                    7/2017
+    //---------------------------------------------------------------------------------------
+    static void MobileGatewayPOC (Js::RuntimeR runtime)
+        {
+        using namespace BentleyApi::iModelJs::ServicesTier;
+        
+        OnTestStarted();
+
+        auto evaluateResult = runtime.EvaluateScript (u8R"(
+            (function() {
+                let require = bentley.imodeljs.servicesTier.require;
+
+                let mobilegateway = require ("@bentley/imodeljs-mobilegateway");
+                BeAssert (mobilegateway.handler === null);
+                BeAssert (typeof (mobilegateway.port) === "number");
+                BeAssert (typeof (mobilegateway.send) === "function");
+
+                mobilegateway.handler = (payload) => {
+                    BeAssert (payload === "abc");
+                    mobilegateway.send ("xyz");
+                };
+            })();
+        )", "iModelJsServicesTierTests:///ServicesTierUtilities.MobileGatewayPOC.js");
+        
+        BeAssert (evaluateResult.status == Js::EvaluateStatus::Success);
+
+        auto connectResult = Uv::Connect ("127.0.0.1", MobileGateway::GetInstance().GetPort(), Uv::IP::V4, [](Uv::StatusCR status, Uv::TcpHandlePtr connection)
+            {
+            BeAssert (!status.IsError());
+            connection->AddRef();
+
+            auto& cref = *connection;
+            auto readResult = connection->Read ([&cref](Uv::StatusCR status, uv_buf_t const& buffer, size_t nread)
+                {
+                BeAssert (!status.IsError());
+
+                if (nread == 5)
+                    {
+                    unsigned char expected [5];
+                    expected [0] = 0x81;
+                    expected [1] = 0x3;
+                    expected [2] = 0x78;
+                    expected [3] = 0x79;
+                    expected [4] = 0x7a;
+                    
+                    BeAssert (strncmp ((const char*) expected, buffer.base, nread) == 0);
+
+                    cref.Release();
+                    OnTestFinished();
+                    return false;
+                    }
+
+                auto expected = "HTTP/1.1 101 Switching Protocols\r\nConnection: upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\nServer: WebSocket++/0.7.0\r\nUpgrade: websocket\r\n\r\n";
+                BeAssert (strncmp (expected, buffer.base, nread) == 0);
+
+                unsigned char message [9];
+                message [0] = 0x81;
+                message [1] = 0x83;
+                message [2] = 0;
+                message [3] = 0;
+                message [4] = 0;
+                message [5] = 0;
+                message [6] = 0x61;
+                message [7] = 0x62;
+                message [8] = 0x63;
+
+                auto writeMessageResult = cref.Write (message, sizeof (message), [](Uv::StatusCR status) { BeAssert (!status.IsError()); });
+
+                BeAssert (!writeMessageResult.IsError());
+
+                return true;
+                });
+
+            BeAssert (!readResult.IsError());
+
+            auto upgrade = "GET / HTTP/1.1\r\nHost: 127.0.0.1:9327\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n";
+            auto writeUpgradeResult = connection->Write (upgrade, strlen (upgrade), [](Uv::StatusCR status) { BeAssert (!status.IsError()); });
+            BeAssert (!writeUpgradeResult.IsError());
+            });
+
+        BeAssert (!connectResult.IsError());
+        }
+
 public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Steve.Wilson                    7/2017
@@ -386,6 +472,7 @@ public:
         BasicWebSockets (runtime);
 #endif
         BasicFileSystem (runtime);
+        MobileGatewayPOC (runtime);
         }
     };
 
