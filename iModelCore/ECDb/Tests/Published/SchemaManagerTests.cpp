@@ -1859,6 +1859,22 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  04/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, ImportPreEC32KindOfQuantity)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ImportPreEC32KindOfQuantity.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                     <KindOfQuantity typeName="MyKindOfQuantity" persistenceUnit="CM" relativeError=".5"  presentationUnits="FT;IN" />
+                                     </ECSchema>)xml")));
+
+    ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
+    ASSERT_TRUE(testSchema != nullptr);
+    
+    ASSERT_EQ(2, testSchema->GetReferencedSchemas().size());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetPreEC32KindOfQuantity)

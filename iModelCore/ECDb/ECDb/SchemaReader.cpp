@@ -1190,20 +1190,19 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
     // The persistence unit is persisted as fully qualified name to preserve backwards compatibility
     BeAssert(!Utf8String::IsNullOrEmpty(persUnitFullName));
 
-    Utf8String persUnitAlias, persUnitName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(persUnitAlias, persUnitName, persUnitFullName))
-        return ERROR;
+    auto lookupUnit = [this, &ctx] (Utf8StringCR unitAlias, Utf8StringCR unitName)
+        {
+        BeAssert(!unitAlias.empty());
+        UnitId persUnitId = SchemaPersistenceHelper::GetUnitId(GetECDb(), GetTableSpace(), unitAlias.c_str(), unitName.c_str(), SchemaLookupMode::ByAlias);
 
-    if (persUnitAlias.empty())
-        persUnitAlias.assign(newKoq->GetSchema().GetAlias());
+        ECUnitCP persUnit = nullptr;
+        if (SUCCESS != ReadUnit(persUnit, ctx, persUnitId))
+            return (ECUnitCP) nullptr;
 
-    UnitId persUnitId = SchemaPersistenceHelper::GetUnitId(GetECDb(), GetTableSpace(), persUnitAlias.c_str(), persUnitName.c_str(), SchemaLookupMode::ByAlias);
+        return persUnit;
+        };
 
-    ECUnitCP persUnit = nullptr;
-    if (SUCCESS != ReadUnit(persUnit, ctx, persUnitId))
-        return ERROR;
-
-    if (ECObjectsStatus::Success != newKoq->SetPersistenceUnit(*persUnit))
+    if (ECObjectsStatus::Success != newKoq->AddPersitenceUnitByName(persUnitFullName, lookupUnit))
         {
         LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit '%s' could not be parsed.", newKoq->GetFullName().c_str(), persUnitFullName);
         return ERROR;
@@ -1215,7 +1214,7 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
         {
         if (SUCCESS != SchemaPersistenceHelper::DeserializeKoqPresentationFormats(*newKoq, m_schemaManager, presFormatsStr))
             {
-            LOG.errorv("Failed to read KindOfQuantity '%s'. One of its presentation formats could not be parsed: %s.", koq->GetFullName().c_str(), presFormatsStr);
+            LOG.errorv("Failed to read KindOfQuantity '%s'. One of its presentation formats could not be parsed: %s.", newKoq->GetFullName().c_str(), presFormatsStr);
             return ERROR;
             }
         }
