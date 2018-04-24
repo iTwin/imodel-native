@@ -10,6 +10,33 @@
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LineManipulationStrategyPtr LineManipulationStrategy::Create
+(
+    DSegment3dCR line
+)
+    {
+    DPoint3d start, end;
+    line.GetEndPoints(start, end);
+    return Create(start, end);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LineManipulationStrategyPtr LineManipulationStrategy::Create
+(
+    DPoint3dCR start, 
+    DPoint3dCR end
+)
+    {
+    LineManipulationStrategyPtr strategy = Create();
+    strategy->AppendKeyPoints({start, end});
+    return strategy;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 ICurvePrimitivePtr LineManipulationStrategy::_FinishPrimitive() const
