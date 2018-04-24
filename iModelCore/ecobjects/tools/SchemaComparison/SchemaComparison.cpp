@@ -117,10 +117,9 @@ int CompareSchemas(SchemaComparisonOptions& options)
             {
             contexts[i]->AddSchemaPath(refDir.GetName());
             }
-        contexts[i]->AddSchemaPath(options.InFileNames[i].GetDirectoryName().GetName());
 
-        schemas[i] = ECN::ECSchema::LocateSchema(options.InFileNames[i].c_str(), *contexts[i]);
-        if (!schemas[i].IsValid())
+        ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlFile(schemas[i], options.InFileNames[i].c_str(), *contexts[i]);
+        if (status != ECN::SchemaReadStatus::Success || !schemas[i].IsValid())
             {
             Utf8String err("Failed to read schema ");
             err += schemas[i]->GetName().c_str();
