@@ -227,7 +227,7 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
     ECN::ECObjectsStatus status = instance.GetValue(standardValue, "Standard");
     if (ECN::ECObjectsStatus::Success != status || standardValue.IsNull())
         {
-        LOG.warningv("Found an ExtendType custom attribute on an the ECProperty, '%s.%s', but it did not contain a Standard value. Dropping custom attribute....",
+        LOG.infov("Found an ExtendType custom attribute on an ECProperty, '%s.%s', but it did not contain a Standard value. Dropping custom attribute....",
                      prop->GetClass().GetFullName(), prop->GetName().c_str());
         container.RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
         container.RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
@@ -258,7 +258,7 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
             ReplaceWithKOQ(schema, prop, "ANGLE", "RAD", getAngleUnitName(m_angle));
             break;
         default:
-            LOG.warningv("Found an ExtendType custom attribute on an the ECProperty, '%s.%s', with an unknown standard value %d.  Only values 7-11 are supported.",
+            LOG.warningv("Found an ExtendType custom attribute on an ECProperty, '%s.%s', with an unknown standard value %d.  Only values 7-11 are supported.",
                          prop->GetClass().GetFullName(), prop->GetName().c_str());
             break;
         }
