@@ -12,6 +12,8 @@
 #include <ECObjects/StandardCustomAttributeHelper.h>
 #include <ECPresentation/RulesDriven/RuleSetEmbedder.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
+#include <Units/Units.h>
+#include <Formatting/FormattingApi.h>
 
 #define TEMPTABLE_ATTACH(name) "temp." name
 
@@ -28,6 +30,239 @@ static bool anyTxnsInFile(DgnDbR db)
     Statement stmt;
     stmt.Prepare(db, "SELECT Id FROM " DGN_TABLE_Txns " LIMIT 1");
     return (BE_SQLITE_ROW == stmt.Step());
+    }
+
+static Utf8CP const EXTEND_TYPE = "ExtendType";
+
+//****************************************************************************************
+// ExtendTypeConverter
+//****************************************************************************************
+struct ExtendTypeConverter : ECN::IECCustomAttributeConverter
+    {
+    private:
+        DgnV8Api::StandardUnit m_standardUnit;
+        DgnV8Api::AngleMode m_angle;
+
+        ECN::ECObjectsStatus ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName);
+    public:
+        ECN::ECObjectsStatus Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance);
+        ExtendTypeConverter(DgnV8Api::StandardUnit standard, DgnV8Api::AngleMode angle) : m_standardUnit(standard), m_angle(angle) {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECN::ECObjectsStatus ExtendTypeConverter::ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName)
+    {
+    ECN::KindOfQuantityP koq = schema.GetKindOfQuantityP(koqName.c_str());
+    if (nullptr == koq)
+        {
+        schema.CreateKindOfQuantity(koq, koqName.c_str());
+        koq->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultRealU", persistenceUnitName));
+        koq->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", presentationUnitName));
+        koq->SetRelativeError(1e-4);
+        }
+    prop->SetKindOfQuantity(koq);
+    prop->RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+    prop->RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+    return ECN::ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP getLinearUnitName(DgnV8Api::StandardUnit standard)
+    {
+    switch (standard)
+        {
+        case StandardUnit::EnglishMiles:
+            return "MILE";
+        case StandardUnit::EnglishYards:
+            return "YRD";
+        case StandardUnit::EnglishFeet:
+            return "FT";
+        case StandardUnit::EnglishInches:
+            return "IN";
+        case StandardUnit::EnglishMicroInches:
+            return "MICROINCH";
+        case StandardUnit::EnglishMils:
+            return "MILLIINCH";
+        case StandardUnit::EnglishSurveyMiles:
+            return "US_SURVEY_MILE";
+        case StandardUnit::EnglishSurveyFeet:
+            return "US_SURVEY_FT";
+        case StandardUnit::EnglishSurveyInches:
+            return "US_SURVEY_IN";
+        case StandardUnit::MetricKilometers:
+            return "KM";
+        case StandardUnit::MetricMeters:
+            return "M";
+        case StandardUnit::MetricCentimeters:
+            return "CM";
+        case StandardUnit::MetricMillimeters:
+            return "MM";
+        case StandardUnit::MetricMicrometers:
+            return "MU";
+        case StandardUnit::NoSystemNauticalMiles:
+            return "NAUT_MILE";
+        default:
+            return "M";
+        };
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP getAreaUnitName(DgnV8Api::StandardUnit standard)
+    {
+    switch (standard)
+        {
+        case StandardUnit::EnglishMiles:
+            return "SQ.MILE";
+        case StandardUnit::EnglishYards:
+            return "SQ.YRD";
+        case StandardUnit::EnglishFeet:
+            return "SQ.FT";
+        case StandardUnit::EnglishInches:
+        case StandardUnit::EnglishMicroInches: // There is no equivalent in the new system for square microinches
+        case StandardUnit::EnglishMils: // There is no equivalent in the new system for square milliinches
+            return "SQ.IN";
+        case StandardUnit::EnglishSurveyMiles:
+            return "SQ.US_SURVEY_MILE";
+        case StandardUnit::EnglishSurveyFeet:
+            return "SQ.US_SURVEY_FT";
+        case StandardUnit::EnglishSurveyInches:
+            return "SQ.US_SURVEY_IN";
+        case StandardUnit::MetricKilometers:
+            return "SQ.KM";
+        case StandardUnit::MetricMeters:
+            return "SQ.M";
+        case StandardUnit::MetricCentimeters:
+            return "SQ.CM";
+        case StandardUnit::MetricMillimeters:
+            return "SQ.MM";
+        case StandardUnit::MetricMicrometers:
+            return "SQ.MU";
+        case StandardUnit::NoSystemNauticalMiles:
+            return "SQ.MILE"; // There is no equivalent in the new system for Square Nautical miles
+        default:
+            return "M";
+    };
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP getVolumeUnitName(DgnV8Api::StandardUnit standard)
+    {
+    switch (standard)
+        {
+        case StandardUnit::EnglishMiles:
+            return "CUB.MILE";
+        case StandardUnit::EnglishYards:
+            return "CUB.YRD";
+        case StandardUnit::EnglishFeet:
+            return "CUB.FT";
+        case StandardUnit::EnglishInches:
+        case StandardUnit::EnglishMicroInches: // There is no equivalent in the new system for cubic microinches
+        case StandardUnit::EnglishMils: // There is no equivalent in the new system for cubic milliinches
+            return "CUB.IN";
+        case StandardUnit::EnglishSurveyMiles:  // There is no equivalent in the new system for cubic survey miles
+            return "CUB.MILE";
+        case StandardUnit::EnglishSurveyFeet:  // There is no equivalent in the new system for cubic survey feet
+            return "CUB.FT";
+        case StandardUnit::EnglishSurveyInches: // There is no equivalent in the new system for cubic survey inches
+            return "CUB.IN";
+        case StandardUnit::MetricKilometers:
+            return "CUB.KM";
+        case StandardUnit::MetricMeters:
+            return "CUB.M";
+        case StandardUnit::MetricCentimeters:
+            return "CUB.CM";
+        case StandardUnit::MetricMillimeters:
+            return "CUB.MM";
+        case StandardUnit::MetricMicrometers:
+            return "CUB.MU";
+        case StandardUnit::NoSystemNauticalMiles:
+            return "CUB.MILE"; // There is no equivalent in the new system for cubic Nautical miles
+        default:
+            return "M";
+        };
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP getAngleUnitName(DgnV8Api::AngleMode angle)
+    {
+    switch (angle)
+        {
+        case AngleMode::Degrees:
+            return "ARC_DEG";
+        case AngleMode::DegMin:
+            return "ARC_MINUTE";
+        case AngleMode::DegMinSec:
+            return "ARC_SECOND";
+        case AngleMode::Centesimal:
+            return "GRAD";
+        default:
+            return "RAD";
+        };
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance)
+    {
+    ECN::ECPropertyP prop = dynamic_cast<ECN::ECPropertyP> (&container);
+    if (prop == nullptr)
+        {
+        LOG.warningv("Found ExtendType custom attribute on a container which is not a property, removing.  Container is %s", container.GetContainerName());
+        container.RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+        container.RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+        return ECN::ECObjectsStatus::Success;
+        }
+
+    ECN::ECValue standardValue;
+    ECN::ECObjectsStatus status = instance.GetValue(standardValue, "Standard");
+    if (ECN::ECObjectsStatus::Success != status || standardValue.IsNull())
+        {
+        LOG.warningv("Found an ExtendType custom attribute on an the ECProperty, '%s.%s', but it did not contain a Standard value. Dropping custom attribute....",
+                     prop->GetClass().GetFullName(), prop->GetName().c_str());
+        container.RemoveCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+        container.RemoveSupplementedCustomAttribute("EditorCustomAttributes", EXTEND_TYPE);
+        return ECN::ECObjectsStatus::Success;
+        }
+
+    int standard = standardValue.GetInteger();
+    switch (standard)
+        {
+        // Coordinates
+        //case 7:
+        //    ReplaceWithKOQ(schema, prop, "COORDINATE", "Coord", 0.0001);
+        //    break;
+        // Distance
+        case 8:
+            ReplaceWithKOQ(schema, prop, "DISTANCE", "M", getLinearUnitName(m_standardUnit));
+            break;
+            // Area
+        case 9:
+            ReplaceWithKOQ(schema, prop, "AREA", "SQ.M", getAreaUnitName(m_standardUnit));
+            break;
+            // Volume
+        case 10:
+            ReplaceWithKOQ(schema, prop, "VOLUME", "CUB.M", getVolumeUnitName(m_standardUnit));
+            break;
+            // Angle
+        case 11:
+            ReplaceWithKOQ(schema, prop, "ANGLE", "RAD", getAngleUnitName(m_angle));
+            break;
+        default:
+            LOG.warningv("Found an ExtendType custom attribute on an the ECProperty, '%s.%s', with an unknown standard value %d.  Only values 7-11 are supported.",
+                         prop->GetClass().GetFullName(), prop->GetName().c_str());
+            break;
+        }
+    return ECN::ECObjectsStatus::Success;
     }
 
 //****************************************************************************************
@@ -1149,6 +1384,21 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
          }
 #endif
 
+     SpatialConverterBase* sc = dynamic_cast<SpatialConverterBase*>(&m_converter);
+     DgnV8Api::StandardUnit standard = DgnV8Api::StandardUnit::MetricMeters;
+     DgnV8Api::AngleMode angle = DgnV8Api::AngleMode::Degrees;
+     if (nullptr != sc)
+         {
+         DgnV8ModelP rootModel = sc->GetRootModelP();
+         DgnV8Api::ModelInfo const& info = rootModel->GetModelInfo();
+         DgnV8Api::UnitDefinition masterUnit = info.GetMasterUnit();
+         standard = masterUnit.IsStandardUnit();
+         angle = info.GetAngularMode();
+         }
+
+     ECN::IECCustomAttributeConverterPtr extendType = new ExtendTypeConverter(standard, angle);
+     ECN::ECSchemaConverter::AddConverter("EditorCustomAttributes", EXTEND_TYPE, extendType);
+
      for (BECN::ECSchemaP schema : schemas)
          {
          if (schema->IsSupplementalSchema())
@@ -1162,6 +1412,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
              return BentleyApi::BSIERROR;
              }
          }
+     ECN::ECSchemaConverter::RemoveConverter(ECN::ECSchemaConverter::GetQualifiedClassName("EditorCustomAttributes", EXTEND_TYPE));
 
      return BSISUCCESS;
     }
