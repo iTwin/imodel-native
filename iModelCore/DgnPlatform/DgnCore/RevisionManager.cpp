@@ -493,8 +493,8 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
 
         if (!letControlHandleThis)
             {
-            LOG.infov("Aborted conflict resolution");
-            return ChangeSet::ConflictResolution::Abort; 
+            // Refer to comment below
+            return opcode == DbOpcode::Update ? ChangeSet::ConflictResolution::Skip : ChangeSet::ConflictResolution::Replace; 
             }
         }
 
