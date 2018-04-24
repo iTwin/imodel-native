@@ -613,10 +613,11 @@ void FormattingTestUtils::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
     {
     Json::Value jval = nfs.ToJson(true);
     Utf8String str = jval.ToString();
-    NumericFormatSpec nfs1 = NumericFormatSpec(jval);
+    NumericFormatSpec nfs1;
+    NumericFormatSpec::FromJson(nfs1, jval);
     EXPECT_TRUE(nfs.IsIdentical(nfs1));
     jval = nfs.ToJson(false);
-    nfs1 = NumericFormatSpec(jval);
+    NumericFormatSpec::FromJson(nfs1, jval);
     EXPECT_TRUE(nfs.IsIdentical(nfs1));
     }
 
@@ -661,6 +662,17 @@ Utf8String FormattingTestUtils::SetLocale(Utf8CP name)
     LOG.infov("Current system locale decpnt= %s name %s   switched from %s", locName.c_str(), loc.name().c_str(), currLoc.name().c_str());
 
     return locName;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          11/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String FormattingTestUtils::JsonComparisonString(Json::Value const& created, Json::Value const& test)
+    {
+    return "Created   (minified): " + created.ToString() + '\n' +
+           "Test Data (minified): " + test.ToString() + '\n' +
+           "Created   (pretty):\n"  + created.toStyledString() + '\n' +
+           "Test Data (pretty):\n"  + test.toStyledString();
     }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

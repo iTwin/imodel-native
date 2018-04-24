@@ -11,8 +11,27 @@
 
 USING_BENTLEY_FORMATTING
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
-
+static BEU::UnitCP s_mile = nullptr;
+static BEU::UnitCP s_yrd = nullptr;
+static BEU::UnitCP s_ft = nullptr;
+static BEU::UnitCP s_inch = nullptr;
 struct FormatTest : FormattingTestFixture {};
+struct FormatJsonTest : FormattingTestFixture 
+{
+    void SetUp() override
+        {
+        FormattingTestFixture::SetUp();
+
+        if (nullptr == s_mile)
+            s_mile = s_unitsContext->LookupUnit("MILE");
+        if (nullptr == s_yrd)
+            s_yrd = s_unitsContext->LookupUnit("YRD");
+        if (nullptr == s_ft)
+            s_ft = s_unitsContext->LookupUnit("FT");
+        if (nullptr == s_inch)
+            s_inch = s_unitsContext->LookupUnit("IN");
+        }
+};
 struct FormatStringTest : FormatTest
 {
     // Valid format strings.
@@ -378,7 +397,247 @@ TEST_F(FormatStringTest, UnitAndLabelOverride)
     EXPECT_STRCASEEQ(spec->GetSubUnit()->GetName().c_str(), "MM");
     EXPECT_TRUE(spec->HasSubLabel());
     EXPECT_STRCASEEQ("label4", spec->GetSubLabel().c_str());
-
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(FormatJsonTest, FormatDecimal)
+    {
+    NumericFormatSpec numericSpec = NumericFormatSpec();
+    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    spec.SetMajorLabel("apple");
+    spec.SetMiddleLabel("banana");
+    spec.SetMinorLabel("cactus pear");
+    spec.SetSubLabel("dragonfruit");
+    spec.SetSpacer("-");
+    auto json = spec.ToJson();
+    Format f = Format(numericSpec, spec);
+    auto expectedJson = R"json({
+                             "decSeparator" : ".",
+                             "formatTraits" : "",
+                             "minWidth" : 0,
+                             "precision" : 6,
+                             "roundFactor" : 0.0,
+                             "signOption" : "OnlyNegative",
+                             "thousandSeparator" : ",",
+                             "type" : "Decimal",
+                             "uomSeparator" : " ",
+                             "composite": {
+                                "includeZero": true,
+                                "spacer": "-",
+                                "units": [
+                                        {
+                                        "name": "MILE",
+                                        "label": "apple"
+                                        },
+                                        {
+                                        "name": "YRD",
+                                        "label": "banana"
+                                        },
+                                        {
+                                        "name": "FT",
+                                        "label": "cactus pear"
+                                        },
+                                        {
+                                        "name": "IN",
+                                        "label": "dragonfruit"
+                                        }
+                                    ]
+                                 }
+                             })json";
+    Json::Value root;
+    Json::Reader::Parse(expectedJson, root);
+    EXPECT_TRUE(root.ToString() == f.ToJson(true).ToString()) << FormattingTestUtils::JsonComparisonString(f.ToJson(true), root);
+
+    // FromJson
+    Format newF;
+    Format::FromJson(newF, root, s_unitsContext);
+
+    EXPECT_TRUE(newF.ToJson(true).ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newF.ToJson(true), root);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(FormatJsonTest, FormatFractional)
+    {
+    NumericFormatSpec numericSpec = NumericFormatSpec();
+    numericSpec.SetPresentationType(PresentationType::Fractional);
+    numericSpec.SetPrecision(FractionalPrecision::Over_256);
+    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    spec.SetMajorLabel("apple");
+    spec.SetMiddleLabel("banana");
+    spec.SetMinorLabel("cactus pear");
+    spec.SetSubLabel("dragonfruit");
+    spec.SetSpacer("-");
+    auto json = spec.ToJson();
+    Format f = Format(numericSpec, spec);
+    auto expectedJson = R"json({
+                             "decSeparator" : ".",
+                             "formatTraits" : "",
+                             "minWidth" : 0,
+                             "precision" : 256,
+                             "roundFactor" : 0.0,
+                             "signOption" : "OnlyNegative",
+                             "thousandSeparator" : ",",
+                             "type" : "Fractional",
+                             "uomSeparator" : " ",
+                             "composite": {
+                                "includeZero": true,
+                                "spacer": "-",
+                                "units": [
+                                        {
+                                        "name": "MILE",
+                                        "label": "apple"
+                                        },
+                                        {
+                                        "name": "YRD",
+                                        "label": "banana"
+                                        },
+                                        {
+                                        "name": "FT",
+                                        "label": "cactus pear"
+                                        },
+                                        {
+                                        "name": "IN",
+                                        "label": "dragonfruit"
+                                        }
+                                    ]
+                                 }
+                             })json";
+    Json::Value root;
+    Json::Reader::Parse(expectedJson, root);
+    EXPECT_TRUE(root.ToString() == f.ToJson(true).ToString()) << FormattingTestUtils::JsonComparisonString(f.ToJson(true), root);
+
+    // FromJson
+    Format newF;
+    Format::FromJson(newF, root, s_unitsContext);
+
+    EXPECT_TRUE(newF.ToJson(true).ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newF.ToJson(true), root);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(FormatJsonTest, FormatScientific)
+    {
+    NumericFormatSpec numericSpec = NumericFormatSpec();
+    numericSpec.SetPresentationType(PresentationType::Scientific);
+    numericSpec.SetScientificType(ScientificType::ZeroNormalized);
+    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    spec.SetMajorLabel("apple");
+    spec.SetMiddleLabel("banana");
+    spec.SetMinorLabel("cactus pear");
+    spec.SetSubLabel("dragonfruit");
+    spec.SetSpacer("-");
+    auto json = spec.ToJson();
+    Format f = Format(numericSpec, spec);
+    auto expectedJson = R"json({
+                             "decSeparator" : ".",
+                             "formatTraits" : "",
+                             "minWidth" : 0,
+                             "precision" : 6,
+                             "roundFactor" : 0.0,
+                             "signOption" : "OnlyNegative",
+                             "thousandSeparator" : ",",
+                             "type" : "Scientific",
+                             "scientificType" : "ZeroNormalized",
+                             "uomSeparator" : " ",
+                             "composite": {
+                                "includeZero": true,
+                                "spacer": "-",
+                                "units": [
+                                        {
+                                        "name": "MILE",
+                                        "label": "apple"
+                                        },
+                                        {
+                                        "name": "YRD",
+                                        "label": "banana"
+                                        },
+                                        {
+                                        "name": "FT",
+                                        "label": "cactus pear"
+                                        },
+                                        {
+                                        "name": "IN",
+                                        "label": "dragonfruit"
+                                        }
+                                    ]
+                                 }
+                             })json";
+    Json::Value root;
+    Json::Reader::Parse(expectedJson, root);
+    EXPECT_TRUE(root.ToString() == f.ToJson(true).ToString()) << FormattingTestUtils::JsonComparisonString(f.ToJson(true), root);
+
+    // FromJson
+    Format newF;
+    Format::FromJson(newF, root, s_unitsContext);
+
+    EXPECT_TRUE(newF.ToJson(true).ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newF.ToJson(true), root);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(FormatJsonTest, FormatStation)
+    {
+    NumericFormatSpec numericSpec = NumericFormatSpec();
+    numericSpec.SetPresentationType(PresentationType::Station);
+    numericSpec.SetStationOffsetSize(4);
+    numericSpec.SetStationSeparator('(');
+    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    spec.SetMajorLabel("apple");
+    spec.SetMiddleLabel("banana");
+    spec.SetMinorLabel("cactus pear");
+    spec.SetSubLabel("dragonfruit");
+    spec.SetSpacer("-");
+    auto json = spec.ToJson();
+    Format f = Format(numericSpec, spec);
+    auto expectedJson = R"json({
+                             "decSeparator" : ".",
+                             "formatTraits" : "",
+                             "minWidth" : 0,
+                             "precision" : 6,
+                             "roundFactor" : 0.0,
+                             "signOption" : "OnlyNegative",
+                             "thousandSeparator" : ",",
+                             "type" : "Station",
+                             "stationOffsetSize" : 4,
+                             "stationSeparator" : "(",
+                             "uomSeparator" : " ",
+                             "composite": {
+                                "includeZero": true,
+                                "spacer": "-",
+                                "units": [
+                                        {
+                                        "name": "MILE",
+                                        "label": "apple"
+                                        },
+                                        {
+                                        "name": "YRD",
+                                        "label": "banana"
+                                        },
+                                        {
+                                        "name": "FT",
+                                        "label": "cactus pear"
+                                        },
+                                        {
+                                        "name": "IN",
+                                        "label": "dragonfruit"
+                                        }
+                                    ]
+                                 }
+                             })json";
+    Json::Value root;
+    Json::Reader::Parse(expectedJson, root);
+    EXPECT_TRUE(root.ToString() == f.ToJson(true).ToString()) << FormattingTestUtils::JsonComparisonString(f.ToJson(true), root);
+
+    // FromJson
+    Format newF;
+    Format::FromJson(newF, root, s_unitsContext);
+
+    EXPECT_TRUE(newF.ToJson(true).ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newF.ToJson(true), root);
+    }
 END_BENTLEY_FORMATTEST_NAMESPACE

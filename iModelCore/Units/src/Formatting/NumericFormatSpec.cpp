@@ -69,7 +69,7 @@ NumericFormatSpec::NumericFormatSpec()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz
 //----------------------------------------------------------------------------------------
-BentleyStatus NumericFormatSpec::FromJson(JsonValueCR jval)
+BentleyStatus NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
     {
     if (jval.empty())
         return SUCCESS;
@@ -77,10 +77,11 @@ BentleyStatus NumericFormatSpec::FromJson(JsonValueCR jval)
     if (Json::objectValue != jval.type())
         return ERROR;
 
+    NumericFormatSpec spec;
     // Presentation Type needs to be read first since reading the precision depends on it.
     JsonValueCR presType = jval[json_type()];
     if (Json::nullValue != presType.type())
-        Utils::ParsePresentationType(m_presentationType, presType.asCString());
+        Utils::ParsePresentationType(spec.m_presentationType, presType.asCString());
 
     Utf8CP paramName;
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
@@ -88,41 +89,80 @@ BentleyStatus NumericFormatSpec::FromJson(JsonValueCR jval)
         paramName = iter.memberName();
         JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_roundFactor()) == 0)
-            m_roundFactor = val.asDouble();
+            {
+            double rf = val.asDouble();
+            spec.SetRoundingFactor(rf);
+            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_precision()) == 0)
             {
-            switch (m_presentationType)
+            switch (spec.m_presentationType)
                 {
                 case PresentationType::Fractional:
-                    Utils::FractionalPrecisionByDenominator(m_fractPrecision, (int32_t)val.asInt64());
+                    FractionalPrecision fracPrec;
+                    Utils::FractionalPrecisionByDenominator(fracPrec, (int32_t)val.asInt64());
+                    spec.SetPrecision(fracPrec);
                     break;
                 case PresentationType::Decimal:
                 case PresentationType::Scientific:
                 case PresentationType::Station:
                 default:
-                    Utils::GetDecimalPrecisionByInt(m_decPrecision, (int32_t)val.asInt64());
+                    DecimalPrecision decPrec;
+                    Utils::GetDecimalPrecisionByInt(decPrec, (int32_t)val.asInt64());
+                    spec.SetPrecision(decPrec);
                 }
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_scientificType()) == 0)
-            Utils::ParseScientificType(m_scientificType, val.asCString());
+            {
+            ScientificType type;
+            Utils::ParseScientificType(type, val.asCString());
+            spec.SetScientificType(type);
+            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_signOption()) == 0)
-            Utils::ParseSignOption(m_signOption, val.asCString());
+            {
+            SignOption option;
+            Utils::ParseSignOption(option, val.asCString());
+            spec.SetSignOption(option);
+            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_decSeparator()) == 0)
-            m_decimalSeparator = val.asString().c_str()[0];
+            {
+            Utf8Char sep;
+            sep = val.asString().c_str()[0];
+            spec.SetDecimalSeparator(sep);
+            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
-            m_thousandsSeparator = val.asString().c_str()[0];
+            {
+            Utf8Char sep;
+            sep = val.asString().c_str()[0];
+            spec.SetThousandSeparator(sep);
+            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_uomSeparator()) == 0)
-            m_uomSeparator = val.asString();
+            {
+            Utf8String sep;
+            sep = val.asString().c_str();
+            spec.SetUomSeparator(sep.c_str());
+            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_stationSeparator()) == 0)
-            m_statSeparator = val.asString().c_str()[0];
+            {
+            Utf8Char sep;
+            sep = val.asString().c_str()[0];
+            spec.SetStationSeparator(sep);
+            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_stationOffsetSize()) == 0)
-            m_stationSize = (uint32_t) val.asUInt();
+            {
+            uint32_t size;
+            size = (uint32_t) val.asUInt();
+            spec.SetStationOffsetSize(size);
+            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_minWidth()) == 0)
-            m_minWidth = val.asInt();
+            {
+            uint32_t width;
+            width = (uint32_t) val.asUInt();
+            spec.SetMinWidth(width);
+            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
-            SetFormatTraits(val); // handled both an Object and String
+            spec.SetFormatTraits(val); // handled both an Object and String
         }
-
+    out = spec;
     return SUCCESS;
     }
 
@@ -144,7 +184,7 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
         // Always serialize offsetSize for station.
         jNFC[json_stationOffsetSize()] = GetStationOffsetSize();
         if (verbose || HasStationSeparator())
-            jNFC[json_stationSeparator()] = GetStationSeparator();
+            jNFC[json_stationSeparator()] = Utf8String(1, GetStationSeparator());
         }
 
     // Common between all Types

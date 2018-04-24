@@ -96,36 +96,40 @@ Format::Format( NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz
 //----------------------------------------------------------------------------------------
-void Format::FromJson(Utf8CP jsonString, BEU::IUnitsContextCP context)
+void Format::FromJson(FormatR out, Utf8CP jsonString, BEU::IUnitsContextCP context)
     {
     Json::Value jval (Json::objectValue);
     Json::Reader::Parse(jsonString, jval);
-    FromJson(jval, context);
+    FromJson(out, jval, context);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
-void Format::FromJson(Json::Value jval, BEU::IUnitsContextCP context)
+void Format::FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP context)
     {
-    *this = Format();
-    m_problem = FormatProblemCode::NoProblems;
+    Format f = Format();
+    f.m_problem = FormatProblemCode::NoProblems;
     if (jval.empty())
         {
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidJsonObject);
+        f.m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidJsonObject);
         return;
         }
 
+    NumericFormatSpec::FromJson(f.m_numericSpec, jval);
     Utf8CP paramName;
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
         paramName = iter.memberName();
         JsonValueCR val = *iter;
-        if (BeStringUtilities::StricmpAscii(paramName, json_NumericFormat()) == 0)
-            m_numericSpec = NumericFormatSpec(val);
-        else if (BeStringUtilities::StricmpAscii(paramName, json_CompositeFormat()) == 0)
-            CompositeValueSpec::FromJson(m_compositeSpec, val, context);
+        if (BeStringUtilities::StricmpAscii(paramName, json_composite()) == 0)
+            {
+            CompositeValueSpec spec;
+            CompositeValueSpec::FromJson(spec, val, context);
+            f.SetCompositeSpec(spec);
+            }
         }
+    out = f;
     }
 
 //----------------------------------------------------------------------------------------
@@ -523,9 +527,13 @@ FormatCR Format::DefaultFormat()
 Json::Value Format::ToJson(bool verbose) const
     {
     Json::Value jNFS;
-    jNFS[json_NumericFormat()] = m_numericSpec.ToJson(verbose);
+    auto num = m_numericSpec.ToJson(verbose);
+    for (Json::ValueIterator iter = num.begin(); iter != num.end(); iter++)
+        {
+        jNFS[iter.memberName()] = *iter;
+        }
     if (HasComposite())
-        jNFS[json_CompositeFormat()] = m_compositeSpec.ToJson();
+        jNFS[json_composite()] = m_compositeSpec.ToJson();
     return jNFS;
     }
 

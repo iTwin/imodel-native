@@ -54,8 +54,7 @@ BE_JSON_NAME(exponentOnlyNegative)
 
 // Format
 BE_JSON_NAME(SpecType)
-BE_JSON_NAME(CompositeFormat)
-BE_JSON_NAME(NumericFormat)
+BE_JSON_NAME(composite)
 
 //UnitProxy
 BE_JSON_NAME(name)
@@ -223,7 +222,6 @@ private:
 public:
     //! Creates a new valid NumericFormatSpec with a 
     UNITS_EXPORT NumericFormatSpec();
-    NumericFormatSpec(JsonValueCR jval) : NumericFormatSpec() {FromJson(jval);}
 
     NumericFormatSpec(NumericFormatSpecCR other) = default;
     ~NumericFormatSpec() = default;
@@ -231,7 +229,7 @@ public:
 
     //! Update this with the values from the provided JSON.
     //! @return Success if this NumericFormatSpec is successfully updated. Otherwise, false.
-    UNITS_EXPORT BentleyStatus FromJson(JsonValueCR jval);
+    UNITS_EXPORT static BentleyStatus FromJson(NumericFormatSpecR out, JsonValueCR jval);
     //! Serializes this to JSON. The JSON will only contain values which differ from their initial state, or have been explicitly set
     //! to the current state.
     //!
@@ -626,8 +624,8 @@ private:
 
 public:
     // TODO: Attempt to remove these methods from the public API================
-    UNITS_EXPORT void FromJson(Utf8CP jsonString, BEU::IUnitsContextCP context = nullptr);
-    UNITS_EXPORT void FromJson(Json::Value jval, BEU::IUnitsContextCP context = nullptr);
+    UNITS_EXPORT static void FromJson(FormatR out, Utf8CP jsonString, BEU::IUnitsContextCP context = nullptr);
+    UNITS_EXPORT static void FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP context = nullptr);
     // !TODO====================================================================
 
     Format() : m_specType(FormatSpecType::None), m_explicitlyDefinedComposite(false), m_problem(FormatProblemCode::NotInitialized) {};

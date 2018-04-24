@@ -60,6 +60,7 @@ struct FormattingTestUtils
         static void NumericFormatSpecJsonTest(NumericFormatSpecCR nfs);
         static void ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena);
         static Utf8String SetLocale(Utf8CP name);
+        static Utf8String JsonComparisonString(Json::Value const& created, Json::Value const& test);
     };
 
 //=======================================================================================

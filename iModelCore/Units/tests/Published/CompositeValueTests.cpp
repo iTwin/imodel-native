@@ -311,17 +311,6 @@ TEST_F(FormatCompositeStringTest, CompositeValueUsesThousandSeparatorForLastUnit
 //===================================================
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                           Victor.Cushman                          11/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-static Utf8String JsonComparisonString(Json::Value const& created, Json::Value const& test)
-    {
-    return "Created   (minified): " + created.ToString() + '\n' +
-           "Test Data (minified): " + test.ToString() + '\n' +
-           "Created   (pretty):\n"  + created.toStyledString() + '\n' +
-           "Test Data (pretty):\n"  + test.toStyledString();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                               Kyle.Abramowitz                      04/18
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CompositeValueSpecJsonTest, JsonTest)
@@ -358,13 +347,13 @@ TEST_F(CompositeValueSpecJsonTest, JsonTest)
                                 })json";
     Json::Value root;
     Json::Reader::Parse(expectedJson, root);
-    EXPECT_TRUE(root.ToString() == spec.ToJson().ToString()) << JsonComparisonString(spec.ToJson(), root);
+    EXPECT_TRUE(root.ToString() == spec.ToJson().ToString()) << FormattingTestUtils::JsonComparisonString(spec.ToJson(), root);
 
     //FromJson
     CompositeValueSpec comp;
     CompositeValueSpec::FromJson(comp, root, s_unitsContext);
 
-    EXPECT_TRUE(comp.ToJson().ToString() == root.ToString()) << JsonComparisonString(comp.ToJson(), root);
+    EXPECT_TRUE(comp.ToJson().ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(comp.ToJson(), root);
     }
 
 END_BENTLEY_FORMATTEST_NAMESPACE
