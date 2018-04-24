@@ -2,14 +2,13 @@
 |
 |     $Source: geom/src/polyface/PolyfaceClip.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include <map>
 #include "IndexedClipEdge.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
-
 
 
 
@@ -341,6 +340,7 @@ void SetTolerancedAltitudeFlag (double zTol)
     }
 };
 
+#ifdef abc
 
 
 /*--------------------------------------------------------------------------------**//**
@@ -743,7 +743,7 @@ bool                    formNewFacesOnClipPlanes
 
     PolyfaceClipContext::ClipToChain (visitor, insideDest, outsideDest, clipPlanes, formNewFacesOnClipPlanes);
     }
-
+#endif
 PolyfaceHeaderPtr PolyfaceHeader::CreateFromTaggedPolygons (TaggedPolygonVectorCR polygons)
     {
     auto pf = PolyfaceHeader::CreateVariableSizeIndexed ();

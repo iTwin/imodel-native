@@ -3303,19 +3303,6 @@ public:
         bvector<bvector<DPoint3d>> *cutLoops = nullptr,
         bvector<bvector<DPoint3d>> *cutChains = nullptr
         );
-/*__PUBLISH_SECTION_END__*/
-//! Visit each face of source. Clip to chain and capture the clipped residual.
-//! @param [in] source input mesh
-//! @param [out] insideDest inside mesh.  (REQUIRED)
-//! @param [out] outsideDest outside mesh (OPTIONAL)
-//! @param [in] clipPlanes chain of convex volumes
-//! @param [in] formNewFacesOnClipPlanes true to attempt reassembling faces on clip planes.
-    GEOMDLLIMPEXP static void AddClippedPolyfaceA (PolyfaceQueryR source,
-        PolyfaceCoordinateMapP insideDest,
-        PolyfaceCoordinateMapP outsideDest,
-        ClipPlaneSetP clipPlanes, bool formNewFacesOnClipPlanes = false);
-/*__PUBLISH_SECTION_START__*/
-
 };
 /*__PUBLISH_SECTION_END__*/
 
