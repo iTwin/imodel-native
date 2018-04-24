@@ -8,17 +8,10 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <WebServices/Connect/IConnectSignInManager.h>
-#include <WebServices/WebServices.h>
 #include <WebServices/Client/ClientInfo.h>
-#include <WebServices/Connect/IConnectAuthenticationPersistence.h>
-#include <WebServices/Connect/IConnectAuthenticationProvider.h>
-#include <WebServices/Connect/IConnectTokenProvider.h>
+#include <WebServices/Connect/IConnectSignInManager.h>
 #include <WebServices/Connect/IImsClient.h>
 #include <WebServices/Connect/SamlToken.h>
-#include <WebServices/Connect/IConnectionClientInterface.h>
-#include <BeHttp/AuthenticationHandler.h>
-#include <BeSecurity/SecureStore.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
