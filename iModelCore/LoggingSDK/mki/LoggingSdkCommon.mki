@@ -2,7 +2,7 @@
 #
 #     $Source: mki/LoggingSdkCommon.mki $
 #
-#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__LoggingSdkCommon_mki__)
@@ -55,7 +55,7 @@ stdBcopyOpts            = -rCFjaw
     programName         =% $(ASSEMBLY_NAME)
 %endif
 
-o                       = $(buildDir)$(programName)/
+o                       = $(PartBuildDir)
 
 #-----------------------------------------------------------------------
 #       Define our build options
