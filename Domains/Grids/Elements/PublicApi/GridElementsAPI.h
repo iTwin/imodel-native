@@ -7,7 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <DgnPlatform/DgnPlatformApi.h>
 #include <Grids/Domain/GridsMacros.h>
+#include <ConstraintSystem/ConstraintSystemApi.h>
 
 #include "ForwardDeclarations.h"
 #include "GridCurvesPortion.h"

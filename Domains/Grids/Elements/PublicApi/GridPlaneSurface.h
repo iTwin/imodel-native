@@ -7,13 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Bentley/Heapzone.h>
-#include <DgnPlatform/Render.h>
-#include <DgnPlatform/ClipPrimitive.h>
-#include <DgnPlatform/DgnElement.h>
-#include <ConstraintSystem/ConstraintSystemApi.h>
-#include <Grids/gridsApi.h>
-
 BEGIN_GRIDS_NAMESPACE
 
 //=======================================================================================

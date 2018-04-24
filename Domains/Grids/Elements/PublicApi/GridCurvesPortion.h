@@ -7,10 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS(GridCurvesPortion)
-
 BEGIN_GRIDS_NAMESPACE
-
 
 //=======================================================================================
 //! Physical building element

@@ -7,12 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Bentley/Heapzone.h>
-#include <DgnPlatform/Render.h>
-#include <DgnPlatform/ClipPrimitive.h>
-#include <DgnPlatform/DgnElement.h>
-#include <Grids/gridsApi.h>
-
 BEGIN_GRIDS_NAMESPACE
 
 #define GRIDLINE_LENGTH_COEFF 0.1

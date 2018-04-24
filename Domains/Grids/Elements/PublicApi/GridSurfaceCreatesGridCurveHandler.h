@@ -7,11 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Grids/gridsApi.h>
-#include <DgnPlatform/ElementHandler.h>
-#include <DgnPlatform/DgnElementDependency.h>
-#include <Geom/CurveVector.h>
-
 BEGIN_GRIDS_NAMESPACE
 
 struct GridSurfaceCreatesGridCurveHandler : Dgn::DgnElementDependencyHandler
