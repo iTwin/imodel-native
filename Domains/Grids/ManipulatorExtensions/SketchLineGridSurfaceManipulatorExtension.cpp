@@ -6,35 +6,18 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/GridManipulatorsAPI.h"
-#include <DgnView/DgnTool.h>
-#include <DgnView/DragManipulatorBase.h>
 
 USING_NAMESPACE_GRIDS
+USING_NAMESPACE_BUILDING_SHARED
+
+BEGIN_GRIDS_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               04/2018
 //=======================================================================================
-struct SketchLineGridSurfaceDragManipulator : Dgn::PointDragManipulator
+struct SketchLineGridSurfaceDragManipulator : GeometricElementManipulator
     {
-    DEFINE_T_SUPER(Dgn::PointDragManipulator)
-
-    struct ControlPoint : Dgn::PointDragManipulator::ControlPoint
-        {
-        DEFINE_T_SUPER(Dgn::PointDragManipulator::ControlPoint)
-
-        private:
-            LineGridSurfaceManipulationStrategyR m_strategy;
-            size_t m_keyPointIndex;
-
-        public:
-            ControlPoint(LineGridSurfaceManipulationStrategyR strategy, size_t keyPointIndex, DPoint3dCR point)
-                : T_Super(point)
-                , m_keyPointIndex(keyPointIndex)
-                , m_strategy(strategy)
-                {}
-
-            void UpdatePoint(DPoint3dCR newPoint, bool isDynamics);
-        };
+    DEFINE_T_SUPER(GeometricElementManipulator)
 
     private:
         SketchLineGridSurfacePtr m_surface;
@@ -43,88 +26,14 @@ struct SketchLineGridSurfaceDragManipulator : Dgn::PointDragManipulator
     protected:
         SketchLineGridSurfaceDragManipulator(SketchLineGridSurfaceR element);
 
-        bool _IsDisplayedInView(Dgn::DgnViewportR vp) override;
-        StatusInt _DoModify(Dgn::DgnButtonEventCR ev, bool isDynamics) override;
-        bool _DoCreateControls() override;
-        StatusInt _OnModifyAccept(Dgn::DgnButtonEventCR ev) override;
+        virtual DgnElementManipulationStrategyR _GetStrategy() override { return *m_strategy; }
+        virtual Dgn::GeometricElementR _GetElement() override { return *m_surface; }
 
     public:
         static Dgn::IEditManipulatorPtr Create(SketchLineGridSurfaceR element);
     };
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void SketchLineGridSurfaceDragManipulator::ControlPoint::UpdatePoint
-(
-    DPoint3dCR newPoint,
-    bool isDynamics
-)
-    {
-    if (isDynamics)
-        m_strategy.UpdateDynamicKeyPoint(newPoint, m_keyPointIndex);
-    else
-        m_strategy.ReplaceKeyPoint(newPoint, m_keyPointIndex);
-
-    m_strategy.FinishElement();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                04/2018
-//---------------+---------------+---------------+---------------+---------------+------
-bool SketchLineGridSurfaceDragManipulator::_IsDisplayedInView
-(
-    Dgn::DgnViewportR vp
-)
-    {
-    if (!vp.GetViewController().IsModelViewed(m_surface->GetModelId()))
-        return false;
-
-    if (!vp.GetViewController().GetViewedCategories().Contains(m_surface->GetCategoryId()))
-        return false;
-
-    return true;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                04/2018
-//---------------+---------------+---------------+---------------+---------------+------
-StatusInt SketchLineGridSurfaceDragManipulator::_OnModifyAccept
-(
-    Dgn::DgnButtonEventCR ev
-)
-    {
-    StatusInt status = T_Super::_OnModifyAccept(ev);
-    if (SUCCESS != status)
-        return status;
-
-    if (m_surface.IsNull())
-        return ERROR;
-
-    return m_surface->GetDgnDb().SaveChanges();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                04/2018
-//---------------+---------------+---------------+---------------+---------------+------
-StatusInt SketchLineGridSurfaceDragManipulator::_DoModify
-(
-    Dgn::DgnButtonEventCR ev, 
-    bool isDynamics
-)
-    {
-    ControlPoint* controlPoint = dynamic_cast<ControlPoint*>(m_controls.m_locations[m_controls.FindFirstSelected()]);
-    if (nullptr == controlPoint)
-        return ERROR;
-
-    DPoint3dCP point = ev.GetPoint();
-    if (nullptr == point)
-        return ERROR;
-
-    controlPoint->UpdatePoint(*point, isDynamics);
-
-    return SUCCESS;
-    }
+END_GRIDS_NAMESPACE
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                04/2018
@@ -136,25 +45,8 @@ SketchLineGridSurfaceDragManipulator::SketchLineGridSurfaceDragManipulator
     : m_surface(&element)
     , m_strategy(LineGridSurfaceManipulationStrategy::Create(element))
     {
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                04/2018
-//---------------+---------------+---------------+---------------+---------------+------
-bool SketchLineGridSurfaceDragManipulator::_DoCreateControls()
-    {
-    m_controls.ClearControls();
-    
-    if (m_strategy.IsNull())
-        return false;
-
-    bvector<DPoint3d> const& keyPoints = m_strategy->GetKeyPoints();
-    for (size_t index = 0; index < keyPoints.size(); ++index)
-        {
-        m_controls.m_locations.push_back(new ControlPoint(*m_strategy, index, keyPoints[index]));
-        }
-
-    return true;
+    BeAssert(m_surface.IsValid());
+    BeAssert(m_strategy.IsValid());
     }
 
 //--------------------------------------------------------------------------------------
@@ -165,7 +57,15 @@ Dgn::IEditManipulatorPtr SketchLineGridSurfaceDragManipulator::Create
     SketchLineGridSurfaceR element
 )
     {
-    return new SketchLineGridSurfaceDragManipulator(element);
+    SketchLineGridSurfaceDragManipulator* manipulator = new SketchLineGridSurfaceDragManipulator(element);
+
+    if (manipulator->m_surface.IsNull() || manipulator->m_strategy.IsNull())
+        {
+        delete manipulator;
+        return nullptr;
+        }
+
+    return manipulator;
     }
 
 //--------------------------------------------------------------------------------------

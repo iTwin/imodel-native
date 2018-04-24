@@ -41,13 +41,11 @@ DLM_OBJECT_DEST = $(o)
 DLM_OBJECT_FILES = $(objs)
 
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GridElements$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GridHandlers$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GridStrategies$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GeometryManipulationStrategies$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnElementManipulationStrategies$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)StrategyPlatform$(libext)
 
 %include $(sharedMki)linkLibrary.mki
 
