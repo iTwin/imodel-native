@@ -22,6 +22,7 @@
 #include "ECSchemaXmlContextUtils.h"
 #include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/BeThread.h>
+#include <Bentley/PerformanceLogger.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -1066,18 +1067,24 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
         RevisionChangesFileReader fs(changesetFilePath, GetDgnDb());
         BeSQLite::ChangeGroup group;
+        PERFLOG_START("iModelJsNative", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
         DbResult r = fs.ToChangeGroup(group);
         if (BE_SQLITE_OK != r)
-            return CreateBentleyReturnErrorObject(r);
+            return CreateBentleyReturnErrorObject(r, Utf8PrintfString("Failed to read ChangeSet file '%s' into a ChangeGroup object.", changesetFilePathStr.c_str()).c_str());
+        PERFLOG_FINISH("iModelJsNative", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
 
+        PERFLOG_START("iModelJsNative", "ExtractChangeSummary>Create ChangeSet from ChangeGroup");
         r = changeset.FromChangeGroup(group);
         if (BE_SQLITE_OK != r)
-            return CreateBentleyReturnErrorObject(r);
+            return CreateBentleyReturnErrorObject(r, Utf8PrintfString("Failed to create ChangeSet object from ChangeGroup object for ChangeSet file '%s'.", changesetFilePathStr.c_str()).c_str());
+        PERFLOG_FINISH("iModelJsNative", "ExtractChangeSummary>Create ChangeSet from ChangeGroup");
         }
 
+        PERFLOG_START("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
         ECInstanceKey changeSummaryKey;
         if (SUCCESS != ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheECDb->GetECDb(), GetDgnDb(), ChangeSetArg(changeset)))
-            return CreateBentleyReturnErrorObject(BE_SQLITE_ERROR);
+            return CreateBentleyReturnErrorObject(BE_SQLITE_ERROR, Utf8PrintfString("Failed to extract ChangeSummary for ChangeSet file '%s'.", changesetFilePathStr.c_str()).c_str());
+        PERFLOG_FINISH("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
 
         return CreateBentleyReturnSuccessObject(Napi::String::New(Env(), changeSummaryKey.GetInstanceId().ToHexStr().c_str()));
         }
