@@ -199,13 +199,13 @@ public:
     // optionally clear the count.
     GEOMDLLIMPEXP static size_t GetEvaluationCount (bool clear = false);
 
-    // Return the (possibly empty) polygon of intersection between a DRange3d and an (unbounded) plane.
+    //! Return the (possibly empty) polygon of intersection between a DRange3d and an (unbounded) plane.
     GEOMDLLIMPEXP static void ClipPlaneToRange
         (
         DRange3dCR range,       //!< [in] range
         DPlane3dCR plane,       //!< [in] unbounded plane
         bvector<DPoint3d> &clippedPoints,    //!< [out] (convex) intersection polygon.
-        bvector<DPoint3d> *largeRectangle = nullptr   //!, [out] (optional) large rectangle which is in the plane and contains the projection of the range onto the plane.  Must be distinct from clippedPoints
+        bvector<DPoint3d> *largeRectangle = nullptr   //!< [out] (optional) large rectangle which is in the plane and contains the projection of the range onto the plane.  Must be distinct from clippedPoints
         );
     };
 

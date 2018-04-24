@@ -303,7 +303,7 @@ $(OUT_DIR)dpoint2darray$(OUT_EXT)   : $(geomSrcFuncs)dpoint2darray.cpp  $(OTHER_
 
 $(OUT_DIR)simpson$(OUT_EXT)         : $(geomSrcFuncs)simpson.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)polygondecomp$(OUT_EXT)   : $(geomSrcFuncs)polygondecomp.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)polygondecomp$(OUT_EXT)   : $(geomSrcFuncs)polygondecomp.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)ellipticintegrals$(OUT_EXT)   : $(geomSrcFuncs)ellipticintegrals.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -377,7 +377,7 @@ $(OUT_DIR)bspsurf_cliptrim$(OUT_EXT)    : $(geomSrcBspline)bspsurf_cliptrim.cpp 
 
 $(OUT_DIR)bspconv$(OUT_EXT)    : $(geomSrcBspline)bspconv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-$(OUT_DIR)bsprcurv$(OUT_EXT)    : $(geomSrcBspline)bsprcurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+#$(OUT_DIR)bsprcurv$(OUT_EXT)    : $(geomSrcBspline)bsprcurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 $(OUT_DIR)bspsurfacetrim$(OUT_EXT)    : $(geomSrcBspline)bspsurfacetrim.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
@@ -940,21 +940,22 @@ $(OUT_DIR)jmdl_mtgclip$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgclip.cpp         $(OTHER
 
 $(OUT_DIR)jmdl_mtgfacet$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgfacet.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)jmdl_mtgfacet3$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgfacet3.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)jmdl_mtgfacet3$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgfacet3.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)jmdl_mtgedgestar$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgedgestar.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)jmdl_mtgparity$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgparity.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)jmdl_mtgreduce$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgreduce.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)jmdl_mtgreduce$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgreduce.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)jmdl_mtgreg$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgreg.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)jmdl_mtgreg$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgreg.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)jmdl_mtgstitch$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgstitch.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+# needed by gp_developable
 $(OUT_DIR)jmdl_mtgswap$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgswap.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)mtgflowlines$(OUT_EXT) : $(geomSrcMTG)mtgflowlines.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)mtgflowlines$(OUT_EXT) : $(geomSrcMTG)mtgflowlines.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)unfold$(OUT_EXT) : $(geomSrcMTG)unfold.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 

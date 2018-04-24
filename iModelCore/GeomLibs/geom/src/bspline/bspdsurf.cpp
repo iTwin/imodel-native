@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspdsurf.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1701,7 +1701,7 @@ MSBsplineSurfacePtr MSBsplineSurface::CreateTubeSurface (MSBsplineCurveCR baseCu
     bspsurf_tubeSurface (result.get (), &traceCurve, &baseCurve, NULL, NULL, translateBaseCurve);
     return result;
     }
-
+#ifdef compile_bspsurf_skinSurface
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BFP             02/91
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2220,7 +2220,8 @@ wrapup:
 
     return status;
     }
-
+#endif
+#ifdef compile_bsproll
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   Rolling Ball Fillet routines                                        |
@@ -2720,5 +2721,5 @@ double              uor_res            /* => UOR resolution */
 #endif
     return status;
     }
-
+#endif
 END_BENTLEY_GEOMETRY_NAMESPACE

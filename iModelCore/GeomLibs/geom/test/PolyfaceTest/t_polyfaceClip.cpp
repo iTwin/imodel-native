@@ -230,14 +230,13 @@ TEST (Polyface, ClipDiamond)
         //clipper.push_back (ConvexClipPlaneSet::FromXYBox (xyz0.x, xyz0.y, xyz1.x, xyz1.y));
         clipper.push_back (ConvexClipPlaneSet::FromXYPolyLine (rectanglePoints, interiorFlag, true));
 
-        bool badCuts;
         PolyfaceHeaderPtr insideClip;
-        PolyfaceQuery::ClipPolyfaceToClipPlanes (
-                insideClip, NULL, badCuts,
-                builder->GetClientMeshR (), clipper, true);
+        ClipPlaneSet::ClipPlaneSetIntersectPolyface (
+                builder->GetClientMeshR (), clipper, true,
+                &insideClip, nullptr);
         if (insideClip.IsValid ())
             Check::SaveTransformed (*insideClip);
-    
+   
         }
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     Check::ClearGeometry ("Polyface.ClipDiamond");

@@ -734,7 +734,7 @@ void Get6Planes (DPlane3d planes[6], double normalLength = 1.0) const;
 //!
 //! Generates individual DSegment3d for the 12 edges of the box.
 //!
-//! @param [out] planes array of 12 edges
+//! @param [out] edges array of 12 edges
 //!
 void GetEdges (bvector<DSegment3d> &edges) const;
 

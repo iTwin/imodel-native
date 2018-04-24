@@ -1240,26 +1240,6 @@ bool computeAndApplyTransform = true     //!< [in] if true, compute a transform 
 );
 
 
-//! @param [out] insideDest inside mesh.  (REQUIRED)
-//! @param [out] outsideDest outside mesh (OPTIONAL)
-//! @param [out] resultHasIncompleteCutPlanefaces indicates that edges on one or more cut planes could not be assembed into loops.
-//! @param [in] clipPlanes chain of convex volumes
-//! @param [in] formNewFacesOnClipPlanes true to attempt reassembling faces on clip planes.
-//! @param [in] filter for mesh
-//! @param [out] cutLoops optional coordinate data for cut loops
-//! @param [out] cutChains optional coordinate data for cut chains 
-static GEOMDLLIMPEXP void ClipPolyfaceToClipPlanes (
-    PolyfaceHeaderPtr &insideClip,
-    PolyfaceHeaderPtr *outsideClip,
-    bool &resultHasIncompleteCutPlaneFaces,
-    PolyfaceQueryCR targetMesh,
-    ClipPlaneSetR clipPlanes,
-    bool formNewFacesOnClipPlanes,
-    IPolyfaceVisitorFilter *filter = nullptr,
-    bvector<bvector<DPoint3d>> *cutLoops = nullptr,
-    bvector<bvector<DPoint3d>> *cutChains = nullptr
-    );
-
 //! Attempt to heal vertical gaps in a mesh.
 //! @param [in] polyface original polyface
 //! @param [in] tryVerticalPanels true to seek pure vertical panels

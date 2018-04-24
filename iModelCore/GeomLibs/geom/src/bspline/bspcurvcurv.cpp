@@ -2,13 +2,13 @@
 |
 |     $Source: geom/src/bspline/bspcurvcurv.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include "msbsplinemaster.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
-
+#ifdef compile_bspcurv_areCurvesCoincident
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/93
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -36,7 +36,7 @@ RotMatrix           *rotMatrixP
         }
     return i==4;
     }
-
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RBB             03/90
@@ -55,7 +55,7 @@ int             openAll                /* => forces opening */
                     curveMult, index, done, sum, status = ERROR, allocSize,
                     *numDistinct = NULL, **knotMultiplicity = NULL,
                     *tags = NULL, allClosed, *maxMult, maxNumKnots = 0;
-    double          curveTolerance, knotTolerance, avgKnot, openAtParam, minDist,
+    double          curveTolerance, knotTolerance, avgKnot, openAtParam,
                     **distinctKnots = NULL, *knots = NULL, dot, dist0, dist1;
     DPoint3d        minPt, tan, lastTan;
     MSBsplineCurve  *cvP;
@@ -115,8 +115,9 @@ int             openAll                /* => forces opening */
                 }
             else
                 {
-                bsprcurv_minDistToCurve (&minDist, &minPt, &openAtParam, outputCurves[i-1]->poles, cvP, NULL, NULL);
-
+                DPoint3d startPointOnPreviousCurve;
+                outputCurves[i-1]->FractionToPoint (startPointOnPreviousCurve, 0.0);
+                cvP->ClosestPoint (minPt, openAtParam, startPointOnPreviousCurve);
                 if (SUCCESS != (status = bspcurv_openCurve (cvP, cvP, openAtParam)))
                     goto wrapup;
                 }

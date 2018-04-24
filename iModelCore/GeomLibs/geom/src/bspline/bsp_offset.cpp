@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bsp_offset.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -415,7 +415,7 @@ MSBsplineCurvePtr MSBsplineCurve::CreateCopyOffsetXY (double offset0, double off
         return offset;
     return NULL;
     }
-
+#ifdef compile_bspcurv_offset
 //--------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------
@@ -584,7 +584,7 @@ wrapup:
         bspcurv_freeCurve (offset);
     return status;
     }
-
+#endif
 /*----------------------------------------------------------------------+
 |                                                                       |
 |    Oriented Bounding Cylinder Routines                                |
@@ -662,7 +662,7 @@ MSBsplineCurve  *curve
         return bound_cylCompute (cyl, curve->poles, curve->params.numPoles);
     }
 
-
+#ifdef compile_bspcurv_offset
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brian.Peters    12/91
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1077,7 +1077,7 @@ wrapup:
         BSIBaseGeom::Free (uCusp);
     return status;
     }
-
+#endif
 
 
 

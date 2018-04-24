@@ -1407,10 +1407,9 @@ bool                    bSignedOneBasedIndices
 
 //!
 //! Triangulate a multiple space loops as viewed in an internally-chosen xy plane.
-//! @param [out] pIndices  array of output indices.  The value of bSignedOneBasedIndices determines the separator of each face loop
-//!                                   and whether or not interior edges are negated.
 //! @param [out] triangleIndices array giving vertex sequence for each exterior loop.
 //! @param [out] exteriorLoopIndices  array of output points, or NULL to disallow adding points at crossings.
+//! @param [out] xyzOut output coordinates.  May have additional points (at self intersections)
 //! @param [out] localToWorld  local to world transformation
 //! @param [out] worldToLocal  world to local transformation
 //! @param [in] loops  array of arrays of points traversing loops.
