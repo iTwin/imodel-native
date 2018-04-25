@@ -244,6 +244,9 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
         BeFileName dbDir;
 #if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
         Utf8CP dbdirenv = getenv("NODE_DGNDB_DIR");
+#elif defined(BENTLEYCONFIG_OS_APPLE_IOS)
+        auto mobileDir = DgnPlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory().GetNameUtf8();        
+        Utf8CP dbdirenv = mobileDir.c_str();
 #else
         Utf8CP dbdirenv = nullptr;
 #endif
