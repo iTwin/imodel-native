@@ -362,6 +362,7 @@
 
     <Part Name="SchemaComparison" BentleyBuildMakeFile="tools/SchemaComparison/SchemaComparison.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsNative" />
+        <SubPart PartName="ToolsSqlang" />
         <Bindings>
             <Files ProductDirectoryName="SchemaComparisonExe">
                 Delivery/SchemaComparison.exe

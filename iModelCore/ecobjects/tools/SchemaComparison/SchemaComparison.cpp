@@ -10,6 +10,7 @@
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECObjects/SchemaComparer.h>
 #include <Windows.h>
+#include <BeSQLite/L10N.h>
 
 #define SCHEMA_COMPARISON_EXIT_DIFFERENCES_DETECTED 1
 #define SCHEMA_COMPARISON_EXIT_FAILURE -1
@@ -188,8 +189,20 @@ int main(int argc, char** argv)
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
     workingDirectory.AppendToPath(L"Assets");
 
+    BeFileName sqlangFile(workingDirectory);
+    sqlangFile.AppendToPath(L"sqlang");
+    BeFileName tempDirectory(sqlangFile);
+    sqlangFile.AppendToPath(L"Tools_en.sqlang.db3");
+
+    BeSQLite::BeSQLiteLib::Initialize(tempDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
+    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
+
     ECN::ECSchemaReadContext::Initialize(workingDirectory);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
 
-    return CompareSchemas(progOptions);
+    int comparisonResult = CompareSchemas(progOptions);
+
+    BeSQLite::L10N::Shutdown();
+
+    return comparisonResult;
     }
