@@ -2604,6 +2604,7 @@ static Napi::Value GetLogger(Napi::CallbackInfo const& info)
 static void SetLogger(Napi::CallbackInfo const& info)
     {
     s_logger = Napi::ObjectReference::New(info[0].ToObject());
+    s_logger.SuppressDestruct();
     }
 
 /*---------------------------------------------------------------------------------**//**
