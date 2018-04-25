@@ -236,7 +236,6 @@ private:
     bool m_isASCII;          // flag indicating that the last scanned byte is ASCII
     ScannerCursorStatus m_status;
     size_t m_effectiveBytes;
-    char m_temp;
     FormattingSignature m_traits;
 
 public:
