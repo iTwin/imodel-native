@@ -16,28 +16,14 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 // FormattingScannerCursor
 //===================================================
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-void FormattingScannerCursor::Rewind()
-    {
-    m_cursorPosition = 0;
-    m_lastScannedCount = 0;
-    m_uniCode = 0;
-    m_isASCII = false;
-    m_status = ScannerCursorStatus::Success;
-    m_effectiveBytes = 0;
-    m_breakIndex = 0; 
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
 FormattingScannerCursor::FormattingScannerCursor(Utf8CP utf8Text, int scanLength, Utf8CP div) :m_dividers(div)
     {
     m_text = Utf8String(utf8Text);  // we make a copy of the original string
-    Rewind();
-
+    m_status = ScannerCursorStatus::Success;
+    m_breakIndex = 0; 
     m_totalScanLength = StringUtils::TextLength(utf8Text);
     if (scanLength > 0 && scanLength <= (int)m_totalScanLength)
         m_totalScanLength = scanLength;
@@ -52,8 +38,6 @@ Utf8String FormattingScannerCursor::ExtractLastEnclosure()
     Utf8Char emptyBuf[2];
     emptyBuf[0] = 0;
     m_status = ScannerCursorStatus::Success;
-    m_lastScannedCount = 0;
-    m_isASCII = true;
     m_breakIndex = m_totalScanLength; // points to the terminating zero
     Utf8CP txt = m_text.c_str();
     
@@ -101,8 +85,6 @@ Utf8String FormattingScannerCursor::ExtractBeforeEnclosure()
     Utf8Char emptyBuf[2];
     emptyBuf[0] = 0;
     m_status = ScannerCursorStatus::Success;
-    m_lastScannedCount = 0;
-    m_isASCII = true;
     Utf8CP txt = m_text.c_str();
     size_t indx = 0;
     while (isspace(txt[indx]) && indx <= m_totalScanLength) ++indx;
@@ -132,8 +114,6 @@ Utf8String FormattingScannerCursor::ExtractSegment(size_t from, size_t to)
     Utf8Char emptyBuf[2];
     emptyBuf[0] = 0;
     m_status = ScannerCursorStatus::Success;
-    m_lastScannedCount = 0;
-    m_isASCII = true;
     Utf8CP txt = m_text.c_str();
 
     if(from < to && to <= m_totalScanLength)
@@ -232,51 +212,6 @@ bool FormatDividerInstance::IsDivLast()
 
     int last = m_positions.back();
     return (m_div == m_mate) ? m_totLen == last : m_totLen == -last;
-    }
-
-//===================================================
-// FormattingSignature
-//===================================================
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 04/17
-//----------------------------------------------------------------------------------------
-bool FormattingSignature::Reset(size_t reserve)
-    { 
-    if (0 == reserve || reserve > m_size) // special case for releasing allocated memory
-        {
-        m_size = reserve;
-        if (nullptr != m_signature)
-            delete m_signature;
-        if (nullptr != m_pattern)
-            delete m_pattern;
-        if (reserve > 0)
-            {
-            m_pattern = new char[m_size + 2];
-            m_signature = new char[m_size + 2];
-            if (nullptr == m_signature || nullptr == m_pattern)
-                return false;
-            m_signature[0] = FormatConstant::EndOfLine();
-            m_pattern[0] = FormatConstant::EndOfLine();
-            }
-        else
-            {
-            m_signature = nullptr;
-            m_pattern = nullptr;
-            }    
-        }
-    else 
-        {
-        if(nullptr != m_signature)
-            m_signature[0] = FormatConstant::EndOfLine();
-        if(nullptr != m_pattern)
-            m_pattern[0] = FormatConstant::EndOfLine();
-        }
-    m_segCount = 0;
-    m_sigIndx = 0;
-    m_patIndx = 0;
-    memset(m_segPos, 0, sizeof(m_segPos));
-    return true;
     }
 
 //===================================================
@@ -666,7 +601,6 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
 void FormatParsingSegment::Init(size_t start)
     {
     m_start = start;
-    m_byteCount = 0;
     m_vect.clear();
     m_type = ParsingSegmentType::NotNumber;
     m_ival = 0;
@@ -685,7 +619,6 @@ FormatParsingSegment::FormatParsingSegment(NumberGrabberCR ng)
     else
         {
         m_start = ng.GetStartIndex();
-        m_byteCount = ng.GetLength();
         m_vect.clear();
         m_type = ng.GetType();
         m_ival = ng.GetInteger();
@@ -706,7 +639,6 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
     unsigned char* ptr;
     for (CursorScanPointP vp = vect.begin(); vp != vect.end(); vp++)
         {
-        m_byteCount += vp->GetLength();
         m_vect.push_back(*vp);
         for (ptr = vp->GetBytes(); *ptr != '\0'; ptr++)
             {

@@ -28,8 +28,6 @@ public:
     FactorPower(size_t div, size_t pow, int ind) : m_divisor(div), m_power(pow), m_index(ind) {}
     UNITS_EXPORT void CopyValues(FactorPowerCP other);
     UNITS_EXPORT void Merge(FactorPowerCP fp1, FactorPowerCP fp2);
-    const int GetDivisor() {return static_cast<int>(m_divisor);}
-    const size_t GetPower() {return m_power;}
     const int GetIndex() {return m_index;}
     UNITS_EXPORT const size_t GetFactor();
 };
@@ -50,8 +48,6 @@ public:
     UNITS_EXPORT FactorizedNumber(size_t ival);
     bvector<FactorPower> GetFactors() {return m_factors;}
     UNITS_EXPORT size_t GetGreatestCommonFactor(FactorizedNumber other);
-    size_t GetValue() {return m_ival;}
-    UNITS_EXPORT Utf8String ToText();
 };
 
 //=======================================================================================
@@ -91,12 +87,7 @@ struct StringUtils
     //! used to calculate the size of the string.
     static size_t TextLength(Utf8CP text) { return (nullptr == text) ? 0 : strlen(text); }
     UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
-    static size_t GetMinSize(size_t a, size_t b) {return(a <= b) ? a : b;}
-    static size_t GetMaxSize(size_t a, size_t b) {return(a >= b) ? a : b;}
-
     UNITS_EXPORT static int IndexOf(Utf8Char c, Utf8CP text);
-    //! Returns the provided string without any leading spaces.
-    static Utf8CP SkipBlanks(Utf8CP str) {while(isspace(*str)) str++; return str;}
 };
 
 END_BENTLEY_FORMATTING_NAMESPACE

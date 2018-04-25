@@ -44,7 +44,6 @@ public:
     UNITS_EXPORT void ProcessNext(Utf8CP input);
     UNITS_EXPORT void ProcessPrevious(Utf8CP input);
     UNITS_EXPORT void Iterate(Utf8CP input, bool revers);
-    bool IsAscii() { return m_len == 1; }
     bool IsDigit() { return (m_len == 1) && (m_patt == FormatConstant::NumberSymbol()); }
     bool IsSign() { return (m_len == 1) && (m_patt == FormatConstant::SignSymbol()); }
     bool IsSpace() { return (m_len == 1) && (m_patt == FormatConstant::SpaceSymbol()); }
@@ -96,7 +95,6 @@ struct FormatParsingSegment
 {
 private:
     size_t m_start;         // start index to the input string
-    size_t m_byteCount;     // byte length 
     bvector<CursorScanPoint> m_vect;
     Utf8String m_name;
     BEU::UnitCP m_unit;
@@ -196,30 +194,6 @@ public:
 };
 
 //=======================================================================================
-// @bsistruct
-//=======================================================================================
-struct FormattingSignature
-{
-private:
-    static const int m_maxNumSeg = 8;
-    size_t m_size;
-    size_t m_sigIndx;
-    size_t m_patIndx;
-    Utf8P  m_signature;
-    Utf8P  m_pattern;
-    size_t m_segCount;
-    size_t m_segPos[m_maxNumSeg];
-
-public:
-    FormattingSignature() : m_size(0), m_signature(nullptr), m_pattern(nullptr),m_segCount(0){ memset(m_segPos, 0, sizeof(m_segPos)); }
-    FormattingSignature(size_t reserve) {Reset(reserve);}
-    UNITS_EXPORT bool Reset(size_t reserve); 
-    ~FormattingSignature() { Reset(0); }
-    Utf8CP GetSignature() const { return m_signature; }
-    Utf8Char GetPatternChar(size_t indx) { return (indx < m_patIndx) ? m_pattern[indx] : FormatConstant::EndOfLine(); }
-};
-
-//=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz
 //=======================================================================================
 struct FormattingScannerCursor
@@ -227,25 +201,17 @@ struct FormattingScannerCursor
 private:
     Utf8String m_text;           // pointer to the head of the string
     size_t m_totalScanLength;    // this is the total length of the byte sequence that ought to be scanned/parsed
-    size_t m_cursorPosition;     // the index of the next byte to be scanned
-    size_t m_lastScannedCount;   // the number of bytes processed in the last step
     size_t m_breakIndex;         // special position  dividing the string into two parts
-    size_t m_uniCode;
     FormattingDividers m_dividers;
-    bool m_isASCII;          // flag indicating that the last scanned byte is ASCII
     ScannerCursorStatus m_status;
-    size_t m_effectiveBytes;
-    FormattingSignature m_traits;
 
 public:
 
     UNITS_EXPORT FormattingScannerCursor(Utf8CP utf8Text, int scanLength, Utf8CP div = nullptr);
     FormattingScannerCursor(FormattingScannerCursorCR other) : m_dividers(other.m_dividers),
-        m_text(other.m_text), m_cursorPosition(other.m_cursorPosition), m_lastScannedCount(other.m_lastScannedCount),
-        m_uniCode(other.m_uniCode), m_isASCII(other.m_isASCII), m_status(other.m_status)
+        m_text(other.m_text), m_status(other.m_status)
         {}
     size_t GetTotalLength() { return m_totalScanLength; }
-    UNITS_EXPORT void Rewind();
     //! This method attempts to extract the content of the last "enclosure" - that is a group of
     //! characters enclosed into one of brackets: parenthesis, curvy bracket or square brackets
     //! if brackets are not detected - the returned word wil be empty
