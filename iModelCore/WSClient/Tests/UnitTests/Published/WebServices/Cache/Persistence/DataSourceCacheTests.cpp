@@ -694,6 +694,46 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_DefaultUsedSchemasPassed_Success)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_DateTimeUtcProperty_Success)
+    {
+    auto cache = GetTestCache();
+
+    CachedResponseKey responseKey = StubCachedResponseKey(*cache);
+
+    StubInstances stubInstances;
+    stubInstances.Add({"TestSchema.TestClassDateTime", "Foo"}, {{"TestDateTimeUtc", "2017-06-13T10:35:35.6327308Z"}});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, stubInstances.ToWSObjectsResponse()));
+
+    Json::Value instances;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, instances));
+
+    EXPECT_EQ(1, instances.size());
+    EXPECT_EQ("2017-06-13T10:35:35.633Z", instances[0]["TestDateTimeUtc"].asString());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_DateTimeUnspecifiedProperty_Success)
+    {
+    auto cache = GetTestCache();
+
+    CachedResponseKey responseKey = StubCachedResponseKey(*cache);
+
+    StubInstances stubInstances;
+    stubInstances.Add({"TestSchema.TestClassDateTime", "Foo"}, {{"TestDateTimeUnspecified", "2017-06-13T10:35:35.6327308"}});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, stubInstances.ToWSObjectsResponse()));
+
+    Json::Value instances;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, instances));
+
+    EXPECT_EQ(1, instances.size());
+    EXPECT_EQ("2017-06-13T10:35:35.633", instances[0]["TestDateTimeUnspecified"].asString());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetInstance_NotCached_ReturnsDataNotCachedAndNullInstance)

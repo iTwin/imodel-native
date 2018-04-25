@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/BaseCacheTest.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -35,6 +35,17 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
             </ECClass>
             <ECClass typeName="TestClass2" >
                 <ECProperty propertyName="TestProperty" typeName="string" />
+            </ECClass>
+            <ECClass typeName="TestClassDateTime" >
+                <ECProperty propertyName="TestDateTimeUnspecified" typeName="dateTime">
+                </ECProperty>
+                <ECProperty propertyName="TestDateTimeUtc" typeName="dateTime">
+                    <ECCustomAttributes>
+                        <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.00">
+                            <DateTimeKind>Utc</DateTimeKind>
+                        </DateTimeInfo>
+                    </ECCustomAttributes>
+                </ECProperty>
             </ECClass>
             <ECClass typeName="TestClassWithStruct" >
                 <ECProperty propertyName="TestProperty" typeName="string" />
