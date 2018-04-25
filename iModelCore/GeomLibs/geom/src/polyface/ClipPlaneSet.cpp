@@ -1470,7 +1470,7 @@ PolyfaceHeaderPtr *outside
         {
         // Each infinite plane of the clip plane set creates a section with the mesh,
         // and the sections are clipped by the other clip planes.
-        DRange3d range = polyface.PointRange ();
+        // unused - DRange3d range = polyface.PointRange ();
         bvector<DPoint3d> work;
         bvector<DPoint3d> clippedXYZ;
         for (auto &convexSet : clipSet)
