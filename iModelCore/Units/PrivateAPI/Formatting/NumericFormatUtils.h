@@ -32,7 +32,6 @@ public:
     const size_t GetPower() {return m_power;}
     const int GetIndex() {return m_index;}
     UNITS_EXPORT const size_t GetFactor();
-    UNITS_EXPORT Utf8String ToText(Utf8Char pref);
 };
 
 //=======================================================================================
@@ -45,18 +44,14 @@ private:
     bvector<FactorPower> m_factors;
     static const size_t* GetPrimes(int* length);
     static size_t PowerOfPrime(size_t ival, size_t prim, size_t* result);
-    size_t RestoreNumber();
 
 public:
     UNITS_EXPORT static size_t GetPrimeCount();
     UNITS_EXPORT FactorizedNumber(size_t ival);
     bvector<FactorPower> GetFactors() {return m_factors;}
-    void ResetFactors(bvector<FactorPower> fact);
-    UNITS_EXPORT FactorPowerP FindDivisor(int div);
     UNITS_EXPORT size_t GetGreatestCommonFactor(FactorizedNumber other);
     size_t GetValue() {return m_ival;}
     UNITS_EXPORT Utf8String ToText();
-    UNITS_EXPORT Utf8String DebugText();
 };
 
 //=======================================================================================
@@ -78,9 +73,6 @@ public:
     size_t GetNumerator() {return m_numerator;}
     int64_t GetIntegral() {return m_integral;}
     UNITS_EXPORT FractionalNumeric(double dval, FractionalPrecision fprec);
-    UNITS_EXPORT FractionalNumeric(double dval, int denominator);
-    UNITS_EXPORT FractionalNumeric(double dval, int denominatorBase, double precision);
-    UNITS_EXPORT Utf8String ToTextDefault(bool reduce);
     UNITS_EXPORT Utf8String GetIntegralString();
     UNITS_EXPORT Utf8String GetDenominatorString();
     UNITS_EXPORT Utf8String GetNumeratorString();

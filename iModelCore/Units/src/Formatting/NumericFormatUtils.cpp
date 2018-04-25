@@ -57,37 +57,6 @@ FractionalNumeric::FractionalNumeric(double dval, FractionalPrecision fprec)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //----------------------------------------------------------------------------------------
-FractionalNumeric::FractionalNumeric(double dval, int denominator)
-    {
-    Calculate(dval, denominator);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 01/17
-//----------------------------------------------------------------------------------------
-FractionalNumeric::FractionalNumeric(double dval, int denominatorBase, double precision)
-    {
-    double maxPrec = 1.0;
-    denominatorBase = abs(denominatorBase); // it must be positive
-    double absDenom = (double)denominatorBase;
-    int denominator = denominatorBase;
-    if (denominator > 0)
-       maxPrec /= absDenom;
-
-    if (!FormatConstant::IsNegligible(precision))
-        {
-        while (maxPrec > precision)
-            {
-            maxPrec /= absDenom;
-            denominator *= denominatorBase;
-            }
-        }
-    Calculate(dval, denominator);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 01/17
-//----------------------------------------------------------------------------------------
 void FractionalNumeric::FormTextParts(bool reduce)
     {
     NumericFormatSpec fmt;
@@ -143,17 +112,6 @@ Utf8String FractionalNumeric::GetDenominatorString()
     return strP;
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-Utf8String FractionalNumeric::ToTextDefault(bool reduce)
-    {
-    FormTextParts(reduce);
-    if (m_numerator > 0)
-       return GetIntegralString() + " " + GetNumeratorString() + "/" + GetDenominatorString();
-    else
-       return GetIntegralString();
-    }
 
 //===================================================
 // FactorPower
@@ -205,25 +163,6 @@ void FactorPower::Merge(FactorPowerCP fp1, FactorPowerCP fp2)
         m_divisor = fp1->m_divisor;
         m_power = GetMin(fp1->m_power, fp2->m_power);
         }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 01/17
-//----------------------------------------------------------------------------------------
-Utf8String FactorPower::ToText(Utf8Char pref)
-    {
-    char buf[128];
-    memset(buf, 0, sizeof(buf));
-    int i = 0;
-    if (0 != pref)
-        buf[i++] = pref;
-    for (size_t n = 0; n < m_power; n++)
-        {
-        if (n > 0)
-            buf[i++] = 'x';
-        i += NumericFormatSpec::FormatSimple(static_cast<int>(m_divisor), buf + i, static_cast<int>(sizeof(buf)) - i, false);
-        }
-    return Utf8String(buf);
     }
 
 //===================================================
@@ -300,81 +239,6 @@ FactorizedNumber::FactorizedNumber(size_t ival)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //----------------------------------------------------------------------------------------
-size_t FactorizedNumber::RestoreNumber()
-    {
-    m_ival = 0;
-    FactorPowerP fpp;
-    if (m_factors.size() > 0)
-        {
-        m_ival = 1;
-        for (auto curr = m_factors.begin(), end = m_factors.end(); curr != end; curr++)
-           {
-            fpp = curr;
-            m_ival *= fpp->GetFactor();
-           }
-        }
-
-    return m_ival;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 01/17
-//----------------------------------------------------------------------------------------
-FactorPowerP FactorizedNumber::FindDivisor(int div)
-    {
-    FactorPowerP fpp;
-    for (auto curr = m_factors.begin(), end = m_factors.end(); curr != end; curr++)
-        {
-        fpp = curr;
-        if (div == fpp->GetDivisor())
-            return fpp;
-        }
-
-    return nullptr;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 01/17
-//----------------------------------------------------------------------------------------
-void FactorizedNumber::ResetFactors(bvector<FactorPower> fact)
-    {
-    m_factors.clear();
-    if (fact.size() < 1)
-        return;
-    FactorPowerP fpp;
-    for (auto curr = fact.begin(), end = fact.end(); curr != end; curr++)
-        {
-        fpp = curr;
-        if (0 < fpp->GetPower())
-            m_factors.push_back(*curr);
-        }
-
-    RestoreNumber();
-    return;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 01/17
-//----------------------------------------------------------------------------------------
-Utf8String FactorizedNumber::ToText()
-    {
-    Utf8String txt = "1";
-    FactorPowerP fpp;
-    if (m_factors.size() > 0)
-        {
-        for (auto curr = m_factors.begin(), end = m_factors.end(); curr != end; curr++)
-            {
-            fpp = curr;
-            txt += fpp->ToText('x');
-            }
-        }
-
-    return txt;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 01/17
-//----------------------------------------------------------------------------------------
 size_t FactorizedNumber::GetGreatestCommonFactor(FactorizedNumber other)
     {
     size_t primN = GetPrimeCount();
@@ -405,16 +269,6 @@ size_t FactorizedNumber::GetGreatestCommonFactor(FactorizedNumber other)
         }
 
     return fact;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 01/17
-//----------------------------------------------------------------------------------------
-Utf8String FactorizedNumber::DebugText()
-    {
-    char buf[256];
-    sprintf(buf, "Value %d  (factors) %s ", static_cast<int>(m_ival), ToText().c_str());
-    return Utf8String(buf);
     }
 
 //===================================================
