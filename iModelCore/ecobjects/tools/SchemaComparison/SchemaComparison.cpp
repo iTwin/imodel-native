@@ -21,7 +21,7 @@ BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::Loggin
 struct SchemaComparisonOptions
     {
     BeFileName InFileNames[NSCHEMAS];
-    bvector<BeFileName> ReferenceDirectories;
+    bvector<BeFileName> ReferenceDirectories[NSCHEMAS];
     };
 
 static void ShowUsage(const char* progName)
@@ -47,6 +47,7 @@ static bool NoParameterNext(int argc, char** argv, int index)
 static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& options)
     {
     size_t inFileIndex = 0;
+    size_t referenceSchemasIndex = 0;
     bool allInputFilesDefined = false;
     for (int i = 1; i < argc; ++i)
         {
@@ -71,9 +72,11 @@ static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& option
             }
         else if (0 == std::strcmp(argv[i], "-r") || 0 == std::strcmp(argv[i], "--ref"))
             {
+            if (referenceSchemasIndex >= NSCHEMAS)
+                return false;
             while (false == NoParameterNext(argc, argv, i))
-                options.ReferenceDirectories.push_back(BeFileName(argv[++i]));
-            for (auto const& refDirectory : options.ReferenceDirectories)
+                options.ReferenceDirectories[referenceSchemasIndex].push_back(BeFileName(argv[++i]));
+            for (auto const& refDirectory : options.ReferenceDirectories[referenceSchemasIndex])
                 {
                 if (!refDirectory.Contains(L"\\"))
                     {
@@ -81,12 +84,19 @@ static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& option
                     return false;
                     }
                 }
+            ++referenceSchemasIndex;
             }
         else
             {
             std::fprintf(stderr, "Unknown option %s\n", argv[i]);
             return false;
             }
+        }
+
+    while (referenceSchemasIndex > 0 && referenceSchemasIndex < NSCHEMAS)
+        {
+        options.ReferenceDirectories[referenceSchemasIndex] = options.ReferenceDirectories[referenceSchemasIndex - 1];
+        ++referenceSchemasIndex;
         }
 
     return allInputFilesDefined;
@@ -113,7 +123,7 @@ int CompareSchemas(SchemaComparisonOptions& options)
         contexts[i]->SetPreserveElementOrder(true);
         contexts[i]->SetPreserveXmlComments(false);
 
-        for (auto const& refDir : options.ReferenceDirectories)
+        for (auto const& refDir : options.ReferenceDirectories[i])
             {
             contexts[i]->AddSchemaPath(refDir.GetName());
             }
