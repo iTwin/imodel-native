@@ -3415,6 +3415,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWa
     EXPECT_EQ("OldValue", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWasCachedAsPartial_TreatsIdOnlyAsReferenceAndDoesNotRejectInstance)
     {
     auto cache = GetTestCache();
@@ -3438,6 +3441,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWa
     EXPECT_EQ("OldValue", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdOnlyForInstanceWithCachedPartialProperties_SkipsInstanceAsTreatsItAsReference)
     {
     auto cache = GetTestCache();
