@@ -31,20 +31,12 @@ protected:
     virtual TravelwayStructureSignificantPointDefCP _ToTravelwayStructureSignificantPointDef() const { return nullptr; }
 
 public:
-    enum class ExpectedAtSurface : int32_t { Internal = 0, Top = 1, Bottom = 2, TopAndBottom = 4 };
-
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(SignificantPointDefinition)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(SignificantPointDefinition)
 
     ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DefinitionModelCR scope, Utf8StringCR value);
     ROADRAILPHYSICAL_EXPORT static SignificantPointDefinitionCPtr QueryByCode(Dgn::DefinitionModelCR model, Utf8StringCR pointCode);
-
-    ExpectedAtSurface GetExpectedAtSurface() const { return static_cast<ExpectedAtSurface>(GetPropertyValueInt32("ExpectedAtSurface")); }
-    void SetExpectedAtSurface(ExpectedAtSurface newVal) { SetPropertyValue("ExpectedAtSurface", static_cast<int32_t>(newVal)); }
-
-    bool GetGenerateLinearElement() const { return GetPropertyValueBoolean("GenerateLinearElement"); }
-    void SetGenerateLinearElement(bool newVal) { SetPropertyValue("GenerateLinearElement", newVal); }
 
     TravelwaySignificantPointDefCP ToTravelwaySignificantPointDef() const { return _ToTravelwaySignificantPointDef(); }
     TravelwaySideSignificantPointDefCP ToTravelwaySideSignificantPointDef() const { return _ToTravelwaySideSignificantPointDef(); }

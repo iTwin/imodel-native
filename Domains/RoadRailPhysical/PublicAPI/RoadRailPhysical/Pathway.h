@@ -185,47 +185,47 @@ public:
 //! A TravelPortionElement specified using linear-referencing methods.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct ThruwayPortion : TravelPortionElement, IMainLinearElementSource
+struct TravelPortion : TravelPortionElement, IMainLinearElementSource
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_ThruwayPortion, TravelPortionElement);
-    friend struct ThruwayPortionHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelPortion, TravelPortionElement);
+    friend struct TravelPortionHandler;
 
 protected:
     //! @private
-    explicit ThruwayPortion(CreateParams const& params) : T_Super(params) {}
+    explicit TravelPortion(CreateParams const& params) : T_Super(params) {}
 
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const override { return *this; }
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruwayPortion)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(ThruwayPortion)
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelPortion)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(TravelPortion)
 
-    ROADRAILPHYSICAL_EXPORT static ThruwayPortionPtr Create(PathwayElementCR pathway, LinearReferencing::ILinearElementCR linearElement);
+    ROADRAILPHYSICAL_EXPORT static TravelPortionPtr Create(PathwayElementCR pathway, LinearReferencing::ILinearElementCR linearElement);
 
-    ROADRAILPHYSICAL_EXPORT ThruwayPortionCPtr Insert(PathwayElement::TravelSide side, Dgn::DgnDbStatus* status = nullptr);
-}; // ThruwayPortion
+    ROADRAILPHYSICAL_EXPORT TravelPortionCPtr Insert(PathwayElement::TravelSide side, Dgn::DgnDbStatus* status = nullptr);
+}; // TravelPortion
 
 //=======================================================================================
 //! A TravelSeparationPortionElement specified using linear-referencing methods.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct ThruwaySeparationPortion : TravelSeparationPortionElement, IMainLinearElementSource
+struct TravelSeparationPortion : TravelSeparationPortionElement, IMainLinearElementSource
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_ThruwaySeparationPortion, TravelSeparationPortionElement);
-    friend struct ThruwaySeparationPortionHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelSeparationPortion, TravelSeparationPortionElement);
+    friend struct TravelSeparationPortionHandler;
 
 protected:
     //! @private
-    explicit ThruwaySeparationPortion(CreateParams const& params) : T_Super(params) {}
+    explicit TravelSeparationPortion(CreateParams const& params) : T_Super(params) {}
 
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const override { return *this; }
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruwaySeparationPortion)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(ThruwaySeparationPortion)
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelSeparationPortion)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TravelSeparationPortion)
 
-    ROADRAILPHYSICAL_EXPORT static ThruwaySeparationPortionPtr Create(PathwayElementCR pathway, LinearReferencing::ILinearElementCR linearElement);
-}; // ThruwaySeparationPortion
+    ROADRAILPHYSICAL_EXPORT static TravelSeparationPortionPtr Create(PathwayElementCR pathway, LinearReferencing::ILinearElementCR linearElement);
+}; // TravelSeparationPortion
 
 //=======================================================================================
 //! Utility class facilitating some operations against ILinearElements in the 
@@ -345,22 +345,22 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelSeparationPortionElement, Travel
 }; // TravelSeparationPortionElementHandler
 
 //=================================================================================
-//! ElementHandler for ThruwayPortion Elements
+//! ElementHandler for TravelPortion Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThruwayPortionHandler : TravelPortionElementHandler
+struct EXPORT_VTABLE_ATTRIBUTE TravelPortionHandler : TravelPortionElementHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_ThruwayPortion, ThruwayPortion, ThruwayPortionHandler, TravelPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
-}; // ThruwayPortionHandler
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelPortion, TravelPortion, TravelPortionHandler, TravelPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // TravelPortionHandler
 
 //=================================================================================
-//! ElementHandler for ThruwayPortion Elements
+//! ElementHandler for TravelPortion Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThruwaySeparationPortionHandler : TravelSeparationPortionElementHandler
+struct EXPORT_VTABLE_ATTRIBUTE TravelSeparationPortionHandler : TravelSeparationPortionElementHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_ThruwaySeparationPortion, ThruwaySeparationPortion, ThruwaySeparationPortionHandler, TravelSeparationPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
-}; // ThruwayPortionHandler
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelSeparationPortion, TravelSeparationPortion, TravelSeparationPortionHandler, TravelSeparationPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // TravelPortionHandler
 
 //=======================================================================================
 //! The ModelHandler for RoadRailPhysicalModel

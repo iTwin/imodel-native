@@ -64,8 +64,6 @@ TravelwaySignificantPointDefPtr TravelwaySignificantPointDef::Create(DefinitionM
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, pointCode));
 
     TravelwaySignificantPointDefPtr retVal(new TravelwaySignificantPointDef(createParams));
-    retVal->SetExpectedAtSurface(ExpectedAtSurface::Top);
-    retVal->SetGenerateLinearElement(false);
 
     if (userLabel)
         retVal->SetUserLabel(userLabel);
@@ -96,9 +94,7 @@ TravelwaySideSignificantPointDefPtr TravelwaySideSignificantPointDef::Create(Def
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, pointCode));
 
     TravelwaySideSignificantPointDefPtr retVal(new TravelwaySideSignificantPointDef(createParams));
-    retVal->SetExpectedAtSurface(ExpectedAtSurface::TopAndBottom);
-    retVal->SetGenerateLinearElement(false);
-
+    
     if (userLabel)
         retVal->SetUserLabel(userLabel);
 
@@ -128,8 +124,6 @@ TravelwayStructureSignificantPointDefPtr TravelwayStructureSignificantPointDef::
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, pointCode));
 
     TravelwayStructureSignificantPointDefPtr retVal(new TravelwayStructureSignificantPointDef(createParams));
-    retVal->SetExpectedAtSurface(ExpectedAtSurface::Internal);
-    retVal->SetGenerateLinearElement(false);
 
     if (userLabel)
         retVal->SetUserLabel(userLabel);

@@ -17,8 +17,8 @@ HANDLER_DEFINE_MEMBERS(RoadRailPhysicalModelHandler)
 HANDLER_DEFINE_MEMBERS(RoadwayHandler)
 HANDLER_DEFINE_MEMBERS(TravelPortionElementHandler)
 HANDLER_DEFINE_MEMBERS(TravelSeparationPortionElementHandler)
-HANDLER_DEFINE_MEMBERS(ThruwayPortionHandler)
-HANDLER_DEFINE_MEMBERS(ThruwaySeparationPortionHandler)
+HANDLER_DEFINE_MEMBERS(TravelPortionHandler)
+HANDLER_DEFINE_MEMBERS(TravelSeparationPortionHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
@@ -299,7 +299,7 @@ PathwayElement::TravelSide TravelPortionElement::QueryTravelSide() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThruwayPortionPtr ThruwayPortion::Create(PathwayElementCR pathway, ILinearElementCR linearElement)
+TravelPortionPtr TravelPortion::Create(PathwayElementCR pathway, ILinearElementCR linearElement)
     {
     if (!pathway.GetElementId().IsValid() || !linearElement.ToElement().GetElementId().IsValid())
         return nullptr;
@@ -308,7 +308,7 @@ ThruwayPortionPtr ThruwayPortion::Create(PathwayElementCR pathway, ILinearElemen
     params.SetParentId(pathway.GetElementId(), 
         DgnClassId(pathway.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayAssemblesElements)));
 
-    ThruwayPortionPtr ptr(new ThruwayPortion(params));
+    TravelPortionPtr ptr(new TravelPortion(params));
     ptr->SetMainLinearElement(&linearElement);
     return ptr;
     }
@@ -316,7 +316,7 @@ ThruwayPortionPtr ThruwayPortion::Create(PathwayElementCR pathway, ILinearElemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThruwayPortionCPtr ThruwayPortion::Insert(PathwayElement::TravelSide side, Dgn::DgnDbStatus* status)
+TravelPortionCPtr TravelPortion::Insert(PathwayElement::TravelSide side, Dgn::DgnDbStatus* status)
     {
     Utf8String relClassName;
     if (side == PathwayElement::TravelSide::Single)
@@ -331,7 +331,7 @@ ThruwayPortionCPtr ThruwayPortion::Insert(PathwayElement::TravelSide side, Dgn::
         return nullptr;
         }
 
-    auto retVal = GetDgnDb().Elements().Insert<ThruwayPortion>(*this, status);
+    auto retVal = GetDgnDb().Elements().Insert<TravelPortion>(*this, status);
 
     ECInstanceKey key;
     GetDgnDb().InsertLinkTableRelationship(key, 
@@ -344,7 +344,7 @@ ThruwayPortionCPtr ThruwayPortion::Insert(PathwayElement::TravelSide side, Dgn::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThruwaySeparationPortionPtr ThruwaySeparationPortion::Create(PathwayElementCR pathway, ILinearElementCR linearElement)
+TravelSeparationPortionPtr TravelSeparationPortion::Create(PathwayElementCR pathway, ILinearElementCR linearElement)
     {
     if (!pathway.GetElementId().IsValid())
         return nullptr;
@@ -353,7 +353,7 @@ ThruwaySeparationPortionPtr ThruwaySeparationPortion::Create(PathwayElementCR pa
     params.SetParentId(pathway.GetElementId(), 
         DgnClassId(pathway.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayAssemblesElements)));
 
-    ThruwaySeparationPortionPtr ptr(new ThruwaySeparationPortion(params));
+    TravelSeparationPortionPtr ptr(new TravelSeparationPortion(params));
     ptr->SetMainLinearElement(&linearElement);
     return ptr;
     }

@@ -42,6 +42,7 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="PathwayElement" modifier="Abstract" description="A long, narrow physical stretch specially constructed for a particular travel type." >
         <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
         <BaseClass>IMainLinearElementSource</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -68,8 +69,10 @@
             <Class class="bis:PhysicalElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="PathwayPortionElement" modifier="Abstract" description="Physical Portion of a Pathway.">
+    <ECEntityClass typeName="PathwayPortionElement" modifier="Abstract" description="Physical Portion of a Pathway, specified using linear-referencing methods.">
         <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
+        <BaseClass>IMainLinearElementSource</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -86,15 +89,14 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="ThruwayPortion" modifier="Sealed" description="A TravelPortionElement specified using linear-referencing methods.">
+    <ECEntityClass typeName="TravelPortion" modifier="Sealed" description="A generic TravelPortionElement.">
         <BaseClass>TravelPortionElement</BaseClass>
-        <BaseClass>IMainLinearElementSource</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
             <HiddenClass xmlns="CoreCustomAttributes.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="ThruwaySeparationPortion" modifier="Sealed" description="A TravelSeparationPortionElement specified using linear-referencing methods.">
+    <ECEntityClass typeName="TravelSeparationPortion" modifier="Sealed" description="A generic TravelSeparationPortionElement.">
         <BaseClass>TravelSeparationPortionElement</BaseClass>
         <BaseClass>IMainLinearElementSource</BaseClass>
         <ECCustomAttributes>
@@ -138,19 +140,11 @@
             <Class class="TravelPortionElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECEnumeration typeName="SignificantPointDefinition_ExpectedAtSurface" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="Internal"/>
-        <ECEnumerator value="1" displayLabel="Top"/>
-        <ECEnumerator value="2" displayLabel="Bottom"/>
-        <ECEnumerator value="4" displayLabel="TopAndBottom"/>
-    </ECEnumeration>
     <ECEntityClass typeName="SignificantPointDefinition" displayLabel="Significant Point Definition" modifier="Abstract" description="Base class for point constructs in a TypicalSection portion definition.">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="GenerateLinearElement" typeName="boolean" />
-        <ECProperty propertyName="ExpectedAtSurface" typeName="SignificantPointDefinition_ExpectedAtSurface" />
     </ECEntityClass>
     <ECRelationshipClass typeName="ILinearElementRelatesToPathwayPortion" strength="referencing" modifier="Sealed">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
@@ -215,4 +209,17 @@
             <Class class="bis:Sheet"/>
         </Target>
     </ECRelationshipClass>
+    <ECEnumeration typeName="AssociatedFacetEnum" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Internal"/>
+        <ECEnumerator value="1" displayLabel="Top"/>
+        <ECEnumerator value="2" displayLabel="Bottom"/>
+        <ECEnumerator value="4" displayLabel="TopAndBottom"/>
+    </ECEnumeration>
+    <ECEntityClass typeName="AssociatedFacetAspect" modifier="Sealed" description="UniqueAspect to be applied to elements, caching the facet of the mesh/surface they are associated with.">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="AssociatedFacet" typeName="AssociatedFacetEnum" />
+    </ECEntityClass>
 </ECSchema>

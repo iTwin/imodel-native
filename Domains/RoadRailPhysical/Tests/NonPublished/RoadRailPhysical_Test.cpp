@@ -15,12 +15,17 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     auto clPointDefPtr = TravelwaySignificantPointDef::CreateAndInsert(*standardsModel, "CL", "Center-line");
     ASSERT_TRUE(clPointDefPtr.IsValid());
 
-    auto alignModelPtr = AlignmentModel::Query(*projectPtr->Elements().GetRootSubject());
+    auto alignModelPtr = AlignmentModel::Query(*projectPtr->Elements().GetRootSubject(), RoadRailAlignmentDomain::GetDesignPartitionName());
 
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);
     alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
+    auto associatedFacetPtr = AssociatedFacetAspect::Create(AssociatedFacetAspect::AssociatedFacetEnum::Top);
+    AssociatedFacetAspect::Set(*alignmentPtr, *associatedFacetPtr);
     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
+
+    auto associatedFacetCPtr = AssociatedFacetAspect::Get(*alignmentPtr);
+    ASSERT_EQ(AssociatedFacetAspect::AssociatedFacetEnum::Top, associatedFacetCPtr->GetAssociatedFacet());
 
     // Create Horizontal 
     DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 50, 0 },{ 100, 0 },{ 150, 0 } };
@@ -56,15 +61,15 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     ASSERT_EQ(1, linearElements.size());
     ASSERT_EQ(alignmentPtr->GetElementId(), *linearElements.begin());
 
-    auto leftThruPortionPtr = ThruwayPortion::Create(*roadwayPtr, *alignmentPtr);
+    auto leftThruPortionPtr = TravelPortion::Create(*roadwayPtr, *alignmentPtr);
     ASSERT_TRUE(leftThruPortionPtr->Insert(PathwayElement::TravelSide::Left).IsValid());
 
     ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedPathwayPortion(*alignmentPtr, *leftThruPortionPtr, *clPointDefPtr));
 
-    auto thruSepPortionPtr = ThruwaySeparationPortion::Create(*roadwayPtr, *alignmentPtr);
+    auto thruSepPortionPtr = TravelSeparationPortion::Create(*roadwayPtr, *alignmentPtr);
     ASSERT_TRUE(thruSepPortionPtr->Insert().IsValid());
 
-    auto rightThruPortionPtr = ThruwayPortion::Create(*roadwayPtr, *alignmentPtr);
+    auto rightThruPortionPtr = TravelPortion::Create(*roadwayPtr, *alignmentPtr);
     ASSERT_TRUE(rightThruPortionPtr->Insert(PathwayElement::TravelSide::Right).IsValid());
 
     ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedPathwayPortion(*alignmentPtr, *rightThruPortionPtr, *clPointDefPtr));

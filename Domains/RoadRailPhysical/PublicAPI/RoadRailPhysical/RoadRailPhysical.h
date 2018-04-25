@@ -61,14 +61,15 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_SignificantPointDefinition                       "SignificantPointDefinition"
 #define BRRP_CLASS_TravelPortionElement                             "TravelPortionElement"
 #define BRRP_CLASS_TravelSeparationPortionElement                   "TravelSeparationPortionElement"
-#define BRRP_CLASS_ThruwayPortion                                   "ThruwayPortion"
-#define BRRP_CLASS_ThruwaySeparationPortion                         "ThruwaySeparationPortion"
+#define BRRP_CLASS_TravelPortion                                   "TravelPortion"
+#define BRRP_CLASS_TravelSeparationPortion                         "TravelSeparationPortion"
 #define BRRP_CLASS_TravelwaySideSignificantPointDef                 "TravelwaySideSignificantPointDef"
 #define BRRP_CLASS_TravelwaySignificantPointDef                     "TravelwaySignificantPointDef"
 #define BRRP_CLASS_TravelwayStructureSignificantPointDef            "TravelwayStructureSignificantPointDef"
 
 
 // Aspects
+#define BRRP_CLASS_AssociatedFacetAspect                            "AssociatedFacetAspect"
 
 
 // Relationships
@@ -85,6 +86,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 
 // Properties
+#define BRRP_PROP_AssociatedFacetAspect_AssociatedFacet             "AssociatedFacet"
 
 
 //-----------------------------------------------------------------------------------------
@@ -155,14 +157,15 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 
 // Road & Rail shared
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(AssociatedFacetAspect)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayPortionElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailPhysicalModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(SignificantPointDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelPortionElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelSeparationPortionElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ThruwayPortion)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(ThruwaySeparationPortion)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelPortion)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelSeparationPortion)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwaySideSignificantPointDef)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwaySignificantPointDef)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayStructureSignificantPointDef)
