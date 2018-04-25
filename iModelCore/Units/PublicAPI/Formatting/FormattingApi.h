@@ -465,7 +465,7 @@ private:
     static size_t const indxMinor  = 2;
     static size_t const indxSub    = 3;
 
-    size_t m_ratio[indxSub];
+    double m_ratio[indxSub];
     bool m_includeZero; // TODO: Not currently used in the formatting code, needs to be fixed.
     bool m_explicitlyDefinedSpacer;
     Utf8String m_spacer;
@@ -476,9 +476,9 @@ private:
     //! Lower may be set to nullptr, indicating the lower unit is not set on the CVS.
     //! This function will set an error FormatProblemCode if:
     //!     1. Units do not belong to the same Phenomenon
-    //!     2. The unit ratios major/middle, middle/minor, and minor/sub are not positive integers.
+    //!     2. The unit ratios major/middle, middle/minor, and minor/sub are not positive numbers.
     //!     3. Upper is a null pointer (invalid CVS).
-    size_t CalculateUnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
+    double CalculateUnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
     //! Calculate/set all unit ratios within this CVS.
     void CalculateUnitRatios();
 
@@ -541,9 +541,9 @@ public:
     bool HasMinorLabel()    const {return HasMinorUnit() && GetProxy(indxMinor)->HasLabel();} //!< Determine whether this composite value has a minor unit label override.
     bool HasSubLabel()      const {return HasSubUnit() && GetProxy(indxSub)->HasLabel();} //!< Determine whether this composite value has a sub unit label override.
 
-    size_t GetMajorToMiddleRatio() const {return m_ratio[indxMajor];}
-    size_t GetMiddleToMinorRatio() const {return m_ratio[indxMiddle];}
-    size_t GetMinorToSubRatio()    const {return m_ratio[indxMinor];}
+    double GetMajorToMiddleRatio() const {return m_ratio[indxMajor];}
+    double GetMiddleToMinorRatio() const {return m_ratio[indxMiddle];}
+    double GetMinorToSubRatio()    const {return m_ratio[indxMinor];}
 
     bool IsProblem() const {return m_problem.IsProblem();}
     Utf8String GetProblemDescription() const {return m_problem.GetProblemDescription();}

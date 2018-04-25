@@ -17,6 +17,7 @@ static BEU::UnitCP s_mile = nullptr;
 static BEU::UnitCP s_yrd = nullptr;
 static BEU::UnitCP s_ft = nullptr;
 static BEU::UnitCP s_inch = nullptr;
+static BEU::UnitCP s_meter = nullptr;
 
 struct CompositeValueSpecTest : FormattingTestFixture
     {
@@ -32,6 +33,8 @@ struct CompositeValueSpecTest : FormattingTestFixture
             s_ft = s_unitsContext->LookupUnit("FT");
         if (nullptr == s_inch)
             s_inch = s_unitsContext->LookupUnit("IN");
+        if (nullptr == s_meter)
+            s_meter = s_unitsContext->LookupUnit("M");
         }
     };
 struct CompositeValueSpecJsonTest : CompositeValueSpecTest {};
@@ -64,9 +67,9 @@ TEST_F(CompositeValueSpecTest, DefaultConstructor)
     EXPECT_EQ(nullptr, cvs.GetSubUnit());
     EXPECT_STREQ("", cvs.GetSubLabel().c_str());
 
-    EXPECT_EQ(0, cvs.GetMajorToMiddleRatio());
-    EXPECT_EQ(0, cvs.GetMiddleToMinorRatio());
-    EXPECT_EQ(0, cvs.GetMinorToSubRatio());
+    EXPECT_DOUBLE_EQ(0.0, cvs.GetMajorToMiddleRatio());
+    EXPECT_DOUBLE_EQ(0.0, cvs.GetMiddleToMinorRatio());
+    EXPECT_DOUBLE_EQ(0.0, cvs.GetMinorToSubRatio());
 
     EXPECT_STREQ(" ", cvs.GetSpacer().c_str());
     EXPECT_TRUE(cvs.IsIncludeZero());
@@ -94,7 +97,7 @@ TEST_F(CompositeValueSpecTest, Constructors)
     EXPECT_STREQ("yd", cvs2unit.GetMiddleUnit()->GetLabel().c_str());
     EXPECT_EQ(nullptr, cvs2unit.GetMinorUnit());
     EXPECT_EQ(nullptr, cvs2unit.GetSubUnit());
-    EXPECT_EQ(1760, cvs2unit.GetMajorToMiddleRatio());
+    EXPECT_DOUBLE_EQ(1760.0, cvs2unit.GetMajorToMiddleRatio());
 
     // Three Units
     CompositeValueSpec cvs3unit(*s_mile, *s_yrd, *s_ft);
@@ -104,8 +107,8 @@ TEST_F(CompositeValueSpecTest, Constructors)
     EXPECT_STREQ("yd", cvs3unit.GetMiddleUnit()->GetLabel().c_str());
     EXPECT_STREQ("ft", cvs3unit.GetMinorUnit()->GetLabel().c_str());
     EXPECT_EQ(nullptr, cvs3unit.GetSubUnit());
-    EXPECT_EQ(1760, cvs3unit.GetMajorToMiddleRatio());
-    EXPECT_EQ(3, cvs3unit.GetMiddleToMinorRatio());
+    EXPECT_DOUBLE_EQ(1760.0, cvs3unit.GetMajorToMiddleRatio());
+    EXPECT_DOUBLE_EQ(3.0, cvs3unit.GetMiddleToMinorRatio());
 
     // Four Units
     CompositeValueSpec cvs4unit(*s_mile, *s_yrd, *s_ft, *s_inch);
@@ -115,9 +118,24 @@ TEST_F(CompositeValueSpecTest, Constructors)
     EXPECT_STREQ("yd", cvs4unit.GetMiddleUnit()->GetLabel().c_str());
     EXPECT_STREQ("ft", cvs4unit.GetMinorUnit()->GetLabel().c_str());
     EXPECT_STREQ("in", cvs4unit.GetSubUnit()->GetLabel().c_str());
-    EXPECT_EQ(1760, cvs4unit.GetMajorToMiddleRatio());
-    EXPECT_EQ(3, cvs4unit.GetMiddleToMinorRatio());
-    EXPECT_EQ(12, cvs4unit.GetMinorToSubRatio());
+    EXPECT_DOUBLE_EQ(1760.0, cvs4unit.GetMajorToMiddleRatio());
+    EXPECT_DOUBLE_EQ(3.0, cvs4unit.GetMiddleToMinorRatio());
+    EXPECT_DOUBLE_EQ(12.0, cvs4unit.GetMinorToSubRatio());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                      04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(CompositeValueSpecTest, NonIntegerRatios)
+    {
+    CompositeValueSpec cvs1unit(*s_mile, *s_meter);
+    ASSERT_EQ(2, cvs1unit.GetUnitCount());
+    ASSERT_FALSE(cvs1unit.IsProblem());
+    EXPECT_STREQ("mi", cvs1unit.GetMajorUnit()->GetLabel().c_str());
+    EXPECT_STREQ("m", cvs1unit.GetMiddleUnit()->GetLabel().c_str());
+    EXPECT_EQ(nullptr, cvs1unit.GetMinorUnit());
+    EXPECT_EQ(nullptr, cvs1unit.GetSubUnit());
+    EXPECT_DOUBLE_EQ(1609.344, cvs1unit.GetMajorToMiddleRatio());
     }
 
 //--------------------------------------------------------------------------------------

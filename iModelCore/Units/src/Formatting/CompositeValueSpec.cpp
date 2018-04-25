@@ -123,13 +123,13 @@ CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
-size_t CompositeValueSpec::CalculateUnitRatio(BEU::UnitCP upper, BEU::UnitCP lower)
+double CompositeValueSpec::CalculateUnitRatio(BEU::UnitCP upper, BEU::UnitCP lower)
     {
     if (nullptr == lower)
         {
         // Lower unit is not defined - which is OK regardless of whether the
         // upper is defined.
-        return 0;
+        return 0.0;
         }
 
     if (nullptr == upper)
@@ -139,21 +139,23 @@ size_t CompositeValueSpec::CalculateUnitRatio(BEU::UnitCP upper, BEU::UnitCP low
         // major/middle, middle/minor, and minor/sub should always have a
         // defined numerator.
         m_problem.UpdateProblemCode(FormatProblemCode::CVS_InconsistentUnitSet);
-        return 0;
+        return 0.0;
         }
 
     if (upper->GetPhenomenon() != lower->GetPhenomenon())
         {
         m_problem.UpdateProblemCode(FormatProblemCode::CVS_UncomparableUnits);
-        return 0;
+        return 0.0;
         }
 
     double ratio;
-    upper->Convert(ratio, 1.0, lower);
-    if (FormatConstant::IsNegligible(fabs(ratio - floor(ratio))))
-        return static_cast<size_t>(ratio);
-    m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidUnitCombination);
-    return 0;
+    auto code = upper->Convert(ratio, 1.0, lower);
+    if (BEU::UnitsProblemCode::NoProblem != code)
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidUnitCombination);
+        return 0.0;
+        }
+    return ratio;
     }
 
 
@@ -168,7 +170,7 @@ void CompositeValueSpec::CalculateUnitRatios()
         m_ratio[indx] = CalculateUnitRatio(GetUnit(indx), GetUnit(indx+1));
         if (IsProblem())
             break;
-        if (m_ratio[indx] <= 1)
+        if (m_ratio[indx] <= 1.0)
             m_problem.UpdateProblemCode(FormatProblemCode::CVS_InconsistentFactorSet);
         }
     }
