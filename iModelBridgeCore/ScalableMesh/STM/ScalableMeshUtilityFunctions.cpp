@@ -6,7 +6,7 @@
 |       $Date: 2013/03/27 15:53:21 $
 |     $Author: Jean-Francois.Cote $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1004,7 +1004,7 @@ void GetCoverageTerrainAbsFileName(BeFileName& coverageFileName, const WString& 
 
     BeFileName coverageBeFileName(coverageName);
     coverageFileName.AppendString(coverageBeFileName);
-    coverageFileName.AppendString(L".3sm");
+	coverageFileName.AppendString(L".stm2");
     }
 
 

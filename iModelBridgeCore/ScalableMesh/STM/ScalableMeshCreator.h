@@ -96,10 +96,6 @@ inline bool fileExist(const WChar* fileName)
     }
 
 
-
-bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename);
-
-
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   06/2011

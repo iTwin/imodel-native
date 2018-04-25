@@ -682,7 +682,8 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
     bool isLocal = true;
     Utf8String newBaseEditsFilePath(baseEditsFilePath);
     SMSQLiteFilePtr smSQLiteFile;
-    if (BeFileName::GetExtension(filePath).CompareToI(L"3sm") == 0)
+    if ((BeFileName::GetExtension(filePath).CompareToI(L"3sm") == 0) ||
+        (BeFileName::GetExtension(filePath).CompareToI(L"stm2") == 0))
         { // Open 3sm file
         StatusInt openStatus;
         smSQLiteFile = SMSQLiteFile::Open(filePath, openReadOnly, openStatus);
@@ -693,7 +694,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
             return 0; // Error opening file
             }
         }
-    else if (BeFileName::GetExtension(filePath).CompareToI(L"json") == 0)
+    else if (BeFileName::GetExtension(filePath).CompareToI(L"json") == 0)    
         { // Open json streaming format
         auto directory = BeFileName::GetDirectoryName(filePath);
         isLocal = BeFileName::DoesPathExist(directory.c_str());
