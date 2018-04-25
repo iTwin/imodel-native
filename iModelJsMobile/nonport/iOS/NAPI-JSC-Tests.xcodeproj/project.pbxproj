@@ -321,6 +321,7 @@
 				262B4E5E206044D400BAAB20 /* Frameworks */,
 				262B4E5F206044D400BAAB20 /* Resources */,
 				26C3E65A206138CE002A6E96 /* Assets */,
+				2687A68120868C2500A99A6B /* copy script */,
 			);
 			buildRules = (
 			);
@@ -342,7 +343,7 @@
 				TargetAttributes = {
 					262B4E60206044D400BAAB20 = {
 						CreatedOnToolsVersion = 9.2;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -379,9 +380,23 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		2687A68120868C2500A99A6B /* copy script */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "copy script";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp -L -R ~/Desktop/imjstest $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME";
+		};
 		26C3E65A206138CE002A6E96 /* Assets */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 12;
+			buildActionMask = 8;
 			files = (
 			);
 			inputPaths = (
@@ -389,9 +404,9 @@
 			name = Assets;
 			outputPaths = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
+			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "AppBundleRoot=\"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\"\ncp -L -R $OutRoot$BuildArchitecture/Product/iModelJs-Tests/Assets $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\ncp -L -R ~/Desktop/imjstest $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME";
+			shellScript = "AppBundleRoot=\"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\"\ncp -L -R $OutRoot$BuildArchitecture/Product/iModelJs-Tests/Assets $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -557,8 +572,9 @@
 			baseConfigurationReference = 262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				ENABLE_BITCODE = NO;
 				HEADER_SEARCH_PATHS = (
@@ -572,8 +588,8 @@
 				LIBRARY_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/SubParts/Libs/";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bentley.napitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "91f0c1f6-3d25-4d70-a56a-124b8fde8dc9";
-				PROVISIONING_PROFILE_SPECIFIER = "Field BU Enterprise Team Profile";
+				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -583,8 +599,9 @@
 			baseConfigurationReference = 262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				ENABLE_BITCODE = NO;
 				HEADER_SEARCH_PATHS = (
@@ -598,8 +615,8 @@
 				LIBRARY_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/SubParts/Libs/";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bentley.napitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "91f0c1f6-3d25-4d70-a56a-124b8fde8dc9";
-				PROVISIONING_PROFILE_SPECIFIER = "Field BU Enterprise Team Profile";
+				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
