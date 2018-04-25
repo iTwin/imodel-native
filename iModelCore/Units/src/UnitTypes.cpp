@@ -133,6 +133,18 @@ Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP def
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+Unit::~Unit()
+    {
+    if (nullptr != m_phenomenon)
+        {
+        m_phenomenon->RemoveUnit(*this);
+        m_phenomenon = nullptr;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
 //--------------------------------------------------------------------------------------
 UnitP Unit::_Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName)
@@ -486,6 +498,18 @@ bool Unit::AreCompatible(UnitCP unitA, UnitCP unitB)
 Phenomenon::Phenomenon(Utf8CP name, Utf8CP definition) : UnitsSymbol(name, definition, 0.0, 0.0, 0) 
     {
     m_isNumber = m_definition.Equals(NUMBER);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+Phenomenon::~Phenomenon()
+    {
+    for (const auto u : m_units)
+        {
+        if (nullptr != u)
+            const_cast<UnitP>(u)->m_phenomenon = nullptr; // Const cast is okay here. Units are invalid without a phen. If this gets deleted we don't want them having a garbage ptr
+        }
     }
 
 //----------------------------------------------------------------------------------------

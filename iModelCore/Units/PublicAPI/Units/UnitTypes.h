@@ -184,7 +184,7 @@ DEFINE_T_SUPER(UnitsSymbol)
 friend struct UnitRegistry;
 friend struct Expression;
 friend struct InverseUnit;
-
+friend struct Phenomenon;
 private:
     // TODO: Should these be a reference because it must be set?
     UnitSystemCP    m_system;
@@ -237,6 +237,7 @@ protected:
         m_parent = &parentUnit;
         m_isNumber = m_parent->IsNumber();
         }
+    UNITS_EXPORT virtual ~Unit();
 
     //! @return Pointer to the parent of this Inverted Unit, if this is an Inverted Unit; otherwise, nullptr.
     UnitCP GetParent() const {return m_parent;}
@@ -305,6 +306,19 @@ private:
             m_units.push_back(&unit);
         }
 
+    void RemoveUnit(UnitCR unit) const
+        {
+        for (auto entryIt = m_units.begin(); entryIt != m_units.end(); entryIt++)
+            {
+            if (*entryIt == &unit)
+                {
+                const_cast<Units::UnitP>(*entryIt)->m_phenomenon = nullptr;
+                m_units.erase(entryIt);
+                break;
+                }
+            }
+        }
+
     Phenomenon() = delete;
     Phenomenon(PhenomenonCR phenomenon) = delete;
     PhenomenonR operator=(PhenomenonCR phenomenon) = delete;
@@ -314,6 +328,7 @@ private:
 protected:
     static PhenomenonP _Create(Utf8CP name, Utf8CP definition) {return new Phenomenon(name, definition);}
     UNITS_EXPORT Phenomenon(Utf8CP name, Utf8CP definition);
+    UNITS_EXPORT virtual ~Phenomenon();
     void SetLabel(Utf8CP label) {m_displayLabel = label;}
 
 public:
