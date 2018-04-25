@@ -630,6 +630,9 @@ Nullable<std::vector<ClassMap const*>> ClassMap::GetDerivedClassMaps() const
 //------------------------------------------------------------------------------------------
 BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
     {
+    if (GetOverflowTable())
+        return SUCCESS;
+
     if (!GetMapStrategy().IsTablePerHierarchy())
         {
         BeAssert(GetMapStrategy().IsTablePerHierarchy());
@@ -644,6 +647,7 @@ BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
         return ERROR;
         }
 
+    
     //!Overflow is delay created which mean system property map are not upto day
     AddTable(overflowTable);
 
