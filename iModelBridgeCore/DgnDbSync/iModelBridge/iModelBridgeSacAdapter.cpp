@@ -180,7 +180,6 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
                      bridge._GetParams().GetReportFileName().GetName());
             return BSIERROR;
             }
-            db->SavePropertyString(DgnProjectProperty::Description(), saparams.GetDescription());
         }
     else
         {
