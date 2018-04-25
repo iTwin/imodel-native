@@ -179,7 +179,113 @@ struct NapiUtils
         return env.Global().Get("JSON").As<Napi::Object>().Get("stringify").As<Napi::Function>()({value}).ToString();
         }
 
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Affan.Khan                      04/18
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static Napi::Value Convert(Napi::Env env, Json::Value const& jsonValue)
+        {
+        switch (jsonValue.type())
+            {
+            case Json::ValueType::booleanValue:
+                return Napi::Boolean::New(env, jsonValue.asBool());
+            case Json::ValueType::intValue:
+                {
+                napi_value v;
+                if (napi_create_int32(env, jsonValue.asInt(), &v) != napi_ok)
+                    return env.Undefined();
+
+                return Napi::Number(env, v);
+                }
+            case Json::ValueType::uintValue:
+                {
+                napi_value v;
+                if (napi_create_uint32(env, jsonValue.asUInt(), &v) != napi_ok)
+                    return env.Undefined();
+
+                return Napi::Number(env, v);
+                }
+            case Json::ValueType::realValue:
+                return Napi::Number::New(env, jsonValue.asDouble());
+            case Json::ValueType::nullValue:
+                return env.Null();
+            case Json::ValueType::stringValue:
+                return Napi::String::New(env, jsonValue.asCString());
+            case Json::ValueType::arrayValue:
+                {
+                Napi::Array jsArray = Napi::Array::New(env, jsonValue.size());
+                for (auto itor = jsonValue.begin(); itor != jsonValue.end(); ++itor)
+                    jsArray.Set(itor.index(), Convert(env, (*itor)));
+
+                return jsArray;
+                }
+            case Json::ValueType::objectValue:
+                {
+                if (jsonValue.isNull()) //also include objectValue
+                    return env.Null();
+
+                Napi::Object jsObject = Napi::Object::New(env);
+                for (auto itor = jsonValue.begin(); itor != jsonValue.end(); ++itor)
+                    jsObject.Set(itor.memberName(), Convert(env, (*itor)));
+
+                return jsObject;
+                }
+            }
+
+        return env.Undefined();
+        }
 };
+
+#if 0 //WIP
+Json::Value Convert(Napi::Value jsValue)
+    {
+    switch (jsValue.Type())
+        {
+        case napi_valuetype::napi_boolean:
+            return Json::Value(jsValue.ToBoolean().Value());
+        case napi_valuetype::napi_null:
+            return Json::Value();
+        case napi_valuetype::napi_number:           
+            return Json::Value(jsValue.ToNumber().DoubleValue());
+        case napi_valuetype::napi_object:
+            {
+            Napi::Object obj = jsValue.ToObject();
+            if (obj.IsObject())
+                {
+                Json::Value jsonObject(Json::ValueType::objectValue);
+                Napi::Array propertyNames = obj.GetPropertyNames();
+                for (uint32_t i = 0; i < propertyNames.Length(); i++)
+                    {
+                    Napi::Value propertyName = propertyNames.Get(i);
+                    jsonObject[propertyName.ToString().Utf8Value().c_str()] = Convert(obj.Get(propertyName));
+                    }
+
+                return jsonObject;
+                }
+            else if (obj.IsArray())
+                {
+                Json::Value jsonArray(Json::ValueType::arrayValue);
+                for (uint32_t i = 0; i < obj.As<Napi::Array>().Length(); i++)
+                    {
+                    Napi::Value arrayValue = obj.Get(i);
+                    jsonArray.append(Convert(obj.Get(arrayValue)));
+                    }
+
+                return jsonArray;
+                }
+
+            throw Napi::Error::New(jsValue.Env(), "Only Array and Object is supported");
+            }
+        case napi_valuetype::napi_string:
+            return Json::Value(jsValue.ToString().Utf8Value().c_str());
+        case napi_valuetype::napi_symbol:
+        case napi_valuetype::napi_undefined:
+        case napi_valuetype::napi_external:
+        case napi_valuetype::napi_function:
+        }
+
+    throw Napi::Error::New(jsValue.Env(), "Unsupported valuetype");
+    }
+#endif
 
 //=======================================================================================
 // Projects the ECDb class into JS
@@ -644,7 +750,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         Json::Value opts = Json::Value::From(optsJsonStr);
         Json::Value elementJson;  // ouput
         auto status = JsInterop::GetElement(elementJson, GetDgnDb(), opts);
-        return CreateBentleyReturnObject(status, Napi::String::New(Env(), elementJson.ToString().c_str()));
+        Napi::Value jsValue = NapiUtils::Convert(Env(), elementJson);
+        return CreateBentleyReturnObject(status, jsValue);
         }
 
     Napi::Value GetModel(Napi::CallbackInfo const& info)
@@ -1146,6 +1253,22 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)BE_SQLITE_OK);
         }
 
+    Napi::Value SetAsMaster(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        OPTIONAL_ARGUMENT_STRING(0, guidStr, Env().Undefined());        
+        if (!guidStr.empty())
+            {
+            BeGuid guid;
+            if (guid.FromString(guidStr.c_str()) != SUCCESS)
+                return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
+
+            return Napi::Number::New(Env(), (int) m_dgndb->SetAsMaster(guid));
+            }
+
+        return Napi::Number::New(Env(), (int) m_dgndb->SetAsMaster());
+        }
+
     Napi::Value BuildBriefcaseManagerResourcesRequestForElement(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_OBJ(0, NativeBriefcaseManagerResourcesRequest, req, Env().Undefined());
@@ -1495,6 +1618,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
             InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerPessimisticConcurrencyControlPolicy),
             InstanceMethod("setDbGuid", &NativeDgnDb::SetDbGuid),
+            InstanceMethod("setAsMaster", &NativeDgnDb::SetAsMaster),
             InstanceMethod("setupBriefcase", &NativeDgnDb::SetupBriefcase),
             InstanceMethod("startCreateChangeSet", &NativeDgnDb::StartCreateChangeSet),
             InstanceMethod("txnManagerGetCurrentTxnId", &NativeDgnDb::TxnManagerGetCurrentTxnId),
