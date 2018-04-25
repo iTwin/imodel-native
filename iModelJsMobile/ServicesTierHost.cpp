@@ -472,7 +472,6 @@ void Host::NotifyStop()
     BeAssert(IsReady());
 
     OnStop();
-    StopIdler();
     TerminateEnvironment();
     TeardownJsRuntime();
 
@@ -504,6 +503,8 @@ void Host::HandleIdle()
             LOG(err.Message().c_str());
             }
         }
+
+    StopIdler();
     }
 
 //---------------------------------------------------------------------------------------
