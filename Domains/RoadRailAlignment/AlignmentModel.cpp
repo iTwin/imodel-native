@@ -18,10 +18,10 @@ HANDLER_DEFINE_MEMBERS(VerticalAlignmentModelHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentModelPtr AlignmentModel::Query(Dgn::SubjectCR parentSubject)
+AlignmentModelPtr AlignmentModel::Query(SubjectCR parentSubject, Utf8CP partitionName)
     {
     DgnDbR db = parentSubject.GetDgnDb();
-    DgnCode partitionCode = SpatialLocationPartition::CreateCode(parentSubject, RoadRailAlignmentDomain::GetDefaultPartitionName());
+    DgnCode partitionCode = SpatialLocationPartition::CreateCode(parentSubject, partitionName);
     DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
     SpatialLocationPartitionCPtr partition = db.Elements().Get<SpatialLocationPartition>(partitionId);
     if (!partition.IsValid())

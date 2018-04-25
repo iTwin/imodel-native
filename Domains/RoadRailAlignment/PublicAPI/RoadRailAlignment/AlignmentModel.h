@@ -52,7 +52,7 @@ public:
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryAlignmentIds() const;
     ROADRAILALIGNMENT_EXPORT Dgn::SubjectCPtr GetParentSubject() const;
 
-    ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr Query(Dgn::SubjectCR parentSubject);
+    ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr Query(Dgn::SubjectCR parentSubject, Utf8CP partitionName);
 
 
     //! @private
@@ -134,6 +134,7 @@ public:
     static VerticalAlignmentModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get<VerticalAlignmentModel>(id); }
     static VerticalAlignmentModelPtr GetForEdit(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get<VerticalAlignmentModel>(id); }
 }; // VerticalAlignmentModel
+
 
 //=======================================================================================
 //! The ModelHandler for AlignmentModel

@@ -37,7 +37,8 @@ public:
     ROADRAILALIGNMENT_EXPORT static Dgn::CodeSpecId QueryAlignmentCodeSpecId(Dgn::DgnDbCR dgndb);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnModelCR scopeModel, Utf8StringCR value);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR subject);    
-    static Utf8CP GetDefaultPartitionName() { return "Road/Rail Alignments"; }
+    static Utf8CP GetDesignPartitionName() { return "Road/Rail Design Alignments"; }
+    static Utf8CP Get3DLinearsPartitionName() { return "Road/Rail 3D Linears"; }
     static Utf8CP GetDomainCategoriesPartitionName() { return "Road/Rail Domain Categories"; }
 
 private:

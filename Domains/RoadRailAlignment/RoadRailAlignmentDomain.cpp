@@ -150,6 +150,33 @@ DgnDbStatus RoadRailAlignmentDomain::InsertViewDefinitions(ConfigurationModelR m
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus createAlignmentPartition(SubjectCR subject, Utf8CP partitionName)
+    {
+    DgnDbStatus status;
+    auto partitionPtr = SpatialLocationPartition::Create(subject, partitionName);
+    if (partitionPtr->Insert(&status).IsNull())
+        return status;
+
+    auto alignmentModelPtr = AlignmentModel::Create(AlignmentModel::CreateParams(subject.GetDgnDb(), partitionPtr->GetElementId()));
+    if (DgnDbStatus::Success != (status = alignmentModelPtr->Insert()))
+        return status;
+
+    auto horizontalPartitionCPtr = HorizontalAlignments::Insert(*alignmentModelPtr);
+    if (horizontalPartitionCPtr.IsNull())
+        return DgnDbStatus::BadModel;
+
+    auto horizontalBreakDownModelPtr = HorizontalAlignmentModel::Create(
+        HorizontalAlignmentModel::CreateParams(subject.GetDgnDb(), horizontalPartitionCPtr->GetElementId()));
+
+    if (DgnDbStatus::Success != (status = horizontalBreakDownModelPtr->Insert()))
+        return status;
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(SubjectCR subject)
@@ -167,21 +194,10 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(SubjectCR subject)
         BeAssert(false);
         }
 
-    auto alignmentPartitionPtr = SpatialLocationPartition::Create(subject, GetDefaultPartitionName());
-    if (alignmentPartitionPtr->Insert(&status).IsNull())
+    if (DgnDbStatus::Success != (status = createAlignmentPartition(subject, GetDesignPartitionName())))
         return status;
 
-    auto alignmentModelPtr = AlignmentModel::Create(AlignmentModel::CreateParams(subject.GetDgnDb(), alignmentPartitionPtr->GetElementId()));
-    if (DgnDbStatus::Success != (status = alignmentModelPtr->Insert()))
-        return status;
-
-    auto horizontalPartitionCPtr = HorizontalAlignments::Insert(*alignmentModelPtr);
-    if (horizontalPartitionCPtr.IsNull())
-        return DgnDbStatus::BadModel;
-
-    auto horizontalBreakDownModelPtr = HorizontalAlignmentModel::Create(HorizontalAlignmentModel::CreateParams(subject.GetDgnDb(), horizontalPartitionCPtr->GetElementId()));
-
-    if (DgnDbStatus::Success != (status = horizontalBreakDownModelPtr->Insert()))
+    if (DgnDbStatus::Success != (status = createAlignmentPartition(subject, Get3DLinearsPartitionName())))
         return status;
     
     if (DgnDbStatus::Success != (status = InsertViewDefinitions(*configModelPtr)))
