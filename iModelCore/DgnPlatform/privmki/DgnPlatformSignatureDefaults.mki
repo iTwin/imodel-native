@@ -25,9 +25,9 @@ TLBIMP_KEYFILE_OPTION = keyfile
 %if $(StrongNameSignature) == "NormalSignature"
     %if defined (UseOfficialKeys)
         %if defined (isRightsCompliant) || defined (isRightsNeutral)
-            ASSEMBLY_KEYFILE_DEFAULT   = $(CSIDL_COMMON_DOCUMENTS)/PRGSRightsCompliant.snk
+            ASSEMBLY_KEYFILE_DEFAULT   = C:/Users/Public/DOCUME~1/PRGSRightsCompliant.snk
         %else
-            ASSEMBLY_KEYFILE_DEFAULT   = $(CSIDL_COMMON_DOCUMENTS)/PRGNonRightsCompliant.snk
+            ASSEMBLY_KEYFILE_DEFAULT   = C:/Users/Public/DOCUME~1/PRGNonRightsCompliant.snk
         %endif
     %else
         %if defined (isRightsCompliant) || defined (isRightsNeutral)
