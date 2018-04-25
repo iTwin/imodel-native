@@ -138,6 +138,12 @@ bool SessionFile::TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>& 
 //******************** IModelConsole ***********************
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle     04/2018
+//---------------------------------------------------------------------------------------
+//static
+IModelConsole* IModelConsole::s_singleton = new IModelConsole();
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     10/2013
 //---------------------------------------------------------------------------------------
 void IModelConsole::Setup()

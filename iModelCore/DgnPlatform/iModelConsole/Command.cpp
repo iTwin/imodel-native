@@ -895,6 +895,12 @@ void ImportCommand::RunImportSchema(Session& session, std::vector<Utf8String> co
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext(false, true);
     context->AddSchemaLocater(session.GetFile().GetECDbHandle()->GetSchemaLocater());
 
+    BeFileName schemaAssetsFolder = Dgn::DgnPlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+
+    BeFileName schemaSearchPath(schemaAssetsFolder);
+    schemaSearchPath.AppendToPath(L"ECSchemas").AppendToPath(L"Domain");
+    context->AddSchemaPath(schemaSearchPath);
+
     bvector<BeFileName> ecschemaFilePaths;
 
     const bool isFolder = (const_cast<BeFileNameR> (ecschemaPath)).IsDirectory();
