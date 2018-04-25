@@ -1067,6 +1067,7 @@ BentleyStatus SchemaReader::ReadFormat(ECN::ECFormatCP& format, Context& ctx, EC
         return ERROR;
 
     newFormat->SetId(id);
+    m_cache.Insert(*newFormat);
     schemaKey->m_loadedTypeCount++;
     format = newFormat;
     return SUCCESS;
@@ -1134,6 +1135,7 @@ BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, 
 
     return format.SetCompositeSpec(spec) ? SUCCESS : ERROR;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
