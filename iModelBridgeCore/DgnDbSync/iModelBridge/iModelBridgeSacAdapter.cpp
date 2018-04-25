@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/iModelBridgeSacAdapter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined(_WIN32)
@@ -89,7 +89,7 @@ static bool isImodelExt(BeFileNameCR fn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge)
+void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge, Utf8CP productName)
     {
     BeFileName fwkAssets = bridge._GetParams ().GetAssetsDir (); 
     if (fwkAssets.empty ())
@@ -102,7 +102,7 @@ void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge)
     fwkDb3.AppendToPath(L"sqlang");
     fwkDb3.AppendToPath(L"iModelBridgeFwk_en-US.sqlang.db3");
 
-    static iModelBridgeBimHost s_host(bridge._GetParams().GetRepositoryAdmin(), fwkAssets, fwkDb3, ""); // *** TBD supply bridge name as product name
+    static iModelBridgeBimHost s_host(bridge._GetParams().GetRepositoryAdmin(), fwkAssets, fwkDb3, productName); // *** TBD supply bridge name as product name
     DgnViewLib::Initialize(s_host, true);
 
     static PrintfProgressMeter s_meter;
@@ -179,6 +179,11 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
             fwprintf(stderr, L"%ls - creation failed. See %ls for details.\n", inputFileName.GetName(),
                      bridge._GetParams().GetReportFileName().GetName());
             return BSIERROR;
+            }
+        Utf8String jobName = bridge._GetParams().GetBridgeJobName();
+        if (!Utf8String::IsNullOrEmpty(jobName.c_str()))
+            {
+            db->SavePropertyString(DgnProjectProperty::Description(), jobName);
             }
         }
     else

@@ -591,7 +591,7 @@ BentleyStatus ConverterApp::Run(int argc, WCharCP argv[])
     if (saparams.GetLoggingConfigFile().empty())
         saparams.SetLoggingConfigFile(_GetLoggingConfigurationFilename(argv[0]));
 
-    iModelBridgeSacAdapter::InitializeHost(*this);
+    iModelBridgeSacAdapter::InitializeHost(*this, "DgnV8Converter");
 
     if (BSISUCCESS != _Initialize(argc, argv))
         {
