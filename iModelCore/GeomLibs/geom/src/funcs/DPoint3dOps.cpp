@@ -220,22 +220,6 @@ void VectorOps<T>::AppendDisconnect (bvector<T> *dest)
     }
 
 template <typename T>
-void VectorOps<T>::AppendClosure (bvector<T> &dest, double tolerance)
-    {
-    if (dest.size () > 1)
-        {
-        double dd = distanceSquared (dest.front (), dest.back ());
-        if (dd > tolerance * tolerance)
-            {
-            T data = dest.front ();   // extract before push to ensure no memory reference after reallocation
-            dest.push_back (data);
-            }
-        else if (dd != 0.0)
-            dest.back () = dest.front ();     // enforce exact closure.
-        }
-    }
-
-template <typename T>
 void VectorOps<T>::Reverse (bvector<T>& data)
     {
     if (data.empty ())
@@ -364,6 +348,22 @@ double computeSortCoordinate (DPoint2dCR target, DPoint2dCR origin, DVec2dCR vec
 static double distanceSquared (DPoint3dCR dataA, DPoint3dCR dataB) {return dataA.Distance (dataB);}
 static double distanceSquared (DPoint2dCR dataA, DPoint2dCR dataB) {return dataA.Distance (dataB);}
 static double distanceSquared (double const &dataA, double const & dataB) {return fabs (dataA - dataB);}
+
+template <typename T>
+void VectorOps<T>::AppendClosure (bvector<T> &dest, double tolerance)
+    {
+    if (dest.size () > 1)
+        {
+        double dd = distanceSquared (dest.front (), dest.back ());
+        if (dd > tolerance * tolerance)
+            {
+            T data = dest.front ();   // extract before push to ensure no memory reference after reallocation
+            dest.push_back (data);
+            }
+        else if (dd != 0.0)
+            dest.back () = dest.front ();     // enforce exact closure.
+        }
+    }
 
 template <typename T>
 double VectorOps<T>::LargestCoordinate (bvector<T> const &data)
