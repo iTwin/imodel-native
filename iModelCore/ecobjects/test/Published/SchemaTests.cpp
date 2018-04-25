@@ -173,6 +173,61 @@ TEST_F(SchemaTest, RemoveReferenceSchema)
     ASSERT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(SchemaKey("RefSchema", 5, 5)));
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(SchemaTest, CannotAddMultipleSchemaItemsWithSameName)
+    {
+    ECSchemaPtr schema;
+
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+
+    ECEntityClassP testClass;
+    EC_EXPECT_SUCCESS(schema->CreateEntityClass(testClass, "IdenticalName"));
+
+    ECEntityClassP testClass2;
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->CreateEntityClass(testClass2, "IdenticalName"));
+
+    ECCustomAttributeClassP caClass;
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->CreateCustomAttributeClass(caClass, "IdenticalName"));
+
+    ECStructClassP structClass;
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->CreateStructClass(structClass, "IdenticalName"));
+
+    ECRelationshipClassP relClass;
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->CreateRelationshipClass(relClass, "IdenticalName"));
+
+    KindOfQuantityP koq;
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->CreateKindOfQuantity(koq, "IdenticalName"));
+
+    ECEnumerationP enumeration;
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->CreateEnumeration(enumeration, "IdenticalName", PRIMITIVETYPE_String));
+
+    PropertyCategoryP propCategory;
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->CreatePropertyCategory(propCategory, "IdenticalName"));
+
+    PhenomenonP phen;
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->CreatePhenomenon(phen, "IdenticalName", ""));
+
+    UnitSystemP unitSystem;
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->CreateUnitSystem(unitSystem, "IdenticalName"));
+
+    PhenomenonP realPhen;
+    EC_EXPECT_SUCCESS(schema->CreatePhenomenon(realPhen, "RealPhenomenon", ""));
+    UnitSystemP realUnitSystem;
+    EC_EXPECT_SUCCESS(schema->CreateUnitSystem(realUnitSystem, "RealUnitSystem"));
+    ECUnitP realUnit;
+    EC_EXPECT_SUCCESS(schema->CreateUnit(realUnit, "RealUnit", "", *realPhen, *realUnitSystem));
+
+    ECUnitP unit;
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->CreateConstant(unit, "IdenticalName", "", *realPhen, 4));
+
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->CreateUnit(unit, "IdenticalName", "", *realPhen, *realUnitSystem));
+
+    ECUnitP invertedUnit;
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->CreateInvertedUnit(invertedUnit, *realUnit, "IdenticalName", *realUnitSystem));
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -243,6 +298,57 @@ TEST_F(SchemaTest, DeletePhenomenon)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    04/2018
 //--------------------------------------------------------------------------------------
+TEST_F(SchemaTest, DeleteUnits)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+
+    PhenomenonP phenom;
+    UnitSystemP unitSystem;
+    EC_ASSERT_SUCCESS(schema->CreatePhenomenon(phenom, "TestPhenomenon", "LENGTH"));
+    EC_ASSERT_SUCCESS(schema->CreateUnitSystem(unitSystem, "TestUnitSystem"));
+
+    { // ECUnit
+    ECUnitP unit;
+    EC_ASSERT_SUCCESS(schema->CreateUnit(unit, "TestUnit", "", *phenom, *unitSystem));
+    ASSERT_NE(nullptr, unit);
+    EXPECT_EQ(1, schema->GetUnitCount());
+    EXPECT_EQ(unit, schema->GetUnitCP("TestUnit"));
+    EC_EXPECT_SUCCESS(schema->DeleteUnit(*unit));
+    EXPECT_EQ(nullptr, schema->GetUnitCP("TestUnit"));
+    EXPECT_EQ(0, schema->GetFormatCount());
+    }
+    { // Inverted Unit
+    ECUnitP unit;
+    EC_ASSERT_SUCCESS(schema->CreateUnit(unit, "TestUnit", "", *phenom, *unitSystem));
+
+    ECUnitP invertedUnit;
+    EC_ASSERT_SUCCESS(schema->CreateInvertedUnit(invertedUnit, *unit, "TestInvertedUnit", *unitSystem));
+    ASSERT_NE(nullptr, invertedUnit);
+    EXPECT_EQ(2, schema->GetUnitCount());
+    EXPECT_EQ(invertedUnit, schema->GetInvertedUnitCP("TestInvertedUnit"));
+    EC_EXPECT_SUCCESS(schema->DeleteUnit(*invertedUnit));
+    EXPECT_EQ(nullptr, schema->GetInvertedUnitCP("TestInvertedUnit"));
+    EXPECT_EQ(1, schema->GetUnitCount());
+
+    // Cleanup
+    schema->DeleteUnit(*unit);
+    }
+    { // Constant
+    ECUnitP constant;
+    EC_ASSERT_SUCCESS(schema->CreateConstant(constant, "TestConstant", "", *phenom, 5));
+    ASSERT_NE(nullptr, constant);
+    EXPECT_EQ(1, schema->GetUnitCount());
+    EXPECT_EQ(constant, schema->GetConstantCP("TestConstant"));
+    EC_EXPECT_SUCCESS(schema->DeleteUnit(*constant));
+    EXPECT_EQ(nullptr, schema->GetConstantCP("TestConstant"));
+    EXPECT_EQ(0, schema->GetUnitCount());
+    }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    04/2018
+//--------------------------------------------------------------------------------------
 TEST_F(SchemaTest, DeleteFormat)
     {
     ECSchemaPtr schema;
@@ -256,7 +362,6 @@ TEST_F(SchemaTest, DeleteFormat)
     EXPECT_EQ(nullptr, schema->GetFormatCP("TestFormat"));
     EXPECT_EQ(0, schema->GetFormatCount());
     }
-
 
 //---------------------------------------------------------------------------------**//**
 // @bsimethod                                   Raimondas.Rimkus                   02/13
