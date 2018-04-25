@@ -21,6 +21,9 @@ USING_NAMESPACE_BENTLEY_TASKS
 
 class AsyncTasksManagerTests : public ::testing::Test {};
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
 TEST_F(AsyncTasksManagerTests, OnAllShedulersEmpty_TwoThreads_ReturnsWhenThreadsFinishTasks)
     {
     auto t1 = WorkerThread::Create("T1");
@@ -52,6 +55,9 @@ TEST_F(AsyncTasksManagerTests, OnAllShedulersEmpty_TwoThreads_ReturnsWhenThreads
     EXPECT_FALSE(t2->HasRunningTasks());
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
 TEST_F(AsyncTasksManagerTests, OnAllShedulersEmpty_DefaultThread_ReturnsWhenThreadsFinishTasks)
     {
     auto t1 = AsyncTasksManager::GetDefaultScheduler();
