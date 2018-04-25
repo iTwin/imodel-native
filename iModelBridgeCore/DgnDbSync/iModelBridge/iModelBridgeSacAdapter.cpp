@@ -180,11 +180,7 @@ BentleyStatus iModelBridgeSacAdapter::CreateOrUpdateBim(iModelBridge& bridge, Pa
                      bridge._GetParams().GetReportFileName().GetName());
             return BSIERROR;
             }
-        Utf8String jobName = bridge._GetParams().GetBridgeJobName();
-        if (!Utf8String::IsNullOrEmpty(jobName.c_str()))
-            {
-            db->SavePropertyString(DgnProjectProperty::Description(), jobName);
-            }
+            db->SavePropertyString(DgnProjectProperty::Description(), saparams.GetDescription());
         }
     else
         {
