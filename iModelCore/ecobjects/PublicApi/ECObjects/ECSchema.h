@@ -3514,7 +3514,7 @@ public:
 
     FormatContainerCR GetFormats() const {return m_formatContainer;} //!< Returns an iterable container of Formats sorted by name.
     uint32_t GetFormatCount() const {return (uint32_t)m_formatMap.size(); } //!< Gets the number of formats in the schema.
-    ECOBJECTS_EXPORT ECObjectsStatus DeleteFormat(ECFormatR format); //!< Removes a format from this schema
+    ECObjectsStatus DeleteFormat(ECFormatR format) {return DeleteSchemaChild<ECFormat, FormatMap>(format, &m_formatMap);} //!< Removes a Format from this schema.
 
     KindOfQuantityContainerCR GetKindOfQuantities() const {return m_kindOfQuantityContainer;} //!< Returns an iterable container of ECClasses sorted by name.
     uint32_t GetKindOfQuantityCount() const {return (uint32_t) m_kindOfQuantityMap.size();} //!< Gets the number of kind of quantity in the schema
@@ -3535,8 +3535,6 @@ public:
     UnitContainerCR GetUnits() const {return m_unitsContext.GetUnits();} //!< Returns an iterable container of ECUnits sorted by name.
     uint32_t GetUnitCount() const {return m_unitsContext.GetUnitCount();} //!< Gets the number of ECUnit in the schema.
     ECOBJECTS_EXPORT ECObjectsStatus DeleteUnit(ECUnitR unit); //!< Removes a ECUnit from this schema.
-    ECObjectsStatus DeleteInvertedUnit(ECUnitR unit) {return DeleteUnit(unit);} //!< Removes an inverted ECUnit from this schema.
-    ECObjectsStatus DeleteConstant(ECUnitR constant) {return DeleteUnit(constant);} //!< Removes a constant from this schema.
 
     SchemaUnitContextCR GetUnitsContext() const {return m_unitsContext;} //< Returns this ECSchema's UnitsContext.
 

@@ -298,6 +298,14 @@ ECSchema::~ECSchema ()
     m_propertyCategoryMap.clear();
     BeAssert(m_propertyCategoryMap.empty());
 
+    for (auto entry : m_formatMap)
+        {
+        auto format = entry.second;
+        delete format;
+        }
+    m_formatMap.clear();
+    BeAssert(m_formatMap.empty());
+
     // The Unit Types are deleted in the destructor of the SchemaUnitContext.
     // delete &m_unitsContext;
 
@@ -1225,9 +1233,7 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
             }
         };
 
-    Utf8String fullName = GetName() + ":" + name;
     const auto* phenomSchema = &phenom.GetSchema();
-
     if ((this != phenomSchema) && !ECSchema::IsSchemaReferenced(*this, *phenomSchema))
         {
         LOG.errorv("Phenomenon %s with schema %s is not in this or any schema referenced by schema %s", phenom.GetName().c_str(), phenomSchema->GetName().c_str(), this->GetName().c_str());
@@ -1370,6 +1376,7 @@ bool ECSchema::NamedElementExists(Utf8CP name)
         (m_enumerationMap.find(name) != m_enumerationMap.end()) ||
         (m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end()) ||
         (m_propertyCategoryMap.find(name) != m_propertyCategoryMap.end()) ||
+        (m_formatMap.find(name) != m_formatMap.end()) ||
         (nullptr != GetUnitCP(name)) ||
         (nullptr != GetPhenomenonCP(name)) ||
         (nullptr != GetUnitSystemCP(name));

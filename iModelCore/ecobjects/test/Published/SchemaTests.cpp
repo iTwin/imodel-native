@@ -240,6 +240,24 @@ TEST_F(SchemaTest, DeletePhenomenon)
     EXPECT_EQ(0, schema->GetPhenomenonCount());
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(SchemaTest, DeleteFormat)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+    ECFormatP format;
+    EC_ASSERT_SUCCESS(schema->CreateFormat(format, "TestFormat"));
+    ASSERT_NE(nullptr, format);
+    EXPECT_EQ(1, schema->GetFormatCount());
+    EXPECT_EQ(format, schema->GetFormatCP("TestFormat"));
+    EC_EXPECT_SUCCESS(schema->DeleteFormat(*format));
+    EXPECT_EQ(nullptr, schema->GetFormatCP("TestFormat"));
+    EXPECT_EQ(0, schema->GetFormatCount());
+    }
+
+
 //---------------------------------------------------------------------------------**//**
 // @bsimethod                                   Raimondas.Rimkus                   02/13
 // +---------------+---------------+---------------+---------------+---------------+-----

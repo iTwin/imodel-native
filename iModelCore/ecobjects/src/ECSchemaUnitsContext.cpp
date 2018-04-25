@@ -24,15 +24,7 @@ SchemaUnitContext::~SchemaUnitContext()
     m_unitSystemMap.clear();
     BeAssert(m_unitSystemMap.empty());
 
-    for (auto entry : m_phenomenonMap)
-        {
-        auto phenomenon = entry.second;
-        delete phenomenon;
-        }
-
-    m_phenomenonMap.clear();
-    BeAssert(m_phenomenonMap.empty());
-
+    // Units have to be deconstructed before Phenomenon since the destructor of Unit remove itself from the phenomenon cache
     for (auto entry : m_unitMap)
         {
         auto unit = entry.second;
@@ -41,6 +33,15 @@ SchemaUnitContext::~SchemaUnitContext()
 
     m_unitMap.clear();
     BeAssert(m_unitMap.empty());
+
+    for (auto entry : m_phenomenonMap)
+        {
+        auto phenomenon = entry.second;
+        delete phenomenon;
+        }
+
+    m_phenomenonMap.clear();
+    BeAssert(m_phenomenonMap.empty());
     }
 
 //--------------------------------------------------------------------------------------
