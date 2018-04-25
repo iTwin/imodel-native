@@ -1,0 +1,1219 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Table>
+    <Name>Table 32 - Services</Name>
+    <Source>Construction Specifications Institute (CSI)</Source>
+    <Version>Major Version No=&apos;OmniClass License Rev&apos;  Major Date=&apos;21st July 2011&apos;  Minor Version No=&apos;OmniClass License Rev&apos;  Minor Date=&apos;21st July 2011&apos;  Major=&apos;&apos;  Minor=&apos;&apos; </Version>
+    <Section>
+        <Code>32-11 00 00</Code>
+        <Name>Transactional Services</Name>
+        <Section>
+            <Code>32-11 11 00</Code>
+            <Name>Marketing</Name>
+        </Section>
+        <Section>
+            <Code>32-11 13 00</Code>
+            <Name>Prequalifying</Name>
+        </Section>
+        <Section>
+            <Code>32-11 15 00</Code>
+            <Name>Proposing</Name>
+        </Section>
+        <Section>
+            <Code>32-11 16 00</Code>
+            <Name>Soliciting</Name>
+        </Section>
+        <Section>
+            <Code>32-11 17 00</Code>
+            <Name>Bidding</Name>
+            <Section>
+                <Code>32-11 17 11</Code>
+                <Name>Submitting Bids</Name>
+            </Section>
+            <Section>
+                <Code>32-11 17 13</Code>
+                <Name>Receiving Bids</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-11 23 00</Code>
+            <Name>Interviewing</Name>
+        </Section>
+        <Section>
+            <Code>32-11 28 00</Code>
+            <Name>Selecting</Name>
+        </Section>
+        <Section>
+            <Code>32-11 31 00</Code>
+            <Name>Awarding</Name>
+        </Section>
+        <Section>
+            <Code>32-11 36 00</Code>
+            <Name>Contracting</Name>
+            <Section>
+                <Code>32-11 36 13</Code>
+                <Name>Subcontracting</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-11 41 00</Code>
+            <Name>Outsourcing</Name>
+        </Section>
+        <Section>
+            <Code>32-11 45 00</Code>
+            <Name>Leasing</Name>
+        </Section>
+        <Section>
+            <Code>32-11 49 00</Code>
+            <Name>Financing</Name>
+        </Section>
+        <Section>
+            <Code>32-11 51 00</Code>
+            <Name>Funding</Name>
+        </Section>
+        <Section>
+            <Code>32-11 55 00</Code>
+            <Name>Procuring</Name>
+            <Section>
+                <Code>32-11 55 11</Code>
+                <Name>Quoting</Name>
+            </Section>
+            <Section>
+                <Code>32-11 55 13</Code>
+                <Name>Buying</Name>
+            </Section>
+            <Section>
+                <Code>32-11 55 15</Code>
+                <Name>Selling</Name>
+            </Section>
+            <Section>
+                <Code>32-11 55 17</Code>
+                <Name>Returning Goods</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-11 61 00</Code>
+            <Name>Budgeting</Name>
+        </Section>
+        <Section>
+            <Code>32-11 67 00</Code>
+            <Name>Estimating</Name>
+        </Section>
+        <Section>
+            <Code>32-11 73 00</Code>
+            <Name>Pricing</Name>
+            <Section>
+                <Code>32-11 73 11</Code>
+                <Name>Guaranteed Maximum Pricing</Name>
+            </Section>
+            <Section>
+                <Code>32-11 73 13</Code>
+                <Name>Unit pricing</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>32-19 00 00</Code>
+        <Name>Administrative Services</Name>
+        <Section>
+            <Code>32-19 11 00</Code>
+            <Name>Managing</Name>
+            <Section>
+                <Code>32-19 11 11</Code>
+                <Name>Team Building</Name>
+            </Section>
+            <Section>
+                <Code>32-19 11 13</Code>
+                <Name>Deciding</Name>
+            </Section>
+            <Section>
+                <Code>32-19 11 15</Code>
+                <Name>Authorizing</Name>
+            </Section>
+            <Section>
+                <Code>32-19 11 17</Code>
+                <Name>Coordinating</Name>
+            </Section>
+            <Section>
+                <Code>32-19 11 19</Code>
+                <Name>Supervising</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-19 31 00</Code>
+            <Name>Scheduling</Name>
+            <Section>
+                <Code>32-19 31 11</Code>
+                <Name>Fast-tracking</Name>
+            </Section>
+            <Section>
+                <Code>32-19 31 13</Code>
+                <Name>Expediting</Name>
+            </Section>
+            <Section>
+                <Code>32-19 31 17</Code>
+                <Name>Postponing</Name>
+                <Section>
+                    <Code>32-19 31 17 11</Code>
+                    <Name>Allocating Tasks</Name>
+                </Section>
+                <Section>
+                    <Code>32-19 31 17 13</Code>
+                    <Name>Allocating Resources</Name>
+                </Section>
+                <Section>
+                    <Code>32-19 31 17 15</Code>
+                    <Name>Allocating Time</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-19 71 00</Code>
+            <Name>Employing</Name>
+            <Section>
+                <Code>32-19 71 11</Code>
+                <Name>Recruiting</Name>
+            </Section>
+            <Section>
+                <Code>32-19 71 15</Code>
+                <Name>Hiring</Name>
+            </Section>
+            <Section>
+                <Code>32-19 71 19</Code>
+                <Name>Terminating</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-19 91 00</Code>
+            <Name>Accounting</Name>
+            <Section>
+                <Code>32-19 91 11</Code>
+                <Name>Billing</Name>
+            </Section>
+            <Section>
+                <Code>32-19 91 13</Code>
+                <Name>Paying</Name>
+            </Section>
+            <Section>
+                <Code>32-19 91 15</Code>
+                <Name>Reimbursing</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>32-27 00 00</Code>
+        <Name>Communication Services</Name>
+        <Section>
+            <Code>32-27 11 00</Code>
+            <Name>Collaborating</Name>
+            <Section>
+                <Code>32-27 11 11</Code>
+                <Name>Brainstorming</Name>
+            </Section>
+            <Section>
+                <Code>32-27 11 13</Code>
+                <Name>Meeting</Name>
+            </Section>
+            <Section>
+                <Code>32-27 11 15</Code>
+                <Name>Networking</Name>
+                <Section>
+                    <Code>32-27 11 15 11</Code>
+                    <Name>Social Networking</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-27 31 00</Code>
+            <Name>Verbalizing</Name>
+            <Section>
+                <Code>32-27 31 11</Code>
+                <Name>Debating</Name>
+            </Section>
+            <Section>
+                <Code>32-27 31 13</Code>
+                <Name>Negotiating</Name>
+            </Section>
+            <Section>
+                <Code>32-27 31 15</Code>
+                <Name>Presenting</Name>
+            </Section>
+            <Section>
+                <Code>32-27 31 17</Code>
+                <Name>Discussing</Name>
+            </Section>
+            <Section>
+                <Code>32-27 31 19</Code>
+                <Name>Reporting</Name>
+            </Section>
+            <Section>
+                <Code>32-27 31 21</Code>
+                <Name>Commenting</Name>
+            </Section>
+            <Section>
+                <Code>32-27 31 23</Code>
+                <Name>Responding</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-27 61 00</Code>
+            <Name>Writing</Name>
+            <Section>
+                <Code>32-27 61 11</Code>
+                <Name>Noting</Name>
+            </Section>
+            <Section>
+                <Code>32-27 61 13</Code>
+                <Name>Editing</Name>
+            </Section>
+            <Section>
+                <Code>32-27 61 15</Code>
+                <Name>Emailing</Name>
+            </Section>
+            <Section>
+                <Code>32-27 61 17</Code>
+                <Name>Corresponding</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-27 91 00</Code>
+            <Name>Participating</Name>
+            <Section>
+                <Code>32-27 91 11</Code>
+                <Name>Attending</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-27 93 00</Code>
+            <Name>Transmitting</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>32-35 00 00</Code>
+        <Name>Conceptualization Services</Name>
+        <Section>
+            <Code>32-35 11 00</Code>
+            <Name>Visioning</Name>
+        </Section>
+        <Section>
+            <Code>32-35 13 00</Code>
+            <Name>Forecasting</Name>
+        </Section>
+        <Section>
+            <Code>32-35 15 00</Code>
+            <Name>Strategizing</Name>
+            <Section>
+                <Code>32-35 15 11</Code>
+                <Name>Goal Setting</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-35 21 00</Code>
+            <Name>Authoring</Name>
+        </Section>
+        <Section>
+            <Code>32-35 27 00</Code>
+            <Name>Defining</Name>
+        </Section>
+        <Section>
+            <Code>32-35 31 00</Code>
+            <Name>Interpreting</Name>
+        </Section>
+        <Section>
+            <Code>32-35 33 00</Code>
+            <Name>Assimilating</Name>
+        </Section>
+        <Section>
+            <Code>32-35 37 00</Code>
+            <Name>Translating</Name>
+        </Section>
+        <Section>
+            <Code>32-35 41 00</Code>
+            <Name>Determining</Name>
+        </Section>
+        <Section>
+            <Code>32-35 43 00</Code>
+            <Name>Formalizing</Name>
+        </Section>
+        <Section>
+            <Code>32-35 45 00</Code>
+            <Name>Formulating</Name>
+        </Section>
+        <Section>
+            <Code>32-35 46 00</Code>
+            <Name>Scoping</Name>
+        </Section>
+        <Section>
+            <Code>32-35 47 00</Code>
+            <Name>Data Gathering</Name>
+            <Section>
+                <Code>32-35 47 11</Code>
+                <Name>Studying</Name>
+            </Section>
+            <Section>
+                <Code>32-35 47 13</Code>
+                <Name>Researching</Name>
+            </Section>
+            <Section>
+                <Code>32-35 47 15</Code>
+                <Name>Searching</Name>
+            </Section>
+            <Section>
+                <Code>32-35 47 17</Code>
+                <Name>Reading</Name>
+            </Section>
+            <Section>
+                <Code>32-35 47 19</Code>
+                <Name>Investigating</Name>
+            </Section>
+            <Section>
+                <Code>32-35 47 21</Code>
+                <Name>Identifying</Name>
+            </Section>
+            <Section>
+                <Code>32-35 47 23</Code>
+                <Name>Surveying</Name>
+            </Section>
+            <Section>
+                <Code>32-35 47 25</Code>
+                <Name>Locating</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-35 51 00</Code>
+            <Name>Quantifying</Name>
+            <Section>
+                <Code>32-35 51 11</Code>
+                <Name>Taking Off</Name>
+            </Section>
+            <Section>
+                <Code>32-35 51 13</Code>
+                <Name>Measuring</Name>
+            </Section>
+            <Section>
+                <Code>32-35 51 15</Code>
+                <Name>Enumerating</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-35 57 00</Code>
+            <Name>Information Processing</Name>
+            <Section>
+                <Code>32-35 57 11</Code>
+                <Name>Evaluating</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 13</Code>
+                <Name>Analyzing</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 15</Code>
+                <Name>Resolving</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 17</Code>
+                <Name>Harmonizing</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 19</Code>
+                <Name>Coordinating</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 21</Code>
+                <Name>Comparing</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 23</Code>
+                <Name>Assessing</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 25</Code>
+                <Name>Prioritizing</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 27</Code>
+                <Name>Rating</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 29</Code>
+                <Name>Benchmarking</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 31</Code>
+                <Name>Data Mining</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 33</Code>
+                <Name>Optimizing</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 35</Code>
+                <Name>Refining</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 37</Code>
+                <Name>Developing</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 39</Code>
+                <Name>Qualifying</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 41</Code>
+                <Name>Selecting</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 43</Code>
+                <Name>Calculating</Name>
+            </Section>
+            <Section>
+                <Code>32-35 57 45</Code>
+                <Name>Allocating</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-35 61 00</Code>
+            <Name>Organizing</Name>
+            <Section>
+                <Code>32-35 61 11</Code>
+                <Name>Sorting</Name>
+            </Section>
+            <Section>
+                <Code>32-35 61 13</Code>
+                <Name>Classifying</Name>
+            </Section>
+            <Section>
+                <Code>32-35 61 15</Code>
+                <Name>Formatting</Name>
+            </Section>
+            <Section>
+                <Code>32-35 61 17</Code>
+                <Name>Filing</Name>
+            </Section>
+            <Section>
+                <Code>32-35 61 19</Code>
+                <Name>Archiving</Name>
+            </Section>
+            <Section>
+                <Code>32-35 61 21</Code>
+                <Name>Retrieving</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-35 71 00</Code>
+            <Name>Reviewing</Name>
+            <Section>
+                <Code>32-35 71 11</Code>
+                <Name>Monitoring</Name>
+            </Section>
+            <Section>
+                <Code>32-35 71 13</Code>
+                <Name>Checking</Name>
+            </Section>
+            <Section>
+                <Code>32-35 71 15</Code>
+                <Name>Tracking</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-35 81 00</Code>
+            <Name>Value Engineering</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>32-41 00 00</Code>
+        <Name>Design Services</Name>
+        <Section>
+            <Code>32-41 21 00</Code>
+            <Name>Programming</Name>
+        </Section>
+        <Section>
+            <Code>32-41 41 00</Code>
+            <Name>Planning</Name>
+            <Section>
+                <Code>32-41 41 11</Code>
+                <Name>Master Planning</Name>
+            </Section>
+            <Section>
+                <Code>32-41 41 13</Code>
+                <Name>Space Planning</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-41 61 00</Code>
+            <Name>Synthesizing</Name>
+            <Section>
+                <Code>32-41 61 11</Code>
+                <Name>Problem Solving</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-41 71 00</Code>
+            <Name>Designing</Name>
+        </Section>
+        <Section>
+            <Code>32-41 81 00</Code>
+            <Name>Validating</Name>
+            <Section>
+                <Code>32-41 81 11</Code>
+                <Name>Verifying</Name>
+            </Section>
+            <Section>
+                <Code>32-41 81 13</Code>
+                <Name>Confirming</Name>
+            </Section>
+            <Section>
+                <Code>32-41 81 15</Code>
+                <Name>Clarifying</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>32-49 00 00</Code>
+        <Name>Documentation Services</Name>
+        <Section>
+            <Code>32-49 11 00</Code>
+            <Name>Modeling</Name>
+            <Section>
+                <Code>32-49 11 11</Code>
+                <Name>Inputting Project Information</Name>
+            </Section>
+            <Section>
+                <Code>32-49 11 13</Code>
+                <Name>Creating BIM Content</Name>
+            </Section>
+            <Section>
+                <Code>32-49 11 15</Code>
+                <Name>Assembling BIM Content</Name>
+            </Section>
+            <Section>
+                <Code>32-49 11 17</Code>
+                <Name>Annotating BIM Content</Name>
+            </Section>
+            <Section>
+                <Code>32-49 11 19</Code>
+                <Name>Creating BIM Views</Name>
+            </Section>
+            <Section>
+                <Code>32-49 11 21</Code>
+                <Name>Defining BIM Sheets</Name>
+            </Section>
+            <Section>
+                <Code>32-49 11 23</Code>
+                <Name>Creating BIM Schedules</Name>
+            </Section>
+            <Section>
+                <Code>32-49 11 25</Code>
+                <Name>Linking BIM/CAD Files</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-49 21 00</Code>
+            <Name>Annotating</Name>
+            <Section>
+                <Code>32-49 21 11</Code>
+                <Name>Assigning</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-49 31 00</Code>
+            <Name>Delineating</Name>
+            <Section>
+                <Code>32-49 31 11</Code>
+                <Name>Rendering</Name>
+            </Section>
+            <Section>
+                <Code>32-49 31 13</Code>
+                <Name>Illustrating</Name>
+            </Section>
+            <Section>
+                <Code>32-49 31 15</Code>
+                <Name>Drawing</Name>
+            </Section>
+            <Section>
+                <Code>32-49 31 17</Code>
+                <Name>Elevating</Name>
+            </Section>
+            <Section>
+                <Code>32-49 31 19</Code>
+                <Name>Diagramming</Name>
+            </Section>
+            <Section>
+                <Code>32-49 31 21</Code>
+                <Name>Sketching</Name>
+            </Section>
+            <Section>
+                <Code>32-49 31 23</Code>
+                <Name>Drafting</Name>
+            </Section>
+            <Section>
+                <Code>32-49 31 25</Code>
+                <Name>Detailing</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-49 41 00</Code>
+            <Name>Specifying</Name>
+        </Section>
+        <Section>
+            <Code>32-49 51 00</Code>
+            <Name>Recording</Name>
+            <Section>
+                <Code>32-49 51 11</Code>
+                <Name>Photographing</Name>
+            </Section>
+            <Section>
+                <Code>32-49 51 13</Code>
+                <Name>Filming</Name>
+                <Section>
+                    <Code>32-49 51 13 11</Code>
+                    <Name>Image Processing</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-49 61 00</Code>
+            <Name>Record Keeping</Name>
+        </Section>
+        <Section>
+            <Code>32-49 71 00</Code>
+            <Name>Preparing</Name>
+        </Section>
+        <Section>
+            <Code>32-49 81 00</Code>
+            <Name>Indexing</Name>
+            <Section>
+                <Code>32-49 81 11</Code>
+                <Name>Listing</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-49 91 00</Code>
+            <Name>Updating</Name>
+            <Section>
+                <Code>32-49 91 11</Code>
+                <Name>Revising</Name>
+            </Section>
+            <Section>
+                <Code>32-49 91 13</Code>
+                <Name>Correcting</Name>
+            </Section>
+            <Section>
+                <Code>32-49 91 15</Code>
+                <Name>Supplementing</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>32-57 00 00</Code>
+        <Name>Implementation Services</Name>
+        <Section>
+            <Code>32-57 11 00</Code>
+            <Name>Executing</Name>
+        </Section>
+        <Section>
+            <Code>32-57 21 00</Code>
+            <Name>Prototyping</Name>
+            <Section>
+                <Code>32-57 21 11</Code>
+                <Name>Rapid Prototyping</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-57 31 00</Code>
+            <Name>Supplying</Name>
+            <Section>
+                <Code>32-57 31 10</Code>
+                <Name>Resourcing</Name>
+            </Section>
+            <Section>
+                <Code>32-57 31 11</Code>
+                <Name>Refining</Name>
+            </Section>
+            <Section>
+                <Code>32-57 31 13</Code>
+                <Name>Manufacturing</Name>
+            </Section>
+            <Section>
+                <Code>32-57 31 15</Code>
+                <Name>Fabricating</Name>
+                <Section>
+                    <Code>32-57 31 15 11</Code>
+                    <Name>Prefabricating</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>32-57 31 17</Code>
+                <Name>Componentizing</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-57 41 00</Code>
+            <Name>Distributing</Name>
+            <Section>
+                <Code>32-57 41 11</Code>
+                <Name>Transporting </Name>
+            </Section>
+            <Section>
+                <Code>32-57 41 13</Code>
+                <Name>Shipping</Name>
+            </Section>
+            <Section>
+                <Code>32-57 41 15</Code>
+                <Name>Handling</Name>
+            </Section>
+            <Section>
+                <Code>32-57 41 17</Code>
+                <Name>Delivering</Name>
+            </Section>
+            <Section>
+                <Code>32-57 41 19</Code>
+                <Name>Storing</Name>
+            </Section>
+            <Section>
+                <Code>32-57 41 21</Code>
+                <Name>Staging</Name>
+            </Section>
+            <Section>
+                <Code>32-57 41 23</Code>
+                <Name>Taking Inventory</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-57 51 00</Code>
+            <Name>Preconstructing</Name>
+            <Section>
+                <Code>32-57 51 11</Code>
+                <Name>Surveying</Name>
+            </Section>
+            <Section>
+                <Code>32-57 51 13</Code>
+                <Name>Mapping</Name>
+            </Section>
+            <Section>
+                <Code>32-57 51 15</Code>
+                <Name>Field Measuring</Name>
+            </Section>
+            <Section>
+                <Code>32-57 51 17</Code>
+                <Name>Scanning</Name>
+                <Section>
+                    <Code>32-57 51 17 11</Code>
+                    <Name>Facility Scanning</Name>
+                </Section>
+                <Section>
+                    <Code>32-57 51 17 13</Code>
+                    <Name>Document Scanning</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>32-57 51 21</Code>
+                <Name>Examining</Name>
+            </Section>
+            <Section>
+                <Code>32-57 51 23</Code>
+                <Name>Preparing</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-57 61 00</Code>
+            <Name>Constructing</Name>
+            <Section>
+                <Code>32-57 61 11</Code>
+                <Name>Building</Name>
+            </Section>
+            <Section>
+                <Code>32-57 61 13</Code>
+                <Name>Forming</Name>
+            </Section>
+            <Section>
+                <Code>32-57 61 15</Code>
+                <Name>Pouring</Name>
+            </Section>
+            <Section>
+                <Code>32-57 61 17</Code>
+                <Name>Assembling</Name>
+            </Section>
+            <Section>
+                <Code>32-57 61 19</Code>
+                <Name>Attaching</Name>
+            </Section>
+            <Section>
+                <Code>32-57 61 21</Code>
+                <Name>Fastening</Name>
+                <Section>
+                    <Code>32-57 61 21 11</Code>
+                    <Name>Nailing</Name>
+                </Section>
+                <Section>
+                    <Code>32-57 61 21 13</Code>
+                    <Name>Screwing</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>32-57 61 23</Code>
+                <Name>Adhering</Name>
+            </Section>
+            <Section>
+                <Code>32-57 61 25</Code>
+                <Name>Placing</Name>
+            </Section>
+            <Section>
+                <Code>32-57 61 27</Code>
+                <Name>Craning</Name>
+            </Section>
+            <Section>
+                <Code>32-57 61 29</Code>
+                <Name>Installing</Name>
+            </Section>
+            <Section>
+                <Code>32-57 61 31</Code>
+                <Name>Erecting</Name>
+            </Section>
+            <Section>
+                <Code>32-57 61 33</Code>
+                <Name>Filling</Name>
+            </Section>
+            <Section>
+                <Code>32-57 61 35</Code>
+                <Name>Backfilling</Name>
+            </Section>
+            <Section>
+                <Code>32-57 61 37</Code>
+                <Name>Finishing</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-57 71 00</Code>
+            <Name>Postconstructing</Name>
+            <Section>
+                <Code>32-57 71 11</Code>
+                <Name>Cleaning</Name>
+            </Section>
+            <Section>
+                <Code>32-57 71 13</Code>
+                <Name>Protecting</Name>
+            </Section>
+            <Section>
+                <Code>32-57 71 15</Code>
+                <Name>Commissioning</Name>
+            </Section>
+            <Section>
+                <Code>32-57 71 17</Code>
+                <Name>Activating</Name>
+            </Section>
+            <Section>
+                <Code>32-57 70 19</Code>
+                <Name>Closing Out</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-57 81 00</Code>
+            <Name>Assuring</Name>
+            <Section>
+                <Code>32-57 81 11</Code>
+                <Name>Observing</Name>
+            </Section>
+            <Section>
+                <Code>32-57 81 13</Code>
+                <Name>Inspecting</Name>
+            </Section>
+            <Section>
+                <Code>32-57 81 15</Code>
+                <Name>Certifying</Name>
+            </Section>
+            <Section>
+                <Code>32-57 81 17</Code>
+                <Name>Testing</Name>
+            </Section>
+            <Section>
+                <Code>32-57 81 19</Code>
+                <Name>Sampling</Name>
+            </Section>
+            <Section>
+                <Code>32-57 81 21</Code>
+                <Name>Warranting</Name>
+            </Section>
+            <Section>
+                <Code>32-57 81 23</Code>
+                <Name>Guaranteeing</Name>
+                <Section>
+                    <Code>32-57 28 15 25</Code>
+                    <Name>Monitoring</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-57 91 00</Code>
+            <Name>Deconstructing</Name>
+            <Section>
+                <Code>32-57 91 11</Code>
+                <Name>Disassembling</Name>
+            </Section>
+            <Section>
+                <Code>32-57 91 13</Code>
+                <Name>Demolishing</Name>
+            </Section>
+            <Section>
+                <Code>32-57 91 15</Code>
+                <Name>Excavating</Name>
+            </Section>
+            <Section>
+                <Code>32-57 91 17</Code>
+                <Name>Cutting</Name>
+            </Section>
+            <Section>
+                <Code>32-57 91 19</Code>
+                <Name>Disposing</Name>
+            </Section>
+            <Section>
+                <Code>32-57 91 21</Code>
+                <Name>Salvaging</Name>
+            </Section>
+            <Section>
+                <Code>32-57 91 23</Code>
+                <Name>Recycling</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>32-65 00 00</Code>
+        <Name>Utilization Services</Name>
+        <Section>
+            <Code>32-65 11 00</Code>
+            <Name>Insuring</Name>
+            <Section>
+                <Code>32-65 11 11</Code>
+                <Name>Bonding</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-65 21 00</Code>
+            <Name>Operating</Name>
+        </Section>
+        <Section>
+            <Code>32-65 31 00</Code>
+            <Name>Maintaining</Name>
+        </Section>
+        <Section>
+            <Code>32-65 41 00</Code>
+            <Name>Servicing</Name>
+        </Section>
+        <Section>
+            <Code>32-65 51 00</Code>
+            <Name>Repairing</Name>
+        </Section>
+        <Section>
+            <Code>32-65 61 00</Code>
+            <Name>Housekeeping</Name>
+        </Section>
+        <Section>
+            <Code>32-65 71 00</Code>
+            <Name>Upgrading</Name>
+            <Section>
+                <Code>32-65 71 11</Code>
+                <Name>Renovating</Name>
+            </Section>
+            <Section>
+                <Code>32-65 71 13</Code>
+                <Name>Remodeling</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-65 73 00</Code>
+            <Name>Customizing</Name>
+        </Section>
+        <Section>
+            <Code>32-65 81 00</Code>
+            <Name>Repurposing</Name>
+            <Section>
+                <Code>32-65 81 11</Code>
+                <Name>Converting</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-65 91 00</Code>
+            <Name>Moving</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>32-73 00 00</Code>
+        <Name>Support Services</Name>
+        <Section>
+            <Code>32-73 11 00</Code>
+            <Name>Advising</Name>
+            <Section>
+                <Code>32-73 11 11</Code>
+                <Name>Recommending </Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-73 17 00</Code>
+            <Name>Representing</Name>
+        </Section>
+        <Section>
+            <Code>32-73 19 00</Code>
+            <Name>Counseling</Name>
+        </Section>
+        <Section>
+            <Code>32-73 21 00</Code>
+            <Name>Testifying</Name>
+            <Section>
+                <Code>32-73 17 11</Code>
+                <Name>Expert Witness Testimony</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-73 23 00</Code>
+            <Name>Resolving</Name>
+            <Section>
+                <Code>32-73 23 11</Code>
+                <Name>Mediating</Name>
+            </Section>
+            <Section>
+                <Code>32-73 23 13</Code>
+                <Name>Arbitrating</Name>
+            </Section>
+            <Section>
+                <Code>32-73 23 15</Code>
+                <Name>Litigating</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-73 29 00</Code>
+            <Name>Real Estate Appraising</Name>
+        </Section>
+        <Section>
+            <Code>32-73 35 00</Code>
+            <Name>Assaying</Name>
+        </Section>
+        <Section>
+            <Code>32-73 41 00</Code>
+            <Name>Consulting</Name>
+            <Section>
+                <Code>32-73 41 11</Code>
+                <Name>Engineering</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-73 47 00</Code>
+            <Name>Advertising</Name>
+        </Section>
+        <Section>
+            <Code>32-73 49 00</Code>
+            <Name>Public Relations</Name>
+        </Section>
+        <Section>
+            <Code>32-73 55 00</Code>
+            <Name>Document Reproduction</Name>
+            <Section>
+                <Code>32-73 55 11</Code>
+                <Name>Printing</Name>
+            </Section>
+            <Section>
+                <Code>32-73 55 13</Code>
+                <Name>Plotting</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-73 61 00</Code>
+            <Name>Submitting</Name>
+        </Section>
+        <Section>
+            <Code>32-73 67 00</Code>
+            <Name>Assisting</Name>
+            <Section>
+                <Code>32-73 67 11</Code>
+                <Name>Tenant-related Services</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-73 71 00</Code>
+            <Name>Travelling</Name>
+        </Section>
+        <Section>
+            <Code>32-73 91 00</Code>
+            <Name>Volunteering</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>32-81 00 00</Code>
+        <Name>Governmental Services</Name>
+        <Section>
+            <Code>32-81 11 00</Code>
+            <Name>Licensing</Name>
+            <Section>
+                <Code>32-81 11 11</Code>
+                <Name>Accrediting</Name>
+            </Section>
+            <Section>
+                <Code>32-81 11 13</Code>
+                <Name>Certifying</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>32-81 31 00</Code>
+            <Name>Plan Reviewing</Name>
+        </Section>
+        <Section>
+            <Code>32-81 51 00</Code>
+            <Name>Permitting</Name>
+        </Section>
+        <Section>
+            <Code>32-81 61 00</Code>
+            <Name>Regulating</Name>
+        </Section>
+        <Section>
+            <Code>32-81 71 00</Code>
+            <Name>Enforcing</Name>
+        </Section>
+        <Section>
+            <Code>32-81 81 00</Code>
+            <Name>Inspecting</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>32-89 00 00</Code>
+        <Name>Overhead Services</Name>
+        <Section>
+            <Code>32-89 11 00</Code>
+            <Name>General Office</Name>
+        </Section>
+        <Section>
+            <Code>32-89 31 00</Code>
+            <Name>Vacation</Name>
+        </Section>
+        <Section>
+            <Code>32-89 51 00</Code>
+            <Name>Sick Leave</Name>
+        </Section>
+        <Section>
+            <Code>32-89 61 00</Code>
+            <Name>Holiday</Name>
+        </Section>
+        <Section>
+            <Code>32-89 71 00</Code>
+            <Name>Civic Duty</Name>
+        </Section>
+        <Section>
+            <Code>32-89 81 00</Code>
+            <Name>Professional Development</Name>
+            <Section>
+                <Code>32-89 81 11</Code>
+                <Name>Training</Name>
+            </Section>
+            <Section>
+                <Code>32-89 81 13</Code>
+                <Name>Educating</Name>
+            </Section>
+            <Section>
+                <Code>32-89 81 15</Code>
+                <Name>Mentoring</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>OmniClass Number</Code>
+        <Name>Level 1 Title</Name>
+    </Section>
+</Table>

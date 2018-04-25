@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Table>
+    <Name>Table 34 - Oraganizational Roles</Name>
+    <Source>The Secretariat for the OCCS Development Committee</Source>
+    <Version>Major Version No=&apos; Edition:1.0&apos;  Major Date=&apos;2006-03-28 Release&apos;  Minor Version No=&apos; Edition:1.0&apos;  Minor Date=&apos;2006-03-28 Release&apos;  Major=&apos;&apos;  Minor=&apos;&apos; </Version>
+    <Section>
+        <Code>34-11 00 00</Code>
+        <Name>Management</Name>
+        <Section>
+            <Code>34-11 11 00</Code>
+            <Name>Executive Management</Name>
+            <Section>
+                <Code>34-11 11 11</Code>
+                <Name>Chief Executive</Name>
+            </Section>
+            <Section>
+                <Code>34-11 11 21</Code>
+                <Name>Vice President</Name>
+            </Section>
+            <Section>
+                <Code>34-11 11 31</Code>
+                <Name>Chairperson</Name>
+            </Section>
+            <Section>
+                <Code>34-11 11 41</Code>
+                <Name>Board Member</Name>
+            </Section>
+            <Section>
+                <Code>34-11 11 51</Code>
+                <Name>Partner</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>34-11 21 00</Code>
+            <Name>Middle-Management</Name>
+            <Section>
+                <Code>34-11 21 11</Code>
+                <Name>Supervisor</Name>
+            </Section>
+            <Section>
+                <Code>34-11 21 21</Code>
+                <Name>Coordinator</Name>
+            </Section>
+            <Section>
+                <Code>34-11 21 31</Code>
+                <Name>Trainer</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>34-21 00 00</Code>
+        <Name>Planning Roles</Name>
+        <Section>
+            <Code>34-21 11 00</Code>
+            <Name>Developer</Name>
+        </Section>
+        <Section>
+            <Code>34-21 14 00</Code>
+            <Name>Owner</Name>
+        </Section>
+        <Section>
+            <Code>34-21 17 00</Code>
+            <Name>Planner</Name>
+        </Section>
+        <Section>
+            <Code>34-21 21 00</Code>
+            <Name>Cost Estimator</Name>
+        </Section>
+        <Section>
+            <Code>34-21 24 00</Code>
+            <Name>Scheduler</Name>
+        </Section>
+        <Section>
+            <Code>34-21 27 00</Code>
+            <Name>Contract Administrator</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>34-25 00 00</Code>
+        <Name>Design Roles</Name>
+        <Section>
+            <Code>34-25 11 00</Code>
+            <Name>Space Designer</Name>
+            <Section>
+                <Code>34-25 11 11</Code>
+                <Name>Interior Designer</Name>
+            </Section>
+            <Section>
+                <Code>34-25 11 14</Code>
+                <Name>Lighting Designer</Name>
+            </Section>
+            <Section>
+                <Code>34-25 11 17</Code>
+                <Name>Space Planner</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>34-25 21 00</Code>
+            <Name>Architect</Name>
+        </Section>
+        <Section>
+            <Code>34-25 31 00</Code>
+            <Name>Engineer</Name>
+        </Section>
+        <Section>
+            <Code>34-25 41 00</Code>
+            <Name>Specifier</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>34-31 00 00</Code>
+        <Name>Procurement Roles</Name>
+        <Section>
+            <Code>34-31 11 00</Code>
+            <Name>Manufacturer</Name>
+        </Section>
+        <Section>
+            <Code>34-31 21 00</Code>
+            <Name>Distributor</Name>
+        </Section>
+        <Section>
+            <Code>34-31 31 00</Code>
+            <Name>Product Representative</Name>
+        </Section>
+        <Section>
+            <Code>34-31 41 00</Code>
+            <Name>Buyer</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>34-35 00 00</Code>
+        <Name>Execution Roles</Name>
+        <Section>
+            <Code>34-35 11 00</Code>
+            <Name>Surveyor</Name>
+        </Section>
+        <Section>
+            <Code>34-35 14 00</Code>
+            <Name>Contractor</Name>
+        </Section>
+        <Section>
+            <Code>34-35 17 00</Code>
+            <Name>Sub Contractor</Name>
+        </Section>
+        <Section>
+            <Code>34-35 21 00</Code>
+            <Name>Tradesperson</Name>
+            <Section>
+                <Code>34-35 21 11</Code>
+                <Name>Equipment Operator</Name>
+            </Section>
+            <Section>
+                <Code>34-35 21 14</Code>
+                <Name>Laborer</Name>
+                <Section>
+                    <Code>34-35 21 14 11</Code>
+                    <Name>Skilled Laborer</Name>
+                </Section>
+                <Section>
+                    <Code>34-35 21 14 14</Code>
+                    <Name>Unskilled Laborer</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>34-35 41 00</Code>
+            <Name>Inspector</Name>
+            <Section>
+                <Code>34-35 41 11</Code>
+                <Name>Code Inspector</Name>
+            </Section>
+            <Section>
+                <Code>34-35 41 14</Code>
+                <Name>Safety Inspector</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>34-41 00 00</Code>
+        <Name>Utilization Roles</Name>
+        <Section>
+            <Code>34-41 11 00</Code>
+            <Name>Facility Manager</Name>
+        </Section>
+        <Section>
+            <Code>34-41 21 00</Code>
+            <Name>Facility Maintenance</Name>
+            <Section>
+                <Code>34-41 21 11</Code>
+                <Name>Facility Engineer</Name>
+            </Section>
+            <Section>
+                <Code>34-41 21 14</Code>
+                <Name>Maintenance Manager</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>34-41 31 00</Code>
+            <Name>Facility Services</Name>
+            <Section>
+                <Code>34-41 31 11</Code>
+                <Name>Janitor</Name>
+            </Section>
+            <Section>
+                <Code>34-41 31 14</Code>
+                <Name>Window Washer</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>34-55 00 00</Code>
+        <Name>Support Roles</Name>
+        <Section>
+            <Code>34-55 11 00</Code>
+            <Name>Administrative Support Staff</Name>
+            <Section>
+                <Code>34-55 11 11</Code>
+                <Name>Administrative Assistant</Name>
+            </Section>
+            <Section>
+                <Code>34-55 11 14</Code>
+                <Name>Receptionist</Name>
+            </Section>
+            <Section>
+                <Code>34-55 11 17</Code>
+                <Name>Records Management Staff</Name>
+            </Section>
+            <Section>
+                <Code>34-55 11 21</Code>
+                <Name>Intern</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>34-55 14 00</Code>
+            <Name>Professional Support Staff</Name>
+            <Section>
+                <Code>34-55 14 11</Code>
+                <Name>Consultant</Name>
+            </Section>
+            <Section>
+                <Code>34-55 14 14</Code>
+                <Name>Librarian</Name>
+            </Section>
+            <Section>
+                <Code>34-55 14 17</Code>
+                <Name>Draftsperson</Name>
+            </Section>
+            <Section>
+                <Code>34-55 14 21</Code>
+                <Name>Accountant</Name>
+            </Section>
+            <Section>
+                <Code>34-55 14 24</Code>
+                <Name>Lawyer</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>34-55 99 00</Code>
+            <Name>Other Support Roles</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>34-61 00 00</Code>
+        <Name>Groups</Name>
+        <Section>
+            <Code>34-61 11 00</Code>
+            <Name>Team</Name>
+        </Section>
+        <Section>
+            <Code>34-61 21 00</Code>
+            <Name>Board</Name>
+        </Section>
+        <Section>
+            <Code>34-61 31 00</Code>
+            <Name>Committee</Name>
+            <Section>
+                <Code>34-61 31 11</Code>
+                <Name>Task Team</Name>
+            </Section>
+            <Section>
+                <Code>34-61 31 21</Code>
+                <Name>Ad Hoc Committee</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>34-65 00 00</Code>
+        <Name>Organizations</Name>
+        <Section>
+            <Code>34-65 11 00</Code>
+            <Name>Business Organizations</Name>
+            <Section>
+                <Code>34-65 11 11</Code>
+                <Name>Corporation</Name>
+            </Section>
+            <Section>
+                <Code>34-65 11 14</Code>
+                <Name>Partnership</Name>
+            </Section>
+            <Section>
+                <Code>34-65 11 17</Code>
+                <Name>Sole Proprietorship</Name>
+            </Section>
+            <Section>
+                <Code>34-65 11 21</Code>
+                <Name>Joint Venture</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>34-65 21 00</Code>
+            <Name>Nonprofit Organizations</Name>
+            <Section>
+                <Code>34-65 21 11</Code>
+                <Name>Association</Name>
+            </Section>
+            <Section>
+                <Code>34-65 21 14</Code>
+                <Name>Foundation</Name>
+            </Section>
+            <Section>
+                <Code>34-65 21 17</Code>
+                <Name>Union</Name>
+            </Section>
+        </Section>
+    </Section>
+</Table>

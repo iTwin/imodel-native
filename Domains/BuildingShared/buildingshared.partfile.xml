@@ -193,6 +193,6 @@
         </Bindings>
     </Part>
 	
-    <Part Name="CodeGenerators" BentleyBuildMakeFile="CodeGenerators/CodeGenerators.mke"/>
+    <Part Name="CodeGenerators" BentleyBuildMakeFile="CodeGenerators/CodeGenerators.mke" BentleyBuildMakeOptions="-dout=$(SrcRoot)DgnDomains\ClassificationSystems\Domain\GeneratedInserts\ -din=$(_MakeFilePath)Xmls\"/>
     
 </BuildContext>
