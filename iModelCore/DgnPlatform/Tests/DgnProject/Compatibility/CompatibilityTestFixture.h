@@ -7,12 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "ECDbPublishedTests.h"
-#include "TestHelper.h"
 #include <functional>
 #include <Bentley/Bentley.h>
-
-BEGIN_ECDBUNITTESTS_NAMESPACE
+#include "../TestFixture/DgnDbTestFixtures.h"
+#include <Logging/bentleylogging.h>
+#include <DgnPlatform/DgnPlatformApi.h>
+#include <Bentley/BeTimeUtilities.h>
 
 #define PROFILE_NAMESPACE_BEDB    "be_Db"
 #define PROFILE_NAMESPACE_ECDB    "ec_Db"
@@ -23,6 +23,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 #define PROFILE_SCHEMAVERSION     "SchemaVersion"
 //BeDb/2.0.0.1
 
+#define LOG (*NativeLogging::LoggingManager::GetLogger (L"Compatibility"))
 struct CompareIUtf8Ascii
     {
     bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::StricmpAscii(s1, s2) < 0; }
@@ -205,4 +206,3 @@ struct CompatibilityTestFixture : ::testing::Test
 #define DGNDB_OPEN_READONLY(T, testFile)   
 #define DGNDB_OPEN_READOWRITE(T, testFile) 
 
-END_ECDBUNITTESTS_NAMESPACE

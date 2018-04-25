@@ -8,8 +8,10 @@
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnMaterial.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_DPTEST
 
 /*---------------------------------------------------------------------------------**//**
 * There used to be two separate interfaces: one for locks, another for codes.
@@ -2653,8 +2655,10 @@ TEST_F (FastQueryTest, CacheCodes)
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ExtractLocksTest : SingleBriefcaseLocksTest
+struct ExtractLocksTest : SingleBriefcaseLocksTest, TestElementDrivesElementHandler::Callback
 {
+    DgnElementCPtr  m_onRootChangedElement = nullptr;
+
     DgnDbStatus ExtractLocks(LockRequestR req, bool extractInserted = true, bool avoidExclusiveModelElements = true)
         {
         if (BE_SQLITE_OK != m_db->SaveChanges())
@@ -2678,6 +2682,26 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
         req.FromRevision(*rev, *m_db, extractInserted, avoidExclusiveModelElements);
         m_db->Revisions().AbandonCreateRevision();
         return DgnDbStatus::Success;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+     * @bsimethod                                                    Diego.Pinate    04/18
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    void _OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target) override
+        {
+        // Update an element to test dependency changes don't generate locks in ExtractLocks call
+        EXPECT_TRUE(m_onRootChangedElement.IsValid());
+        DgnElementPtr elementEdit = db.Elements().GetForEdit<DgnElement>(m_onRootChangedElement->GetElementId());
+        elementEdit->SetUserLabel("Updated label OnRootChanged");
+        EXPECT_TRUE(elementEdit->Update().IsValid());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+     * @bsimethod                                                    Diego.Pinate    04/18
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    void _ProcessDeletedDependency(DgnDbR db, dgn_TxnTable::ElementDep::DepRelData const& relData) override
+        {
+        //
         }
     
     //-------------------------------------------------------------------------------------------
@@ -2723,8 +2747,14 @@ TEST_F(ExtractLocksTest, UsedLocks)
         ~UndoScope() { m_db.Txns().ReverseTo(m_id); }
     };
 
+    // Need Test domain for ElementDrivesElement dependency tests
+    //DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+
     AssertScope V_V_V_Asserts;
     m_db = SetupDb(L"UsedLocksTests.bim", m_bcId);
+
+    // Import domain
+    //SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
 
     DgnDbR db = *m_db;
     DgnModelR model = *db.Models().GetModel(m_modelId);
@@ -2849,6 +2879,34 @@ TEST_F(ExtractLocksTest, UsedLocks)
         EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
         EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(testModelId));
         EXPECT_EQ(LockLevel::None, req.GetLockLevel(testElemId)); // Model is exclusive, so lock for element not present
+        }
+
+    // Change reversed on exit above scope
+    EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+    EXPECT_TRUE(req.IsEmpty());
+
+    // Indirect changes shouldn't be extracted as required locks
+        {
+        UndoScope V_V_V_Undo(db);
+        // Create two elements and insert the relationship between them
+        DgnElementCPtr root = CreateElement(*testModel);
+        DgnElementCPtr dependent = CreateElement(*testModel);
+        TestElementDrivesElementHandler::SetCallback(this);
+        TestElementDrivesElementHandler::Insert(db, root->GetElementId(), dependent->GetElementId());
+        // Set the testElem in the Db as the element that we will update in the _OnRootChanged call
+        m_onRootChangedElement = testElem;
+        // Trigger a change in the root which will call our Callback on this element, causing an update on an element
+        DgnElementPtr rootEdit = root->CopyForEdit();
+        rootEdit->SetUserLabel("New Root Label");
+        DgnDbStatus status;
+        EXPECT_TRUE(db.Elements().Update<DgnElement>(*rootEdit).IsValid());
+        // Calling ExtractLocks below will trigger the _OnRootChange called when saving changes to the Db and extracting necessary locks
+        EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
+
+        // Result of dependency callback, we shouldn't extract locks for the update done to this element
+        EXPECT_EQ(LockLevel::None, req.GetLockLevel(LockableId(m_onRootChangedElement->GetElementId())));
+        // Get rid of the static callback pointer
+        TestElementDrivesElementHandler::SetCallback(nullptr);
         }
     }
 
