@@ -276,22 +276,12 @@ TEST(RemainderArithmetic,Test)
     }
 #endif
 
-void GetOffsets (CurveVectorPtr pathA, double offsetDistance, double arcAngle, CurveVectorPtr &pathB, CurveVectorPtr &pathC, bool checkLength = false)
+void GetOffsets (CurveVectorPtr pathA, double offsetDistance, double arcAngle, CurveVectorPtr &pathB)
     {
     static double s_chamferAngle = -1.0;
     CurveOffsetOptions options (offsetDistance);
     options.SetArcAngle (arcAngle);
     pathB = pathA->CloneOffsetCurvesXY(options);
-    GraphicsPointArray  gpaA, gpaC;
-    gpaA.AddCurves (*pathA, false);
-    jmdlGraphicsPointArray_collectOffsetXY (&gpaC, &gpaA, arcAngle, s_chamferAngle, -offsetDistance, true);
-    pathC = gpaC.CreateCurveVector ();
-    double lengthB = pathB->Length ();
-    double lengthC = pathC->Length ();
-    if (checkLength)
-        {
-        Check::Near (lengthB, lengthC, "Offset length");
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -398,15 +388,14 @@ TEST(CloneOffset, RectangleOffset)
         for (double offset = 0.5; offset > -2.0; offset -= 1.0)
             {
             CurveVectorPtr pathA = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Outer);
-            CurveVectorPtr pathB, pathB1;
-            GetOffsets (pathA, offset, -1.0, pathB, pathB1);
+            CurveVectorPtr pathB;
+            GetOffsets (pathA, offset, -1.0, pathB);
             if (s_noisy > 0)
                 {
                 printf ("\n\n OFFSET DISTANCE %#.17g\n", offset);        
 
                 Check::Print (pathA, "BaseCurve");
                 Check::Print (pathB, "Line Offset");
-                Check::Print (pathB1, "GPA Offset");
                 }
             if (offset > -0.45 * ax && offset > -0.45 * ay)
                 {
@@ -414,12 +403,11 @@ TEST(CloneOffset, RectangleOffset)
                 Check::Near (2.0 * ax + 2.0 * ay + 8.0 * offset, pathB->Length (), "Line offset length");
                 }
                         
-            CurveVectorPtr pathC, pathC1;
-            GetOffsets (pathA, offset, 0.001, pathC, pathC1);
+            CurveVectorPtr pathC;
+            GetOffsets (pathA, offset, 0.001, pathC);
             if (s_noisy > 0)
                 {
                 Check::Print (pathC, "Arc Offset");
-                Check::Print (pathC1, "GPA Arc Offset");
                 }
             if (offset > 0.0)
                 Check::Near (2.0 * ax + 2.0 * ay + 4.0 * offset * Angle::PiOver2 (), pathC->Length (), "Arc offset length");
