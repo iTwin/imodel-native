@@ -50,6 +50,12 @@
 #define DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT IMPORT_ATTRIBUTE
 #endif
 
+#if defined (__STRATEGYPLATFORM_BUILD__)
+#define STRATEGYPLATFORM_EXPORT EXPORT_ATTRIBUTE
+#else
+#define STRATEGYPLATFORM_EXPORT IMPORT_ATTRIBUTE
+#endif
+
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types
 //-----------------------------------------------------------------------------------------

@@ -94,6 +94,18 @@
             <Assemblies>Delivery/$(shlibprefix)DgnElementManipulationStrategies$(shlibext)</Assemblies>
         </Bindings>
     </Part>
+
+    <Part Name="StrategyPlatform" BentleyBuildMakeFile="StrategyPlatform/StrategyPlatform.mke">
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform" />
+        <SubPart PartName="BeSQLite" Repository="BeSQLite" PartFile="BeSQLite" />
+        <SubPart PartName="DgnView" Repository="DgnDisplay" PartFile="DgnDisplay" />
+        <SubPart PartName="GeometryManipulationStrategies" />
+        <SubPart PartName="DgnElementManipulationStrategies" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)StrategyPlatform$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)StrategyPlatform$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
     
   <Part Name="BuildingShared-Tested">
     <SubPart PartName="BuildingSharedBundle"/>

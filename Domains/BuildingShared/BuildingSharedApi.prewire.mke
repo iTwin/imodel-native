@@ -32,3 +32,6 @@ $(BuildContext)PublicAPI/BuildingShared/DgnElementManipulationStrategies : $(_Ma
 
 $(BuildContext)PublicAPI/BuildingShared/DgnUtils : $(_MakeFilePath)DgnUtils/PublicAPI
     $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/BuildingShared/StrategyPlatform : $(_MakeFilePath)StrategyPlatform/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
