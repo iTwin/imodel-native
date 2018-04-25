@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/IDataSourceCache.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -372,7 +372,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! Recursively get all instances connected to root. More efficient way for checking if multiple instances are held by root
         virtual BentleyStatus ReadInstancesConnectedToRootMap(Utf8StringCR rootName, ECInstanceKeyMultiMap& instancesOut, uint8_t depth = UINT8_MAX) = 0;
 
-        //! Recursively get all cached instances held by specific instance in cache
+        //! Recursively get all cached instances held by specific instance or root in cache
         virtual BentleyStatus ReadInstanceHierarchy
             (
             ECInstanceKeyCR instance,
