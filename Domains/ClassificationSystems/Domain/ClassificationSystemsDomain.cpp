@@ -46,9 +46,30 @@ ClassificationSystemsDomain::~ClassificationSystemsDomain ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                 03/2018
 //---------------------------------------------------------------------------------------
-void ClassificationSystemsDomain::_OnSchemaImported(Dgn::DgnDbR db) const
+void ClassificationSystemsDomain::_OnSchemaImported
+(
+Dgn::DgnDbR db
+) const
     {
-    ClassificationSystemsDomain::InsertDefinitionSystems(db);
+    ClassificationSystemsDomain::InsertStandardDefinitionSystems(db);
+    //ClassificationSystemsDomain::InsertMasterFormatDefinition(db);
+    ClassificationSystemsDomain::InsertUniFormatDefinitions(db);
+    /*ClassificationSystemsDomain::InsertOmniClass11Definitions(db);
+    ClassificationSystemsDomain::InsertOmniClass12Definitions(db);
+    ClassificationSystemsDomain::InsertOmniClass13_2006Definitions(db);
+    ClassificationSystemsDomain::InsertOmniClass13_2010Definitions(db);
+    ClassificationSystemsDomain::InsertOmniClass14Definitions(db);
+    ClassificationSystemsDomain::InsertOmniClass21Definitions(db);
+    ClassificationSystemsDomain::InsertOmniClass22_2006Definitions(Dgn::DgnDbR db);
+    ClassificationSystemsDomain::InsertOmniClass22_2010Definitions(Dgn::DgnDbR db);
+    ClassificationSystemsDomain::InsertOmniClass23Definitions(Dgn::DgnDbR db);
+    ClassificationSystemsDomain::InsertOmniClass32Definitions(Dgn::DgnDbR db);
+    ClassificationSystemsDomain::InsertOmniClass33Definitions(Dgn::DgnDbR db);
+    ClassificationSystemsDomain::InsertOmniClass34Definitions(Dgn::DgnDbR db);
+    ClassificationSystemsDomain::InsertOmniClass36_04Definitions(Dgn::DgnDbR db);
+    ClassificationSystemsDomain::InsertOmniClass36_24Definitions(Dgn::DgnDbR db);
+    ClassificationSystemsDomain::InsertOmniClass41Definitions(Dgn::DgnDbR db);
+    ClassificationSystemsDomain::InsertOmniClass49Definitions(Dgn::DgnDbR db);*/
         //TODO call my Generated Method
         //TODO all methods
     }
@@ -57,25 +78,49 @@ void ClassificationSystemsDomain::_OnSchemaImported(Dgn::DgnDbR db) const
 //---------------------------------------------------------------------------------------
 ClassificationSystemPtr ClassificationSystemsDomain::InsertSystem
 (
-    Dgn::DgnDbR db,
-    Utf8CP name
+Dgn::DgnDbR db,
+Utf8CP name
 ) const
     {
-    ClassificationSystemPtr classDefinitionGroup = ClassificationSystem::Create(db, name);
-    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinitionGroup.get(), BeSQLite::DbOpcode::Insert, "ClassificationSystem : Insertion"))
+    Dgn::DgnCode code = Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), Dgn::DgnElementId(), name);
+    ClassificationSystemPtr classSystem = ClassificationSystem::Create(db, name);
+    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classSystem.get(), BeSQLite::DbOpcode::Insert, "ClassificationSystem : Insertion"))
         {
-        classDefinitionGroup->Insert();
-        return classDefinitionGroup;
+        classSystem->SetCode(code);
+        classSystem->Insert();
+        return classSystem;
         }
     return nullptr;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              04/2018
 //---------------------------------------------------------------------------------------
+ClassificationSystemCPtr ClassificationSystemsDomain::TryAndGetSystem
+(
+Dgn::DgnDbR db,
+Utf8CP name
+) const
+    {
+    Dgn::DgnCode code = Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), Dgn::DgnElementId() , name);
+    Dgn::DgnElementId id = db.Elements().QueryElementIdByCode(code);
+    if (id.IsValid()) 
+        {
+        ClassificationSystemCPtr system = db.Elements().Get<ClassificationSystem>(id);
+        return system;
+        }
+    else {
+        return InsertSystem(db, name);
+        }
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              04/2018
+//---------------------------------------------------------------------------------------
 ClassificationGroupPtr ClassificationSystemsDomain::InsertGroup
 (
-    ClassificationSystemCR system,
-    Utf8CP name
+ClassificationSystemCR system,
+Utf8CP name
 ) const
     {
     ClassificationGroupPtr classDefinitionGroup = ClassificationGroup::Create(system, name);
@@ -92,9 +137,9 @@ ClassificationGroupPtr ClassificationSystemsDomain::InsertGroup
 //---------------------------------------------------------------------------------------
 void ClassificationSystemsDomain::InsertCIBSE 
 (
-    ClassificationSystemCR system,
-    ClassificationGroupCR group,
-    Utf8CP name
+ClassificationSystemCR system,
+ClassificationGroupCR group,
+Utf8CP name
 ) const
     {
     CIBSEClassDefinitionPtr classDefinition = CIBSEClassDefinition::Create(system, group, name);
@@ -108,9 +153,9 @@ void ClassificationSystemsDomain::InsertCIBSE
 //---------------------------------------------------------------------------------------
 void ClassificationSystemsDomain::InsertASHRAE2004 
 (
-    ClassificationSystemCR system,
-    ClassificationGroupCR group,
-    Utf8CP name
+ClassificationSystemCR system,
+ClassificationGroupCR group,
+Utf8CP name
 ) const
     {
     ASHRAE2004ClassDefinitionPtr classDefinition = ASHRAE2004ClassDefinition::Create(system, group, name);
@@ -124,9 +169,9 @@ void ClassificationSystemsDomain::InsertASHRAE2004
 //---------------------------------------------------------------------------------------
 void ClassificationSystemsDomain::InsertASHRAE2007 
 (
-    ClassificationSystemCR system,
-    ClassificationGroupCR group,
-    Utf8CP name
+ClassificationSystemCR system,
+ClassificationGroupCR group,
+Utf8CP name
 ) const
     {
     }
@@ -135,9 +180,9 @@ void ClassificationSystemsDomain::InsertASHRAE2007
 //---------------------------------------------------------------------------------------
 void ClassificationSystemsDomain::InsertASHRAE2010 
 (
-    ClassificationSystemCR system,
-    ClassificationGroupCR group,
-    Utf8CP name
+ClassificationSystemCR system,
+ClassificationGroupCR group,
+Utf8CP name
 ) const
     {
     ASHRAE2010ClassDefinitionPtr classDefinition = ASHRAE2010ClassDefinition::Create(system, group, name);
@@ -146,7 +191,45 @@ void ClassificationSystemsDomain::InsertASHRAE2010
         classDefinition->Insert();
         }
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              04/2018
+//---------------------------------------------------------------------------------------
+UniFormatClassDefinitionPtr ClassificationSystemsDomain::InsertUniFormat
+(
+ClassificationSystemCR system, 
+Utf8CP code, 
+Utf8CP name, 
+UniFormatClassDefinitionCP specializes
+) const 
+    {
+        return nullptr;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              04/2018
+//---------------------------------------------------------------------------------------
+MasterFormatClassDefinitionPtr ClassificationSystemsDomain::InsertMasterFormat
+(
+    ClassificationSystemCR system,
+    Utf8CP code,
+    Utf8CP name,
+    MasterFormatClassDefinitionCP specializes
+) const
+    {
+    return nullptr;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              04/2018
+//---------------------------------------------------------------------------------------
+OmniClassClassDefinitionPtr ClassificationSystemsDomain::InsertOmniClass
+(
+    ClassificationSystemCR system,
+    Utf8CP code,
+    Utf8CP name,
+    OmniClassClassDefinitionCP specializes
+) const
+    {
+    return nullptr;
+    }
 
-#include "GeneratedClassificationInserts.cpp"
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
