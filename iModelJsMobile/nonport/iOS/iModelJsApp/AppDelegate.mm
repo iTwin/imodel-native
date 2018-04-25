@@ -37,7 +37,7 @@ extern void imodeljs_addon_setMobileResourcesDir(Utf8CP d);
         
         NSString* backendJsPath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"BackEnd/MyAppMobileBackend.js"];
         NSString* backendJs = [NSString stringWithContentsOfFile:backendJsPath encoding:NSUTF8StringEncoding error:NULL];
-        auto evaluated = runtime.EvaluateScript ([backendJs UTF8String]);
+        auto evaluated = runtime.EvaluateScript ([backendJs UTF8String], [backendJsPath UTF8String]);
         BeAssert (evaluated.status == Js::EvaluateStatus::Success);
         });
     
