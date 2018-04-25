@@ -16,7 +16,6 @@ namespace BEU = BentleyApi::Units;
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingDividers)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingWord)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingScannerCursor)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CursorScanPoint)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumberGrabber)
@@ -251,26 +250,9 @@ public:
     //! characters enclosed into one of brackets: parenthesis, curvy bracket or square brackets
     //! if brackets are not detected - the returned word wil be empty
     //! "vertical line" divider is marked by single boolean argument because the divider and its mate are same
-    UNITS_EXPORT FormattingWord ExtractLastEnclosure();
-    UNITS_EXPORT FormattingWord ExtractBeforeEnclosure();
-    UNITS_EXPORT FormattingWord ExtractSegment(size_t from, size_t to);
-};
-
-//=======================================================================================
-// @bsiclass                                                    David.Fox-Rabinovitz
-//=======================================================================================
-struct FormattingWord
-{
-private:
-    static const int maxDelim = 4;   // the maximum number of ASCII characters in the delimiting group/clause
-    FormattingScannerCursorP m_cursor;  // just a reference to the cursor that has been used
-    Utf8String m_word;
-    Utf8Char m_delim[maxDelim + 2];
-    bool m_isASCII;
-public:
-    UNITS_EXPORT FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, Utf8CP delim, bool isAscii);
-    FormattingWord() : m_cursor(nullptr), m_isASCII(false) {}
-    Utf8CP GetText() { return m_word.c_str(); }
+    UNITS_EXPORT Utf8String ExtractLastEnclosure();
+    UNITS_EXPORT Utf8String ExtractBeforeEnclosure();
+    UNITS_EXPORT Utf8String ExtractSegment(size_t from, size_t to);
 };
 
 END_BENTLEY_FORMATTING_NAMESPACE

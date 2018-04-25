@@ -47,7 +47,7 @@ FormattingScannerCursor::FormattingScannerCursor(Utf8CP utf8Text, int scanLength
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 03/17
 //---------------------------------------------------------------------------------------
-FormattingWord FormattingScannerCursor::ExtractLastEnclosure()
+Utf8String FormattingScannerCursor::ExtractLastEnclosure()
     {
     Utf8Char emptyBuf[2];
     emptyBuf[0] = 0;
@@ -62,14 +62,14 @@ FormattingWord FormattingScannerCursor::ExtractLastEnclosure()
     if (!m_dividers.IsDivider(txt[m_breakIndex]))
         {
         m_status = ScannerCursorStatus::NoEnclosure;
-        return FormattingWord(this, emptyBuf, emptyBuf, true);
+        return emptyBuf;
         }
     Utf8Char div = txt[m_breakIndex];
     Utf8Char m = Utils::MatchingDivider(txt[m_breakIndex]);
     if(FormatConstant::EndOfLine() == m)
         {
         m_status = ScannerCursorStatus::NoEnclosure;
-        return FormattingWord(this, emptyBuf, emptyBuf, true);
+        return emptyBuf;
         }
     size_t endDivPosition = m_breakIndex;
     if (div)
@@ -79,7 +79,7 @@ FormattingWord FormattingScannerCursor::ExtractLastEnclosure()
     if(txt[m_breakIndex] != m || endDivPosition <= m_breakIndex)
         {
         m_status = ScannerCursorStatus::NoEnclosure;
-        return FormattingWord(this, emptyBuf, emptyBuf, true);
+        return emptyBuf;
         }
     // ready to extract content
 
@@ -90,14 +90,13 @@ FormattingWord FormattingScannerCursor::ExtractLastEnclosure()
     buf[len] = FormatConstant::EndOfLine();
     emptyBuf[0] = div;
     emptyBuf[1] = FormatConstant::EndOfLine();
-    FormattingWord word = FormattingWord(this, buf, emptyBuf, m_isASCII);
-    return word;
+    return Utf8String(buf);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-FormattingWord FormattingScannerCursor::ExtractBeforeEnclosure()
+Utf8String FormattingScannerCursor::ExtractBeforeEnclosure()
     {
     Utf8Char emptyBuf[2];
     emptyBuf[0] = 0;
@@ -111,7 +110,7 @@ FormattingWord FormattingScannerCursor::ExtractBeforeEnclosure()
     if (m_breakIndex <= indx || !m_dividers.IsDivider(txt[m_breakIndex]))
         {
         m_status = ScannerCursorStatus::NoEnclosure;
-        return FormattingWord(this, emptyBuf, emptyBuf, true);
+        return emptyBuf;
         }
 
     size_t len = m_breakIndex - indx;
@@ -122,14 +121,13 @@ FormattingWord FormattingScannerCursor::ExtractBeforeEnclosure()
     buf[len] = FormatConstant::EndOfLine();
     emptyBuf[0] = txt[m_breakIndex];
     emptyBuf[1] = FormatConstant::EndOfLine();
-    FormattingWord word = FormattingWord(this, buf, emptyBuf, m_isASCII);
-    return word;
+    return Utf8String(buf);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-FormattingWord FormattingScannerCursor::ExtractSegment(size_t from, size_t to)
+Utf8String FormattingScannerCursor::ExtractSegment(size_t from, size_t to)
     {
     Utf8Char emptyBuf[2];
     emptyBuf[0] = 0;
@@ -144,11 +142,11 @@ FormattingWord FormattingScannerCursor::ExtractSegment(size_t from, size_t to)
         Utf8P buf = (Utf8P)alloca(len + 2);
         memcpy(buf, txt + from, len);
         buf[len] = FormatConstant::EndOfLine();
-        return FormattingWord(this, buf, emptyBuf, m_isASCII);
+        return Utf8String(buf);
         }
  
     m_status = ScannerCursorStatus::NoEnclosure;
-    return FormattingWord(this, emptyBuf, emptyBuf, true);
+    return emptyBuf;
     }
 
 //===================================================

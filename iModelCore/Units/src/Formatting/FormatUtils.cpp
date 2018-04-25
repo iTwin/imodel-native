@@ -652,27 +652,6 @@ bool FormattingDividers::IsDivider(char c)
     }
 
 //===================================================
-// FormattingWord
-//===================================================
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, Utf8CP delim, bool isAscii)
-    {
-    m_cursor = cursor;
-    m_word = "";
-    size_t len = (nullptr == buffer) ? 0 : strlen(buffer);
-    if(0 < len)
-        m_word = buffer;
-    len = (nullptr == delim) ? 0 : strlen(delim);
-    memset(m_delim, 0, sizeof(m_delim));
-    if (0 < len)
-        memcpy(m_delim, delim, StringUtils::GetMinSize(maxDelim, len));
-    m_isASCII = isAscii;
-    }
-
-//===================================================
 // FormatProblemDetail
 //===================================================
 

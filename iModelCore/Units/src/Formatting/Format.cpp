@@ -461,8 +461,8 @@ BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<int32_t
 void Format::ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description)
     {
     FormattingScannerCursor curs = FormattingScannerCursor(description, -1, FormatConstant::Dividers());
-    FormattingWord fnam;
-    FormattingWord unit;
+    Utf8String fnam;
+    Utf8String unit;
     FormatDividerInstance fdt;
     FormatDividerInstance fdi = FormatDividerInstance(description, '|'); // check if this is a new format
     int n = fdi.GetDivCount();
@@ -489,7 +489,7 @@ void Format::ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatS
         if (fdi.BracketsMatched() && fdi.IsDivLast()) // there is a candidate for the format in parethesis
             {
             unit = curs.ExtractLastEnclosure();
-            fdt = FormatDividerInstance(unit.GetText(), "/*");
+            fdt = FormatDividerInstance(unit.c_str(), "/*");
             if (fdt.GetDivCount() == 0) // it can be a format name
                 {
                 fnam = unit;
@@ -504,8 +504,8 @@ void Format::ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatS
             unit = curs.ExtractSegment(0, curs.GetTotalLength());
         // dividers are not found - we assume a Unit name only
         }
-    formatString = fnam.GetText();
-    unitName = unit.GetText();
+    formatString = fnam;
+    unitName = unit;
     }
 
 //----------------------------------------------------------------------------------------
