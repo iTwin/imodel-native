@@ -244,6 +244,9 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
         BeFileName dbDir;
 #if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
         Utf8CP dbdirenv = getenv("NODE_DGNDB_DIR");
+#elif defined(BENTLEYCONFIG_OS_APPLE_IOS)
+        auto mobileDir = DgnPlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory().GetNameUtf8();        
+        Utf8CP dbdirenv = mobileDir.c_str();
 #else
         Utf8CP dbdirenv = nullptr;
 #endif
@@ -417,6 +420,21 @@ static void convertCodeSetToJson(JsonValueR json, DgnCodeSet const& codes, int c
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Karolis.Dziedzelis              03/18
 //---------------------------------------------------------------------------------------
+DbResult ExtractCodesFromChangeSet(JsonValueR codes, DgnRevisionPtr revision, DgnDbR dgndb)
+    {
+    DgnCodeSet usedCodes;
+    DgnCodeSet discardedCodes;
+    revision->ExtractCodes(usedCodes, discardedCodes, dgndb);
+
+    codes = Json::arrayValue;
+    convertCodeSetToJson(codes, usedCodes, 2);
+    convertCodeSetToJson(codes, discardedCodes, 3);
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Karolis.Dziedzelis              03/18
+//---------------------------------------------------------------------------------------
 DbResult JsInterop::ExtractCodes(JsonValueR codes, DgnDbR dgndb)
     {
     RevisionManagerR revisions = dgndb.Revisions();
@@ -424,14 +442,106 @@ DbResult JsInterop::ExtractCodes(JsonValueR codes, DgnDbR dgndb)
     if (!revisions.IsCreatingRevision())
         return BE_SQLITE_ERROR;
 
-    DgnCodeSet usedCodes;
-    DgnCodeSet discardedCodes;
-    revisions.GetCreatingRevision()->ExtractCodes(usedCodes, discardedCodes, dgndb);
+    return ExtractCodesFromChangeSet(codes, revisions.GetCreatingRevision(), dgndb);
+    }
 
-    codes = Json::arrayValue;
-    convertCodeSetToJson(codes, usedCodes, 2);
-    convertCodeSetToJson(codes, discardedCodes, 3);
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Karolis.Dziedzelis              04/18
+//---------------------------------------------------------------------------------------
+DbResult JsInterop::ExtractCodesFromFile(JsonValueR codes, DgnDbR dgndb, JsonValueCR changeSetToken)
+    {
+    bvector<DgnRevisionPtr> revisionPtrs;
+    bool containsSchemaChanges;
+    DbResult result = ReadChangeSets(revisionPtrs, containsSchemaChanges, dgndb.GetDbGuid().ToString(), changeSetToken);
+    if (BE_SQLITE_OK != result)
+        return result;
+
+    if (revisionPtrs.empty())
+        return BE_SQLITE_ERROR;
+    
+    return ExtractCodesFromChangeSet(codes, revisionPtrs[0], dgndb);
+    }
+
+#define PENDING_CHANGESET_PROPERTY_NAME "PendingChangeSets"
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Karolis.Dziedzelis              04/18
+//---------------------------------------------------------------------------------------
+DbResult SavePendingChangeSets(DgnDbR dgndb, JsonValueCR changeSets)
+    {
+    DbResult result = dgndb.SaveBriefcaseLocalValue(PENDING_CHANGESET_PROPERTY_NAME, changeSets.ToString());
+    
+    if (BE_SQLITE_DONE != result)
+        return result;
+
+    return dgndb.SaveChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Karolis.Dziedzelis              04/18
+//---------------------------------------------------------------------------------------
+DbResult JsInterop::GetPendingChangeSets(JsonValueR changeSets, DgnDbR dgndb)
+    {
+    Utf8String savedValue;
+
+    dgndb.QueryBriefcaseLocalValue(savedValue, PENDING_CHANGESET_PROPERTY_NAME);
+    if (Utf8String::IsNullOrEmpty(savedValue.c_str()))
+        changeSets = Json::arrayValue;
+    else
+        Json::Reader::Parse(savedValue, changeSets);
+
     return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Karolis.Dziedzelis              04/18
+//---------------------------------------------------------------------------------------
+Json::ArrayIndex FindChangeSet(JsonValueR changeSets, Utf8StringCR changeSetId)
+    {
+    for (Json::ArrayIndex i = 0; i < changeSets.size(); ++i)
+        {
+        if (changeSets[i].asString() == changeSetId)
+            return i;
+        }
+    return -1;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Karolis.Dziedzelis              04/18
+//---------------------------------------------------------------------------------------
+DbResult JsInterop::AddPendingChangeSet(DgnDbR dgndb, Utf8StringCR changeSetId)
+    {
+    Json::Value changeSets;
+    DbResult result = GetPendingChangeSets(changeSets, dgndb);
+    if (BE_SQLITE_OK != result)
+        return result;
+
+    if (-1 != FindChangeSet(changeSets, changeSetId))
+        return BE_SQLITE_OK;
+    
+    changeSets.append(changeSetId);
+
+    return SavePendingChangeSets(dgndb, changeSets);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Karolis.Dziedzelis              04/18
+//---------------------------------------------------------------------------------------
+DbResult JsInterop::RemovePendingChangeSet(DgnDbR dgndb, Utf8StringCR changeSetId)
+    {
+    Json::Value changeSets;
+    DbResult result = GetPendingChangeSets(changeSets, dgndb);
+    if (BE_SQLITE_OK != result)
+        return result;
+
+    Json::ArrayIndex foundIndex = FindChangeSet(changeSets, changeSetId);
+
+    if (-1 == foundIndex)
+        return BE_SQLITE_OK;
+    
+    changeSets.removeIndex(foundIndex);
+
+    return SavePendingChangeSets(dgndb, changeSets);
     }
 
 //---------------------------------------------------------------------------------------

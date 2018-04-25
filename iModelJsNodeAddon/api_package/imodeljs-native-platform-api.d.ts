@@ -134,9 +134,29 @@ declare class NativeDgnDb {
     abandonCreateChangeSet(): void;
 
     /**
-     * Start creating a new change set with local changes
+     * Extract codes from change set that is being created
      */
     extractCodes(): ErrorStatusOrResult<DbResult, string>;
+
+    /**
+     * Extract codes from a change set file
+     */
+    extractCodesFromFile(changeSets: string): ErrorStatusOrResult<DbResult, string>;
+
+    /**
+     * Get list of change sets that failed updating their codes
+     */
+    getPendingChangeSets(): ErrorStatusOrResult<DbResult, string>;
+
+    /**
+     * Mark change set as failed to update codes
+     */
+    addPendingChangeSet(changeSetId: string): DbResult;
+    
+    /**
+     * Remove change set from failed change sets list
+     */
+    removePendingChangeSet(changeSetId: string): DbResult;
 
     /** Creates an EC change cache for this iModel (but does not attach it). 
      * @param changeCacheFile The created change cache ECDb file

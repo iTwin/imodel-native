@@ -22,7 +22,7 @@
 #include "ECSchemaXmlContextUtils.h"
 #include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/BeThread.h>
-#include <ECPresentation/DgnECPresentationSerializer.h>
+#include <Bentley/PerformanceLogger.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -573,9 +573,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(m_connections, paths));
         IECPresentationManager::RegisterImplementation(m_presentationManager.get());
-        IECPresentationManager::SetSerializer(&DgnECPresentationSerializer::Get());
         m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
-        m_connections.NotifyConnectionOpened(*m_dgndb);
         }
 
     void TearDownPresentationManager()
@@ -789,6 +787,40 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return CreateBentleyReturnObject(result, Napi::String::New(Env(), codes.ToString().c_str()));
         }
 
+    Napi::Value ExtractCodesFromFile(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, changeSetToken, Env().Undefined());
+        Json::Value jsonChangeSetToken = Json::Value::From(changeSetToken);
+        Json::Value codes;
+        DbResult result = JsInterop::ExtractCodesFromFile(codes, *m_dgndb, jsonChangeSetToken);
+        return CreateBentleyReturnObject(result, Napi::String::New(Env(), codes.ToString().c_str()));
+        }
+
+    Napi::Value GetPendingChangeSets(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        Json::Value changeSets;
+        DbResult result = JsInterop::GetPendingChangeSets(changeSets, *m_dgndb);
+        return CreateBentleyReturnObject(result, Napi::String::New(Env(), changeSets.ToString().c_str()));
+        }
+
+    Napi::Value AddPendingChangeSet(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, changeSetId, Env().Undefined());
+        DbResult result = JsInterop::AddPendingChangeSet(*m_dgndb, changeSetId);
+        return Napi::Number::New(Env(), (int) result);
+        }
+
+    Napi::Value RemovePendingChangeSet(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, changeSetId, Env().Undefined());
+        DbResult result = JsInterop::RemovePendingChangeSet(*m_dgndb, changeSetId);
+        return Napi::Number::New(Env(), (int) result);
+        }
+
     Napi::Value GetCachedBriefcaseInfos(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, cachePath, Env().Undefined());
@@ -927,12 +959,13 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             return CreateBentleyReturnErrorObject(DgnDbStatus::SQLiteError);
 
         ECClassId ecclassId = stmt->GetValueId<ECClassId>(0);
-        ECInstanceKey instanceKey = ECInstanceKey(ecclassId, elemId);
-        KeySetPtr input = KeySet::Create({instanceKey});
+        ECClassCP ecclass = GetDgnDb().Schemas().GetClass(ecclassId);
+        KeySetPtr input = KeySet::Create({ECClassInstanceKey(ecclass, elemId)});
         RulesDrivenECPresentationManager::ContentOptions options ("Items");
         if ( m_presentationManager == nullptr)
             return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
 
+        m_connections.NotifyConnectionOpened(GetDgnDb());
         ContentDescriptorCPtr descriptor = m_presentationManager->GetContentDescriptor(GetDgnDb(), ContentDisplayType::PropertyPane, *input, nullptr, options.GetJson()).get();
         if (descriptor.IsNull())
             return CreateBentleyReturnErrorObject(DgnDbStatus::BadArg);
@@ -1035,18 +1068,24 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
         RevisionChangesFileReader fs(changesetFilePath, GetDgnDb());
         BeSQLite::ChangeGroup group;
+        PERFLOG_START("iModelJsNative", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
         DbResult r = fs.ToChangeGroup(group);
         if (BE_SQLITE_OK != r)
-            return CreateBentleyReturnErrorObject(r);
+            return CreateBentleyReturnErrorObject(r, Utf8PrintfString("Failed to read ChangeSet file '%s' into a ChangeGroup object.", changesetFilePathStr.c_str()).c_str());
+        PERFLOG_FINISH("iModelJsNative", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
 
+        PERFLOG_START("iModelJsNative", "ExtractChangeSummary>Create ChangeSet from ChangeGroup");
         r = changeset.FromChangeGroup(group);
         if (BE_SQLITE_OK != r)
-            return CreateBentleyReturnErrorObject(r);
+            return CreateBentleyReturnErrorObject(r, Utf8PrintfString("Failed to create ChangeSet object from ChangeGroup object for ChangeSet file '%s'.", changesetFilePathStr.c_str()).c_str());
+        PERFLOG_FINISH("iModelJsNative", "ExtractChangeSummary>Create ChangeSet from ChangeGroup");
         }
 
+        PERFLOG_START("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
         ECInstanceKey changeSummaryKey;
         if (SUCCESS != ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheECDb->GetECDb(), GetDgnDb(), ChangeSetArg(changeset)))
-            return CreateBentleyReturnErrorObject(BE_SQLITE_ERROR);
+            return CreateBentleyReturnErrorObject(BE_SQLITE_ERROR, Utf8PrintfString("Failed to extract ChangeSummary for ChangeSet file '%s'.", changesetFilePathStr.c_str()).c_str());
+        PERFLOG_FINISH("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
 
         return CreateBentleyReturnSuccessObject(Napi::String::New(Env(), changeSummaryKey.GetInstanceId().ToHexStr().c_str()));
         }
@@ -1283,6 +1322,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             return Env().Undefined();
             }
 
+        fonts.Invalidate(); // Make sure font map gets updated...
+
         auto thisFont = Json::Value();
         thisFont[DgnFonts::json_id()] = (int)fontId.GetValue();
         thisFont[DgnFonts::json_type()] = (int)fontType;
@@ -1402,6 +1443,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         Napi::Function t = DefineClass(env, "NativeDgnDb", {
             InstanceMethod("abandonChanges", &NativeDgnDb::AbandonChanges),
             InstanceMethod("abandonCreateChangeSet", &NativeDgnDb::AbandonCreateChangeSet),
+            InstanceMethod("addPendingChangeSet", &NativeDgnDb::AddPendingChangeSet),
             InstanceMethod("appendBriefcaseManagerResourcesRequest", &NativeDgnDb::AppendBriefcaseManagerResourcesRequest),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
             InstanceMethod("briefcaseManagerEndBulkOperation", &NativeDgnDb::BriefcaseManagerEndBulkOperation),
@@ -1420,6 +1462,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("extractBulkResourcesRequest", &NativeDgnDb::ExtractBulkResourcesRequest),
             InstanceMethod("extractChangeSummary", &NativeDgnDb::ExtractChangeSummary),
             InstanceMethod("extractCodes", &NativeDgnDb::ExtractCodes),
+            InstanceMethod("extractCodesFromFile", &NativeDgnDb::ExtractCodesFromFile),
             InstanceMethod("finishCreateChangeSet", &NativeDgnDb::FinishCreateChangeSet),
             InstanceMethod("getBriefcaseId", &NativeDgnDb::GetBriefcaseId),
             InstanceMethod("getCachedBriefcaseInfos", &NativeDgnDb::GetCachedBriefcaseInfos),
@@ -1430,6 +1473,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getIModelProps", &NativeDgnDb::GetIModelProps),
             InstanceMethod("getModel", &NativeDgnDb::GetModel),
             InstanceMethod("getParentChangeSetId", &NativeDgnDb::GetParentChangeSetId),
+            InstanceMethod("getPendingChangeSets", &NativeDgnDb::GetPendingChangeSets),
             InstanceMethod("getReversedChangeSetId", &NativeDgnDb::GetReversedChangeSetId),
             InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
             InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
@@ -1443,6 +1487,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryNextAvailableFileProperty", &NativeDgnDb::QueryNextAvailableFileProperty),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
+            InstanceMethod("removePendingChangeSet", &NativeDgnDb::RemovePendingChangeSet),
             InstanceMethod("embedFont", &NativeDgnDb::EmbedFont),
             InstanceMethod("saveChanges", &NativeDgnDb::SaveChanges),
             InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
