@@ -229,13 +229,4 @@ Quantity Quantity::Subtract(QuantityCR rhs) const
     return  Quantity(newValue, *m_unit);
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                             David.Fox-Rabinovitz     12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Quantity::ToDebugText() const
-    {
-    Utf8PrintfString txt("%f %s", m_magnitude, m_unit->GetName().c_str());
-    return(txt);
-    }
-
 END_BENTLEY_UNITS_NAMESPACE

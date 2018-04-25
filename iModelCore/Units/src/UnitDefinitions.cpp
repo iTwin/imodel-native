@@ -112,9 +112,6 @@ void AddIlluminance(UnitRegistry& reg)
     reg.AddUnit(ILLUMINANCE, USCUSTOM, "LUMEN/SQ.FT", "LUMEN*FT(-2)");
     }
 
-void AddLuminosity(UnitRegistry& reg)
-    {}
-
 void AddMole(UnitRegistry& reg)
     {
     reg.AddUnit(MOLE, METRIC, "KMOL", "[KILO]*MOL");
@@ -126,12 +123,6 @@ void AddPerson(UnitRegistry& reg)
     reg.AddUnit(CAPITA, STATISTICS, "HUNDRED_PERSON", "[HECTO]*PERSON");
     reg.AddUnit(CAPITA, STATISTICS, "THOUSAND_PERSON", "[KILO]*PERSON");
     }
-
-void AddFinance(UnitRegistry& reg)
-    {}
-
-void AddRatio(UnitRegistry& reg)
-    {}
 
 void AddRotationalSpringConstant(UnitRegistry& reg)
     {
@@ -161,9 +152,6 @@ void AddPlaneAngle(UnitRegistry& reg)
     reg.AddUnit(ANGLE, METRIC, "GRAD", "[PI]*RAD", 1.0, 200.0); // 1/200
     reg.AddUnit(ANGLE, METRIC, "REVOLUTION", "[2PI]*RAD");
     }
-
-void AddSolidAngle(UnitRegistry& reg)
-    {}
 
 void AddArea(UnitRegistry& reg)
     {
@@ -319,11 +307,6 @@ void AddSpecificHeatCapacityMolar(UnitRegistry& reg)
     reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, METRIC, "J/(KMOL*K)", "J*KMOL(-1)*DELTA_KELVIN(-1)");
     reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, METRIC, "KJ/(KMOL*K)", "KJ*KMOL(-1)*DELTA_KELVIN(-1)");
     reg.AddUnit(SPECIFIC_HEAT_CAPACITY_MOLAR, USCUSTOM, "BTU/(LB-MOL*RANKINE)", "BTU*LB-MOL(-1)*DELTA_RANKINE(-1)");
-    }
-
-void AddVolumeFlowRateByArea(UnitRegistry& reg)
-    {
-
     }
 
 void AddVolumeFlowRate(UnitRegistry& reg)
@@ -791,16 +774,12 @@ void UnitRegistry::AddDefaultUnits()
     AddTemperatureChange(*this);
     AddLuminousFlux(*this);
     AddIlluminance(*this);
-    AddLuminosity(*this);
     AddMole(*this);
     AddPerson(*this);
-    AddFinance(*this);
-    AddRatio(*this);
     AddRotationalSpringConstant(*this);
     AddLinearRotationalSpringConstant(*this);
     AddAcceleration(*this);
     AddPlaneAngle(*this);
-    AddSolidAngle(*this);
     AddArea(*this);
     AddSizeLengthRate(*this);
     AddDensity(*this);

@@ -169,15 +169,15 @@ UnitP Unit::_Create(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, dou
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 BentleyStatus Unit::SetPhenomenon(PhenomenonCR phenom)
-        {
-        if (nullptr != m_phenomenon)
-            return ERROR; 
+    {
+    if (nullptr != m_phenomenon)
+        return ERROR;
 
-        phenom.AddUnit(*this);
+    phenom.AddUnit(*this);
 
-        m_phenomenon = &phenom;
-        return SUCCESS;
-        }
+    m_phenomenon = &phenom;
+    return SUCCESS;
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
@@ -477,9 +477,7 @@ bool Unit::AreCompatible(UnitCP unitA, UnitCP unitB)
     }
 
 //===================================================
-//
 // Phenomenon
-//
 //===================================================
 
 //--------------------------------------------------------------------------------------

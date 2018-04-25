@@ -274,4 +274,15 @@ TEST_F(MappingTest, AliasFormatString)
         }
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+TEST_F(MappingTest, MappingNotFound)
+    {
+    EXPECT_EQ(nullptr, AliasMappings::TryGetAliasFromName("NotAName"));
+    EXPECT_EQ(nullptr, AliasMappings::TryGetNameFromAlias("NotAnAlias"));
+    EXPECT_EQ(nullptr, LegacyNameMappings::TryGetFormatStringFromLegacyName("NotALegacyName"));
+    EXPECT_EQ(nullptr, LegacyNameMappings::TryGetLegacyNameFromFormatString("NotAFormatString"));
+    }
+
 END_BENTLEY_FORMATTEST_NAMESPACE

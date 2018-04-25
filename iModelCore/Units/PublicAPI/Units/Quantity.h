@@ -43,7 +43,6 @@ public:
     Utf8CP GetUnitLabel() const {return (nullptr == m_unit)? nullptr : m_unit->GetLabel().c_str();}
     PhenomenonCP GetPhenomenon() const {return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon();}
     UNITS_EXPORT Quantity ConvertTo(UnitCP unit) const;
-    UNITS_EXPORT Utf8String ToDebugText() const;
     UNITS_EXPORT bool IsClose(QuantityCR rhs, double tolerance) const;
 
     // Tolerance is factor used to scale the machine epsilon in order to determine

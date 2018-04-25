@@ -60,7 +60,7 @@ bool Format::SetNumericSpec(NumericFormatSpec spec)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-Format::Format( NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec)
+Format::Format(NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec)
     : Format(numSpec)
     {
     m_compositeSpec = compSpec;
@@ -93,6 +93,7 @@ Format::Format( NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz
 //----------------------------------------------------------------------------------------
+// static
 void Format::FromJson(FormatR out, Utf8CP jsonString, BEU::IUnitsContextCP context)
     {
     Json::Value jval (Json::objectValue);
@@ -103,6 +104,7 @@ void Format::FromJson(FormatR out, Utf8CP jsonString, BEU::IUnitsContextCP conte
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
+// static
 void Format::FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP context)
     {
     Format f = Format();
