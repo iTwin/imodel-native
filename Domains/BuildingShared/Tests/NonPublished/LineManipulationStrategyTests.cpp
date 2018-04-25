@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/LineManipulationStrategyTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley\BeTest.h>
@@ -54,4 +54,58 @@ TEST_F(LineManipulationStrategyTests, Finish_CreatesLine)
     segment.GetEndPoints(start, end);
     ASSERT_TRUE(start.AlmostEqual({1,1,1}));
     ASSERT_TRUE(end.AlmostEqual({2,2,2}));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(LineManipulationStrategyTests, Create_FromExistingSegment)
+    {
+    DPoint3d expectedStart = DPoint3d::From(0, 0, 0);
+    DPoint3d expectedEnd = DPoint3d::From(1, 0, 0);
+    DSegment3d expectedLine = DSegment3d::From(expectedStart, expectedEnd);
+
+    LineManipulationStrategyPtr sut = LineManipulationStrategy::Create(expectedLine);
+    ASSERT_TRUE(sut.IsValid());
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet());
+    ASSERT_TRUE(sut->IsComplete());
+
+    bvector<DPoint3d> keyPoints = sut->GetKeyPoints();
+    ASSERT_EQ(2, keyPoints.size());
+
+    ICurvePrimitivePtr linePrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(linePrimitive.IsValid());
+    DSegment3d actualLine;
+    ASSERT_TRUE(linePrimitive->TryGetLine(actualLine));
+    DPoint3d actualStart, actualEnd;
+    actualLine.GetEndPoints(actualStart, actualEnd);
+    ASSERT_TRUE(actualStart.AlmostEqual(expectedStart));
+    ASSERT_TRUE(actualEnd.AlmostEqual(expectedEnd));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(LineManipulationStrategyTests, Create_FromExistingStartEnd)
+    {
+    DPoint3d expectedStart = DPoint3d::From(0, 0, 0);
+    DPoint3d expectedEnd = DPoint3d::From(1, 0, 0);
+    DSegment3d expectedLine = DSegment3d::From(expectedStart, expectedEnd);
+
+    LineManipulationStrategyPtr sut = LineManipulationStrategy::Create(expectedStart, expectedEnd);
+    ASSERT_TRUE(sut.IsValid());
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet());
+    ASSERT_TRUE(sut->IsComplete());
+
+    bvector<DPoint3d> keyPoints = sut->GetKeyPoints();
+    ASSERT_EQ(2, keyPoints.size());
+
+    ICurvePrimitivePtr linePrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(linePrimitive.IsValid());
+    DSegment3d actualLine;
+    ASSERT_TRUE(linePrimitive->TryGetLine(actualLine));
+    DPoint3d actualStart, actualEnd;
+    actualLine.GetEndPoints(actualStart, actualEnd);
+    ASSERT_TRUE(actualStart.AlmostEqual(expectedStart));
+    ASSERT_TRUE(actualEnd.AlmostEqual(expectedEnd));
     }

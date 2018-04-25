@@ -36,6 +36,8 @@ struct LineManipulationStrategy : public CurvePrimitiveManipulationStrategy
 
     public:
         static LineManipulationStrategyPtr Create() { return new LineManipulationStrategy(); }
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static LineManipulationStrategyPtr Create(DSegment3dCR line);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static LineManipulationStrategyPtr Create(DPoint3dCR start, DPoint3dCR end);
     };
 
 END_BUILDING_SHARED_NAMESPACE
