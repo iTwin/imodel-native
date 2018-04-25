@@ -4548,62 +4548,57 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
             case GeometryStreamIO::OpCode::Pattern:
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::AreaPattern>(egOp.m_data);
-                Json::Value value;
+                PatternParamsPtr pattern = PatternParams::Create();
 
                 if (ppfb->has_origin())
-                    JsonUtils::DPoint3dToJson(value["origin"], *(DPoint3dCP) ppfb->origin());
+                    pattern->SetOrigin(*((DPoint3dCP) ppfb->origin()));
 
                 if (ppfb->has_rotation())
-                    {
-                    YawPitchRollAngles angles;
-                    YawPitchRollAngles::TryFromRotMatrix(angles, *((RotMatrixCP) ppfb->rotation())); // Is this ok?
-                    value["rotation"] = JsonUtils::YawPitchRollToJson(angles);
-                    }
+                    pattern->SetOrientation(*((RotMatrixCP) ppfb->rotation()));
 
-                value["space1"] = Json::Value(ppfb->space1());
-                value["space2"] = Json::Value(ppfb->space2());
-                value["angle1"] = JsonUtils::FromAngle(Angle::FromRadians(ppfb->angle1()));
-                value["angle2"] = JsonUtils::FromAngle(Angle::FromRadians(ppfb->angle2()));
-                value["scale"]  = Json::Value(ppfb->scale());
+                pattern->SetPrimarySpacing(ppfb->space1());
+                pattern->SetSecondarySpacing(ppfb->space2());
+                pattern->SetPrimaryAngle(ppfb->angle1());
+                pattern->SetSecondaryAngle(ppfb->angle2());
+                pattern->SetScale(ppfb->scale());
 
                 if (ppfb->useColor())
-                    value["color"] = Json::Value(ppfb->color());
+                    pattern->SetColor(ColorDef(ppfb->color()));
 
                 if (ppfb->useWeight())
-                    value["weight"] = Json::Value(ppfb->weight());
+                    pattern->SetWeight(ppfb->weight());
 
-                value["invisibleBoundary"] = Json::Value(TO_BOOL(ppfb->invisibleBoundary()));
-                value["snappable"] = Json::Value(TO_BOOL(ppfb->snappable()));
-
-                DgnGeometryPartId symbolId = DgnGeometryPartId((uint64_t) ppfb->symbolId());
-                if (symbolId.IsValid())
-                    value["symbolId"] = symbolId.ToHexStr();
+                pattern->SetInvisibleBoundary(TO_BOOL(ppfb->invisibleBoundary()));
+                pattern->SetSnappable(TO_BOOL(ppfb->snappable()));
+                pattern->SetSymbolId(DgnGeometryPartId((uint64_t) ppfb->symbolId()));
 
                 if (ppfb->has_defLine())
                     {
                     flatbuffers::Vector<flatbuffers::Offset<FB::DwgHatchDefLine>> const* fbDefLineOffsets = ppfb->defLine();
+                    bvector<DwgHatchDefLine> defLines;
 
                     for (auto const& fbDefLine : *fbDefLineOffsets)
                         {
-                        Json::Value defLine;
+                        DwgHatchDefLine line;
 
-                        defLine["angle"] = JsonUtils::FromAngle(Angle::FromRadians(fbDefLine.angle()));
-                        JsonUtils::DPoint2dToJson(defLine["through"], *((DPoint2dCP) fbDefLine.through()));
-                        JsonUtils::DPoint2dToJson(defLine["offset"], *((DPoint2dCP) fbDefLine.offset()));
+                        line.m_angle   = fbDefLine.angle();
+                        line.m_through = *((DPoint2dCP) fbDefLine.through());
+                        line.m_offset  = *((DPoint2dCP) fbDefLine.offset());
+                        line.m_nDashes = fbDefLine.dashes()->Length();
 
-                        uint32_t nDashes = fbDefLine.dashes()->Length();
-                        double* dashes = (double*) fbDefLine.dashes()->Data();
+                        if (0 != line.m_nDashes)
+                            memcpy(line.m_dashes, fbDefLine.dashes()->Data(), line.m_nDashes * sizeof(double));
 
-                        for (uint32_t iDash=0; iDash < nDashes; ++iDash)
-                            defLine["dashes"].append(Json::Value(dashes[iDash]));
-
-                        value["defLines"].append(defLine);
+                        defLines.push_back(line);
                         }
+
+                    pattern->SetDwgHatchDef(defLines);
                     }
 
-                Json::Value patternValue;
-                patternValue["pattern"] = value;
-                output.append(patternValue);                
+                Json::Value value;
+
+                value["pattern"] = pattern->ToJson();
+                output.append(value);  
                 break;
                 }
 
@@ -6199,81 +6194,10 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
             }
         else if (entry.isMember("pattern"))
             {
-            Json::Value pattern = entry["pattern"];
             PatternParamsPtr patternParams = PatternParams::Create();
 
-            if (!pattern["origin"].isNull())
-                {
-                DPoint3d origin;
-
-                JsonUtils::DPoint3dFromJson(origin, pattern["origin"]);
-                patternParams->SetOrigin(origin);
-                }
-
-            if (!pattern["rotation"].isNull())
-                {
-                YawPitchRollAngles angles = JsonUtils::YawPitchRollFromJson(pattern["rotation"]);
-                RotMatrix rMatrix = angles.ToRotMatrix();
-
-                patternParams->SetOrientation(rMatrix);
-                }
-
-            if (!pattern["space1"].isNull())
-                patternParams->SetPrimarySpacing(pattern["space1"].asDouble());
-
-            if (!pattern["space2"].isNull())
-                patternParams->SetSecondarySpacing(pattern["space2"].asDouble());
-
-            if (!pattern["angle1"].isNull())
-                patternParams->SetPrimaryAngle(JsonUtils::ToAngle(pattern["angle1"]).Radians());
-
-            if (!pattern["angle2"].isNull())
-                patternParams->SetSecondaryAngle(JsonUtils::ToAngle(pattern["angle2"]).Radians());
-
-            if (!pattern["scale"].isNull())
-                patternParams->SetScale(pattern["scale"].asDouble());
-
-            if (!pattern["color"].isNull())
-                patternParams->SetColor(ColorDef(pattern["color"].asUInt()));
-
-            if (!pattern["weight"].isNull())
-                patternParams->SetWeight(pattern["weight"].asUInt());
-
-            patternParams->SetInvisibleBoundary(pattern["invisibleBoundary"].asBool());
-            patternParams->SetSnappable(pattern["snappable"].asBool());
-
-            if (!pattern["symbolId"].isNull())
-                {
-                DgnGeometryPartId symbolId;
-                symbolId.FromJson(pattern["symbolId"]);
-                if (symbolId.IsValid())
-                    patternParams->SetSymbolId(symbolId);
-                }
-
-            if (!pattern["defLines"].isNull() && pattern["defLines"].isArray())
-                {
-                bvector<DwgHatchDefLine> defLines;
-                uint32_t nDefLines = (uint32_t) pattern["defLines"].size();
-
-                for (uint32_t i=0; i < nDefLines; i++)
-                    {
-                    DwgHatchDefLine line;
-
-                    line.m_angle = JsonUtils::ToAngle(pattern["defLines"][i]["angle"]).Radians();
-                    JsonUtils::DPoint2dFromJson(line.m_through, pattern["defLines"][i]["through"]);
-                    JsonUtils::DPoint2dFromJson(line.m_through, pattern["defLines"][i]["offset"]);
-                    line.m_nDashes = std::min((short) pattern["defLines"][i]["dashes"].size(), (short) MAX_DWG_HATCH_LINE_DASHES);
-
-                    for (short iDash=0; iDash < line.m_nDashes; iDash++)
-                        line.m_dashes[iDash] = pattern["defLines"][i]["dashes"][iDash].asDouble();
-
-                    defLines.push_back(line);
-                    }
-
-                patternParams->SetDwgHatchDef(defLines);
-                }
-
-            params.SetPatternParams(patternParams.get());
+            if (SUCCESS == patternParams->FromJson(entry["pattern"]))
+                params.SetPatternParams(patternParams.get());
             }
         else if (entry.isMember("material"))
             {
