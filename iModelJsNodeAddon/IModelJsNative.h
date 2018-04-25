@@ -11,6 +11,7 @@
 #include <DgnPlatform/DgnDb.h>
 #include <ECDb/ECDbApi.h>
 #include <DgnPlatform/ECUtils.h>
+#include <DgnPlatform/DgnFontData.h>
 #include <node-addon-api/napi.h>
 
 USING_NAMESPACE_BENTLEY
@@ -90,6 +91,10 @@ public:
     static BeSQLite::DbResult FinishCreateChangeSet(DgnDbR dgndb);
     static void AbandonCreateChangeSet(DgnDbR dgndb);
     static BeSQLite::DbResult ExtractCodes(JsonValueR codes, DgnDbR db);
+    static BeSQLite::DbResult ExtractCodesFromFile(JsonValueR codes, DgnDbR db, JsonValueCR changeSetToken);
+    static BeSQLite::DbResult GetPendingChangeSets(JsonValueR changeSets, DgnDbR db);
+    static BeSQLite::DbResult AddPendingChangeSet(DgnDbR db, Utf8StringCR changeSetId);
+    static BeSQLite::DbResult RemovePendingChangeSet(DgnDbR db, Utf8StringCR changeSetId);
 
     static void GetIModelProps(JsonValueR, DgnDbCR dgndb);
     
