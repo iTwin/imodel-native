@@ -424,6 +424,17 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM]", presFormatStrings[1].c_str());
     EXPECT_STRCASEEQ("f:DefaultReal[u:MM]", presFormatStrings[2].c_str());
     }
+    {
+    persUnitName.clear();
+    presFormatStrings.clear();
+    presFUSes.clear();
+    presFUSes.push_back("DM(fi8)");
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(fi8)", presFUSes));
+    EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
+    EXPECT_EQ(2, presFormatStrings.size());
+    EXPECT_STRCASEEQ("f:AmerFI", presFormatStrings[0].c_str());
+    EXPECT_STRCASEEQ("f:AmerFI", presFormatStrings[1].c_str());
+    }
     }
 
 //--------------------------------------------------------------------------------------

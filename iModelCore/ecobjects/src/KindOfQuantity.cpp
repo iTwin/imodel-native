@@ -713,6 +713,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
     if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPers, persistenceUnit))
         return ECObjectsStatus::Error;
 
+
     // Presentation
     for (Utf8CP presFus : presFuses)
         {
@@ -743,11 +744,17 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
         formatString
             .append("f:")
             .append(unqualifiedPresFormat);
-        formatString
-            .append("[")
-            .append("u:")
-            .append(unqualifiedPres)
-            .append("]");
+        bvector<Utf8String> split;
+        BeStringUtilities::Split(unqualifiedPresFormat.c_str(), "(", split);
+        auto format = StandardFormatsHelper::GetFormat(split[0].c_str());
+        if (nullptr == format || !format->HasComposite())
+            {
+            formatString
+                .append("[")
+                .append("u:")
+                .append(unqualifiedPres)
+                .append("]");
+            }
         formatStrings.push_back(formatString);
         }
 
@@ -761,11 +768,18 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
         Utf8String formatString;
         formatString
             .append("f:")
-            .append(unqualifiedPersFormat)
-            .append("[")
-            .append("u:")
-            .append(unqualifiedPers)
-            .append("]");
+            .append(unqualifiedPersFormat);
+        bvector<Utf8String> split;
+        BeStringUtilities::Split(unqualifiedPersFormat.c_str(), "(", split);
+        auto format = StandardFormatsHelper::GetFormat(split[0].c_str());
+        if (nullptr == format || !format->HasComposite())
+            {
+            formatString
+                .append("[")
+                .append("u:")
+                .append(unqualifiedPers)
+                .append("]");
+            }
 
         formatStrings.push_back(formatString);
         }
