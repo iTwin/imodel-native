@@ -534,6 +534,13 @@ NAPI_EXTERN napi_status napi_run_script(napi_env env,
                                         napi_value script,
                                         napi_value* result);
 
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+NAPI_EXTERN napi_status napi_run_script_with_identifier(napi_env env,
+                                        napi_value script,
+                                        napi_value identifier,
+                                        napi_value* result);
+#endif
+
 EXTERN_C_END
 
 #endif  // SRC_NODE_API_H_

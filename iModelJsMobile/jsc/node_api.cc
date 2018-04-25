@@ -2173,3 +2173,24 @@ napi_status napi_run_script(napi_env env,
 
     return GET_RETURN_STATUS(env);
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+napi_status napi_run_script_with_identifier(napi_env env,
+                            napi_value script,
+                            napi_value identifier,
+                            napi_value* result) {
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, script);
+    CHECK_ARG(env, result);
+    
+    JSContextRef ctx = env->GetContext();
+    JSStringRef scriptString = JSValueToStringCopy (ctx, script, NULL);
+    JSStringRef identifierString = JSValueToStringCopy (ctx, identifier, NULL);
+    *result = JSEvaluateScript(ctx,scriptString,NULL,identifierString,0,NULL);
+    JSStringRelease(scriptString);
+    JSStringRelease(identifierString);
+
+    return GET_RETURN_STATUS(env);
+}
