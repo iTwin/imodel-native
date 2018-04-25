@@ -748,7 +748,7 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationFormats(KindOfQ
     for (rapidjson::Value const& presFormatJson : presFormatsJson.GetArray())
         {
         BeAssert(presFormatJson.IsString() && presFormatJson.GetStringLength() > 0);
-        if (ECObjectsStatus::Success != koq.AddPresentationFormatByString(presFormatJson.GetString(), lookupFormat, lookupUnit))
+        if (ECObjectsStatus::Success != koq.AddPresentationFormatsByString(presFormatJson.GetString(), lookupFormat, lookupUnit))
             {
             LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation format '%s' could not be parsed.", koq.GetFullName().c_str(), presFormatJson.GetString());
             return ERROR;
