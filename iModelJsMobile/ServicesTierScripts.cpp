@@ -505,7 +505,7 @@ Utf8CP Host::InitScript()
             if (extensionCache.hasOwnProperty (identifier))
                 return extensionCache [identifier];
 
-            let extensionContents = params.deliverExtension.apply (this, arguments);
+            let extensionContents = params.deliverExtension(identifier);
             if (typeof (extensionContents) !== "undefined") {
                 extensionCache [identifier] = extensionContents;
                 return extensionContents;

@@ -15,7 +15,7 @@ BEGIN_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_fs_open (Napi::Env& env)
     {
-    return Napi::Function::New(env, [this](Napi::CallbackInfo const& info) -> Napi::Value
+    return Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (3);
 
@@ -36,7 +36,7 @@ Napi::Function Utilities::uv_fs_open (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_fs_realpath (Napi::Env& env)
     {
-    return Napi::Function::New(env, [this](Napi::CallbackInfo const& info) -> Napi::Value
+    return Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
 
@@ -71,7 +71,7 @@ Napi::Function Utilities::uv_fs_realpath (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_fs_stat (Napi::Env& env)
     {
-    return Napi::Function::New(env, [this](Napi::CallbackInfo const& info) -> Napi::Value
+    return Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
 
@@ -105,7 +105,7 @@ Napi::Function Utilities::uv_fs_stat (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_fs_read (Napi::Env& env)
     {
-    return Napi::Function::New(env, [this](Napi::CallbackInfo const& info) -> Napi::Value
+    return Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (2);
 
@@ -126,7 +126,7 @@ Napi::Function Utilities::uv_fs_read (Napi::Env& env)
 //---------------------------------------------------------------------------------------
 Napi::Function Utilities::uv_fs_close (Napi::Env& env)
     {
-    return Napi::Function::New(env, [this](Napi::CallbackInfo const& info) -> Napi::Value
+    return Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value
         {
         JS_CALLBACK_REQUIRE_AT_LEAST_N_ARGS (1);
 
@@ -911,7 +911,11 @@ MobileGateway::MobileGateway()
         BeAssert (!acceptResult.IsError());
 
         m_client = connection;
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
+        m_connection = m_endpoint.CreateConnection ([](WebSockets::Event event, WebSockets::websocketpp_server_t::message_ptr message)
+#else
         m_connection = m_endpoint.CreateConnection ([this](WebSockets::Event event, WebSockets::websocketpp_server_t::message_ptr message)
+#endif
             {
             if (event == WebSockets::Event::Message)
                 {
@@ -920,7 +924,12 @@ MobileGateway::MobileGateway()
                 auto& env = Host::GetInstance().GetJsRuntime().Env();
                 Napi::HandleScope scope (env);
                 auto payload = Napi::String::New (env, message->get_payload());
+                
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
+                env.Global().Get("__imodeljs_mobilegateway_handler__").As<Napi::Function>().Call({ payload }); //WIP: napi add ref not implemented yet for jsc
+#else
                 m_exports.Get("handler").As<Napi::Function>().Call({ payload });
+#endif
                 }
             }, [this](const std::streambuf::char_type* s, std::streamsize c)
             {
@@ -956,7 +965,7 @@ Napi::Value MobileGateway::ExportJsModule (Js::RuntimeR runtime)
     auto& env = runtime.Env();
 
     auto exports = Napi::Object::New (env);
-    m_exports.Reset (exports);
+    m_exports.Reset (exports, 1);
 
     exports.Set ("handler", env.Null());
     exports.Set ("port", Napi::Number::New (env, GetPort()));

@@ -748,7 +748,7 @@ Utf8String Host::GetSystemArgv() const
     argv.Assign(argvW.GetWCharCP());
 #else
 // TODO: GetSystemArgv
-BeAssert(false && "TBD");
+// BeAssert(false && "TBD");
 #endif
 
     return argv;

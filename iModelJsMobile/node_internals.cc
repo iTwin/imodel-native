@@ -63,8 +63,8 @@ NO_RETURN void Assert(const char* const (*args)[4]) {
   auto function = (*args)[3];
 
   char exepath[256];
-  size_t exepath_size = sizeof(exepath);
 #if !defined(BENTLEYCONFIG_OS_APPLE_IOS)
+  size_t exepath_size = sizeof(exepath);
   if (uv_exepath(exepath, &exepath_size))
     snprintf(exepath, sizeof(exepath), "node");
 #endif

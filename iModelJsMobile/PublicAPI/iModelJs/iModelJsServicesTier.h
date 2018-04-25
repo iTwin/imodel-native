@@ -38,6 +38,7 @@ IMODELJS_SERVICES_TIER_TYPEDEFS (MobileGateway)
 
 IMODELJS_SERVICES_TIER_REF_COUNTED_PTR (Extension)
 IMODELJS_SERVICES_TIER_REF_COUNTED_PTR (MobileGateway)
+IMODELJS_SERVICES_TIER_REF_COUNTED_PTR (UvHost)
 
 BEGIN_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
 
@@ -95,7 +96,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    Steve.Wilson   7/17
 //=======================================================================================
-struct Host
+struct Host : public RefCountedBase
     {
     friend struct Extension;
 

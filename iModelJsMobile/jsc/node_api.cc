@@ -140,7 +140,10 @@ public:
 
     static JSObjectRef CallAsConstructor (JSContextRef ctx, JSObjectRef constructor, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception){
         auto classCBData = reinterpret_cast<JSClassCallbackData*>(JSObjectGetPrivate(constructor));
-        JSObjectRef thisObject = JSObjectMake(ctx, nullptr, nullptr);
+        JSClassDefinition classDef = kJSClassDefinitionEmpty;
+        JSClassRef classRef = JSClassCreate(&classDef);
+        JSObjectRef thisObject = JSObjectMake(ctx, classRef, nullptr);
+        JSClassRelease(classRef);
         JSObjectSetPrototype(ctx, thisObject, classCBData->Prototype());
         JSCFunctionCallbackWrapper cbwrapper(ctx, classCBData, thisObject,
                                              argumentCount,arguments,true);
@@ -692,7 +695,10 @@ napi_status napi_create_object(napi_env env, napi_value* result) {
     CHECK_ARG(env, result);
 
     JSContextRef ctx = env->GetContext();
-    *result = JSObjectMake(ctx, NULL, NULL);
+    JSClassDefinition classDef = kJSClassDefinitionEmpty;
+    JSClassRef classRef = JSClassCreate(&classDef);
+    *result = JSObjectMake(ctx,classRef,NULL);
+    JSClassRelease(classRef);
 
     return napi_clear_last_error(env);
 }
@@ -1025,7 +1031,10 @@ napi_status napi_get_new_target(napi_env env,
     JSContextRef ctx = env->GetContext();
     JSCFunctionCallbackWrapper* info = reinterpret_cast<JSCFunctionCallbackWrapper*>(cbinfo);
     if (info->IsConstructor()) {
-        *result = JSObjectMake(ctx, nullptr, nullptr);
+        JSClassDefinition classDef = kJSClassDefinitionEmpty;
+        JSClassRef classRef = JSClassCreate(&classDef);
+        *result = JSObjectMake(ctx,classRef,NULL);
+        JSClassRelease(classRef);
     } else {
         *result = nullptr;
     }
@@ -1406,8 +1415,9 @@ napi_status napi_wrap(napi_env env,
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, js_object);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+  //JSContextRef ctx = env->GetContext();
+  auto set = JSObjectSetPrivate((JSObjectRef)js_object, native_object);
+  BeAssert(set);
 
   return GET_RETURN_STATUS(env);
 }
@@ -1422,6 +1432,7 @@ napi_status napi_unwrap(napi_env env, napi_value obj, void** result) {
 
 //  JSContextRef ctx = env->GetContext();
   // TODO
+  *result = JSObjectGetPrivate((JSObjectRef)obj);
 
   return GET_RETURN_STATUS(env);
 }

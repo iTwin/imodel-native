@@ -7,6 +7,7 @@
 //
 
 #import "ViewController.h"
+#include <iModelJs/iModelJsServicesTier.h>
 
 @interface ViewController ()
 
@@ -24,9 +25,16 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
+    auto& gateway = BentleyApi::iModelJs::ServicesTier::MobileGateway::GetInstance();
+    
     NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
     NSString *frontEndIndexPath = [appFolderPath stringByAppendingPathComponent:@"FrontEnd/index.html"];
+    
     NSURL* url = [NSURL fileURLWithPath:frontEndIndexPath];
+    NSString* fragment = [NSString stringWithFormat:@"#%u", gateway.GetPort()];
+    url = [NSURL URLWithString:fragment relativeToURL:url];
+    
     NSURLRequest* request = [NSURLRequest requestWithURL:url];
     [self.webView loadRequest:request];
 }
