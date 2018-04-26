@@ -32,6 +32,7 @@ public:
 
 //__PUBLISH_SECTION_START__
 public:
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetCorridor(Dgn::DgnDbR);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetRoadway(Dgn::DgnDbR);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCategoryId GetRailway(Dgn::DgnDbR);
 }; // RoadRailCategory

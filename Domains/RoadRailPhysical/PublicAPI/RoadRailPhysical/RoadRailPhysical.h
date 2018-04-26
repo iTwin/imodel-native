@@ -54,15 +54,14 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 
 // Elements
+#define BRRP_CLASS_Corridor                                         "Corridor"
+#define BRRP_CLASS_CorridorPortionElement                           "CorridorPortionElement"
 #define BRRP_CLASS_PathwayElement                                   "PathwayElement"
-#define BRRP_CLASS_PathwayPortionElement                            "PathwayPortionElement"
 #define BRRP_CLASS_Railway                                          "Railway"
 #define BRRP_CLASS_Roadway                                          "Roadway"
 #define BRRP_CLASS_SignificantPointDefinition                       "SignificantPointDefinition"
-#define BRRP_CLASS_TravelPortionElement                             "TravelPortionElement"
-#define BRRP_CLASS_TravelSeparationPortionElement                   "TravelSeparationPortionElement"
-#define BRRP_CLASS_TravelPortion                                   "TravelPortion"
-#define BRRP_CLASS_TravelSeparationPortion                         "TravelSeparationPortion"
+#define BRRP_CLASS_PathwaySeparationElement                         "PathwaySeparationElement"
+#define BRRP_CLASS_PathwaySeparation                                "PathwaySeparation"
 #define BRRP_CLASS_TravelwaySideSignificantPointDef                 "TravelwaySideSignificantPointDef"
 #define BRRP_CLASS_TravelwaySignificantPointDef                     "TravelwaySignificantPointDef"
 #define BRRP_CLASS_TravelwayStructureSignificantPointDef            "TravelwayStructureSignificantPointDef"
@@ -73,16 +72,14 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 
 // Relationships
-#define BRRP_REL_DrawingGraphicRepresentsPathway                    "DrawingGraphicRepresentsPathway"
+#define BRRP_REL_CorridorAssemblesPortions                          "CorridorAssemblesPortions"
+#define BRRP_REL_CorridorRefersToOrderedPathways                    "CorridorRefersToOrderedPathways"
+#define BRRP_REL_DrawingGraphicRepresentsCorridor                   "DrawingGraphicRepresentsCorridor"
 #define BRRP_REL_GeometricElementBoundsContentForSheet              "GeometricElementBoundsContentForSheet"
-#define BRRP_REL_GraphicalElement3dRepresentsPathway                "GraphicalElement3dRepresentsPathway"
-#define BRRP_REL_ILinearElementRelatesToPathwayPortion              "ILinearElementRelatesToPathwayPortion"
+#define BRRP_REL_GraphicalElement3dRepresentsCorridor               "GraphicalElement3dRepresentsCorridor"
+#define BRRP_REL_ILinearElementRelatesToCorridorPortion             "ILinearElementRelatesToCorridorPortion"
 #define BRRP_REL_PathwayAssemblesElements                           "PathwayAssemblesElements"
 #define BRRP_REL_PathwayRefersToMainAlignment                       "PathwayRefersToMainAlignment"
-#define BRRP_REL_PathwayRefersToLeftTravelPortion                   "PathwayRefersToLeftTravelPortion"
-#define BRRP_REL_PathwayRefersToRightTravelPortion                  "PathwayRefersToRightTravelPortion"
-#define BRRP_REL_PathwayRefersToSingleTravelPortion                 "PathwayRefersToSingleTravelPortion"
-#define BRRP_REL_PathwayRefersToTravelPortion                       "PathwayRefersToTravelPortion"
 
 
 // Properties
@@ -92,6 +89,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Category names
 //-----------------------------------------------------------------------------------------
+#define BRRP_CATEGORY_Corridor                                      "Corridor"
 #define BRRP_CATEGORY_Railway                                       "Railway"
 #define BRRP_CATEGORY_Roadway                                       "Roadway"
 
@@ -100,9 +98,9 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // CodeSpec names
 //-----------------------------------------------------------------------------------------
-#define BRRP_CODESPEC_Pathway                                      "Pathway"
-#define BRRP_CODESPEC_PathwayPortion                               "PathwayPortion"
-#define BRRP_CODESPEC_SignificantPointDefinition                   "SignificantPointDefinition"
+#define BRRP_CODESPEC_Corridor                                      "Corridor"
+#define BRRP_CODESPEC_Pathway                                       "Pathway"
+#define BRRP_CODESPEC_SignificantPointDefinition                    "SignificantPointDefinition"
 
 
 
@@ -158,14 +156,13 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Road & Rail shared
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(AssociatedFacetAspect)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(Corridor)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorPortionElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayPortionElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwaySeparationElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwaySeparation)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailPhysicalModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(SignificantPointDefinition)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelPortionElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelSeparationPortionElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelPortion)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelSeparationPortion)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwaySideSignificantPointDef)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwaySignificantPointDef)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwayStructureSignificantPointDef)

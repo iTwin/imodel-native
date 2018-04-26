@@ -40,10 +40,33 @@
             <Class class="lr:ILinearElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="PathwayElement" modifier="Abstract" description="A long, narrow physical stretch specially constructed for a particular travel type." >
+    <ECEntityClass typeName="Corridor" modifier="Sealed" displayLabel="Corridor" description="A long, narrow physical stretch that is designed for one or more modes of transportation which share a common course. It is typically defined along a main linear element." >
         <BaseClass>bis:PhysicalElement</BaseClass>
         <BaseClass>bis:IParentElement</BaseClass>
         <BaseClass>IMainLinearElementSource</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CorridorAssemblesPortions" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="assembles">
+            <Class class="Corridor"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is assembled by">
+            <Class class="CorridorPortionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="CorridorPortionElement" modifier="Abstract" description="A long, narrow physical stretch specially constructed for a particular travel type." >
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
+        <BaseClass>IMainLinearElementSource</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="PathwayElement" modifier="Abstract" description="A long, narrow physical stretch specially constructed for a particular travel type." >
+        <BaseClass>CorridorPortionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -59,85 +82,44 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
+    </ECEntityClass>    
+    <ECEntityClass typeName="PathwaySeparationElement" modifier="Abstract" description="A Physical Portion of a Corridor specially constructed to separate two of its Pathways. It is typically defined along an alignment.">
+        <BaseClass>CorridorPortionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="PathwayLeftSide" relationshipName="PathwaySeparationRefersToPathwayLeftSide" direction="Forward"/>
+        <ECNavigationProperty propertyName="PathwayRightSide" relationshipName="PathwaySeparationRefersToPathwayRightSide" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="PathwayAssemblesElements" strength="embedding" modifier="Sealed">
-        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="assembles">
-            <Class class="PathwayElement"/>
+    <ECRelationshipClass typeName="PathwaySeparationRefersToPathwayLeftSide" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to left side">
+            <Class class="PathwaySeparationElement"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is assembled by">
-            <Class class="bis:PhysicalElement"/>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referenced by">
+            <Class class="PathwayElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="PathwayPortionElement" modifier="Abstract" description="Physical Portion of a Pathway, specified using linear-referencing methods.">
-        <BaseClass>bis:PhysicalElement</BaseClass>
-        <BaseClass>bis:IParentElement</BaseClass>
-        <BaseClass>IMainLinearElementSource</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="TravelPortionElement" modifier="Abstract" description="A PathwayPortion specially constructed for continuous travel of a particular type.">
-        <BaseClass>PathwayPortionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="TravelSeparationPortionElement" modifier="Abstract" description="A PathwayPortion specially constructed to separate two portions of continuous travel.">
-        <BaseClass>PathwayPortionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="TravelPortion" modifier="Sealed" description="A generic TravelPortionElement.">
-        <BaseClass>TravelPortionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-            <HiddenClass xmlns="CoreCustomAttributes.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="TravelSeparationPortion" modifier="Sealed" description="A generic TravelSeparationPortionElement.">
-        <BaseClass>TravelSeparationPortionElement</BaseClass>
-        <BaseClass>IMainLinearElementSource</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-            <HiddenClass xmlns="CoreCustomAttributes.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="PathwayRefersToTravelPortion" strength="referencing" modifier="Abstract">
-        <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
+    <ECRelationshipClass typeName="PathwaySeparationRefersToPathwayRightSide" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to right side">
+            <Class class="PathwaySeparationElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referenced by">
             <Class class="PathwayElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="PathwaySeparation" modifier="Sealed" description="A generic PathwaySeparationElement.">
+        <BaseClass>PathwaySeparationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CorridorRefersToOrderedPathways" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:ElementGroupsMembers</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="false">
+            <Class class="Corridor"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
-            <Class class="TravelPortionElement"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="PathwayRefersToSingleTravelPortion" strength="referencing" modifier="Sealed">
-        <BaseClass>PathwayRefersToTravelPortion</BaseClass>
-        <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
             <Class class="PathwayElement"/>
-        </Source>
-        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
-            <Class class="TravelPortionElement"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="PathwayRefersToRightTravelPortion" strength="referencing" modifier="Sealed">
-        <BaseClass>PathwayRefersToTravelPortion</BaseClass>
-        <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
-            <Class class="PathwayElement"/>
-        </Source>
-        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
-            <Class class="TravelPortionElement"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="PathwayRefersToLeftTravelPortion" strength="referencing" modifier="Sealed">
-        <BaseClass>PathwayRefersToTravelPortion</BaseClass>
-        <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
-            <Class class="PathwayElement"/>
-        </Source>
-        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
-            <Class class="TravelPortionElement"/>
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="SignificantPointDefinition" displayLabel="Significant Point Definition" modifier="Abstract" description="Base class for point constructs in a TypicalSection portion definition.">
@@ -146,19 +128,19 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ILinearElementRelatesToPathwayPortion" strength="referencing" modifier="Sealed">
+    <ECRelationshipClass typeName="ILinearElementRelatesToCorridorPortion" strength="referencing" modifier="Sealed">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="is associated with" polymorphic="true">
             <Class class="lr:ILinearElement"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
-            <Class class="PathwayPortionElement"/>
+            <Class class="CorridorPortionElement"/>
         </Target>
         <ECNavigationProperty propertyName="SignificantPointDef" relationshipName="ILinearElementRelatesToSignificantPointDef" direction="Forward"/>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ILinearElementRelatesToSignificantPointDef" strength="referencing" strengthDirection="Forward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
-            <Class class="ILinearElementRelatesToPathwayPortion"/>
+            <Class class="ILinearElementRelatesToCorridorPortion"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referenced by">
             <Class class="SignificantPointDefinition"/>
@@ -182,22 +164,22 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="DrawingGraphicRepresentsPathway" strength="referencing" modifier="Sealed">
+    <ECRelationshipClass typeName="DrawingGraphicRepresentsCorridor" strength="referencing" modifier="Sealed">
         <BaseClass>bis:DrawingGraphicRepresentsElement</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
             <Class class="bis:DrawingGraphic"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is represented by" polymorphic="false">
-            <Class class="PathwayElement"/>
+            <Class class="Corridor"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="GraphicalElement3dRepresentsPathway" strength="referencing" modifier="Sealed">
+    <ECRelationshipClass typeName="GraphicalElement3dRepresentsCorridor" strength="referencing" modifier="Sealed">
         <BaseClass>rralign:GraphicalElement3dRepresentsSpatialElement</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
             <Class class="bis:GraphicalElement3d"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="is represented by" polymorphic="true">
-            <Class class="PathwayElement"/>
+        <Target multiplicity="(0..1)" roleLabel="is represented by" polymorphic="false">
+            <Class class="Corridor"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="GeometricElementBoundsContentForSheet" strength="referencing" modifier="None">

@@ -26,25 +26,23 @@ DOMAIN_DEFINE_MEMBERS(RoadRailPhysicalDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "Bentley RoadRailPhysical Domain", 1)
     {    
-    RegisterHandler(PathwayElementHandler::GetHandler());
+    RegisterHandler(CorridorHandler::GetHandler());    
 
     RegisterHandler(SignificantPointDefinitionHandler::GetHandler());
     RegisterHandler(TravelwaySignificantPointDefHandler::GetHandler());
     RegisterHandler(TravelwaySideSignificantPointDefHandler::GetHandler());
     RegisterHandler(TravelwayStructureSignificantPointDefHandler::GetHandler());
 
-    RegisterHandler(PathwayPortionElementHandler::GetHandler());
-    RegisterHandler(TravelPortionElementHandler::GetHandler());
-    RegisterHandler(TravelSeparationPortionElementHandler::GetHandler());
-    RegisterHandler(TravelPortionHandler::GetHandler());
-    RegisterHandler(TravelSeparationPortionHandler::GetHandler());
-
     RegisterHandler(RoadRailPhysicalModelHandler::GetHandler());
     RegisterHandler(RailwayStandardsModelHandler::GetHandler());
     RegisterHandler(RoadwayStandardsModelHandler::GetHandler());
 
+    RegisterHandler(CorridorPortionElementHandler::GetHandler());
+    RegisterHandler(PathwayElementHandler::GetHandler());
     RegisterHandler(RailwayHandler::GetHandler());
     RegisterHandler(RoadwayHandler::GetHandler());    
+    RegisterHandler(PathwaySeparationElementHandler::GetHandler());
+    RegisterHandler(PathwaySeparationHandler::GetHandler());
 
     RegisterHandler(AssociatedFacetAspectHandler::GetHandler());
     }
@@ -131,7 +129,7 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void createCodeSpecs(DgnDbR dgndb)
     {
-    auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_Pathway, CodeScopeSpec::CreateModelScope());
+    auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_Corridor, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {
@@ -139,7 +137,7 @@ void createCodeSpecs(DgnDbR dgndb)
         BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_PathwayPortion, CodeScopeSpec::CreateModelScope());
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_Pathway, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {

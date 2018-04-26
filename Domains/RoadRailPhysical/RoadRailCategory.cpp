@@ -20,6 +20,7 @@ void RoadRailCategory::InsertDomainCategories(DgnDbR db)
         BeAssert(false);
         }
 
+    InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_Corridor, ColorDef::White());
     InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_Roadway, ColorDef::White());
     InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_Railway, ColorDef::White());
     }
@@ -111,5 +112,6 @@ DgnSubCategoryId RoadRailCategory::QuerySubCategoryId(DgnDbR dgnDb, DgnCategoryI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnCategoryId RoadRailCategory::GetCorridor(DgnDbR db) { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_Corridor);    BeAssert(categoryId.IsValid()); return categoryId; }
 DgnCategoryId RoadRailCategory::GetRoadway(DgnDbR db)  { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_Roadway);    BeAssert(categoryId.IsValid()); return categoryId; }
 DgnCategoryId RoadRailCategory::GetRailway(DgnDbR db) { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_Railway);   BeAssert(categoryId.IsValid()); return categoryId; }

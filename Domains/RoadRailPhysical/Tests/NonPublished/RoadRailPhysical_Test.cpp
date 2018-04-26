@@ -3,10 +3,10 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
+TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
     {
 #pragma region SetUp
-    DgnDbPtr projectPtr = CreateProject(L"BasicRoadwayTest.bim");
+    DgnDbPtr projectPtr = CreateProject(L"BasicCorridorTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
     RoadwayStandardsModelCPtr standardsModel = RoadwayStandardsModel::Query(*projectPtr->Elements().GetRootSubject());
@@ -47,37 +47,40 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
 #pragma region Create Road Elements
     auto physicalModelPtr = RoadRailPhysicalModel::Query(*projectPtr->Elements().GetRootSubject());
 
-    // Create Roadway
-    auto roadwayPtr = Roadway::Create(*physicalModelPtr);
-    roadwayPtr->SetMainLinearElement(alignmentPtr.get());
-    auto roadwayCPtr = roadwayPtr->Insert();
-    ASSERT_TRUE(roadwayCPtr.IsValid());    
-    ASSERT_EQ(alignmentPtr->GetElementId(), roadwayCPtr->GetMainLinearElementId());
+    // Create Corridor
+    auto corridorPtr = Corridor::Create(*physicalModelPtr);
+    corridorPtr->SetMainLinearElement(alignmentPtr.get());
+    auto corridorCPtr = corridorPtr->Insert();
+    ASSERT_TRUE(corridorCPtr.IsValid());    
+    ASSERT_EQ(alignmentPtr->GetElementId(), corridorCPtr->GetMainLinearElementId());
 
-    alignmentPtr->SetILinearElementSource(roadwayPtr.get());
+    alignmentPtr->SetILinearElementSource(corridorPtr.get());
     ASSERT_TRUE(alignmentPtr->Update().IsValid());
 
-    auto linearElements = roadwayPtr->QueryLinearElements();
+    auto linearElements = corridorPtr->QueryLinearElements();
     ASSERT_EQ(1, linearElements.size());
     ASSERT_EQ(alignmentPtr->GetElementId(), *linearElements.begin());
 
-    auto leftThruPortionPtr = TravelPortion::Create(*roadwayPtr, *alignmentPtr);
-    ASSERT_TRUE(leftThruPortionPtr->Insert(PathwayElement::TravelSide::Left).IsValid());
+    auto leftRoadwayPtr = Roadway::Create(*corridorPtr);
+    leftRoadwayPtr->SetMainLinearElement(alignmentPtr.get());
+    ASSERT_TRUE(leftRoadwayPtr->Insert((int32_t)PathwayElement::Order::LeftMost).IsValid());
 
-    ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedPathwayPortion(*alignmentPtr, *leftThruPortionPtr, *clPointDefPtr));
+    ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedCorridorPortion(*alignmentPtr, *leftRoadwayPtr, *clPointDefPtr));
 
-    auto thruSepPortionPtr = TravelSeparationPortion::Create(*roadwayPtr, *alignmentPtr);
-    ASSERT_TRUE(thruSepPortionPtr->Insert().IsValid());
+    auto rightRoadwayPtr = Roadway::Create(*corridorPtr);
+    rightRoadwayPtr->SetMainLinearElement(alignmentPtr.get());
+    ASSERT_TRUE(rightRoadwayPtr->Insert((int32_t)PathwayElement::Order::RightMost).IsValid());
 
-    auto rightThruPortionPtr = TravelPortion::Create(*roadwayPtr, *alignmentPtr);
-    ASSERT_TRUE(rightThruPortionPtr->Insert(PathwayElement::TravelSide::Right).IsValid());
+    auto sepPortionPtr = PathwaySeparation::Create(*corridorPtr, *alignmentPtr, *leftRoadwayPtr, *rightRoadwayPtr);
+    ASSERT_TRUE(sepPortionPtr->Insert().IsValid());
 
-    ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedPathwayPortion(*alignmentPtr, *rightThruPortionPtr, *clPointDefPtr));
+    ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedCorridorPortion(*alignmentPtr, *rightRoadwayPtr, *clPointDefPtr));
 
-    ASSERT_EQ(3, roadwayCPtr->QueryPortionIds().size());
-    ASSERT_EQ(2, roadwayCPtr->QueryTravelPortionInfos().size());
-    ASSERT_EQ(thruSepPortionPtr->GetElementId(), roadwayCPtr->QueryTravelSeparationId());
-    ASSERT_EQ(leftThruPortionPtr->GetElementId(), roadwayCPtr->QueryTravelPortionId(PathwayElement::TravelSide::Left));
-    ASSERT_EQ(rightThruPortionPtr->GetElementId(), roadwayCPtr->QueryTravelPortionId(PathwayElement::TravelSide::Right));
+    auto pathwayIds = corridorCPtr->QueryOrderedPathwayIds();
+    ASSERT_EQ(2, pathwayIds.size());
+    ASSERT_EQ(leftRoadwayPtr->GetElementId(), pathwayIds[0]);
+    ASSERT_EQ(rightRoadwayPtr->GetElementId(), pathwayIds[1]);
+
+    ASSERT_EQ(1, corridorCPtr->QueryPathwaySeparationInfos().size());
 #pragma endregion
     }
