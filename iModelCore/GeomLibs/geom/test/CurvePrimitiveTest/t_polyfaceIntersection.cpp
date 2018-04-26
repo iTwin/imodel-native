@@ -496,7 +496,7 @@ TEST(PolyfaceIntersection,Boxes)
     pointA.push_back (DPoint3d::From (0,a,0));
     meshA->AddPolygon (pointA);
     static bool s_triangulate = false;
-    static int s_maxPerFace = 3;
+    // unused - static int s_maxPerFace = 3;
     Check::True (meshA->SweepToSolid (DVec3d::From (0,0,b), s_triangulate));
 
     PolyfaceHeaderPtr meshB = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -528,7 +528,7 @@ TEST(PolyfaceIntersection,MultipleBoxes)
     pointA.push_back (DPoint3d::From (0,a,0));
     meshA->AddPolygon (pointA);
     static bool s_triangulate = false;
-    static int s_maxPerFace = 3;
+    // unused - static int s_maxPerFace = 3;
     Check::True (meshA->SweepToSolid (DVec3d::From (0,0,b), s_triangulate));
 
     PolyfaceHeaderPtr meshB = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -669,7 +669,7 @@ struct CutFillPatchArray : bvector<CutFillPatch>
   };
 
 //extern void PrintPolyfaceXYZ (PolyfaceHeaderR mesh, char * title, size_t maxPrintSize);
-void Print (bvector<PolyfaceHeaderPtr> &meshes, char * title, size_t maxPrintSize = 200)
+void Print (bvector<PolyfaceHeaderPtr> &meshes, CharCP title, size_t maxPrintSize = 200)
     {
     if (!Check::PrintDeepStructs ())
         return;

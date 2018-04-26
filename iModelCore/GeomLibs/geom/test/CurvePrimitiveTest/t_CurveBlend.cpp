@@ -278,7 +278,7 @@ TEST(RemainderArithmetic,Test)
 
 void GetOffsets (CurveVectorPtr pathA, double offsetDistance, double arcAngle, CurveVectorPtr &pathB)
     {
-    static double s_chamferAngle = -1.0;
+    // unused - static double s_chamferAngle = -1.0;
     CurveOffsetOptions options (offsetDistance);
     options.SetArcAngle (arcAngle);
     pathB = pathA->CloneOffsetCurvesXY(options);
