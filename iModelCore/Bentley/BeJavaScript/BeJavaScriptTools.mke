@@ -1,0 +1,14 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: BeJavaScript/BeJavaScriptTools.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir                  = $(_MakeFilePath)
+beJavaScriptPublicApiSrc = $(baseDir)PublicAPI/BeJavaScriptTools/
+
+$(BuildContext)PublicAPI/BeJavaScriptTools : $(baseDir)PublicAPI/BeJavaScriptTools
+    $(LinkFirstDepToFirstTargetAsDirectory)
