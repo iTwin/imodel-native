@@ -1567,7 +1567,7 @@ public:
     //! the persistence unit to a new unit name. If the persistence fus has a format, it will be added to the end of the
     //! formatString that is returned
     //!
-    //! @param[out] persUnitName    The qualified name of the persitence unit mapped to a unit name in the standard units schema
+    //! @param[out] persUnitName    The qualified name of the persistence unit mapped to a unit name in the standard units schema
     //! @param[out] formatStrings   List of presentation format strings representing format overrides. 
     //! @param[in] persFus          The descriptor for the persistence FUS that is of the format for the old FUS descriptor, 
     //!                             format: {unitName}({formatName}), where the format part is optional.
@@ -1575,8 +1575,9 @@ public:
     //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName 
     //! if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
     ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptors(Utf8StringR persUnitName, bvector<Utf8String>& formatStrings, Utf8CP persFus, bvector<Utf8CP> const& presFuses);
-    ECOBJECTS_EXPORT ECObjectsStatus AddPersitenceUnitByName(Utf8StringCR unitName, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper);
+    ECOBJECTS_EXPORT ECObjectsStatus AddPersistenceUnitByName(Utf8StringCR unitName, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper);
     ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatsByString(Utf8StringCR formatsString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper);
+    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper);
 
     //! Given an old FUS descriptor or an EC3.2 unit name, parse and set the perstence unit for this KoQ
     //! Additionally if upgrading a FUS descriptor, this will add an override to this KoQ's presentation
