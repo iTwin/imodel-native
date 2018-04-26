@@ -493,8 +493,8 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
 
         if (!letControlHandleThis)
             {
-            LOG.infov("Aborted conflict resolution");
-            return ChangeSet::ConflictResolution::Abort; 
+            // Refer to comment below
+            return opcode == DbOpcode::Update ? ChangeSet::ConflictResolution::Skip : ChangeSet::ConflictResolution::Replace; 
             }
         }
 
@@ -926,7 +926,8 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb, bool extrac
         ECClassCP primaryClass = entry.GetPrimaryClass();
         BeAssert(primaryClass != nullptr);
 
-        if (!entry.IsPrimaryTable() || !primaryClass->Is(elemClass))
+        // Check for indirect changes cause by a ElementDrivesElement relationship
+        if (entry.GetIndirect() || !entry.IsPrimaryTable() || !primaryClass->Is(elemClass))
             continue;
 
         ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(*primaryClass); // Note: ColumnIterator needs to be in the stack to access column
