@@ -15,7 +15,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="TilePublisherLib" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
+    <Part Name="TilePublisherLib" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke" ApiNumber="B02">
         <SubPart PartName="TilePublisherPublicAPI" />
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
         <SubPart PartName="GeoCoordData"        PartFile="csmap"                Repository="libsrc-csmap"/>
@@ -31,7 +31,7 @@
 
         <Bindings>
             <Libs>Delivery/$(libprefix)TilePublisher$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)TilePublisher$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)TilePublisher$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
