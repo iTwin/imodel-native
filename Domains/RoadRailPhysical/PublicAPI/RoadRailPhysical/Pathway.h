@@ -116,7 +116,7 @@ protected:
     virtual RoadwayCP _ToRoadway() const { return nullptr; }
 
 public:
-    enum class Order: int32_t { LeftMost = 0, RightMost = 100 };
+    enum class Order: int32_t { LeftMost = 0, RightMost = 1000 };
 
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwayElement)
