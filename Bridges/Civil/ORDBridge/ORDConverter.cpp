@@ -201,6 +201,9 @@ bool ORDAlignmentsConverter::Is3DLinear(AlignmentCR alignment) const
     if (linearEntity3dPtr.IsNull())
         return false;
 
+    if (WString::IsNullOrEmpty(linearEntity3dPtr->GetName().c_str()))
+        return false;
+
     auto corridorPtr = linearEntity3dPtr->GetCorridor();
     return corridorPtr.IsValid();
     }
@@ -619,12 +622,12 @@ private:
     ORDCorridorsConverter(DgnDbSync::DgnV8::Converter& converterLib, TransformCR unitsScaleTransform);
 
     BentleyStatus Marshal(PolyfaceHeaderPtr& bimMesh, Bentley::PolyfaceHeaderCR v8Mesh);
-    BentleyStatus CreateNewRoadway(CorridorCR cifCorridor,
+    BentleyStatus CreateNewCorridor(CorridorCR cifCorridor,
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID fileScopeId, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change,
-        RoadRailBim::RoadwayCPtr& bimRoadwayCPtr, DgnCategoryId targetCategoryId);
-    BentleyStatus UpdateRoadway(CorridorCR cifCorridor,
+        RoadRailBim::CorridorCPtr& bimCorridorCPtr, DgnCategoryId targetCategoryId);
+    BentleyStatus UpdateCorridor(CorridorCR cifCorridor,
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, DgnCategoryId targetCategoryId);
-    BentleyStatus AssignRoadwayGeomStream(CorridorCR cifCorridor, RoadRailBim::RoadwayR roadway);
+    BentleyStatus AssignCorridorGeomStream(CorridorCR cifCorridor, RoadRailBim::CorridorR corridor);
 
 public:
     static ORDCorridorsConverterPtr Create(DgnDbSync::DgnV8::Converter& converter, TransformCR unitsScaleTransform)
@@ -659,13 +662,13 @@ BentleyStatus ORDCorridorsConverter::Marshal(PolyfaceHeaderPtr& bimMeshPtr, Bent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ORDCorridorsConverter::AssignRoadwayGeomStream(CorridorCR cifCorridor, RoadRailBim::RoadwayR roadway)
+BentleyStatus ORDCorridorsConverter::AssignCorridorGeomStream(CorridorCR cifCorridor, RoadRailBim::CorridorR corridor)
     {
     auto corridorSurfacesPtr = cifCorridor.GetCorridorSurfaces();
     if (corridorSurfacesPtr.IsNull())
         return BentleyStatus::SUCCESS;
 
-    auto geomBuilderPtr = GeometryBuilder::Create(roadway);
+    auto geomBuilderPtr = GeometryBuilder::Create(corridor);
     while (corridorSurfacesPtr.IsValid() && corridorSurfacesPtr->MoveNext())
         {
         auto corridorSurfacePtr = corridorSurfacesPtr->GetCurrent();
@@ -683,7 +686,7 @@ BentleyStatus ORDCorridorsConverter::AssignRoadwayGeomStream(CorridorCR cifCorri
                 corridorSurfacePtr->GetElementHandle()->GetDisplayHandler()->GetElemDisplayParams(*v8CorridorElmHandleCP, v8DispParams, true);
 
                 Render::GeometryParams geomParams;
-                geomParams.SetCategoryId(roadway.GetCategoryId());
+                geomParams.SetCategoryId(corridor.GetCategoryId());
 
                 if (auto pMaterial = v8DispParams.GetMaterial())
                     {
@@ -698,7 +701,7 @@ BentleyStatus ORDCorridorsConverter::AssignRoadwayGeomStream(CorridorCR cifCorri
             }
         }
 
-    if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(roadway))
+    if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(corridor))
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
@@ -706,20 +709,20 @@ BentleyStatus ORDCorridorsConverter::AssignRoadwayGeomStream(CorridorCR cifCorri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
+BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     CorridorCR cifCorridor, 
     iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, 
     iModelBridgeSyncInfoFile::ROWID fileScopeId,
-    iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, RoadRailBim::RoadwayCPtr& bimRoadwayCPtr, DgnCategoryId targetCategoryId)
+    iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, RoadRailBim::CorridorCPtr& bimCorridorCPtr, DgnCategoryId targetCategoryId)
     {
-    auto roadwayPtr = RoadRailBim::Roadway::Create(*m_bimPhysicalModelPtr);
+    auto corridorPtr = RoadRailBim::Corridor::Create(*m_bimPhysicalModelPtr);
     if (targetCategoryId.IsValid())
-        roadwayPtr->SetCategoryId(targetCategoryId);
+        corridorPtr->SetCategoryId(targetCategoryId);
 
-    ORDConverterUtils::AssignFederationGuid(*roadwayPtr, cifCorridor.GetSyncId());
+    ORDConverterUtils::AssignFederationGuid(*corridorPtr, cifCorridor.GetSyncId());
 
     if (!WString::IsNullOrEmpty(cifCorridor.GetName().c_str()))
-        roadwayPtr->SetUserLabel(Utf8String(cifCorridor.GetName().c_str()).c_str());
+        corridorPtr->SetUserLabel(Utf8String(cifCorridor.GetName().c_str()).c_str());
     
     AlignmentBim::AlignmentPtr bimMainAlignmentPtr;
     auto cifAlignmentPtr = cifCorridor.GetCorridorAlignment();
@@ -735,31 +738,32 @@ BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
             if (bimMainAlignmentPtr.IsValid())
                 {
                 if (bimMainAlignmentPtr->GetILinearElementSource().IsValid())
-                    return BentleyStatus::ERROR; // Alignment already associated with another Roadway
+                    return BentleyStatus::ERROR; // Alignment already associated with another Corridor
 
-                roadwayPtr->SetMainLinearElement(bimMainAlignmentPtr.get());
+                corridorPtr->SetMainLinearElement(bimMainAlignmentPtr.get());
                 }
             }
         }
 
-    if (BentleyStatus::SUCCESS != AssignRoadwayGeomStream(cifCorridor, *roadwayPtr))
+    if (BentleyStatus::SUCCESS != AssignCorridorGeomStream(cifCorridor, *corridorPtr))
         return BentleyStatus::ERROR;
 
     iModelBridgeSyncInfoFile::ConversionResults results;
-    results.m_element = roadwayPtr;
+    results.m_element = corridorPtr;
     if (BentleyStatus::SUCCESS != changeDetector._UpdateBimAndSyncInfo(results, change))
         return BentleyStatus::ERROR;
 
     if (bimMainAlignmentPtr.IsValid())
         {
-        bimMainAlignmentPtr->SetILinearElementSource(roadwayPtr.get());
+        bimMainAlignmentPtr->SetILinearElementSource(corridorPtr.get());
         bimMainAlignmentPtr->Update();
         }
 
-    bimRoadwayCPtr = RoadRailBim::Roadway::Get(roadwayPtr->GetDgnDb(), roadwayPtr->GetElementId());
+    bimCorridorCPtr = RoadRailBim::Corridor::Get(corridorPtr->GetDgnDb(), corridorPtr->GetElementId());
 
-    auto travelPortionPtr = RoadRailBim::TravelPortion::Create(*bimRoadwayCPtr, *bimMainAlignmentPtr);
-    if (travelPortionPtr->Insert(RoadRailBim::PathwayElement::TravelSide::Single).IsNull())
+    auto roadwayPtr = RoadRailBim::Roadway::Create(*bimCorridorCPtr);
+    roadwayPtr->SetMainLinearElement(bimMainAlignmentPtr.get());
+    if (roadwayPtr->Insert((int32_t)RoadRailBim::PathwayElement::Order::LeftMost).IsNull())
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
@@ -768,19 +772,19 @@ BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ORDCorridorsConverter::UpdateRoadway(CorridorCR cifCorridor,
+BentleyStatus ORDCorridorsConverter::UpdateCorridor(CorridorCR cifCorridor,
     iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change,
     DgnCategoryId targetCategoryId)
     {
-    auto roadwayPtr = RoadRailBim::Roadway::GetForEdit(changeDetector.GetDgnDb(), change.GetSyncInfoRecord().GetDgnElementId());
+    auto corridorPtr = RoadRailBim::Corridor::GetForEdit(changeDetector.GetDgnDb(), change.GetSyncInfoRecord().GetDgnElementId());
     if (targetCategoryId.IsValid())
-        roadwayPtr->SetCategoryId(targetCategoryId);
+        corridorPtr->SetCategoryId(targetCategoryId);
 
-    if (BentleyStatus::SUCCESS != AssignRoadwayGeomStream(cifCorridor, *roadwayPtr))
+    if (BentleyStatus::SUCCESS != AssignCorridorGeomStream(cifCorridor, *corridorPtr))
         return BentleyStatus::ERROR;
 
     iModelBridgeSyncInfoFile::ConversionResults results;
-    results.m_element = roadwayPtr;
+    results.m_element = corridorPtr;
     if (BentleyStatus::SUCCESS != changeDetector._UpdateBimAndSyncInfo(results, change))
         return BentleyStatus::ERROR;
 
@@ -794,7 +798,7 @@ DgnElementId ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, ORDC
     {
     CifCorridorSourceItem sourceItem(cifCorridor);
 
-    RoadRailBim::RoadwayCPtr bimRoadwayCPtr;
+    RoadRailBim::CorridorCPtr bimCorridorCPtr;
 
     // only convert a Corridor if it is new or has changed in the source
     auto change = params.changeDetectorP->_DetectChange(params.fileScopeId, sourceItem.Kind(), sourceItem, nullptr, params.spatialDataTransformHasChanged);
@@ -804,19 +808,19 @@ DgnElementId ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, ORDC
         }
     else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New == change.GetChangeType())
         {
-        if (BentleyStatus::SUCCESS != CreateNewRoadway(cifCorridor, *params.changeDetectorP, params.fileScopeId, change, bimRoadwayCPtr, targetCategoryId))
+        if (BentleyStatus::SUCCESS != CreateNewCorridor(cifCorridor, *params.changeDetectorP, params.fileScopeId, change, bimCorridorCPtr, targetCategoryId))
             return DgnElementId();
         }
     else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed == change.GetChangeType())
         {
-        if (BentleyStatus::SUCCESS != UpdateRoadway(cifCorridor, *params.changeDetectorP, change, targetCategoryId))
+        if (BentleyStatus::SUCCESS != UpdateCorridor(cifCorridor, *params.changeDetectorP, change, targetCategoryId))
             return DgnElementId();
         }
 
-    if (bimRoadwayCPtr.IsNull())
-        bimRoadwayCPtr = RoadRailBim::Roadway::Get(params.changeDetectorP->GetDgnDb(), change.GetSyncInfoRecord().GetDgnElementId());
+    if (bimCorridorCPtr.IsNull())
+        bimCorridorCPtr = RoadRailBim::Corridor::Get(params.changeDetectorP->GetDgnDb(), change.GetSyncInfoRecord().GetDgnElementId());
 
-    return bimRoadwayCPtr->GetElementId();
+    return bimCorridorCPtr->GetElementId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1077,7 +1081,7 @@ void ORDConverter::CreatePathways(bset<DgnCategoryId>& additionalCategoriesForSe
     ORDCorridorsConverterPtr corridorsConverterPtr;
 
     Bentley::ElementRefP lastCorridorRefP = nullptr;
-    RoadRailBim::PathwayElementCPtr pathwayElmCPtr;
+    RoadRailBim::CorridorCPtr corridorElmCPtr;
     bmap<DgnCategoryId, DgnCategoryId> drawingToSpatialCategoryMap;
 
     for (auto& cifCorridorEntry : m_cifCorridors)
@@ -1108,16 +1112,16 @@ void ORDConverter::CreatePathways(bset<DgnCategoryId>& additionalCategoriesForSe
                 }
             }
 
-        auto bimRoadwayId = corridorsConverterPtr->ConvertCorridor(*cifCorridorPtr, *m_ordParams, categoryId);
+        auto bimCorridorId = corridorsConverterPtr->ConvertCorridor(*cifCorridorPtr, *m_ordParams, categoryId);
         lastCorridorRefP = cifCorridorPtr->GetElementHandle()->GetElementRef();
-        pathwayElmCPtr = RoadRailPhysical::PathwayElement::Get(GetDgnDb(), bimRoadwayId);
+        corridorElmCPtr = RoadRailPhysical::Corridor::Get(GetDgnDb(), bimCorridorId);
 
-        if (pathwayElmCPtr.IsValid() && bimElmPtr.IsValid())
+        if (corridorElmCPtr.IsValid() && bimElmPtr.IsValid())
             {
             if (auto bimGeomSourceCP = bimElmPtr->ToGeometrySource())
                 {
-                if (!pathwayElmCPtr->QueryIsRepresentedBy(*bimGeomSourceCP))
-                    RoadRailPhysical::PathwayElement::AddRepresentedBy(*pathwayElmCPtr, *bimGeomSourceCP);
+                if (!corridorElmCPtr->QueryIsRepresentedBy(*bimGeomSourceCP))
+                    RoadRailPhysical::Corridor::AddRepresentedBy(*corridorElmCPtr, *bimGeomSourceCP);
                 }
             }
         }
@@ -1126,21 +1130,21 @@ void ORDConverter::CreatePathways(bset<DgnCategoryId>& additionalCategoriesForSe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void setGeneratedAlignmentLabel(Dgn::DgnElementId alignmentId, RoadRailBim::TravelPortionCR travelPortion,
+void setGeneratedAlignmentLabel(Dgn::DgnElementId alignmentId, RoadRailBim::PathwayElementCR pathway,
     RoadRailBim::SignificantPointDefinitionCR significantPointDef)
     {
-    auto portionAlignmentCPtr = travelPortion.GetMainLinearElementAs<RoadRailAlignment::Alignment>();
+    auto pathwayAlignmentCPtr = pathway.GetMainLinearElementAs<RoadRailAlignment::Alignment>();
 
     Utf8String genAlgLabel;
-    if (!Utf8String::IsNullOrEmpty(portionAlignmentCPtr->GetUserLabel()))
+    if (!Utf8String::IsNullOrEmpty(pathwayAlignmentCPtr->GetUserLabel()))
         {
-        genAlgLabel = portionAlignmentCPtr->GetUserLabel();
+        genAlgLabel = pathwayAlignmentCPtr->GetUserLabel();
         genAlgLabel.append("/");
         }
 
     genAlgLabel.append(significantPointDef.GetCode().GetValueUtf8CP());
 
-    auto alignmentPtr = RoadRailAlignment::Alignment::GetForEdit(travelPortion.GetDgnDb(), alignmentId);
+    auto alignmentPtr = RoadRailAlignment::Alignment::GetForEdit(pathway.GetDgnDb(), alignmentId);
     alignmentPtr->SetUserLabel(genAlgLabel.c_str());
     alignmentPtr->Update();
     }
@@ -1154,6 +1158,9 @@ void ORDConverter::AssociateGeneratedAlignments()
 
     for (auto& cifGenLine3d : m_cifGeneratedLinear3ds)
         {
+        if (WString::IsNullOrEmpty(cifGenLine3d->GetName().c_str()))
+            continue;
+
         Utf8String pointCode(cifGenLine3d->GetName().c_str());
         auto pointDefCPtr = RoadRailPhysical::SignificantPointDefinition::QueryByCode(*roadwayStandardsModelPtr, pointCode);
         if (pointDefCPtr.IsNull())
@@ -1176,7 +1183,7 @@ void ORDConverter::AssociateGeneratedAlignments()
                 continue;
             }
 
-        RoadRailBim::PathwayElementCPtr pathwayCPtr;
+        RoadRailBim::CorridorCPtr corridorCPtr;
         auto cifCorridorPtr = cifGenLine3d->GetCorridor();
 
         ORDCorridorsConverter::CifCorridorSourceItem corridorItem(*cifCorridorPtr);
@@ -1185,23 +1192,24 @@ void ORDConverter::AssociateGeneratedAlignments()
         iterEntry = corrIterator.begin();
         if (iterEntry != corrIterator.end())
             {
-            pathwayCPtr = RoadRailBim::PathwayElement::Get(GetDgnDb(), iterEntry.GetDgnElementId());
-            if (pathwayCPtr.IsNull())
+            corridorCPtr = RoadRailBim::Corridor::Get(GetDgnDb(), iterEntry.GetDgnElementId());
+            if (corridorCPtr.IsNull())
                 continue;
             }
 
-        if (pathwayCPtr.IsValid() && bimAlignmentCPtr.IsValid())
+        if (corridorCPtr.IsValid() && bimAlignmentCPtr.IsValid())
             {
-            auto travelPortionId = pathwayCPtr->QueryTravelPortionId(RoadRailBim::PathwayElement::TravelSide::Single);
-            if (!travelPortionId.IsValid())
+            auto roadwayId = corridorCPtr->QueryOrderedPathwayIds()[0];
+            if (!roadwayId.IsValid())
                 continue;
 
-            auto portionCPtr = RoadRailBim::TravelPortion::Get(GetDgnDb(), travelPortionId);
-            if (portionCPtr.IsValid())
+            auto roadwayCPtr = RoadRailBim::Roadway::Get(GetDgnDb(), roadwayId);
+            if (roadwayCPtr.IsValid())
                 {
-                RoadRailBim::ILinearElementUtilities::SetRelatedPathwayPortion(*bimAlignmentCPtr, *portionCPtr, *pointDefCPtr);
-                if (Utf8String::IsNullOrEmpty(bimAlignmentCPtr->GetUserLabel()))
-                    setGeneratedAlignmentLabel(bimAlignmentCPtr->GetElementId(), *portionCPtr, *pointDefCPtr);
+                RoadRailBim::ILinearElementUtilities::SetRelatedCorridorPortion(*bimAlignmentCPtr, *roadwayCPtr, *pointDefCPtr);
+                // TODO: enable after EAP
+                /*if (Utf8String::IsNullOrEmpty(bimAlignmentCPtr->GetUserLabel()))
+                    setGeneratedAlignmentLabel(bimAlignmentCPtr->GetElementId(), *roadwayCPtr, *pointDefCPtr);*/
                 }
             }
         }

@@ -51,7 +51,7 @@ protected:
 
     static bool CopyTestFile(Utf8CP source, Utf8CP target);
     static bool RunTestApp(Utf8CP input, Utf8CP bimFileName, bool updateMode);
-    static Dgn::DgnDbPtr VerifyConvertedElements(Utf8CP bimFileName, size_t alignmentCount, size_t roadwayCount);
+    static Dgn::DgnDbPtr VerifyConvertedElements(Utf8CP bimFileName, size_t alignmentCount, size_t corridorCount);
 
 public:
 };

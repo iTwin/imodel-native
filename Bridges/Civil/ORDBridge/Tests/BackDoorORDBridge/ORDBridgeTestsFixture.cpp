@@ -215,7 +215,7 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(Utf8CP input, Utf8CP bi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElements(Utf8CP bimFileName, size_t alignmentCount, size_t roadwayCount)
+DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElements(Utf8CP bimFileName, size_t alignmentCount, size_t corridorCount)
     {
     BeFileName outputPath = m_host->GetOutputDirectory();
     outputPath.AppendA(bimFileName);
@@ -237,19 +237,19 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElements(Utf8CP
     stmt.Finalize();
 
     stmt.Prepare(*dgnDbPtr, "SELECT COUNT(*) FROM "
-        BRRP_SCHEMA(BRRP_CLASS_Roadway) " r," BIS_SCHEMA(BIS_CLASS_Model) " m, " BIS_SCHEMA(BIS_CLASS_PhysicalPartition) " p "
+        BRRP_SCHEMA(BRRP_CLASS_Corridor) " r," BIS_SCHEMA(BIS_CLASS_Model) " m, " BIS_SCHEMA(BIS_CLASS_PhysicalPartition) " p "
         "WHERE p.CodeValue=? AND p.ECInstanceId = m.ModeledElement.Id AND r.Model.Id = m.ECInstanceId "
         "GROUP BY r.Model.Id");
     BeAssert(stmt.IsPrepared());
 
     stmt.BindText(1, RoadRailPhysical::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName(), IECSqlBinder::MakeCopy::Yes);
 
-    if (roadwayCount == 0)
+    if (corridorCount == 0)
         BeAssert(DbResult::BE_SQLITE_DONE == stmt.Step());
     else
         {
         BeAssert(DbResult::BE_SQLITE_ROW == stmt.Step());
-        BeAssert(roadwayCount == stmt.GetValueInt(0));
+        BeAssert(corridorCount == stmt.GetValueInt(0));
         }
 
     return dgnDbPtr;
