@@ -186,7 +186,7 @@ BentleyStatus Unit::SetPhenomenon(PhenomenonCR phenom)
         return ERROR;
 
     phenom.AddUnit(*this);
-
+    m_isNumber = phenom.IsNumber();
     m_phenomenon = &phenom;
     return SUCCESS;
     }
