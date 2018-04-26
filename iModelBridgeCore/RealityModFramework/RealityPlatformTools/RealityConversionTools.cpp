@@ -454,7 +454,7 @@ void RealityConversionTools::JsonToRealityData(RealityDataPtr realityData, Json:
     }
 
 
-#if (1)
+
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Alain.Robert                            03/2017
 +-----------------+------------------+-------------------+-----------------+------------*/
@@ -723,6 +723,11 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
             }
         propertyVector.push_back(propertyString);
         }
+
+    // For when no properties designated.
+    if (0 == propertyString.size())
+        return "";
+
     propertyString = propertyVector[0];
     for(int i = 1; i < propertyVector.size(); ++i)
         {
@@ -732,7 +737,6 @@ Utf8String RealityConversionTools::RealityDataToJson(RealityDataCR realityData, 
     return propertyString;
     }
 
-#endif
 
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            11/2016
