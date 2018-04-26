@@ -808,24 +808,6 @@ ECObjectsStatus KindOfQuantity::AddPersistenceUnitByName(Utf8StringCR unitName, 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPresentationFormatsByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper)
-    {
-    bvector<Utf8String> tokens;
-    BeStringUtilities::Split(formatString.c_str(), ";", tokens);
-
-    for (auto const& str : tokens) // str of the format {formatName}<{precision}>[overrides|label][...]...
-        {
-        ECObjectsStatus stat = AddPresentationFormatByString(str, nameToFormatMapper, nameToUnitMapper);
-        if (ECObjectsStatus::Success != stat)
-            return stat;
-        }
-
-    return ECObjectsStatus::Success;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  04/2018
-//--------------------------------------------------------------------------------------
 ECObjectsStatus KindOfQuantity::AddPresentationFormatByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper)
     {
     Utf8String formatName;

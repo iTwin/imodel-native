@@ -494,7 +494,7 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
     EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
-    koq->AddPresentationFormatsByString("f:DefaultRealU", formatLookerUpper, unitLookerUpper);
+    koq->AddPresentationFormatByString("f:DefaultRealU", formatLookerUpper, unitLookerUpper);
     EXPECT_STRCASEEQ("DefaultRealU", koq->GetDefaultPresentationFormat()->GetName().c_str());
     }
 
@@ -503,7 +503,7 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
     EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
-    koq->AddPresentationFormatsByString("f:DefaultRealU(8)", formatLookerUpper, unitLookerUpper);
+    koq->AddPresentationFormatByString("f:DefaultRealU(8)", formatLookerUpper, unitLookerUpper);
     EXPECT_STRCASEEQ("DefaultRealU(8)", koq->GetDefaultPresentationFormat()->GetName().c_str());
     }
 
@@ -513,20 +513,8 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
     EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
     koq->SetPersistenceUnit(*m_schema->GetUnitsContext().LookupUnit("u:M"));
-    koq->AddPresentationFormatsByString("f:DefaultRealU(8)[u:IN|inch(es)]", formatLookerUpper, unitLookerUpper);
+    koq->AddPresentationFormatByString("f:DefaultRealU(8)[u:IN|inch(es)]", formatLookerUpper, unitLookerUpper);
     EXPECT_STRCASEEQ("DefaultRealU(8)[u:IN|inch(es)]", koq->GetDefaultPresentationFormat()->GetName().c_str());
-    }
-
-    {
-    CreateTestSchema(true);
-    m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
-    m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
-    EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
-    koq->SetPersistenceUnit(*m_schema->GetUnitsContext().LookupUnit("u:M"));
-    koq->AddPresentationFormatsByString("f:DefaultRealU(8)[u:IN|inch(es)];f:AmerFI(4)", formatLookerUpper, unitLookerUpper);
-    EXPECT_EQ(2, koq->GetPresentationFormats().size());
-    EXPECT_STRCASEEQ("DefaultRealU(8)[u:IN|inch(es)]", koq->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_STRCASEEQ("AmerFI(4)", koq->GetPresentationFormats()[1].GetName().c_str());
     }
 
     }
