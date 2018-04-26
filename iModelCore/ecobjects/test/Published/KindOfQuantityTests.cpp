@@ -457,7 +457,7 @@ TEST_F(KindOfQuantityTest, AddPersistenceUnitByNameTest)
     CreateTestSchema(true);
     m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
     EXPECT_EQ(nullptr, koq->GetPersistenceUnit());
-    koq->AddPersitenceUnitByName("u:M", unitLookerUpper);
+    koq->AddPersistenceUnitByName("u:M", unitLookerUpper);
     EXPECT_STRCASEEQ("M", koq->GetPersistenceUnit()->GetName().c_str());
     }
 
@@ -465,7 +465,7 @@ TEST_F(KindOfQuantityTest, AddPersistenceUnitByNameTest)
     CreateTestSchema(true);
     m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
     EXPECT_EQ(nullptr, koq->GetPersistenceUnit());
-    koq->AddPersitenceUnitByName("u:fakeUnit", unitLookerUpper);
+    koq->AddPersistenceUnitByName("u:fakeUnit", unitLookerUpper);
     EXPECT_EQ(nullptr, koq->GetPersistenceUnit());
     }
 
