@@ -1572,10 +1572,24 @@ public:
     //! @param[in] persFus          The descriptor for the persistence FUS that is of the format for the old FUS descriptor, 
     //!                             format: {unitName}({formatName}), where the format part is optional.
     //! @param[in] presFuses        List of presentation FUS descriptors
+    //! @param[in] formatSchema     Reference to standard formats schema use to locate formats and verify if they have a composite or not
     //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName 
     //! if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
     ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptors(Utf8StringR persUnitName, bvector<Utf8String>& formatStrings, Utf8CP persFus, bvector<Utf8CP> const& presFuses, ECSchemaCR formatSchema);
+    //! Given a string representating the name of a unit and a mapping function, adds the unit as the persistence unit if it is found
+    //! by the mapping function
+    //!
+    //! @param[in] unitName           The name of the unit to be added as a persistence unit
+    //! @param[in] nameToUnitMapper   Function that maps unit names to ECUnitCP
+    //! @return ECObjectsStatus::Success if successfully updates the persistence unit. Otherwise error codes
     ECOBJECTS_EXPORT ECObjectsStatus AddPersistenceUnitByName(Utf8StringCR unitName, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper);
+    //! Given a string representating a format string and a mapping function, adds the unit as the format as a presentation format if it is found
+    //! by the mapping function
+    //!
+    //! @param[in] formatString         The format string to add
+    //! @param[in] nameToFormatMapper   Function that maps format names to ECFormatCP
+    //! @param[in] nameToUnitMapper     Function that maps unit names to ECUnitCP
+    //! @return ECObjectsStatus::Success if successfully updates the presentation format. Otherwise error codes
     ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper);
 
     //! Given an old FUS descriptor or an EC3.2 unit name, parse and set the perstence unit for this KoQ
