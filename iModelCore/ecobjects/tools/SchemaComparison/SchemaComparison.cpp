@@ -23,18 +23,20 @@ struct SchemaComparisonOptions
     {
     BeFileName InFileNames[NSCHEMAS];
     bvector<BeFileName> ReferenceDirectories[NSCHEMAS];
+    bool NoStandardSchemas;
     };
 
 static void ShowUsage(const char* progName)
     {
     std::fprintf(stderr,
-                 "\n%s -i <inputSchemaPath> <inputSchemaPath> [-r directories]\n%s\n%s\n%s\n%s\n%s\n",
+                 "\n%s -i <inputSchemaPath> <inputSchemaPath> [-r directories]\n%s\n%s\n%s\n%s\n%s\n%s\n",
                  progName,
                  "Tool to compare and check for differences between two ECSchemas.\nReturns the number of differences between provided ECSchemas on success, -1 on error.\n",
                  "options:",
                  " -h --help                         show this help message and exit",
                  " -i        FILE0 [FILE1 ... FILEN] specify input schemas",
-                 " -r --ref  DIR0  [DIR1  ... DIRN]  other directories for reference schemas");
+                 " -r --ref  DIR0  [DIR1  ... DIRN]  other directories for reference schemas",
+                 " --NoStandardSchemas               do not initialize SchemaReadContext with standard schemas directory");
     }
 
 static bool NoParameterNext(int argc, char** argv, int index)
@@ -50,11 +52,16 @@ static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& option
     size_t inFileIndex = 0;
     size_t referenceSchemasIndex = 0;
     bool allInputFilesDefined = false;
+    options.NoStandardSchemas = false;
     for (int i = 1; i < argc; ++i)
         {
         if (0 == std::strcmp(argv[i], "-h") || 0 == std::strcmp(argv[i], "--help"))
             {
             return false;
+            }
+        if (0 == std::strcmp(argv[i], "--NoStandardSchemas"))
+            {
+            options.NoStandardSchemas = true;
             }
         else if (0 == std::strcmp(argv[i], "-i"))
             {
@@ -197,9 +204,16 @@ int main(int argc, char** argv)
     BeSQLite::BeSQLiteLib::Initialize(tempDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
     BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
 
-    ECN::ECSchemaReadContext::Initialize(workingDirectory);
-    s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
-
+    if (progOptions.NoStandardSchemas)
+        {
+        s_logger->infov(L"Skipping initialization of ECSchemaReadContext");
+        }
+    else
+        {
+        ECN::ECSchemaReadContext::Initialize(workingDirectory);
+        s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);    
+        }
+    
     int comparisonResult = CompareSchemas(progOptions);
 
     BeSQLite::L10N::Shutdown();
