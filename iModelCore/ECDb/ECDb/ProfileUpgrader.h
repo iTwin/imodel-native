@@ -97,11 +97,30 @@ private:
     static constexpr Utf8CP UnitsSchemaName = "Units";
     static constexpr Utf8CP FormatsSchemaName = "Formats";
 
+    struct KoqConversionContext final
+        {
+        ECDbCR m_ecdb;
+        ECN::ECSchemaPtr m_unitsSchema = nullptr;
+        ECN::ECSchemaPtr m_formatsSchema = nullptr;
+        bset<ECN::ECSchemaId> m_schemasToReferenceUnits;
+        bset<ECN::ECSchemaId> m_schemasToReferenceFormats;
+
+        explicit KoqConversionContext(ECDbCR ecdb) : m_ecdb(ecdb) {}
+
+        bool AreStandardSchemasDeserialized() const { return m_unitsSchema != nullptr; }
+        bool NeedsToImportFormatSchema() const { return !m_schemasToReferenceFormats.empty(); }
+        };
+
     DbResult _Upgrade(ECDbCR) const override;
 
     static DbResult UpgradeECEnums(ECDbCR);
     static void UpgradeECDbEnum(bmap<int64_t, Utf8String>& enumMap, int64_t enumId, Utf8CP enumName);
     static DbResult UpgradeKoqs(ECDbCR);
+    static BentleyStatus ConvertKoqFuses(KoqConversionContext&);
+    static ECN::ECSchemaId InsertSchemaStub(ECDbCR, Utf8StringCR schemaName, Utf8StringCR alias);
+    static BentleyStatus InsertReferencesToUnitsAndFormatsSchema(KoqConversionContext&, ECN::ECSchemaId unitsSchemaId, ECN::ECSchemaId formatsSchemaId);
+    static BentleyStatus ImportFullUnitsAndFormatsSchemas(KoqConversionContext&);
+    static BentleyStatus DeserializeUnitsAndFormatsSchemas(KoqConversionContext&);
     static DbResult FixMetaSchemaClassMapCAXml(ECDbCR);
     };
 

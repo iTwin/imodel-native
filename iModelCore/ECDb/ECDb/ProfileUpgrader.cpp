@@ -313,10 +313,61 @@ void ProfileUpgrader_4002::UpgradeECDbEnum(bmap<int64_t, Utf8String>& enumMap, i
 //static
 DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
     {
-    bset<ECSchemaId> schemasThatNeedUnitsReference;
-    bset<ECSchemaId> schemasThatNeedUnitsAndFormatsReference;
+    KoqConversionContext ctx(ecdb);
 
-    // Upgrade the persisted PersistenceUnits and PresentationFormat strings to new format
+    if (SUCCESS != ConvertKoqFuses(ctx))
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+    if (ctx.m_schemasToReferenceUnits.empty())
+        {
+        BeAssert(!ctx.AreStandardSchemasDeserialized());
+        LOG.debug("ECDb profile upgrade: Upgraded KindOfQuantities to EC3.2 format.");
+        return BE_SQLITE_OK;
+        }
+
+    BeAssert(ctx.m_unitsSchema != nullptr);
+    ECSchemaId unitsSchemaId = InsertSchemaStub(ecdb, ctx.m_unitsSchema->GetName(), ctx.m_unitsSchema->GetAlias());
+    if (!unitsSchemaId.IsValid())
+        {
+        LOG.error("ECDb profile upgrade failed: Creating Units ECSchema stub failed.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    ECSchemaId formatsSchemaId;
+    if (ctx.NeedsToImportFormatSchema())
+        {
+        BeAssert(ctx.m_formatsSchema != nullptr);
+        formatsSchemaId = InsertSchemaStub(ecdb, ctx.m_formatsSchema->GetName(), ctx.m_formatsSchema->GetAlias());
+        if (!formatsSchemaId.IsValid())
+            {
+            LOG.error("ECDb profile upgrade failed: Creating Formats ECSchema stub failed.");
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+        }
+
+    //now add the schema references
+    if (SUCCESS != InsertReferencesToUnitsAndFormatsSchema(ctx, unitsSchemaId, formatsSchemaId))
+        {
+        LOG.error("ECDb profile upgrade failed: Creating schema references to new Units and Formats ECSchemas failed.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+
+    //now import Units (and Formats schemas) which technically amounts to a schema upgrade of the previously inserted units and formats schema stubs
+    if (SUCCESS != ImportFullUnitsAndFormatsSchemas(ctx))
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+
+    LOG.debug("ECDb profile upgrade: Upgraded KindOfQuantities to EC3.2 format.");
+    return BE_SQLITE_OK;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    04/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+BentleyStatus ProfileUpgrader_4002::ConvertKoqFuses(KoqConversionContext& ctx)
+    {
     struct UpgradedUnitFormatStrings
         {
         Utf8String m_persistenceUnit;
@@ -326,64 +377,67 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
     bmap<KindOfQuantityId, UpgradedUnitFormatStrings> koqs;
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Id,SchemaId,PersistenceUnit,PresentationUnits,SchemaId FROM " TABLE_KindOfQuantity))
+    if (BE_SQLITE_OK != stmt.Prepare(ctx.m_ecdb, "SELECT Id,SchemaId,PersistenceUnit,PresentationUnits,SchemaId FROM " TABLE_KindOfQuantity))
         {
-        LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ctx.m_ecdb.GetLastError().c_str());
+        return ERROR;
         }
-
 
     while (BE_SQLITE_ROW == stmt.Step())
         {
+        if (!ctx.AreStandardSchemasDeserialized())
+            {
+            if (SUCCESS != DeserializeUnitsAndFormatsSchemas(ctx))
+                return ERROR;
+            }
+
+        BeAssert(ctx.AreStandardSchemasDeserialized());
         UpgradedUnitFormatStrings& unitFormatStrings = koqs[stmt.GetValueId<KindOfQuantityId>(0)];
         ECSchemaId schemaId = stmt.GetValueId<ECSchemaId>(1);
+        Json::Value oldPresFusesJson;
+        bvector<Utf8CP> oldPresFuses; //can use Utf8CP as the string is owned by the Json::Value (-> Json::Value must not be moved into the if statement)
         if (!stmt.IsColumnNull(3))
             {
-            Json::Value presFusesJson;
-            if (!Json::Reader::Parse(stmt.GetValueText(3), presFusesJson))
+            if (!Json::Reader::Parse(stmt.GetValueText(3), oldPresFusesJson))
                 {
                 LOG.error("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed. Could not parse the old presentation units.");
-                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                return ERROR;
                 }
 
-            bvector<Utf8CP> presFuses;
-            for (Json::Value const& presFus : presFusesJson)
+            for (Json::Value const& presFus : oldPresFusesJson)
                 {
-                presFuses.push_back(presFus.asCString());
-                }
-
-            if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptors(unitFormatStrings.m_persistenceUnit, unitFormatStrings.m_presentationFormats, stmt.GetValueText(2), presFuses))
-                {
-                LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
-                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                oldPresFuses.push_back(presFus.asCString());
                 }
             }
 
-        schemasThatNeedUnitsReference.insert(schemaId);
+        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptors(unitFormatStrings.m_persistenceUnit, unitFormatStrings.m_presentationFormats, stmt.GetValueText(2), oldPresFuses))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ctx.m_ecdb.GetLastError().c_str());
+            return ERROR;
+            }
+
+        ctx.m_schemasToReferenceUnits.insert(schemaId);
         if (!unitFormatStrings.m_presentationFormats.empty())
-            schemasThatNeedUnitsAndFormatsReference.insert(schemaId);
+            ctx.m_schemasToReferenceFormats.insert(schemaId);
 
         }
 
     stmt.Finalize();
     if (koqs.empty())
-        {
-        LOG.debug("ECDb profile upgrade: Upgraded KindOfQuantities to EC3.2 format.");
-        return BE_SQLITE_OK;
-        }
+        return SUCCESS;
 
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE " TABLE_KindOfQuantity " SET PersistenceUnit=?,PresentationUnits=? WHERE Id=?"))
+    if (BE_SQLITE_OK != stmt.Prepare(ctx.m_ecdb, "UPDATE " TABLE_KindOfQuantity " SET PersistenceUnit=?,PresentationUnits=? WHERE Id=?"))
         {
-        LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ctx.m_ecdb.GetLastError().c_str());
+        return ERROR;
         }
 
     for (bpair<KindOfQuantityId, UpgradedUnitFormatStrings> const& kvPair : koqs)
         {
         if (BE_SQLITE_OK != stmt.BindText(1, kvPair.second.m_persistenceUnit, Statement::MakeCopy::No))
             {
-            LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
-            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ctx.m_ecdb.GetLastError().c_str());
+            return ERROR;
             }
 
         // Presentation Format list must be turned into a JSON array
@@ -393,113 +447,142 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
             Utf8String presFormatJson;
             if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationFormats(presFormatJson, kvPair.second.m_presentationFormats))
                 {
-                LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
-                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ctx.m_ecdb.GetLastError().c_str());
+                return ERROR;
                 }
 
             if (BE_SQLITE_OK != stmt.BindText(2, presFormatJson, Statement::MakeCopy::Yes))
                 {
-                LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
-                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ctx.m_ecdb.GetLastError().c_str());
+                return ERROR;
                 }
             }
 
         if (BE_SQLITE_OK != stmt.BindId(3, kvPair.first) ||
             BE_SQLITE_DONE != stmt.Step())
             {
-            LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
-            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ctx.m_ecdb.GetLastError().c_str());
+            return ERROR;
             }
 
         stmt.Reset();
         stmt.ClearBindings();
         }
 
-    stmt.Finalize();
-    BeAssert(!schemasThatNeedUnitsReference.empty());
-
-    //now import Units (and Formats schemas) as new KOQ format requires references to it.
-    ECSchemaId unitsSchemaId, formatsSchemaId;
-    {
-    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
-    ctx->AddSchemaLocater(ecdb.GetSchemaLocater());
-    //Formats schema references Units schema. So if formats are needed, we can just locate Formats and it will deserialize Units as well
-    Utf8CP schemaName = schemasThatNeedUnitsAndFormatsReference.empty() ? UnitsSchemaName : FormatsSchemaName;
-    SchemaKey schemaKey(schemaName, 1, 0, 0);
-    if (ECSchema::LocateSchema(schemaKey, *ctx) == nullptr)
-        {
-        LOG.error("ECDb profile upgrade failed: Deserializing standard Units and Formats ECSchemas failed.");
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    ECSchemaCacheCR schemaCache = ctx->GetCache();
-    if (SUCCESS != ecdb.Schemas().ImportSchemas(schemaCache.GetSchemas(), ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken()))
-        {
-        LOG.error("ECDb profile upgrade failed: Importing standard Units and Formats ECSchemas failed.");
-        return BE_SQLITE_ERROR;
-        }
-
-    ECSchemaPtr unitsSchema = schemaCache.GetSchema(SchemaKey(UnitsSchemaName, 1, 0, 0), SchemaMatchType::Exact);
-    if (unitsSchema == nullptr || !unitsSchema->HasId())
-        {
-        LOG.error("ECDb profile upgrade failed: Importing standard Units and Formats ECSchemas failed.");
-        return BE_SQLITE_ERROR;
-        }
-
-    unitsSchemaId = unitsSchema->GetId();
-
-    if (!schemasThatNeedUnitsAndFormatsReference.empty())
-        {
-        ECSchemaPtr formatsSchema = schemaCache.GetSchema(SchemaKey(FormatsSchemaName, 1, 0, 0), SchemaMatchType::Exact);
-        if (formatsSchema == nullptr || !formatsSchema->HasId())
-            {
-            LOG.error("ECDb profile upgrade failed: Importing standard Units and Formats ECSchemas failed.");
-            return BE_SQLITE_ERROR;
-            }
-
-        formatsSchemaId = formatsSchema->GetId();
-        }
-
-    ecdb.ClearECDbCache();
+    return SUCCESS;
     }
 
-    //now add the schema references
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "INSERT INTO main." TABLE_SchemaReference "(SchemaId,ReferencedSchemaId) VALUES(?,?)"))
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    04/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSchemaId ProfileUpgrader_4002::InsertSchemaStub(ECDbCR ecdb, Utf8StringCR schemaName, Utf8StringCR alias)
+    {
+    ECSchemaPtr stub = nullptr;
+    if (ECObjectsStatus::Success != ECSchema::CreateSchema(stub, schemaName, alias, 1, 0, 0))
+        return ECSchemaId();
+
+    stub->SetOriginalECXmlVersion(3, 2);
+    if (SUCCESS != SchemaWriter::InsertSchemaEntry(ecdb, *stub))
+        return ECSchemaId();
+
+    BeAssert(stub->HasId());
+    return stub->GetId();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    04/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+BentleyStatus ProfileUpgrader_4002::InsertReferencesToUnitsAndFormatsSchema(KoqConversionContext& ctx, ECSchemaId unitsSchemaId, ECSchemaId formatsSchemaId)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ctx.m_ecdb, "INSERT INTO main." TABLE_SchemaReference "(SchemaId,ReferencedSchemaId) VALUES(?,?)"))
         {
         LOG.error("ECDb profile upgrade failed: Failed to prepare SQL to insert references to standard Units schema.");
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        return ERROR;
         }
 
-    for (ECSchemaId schemaThatNeedUnitsReference : schemasThatNeedUnitsReference)
+    for (ECSchemaId schemaThatNeedUnitsReference : ctx.m_schemasToReferenceUnits)
         {
         if (BE_SQLITE_OK != stmt.BindId(1, schemaThatNeedUnitsReference) ||
             BE_SQLITE_OK != stmt.BindId(2, unitsSchemaId) ||
             BE_SQLITE_DONE != stmt.Step())
             {
             LOG.error("ECDb profile upgrade failed: Failed to insert references to standard Units schema.");
-            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            return ERROR;
             }
 
         stmt.Reset();
         stmt.ClearBindings();
         }
 
-    for (ECSchemaId schemaThatNeedFormatsReference : schemasThatNeedUnitsAndFormatsReference)
+    for (ECSchemaId schemaThatNeedFormatsReference : ctx.m_schemasToReferenceFormats)
         {
         if (BE_SQLITE_OK != stmt.BindId(1, schemaThatNeedFormatsReference) ||
             BE_SQLITE_OK != stmt.BindId(2, formatsSchemaId) ||
             BE_SQLITE_DONE != stmt.Step())
             {
             LOG.error("ECDb profile upgrade failed: Failed to insert references to standard Formats schema.");
-            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            return ERROR;
             }
 
         stmt.Reset();
         stmt.ClearBindings();
         }
 
-    LOG.debug("ECDb profile upgrade: Upgraded KindOfQuantities to EC3.2 format.");
-    return BE_SQLITE_OK;
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    04/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+BentleyStatus ProfileUpgrader_4002::ImportFullUnitsAndFormatsSchemas(KoqConversionContext& ctx)
+    {
+    bvector<ECSchemaCP> schemas;
+    schemas.push_back(ctx.m_unitsSchema.get());
+    if (ctx.NeedsToImportFormatSchema())
+        schemas.push_back(ctx.m_formatsSchema.get());
+
+    if (SUCCESS != ctx.m_ecdb.Schemas().ImportSchemas(schemas, ctx.m_ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken()))
+        {
+        LOG.error("ECDb profile upgrade failed: Importing standard Units and Formats ECSchemas failed.");
+        return ERROR;
+        }
+
+    ctx.m_ecdb.ClearECDbCache();
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    04/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+BentleyStatus ProfileUpgrader_4002::DeserializeUnitsAndFormatsSchemas(KoqConversionContext& ctx)
+    {
+    ECSchemaReadContextPtr readCtx = ECSchemaReadContext::CreateContext();
+    readCtx->AddSchemaLocater(ctx.m_ecdb.GetSchemaLocater());
+    //Formats schema references Units schema. We can just locate Formats and it will deserialize Units as well
+    SchemaKey formatsSchemaKey(FormatsSchemaName, 1, 0, 0);
+    ctx.m_formatsSchema = ECSchema::LocateSchema(formatsSchemaKey, *readCtx);
+    if (ctx.m_formatsSchema == nullptr)
+        {
+        LOG.error("ECDb profile upgrade failed: Deserializing standard Units and Formats ECSchemas failed.");
+        return ERROR;
+        }
+
+    BeAssert(readCtx->GetCache().GetCount() == 2);
+    SchemaKey unitsSchemaKey(UnitsSchemaName, 1, 0, 0);
+    auto it = ctx.m_formatsSchema->GetReferencedSchemas().Find(unitsSchemaKey, SchemaMatchType::Exact);
+    if (it == ctx.m_formatsSchema->GetReferencedSchemas().end())
+        {
+        LOG.error("ECDb profile upgrade failed: Deserializing standard Units and Formats ECSchemas failed.");
+        return ERROR;
+        }
+
+    ctx.m_unitsSchema = it->second;
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------
