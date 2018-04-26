@@ -3,7 +3,7 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
     <Part Name="DgnDb0601Assemblies" BentleyBuildMakeFile="BimTeleporter/DgnDb0601AssembliesPrewire.mke">
-        <NuGetPackage targetFramework="native">DgnDb_1_6_ForTeleporterNuget</NuGetPackage>
+        <NuGetPackage targetFramework="native">DgnDb_1_6_ForUpgraderNuget</NuGetPackage>
         <Bindings>
             <Assemblies ProductDirectoryName="DgnDbAssemblies" Required="false">
                 Delivery/*.dll,
