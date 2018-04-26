@@ -508,6 +508,7 @@ ECObjectsStatus KindOfQuantity::ParseDescriptorAndAddRefs(Utf8StringR unitName, 
 
     return ECObjectsStatus::Success;
     }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
@@ -691,7 +692,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
 // static
-ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvector<Utf8String>& formatStrings, Utf8CP persFus, bvector<Utf8CP> const& presFuses)
+ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvector<Utf8String>& formatStrings, Utf8CP persFus, bvector<Utf8CP> const& presFuses, ECSchemaCR formatSchema)
     {
     unitName.clear();
     formatStrings.clear();
@@ -742,7 +743,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
             .append(unqualifiedPresFormat);
         bvector<Utf8String> split;
         BeStringUtilities::Split(unqualifiedPresFormat.c_str(), "(", split);
-        auto format = StandardFormatsHelper::GetFormat(split[0].c_str());
+        auto format = formatSchema.GetFormatCP(split[0].c_str());
         if (nullptr == format || !format->HasComposite())
             {
             formatString
@@ -767,7 +768,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
             .append(unqualifiedPersFormat);
         bvector<Utf8String> split;
         BeStringUtilities::Split(unqualifiedPersFormat.c_str(), "(", split);
-        auto format = StandardFormatsHelper::GetFormat(split[0].c_str());
+        auto format = formatSchema.GetFormatCP(split[0].c_str());
         if (nullptr == format || !format->HasComposite())
             {
             formatString
