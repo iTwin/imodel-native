@@ -51,6 +51,11 @@ bool DataSource::isEmpty(void)
     return true;
     }
 
+bool DataSource::isFromCache(void)
+    {
+    return m_isFromCache;
+    }
+
 void DataSource::setTimeout(Timeout timeMilliseconds)
 {
     timeout = timeMilliseconds;

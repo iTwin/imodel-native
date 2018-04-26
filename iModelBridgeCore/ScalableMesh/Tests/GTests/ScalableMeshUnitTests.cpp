@@ -167,6 +167,75 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
                 vec.push_back(pt);
                 }
             };
+
+        void CreateSimpleClipFromRangeHelper(bvector<DPoint3d>& vec, const DRange3d& range)
+            {
+            std::random_device rd;
+
+            std::default_random_engine e1(rd());
+            std::uniform_real_distribution<double> val_x(range.low.x, range.high.x);
+            std::uniform_real_distribution<double> val_y(range.low.y, range.high.y);
+
+            for (size_t i = 0; i < 2; ++i)
+                {
+                DPoint3d pt = DPoint3d::From(val_x(e1), val_y(e1), range.high.z);
+                vec.push_back(pt);
+                }
+            DRange3d clipRange = DRange3d::From(vec.data(), (int)vec.size());
+
+            vec.clear();
+            vec.push_back(clipRange.low);
+            vec.push_back(DPoint3d::From(clipRange.high.x, clipRange.low.y, clipRange.high.z)); 
+            vec.push_back(DPoint3d::From(clipRange.low.x, clipRange.high.y, clipRange.high.z));
+            vec.push_back(clipRange.high);
+            vec.push_back(clipRange.low);
+            }
+
+        void SetReprojection(IScalableMeshPtr myScalableMesh, bool& status)
+            {
+            status = false;
+            Transform tr = myScalableMesh->GetReprojectionTransform();
+            if (tr.IsIdentity())
+                {
+                // Reproject ECEF mesh using Bing maps GCS because they can't be clipped without being reprojected
+                WString bingWKT(BINGWKT);
+                auto bingGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+                StatusInt warningStat;
+                WString warningMessageString;
+
+                bingGCS->InitFromWellKnownText(&warningStat,
+                    &warningMessageString,
+                    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown,
+                    bingWKT.c_str());
+
+                ASSERT_EQ(warningStat, SUCCESS);
+                ASSERT_EQ(warningMessageString.size(), 0);
+
+                DRange3d range;
+                ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+                DPoint3d extent;
+                extent.DifferenceOf(range.high, range.low);
+
+                GeoCoordinates::DgnGCSPtr  smGCS = GeoCoordinates::DgnGCS::CreateGCS(myScalableMesh->GetBaseGCS().get(), nullptr);
+                GeoCoordinates::DgnGCSPtr  targetGCS = GeoCoordinates::DgnGCS::CreateGCS(bingGCS.get(), nullptr);
+
+                Transform       approxTransform;
+                auto localTransformStatus = smGCS->GetLocalTransform(&approxTransform,
+                    range.low,
+                    &extent,
+                    true/*doRotate*/, true/*doScale*/,
+                    GeoCoordinates::GeoCoordInterpretation::XYZ,
+                    *targetGCS);
+
+                if (0 == localTransformStatus || 1 == localTransformStatus)
+                    {
+                    status = true;
+                    myScalableMesh->SetReprojection(*bingGCS, approxTransform);
+                    }
+                }
+            }
     };
 
 
@@ -946,47 +1015,12 @@ TEST_P(ScalableMeshTestWithParams, Node_RefreshMergedClip)
 
     if (myScalableMesh->IsCesium3DTiles())
         {
-        Transform tr = myScalableMesh->GetReprojectionTransform();
-        if (tr.IsIdentity())
+        bool status;
+        SetReprojection(myScalableMesh, status);
+        if (status == false)
             {
-            // Reproject ECEF mesh using Bing maps GCS because they can't be clipped without being reprojected
-            WString bingWKT(BINGWKT);
-            auto bingGCS = GeoCoordinates::BaseGCS::CreateGCS();
-
-            StatusInt warningStat;
-            WString warningMessageString;
-
-            bingGCS->InitFromWellKnownText(&warningStat,
-                                           &warningMessageString,
-                                           BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown,
-                                           bingWKT.c_str());
-
-            ASSERT_EQ(warningStat, SUCCESS);
-            ASSERT_EQ(warningMessageString.size(), 0);
-
-            DRange3d range;
-            ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
-
-            DPoint3d extent;
-            extent.DifferenceOf(range.high, range.low);
-
-            GeoCoordinates::DgnGCSPtr  smGCS = GeoCoordinates::DgnGCS::CreateGCS(myScalableMesh->GetBaseGCS().get(), nullptr);
-            GeoCoordinates::DgnGCSPtr  targetGCS = GeoCoordinates::DgnGCS::CreateGCS(bingGCS.get(), nullptr);
-
-            Transform       approxTransform;
-            auto status = smGCS->GetLocalTransform(&approxTransform, 
-                                                    range.low,
-                                                   &extent, 
-                                                    true/*doRotate*/, true/*doScale*/, 
-                                                    GeoCoordinates::GeoCoordInterpretation::XYZ, 
-                                                    *targetGCS);
-
-            if (0 != status && 1 != status)
-                {
-                // Skip this dataset, it is not ECEF
-                return;
-                }
-            myScalableMesh->SetReprojection(*bingGCS, approxTransform);
+            // Skip this dataset, it is not ECEF
+            return;
             }
         }
 
@@ -1555,6 +1589,121 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithGraph)
     }
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Richard.Bois     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, LoadMeshWithClip)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    if (myScalableMesh->IsCesium3DTiles())
+        {
+        bool status;
+        SetReprojection(myScalableMesh, status);
+        if (status == false)
+            {
+            // Skip this dataset, it is not ECEF
+            return;
+            }
+        }
+
+    // Compute clip object from mesh range
+    DRange3d range;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+
+    if (nodeP->GetPointCount() > 4)
+    {
+        range.scaleAboutCenter(&range, 0.75);
+
+        Transform tr = Transform::FromIdentity();
+
+        bvector<DPoint3d> clipPoints;
+        CreateSimpleClipFromRangeHelper(clipPoints, range);
+
+        uint64_t clipId = 1;
+        ASSERT_TRUE(myScalableMesh->AddClip(clipPoints.data(), clipPoints.size(), clipId));
+
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false, true);
+
+        auto mesh = nodeP->GetMesh(flags);
+        if (!nodeP->GetContentExtent().IsNull())
+            ASSERT_TRUE(mesh.IsValid());
+        if (mesh.IsValid())
+        {
+            if (nodeP->IsTextured())
+                ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() != nullptr);
+            else
+                ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() == nullptr);
+
+            ASSERT_EQ(mesh->GetNbPoints(), mesh->GetPolyfaceQuery()->GetPointCount());
+            ASSERT_EQ(mesh->GetNbFaces(), mesh->GetPolyfaceQuery()->GetPointIndexCount() / 3);
+            ASSERT_NE(nodeP->GetPointCount(), mesh->GetNbPoints());
+
+            flags = IScalableMeshMeshFlags::Create(false, false);
+            mesh = nodeP->GetMesh(flags);
+            ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() == nullptr);
+
+            ASSERT_EQ(mesh->GetNbPoints(), mesh->GetPolyfaceQuery()->GetPointCount());
+            ASSERT_EQ(mesh->GetNbFaces(), mesh->GetPolyfaceQuery()->GetPointIndexCount() / 3);
+            ASSERT_EQ(nodeP->GetPointCount(), mesh->GetNbPoints());
+        }
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Richard.Bois     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetAsBcDTM)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+    auto mesh = nodeP->GetMesh(flags);
+    if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
+        ASSERT_TRUE(mesh.IsValid());
+    if (mesh.IsValid())
+    {
+
+        BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr bcdtmP = nullptr;
+        ASSERT_EQ(SUCCESS, mesh->GetAsBcDTM(bcdtmP));
+        ASSERT_EQ(bcdtmP->GetTrianglesCount(), mesh->GetNbFaces());
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Richard.Bois     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetTexture)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+
+    IScalableMeshTexturePtr textureP = nodeP->GetTexture();
+    if (textureP.IsValid())
+    {
+        ASSERT_TRUE(textureP->GetSize() != 0);
+        ASSERT_TRUE(textureP->GetData() != nullptr);
+        ASSERT_EQ  (textureP->GetNOfChannels(), 3);  // Only support RGB for now...
+        ASSERT_GT  (textureP->GetDimension().x, 0);  // width > 0
+        ASSERT_GT  (textureP->GetDimension().y, 0);  // height > 0
+    }
+    else
+    {
+        ASSERT_FALSE(nodeP->IsTextured());
+    }
+}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               Elenie.Godzaridis     02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/

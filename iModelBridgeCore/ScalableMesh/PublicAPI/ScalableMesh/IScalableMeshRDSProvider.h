@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/IScalableMeshRDSProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,6 +39,9 @@ protected:
 
     virtual Utf8String _GetRootDocument() = 0;
 
+    virtual Utf8String _GetProjectID() = 0;
+
+
 
     /*__PUBLISH_SECTION_START__*/
 
@@ -51,6 +54,8 @@ public:
     BENTLEY_SM_EXPORT Utf8String GetToken();
 
     BENTLEY_SM_EXPORT Utf8String GetRootDocument();
+
+    BENTLEY_SM_EXPORT Utf8String GetProjectID();
 
     BENTLEY_SM_EXPORT static IScalableMeshRDSProviderPtr Create(const Utf8String& projectGuid, const Utf8String& pwcsMeshGuid);
 };

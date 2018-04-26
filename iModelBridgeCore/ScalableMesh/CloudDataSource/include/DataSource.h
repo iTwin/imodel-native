@@ -57,6 +57,7 @@ protected:
 
 
     Timeout                                         timeout;
+    bool                                            m_isFromCache = false;
 
 protected:
 
@@ -82,12 +83,15 @@ public:
 
     virtual            bool                         isValid             (void);
     virtual            bool                         isEmpty             (void);
+    virtual            bool                         isFromCache         (void);
 
     virtual            void                         setTimeout          (Timeout timeMilliseconds);
     virtual            Timeout                      getTimeout          (void);
 
     virtual            void                         setCachingEnabled   (bool enabled);
     virtual            bool                         getCachingEnabled   (void);
+
+    virtual            void                         setForceWriteToCache(void) {}
 
     virtual            DataSource *                 getCacheDataSource  (void);
 };

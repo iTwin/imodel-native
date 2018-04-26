@@ -353,6 +353,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                                                             // Segment has been processed, so signal this. Waiting threads are signalled once all are completed.
             if (buffer->signalSegmentProcessed())
             {
+                buffer->setExternalBufferSize(buffer->getReadSize());
                                                             // Remove bufer from buffer queue
                 removeBuffer(*buffer);
 #ifdef SM_STREAMING_PERF
