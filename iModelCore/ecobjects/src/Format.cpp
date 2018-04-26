@@ -437,32 +437,11 @@ SchemaWriteStatus ECFormat::WriteJson(Json::Value & outValue, bool standalone, b
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
     if (HasNumeric())
         {
-        auto nfs = GetNumericSpec();
-        if (nfs->HasRoundingFactor())
-            outValue[FORMAT_ROUND_FACTOR_ATTRIBUTE] = nfs->GetRoundingFactor();
-        outValue[FORMAT_TYPE_ATTRIBUTE] = Formatting::Utils::GetPresentationTypeString(nfs->GetPresentationType());
-        if (nfs->HasSignOption())
-            outValue[FORMAT_SIGN_OPTION_ATTRIBUTE] = Formatting::Utils::GetSignOptionString(nfs->GetSignOption());
-        if (nfs->HasFormatTraits())
-            outValue[FORMAT_TRAITS_ATTRIBUTE] = nfs->GetFormatTraitsString();
-        if (nfs->HasPrecision())
-            { 
-            outValue[FORMAT_PRECISION_ATTRIBUTE] = GetPresentationType() == Formatting::PresentationType::Fractional ? 
-                        static_cast<uint32_t>(pow(2u, static_cast<uint32_t>(nfs->GetFractionalPrecision()))) : 
-                        static_cast<uint32_t>(nfs->GetDecimalPrecision());
+        auto num = GetNumericSpec()->ToJson(false);
+        for (Json::ValueIterator iter = num.begin(); iter != num.end(); iter++)
+            {
+            outValue[iter.memberName()] = *iter;
             }
-        if (Formatting::PresentationType::Scientific == GetPresentationType())
-            outValue[FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE] = Formatting::Utils::GetScientificTypeString(nfs->GetScientificType());
-        if (nfs->HasDecimalSeparator())
-            outValue[FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE] = Utf8String(1, nfs->GetDecimalSeparator()).c_str();
-        if (nfs->HasThousandsSeparator())
-            outValue[FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE] = Utf8String(1,nfs->GetThousandSeparator()).c_str();
-        if (nfs->HasUomSeparator())
-            outValue[FORMAT_UOM_SEPARATOR_ATTRIBUTE] = nfs->GetUomSeparator();
-        if (nfs->HasStationSeparator())
-            outValue[FORMAT_STAT_SEPARATOR_ATTRIBUTE] = Utf8String(1, nfs->GetStationSeparator()).c_str();
-        if (Formatting::PresentationType::Station == GetPresentationType())
-            outValue[FORMAT_STATION_SIZE_ATTRIBUTE] = nfs->GetStationOffsetSize();
         }
     
     if (HasComposite())
