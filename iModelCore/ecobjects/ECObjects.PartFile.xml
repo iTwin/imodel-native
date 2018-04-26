@@ -363,10 +363,21 @@
 
     <Part Name="SchemaComparison" BentleyBuildMakeFile="tools/SchemaComparison/SchemaComparison.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsNative" />
+        <SubPart PartName="ToolsSqlang" />
         <Bindings>
             <Files ProductDirectoryName="SchemaComparisonExe">
                 Delivery/SchemaComparison.exe
                 Delivery/SchemaComparison.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="SchemaJsonSerializer" BentleyBuildMakeFile="tools/SchemaJsonSerializer/SchemaJsonSerializer.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Files ProductDirectoryName="SchemaJsonSerializerExe">
+                Delivery/SchemaJsonSerializer.exe
+                Delivery/SchemaJsonSerializer.logging.config.xml
             </Files>
         </Bindings>
     </Part>
@@ -418,12 +429,17 @@
         <ProductDirectory Name="SchemaComparisonExe"     Path=""/>
     </ProductDirectoryList>
 
+    <ProductDirectoryList ListName="SchemaJsonSerializer">
+        <ProductDirectory Name="SchemaJsonSerializerExe"     Path=""/>
+    </ProductDirectoryList>
+
     <Product Name="ECObjectsTools">
         <SubPart PartName="SchemaConverter" />
         <SubPart PartName="SchemaResourceGenerator" />
         <SubPart PartName="SchemaRoundtrip" />
         <SubPart PartName="SchemaValidator"/>
         <SubPart PartName="SchemaComparison" />
+        <SubPart PartName="SchemaJsonSerializer" />
         <SubProduct ProductName="ECObjects"/>
         <Directories DirectoryListName="ECObjects" />
         <Directories DirectoryListName="SchemaConverter" />
@@ -431,6 +447,7 @@
         <Directories DirectoryListName="SchemaRoundtrip" />
         <Directories DirectoryListName="SchemaValidator" />
         <Directories DirectoryListName="SchemaComparison" />
+        <Directories DirectoryListName="SchemaJsonSerializer" />
     </Product>
     
     <Part Name="ToolsSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/SchemaValidator/SQLang/Tools_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">

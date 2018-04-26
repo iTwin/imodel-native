@@ -10,6 +10,7 @@
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECObjects/SchemaComparer.h>
 #include <Windows.h>
+#include <BeSQLite/L10N.h>
 
 #define SCHEMA_COMPARISON_EXIT_DIFFERENCES_DETECTED 1
 #define SCHEMA_COMPARISON_EXIT_FAILURE -1
@@ -21,7 +22,7 @@ BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::Loggin
 struct SchemaComparisonOptions
     {
     BeFileName InFileNames[NSCHEMAS];
-    bvector<BeFileName> ReferenceDirectories;
+    bvector<BeFileName> ReferenceDirectories[NSCHEMAS];
     };
 
 static void ShowUsage(const char* progName)
@@ -47,6 +48,7 @@ static bool NoParameterNext(int argc, char** argv, int index)
 static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& options)
     {
     size_t inFileIndex = 0;
+    size_t referenceSchemasIndex = 0;
     bool allInputFilesDefined = false;
     for (int i = 1; i < argc; ++i)
         {
@@ -71,9 +73,11 @@ static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& option
             }
         else if (0 == std::strcmp(argv[i], "-r") || 0 == std::strcmp(argv[i], "--ref"))
             {
+            if (referenceSchemasIndex >= NSCHEMAS)
+                return false;
             while (false == NoParameterNext(argc, argv, i))
-                options.ReferenceDirectories.push_back(BeFileName(argv[++i]));
-            for (auto const& refDirectory : options.ReferenceDirectories)
+                options.ReferenceDirectories[referenceSchemasIndex].push_back(BeFileName(argv[++i]));
+            for (auto const& refDirectory : options.ReferenceDirectories[referenceSchemasIndex])
                 {
                 if (!refDirectory.Contains(L"\\"))
                     {
@@ -81,12 +85,19 @@ static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& option
                     return false;
                     }
                 }
+            ++referenceSchemasIndex;
             }
         else
             {
             std::fprintf(stderr, "Unknown option %s\n", argv[i]);
             return false;
             }
+        }
+
+    while (referenceSchemasIndex > 0 && referenceSchemasIndex < NSCHEMAS)
+        {
+        options.ReferenceDirectories[referenceSchemasIndex] = options.ReferenceDirectories[referenceSchemasIndex - 1];
+        ++referenceSchemasIndex;
         }
 
     return allInputFilesDefined;
@@ -113,14 +124,13 @@ int CompareSchemas(SchemaComparisonOptions& options)
         contexts[i]->SetPreserveElementOrder(true);
         contexts[i]->SetPreserveXmlComments(false);
 
-        for (auto const& refDir : options.ReferenceDirectories)
+        for (auto const& refDir : options.ReferenceDirectories[i])
             {
             contexts[i]->AddSchemaPath(refDir.GetName());
             }
-        contexts[i]->AddSchemaPath(options.InFileNames[i].GetDirectoryName().GetName());
 
-        schemas[i] = ECN::ECSchema::LocateSchema(options.InFileNames[i].c_str(), *contexts[i]);
-        if (!schemas[i].IsValid())
+        ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlFile(schemas[i], options.InFileNames[i].c_str(), *contexts[i]);
+        if (status != ECN::SchemaReadStatus::Success || !schemas[i].IsValid())
             {
             Utf8String err("Failed to read schema ");
             err += schemas[i]->GetName().c_str();
@@ -179,8 +189,20 @@ int main(int argc, char** argv)
     BentleyApi::NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
     workingDirectory.AppendToPath(L"Assets");
 
+    BeFileName sqlangFile(workingDirectory);
+    sqlangFile.AppendToPath(L"sqlang");
+    BeFileName tempDirectory(sqlangFile);
+    sqlangFile.AppendToPath(L"Tools_en.sqlang.db3");
+
+    BeSQLite::BeSQLiteLib::Initialize(tempDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
+    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
+
     ECN::ECSchemaReadContext::Initialize(workingDirectory);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
 
-    return CompareSchemas(progOptions);
+    int comparisonResult = CompareSchemas(progOptions);
+
+    BeSQLite::L10N::Shutdown();
+
+    return comparisonResult;
     }

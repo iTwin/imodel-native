@@ -1,11 +1,11 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: tools/SchemaComparison/SchemaComparison.mke $
+#  $Source: tools/SchemaJsonSerializer/SchemaJsonSerializer.mke $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-appName = SchemaComparison
+appName = SchemaJsonSerializer
 
 SrcDir = $(_MakeFilePath)
 
@@ -19,7 +19,7 @@ always:
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)SchemaComparison.obj : $(SrcDir)SchemaComparison.cpp ${MultiCompileDepends}
+$(o)SchemaJsonSerializer.obj : $(SrcDir)SchemaJsonSerializer.cpp ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki
@@ -34,8 +34,8 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(li
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)   
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeSqlite$(libext)  
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeSqlite$(libext)
 
 %include $(SharedMki)linktool.mki
 

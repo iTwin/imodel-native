@@ -3436,7 +3436,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         
         if (!constraintClass->IsEntityClass() && !constraintClass->IsRelationshipClass())
             {
-            if (2 == m_relClass->GetSchema().GetVersionRead())
+            if (2 == m_relClass->GetSchema().GetOriginalECXmlVersionMajor())
                 {
                 LOG.warningv("Invalid ECSchemaXML: The %s ECRelationshipConstraint on %s contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass or ECRelationshipClass named '%s' in the ECSchema '%s'.  The constraint class will be ignored.", 
                              m_isSource ? "Source" : "Target", m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
