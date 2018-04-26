@@ -122,11 +122,11 @@ $(OUT_DIR)dconic4d$(OUT_EXT)        : $(geomSrcStructs)dconic4d.cpp         $(OT
 
 #$(OUT_DIR)frange3d$(OUT_EXT)        : $(geomSrcStructs)frange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)fpoint3d$(OUT_EXT)        : $(geomSrcStructs)fpoint3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)fpoint3d$(OUT_EXT)        : $(geomSrcStructs)fpoint3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)fpoint2d$(OUT_EXT)        : $(geomSrcStructs)fpoint2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)fpoint2d$(OUT_EXT)        : $(geomSrcStructs)fpoint2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)frange2d$(OUT_EXT)        : $(geomSrcStructs)frange2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)frange2d$(OUT_EXT)        : $(geomSrcStructs)frange2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 
 # (end structs_sources_pubinc.mki)
@@ -407,9 +407,9 @@ $(OUT_DIR)bspicurv$(OUT_EXT)    : $(geomSrcBspline)bspicurv.cpp $(OTHER_DEPENDEN
 
 $(OUT_DIR)bsprange$(OUT_EXT)    : $(geomSrcBspline)bsprange.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-$(OUT_DIR)plank$(OUT_EXT)    : $(geomSrcBspline)plank.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+#$(OUT_DIR)plank$(OUT_EXT)    : $(geomSrcBspline)plank.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-$(OUT_DIR)bspplank$(OUT_EXT)    : $(geomSrcBspline)bspplank.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+#$(OUT_DIR)bspplank$(OUT_EXT)    : $(geomSrcBspline)bspplank.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 $(OUT_DIR)bsp_curvature$(OUT_EXT)    : $(geomSrcBspline)bsp_curvature.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 

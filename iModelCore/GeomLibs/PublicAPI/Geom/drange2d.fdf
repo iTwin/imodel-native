@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/drange2d.fdf $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,20 +22,6 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 Public GEOMDLLIMPEXP void     bsiDRange2d_init
 (
 DRange2dP pRange        /* OUT     range to be initialized */
-);
-
-//!
-//!
-//! Initializes a range cube with (inverted) large positive and negative
-//! values.
-//!
-//! @param pFRange OUT     "float" range.
-//! 
-//!
-Public GEOMDLLIMPEXP void     bsiDRange2d_initFromFRange2d
-(
-DRange2dP pRange,
-FRange2dCP pFRange
 );
 
 //!
