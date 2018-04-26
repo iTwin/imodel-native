@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/iModelBridge.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridge.h>
@@ -129,6 +129,9 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
         LOG.fatalv(L"Failed to create repository [%s] with error %x", _GetParams().GetBriefcaseName().c_str(), createStatus);
         return nullptr;
         }
+
+    if (nullptr != rootSubjectDescription)
+        db->SavePropertyString(DgnProjectProperty::Description(), rootSubjectDescription);
 
     bvector<DgnModelId> baseModels;
     queryAllModels(baseModels, *db);

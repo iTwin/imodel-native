@@ -1206,6 +1206,7 @@ private:
     DWGGE_Type(Vector3d)    m_cameraUpDirection;
     DWGGE_Type(Point2d)     m_lowerleftCorner;
     DWGGE_Type(Point2d)     m_upperrightCorner;
+    DWGGE_Type(Matrix3d)    m_worldToEye;
 
 public:
 #ifdef DWGTOOLKIT_OpenDwg
@@ -1214,7 +1215,7 @@ public:
 #endif
 
     // constructors
-    DwgGiViewport () : m_viewDirection(0.0, 0.0, 1.0), m_lowerleftCorner(0.0,0.0), m_upperrightCorner(0.0,0.0) {}
+    DwgGiViewport () : m_viewDirection(0.0, 0.0, 1.0), m_lowerleftCorner(0.0,0.0), m_upperrightCorner(0.0,0.0) { m_worldToEye.setToIdentity(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -1227,6 +1228,7 @@ explicit DwgGiViewport (DVec3dCR viewDir, DVec3dCR cameraUp, DPoint3dCR cameraLo
     m_cameraTarget.setToSum (m_cameraLocation, m_viewDirection);
     m_lowerleftCorner.set (0.0, 0.0);
     m_upperrightCorner.set (0.0, 0.0);
+    m_worldToEye = DWGGE_Type(Matrix3d)::worldToPlane (m_viewDirection);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1278,10 +1280,10 @@ virtual OdGePoint3d     getCameraTarget () const override { return m_cameraTarge
 virtual OdGeVector3d    getCameraUpVector() const override { return m_cameraUpDirection; }
 
 #elif DWGTOOLKIT_RealDwg
-virtual void            getModelToEyeTransform (DWGGE_TypeR(Matrix3d) matrix) const override { matrix.setToIdentity(); }
-virtual void            getEyeToModelTransform (DWGGE_TypeR(Matrix3d) matrix) const override { matrix.setToIdentity(); }
-virtual void            getWorldToEyeTransform (DWGGE_TypeR(Matrix3d) matrix) const override { matrix.setToIdentity(); }
-virtual void            getEyeToWorldTransform (DWGGE_TypeR(Matrix3d) matrix) const override { matrix.setToIdentity(); }
+virtual void            getModelToEyeTransform (DWGGE_TypeR(Matrix3d) matrix) const override { matrix = m_worldToEye; }
+virtual void            getEyeToModelTransform (DWGGE_TypeR(Matrix3d) matrix) const override { matrix = m_worldToEye.transpose(); }
+virtual void            getWorldToEyeTransform (DWGGE_TypeR(Matrix3d) matrix) const override { matrix = m_worldToEye; }
+virtual void            getEyeToWorldTransform (DWGGE_TypeR(Matrix3d) matrix) const override { matrix = m_worldToEye.transpose(); }
 virtual void            getCameraLocation (AcGePoint3d& location) const override { location = m_cameraLocation; }
 virtual void            getCameraTarget (AcGePoint3d& target) const override { target = m_cameraTarget; }
 virtual void            getCameraUpVector(AcGeVector3d& upDir) const override { upDir = m_cameraUpDirection; }

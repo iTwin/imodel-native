@@ -30,6 +30,9 @@ USING_NAMESPACE_IMAGEPP
 
 BEGIN_DGNDBSYNC_DWG_NAMESPACE
 
+static const double     s_finishExponent = 0.016;
+static const double     s_finishFactor = 2.5;
+
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          10/16
 +===============+===============+===============+===============+===============+======*/
@@ -538,12 +541,17 @@ void            MaterialFactory::ConvertSpecular ()
 
     double  scale = m_dwgMaterial->GetSpecular (dwgColor, dwgMap);
 
+    if (DwgGiMaterialColor::Override == dwgColor.GetMethod())
+        scale = dwgColor.GetFactor ();
+    // WIP - convert specular scale?
+    scale /= 100.0;
+
     m_materialJson[RENDER_MATERIAL_Specular] = scale;
     m_materialJson[RENDER_MATERIAL_FlagHasSpecularColor] = DwgGiMaterialColor::Override == dwgColor.GetMethod();
 
     bool    hasSpecular = m_materialJson[RENDER_MATERIAL_FlagHasSpecularColor].asBool ();
-    // missing "specular_color" causes Gist to hit an assert!
-    m_materialJson[RENDER_MATERIAL_SpecularColor] = this->GetRGBFrom (dwgColor);
+    if (hasSpecular)
+        m_materialJson[RENDER_MATERIAL_SpecularColor] = this->GetRGBFrom (dwgColor);
 
     m_materialJson[RENDER_MATERIAL_FlagLockFinishToSpecular] = false;
 
@@ -637,8 +645,11 @@ void            MaterialFactory::ConvertShinness ()
     {
     double      scale = fabs (100 * m_dwgMaterial->GetShininess());
 
-    if (scale > 100.0)
-        scale = 100.0;
+    // apply V8 scale factor conversion:
+    if (scale > 2000.0)
+        scale = 2000.0;
+
+    scale = ::pow (10.0, s_finishExponent * scale) / s_finishFactor;
 
     m_materialJson[RENDER_MATERIAL_Finish] = scale;
     m_materialJson[RENDER_MATERIAL_FlagHasFinish] = scale > 1.e-5;
