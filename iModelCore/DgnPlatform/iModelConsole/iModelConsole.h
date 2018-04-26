@@ -7,7 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
+
 #include "Command.h"
 
 USING_NAMESPACE_BENTLEY
@@ -195,10 +197,14 @@ struct IModelConsole final : Dgn::DgnPlatformLib::Host
     private:
         static const Utf8Char COMMAND_PREFIX = '.';
 
+        static IModelConsole* s_singleton;
+
         Session m_session;
         Utf8Char m_readBuffer[5000];
         std::vector<Utf8String> m_commandHistory;
         std::map<Utf8String, std::shared_ptr<Command>> m_commands;
+
+        IModelConsole(): Dgn::DgnPlatformLib::Host() {}
 
         void _SupplyProductName(Utf8StringR name) override { name.assign("iModelConsole"); }
         IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new Dgn::KnownDesktopLocationsAdmin; }
@@ -225,7 +231,8 @@ struct IModelConsole final : Dgn::DgnPlatformLib::Host
 
 
     public:
-        IModelConsole() {}
+        static IModelConsole& Singleton() { return *s_singleton; }
+
         int Run(int argc, WCharCP argv[]);
 
         static size_t FindNextToken(Utf8String& token, WStringCR inputString, size_t startIndex, WChar delimiter, WChar delimiterEscapeChar = L'\0');

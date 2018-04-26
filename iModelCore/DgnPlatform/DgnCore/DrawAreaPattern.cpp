@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DrawAreaPattern.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -98,6 +98,141 @@ void PatternParams::ApplyTransform(TransformCR transform, uint32_t options)
     transform.Multiply(m_origin);
     m_rMatrix.InitProduct(transform, m_rMatrix);
     m_rMatrix.SquareAndNormalizeColumns(m_rMatrix, 0, 1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                                     BrienBastings   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PatternParams::FromJson(Json::Value const& json)
+    {
+    if (!json["origin"].isNull())
+        {
+        DPoint3d origin;
+
+        JsonUtils::DPoint3dFromJson(origin, json["origin"]);
+        SetOrigin(origin);
+        }
+
+    if (!json["rotation"].isNull())
+        {
+        YawPitchRollAngles angles = JsonUtils::YawPitchRollFromJson(json["rotation"]);
+        RotMatrix rMatrix = angles.ToRotMatrix();
+
+        SetOrientation(rMatrix);
+        }
+
+    if (!json["space1"].isNull())
+        SetPrimarySpacing(json["space1"].asDouble());
+
+    if (!json["space2"].isNull())
+        SetSecondarySpacing(json["space2"].asDouble());
+
+    if (!json["angle1"].isNull())
+        SetPrimaryAngle(JsonUtils::ToAngle(json["angle1"]).Radians());
+
+    if (!json["angle2"].isNull())
+        SetSecondaryAngle(JsonUtils::ToAngle(json["angle2"]).Radians());
+
+    if (!json["scale"].isNull())
+        SetScale(json["scale"].asDouble());
+
+    if (!json["color"].isNull())
+        SetColor(ColorDef(json["color"].asUInt()));
+
+    if (!json["weight"].isNull())
+        SetWeight(json["weight"].asUInt());
+
+    SetInvisibleBoundary(json["invisibleBoundary"].asBool());
+    SetSnappable(json["snappable"].asBool());
+
+    if (!json["symbolId"].isNull())
+        {
+        DgnGeometryPartId symbolId;
+        symbolId.FromJson(json["symbolId"]);
+        if (symbolId.IsValid())
+            SetSymbolId(symbolId);
+        }
+
+    if (!json["defLines"].isNull() && json["defLines"].isArray())
+        {
+        bvector<DwgHatchDefLine> defLines;
+        uint32_t nDefLines = (uint32_t) json["defLines"].size();
+
+        for (uint32_t i=0; i < nDefLines; i++)
+            {
+            DwgHatchDefLine line;
+
+            line.m_angle = JsonUtils::ToAngle(json["defLines"][i]["angle"]).Radians();
+            JsonUtils::DPoint2dFromJson(line.m_through, json["defLines"][i]["through"]);
+            JsonUtils::DPoint2dFromJson(line.m_through, json["defLines"][i]["offset"]);
+            line.m_nDashes = std::min((short) json["defLines"][i]["dashes"].size(), (short) MAX_DWG_HATCH_LINE_DASHES);
+
+            for (short iDash=0; iDash < line.m_nDashes; iDash++)
+                line.m_dashes[iDash] = json["defLines"][i]["dashes"][iDash].asDouble();
+
+            defLines.push_back(line);
+            }
+
+        SetDwgHatchDef(defLines);
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                                     BrienBastings   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PatternParams::ToJson() const
+    {
+    Json::Value value;
+
+    JsonUtils::DPoint3dToJson(value["origin"], m_origin);
+
+    if (!m_rMatrix.IsIdentity())
+        {
+        YawPitchRollAngles angles;
+        YawPitchRollAngles::TryFromRotMatrix(angles, m_rMatrix); // Is this ok?
+        value["rotation"] = JsonUtils::YawPitchRollToJson(angles);
+        }
+
+    value["space1"] = Json::Value(m_space1);
+    value["space2"] = Json::Value(m_space2);
+    value["angle1"] = JsonUtils::FromAngle(Angle::FromRadians(m_angle1));
+    value["angle2"] = JsonUtils::FromAngle(Angle::FromRadians(m_angle2));
+
+    if (0.0 != m_scale && 1.0 != m_scale)
+        value["scale"] = Json::Value(m_scale);
+
+    if (m_useColor)
+        value["color"] = Json::Value(m_color.GetValue());
+
+    if (m_useWeight)
+        value["weight"] = Json::Value(m_weight);
+
+    value["invisibleBoundary"] = Json::Value(m_invisibleBoundary);
+    value["snappable"] = Json::Value(m_snappable);
+
+    if (m_symbolId.IsValid())
+        value["symbolId"] = m_symbolId.ToHexStr();
+
+    if (!m_hatchLines.empty())
+        {
+        for (auto const& line : m_hatchLines)
+            {
+            Json::Value defLine;
+
+            defLine["angle"] = JsonUtils::FromAngle(Angle::FromRadians(line.m_angle));
+            JsonUtils::DPoint2dToJson(defLine["through"], line.m_through);
+            JsonUtils::DPoint2dToJson(defLine["offset"], line.m_offset);
+
+            for (int iDash=0; iDash < line.m_nDashes; ++iDash)
+                defLine["dashes"].append(Json::Value(line.m_dashes[iDash]));
+
+            value["defLines"].append(defLine);
+            }
+        }
+
+    return value;
     }
 
 /*=================================================================================**//**
