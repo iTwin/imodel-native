@@ -872,6 +872,8 @@ public:
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(DataStrings, dwg_dataStrings)
         L10N_STRING(AttrdefsSchemaDescription)         // =="Block attribute definitions created from DWG file %ls"==
         L10N_STRING(BlockAttrdefDescription)           // =="Attribute definition created from DWG block %ls"==
+        L10N_STRING(ModelView)                         // =="Model View"==
+        L10N_STRING(LayoutView)                        // =="Layout View"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
     
     struct IssueReporter

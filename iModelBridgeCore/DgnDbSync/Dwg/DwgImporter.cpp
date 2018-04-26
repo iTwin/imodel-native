@@ -424,13 +424,21 @@ Utf8String      DwgImporter::_ComputeModelName (DwgDbBlockTableRecordCR block, U
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String      DwgImporter::ComputeModelName (Utf8StringR proposedName, BeFileNameCR baseFilename, BeFileNameCR refPath, Utf8CP inSuffix, DgnClassId modelType)
     {
+    bool        hasRule = false;
     ImportRule  modelMergeEntry;
     if (BSISUCCESS == this->SearchForMatchingRule(modelMergeEntry, proposedName, baseFilename))
         {
         Utf8String      computedName;
-        if (SUCCESS == modelMergeEntry.ComputeNewName(computedName, proposedName, baseFilename))
+        if (BSISUCCESS == modelMergeEntry.ComputeNewName(computedName, proposedName, baseFilename))
+            {
             proposedName = computedName;
+            hasRule = true;
+            }
         }
+
+    // unless user has a rule for a layout, append the base file name:
+    if (!hasRule && m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel) == modelType)
+        proposedName += "[" + Utf8String(baseFilename) + "]";
 
     DgnModels&  models = m_dgndb->Models ();
     models.ReplaceInvalidCharacters (proposedName, models.GetIllegalCharacters(), '_');

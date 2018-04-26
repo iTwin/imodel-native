@@ -15,6 +15,7 @@ struct ImporterAppTests : public ImporterTests, public ImporterCommandBuilder
 {
     BentleyApi::StatusInt RunCMD(BentleyApi::WString);
 };
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar Hayat      05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -244,5 +245,6 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
     EXPECT_TRUE (view.IsValid()) << "The default view is invalid!";
     EXPECT_TRUE (view->IsSpatialView()) << "The default view is not a SpatialView!";
     Utf8String  name = view->GetName ();
-    EXPECT_TRUE (name.EqualsI("Model - Active")) << "The default view should be \"Model - Active\"!";
+    auto expected = BuildModelspaceModelname (inFile);
+    EXPECT_TRUE (name.EqualsI(expected.c_str())) << "The default view should be \"Model[filename]\"!";
     }
