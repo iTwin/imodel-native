@@ -2086,12 +2086,18 @@ void TriMeshTree::Root::ClipTriMesh(TriMeshList& triMeshList, TriMesh::CreatePar
 
             for (size_t i=0; i<numPoints; i++)
                 {
-                bsiFPoint3d_initFromDPoint3d(&points[i], &clippedPolyface->GetPointCP()[i]);
+                points[i] = FPoint3d::From (clippedPolyface->GetPointCP()[i]);
+                //bsiFPoint3d_initFromDPoint3d(&points[i], &clippedPolyface->GetPointCP()[i]);
                 if (nullptr != clippedPolyface->GetNormalCP())
-                    bsiFPoint3d_initFromDPoint3d(&normals[i], &clippedPolyface->GetNormalCP()[i]);
+                    normals[i] = FPoint3d::From (clippedPolyface->GetNormalCP()[i]);
+                    //bsiFPoint3d_initFromDPoint3d(&normals[i], &clippedPolyface->GetNormalCP()[i]);
 
                 if (nullptr != clippedPolyface->GetParamCP())
-                    bsiFPoint2d_initFromDPoint2d(&params[i], &clippedPolyface->GetParamCP()[i]);
+                    {
+                    params[i].x = clippedPolyface->GetParamCP()[i].x;
+                    params[i].y = clippedPolyface->GetParamCP()[i].y;
+                    }
+                    //bsiFPoint2d_initFromDPoint2d(&params[i], &clippedPolyface->GetParamCP()[i]);
                 }
             PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*clippedPolyface, true);
             for (visitor->Reset(); visitor->AdvanceToNextFace();)

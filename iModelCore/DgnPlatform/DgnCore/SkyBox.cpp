@@ -234,6 +234,13 @@ DPoint3d ViewDefinition3d::ComputeEyePoint(Frustum const& frustum) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR viewport, double rotation, double zOffset)
     {
+#define DIRECT_MESH_CONSTRUCTION_not
+#ifdef DIRECT_MESH_CONSTRUCTION
+PolyfaceHeaderPtr polyface = PolyfaceHeader::create ();
+polyface.Param().setActive (true);
+polyface.ParamIndex().setActive (true);
+polyface.PointIndex().setActive(true;
+#else
     enum {MESH_DIMENSION=10};
 
     double delta = 1.0 / (double) (MESH_DIMENSION-1);
@@ -298,7 +305,7 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
                                             0, nullptr, nullptr,                            // Normals.
                                             meshParams.size(), &meshParams[0], &indices[0], // Params.
                                             0, nullptr, nullptr);                          // Colors
-
+#endif
     builder->AddPolyface(polyface, true);
     }
 
