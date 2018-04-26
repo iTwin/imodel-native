@@ -375,11 +375,14 @@ bool Db::IsEncryptedDb(BeFileNameCR dbFileName)
     if (BeFileStatus::Success != fileStatus)
         return false;
 
-    Utf8Char formatSignature[static_cast<uint32_t>(FileHeaderSizeOf::FormatSignature)];
+    Utf8Char formatSignature[static_cast<uint32_t>(FileHeaderSizeOf::FormatSignature) + 1];
     uint32_t bytesRead;
-    fileStatus = dbFile.Read(&formatSignature, &bytesRead, sizeof(formatSignature));
+    fileStatus = dbFile.Read(&formatSignature, &bytesRead, sizeof(formatSignature) - 1);
     if ((BeFileStatus::Success != fileStatus) || (bytesRead < sizeof(ENCRYPTED_BESQLITE_FORMAT_SIGNATURE)))
         return false;
+
+    // Silence the static analyzer.
+    formatSignature[sizeof(formatSignature) - 1] = 0;
 
     return 0 == strcmp(ENCRYPTED_BESQLITE_FORMAT_SIGNATURE, formatSignature);
     }
