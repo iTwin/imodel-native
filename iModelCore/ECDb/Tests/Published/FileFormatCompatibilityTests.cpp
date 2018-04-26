@@ -1502,7 +1502,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
-    ASSERT_EQ(23, stmt.GetValueInt(0)) << "ECDb profile table count";
+    ASSERT_EQ(25, stmt.GetValueInt(0)) << "ECDb profile table count";
     }
 
     
@@ -1566,7 +1566,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     actualDdlStmt.Finalize();
     ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(upgradedFile, "SELECT count(*) FROM sqlite_master"));
     ASSERT_EQ(BE_SQLITE_ROW, actualDdlStmt.Step());
-    ASSERT_EQ(benchmarkMasterTableRowCount + 12, actualDdlStmt.GetValueInt(0)) << " 12 sqlite_master entries are added in the upgrade " << benchmarkFilePath.GetNameUtf8();
+    ASSERT_EQ(benchmarkMasterTableRowCount + 18, actualDdlStmt.GetValueInt(0)) << " 18 sqlite_master entries are added in the upgrade " << benchmarkFilePath.GetNameUtf8();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1619,7 +1619,7 @@ TEST_F(FileFormatCompatibilityTests, CompareProfileTables_NewFile)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
-    ASSERT_EQ(23, stmt.GetValueInt(0)) << "ECDb profile table count";
+    ASSERT_EQ(25, stmt.GetValueInt(0)) << "ECDb profile table count";
     }
 
     //schema profile tables

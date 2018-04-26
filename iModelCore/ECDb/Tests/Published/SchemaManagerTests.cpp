@@ -1873,6 +1873,11 @@ TEST_F(SchemaManagerTests, ImportPreEC32KindOfQuantity)
     ASSERT_TRUE(testSchema != nullptr);
     
     ASSERT_EQ(2, testSchema->GetReferencedSchemas().size());
+    KindOfQuantityCP koq = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
+    ASSERT_TRUE(koq != nullptr);
+    ASSERT_EQ(2, koq->GetPresentationFormats().size());
+    EXPECT_STREQ("f:DefaultRealU[u:FT]", koq->GetPresentationFormats()[0].GetQualifiedName(*testSchema).c_str());
+    EXPECT_STREQ("f:DefaultRealU[u:IN]", koq->GetPresentationFormats()[1].GetQualifiedName(*testSchema).c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1886,7 +1891,7 @@ TEST_F(SchemaManagerTests, GetPreEC32KindOfQuantity)
         EXPECT_STREQ("My KindOfQuantity", actualKoq.GetDescription().c_str());
         EXPECT_STREQ("u:CM", actualKoq.GetPersistenceUnit()->GetQualifiedName(actualKoq.GetSchema()).c_str());
         EXPECT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
-        EXPECT_EQ(2, actualKoq.GetPresentationFormats().size());
+        ASSERT_EQ(2, actualKoq.GetPresentationFormats().size());
         EXPECT_STREQ("f:DefaultRealU[u:FT]", actualKoq.GetPresentationFormats()[0].GetQualifiedName(actualKoq.GetSchema()).c_str());
         EXPECT_STREQ("f:DefaultRealU[u:IN]", actualKoq.GetPresentationFormats()[1].GetQualifiedName(actualKoq.GetSchema()).c_str());
         };

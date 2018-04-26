@@ -860,36 +860,36 @@ void ECDbMetaSchemaECSqlTestFixture::AssertUnitDef(ECUnitCR expected, ECSqlState
 
         if (colName.EqualsI("ECInstanceId"))
             {
-            ASSERT_EQ(expected.GetId().GetValue(), val.GetId<UnitId>().GetValue()) << "UnitDef.ECInstanceId";
+            ASSERT_EQ(expected.GetId().GetValue(), val.GetId<UnitId>().GetValue()) << "UnitDef.ECInstanceId of " << expected.GetFullName();
             continue;
             }
 
         if (colName.EqualsI("ECClassId"))
             {
-            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "UnitDef")->GetId(), val.GetId<ECClassId>()) << "UnitDef.ECClassId";
+            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "UnitDef")->GetId(), val.GetId<ECClassId>()) << "UnitDef.ECClassId of " << expected.GetFullName();
             continue;
             }
 
         if (colName.EqualsI("Schema"))
             {
             ECClassId actualRelClassId;
-            ASSERT_EQ(expected.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.Schema";
-            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.Schema";
+            ASSERT_EQ(expected.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.Schema of " << expected.GetFullName();
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.Schema of " << expected.GetFullName();
             continue;
             }
 
         if (colName.EqualsI("Name"))
             {
-            ASSERT_STREQ(expected.GetName().c_str(), val.GetText()) << "UnitDef.Name";
+            ASSERT_STREQ(expected.GetName().c_str(), val.GetText()) << "UnitDef.Name of " << expected.GetFullName();
             continue;
             }
 
         if (colName.EqualsI("DisplayLabel"))
             {
             if (expected.GetIsDisplayLabelDefined())
-                ASSERT_STREQ(expected.GetInvariantDisplayLabel().c_str(), val.GetText()) << "UnitDef.DisplayLabel";
+                ASSERT_STREQ(expected.GetInvariantDisplayLabel().c_str(), val.GetText()) << "UnitDef.DisplayLabel of " << expected.GetFullName();
             else
-                ASSERT_TRUE(val.IsNull()) << "UnitDef.DisplayLabel";
+                ASSERT_TRUE(val.IsNull()) << "UnitDef.DisplayLabel of " << expected.GetFullName();
 
             continue;
             }
@@ -897,63 +897,88 @@ void ECDbMetaSchemaECSqlTestFixture::AssertUnitDef(ECUnitCR expected, ECSqlState
         if (colName.EqualsI("Description"))
             {
             if (!expected.GetInvariantDescription().empty())
-                ASSERT_STREQ(expected.GetInvariantDescription().c_str(), val.GetText()) << "UnitDef.Description";
+                ASSERT_STREQ(expected.GetInvariantDescription().c_str(), val.GetText()) << "UnitDef.Description of " << expected.GetFullName();
             else
-                ASSERT_TRUE(val.IsNull()) << "UnitDef.Description";
+                ASSERT_TRUE(val.IsNull()) << "UnitDef.Description of " << expected.GetFullName();
 
             continue;
             }
 
         if (colName.EqualsI("UnitSystem"))
             {
-            ECClassId actualRelClassId;
-            ASSERT_EQ(static_cast<ECN::UnitSystemCP>(expected.GetUnitSystem())->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.UnitSystem";
-            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.UnitSystem";
+            if (expected.HasUnitSystem())
+                {
+                ECClassId actualRelClassId;
+                ASSERT_EQ(static_cast<ECN::UnitSystemCP>(expected.GetUnitSystem())->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.UnitSystem of " << expected.GetFullName();
+                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.UnitSystem of " << expected.GetFullName();
+                }
+            else
+                ASSERT_TRUE(val.IsNull()) << "UnitDef.UnitSystem of " << expected.GetFullName();
+
             continue;
             }
 
         if (colName.EqualsI("Phenomenon"))
             {
             ECClassId actualRelClassId;
-            ASSERT_EQ(static_cast<ECN::PhenomenonCP>(expected.GetPhenomenon())->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.Phenomenon";
-            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.Phenomenon";
+            ASSERT_EQ(static_cast<ECN::PhenomenonCP>(expected.GetPhenomenon())->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.Phenomenon of " << expected.GetFullName();
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.Phenomenon of " << expected.GetFullName();
+            continue;
+            }
+
+        if (colName.EqualsIAscii("IsConstant"))
+            {
+            ASSERT_EQ(expected.IsConstant(), val.GetBoolean()) << "UnitDef.IsConstant of " << expected.GetFullName();
             continue;
             }
 
         if (colName.EqualsI("Definition"))
             {
-            ASSERT_STREQ(expected.GetDefinition().c_str(), val.GetText()) << "UnitDef.Definition";
+            ASSERT_STREQ(expected.GetDefinition().c_str(), val.GetText()) << "UnitDef.Definition of " << expected.GetFullName();
             continue;
             }
 
         if (colName.EqualsI("Numerator"))
             {
-            ASSERT_DOUBLE_EQ(expected.GetNumerator(), val.GetDouble()) << "UnitDef.Numerator";
+            if (expected.HasNumerator())
+                ASSERT_DOUBLE_EQ(expected.GetNumerator(), val.GetDouble()) << "UnitDef.Numerator of " << expected.GetFullName();
+            else
+                ASSERT_TRUE(val.IsNull()) << "UnitDef.Numerator of " << expected.GetFullName();
+
             continue;
             }
 
         if (colName.EqualsI("Denominator"))
             {
-            ASSERT_DOUBLE_EQ(expected.GetDenominator(), val.GetDouble()) << "UnitDef.Denominator";
+            if (expected.HasDenominator())
+                ASSERT_DOUBLE_EQ(expected.GetDenominator(), val.GetDouble()) << "UnitDef.Denominator of " << expected.GetFullName();
+            else
+                ASSERT_TRUE(val.IsNull()) << "UnitDef.Denominator of " << expected.GetFullName();
+
             continue;
             }
 
         if (colName.EqualsI("Offset"))
             {
             if (expected.HasOffset())
-                ASSERT_DOUBLE_EQ(expected.GetOffset(), val.GetDouble()) << "UnitDef.Offset";
+                ASSERT_DOUBLE_EQ(expected.GetOffset(), val.GetDouble()) << "UnitDef.Offset of " << expected.GetFullName();
             else
-                ASSERT_TRUE(val.IsNull()) << "UnitDef.Offset";
+                ASSERT_TRUE(val.IsNull()) << "UnitDef.Offset of " << expected.GetFullName();
 
             continue;
             }
 
         if (colName.EqualsI("InvertingUnit"))
             {
-            ASSERT_TRUE(expected.GetInvertingUnit() != nullptr);
-            ECClassId actualRelClassId;
-            ASSERT_EQ(expected.GetInvertingUnit()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.InvertingUnit";
-            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.InvertsUnit";
+            if (expected.IsInvertedUnit())
+                {
+                ECClassId actualRelClassId;
+                ASSERT_EQ(expected.GetInvertingUnit()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "UnitDef.InvertingUnit of " << expected.GetFullName();
+                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "UnitDef.InvertingUnit of " << expected.GetFullName();
+                }
+            else
+                ASSERT_TRUE(val.IsNull());
+
             continue;
             }
 
@@ -1061,7 +1086,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
 
         if (colName.EqualsI("CompositeSpacer"))
             {
-            if (!expected.HasComposite() && !expected.GetCompositeSpec()->HasSpacer())
+            if (!expected.HasComposite() || !expected.HasCompositeSpacer())
                 ASSERT_TRUE(val.IsNull()) << "FormatDef.CompositeSpacer";
             else
                 ASSERT_STREQ(expected.GetCompositeSpec()->GetSpacer().c_str(), val.GetText()) << "FormatDef.CompositeSpacer";
