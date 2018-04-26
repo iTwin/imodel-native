@@ -707,12 +707,8 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
     if (ECObjectsStatus::Success != status )
         return status;
 
-    if (persistenceFormat.empty())
-        persistenceFormat = oldDefaultFormatName;
-
     if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPers, persistenceUnit))
         return ECObjectsStatus::Error;
-
 
     // Presentation
     for (Utf8CP presFus : presFuses)

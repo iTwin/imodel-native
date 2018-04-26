@@ -368,6 +368,7 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     presFUSes.clear();
     EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM", presFUSes));
     EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
+    EXPECT_TRUE(presFormatStrings.empty());
     }
     {
     persUnitName.clear();
@@ -407,9 +408,8 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     presFUSes.push_back("CM(real4u)");
     EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM", presFUSes));
     EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
-    EXPECT_EQ(2, presFormatStrings.size());
+    EXPECT_EQ(1, presFormatStrings.size());
     EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM]", presFormatStrings[0].c_str());
-    EXPECT_STRCASEEQ("f:DefaultRealU[u:MM]", presFormatStrings[1].c_str());
     }
     {
     persUnitName.clear();
