@@ -3676,6 +3676,107 @@ BentleyStatus SchemaWriter::UpdateUnit(Context& ctx, UnitChange& change, ECN::EC
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdateFormats(Context& ctx, FormatChanges& changes, ECSchemaCR oldSchema, ECSchemaCR newSchema)
+    {
+    if (!changes.IsValid())
+        return SUCCESS;
+
+    for (size_t i = 0; i < changes.Count(); i++)
+        {
+        FormatChange& change = changes.At(i);
+        if (change.GetState() == ChangeState::Deleted)
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting Formats from an ECSchema is not supported.",
+                                 oldSchema.GetFullSchemaName().c_str());
+            return ERROR;
+            }
+
+        if (change.GetState() == ChangeState::New)
+            {
+            ECFormatCP format = newSchema.GetFormatCP(change.GetId());
+            if (format == nullptr)
+                {
+                BeAssert(false && "Failed to find format");
+                return ERROR;
+                }
+
+            if (SUCCESS != ImportFormat(ctx, *format))
+                return ERROR;
+            }
+
+        if (change.GetState() == ChangeState::Modified)
+            {
+            ECFormatCP oldVal = oldSchema.GetFormatCP(change.GetId());
+            ECFormatCP newVal = newSchema.GetFormatCP(change.GetId());
+            if (oldVal == nullptr)
+                {
+                BeAssert(false && "Failed to find format");
+                return ERROR;
+                }
+            if (newVal == nullptr)
+                {
+                BeAssert(false && "Failed to find format");
+                return ERROR;
+                }
+
+            if (UpdateFormat(ctx, change, *oldVal, *newVal) != SUCCESS)
+                return ERROR;
+
+            continue;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdateFormat(Context& ctx, FormatChange& change, ECN::ECFormatCR oldVal, ECN::ECFormatCR newVal)
+    {
+    if (change.GetStatus() == ECChange::Status::Done)
+        return SUCCESS;
+
+    if (change.GetName().IsValid())
+        {
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of a Format is not supported.");
+        return ERROR;
+        }
+
+    size_t actualChanges = 0;
+    SqlUpdateBuilder sqlUpdateBuilder(TABLE_Format);
+    if (change.GetDisplayLabel().IsValid())
+        {
+        actualChanges++;
+        if (change.GetDisplayLabel().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("DisplayLabel");
+        else
+            sqlUpdateBuilder.AddSetExp("DisplayLabel", change.GetDisplayLabel().GetNew().Value().c_str());
+        }
+
+    if (change.GetDescription().IsValid())
+        {
+        actualChanges++;
+        if (change.GetDescription().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Description");
+        else
+            sqlUpdateBuilder.AddSetExp("Description", change.GetDescription().GetNew().Value().c_str());
+        }
+
+    if (change.ChangesCount() > actualChanges)
+        {
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing properties of Format '%s' is not supported except for DisplayLabel and Description.",
+                             oldVal.GetFullName().c_str());
+        return ERROR;
+        }
+
+    sqlUpdateBuilder.AddWhereExp("Id", oldVal.GetId().GetValue());
+    return sqlUpdateBuilder.ExecuteSql(ctx.GetECDb());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChange, ECSchemaCR oldSchema, ECSchemaCR newSchema)
@@ -3831,6 +3932,9 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         return ERROR;
 
     if (SUCCESS != UpdateUnits(ctx, schemaChange.Units(), oldSchema, newSchema))
+        return ERROR;
+
+    if (SUCCESS != UpdateFormats(ctx, schemaChange.Formats(), oldSchema, newSchema))
         return ERROR;
 
     if (UpdateKindOfQuantities(ctx, schemaChange.KindOfQuantities(), oldSchema, newSchema) == ERROR)

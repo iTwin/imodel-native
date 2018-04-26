@@ -1785,20 +1785,21 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
         {
         ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDisplayLabel().c_str());
         ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDescription().c_str());
-        ASSERT_STREQ("u:CM", actualKoq.GetPersistenceUnit()->GetFullName().c_str());
+        ASSERT_STREQ("u:CM", actualKoq.GetPersistenceUnit()->GetQualifiedName(actualKoq.GetSchema()).c_str());
         ASSERT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
         ASSERT_EQ(2, actualKoq.GetPresentationFormats().size());
-        ASSERT_STREQ("u:FT(DefaultRealU)", actualKoq.GetPresentationFormats()[0].GetName().c_str());
-        ASSERT_STREQ("u:IN(DefaultRealU)", actualKoq.GetPresentationFormats()[1].GetName().c_str());
+        ASSERT_STREQ("f:DefaultRealU", actualKoq.GetPresentationFormats()[0].GetQualifiedName(actualKoq.GetSchema()).c_str());
+        ASSERT_STREQ("f:DefaultReal", actualKoq.GetPresentationFormats()[1].GetQualifiedName(actualKoq.GetSchema()).c_str());
         };
 
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                      <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                      <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                     <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
                                      <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                                                      displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
-                                                     presentationUnits="u:FT;u:IN" />
+                                                     presentationUnits="f:DefaultRealU;f:DefaultReal" />
                                      </ECSchema>)xml"));
 
     testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -1881,13 +1882,13 @@ TEST_F(SchemaManagerTests, GetPreEC32KindOfQuantity)
     {
     auto assertKoq = [] (KindOfQuantityCR actualKoq)
         {
-        ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDisplayLabel().c_str());
-        ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDescription().c_str());
-        ASSERT_STREQ("u:CM", actualKoq.GetPersistenceUnit()->GetFullName().c_str());
-        ASSERT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
-        ASSERT_EQ(2, actualKoq.GetPresentationFormats().size());
-        ASSERT_STREQ("u:FT(DefaultRealU)", actualKoq.GetPresentationFormats()[0].GetName().c_str());
-        ASSERT_STREQ("u:IN(DefaultRealU)", actualKoq.GetPresentationFormats()[1].GetName().c_str());
+        EXPECT_STREQ("My KindOfQuantity", actualKoq.GetDisplayLabel().c_str());
+        EXPECT_STREQ("My KindOfQuantity", actualKoq.GetDescription().c_str());
+        EXPECT_STREQ("u:CM", actualKoq.GetPersistenceUnit()->GetQualifiedName(actualKoq.GetSchema()).c_str());
+        EXPECT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
+        EXPECT_EQ(2, actualKoq.GetPresentationFormats().size());
+        EXPECT_STREQ("f:DefaultRealU[u:FT]", actualKoq.GetPresentationFormats()[0].GetQualifiedName(actualKoq.GetSchema()).c_str());
+        EXPECT_STREQ("f:DefaultRealU[u:IN]", actualKoq.GetPresentationFormats()[1].GetQualifiedName(actualKoq.GetSchema()).c_str());
         };
 
     std::vector<SchemaItem> testSchemas;

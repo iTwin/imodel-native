@@ -64,6 +64,10 @@ void ECDbMetaSchemaECSqlTestFixture::AssertSchemaDefs()
         AssertEnumerationDefs(*expectedSchema);
         AssertKindOfQuantityDefs(*expectedSchema);
         AssertPropertyCategoryDefs(*expectedSchema);
+        AssertUnitSystemDefs(*expectedSchema);
+        AssertPhenomenonDefs(*expectedSchema);
+        AssertUnitDefs(*expectedSchema);
+        AssertFormatDefs(*expectedSchema);
         actualSchemaCount++;
         }
 
@@ -610,7 +614,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR ex
                 size_t i = 0;
                 for (IECSqlValue const& arrayElementVal : val.GetArrayIterable())
                     {
-                    ASSERT_STREQ(expectedKoq.GetPresentationFormats()[i].GetName().c_str(), arrayElementVal.GetText()) << "KindOfQuantityDef.PresentationFormatList";
+                    ASSERT_STREQ(expectedKoq.GetPresentationFormats()[i].GetQualifiedName(expectedKoq.GetSchema()).c_str(), arrayElementVal.GetText()) << "KindOfQuantityDef.PresentationFormatList";
                     i++;
                     }
                 }

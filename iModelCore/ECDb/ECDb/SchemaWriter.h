@@ -112,6 +112,8 @@ struct SchemaWriter final
         static BentleyStatus UpdateUnitSystem(Context&, ECN::UnitSystemChange&, ECN::UnitSystemCR oldVal, ECN::UnitSystemCR newVal);
         static BentleyStatus UpdateUnits(Context&, ECN::UnitChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
         static BentleyStatus UpdateUnit(Context&, ECN::UnitChange&, ECN::ECUnitCR oldVal, ECN::ECUnitCR newVal);
+        static BentleyStatus UpdateFormats(Context&, ECN::FormatChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        static BentleyStatus UpdateFormat(Context&, ECN::FormatChange&, ECN::ECFormatCR oldVal, ECN::ECFormatCR newVal);
 
         static BentleyStatus UpdateProperties(Context&, ECN::ECPropertyChanges&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
 

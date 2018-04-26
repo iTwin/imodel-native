@@ -827,8 +827,8 @@ BentleyStatus SchemaReader::ReadUnitSystem(ECN::UnitSystemCP& system, Context& c
         return ERROR;
 
     Utf8CP usName = stmt->GetValueText(1);
-    Utf8CP displayLabel = stmt->IsColumnNull(2) ? nullptr : stmt->GetValueText(3);
-    Utf8CP description = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(4);
+    Utf8CP displayLabel = stmt->IsColumnNull(2) ? nullptr : stmt->GetValueText(2);
+    Utf8CP description = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(3);
 
     UnitSystemP newSystem = nullptr;
     if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateUnitSystem(newSystem, usName, displayLabel, description))
@@ -867,9 +867,9 @@ BentleyStatus SchemaReader::ReadPhenomenon(ECN::PhenomenonCP& phen, Context& ctx
         return ERROR;
 
     Utf8CP name = stmt->GetValueText(1);
-    Utf8CP displayLabel = stmt->IsColumnNull(2) ? nullptr : stmt->GetValueText(3);
-    Utf8CP description = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(4);
-    Utf8CP definition = stmt->IsColumnNull(4) ? nullptr : stmt->GetValueText(5);
+    Utf8CP displayLabel = stmt->IsColumnNull(2) ? nullptr : stmt->GetValueText(2);
+    Utf8CP description = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(3);
+    Utf8CP definition = stmt->IsColumnNull(4) ? nullptr : stmt->GetValueText(4);
 
     PhenomenonP newPhen = nullptr;
     if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreatePhenomenon(newPhen, name, definition, displayLabel, description))
@@ -1118,16 +1118,16 @@ BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, 
     if (!Utf8String::IsNullOrEmpty(compositeSpacer))
         spec.SetSpacer(compositeSpacer);
 
-    if (labelCount == 1 && !labels[0].empty())
+    if (labelCount >= 1 && !labels[0].empty())
         spec.SetMajorLabel(labels[0]);
 
-    if (labelCount == 2 && !labels[1].empty())
+    if (labelCount >= 2 && !labels[1].empty())
         spec.SetMiddleLabel(labels[1]);
 
-    if (labelCount == 3 && !labels[2].empty())
+    if (labelCount >= 3 && !labels[2].empty())
         spec.SetMinorLabel(labels[2]);
 
-    if (labelCount == 4 && !labels[3].empty())
+    if (labelCount >= 4 && !labels[3].empty())
         spec.SetSubLabel(labels[3]);
 
     if (spec.IsProblem())
