@@ -59,7 +59,6 @@
   <ItemGroup>
     <ClCompile Include="Published\AccessorTests.cpp" />
     <ClCompile Include="Published\AdhocPropertyTests.cpp" />
-    <ClCompile Include="Published\BuildInstanceAndSerializeToXML.cpp" />
     <ClCompile Include="Published\CalculatedPropertyTests.cpp" />
     <ClCompile Include="Published\CustomAttributeUnitsConversionTests.cpp" />
     <ClCompile Include="Published\CustomAttributeConversionsTest.cpp" />
