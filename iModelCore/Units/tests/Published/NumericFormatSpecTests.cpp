@@ -94,7 +94,7 @@ void NumericFormatSpecJsonTest::ValidateJson_Type(JsonValueCR jval, Presentation
 void NumericFormatSpecJsonTest::ValidateJson_DefaultCommonAttributes(JsonValueCR jval)
     {
     // Sign Option
-    JsonValueCR signOptJson = jval[json_signOption()];
+    JsonValueCR signOptJson = jval[json_showSignOption()];
     EXPECT_EQ(Json::stringValue, signOptJson.type());
     SignOption signOpt;
     EXPECT_TRUE(Utils::ParseSignOption(signOpt, signOptJson.asCString()));
@@ -142,7 +142,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeStation)
     {
     Utf8CP jsonString = R"json({
         "type": "station",
-        "signOption": "signAlways",
+        "showSignOption": "signAlways",
         "formatTraits": "TrailZeroes|KeepSingleZero",
         "precision": 4,
         "decSeparator": "-",
@@ -179,7 +179,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeDecimal)
     {
     Utf8CP jsonString = R"json({
         "type": "decimal",
-        "signOption": "signAlways",
+        "showSignOption": "signAlways",
         "formatTraits": "TrailZeroes|KeepSingleZero",
         "precision": 4,
         "decSeparator": "-",
@@ -212,7 +212,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeFractional)
     {
     Utf8CP jsonString = R"json({
         "type": "fractional",
-        "signOption": "signAlways",
+        "showSignOption": "signAlways",
         "formatTraits": "TrailZeroes|KeepSingleZero",
         "precision": 4,
         "decSeparator": "-",
@@ -246,7 +246,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeScientific)
     Utf8CP jsonString = R"json({
         "type": "scientific",
         "scientificType": "normalized",
-        "signOption": "signAlways",
+        "showSignOption": "signAlways",
         "formatTraits": "TrailZeroes|KeepSingleZero",
         "precision": 4,
         "decSeparator": "-",

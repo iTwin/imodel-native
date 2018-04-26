@@ -117,7 +117,7 @@ BentleyStatus NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jv
             Utils::ParseScientificType(type, val.asCString());
             spec.SetScientificType(type);
             }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_signOption()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_showSignOption()) == 0)
             {
             SignOption option;
             Utils::ParseSignOption(option, val.asCString());
@@ -205,7 +205,7 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
         }
 
     if(verbose || HasSignOption())
-        jNFC[json_signOption()] = Utils::GetSignOptionString(m_signOption);
+        jNFC[json_showSignOption()] = Utils::GetSignOptionString(m_signOption);
     if (verbose || HasRoundingFactor())
         jNFC[json_roundFactor()] = GetRoundingFactor();
     if (verbose || HasFormatTraits())
@@ -218,7 +218,6 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
         jNFC[json_uomSeparator()] = GetUomSeparator();
     if (verbose || HasMinWidth())
         jNFC[json_minWidth()] = GetMinWidth();
-
     if (verbose || HasFormatTraits())
         jNFC[json_formatTraits()] = GetFormatTraitsString();
 
