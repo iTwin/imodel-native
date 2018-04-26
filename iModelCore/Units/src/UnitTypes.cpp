@@ -20,14 +20,14 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 UnitsSymbol::UnitsSymbol(Utf8CP name) : m_name(name), m_isBaseSymbol(false), m_numerator(1.0), m_denominator(1.0),
-    m_offset(0.0), m_isNumber(true), m_evaluated(false), m_symbolExpression(new Expression()) {}
+    m_offset(0.0), m_evaluated(false), m_symbolExpression(new Expression()) {}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
 //--------------------------------------------------------------------------------------
 UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset) :
     m_name(name), m_definition(definition), m_isBaseSymbol(false), m_numerator(numerator), m_denominator(denominator),
-    m_offset(offset), m_evaluated(false), m_isNumber(false), m_symbolExpression(new Expression())
+    m_offset(offset), m_evaluated(false), m_symbolExpression(new Expression())
     {
     m_isBaseSymbol = m_name.EqualsI(m_definition.c_str());
     }
@@ -36,7 +36,7 @@ UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, double numerator, doubl
 // @bsimethod                                Kyle.Abramowitz                    03/2018
 //--------------------------------------------------------------------------------------
 UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition) : m_name(name), m_definition(definition), m_isBaseSymbol(false), m_numerator(1.0), m_denominator(1.0),
-    m_offset(0.0), m_evaluated(false), m_isNumber(false), m_symbolExpression(new Expression())
+    m_offset(0.0), m_evaluated(false), m_symbolExpression(new Expression())
     {
     m_isBaseSymbol = m_name.EqualsI(m_definition.c_str());
     }
@@ -118,7 +118,6 @@ ExpressionCR UnitsSymbol::Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP
 Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double nominator, double denominator, double offset, bool isConstant)
     : UnitsSymbol(name, definition, nominator, denominator, offset), m_system(&system), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(isConstant)
     {
-    m_isNumber = phenomenon.IsNumber();
     SetPhenomenon(phenomenon);
     }
 
@@ -128,7 +127,6 @@ Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP def
 Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition)
     : UnitsSymbol(name, definition), m_system(&system), m_phenomenon(nullptr), m_parent(nullptr),  m_isConstant(false)
     {
-    m_isNumber = phenomenon.IsNumber();
     SetPhenomenon(phenomenon);
     }
 
@@ -256,6 +254,14 @@ Utf8CP Unit::GetDescription() const
         }
 
     return m_displayDescription.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 04/2018
+//---------------------------------------------------------------------------------------
+bool Unit::IsNumber() const  
+    {
+    return (nullptr == m_phenomenon) ? false : m_phenomenon->IsNumber();
     }
 
 double FastIntegerPower(double a, uint32_t n)
@@ -547,6 +553,18 @@ ExpressionCR Phenomenon::Evaluate() const
 bool Phenomenon::IsCompatible(UnitCR unit) const
     {
     return Expression::ShareSignatures(*this, unit);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                   04/2018
+//--------------------------------------------------------------------------------------
+BentleyStatus Phenomenon::SetDefinition(Utf8CP definition)
+    {
+    if (SUCCESS != T_Super::SetDefinition(definition))
+        return ERROR;
+    if (m_definition.Equals(NUMBER))
+        m_isNumber = true;
+    return SUCCESS;
     }
 
 bool Phenomenon::IsLength() const { return m_name.Equals(LENGTH); }

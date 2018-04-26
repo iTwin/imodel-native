@@ -119,12 +119,12 @@ private:
     double      m_numerator;
     double      m_denominator;
     double      m_offset;
-    bool        m_isNumber;
+
 
     mutable bool m_evaluated;
     Expression* m_symbolExpression;
 
-    bool    IsNumber() const {return m_isNumber;}
+    virtual bool IsNumber() const = 0;
 
     virtual PhenomenonCP GetPhenomenon() const = 0;
 
@@ -132,7 +132,7 @@ protected:
     IUnitsContextCP m_unitsContext;
 
     // Creates a default invalid Symbol
-    UnitsSymbol() : m_isBaseSymbol(false), m_numerator(1.0), m_denominator(1.0), m_offset(0.0), m_isNumber(true), m_evaluated(false), m_unitsContext(nullptr) {}
+    UnitsSymbol() : m_isBaseSymbol(false), m_numerator(1.0), m_denominator(1.0), m_offset(0.0), m_evaluated(false), m_unitsContext(nullptr) {}
 
     // Creates an invalid Symbol with the provided name.
     UNITS_EXPORT UnitsSymbol(Utf8CP name);
@@ -145,7 +145,7 @@ protected:
     ExpressionCR Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP, IUnitsContextCP)> getSymbolByName) const;
 
     //! Sets the definition of this UnitSymbol if a definition is not already defined.
-    UNITS_EXPORT BentleyStatus SetDefinition(Utf8CP definition);
+    UNITS_EXPORT virtual BentleyStatus SetDefinition(Utf8CP definition);
 
     //! Sets the numerator of this UnitSymbol if the current numerator is the default, 1.0. The provided
     //! numerator cannot be 0.0.
@@ -235,7 +235,6 @@ protected:
         : Unit(system, *(parentUnit.GetPhenomenon()), name, parentUnit.GetDefinition().c_str(), 0, 0, 0, false)
         {
         m_parent = &parentUnit;
-        m_isNumber = m_parent->IsNumber();
         }
     UNITS_EXPORT virtual ~Unit();
 
@@ -270,6 +269,7 @@ public:
     bool HasUnitSystem() const {return nullptr != m_system;} //!< Gets whether this unit has a unit system or not.
     //! Returns true if the unit is just a place holder for a real unit, invalid units are not convertible into any other unit.
     bool IsValid() const {return !m_dummyUnit;}
+    UNITS_EXPORT bool IsNumber() const override;
     PhenomenonCP GetPhenomenon() const {return m_phenomenon;} //!< Gets the Phenomenon for this Unit.
 
     UnitCP MultiplyUnit(UnitCR rhs) const;
@@ -293,6 +293,7 @@ friend struct UnitRegistry;
 friend struct Expression;
 
 private:
+    bool m_isNumber;
     mutable bvector<UnitCP> m_units;
     mutable Utf8String m_displayLabel;
 
@@ -343,6 +344,9 @@ public:
     UNITS_EXPORT bool IsCompatible(UnitCR unit) const;
     bool Equals(PhenomenonCR comparePhenomenon) const {return 0 == GetName().CompareToI(comparePhenomenon.GetName().c_str());}
     static bool AreEqual(PhenomenonCP phenA, PhenomenonCP phenB) {return nullptr == phenA || nullptr == phenB ? false : phenA->Equals(*phenB);}
+    bool IsNumber() const override {return m_isNumber;}
+    //! Sets the definition of this UnitSymbol if a definition is not already defined.
+    UNITS_EXPORT BentleyStatus SetDefinition(Utf8CP definition) override;
 
     UNITS_EXPORT bool IsLength() const;
     UNITS_EXPORT bool IsTime() const;
