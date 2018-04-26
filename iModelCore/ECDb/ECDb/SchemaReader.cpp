@@ -1205,7 +1205,7 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
         return persUnit;
         };
 
-    if (ECObjectsStatus::Success != newKoq->AddPersitenceUnitByName(persUnitFullName, lookupUnit))
+    if (ECObjectsStatus::Success != newKoq->AddPersistenceUnitByName(persUnitFullName, lookupUnit))
         {
         LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit '%s' could not be parsed.", newKoq->GetFullName().c_str(), persUnitFullName);
         return ERROR;
