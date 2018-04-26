@@ -770,6 +770,7 @@ DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8Stri
     this->ComputeSpatialView (*view);
 
     view->SetIsPrivate (m_isPrivate);
+    view->SetUserLabel (DwgImporter::DataStrings::GetString(DwgImporter::DataStrings::ModelView()).c_str());
 
     // insert the view to BIM
     if (!view.IsValid() || view->Insert().IsNull())
@@ -864,6 +865,7 @@ DgnViewId       ViewportFactory::CreateSheetView (DgnModelId modelId, Utf8String
     this->ComputeSheetView (*view.get());
 
     view->SetIsPrivate (m_isPrivate);
+    view->SetUserLabel (DwgImporter::DataStrings::GetString(DwgImporter::DataStrings::LayoutView()).c_str());
 
     // now insert the new view into DB:
     if (view->Insert().IsNull())
@@ -1146,6 +1148,7 @@ DgnViewId   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecordCR d
         return viewId;
         }
         
+    // build a view factory for either importing or updating:
     ViewportFactory factory(*this, dwgVport);
 
     if (this->IsUpdating())
@@ -1158,24 +1161,8 @@ DgnViewId   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecordCR d
             }
         }
 
-    Utf8String                  layoutName;
-    DwgDbBlockTableRecordPtr    modelspace (m_modelspaceId, DwgDbOpenMode::ForRead);
-    if (!modelspace.IsNull())
-        {
-        DwgDbLayoutPtr  layout (modelspace->GetLayoutId(), DwgDbOpenMode::ForRead);
-        if (!layout.IsNull())
-            layoutName.Assign (layout->GetName().c_str());
-        }
-    if (layoutName.empty())
-        layoutName.assign ("ModelSpace");
-   
-    Utf8String  vportName = Utf8String (dwgVport.GetName().c_str());
-    if (vportName.empty())
-        vportName.assign ("View");
-    else if (vportName.StartsWith("*"))
-        vportName.erase (0, 1);
-
-    Utf8PrintfString    viewName ("%s - %s", layoutName, vportName);
+    // set Model view name as the model name (also the same as the layout name):
+    Utf8String  viewName = rootModel->GetName ();
 
     viewId = factory.CreateSpatialView (rootModel->GetModelId(), viewName);
 
@@ -1254,24 +1241,25 @@ BentleyStatus   DwgImporter::_ImportPaperspaceViewport (DgnModelR model, Transfo
         return  BSIERROR;
         }
    
-    // set sheet view name as "LayoutName - View"
-    Utf8PrintfString    viewName ("%s - View", layoutName);
-    ViewportFactory     factory (*this, *viewport.get(), &layout);
+    // build a view factory for either importing or updating:
+    ViewportFactory factory (*this, *viewport.get(), &layout);
+    DwgDbObjectId   viewportId = viewport->GetObjectId ();
+    DgnViewId       sheetViewId;
 
-    DgnViewId   sheetViewId;
     if (this->IsUpdating())
         {
-        sheetViewId = m_syncInfo.FindView (viewport->GetObjectId(), DwgSyncInfo::View::Type::PaperspaceViewport);
+        sheetViewId = m_syncInfo.FindView (viewportId, DwgSyncInfo::View::Type::PaperspaceViewport);
         if (sheetViewId.IsValid())
             return factory.UpdateSheetView (sheetViewId);
         }
 
+    // set sheet view name as the model name (also the layout name):
+    Utf8String  viewName = model.GetName ();
     sheetViewId = factory.CreateSheetView (model.GetModelId(), viewName);
     if (!sheetViewId.IsValid())
         return  BSIERROR;
 
     // a sheet has been created - cache the results:
-    DwgDbObjectId       viewportId = viewport->GetObjectId ();
     m_paperspaceViews.insert (T_PaperspaceView(sheetViewId, viewportId));
 
     // do not let the default view unset; override it if a valid active layout exists:
