@@ -2717,6 +2717,22 @@ PolyfaceHeaderPtr m_mesh;
 PolyfaceIndexedHeapRangeTreePtr m_rangeTree;
 PolyfaceVisitorPtr m_visitor;
 
+void DoDrapeXY_recurse
+(
+CurveVectorCR curves,
+size_t &segmentCounter,
+bvector<DrapeSegment> &workDrapeSegments,
+bvector<DSegment3dSizeSize> &imprintSegments
+);
+
+void DoDrapeXY_go
+(
+DSegment3dCR segment,
+size_t tagA,
+bvector<DrapeSegment> &workDrapeSegments,
+bvector<DSegment3dSizeSize> &imprintSegments
+);
+
 public:
 /// Capture a reference to a mesh.
 GEOMDLLIMPEXP PolyfaceSearchContext (PolyfaceHeaderPtr &mesh, bool sortX, bool sortY, bool sortZ);
@@ -2724,6 +2740,17 @@ GEOMDLLIMPEXP PolyfaceSearchContext (PolyfaceHeaderPtr &mesh, bool sortX, bool s
 /// compute drape for a single line segment.
 /// the drape results are deposited in the m_segments vector.  Repeated calls will reuse the memory allocations.
 GEOMDLLIMPEXP void DoDrapeXY (DSegment3dCR segment, bvector<DrapeSegment> &drapeSegments);
+
+/// compute drape for a linestring. Return the results as DSegment3dSizeSize pairs with (tagA, tagB) = (linesegment index, facet index)
+GEOMDLLIMPEXP void DoDrapeXY (bvector<DPoint3d> const &linestring, bvector<DSegment3dSizeSize> &drapeSegments);
+
+/// compute drape for a multiple segments (e.g. from prior merges or facet extractions). Return the results as DSegment3dSizeSize pairs with (tagA, tagB) = (source index, facet index)
+GEOMDLLIMPEXP void DoDrapeXY (bvector<DSegment3dSizeSize> const &sourceSegment, bvector<DSegment3dSizeSize> &drapeSegments);
+
+/// compute drape for all linestrings in the curve vector. All other curves are ignored.  Return the results as DSegment3dSizeSize pairs with (tagA, tagB) = (linestringIndex, facet index)
+/// (The segment index is counted sequentially within the curve vector.)
+GEOMDLLIMPEXP void DoDrapeXY (CurveVectorCR curves, bvector<DSegment3dSizeSize> &drapeSegments);
+
 
 /// find facets under a space point.
 /// the drape results are deposited in the m_facetPoints .  (Repeated calls will reuse the memory allocations)
