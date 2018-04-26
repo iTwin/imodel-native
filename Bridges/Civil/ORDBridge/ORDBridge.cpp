@@ -136,8 +136,11 @@ SubjectCPtr ORDBridge::_InitializeJob()
         auto physicalModelPtr = RoadRailBim::RoadRailPhysicalModel::Query(subjectCR);
         InsertElementHasLinksRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
 
-        auto alignmentModelPtr = RoadRailAlignment::AlignmentModel::Query(subjectCR);
-        InsertElementHasLinksRelationship(GetDgnDbR(), alignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
+        auto designAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(subjectCR, AlignmentBim::RoadRailAlignmentDomain::GetDesignPartitionName());
+        InsertElementHasLinksRelationship(GetDgnDbR(), designAlignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
+
+        auto linearsAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(subjectCR, AlignmentBim::RoadRailAlignmentDomain::Get3DLinearsPartitionName());
+        InsertElementHasLinksRelationship(GetDgnDbR(), linearsAlignmentModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
 
         m_converter->SetUpModelFormatters(subjectCR);
 

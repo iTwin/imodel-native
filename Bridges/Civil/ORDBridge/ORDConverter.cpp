@@ -150,7 +150,9 @@ struct ORDAlignmentsConverter: RefCountedBase
     }; // CifProfileSourceItem
 
 private:
-    AlignmentBim::AlignmentModelPtr m_bimAlignmentModelPtr;
+    AlignmentBim::AlignmentModelPtr m_bimDesignAlignmentModelPtr, m_bim3DLinearsAlignmentModelPtr;
+
+    bool Is3DLinear(AlignmentCR alignment) const;
 
 private:
     ORDAlignmentsConverter(SubjectCR jobSubject);
@@ -176,7 +178,8 @@ public:
         return new ORDAlignmentsConverter(jobSubject);
         }
 
-    AlignmentBim::AlignmentModelR GetAlignmentModel() const { return *m_bimAlignmentModelPtr; }
+    AlignmentBim::AlignmentModelR GetDesignAlignmentModel() const { return *m_bimDesignAlignmentModelPtr; }
+    AlignmentBim::AlignmentModelR Get3DLinearsAlignmentModel() const { return *m_bim3DLinearsAlignmentModelPtr; }
     DgnElementId ConvertAlignment(AlignmentCR cifAlignment, ORDConverter::Params& params, DgnCategoryId targetCategory = DgnCategoryId());
 }; // ORDAlignmentsConverter
 
@@ -185,7 +188,21 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 ORDAlignmentsConverter::ORDAlignmentsConverter(SubjectCR jobSubject)
     {
-    m_bimAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject);
+    m_bimDesignAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, AlignmentBim::RoadRailAlignmentDomain::GetDesignPartitionName());
+    m_bim3DLinearsAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, AlignmentBim::RoadRailAlignmentDomain::Get3DLinearsPartitionName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ORDAlignmentsConverter::Is3DLinear(AlignmentCR alignment) const
+    {
+    auto linearEntity3dPtr = alignment.GetActiveLinearEntity3d();
+    if (linearEntity3dPtr.IsNull())
+        return false;
+
+    auto corridorPtr = linearEntity3dPtr->GetCorridor();
+    return corridorPtr.IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -233,6 +250,8 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     Bentley::WString cifSyncId = cifAlignment.GetSyncId();
     auto bimGuid = ORDConverterUtils::CifSyncIdToBeGuid(cifSyncId);
     
+    auto& bimAlignmentModelR = (Is3DLinear(cifAlignment)) ? Get3DLinearsAlignmentModel() : GetDesignAlignmentModel();
+
     DgnCode bimCode;
     
     // Identifying alignments appearing more than once in a single bridge-run.
@@ -240,14 +259,14 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     // For named alignments, if a name (code) is already used, differentiate them with full file-name + modelname.
     if (Utf8String::IsNullOrEmpty(cifAlignmentName.c_str()))
         {        
-        auto existingCPtr = m_bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementByFederationGuid(bimGuid);
+        auto existingCPtr = bimAlignmentModelR.GetDgnDb().Elements().QueryElementByFederationGuid(bimGuid);
         if (existingCPtr.IsValid())
             return BentleyStatus::ERROR;
         cifAlignmentName = Utf8String(cifSyncId.c_str());
-        }
+        }    
 
     Utf8String bimAlignmentName = cifAlignmentName;
-    bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName);
+    bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(bimAlignmentModelR, bimAlignmentName);
 
     int32_t suffix = 0;
     DgnElementId existingId;
@@ -264,14 +283,14 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
         if (suffix > 0)
             bimAlignmentName += Utf8PrintfString("-%d", suffix).c_str();
 
-        bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName);
+        bimCode = AlignmentBim::RoadRailAlignmentDomain::CreateCode(bimAlignmentModelR, bimAlignmentName);
         suffix++;
 
-        existingId = m_bimAlignmentModelPtr->GetDgnDb().Elements().QueryElementIdByCode(bimCode);
+        existingId = bimAlignmentModelR.GetDgnDb().Elements().QueryElementIdByCode(bimCode);
         } while (existingId.IsValid());
 
     // Create Alignment
-    auto bimAlignmentPtr = AlignmentBim::Alignment::Create(*m_bimAlignmentModelPtr);
+    auto bimAlignmentPtr = AlignmentBim::Alignment::Create(bimAlignmentModelR);
     if (targetCategoryId.IsValid())
         bimAlignmentPtr->SetCategoryId(targetCategoryId);
     
@@ -390,7 +409,7 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimVerticalAlignment(ProfileCR ci
     if (!verticalModelId.IsValid())
         {
         auto verticalModelPtr = AlignmentBim::VerticalAlignmentModel::Create(
-            AlignmentBim::VerticalAlignmentModel::CreateParams(m_bimAlignmentModelPtr->GetDgnDb(), alignment.GetElementId()));
+            AlignmentBim::VerticalAlignmentModel::CreateParams(GetDesignAlignmentModel().GetDgnDb(), alignment.GetElementId()));
         if (DgnDbStatus::Success != verticalModelPtr->Insert())
             return BentleyStatus::ERROR;
 
@@ -739,8 +758,8 @@ BentleyStatus ORDCorridorsConverter::CreateNewRoadway(
 
     bimRoadwayCPtr = RoadRailBim::Roadway::Get(roadwayPtr->GetDgnDb(), roadwayPtr->GetElementId());
 
-    auto thruwayPortionPtr = RoadRailBim::ThruwayPortion::Create(*bimRoadwayCPtr, *bimMainAlignmentPtr);
-    if (thruwayPortionPtr->Insert(RoadRailBim::PathwayElement::TravelSide::Single).IsNull())
+    auto travelPortionPtr = RoadRailBim::TravelPortion::Create(*bimRoadwayCPtr, *bimMainAlignmentPtr);
+    if (travelPortionPtr->Insert(RoadRailBim::PathwayElement::TravelSide::Single).IsNull())
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
@@ -1107,7 +1126,7 @@ void ORDConverter::CreatePathways(bset<DgnCategoryId>& additionalCategoriesForSe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void setGeneratedAlignmentLabel(Dgn::DgnElementId alignmentId, RoadRailBim::ThruwayPortionCR travelPortion,
+void setGeneratedAlignmentLabel(Dgn::DgnElementId alignmentId, RoadRailBim::TravelPortionCR travelPortion,
     RoadRailBim::SignificantPointDefinitionCR significantPointDef)
     {
     auto portionAlignmentCPtr = travelPortion.GetMainLinearElementAs<RoadRailAlignment::Alignment>();
@@ -1177,7 +1196,7 @@ void ORDConverter::AssociateGeneratedAlignments()
             if (!travelPortionId.IsValid())
                 continue;
 
-            auto portionCPtr = RoadRailBim::ThruwayPortion::Get(GetDgnDb(), travelPortionId);
+            auto portionCPtr = RoadRailBim::TravelPortion::Get(GetDgnDb(), travelPortionId);
             if (portionCPtr.IsValid())
                 {
                 RoadRailBim::ILinearElementUtilities::SetRelatedPathwayPortion(*bimAlignmentCPtr, *portionCPtr, *pointDefCPtr);
@@ -1198,18 +1217,25 @@ void ORDConverter::CreateRoadRailElements()
     CreatePathways(additionalCategories);
     AssociateGeneratedAlignments();
 
-    auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(GetJobSubject());
-    auto horizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
-    auto horizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(GetDgnDb(), horizontalAlignmentModelId);
+    auto designAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(GetJobSubject(), AlignmentBim::RoadRailAlignmentDomain::GetDesignPartitionName());
+    auto linearsAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(GetJobSubject(), AlignmentBim::RoadRailAlignmentDomain::Get3DLinearsPartitionName());
+    auto designHorizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*designAlignmentModelPtr);
+    auto designHorizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(GetDgnDb(), designHorizontalAlignmentModelId);
+    auto linearsHorizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*linearsAlignmentModelPtr);
+    auto linearsHorizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(GetDgnDb(), linearsHorizontalAlignmentModelId);
     auto physicalModelPtr = RoadRailBim::RoadRailPhysicalModel::Query(GetJobSubject());
 
-    updateProjectExtents(*horizAlignmentModelCPtr, *m_ordParams, false);
+    updateProjectExtents(*designHorizAlignmentModelCPtr, *m_ordParams, false);
+    updateProjectExtents(*linearsHorizAlignmentModelCPtr, *m_ordParams, false);
     updateProjectExtents(*physicalModelPtr, *m_ordParams, true);
 
     if (IsCreatingNewDgnDb())
         {
-        alignmentModelPtr->SetIsPrivate(false);
-        alignmentModelPtr->Update();
+        designAlignmentModelPtr->SetIsPrivate(false);
+        designAlignmentModelPtr->Update();
+
+        linearsAlignmentModelPtr->SetIsPrivate(false);
+        linearsAlignmentModelPtr->Update();
 
         bvector<DgnCategoryId> additionalCategoriesForSelector;
         for (auto categoryId : additionalCategories)
@@ -1222,7 +1248,8 @@ void ORDConverter::CreateRoadRailElements()
 
             auto viewDefCPtr = GetDgnDb().Elements().Get<SpatialViewDefinition>(viewId);
             auto modelSelectorPtr = GetDgnDb().Elements().GetForEdit<ModelSelector>(viewDefCPtr->GetModelSelectorId());
-            modelSelectorPtr->AddModel(alignmentModelPtr->GetModelId());
+            modelSelectorPtr->AddModel(designAlignmentModelPtr->GetModelId());
+            modelSelectorPtr->AddModel(linearsAlignmentModelPtr->GetModelId());
             modelSelectorPtr->Update();
             }
         }
@@ -1282,15 +1309,18 @@ static void setUpModelFormatter(Dgn::GeometricModelR geometricModel, DgnV8Api::M
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDConverter::SetUpModelFormatters(Dgn::SubjectCR jobSubject)
     {    
-    auto alignmentModelPtr = RoadRailAlignment::AlignmentModel::Query(jobSubject);
+    auto designAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, AlignmentBim::RoadRailAlignmentDomain::GetDesignPartitionName());
+    auto linearsAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, AlignmentBim::RoadRailAlignmentDomain::Get3DLinearsPartitionName());
     auto physicalModelPtr = RoadRailBim::RoadRailPhysicalModel::Query(jobSubject);
 
     DgnV8Api::ModelInfo const& v8ModelInfo = _GetModelInfo(*GetRootModelP());
 
-    setUpModelFormatter(*alignmentModelPtr, v8ModelInfo);
+    setUpModelFormatter(*designAlignmentModelPtr, v8ModelInfo);
+    setUpModelFormatter(*linearsAlignmentModelPtr, v8ModelInfo);
     setUpModelFormatter(*physicalModelPtr, v8ModelInfo);
 
-    alignmentModelPtr->Update();
+    designAlignmentModelPtr->Update();
+    linearsAlignmentModelPtr->Update();
     physicalModelPtr->Update();
     }
 

@@ -230,7 +230,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElements(Utf8CP
         "GROUP BY a.Model.Id");
     BeAssert(stmt.IsPrepared());
     
-    stmt.BindText(1, RoadRailAlignmentDomain::GetDefaultPartitionName(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(1, RoadRailAlignmentDomain::GetDesignPartitionName(), IECSqlBinder::MakeCopy::Yes);
     BeAssert(DbResult::BE_SQLITE_ROW == stmt.Step());
     BeAssert(alignmentCount == stmt.GetValueInt(0));
     
