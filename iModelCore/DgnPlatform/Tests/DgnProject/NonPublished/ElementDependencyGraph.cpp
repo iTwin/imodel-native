@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementDependencyGraph.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -59,6 +59,71 @@ struct TestElementDrivesElementHandlerShouldFail
     ~TestElementDrivesElementHandlerShouldFail() {TestElementDrivesElementHandler::SetShouldFail(false);}
     };
 
+//=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      04/18
+//=======================================================================================
+struct CallbackSequenceRecorder
+    {
+    enum class EntryType
+        {
+        RelationshipHandlerCallback = 0,
+        AllInputsHandledCallback = 1,
+        BeforeOutputsHandledCallback = 2
+        };
+
+    typedef bpair<BeInt64Id, EntryType> SequenceEntry;
+    bvector<SequenceEntry> m_sequence;
+
+    //=======================================================================================
+    // @bsiclass                                               Mindaugas.Butkus      04/18
+    //=======================================================================================
+    struct EDERelationshipCallback : TestElementDrivesElementHandler::Callback
+        {
+        private:
+            CallbackSequenceRecorder& m_recorder;
+
+        protected:
+            void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
+            void _ProcessDeletedDependency(Dgn::DgnDbR db, Dgn::dgn_TxnTable::ElementDep::DepRelData const& relData) override {}
+
+        public:
+            EDERelationshipCallback(CallbackSequenceRecorder& recorder) : m_recorder(recorder) {}
+        };
+
+    //=======================================================================================
+    // @bsiclass                                               Mindaugas.Butkus      04/18
+    //=======================================================================================
+    struct EDENodeCallback : TestDriverBundle::Callback
+        {
+        private:
+            CallbackSequenceRecorder& m_recorder;
+
+        protected:
+            virtual void _OnAllInputsHandled(Dgn::DgnElementId) override;
+            virtual void _OnBeforeOutputsHandled(Dgn::DgnElementId) override;
+
+        public:
+            EDENodeCallback(CallbackSequenceRecorder& recorder) : m_recorder(recorder) {}
+        };
+    };
+
+//=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      04/18
+//=======================================================================================
+struct EDECallbackSequenceMonitor
+    {
+    private:
+        CallbackSequenceRecorder m_recorder;
+        CallbackSequenceRecorder::EDERelationshipCallback m_relationshipCallback;
+        CallbackSequenceRecorder::EDENodeCallback m_nodeCallback;
+
+    public:
+        EDECallbackSequenceMonitor();
+        ~EDECallbackSequenceMonitor();
+
+        CallbackSequenceRecorder const& GetRecorder() { return m_recorder; }
+    };
+
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
 +===============+===============+===============+===============+===============+======*/
@@ -80,6 +145,8 @@ struct ElementDependencyGraph : DgnDbTestFixture
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
     DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
     void TwiddleTime(DgnElementCPtr);
+
+    DriverBundleElementCPtr InsertBundle();
     
     WString GetTestFileName(WCharCP testname);
     ECN::ECClassCR GetElementDrivesElementClass();
@@ -94,6 +161,62 @@ struct ElementDependencyGraph : DgnDbTestFixture
 };
 
 END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+EDECallbackSequenceMonitor::EDECallbackSequenceMonitor()
+    : m_relationshipCallback(m_recorder)
+    , m_nodeCallback(m_recorder)
+    {
+    TestDriverBundle::SetCallback(&m_nodeCallback);
+    TestElementDrivesElementHandler::GetHandler().SetCallback(&m_relationshipCallback);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+EDECallbackSequenceMonitor::~EDECallbackSequenceMonitor()
+    {
+    TestDriverBundle::SetCallback(nullptr);
+    TestElementDrivesElementHandler::GetHandler().SetCallback(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void CallbackSequenceRecorder::EDERelationshipCallback::_OnRootChanged
+(
+    Dgn::DgnDbR db,
+    ECInstanceId relationshipId,
+    Dgn::DgnElementId source,
+    Dgn::DgnElementId target
+)
+    {
+    m_recorder.m_sequence.push_back({relationshipId, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void CallbackSequenceRecorder::EDENodeCallback::_OnAllInputsHandled
+(
+    Dgn::DgnElementId nodeId
+)
+    {
+    m_recorder.m_sequence.push_back({nodeId, CallbackSequenceRecorder::EntryType::AllInputsHandledCallback});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void CallbackSequenceRecorder::EDENodeCallback::_OnBeforeOutputsHandled
+(
+    Dgn::DgnElementId nodeId
+)
+    {
+    m_recorder.m_sequence.push_back({nodeId, CallbackSequenceRecorder::EntryType::BeforeOutputsHandledCallback});
+    }
 
 //---------------------------------------------------------------------------------------
 // Clean up what I did in my one-time setup
@@ -202,6 +325,15 @@ DgnElementCPtr ElementDependencyGraph::InsertElement(Utf8CP elementCode, DgnMode
 
     TestElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
     return m_db->Elements().Insert(*el);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DriverBundleElementCPtr ElementDependencyGraph::InsertBundle()
+    {
+    TestDriverBundlePtr bundle = TestDriverBundle::Create(*m_db, m_defaultModelId);
+    return dynamic_cast<TestDriverBundleCP>(m_db->Elements().Insert(*bundle).get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -998,5 +1130,99 @@ TEST_F(ElementDependencyGraph, TestPriority)
         auto ie11_e2 = findRelId(rels, e11_e2);    ASSERT_TRUE( ie11_e2 != rels.end() );
         auto ie12_e2 = findRelId(rels, e12_e2);    ASSERT_TRUE( ie12_e2 != rels.end() );
         ASSERT_LT( ie12_e2, ie11_e2 ) << L"new priority should put e12_e2 first";
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, DriverBundleGroupsMultipleEDERelationships)
+    {
+    SetUpForRelationshipTests();
+
+    //  ----------------
+    //     o->e1-o      o->e3
+    //    /       \    /
+    //  b1         ->b2
+    //    \       /    \
+    //     o->e2-o      o->e4
+    //
+    // (The little "o"s represent the ECRelationships, e* - elements, b* - driver bundles)
+    //  ----------------
+
+    DriverBundleElementCPtr b1 = InsertBundle();
+
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+    DgnElementCPtr e3 = InsertElement("E3");
+    DgnElementCPtr e4 = InsertElement("E4");
+
+    DriverBundleElementCPtr b2 = InsertBundle();
+
+    ECInstanceId b1_e1 = InsertElementDrivesElementRelationship(b1, e1).GetInstanceId();
+    ECInstanceId b1_e2 = InsertElementDrivesElementRelationship(b1, e2).GetInstanceId();
+    ECInstanceId e1_b2 = InsertElementDrivesElementRelationship(e1, b2).GetInstanceId();
+    ECInstanceId e2_b2 = InsertElementDrivesElementRelationship(e2, b2).GetInstanceId();
+    ECInstanceId b2_e3 = InsertElementDrivesElementRelationship(b2, e3).GetInstanceId();
+    ECInstanceId b2_e4 = InsertElementDrivesElementRelationship(b2, e4).GetInstanceId();
+
+    m_db->SaveChanges();
+
+    if (true)
+        {
+        EDECallbackSequenceMonitor monitor;
+        CallbackSequenceRecorder const& recorder = monitor.GetRecorder();
+
+        TwiddleTime(b1);
+        m_db->SaveChanges();
+
+        // b1 was updated. Expected handler call sequence:
+        //   0. b1 (before outputs handled)
+        // 1-2. b1_e1 and b1_e2
+        // 3-4. e1_b2 and e2_b2
+        //   5. b2 (all inputs handled)
+        // 6-7. b2_e3 and b2_e4
+
+        ASSERT_EQ(8, recorder.m_sequence.size());
+        ASSERT_EQ(recorder.m_sequence[0].second, CallbackSequenceRecorder::EntryType::BeforeOutputsHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[1].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[2].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[3].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[4].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[5].second, CallbackSequenceRecorder::EntryType::AllInputsHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[6].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[7].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+
+        ASSERT_EQ(recorder.m_sequence[0].first, b1->GetElementId());
+        ASSERT_TRUE(b1_e1 == recorder.m_sequence[1].first || b1_e2 == recorder.m_sequence[1].first);
+        ASSERT_TRUE(b1_e1 == recorder.m_sequence[2].first || b1_e2 == recorder.m_sequence[2].first);
+        ASSERT_TRUE(e1_b2 == recorder.m_sequence[3].first || e2_b2 == recorder.m_sequence[3].first);
+        ASSERT_TRUE(e1_b2 == recorder.m_sequence[4].first || e2_b2 == recorder.m_sequence[4].first);
+        ASSERT_EQ(recorder.m_sequence[5].first, b2->GetElementId());
+        ASSERT_TRUE(b2_e3 == recorder.m_sequence[6].first || b2_e4 == recorder.m_sequence[6].first);
+        ASSERT_TRUE(b2_e3 == recorder.m_sequence[7].first || b2_e4 == recorder.m_sequence[7].first);
+        }
+
+    if (true)
+        {
+        EDECallbackSequenceMonitor monitor;
+        CallbackSequenceRecorder const& recorder = monitor.GetRecorder();
+
+        TwiddleTime(e3);
+        TwiddleTime(e4);
+        m_db->SaveChanges();
+
+        // e3 and e4 were updated. Expected handler call sequence:
+        //   0. b2 (dependents changed)
+        // 1-2. b2_e3 and b2_e4
+
+        ASSERT_EQ(3, recorder.m_sequence.size());
+        ASSERT_EQ(recorder.m_sequence[0].second, CallbackSequenceRecorder::EntryType::BeforeOutputsHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[1].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[2].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+
+        ASSERT_EQ(recorder.m_sequence[0].first, b2->GetElementId());
+        ASSERT_TRUE(b2_e3 == recorder.m_sequence[1].first || b2_e4 == recorder.m_sequence[1].first);
+        ASSERT_TRUE(b2_e3 == recorder.m_sequence[2].first || b2_e4 == recorder.m_sequence[2].first);
         }
     }

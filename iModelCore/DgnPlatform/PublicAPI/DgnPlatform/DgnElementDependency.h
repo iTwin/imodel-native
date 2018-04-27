@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnElementDependency.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,6 +61,25 @@ public:
 };
 
 //=======================================================================================
+//! Interface for element nodes in the dependency graph.
+// @bsiclass                                              Mindaugas.Butkus  04/18
+//=======================================================================================
+struct IDependencyGraphNode
+    {
+    protected:
+        friend struct DgnElementDependencyGraph;
+
+        //! Called by DgnElementDependencyGraph after all incoming ElementDrivesElement ECRelationships have been handled.
+        //! Call Txns::ReportError to reject an invalid change. The reported error can be classified as fatal or just a warning.
+        virtual void _OnAllInputsHandled() = 0;
+
+        //! Called by DgnElementDependencyGraph before handling the first ElementDrivesElement ECRelationship where this node is the source
+        //! and only if there are no incoming ElementDrivesElement ECRelationships.
+        //! Call Txns::ReportError to reject an invalid change. The reported error can be classified as fatal or just a warning.
+        virtual void _OnBeforeOutputsHandled() = 0;
+    };
+
+//=======================================================================================
 //! Element dependency graph calls DgnElementDependencyHandler in the correct order when a transaction is "validated".
 //! Called by Txns::CheckTxnBoundary.
 //! 
@@ -103,6 +122,7 @@ public:
 struct DgnElementDependencyGraph
 {
     struct EdgeQueue;
+    struct Nodes;
     struct TableApi;
     struct ElementDrivesElement;
 
@@ -224,6 +244,7 @@ private:
     TxnManager&             m_txnMgr;
     ElementDrivesElement*   m_elementDrivesElement;
     EdgeQueue*              m_edgeQueue;
+    Nodes*                  m_nodes;
     IEdgeProcessor*         m_processor;
 
     void Init();
