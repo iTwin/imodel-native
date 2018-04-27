@@ -64,6 +64,10 @@
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices" LibType="static"/>
     </ProductDirectoryList>
+
+    <Part Name="imodeljsiosapp" BentleyBuildMakeFile="nonport/iOS/iModelJsApp/iModelJsApp.mke">
+        <SubPart PartName="iModelJs" LibType="Static" />
+    </Part>
     
     <!-- ======================================================================================================== 
       Build Unit Tests 

@@ -1,0 +1,5 @@
+BaseDir  = $(_MakeFilePath)
+
+always:
+    $(BaseDir)configureProject.py
+

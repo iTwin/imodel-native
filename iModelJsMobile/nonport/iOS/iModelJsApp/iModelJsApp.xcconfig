@@ -1,5 +1,0 @@
-SrcRoot = /Users/stevewilson/Graphite/Bim02-src/
-OutRoot = /Users/stevewilson/Graphite/Bim02-out/
-AssetRoot = /Users/stevewilson/gitsrc/test-imodel-service/source/backend/lib/backend/dist/
-BuildArchitecture = iOSARM64
-
