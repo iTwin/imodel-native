@@ -35,7 +35,9 @@ TEST_F(UnitsTests, BasicECUnitCreation)
     EC_EXPECT_SUCCESS(schema->CreateUnit(unit, "ExampleUnit", "M", *phenom, *system, 10.0, 1.0, 1.0, "ExampleUnitLabel", "ExampleUnitDescription")); 
     
     EXPECT_STREQ("ExampleUnitDescription", unit->GetInvariantDescription().c_str());
+    EXPECT_TRUE(unit->GetIsDescriptionDefined());
     EXPECT_STREQ("ExampleUnitLabel", unit->GetInvariantDisplayLabel().c_str());
+    EXPECT_TRUE(unit->GetIsDisplayLabelDefined());
     EXPECT_STREQ("M", unit->GetDefinition().c_str());
     EXPECT_STREQ("ExampleUnit", unit->GetName().c_str());
     EXPECT_EQ(phenom, unit->GetPhenomenon());
@@ -106,6 +108,8 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 ASSERT_TRUE(unit->IsConstant());
                 EXPECT_STREQ("Constant", unit->GetInvariantDescription().c_str());
                 EXPECT_STREQ("Constant", unit->GetInvariantDisplayLabel().c_str());
+                EXPECT_TRUE(unit->GetIsDescriptionDefined());
+                EXPECT_TRUE(unit->GetIsDisplayLabelDefined());
                 EXPECT_STREQ("Constant", unit->GetName().c_str());
                 EXPECT_STREQ("M", unit->GetDefinition().c_str());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
@@ -119,6 +123,8 @@ TEST_F(UnitsTests, ECUnitContainerTest)
             case 1:
                 EXPECT_STREQ("ExampleUnitDescription1", unit->GetInvariantDescription().c_str());
                 EXPECT_STREQ("ExampleUnitLabel1", unit->GetInvariantDisplayLabel().c_str());
+                EXPECT_TRUE(unit->GetIsDescriptionDefined());
+                EXPECT_TRUE(unit->GetIsDisplayLabelDefined());
                 EXPECT_STREQ("M", unit->GetDefinition().c_str());
                 EXPECT_STREQ("ExampleUnit1", unit->GetName().c_str());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
@@ -136,6 +142,8 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_STREQ("ExampleUnitLabel2", unit->GetInvariantDisplayLabel().c_str());
                 EXPECT_STREQ("MM", unit->GetDefinition().c_str());
                 EXPECT_STREQ("ExampleUnit2", unit->GetName().c_str());
+                EXPECT_TRUE(unit->GetIsDescriptionDefined());
+                EXPECT_TRUE(unit->GetIsDisplayLabelDefined());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
                 EXPECT_EQ(system, unit->GetUnitSystem());
                 EXPECT_TRUE(unit->HasNumerator());
@@ -150,6 +158,8 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_STREQ("ExampleUnit3", unit->GetInvariantDisplayLabel().c_str());
                 EXPECT_STREQ("MMM", unit->GetDefinition().c_str());
                 EXPECT_STREQ("ExampleUnit3", unit->GetName().c_str());
+                EXPECT_FALSE(unit->GetIsDescriptionDefined());
+                EXPECT_FALSE(unit->GetIsDisplayLabelDefined());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
                 EXPECT_EQ(system, unit->GetUnitSystem());
                 EXPECT_FALSE(unit->HasNumerator());
@@ -165,6 +175,8 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_STREQ("ExampleUnitLabel4", unit->GetInvariantDisplayLabel().c_str());
                 EXPECT_STREQ("MMMM", unit->GetDefinition().c_str());
                 EXPECT_STREQ("ExampleUnit4", unit->GetName().c_str());
+                EXPECT_TRUE(unit->GetIsDescriptionDefined());
+                EXPECT_TRUE(unit->GetIsDisplayLabelDefined());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
                 EXPECT_EQ(system, unit->GetUnitSystem());
                 EXPECT_FALSE(unit->HasNumerator());
@@ -179,6 +191,8 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 ASSERT_TRUE(unit->IsInvertedUnit());
                 EXPECT_STREQ("Inverted Unit", unit->GetInvariantDescription().c_str());
                 EXPECT_STREQ("Inverted Unit", unit->GetInvariantDisplayLabel().c_str());
+                EXPECT_TRUE(unit->GetIsDescriptionDefined());
+                EXPECT_TRUE(unit->GetIsDisplayLabelDefined());
                 EXPECT_STREQ("InvertedUnit", unit->GetName().c_str());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
                 EXPECT_EQ(system, unit->GetUnitSystem());
@@ -284,8 +298,11 @@ TEST_F(UnitsDeserializationTests, BasicRoundTripTest)
     EXPECT_STREQ("This is an awesome new Unit", unit->GetInvariantDescription().c_str());
     EXPECT_STREQ("M", unit->GetDefinition().c_str());
     EXPECT_DOUBLE_EQ(10.0, unit->GetOffset());
+    EXPECT_TRUE(unit->HasOffset());
     EXPECT_DOUBLE_EQ(10.0, unit->GetNumerator());
+    EXPECT_TRUE(unit->HasNumerator());
     EXPECT_DOUBLE_EQ(10.0, unit->GetDenominator());
+    EXPECT_TRUE(unit->HasDenominator());
 
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
     }
@@ -301,8 +318,11 @@ TEST_F(UnitsDeserializationTests, BasicRoundTripTest)
     EXPECT_STREQ("This is an awesome new Unit", serializedECUnit->GetInvariantDescription().c_str());
     EXPECT_STREQ("M", serializedECUnit->GetDefinition().c_str());
     EXPECT_DOUBLE_EQ(10.0, serializedECUnit->GetOffset());
+    EXPECT_TRUE(serializedECUnit->HasOffset());
     EXPECT_DOUBLE_EQ(10.0, serializedECUnit->GetNumerator());
+    EXPECT_TRUE(serializedECUnit->HasNumerator());
     EXPECT_DOUBLE_EQ(10.0, serializedECUnit->GetDenominator());
+    EXPECT_TRUE(serializedECUnit->HasDenominator());
     }
     }
 
@@ -341,6 +361,9 @@ TEST_F(UnitsDeserializationTests, RoundTripWithReferencedSchemaForPhenomenonAndU
     EXPECT_STREQ("M", unit->GetDefinition().c_str());
     EXPECT_STREQ("LENGTH*LENGTH", unit->GetPhenomenon()->GetDefinition().c_str());
     EXPECT_STREQ("Unit System", ((ECN::UnitSystemCP)unit->GetUnitSystem())->GetInvariantDisplayLabel().c_str());
+    EXPECT_FALSE(unit->HasOffset());
+    EXPECT_FALSE(unit->HasNumerator());
+    EXPECT_FALSE(unit->HasDenominator());
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
     EXPECT_EQ(SchemaWriteStatus::Success, refSchema->WriteToXmlString(serializedRefSchemaXml));
     }
@@ -359,6 +382,9 @@ TEST_F(UnitsDeserializationTests, RoundTripWithReferencedSchemaForPhenomenonAndU
     EXPECT_STREQ("M", serializedUnit->GetDefinition().c_str());
     EXPECT_STREQ("LENGTH*LENGTH", serializedUnit->GetPhenomenon()->GetDefinition().c_str());
     EXPECT_STREQ("Unit System", ((ECN::UnitSystemCP)serializedUnit->GetUnitSystem())->GetInvariantDisplayLabel().c_str());
+    EXPECT_FALSE(serializedUnit->HasOffset());
+    EXPECT_FALSE(serializedUnit->HasNumerator());
+    EXPECT_FALSE(serializedUnit->HasDenominator());
     }
     }
 
@@ -685,6 +711,16 @@ TEST_F(InvertedUnitsTests, BasicCreation)
     EXPECT_EQ(unit, testECUnit);
     auto schemaInvertedUnit = schema->GetInvertedUnitCP("ExampleInvertedUnit");
     EXPECT_EQ(invertedUnit, schemaInvertedUnit);
+    EXPECT_FALSE(invertedUnit->HasOffset());
+    EXPECT_FALSE(invertedUnit->HasNumerator());
+    EXPECT_FALSE(invertedUnit->HasDenominator());
+    EXPECT_STRCASEEQ("ExampleInvertedUnit", invertedUnit->GetName().c_str());
+    EXPECT_EQ(system, invertedUnit->GetUnitSystem());
+    EXPECT_STRCASEEQ("ExampleInvertedUnitLabel", invertedUnit->GetInvariantDisplayLabel().c_str());
+    EXPECT_STRCASEEQ("ExampleInvertedUnitDescription", invertedUnit->GetInvariantDescription().c_str());
+    EXPECT_TRUE(invertedUnit->GetIsDisplayLabelDefined());
+    EXPECT_TRUE(invertedUnit->GetIsDescriptionDefined());
+    EXPECT_EQ(unit, invertedUnit->GetInvertingUnit());
     }
 
 //---------------------------------------------------------------------------------------
@@ -770,6 +806,11 @@ TEST_F(InvertedUnitsDeserializationTests, RoundTripWithReferencedSchema)
         
     EXPECT_STREQ("InvertedUnitLabel", unit->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ("InvertedUnitDescription", unit->GetInvariantDescription().c_str());
+    EXPECT_TRUE(unit->GetIsDescriptionDefined());
+    EXPECT_TRUE(unit->GetIsDisplayLabelDefined());
+    EXPECT_FALSE(unit->HasOffset());
+    EXPECT_FALSE(unit->HasNumerator());
+    EXPECT_FALSE(unit->HasDenominator());
     EXPECT_STREQ("LENGTH*LENGTH", unit->GetPhenomenon()->GetDefinition().c_str());
     EXPECT_STREQ("Unit System", ((ECN::UnitSystemCP)unit->GetUnitSystem())->GetInvariantDisplayLabel().c_str());
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
@@ -789,6 +830,11 @@ TEST_F(InvertedUnitsDeserializationTests, RoundTripWithReferencedSchema)
     EXPECT_STREQ("InvertedUnitDescription", serializedUnit->GetInvariantDescription().c_str());
     EXPECT_STREQ("LENGTH*LENGTH", serializedUnit->GetPhenomenon()->GetDefinition().c_str());
     EXPECT_STREQ("Unit System", ((ECN::UnitSystemCP)serializedUnit->GetUnitSystem())->GetInvariantDisplayLabel().c_str());
+    EXPECT_TRUE(serializedUnit->GetIsDescriptionDefined());
+    EXPECT_TRUE(serializedUnit->GetIsDisplayLabelDefined());
+    EXPECT_FALSE(serializedUnit->HasOffset());
+    EXPECT_FALSE(serializedUnit->HasNumerator());
+    EXPECT_FALSE(serializedUnit->HasDenominator());
     }
     }
 
@@ -937,6 +983,39 @@ TEST_F(InvertedUnitsDeserializationTests, ShouldFailWithBadSchemaAliases)
 //! ConstantTests
 //=======================================================================================
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ConstantTests, BasicCreation)
+    {
+    ECSchemaPtr schema;
+    ECUnitP unit;
+
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+    PhenomenonP phenom;
+    schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH");
+    EC_EXPECT_SUCCESS(schema->CreateConstant(unit, "CONSTANT", "M", *phenom, 10, 10.0, "ConstantLabel", "ConstantDescription")); 
+    
+    EXPECT_STREQ("ConstantDescription", unit->GetInvariantDescription().c_str());
+    EXPECT_TRUE(unit->GetIsDescriptionDefined());
+    EXPECT_STREQ("ConstantLabel", unit->GetInvariantDisplayLabel().c_str());
+    EXPECT_TRUE(unit->GetIsDisplayLabelDefined());
+    EXPECT_STREQ("M", unit->GetDefinition().c_str());
+    EXPECT_STREQ("CONSTANT", unit->GetName().c_str());
+    EXPECT_EQ(phenom, unit->GetPhenomenon());
+    EXPECT_EQ(nullptr, unit->GetUnitSystem());
+    EXPECT_EQ(10.0, unit->GetNumerator());
+    EXPECT_TRUE(unit->HasNumerator());
+    EXPECT_EQ(10.0, unit->GetDenominator());
+    EXPECT_TRUE(unit->HasDenominator());
+    EXPECT_FALSE(unit->HasOffset());
+    EXPECT_FALSE(unit->HasUnitSystem());
+
+    auto testECUnit = schema->GetUnitCP("CONSTANT");
+    EXPECT_EQ(unit, testECUnit);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Kyle.Abramowitz                          02/2018
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -966,7 +1045,7 @@ TEST_F(ConstantTests, StandaloneSchemaChild)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Kyle.Abramowitz                          03/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(UnitsTests, WritingToPre32VersionShouldNotWriteConstant)
+TEST_F(ConstantTests, WritingToPre32VersionShouldNotWriteConstant)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
