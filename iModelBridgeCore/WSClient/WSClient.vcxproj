@@ -199,6 +199,7 @@
     <ClCompile Include="iModelHubClient\Events\VersionEvent.cpp" />
     <ClCompile Include="iModelHubClient\MultiProgressCallbackHandler.cpp" />
     <ClCompile Include="iModelHubClient\StatisticsInfo.cpp" />
+    <ClCompile Include="iModelHubClient\ThumbnailsManager.cpp" />
     <ClCompile Include="iModelHubClient\UserInfo.cpp" />
     <ClCompile Include="iModelHubClient\UserInfoManager.cpp" />
     <ClCompile Include="iModelHubClient\Utils.cpp" />
@@ -317,6 +318,7 @@
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\FileAccessKey.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\StatisticsInfo.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\StatisticsManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ThumbnailsManager.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\UserInfoManager.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\CodeAdmin.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BreakHelper.h" />

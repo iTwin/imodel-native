@@ -17,6 +17,7 @@ Dgn::PhysicalModelPtr CreateModel(Utf8CP name, Dgn::DgnDbR db);
 Dgn::DgnElementCPtr CreateElement(Dgn::DgnModelR model, bool acquireLocks);
 Dgn::DgnCode MakeStyleCode(Utf8CP name, Dgn::DgnDbR db);
 Dgn::DgnDbStatus InsertStyle(Utf8CP name, Dgn::DgnDbR db, bool expectSuccess = true);
+void InsertSpatialView(Dgn::SpatialModelR model, Utf8CP name, bool isPrivate = false);
 void OpenDgnDb(Dgn::DgnDbPtr& db, BeFileNameCR path);
 void OpenReadOnlyDgnDb(Dgn::DgnDbPtr& db, BeFileNameCR path);
 END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE

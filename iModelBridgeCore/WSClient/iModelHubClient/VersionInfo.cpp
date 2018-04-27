@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/VersionInfo.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/VersionInfo.h>
@@ -32,7 +32,7 @@ Json::Value VersionInfo::GenerateJson() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Viktorija.Adomauskaite           02/2017
 //---------------------------------------------------------------------------------------
-VersionInfoPtr VersionInfo::ParseRapidJson(RapidJsonValueCR properties)
+VersionInfoPtr VersionInfo::ParseRapidJson(RapidJsonValueCR properties, Utf8String smallThumbnailId, Utf8String largeThumbnailId)
     {
     auto id = properties[ServerSchema::Property::Id].GetString();
     auto name = properties[ServerSchema::Property::Name].GetString();
@@ -42,7 +42,7 @@ VersionInfoPtr VersionInfo::ParseRapidJson(RapidJsonValueCR properties)
     auto createdDate = properties.HasMember(ServerSchema::Property::CreatedDate) ? 
         BeJsonUtilities::DateTimeFromValue(properties[ServerSchema::Property::CreatedDate].GetString()) : DateTime();
 
-    return new VersionInfo(id, name, description, changeSetId, userCreated, createdDate);
+    return new VersionInfo(id, name, description, changeSetId, userCreated, createdDate, smallThumbnailId, largeThumbnailId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -51,5 +51,5 @@ VersionInfoPtr VersionInfo::ParseRapidJson(RapidJsonValueCR properties)
 VersionInfoPtr VersionInfo::Parse(WSObjectsReader::Instance instance)
     {
     RapidJsonValueCR properties = instance.GetProperties();
-    return ParseRapidJson(properties);
+    return ParseRapidJson(properties, Thumbnail::ParseFromRelated(instance, Thumbnail::Size::Small), Thumbnail::ParseFromRelated(instance, Thumbnail::Size::Large));
     }

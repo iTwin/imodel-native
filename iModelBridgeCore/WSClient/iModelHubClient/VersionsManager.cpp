@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/VersionsManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/VersionsManager.h>
@@ -132,11 +132,18 @@ WSQuery VersionsManager::CreateChangeSetsBetweenVersionAndChangeSetQuery(Utf8Str
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Viktorija.Adomauskaite           02/2017
 //---------------------------------------------------------------------------------------
-VersionsInfoTaskPtr VersionsManager::GetAllVersions(ICancellationTokenPtr cancellationToken) const
+VersionsInfoTaskPtr VersionsManager::GetAllVersions(ICancellationTokenPtr cancellationToken, Thumbnail::Size thumbnailsToSelect) const
     {
     const Utf8String methodName = "VersionsManager::GetAllVersions";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::Version);
+
+    Utf8String select = "*";
+    if (thumbnailsToSelect & Thumbnail::Size::Small)
+        Thumbnail::AddHasThumbnailSelect(select, Thumbnail::Size::Small);
+    if (thumbnailsToSelect & Thumbnail::Size::Large)
+        Thumbnail::AddHasThumbnailSelect(select, Thumbnail::Size::Large);
+    query.SetSelect(select);
 
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<VersionsInfoResult>
         ([=](const WSObjectsResult& versionInfoResult)
@@ -167,12 +174,20 @@ VersionsInfoTaskPtr VersionsManager::GetAllVersions(ICancellationTokenPtr cancel
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Viktorija.Adomauskaite           02/2017
 //---------------------------------------------------------------------------------------
-VersionInfoTaskPtr VersionsManager::GetVersionById(Utf8StringCR versionId, ICancellationTokenPtr cancellationToken) const
+VersionInfoTaskPtr VersionsManager::GetVersionById(Utf8StringCR versionId, ICancellationTokenPtr cancellationToken, Thumbnail::Size thumbnailsToSelect) const
     {
     const Utf8String methodName = "VersionsManager::GetVersionById";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return m_wsRepositoryClient->SendGetObjectRequest(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Version, versionId), nullptr, 
-                                                      cancellationToken)
+    WSQuery query(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Version, versionId));
+
+    Utf8String select = "*";
+    if (thumbnailsToSelect & Thumbnail::Size::Small)
+        Thumbnail::AddHasThumbnailSelect(select, Thumbnail::Size::Small);
+    if (thumbnailsToSelect & Thumbnail::Size::Large)
+        Thumbnail::AddHasThumbnailSelect(select, Thumbnail::Size::Large);
+    query.SetSelect(select);
+
+    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
         ->Then<VersionInfoResult>([=](WSObjectsResult const& versionInfoResult)
         {
         if (versionInfoResult.IsSuccess())
@@ -204,7 +219,7 @@ VersionInfoTaskPtr VersionsManager::CreateVersion(VersionInfoR version, ICancell
             Json::Value json;
             versionInfoResult.GetValue().GetJson(json);
             JsonValueCR instance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange][ServerSchema::Properties];
-            auto versionInfo = VersionInfo::ParseRapidJson(ToRapidJson(instance));
+            auto versionInfo = VersionInfo::ParseRapidJson(ToRapidJson(instance), nullptr, nullptr);
 
             return VersionInfoResult::Success(versionInfo);
             }

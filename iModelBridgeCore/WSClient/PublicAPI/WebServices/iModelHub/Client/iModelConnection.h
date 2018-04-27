@@ -25,6 +25,7 @@
 #include <WebServices/iModelHub/Client/VersionsManager.h>
 #include <WebServices/iModelHub/Client/ChangeSetCacheManager.h>
 #include <WebServices/iModelHub/Client/StatisticsManager.h>
+#include <WebServices/iModelHub/Client/ThumbnailsManager.h>
 #include <WebServices/iModelHub/Client/ChunkedWSChangeset.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
@@ -164,6 +165,7 @@ private:
     VersionsManager            m_versionsManager;
     ChangeSetCacheManager      m_changeSetCacheManager;
     StatisticsManager          m_statisticsManager;
+    ThumbnailsManager          m_thumbnailsManager;
 
     iModelConnection(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
 
@@ -468,6 +470,10 @@ public:
     //! @return Statistics manager
     IMODELHUBCLIENT_EXPORT StatisticsManagerCR GetStatisticsManager() const { return m_statisticsManager; }
 
+    //! Gets ThumbnailsManager
+    //! @return Thumbnails manager
+    IMODELHUBCLIENT_EXPORT ThumbnailsManagerCR GetThumbnailsManager() const { return m_thumbnailsManager; }
+
     //!< Gets RepositoryClient.
     //! @return Returns repository client
     //! @private
@@ -488,6 +494,7 @@ public:
         m_versionsManager = VersionsManager(client, this);
         m_changeSetCacheManager = ChangeSetCacheManager(this);
         m_statisticsManager = StatisticsManager(client);
+        m_thumbnailsManager = ThumbnailsManager(client);
         }
 
     //! Gets AzureBlobStorageClient.
