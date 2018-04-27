@@ -4,7 +4,8 @@
 #include <GeomSerialization/GeomSerializationApi.h>
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 
-    
+// TFS#885940
+#if !defined(BENTLEYCONFIG_OS_APPLE_IOS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -76,6 +77,7 @@ TEST(PseudoSpiral,Serialize)
         Check::ClearGeometry (fileName);
         }
     }
+#endif
 
 ICurvePrimitivePtr ConstructSpiralRadiusRadiusLength (int typeCode, Angle bearingA, double radiusA, double radiusB, double lengthAB)
     {
