@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
+#include <Bentley/BeNumerical.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -122,6 +123,56 @@ TEST_F(PhenomenonTests, StandaloneSchemaChildPhenomenon)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(PhenomenonTests, AllPhenomenonInStandardUnitsSchemaHaveValidDefinitions)
+    {
+    ECSchemaPtr schema = ECTestFixture::GetUnitsSchema();
+
+    bvector<Units::PhenomenonCP> allPhenom;
+    bvector<Utf8String> dimensionlessPhenomena = {"LENGTH_RATIO", "VOLUME_RATIO", "SLOPE"};
+    schema->GetUnitsContext().AllPhenomena(allPhenom);
+
+    for(auto const& p: allPhenom)
+        {
+        if (std::find(dimensionlessPhenomena.begin(), dimensionlessPhenomena.end(), p->GetName()))
+            continue;
+        Utf8StringCR expression = p->GetPhenomenonSignature();
+        ASSERT_FALSE(expression.empty());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(PhenomenonTests, AllUnitsInPhenomenaAreConvertibleBetweenEachOther)
+    {
+    ECSchemaPtr schema = ECTestFixture::GetUnitsSchema();
+
+    bvector<Units::PhenomenonCP> allPhenom;
+    // Currency cannot be converted because the conversion factor is not constant
+    bvector<Utf8String> excludedPhenomenon = {"CURRENCY"};
+    schema->GetUnitsContext().AllPhenomena(allPhenom);
+
+    for(auto const& p: allPhenom)
+        {
+        if (std::find(excludedPhenomenon.begin(), excludedPhenomenon.end(), p->GetName()))
+            continue;
+        auto units = p->GetUnits();
+        for (auto const& u : units)
+            {
+            for (auto const& convertTo : units)
+                {
+                double converted;
+                auto code =  u->Convert(converted, 1.0, convertTo);
+                EXPECT_EQ(Units::UnitsProblemCode::NoProblem, code);
+                EXPECT_FALSE(BeNumerical::BeIsnan(converted) || !BeNumerical::BeFinite(converted));
+                }
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
