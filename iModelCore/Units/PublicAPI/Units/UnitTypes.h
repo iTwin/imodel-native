@@ -270,7 +270,7 @@ public:
     //! Returns true if the unit is just a place holder for a real unit, invalid units are not convertible into any other unit.
     bool IsValid() const {return !m_dummyUnit;}
     UNITS_EXPORT bool IsNumber() const override;
-    PhenomenonCP GetPhenomenon() const {return m_phenomenon;} //!< Gets the Phenomenon for this Unit.
+    PhenomenonCP GetPhenomenon() const override {return m_phenomenon;} //!< Gets the Phenomenon for this Unit.
 
     UnitCP MultiplyUnit(UnitCR rhs) const;
     UnitCP DivideUnit(UnitCR rhs) const;
@@ -333,7 +333,7 @@ protected:
     void SetLabel(Utf8CP label) {m_displayLabel = label;}
 
 public:
-    PhenomenonCP GetPhenomenon() const {return this;} //!< Returns this Phenomenon.
+    PhenomenonCP GetPhenomenon() const override {return this;} //!< Returns this Phenomenon.
 
     UNITS_EXPORT Utf8String GetPhenomenonSignature() const;
 
