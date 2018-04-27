@@ -115,13 +115,13 @@ friend struct Phenomenon; // Needed for access to private members
 private:
     Utf8String  m_name;
     Utf8String  m_definition;
-    bool        m_isBaseSymbol;
-    double      m_numerator;
-    double      m_denominator;
-    double      m_offset;
+    bool        m_isBaseSymbol = false;
+    double      m_numerator = 1.0;
+    double      m_denominator = 1.0;
+    double      m_offset = 0.0;
 
 
-    mutable bool m_evaluated;
+    mutable bool m_evaluated = false;
     Expression* m_symbolExpression;
 
     virtual bool IsNumber() const = 0;
@@ -129,10 +129,10 @@ private:
     virtual PhenomenonCP GetPhenomenon() const = 0;
 
 protected:
-    IUnitsContextCP m_unitsContext;
+    IUnitsContextCP m_unitsContext = nullptr;
 
     // Creates a default invalid Symbol
-    UnitsSymbol() : m_isBaseSymbol(false), m_numerator(1.0), m_denominator(1.0), m_offset(0.0), m_evaluated(false), m_unitsContext(nullptr) {}
+    UnitsSymbol() {}
 
     // Creates an invalid Symbol with the provided name.
     UNITS_EXPORT UnitsSymbol(Utf8CP name);
@@ -187,15 +187,15 @@ friend struct InverseUnit;
 friend struct Phenomenon;
 private:
     // TODO: Should these be a reference because it must be set?
-    UnitSystemCP    m_system;
-    PhenomenonCP    m_phenomenon;
-    UnitCP          m_parent; // for an inverted Unit only.
-    bool            m_isConstant;
-    bool            m_dummyUnit;
+    UnitSystemCP    m_system = nullptr;
+    PhenomenonCP    m_phenomenon = nullptr;
+    UnitCP          m_parent = nullptr; // for an inverted Unit only.
+    bool            m_isConstant = false;
+    bool            m_dummyUnit = false;
     mutable Utf8String m_displayLabel;
     mutable Utf8String m_displayDescription;
 
-    Unit() :UnitsSymbol(), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true), m_dummyUnit(false) {}
+    Unit() :UnitsSymbol(), m_isConstant(true) {}
 
     // Do not allow copies or assignments.
     Unit(UnitCR unit) = delete;
@@ -224,12 +224,12 @@ protected:
     UNITS_EXPORT static UnitP _Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName);
     UNITS_EXPORT static UnitP _Create(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator);
 
-    Unit(Utf8CP name) : UnitsSymbol(name), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(false), m_dummyUnit(false) {}
+    Unit(Utf8CP name) : UnitsSymbol(name) {}
     UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant);
     UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition);
     //! Creates a constant.
     Unit(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator)
-        : UnitsSymbol(name, definition, numerator, denominator, 0), m_system(nullptr), m_phenomenon(nullptr) { SetPhenomenon(phenomenon); SetConstant(true);}
+        : UnitsSymbol(name, definition, numerator, denominator, 0) { SetPhenomenon(phenomenon); SetConstant(true);}
     //! Creates an inverted Unit.
     Unit(UnitCR parentUnit, UnitSystemCR system, Utf8CP name)
         : Unit(system, *(parentUnit.GetPhenomenon()), name, parentUnit.GetDefinition().c_str(), 0, 0, 0, false)
