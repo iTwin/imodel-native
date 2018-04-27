@@ -40,7 +40,7 @@ public:
     //! The name of the RailwayStandards Partition
     static Utf8CP GetRailwayStandardsPartitionName() { return "Railway Standards"; }
 
-    //! The name of the default Standards Partition
+    //! The name of the RoadwayStandards Partition
     static Utf8CP GetRoadwayStandardsPartitionName() { return "Roadway Standards"; }    
 
     //! @private

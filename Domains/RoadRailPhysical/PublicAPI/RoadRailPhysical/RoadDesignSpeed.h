@@ -44,9 +44,11 @@ protected:
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RoadwayStandardsModel)
 
+    //! @private
     static RoadwayStandardsModelPtr Create(CreateParams const& params) { return new RoadwayStandardsModel(params); }
+    //! @private
     static RoadwayStandardsModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< RoadwayStandardsModel >(id); }
-
+    //! @private
     ROADRAILPHYSICAL_EXPORT static RoadwayStandardsModelPtr Query(Dgn::SubjectCR parentSubject);
 }; // RoadwayStandardsModel
 
@@ -81,13 +83,16 @@ protected:
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RailwayStandardsModel)
 
+    //! @private
     static RailwayStandardsModelPtr Create(CreateParams const& params) { return new RailwayStandardsModel(params); }
+    //! @private
     static RailwayStandardsModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< RailwayStandardsModel >(id); }
-
+    //! @private
     ROADRAILPHYSICAL_EXPORT static RailwayStandardsModelPtr Query(Dgn::SubjectCR parentSubject);
 }; // RailwayStandardsModel
 
 
+//__PUBLISH_SECTION_END__
 //=======================================================================================
 //! The ModelHandler for RoadwayStandards Models
 //=======================================================================================
@@ -104,4 +109,5 @@ struct EXPORT_VTABLE_ATTRIBUTE RailwayStandardsModelHandler : Dgn::dgn_ModelHand
 MODELHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RailwayStandardsModel, RailwayStandardsModel, RailwayStandardsModelHandler, Dgn::dgn_ModelHandler::Definition, ROADRAILPHYSICAL_EXPORT)
 }; // RailwayStandardsModelHandler
 
+//__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

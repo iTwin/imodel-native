@@ -25,21 +25,34 @@ friend struct SignificantPointDefinitionHandler;
 protected:
     //! @private
     explicit SignificantPointDefinition(CreateParams const& params);
-
+    //! @private
     virtual TravelwaySignificantPointDefCP _ToTravelwaySignificantPointDef() const { return nullptr; }
+    //! @private
     virtual TravelwaySideSignificantPointDefCP _ToTravelwaySideSignificantPointDef() const { return nullptr; }
+    //! @private
     virtual TravelwayStructureSignificantPointDefCP _ToTravelwayStructureSignificantPointDef() const { return nullptr; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(SignificantPointDefinition)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(SignificantPointDefinition)
 
+    //! @private
     ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
+    //! @private
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DefinitionModelCR scope, Utf8StringCR value);
+    
+    //! Query for a Significant Point Definition based on a Code value
+    //! @return A Significant Point Definition or nullptr if none could be found for the given Code value
     ROADRAILPHYSICAL_EXPORT static SignificantPointDefinitionCPtr QueryByCode(Dgn::DefinitionModelCR model, Utf8StringCR pointCode);
 
+    //! Cast this SignificantPointDefinition into a TravelwaySignificantPointDef
+    //! @return A TravelwaySignificantPointDef or nullptr if this CorridorPortionElement is not a TravelwaySignificantPointDef
     TravelwaySignificantPointDefCP ToTravelwaySignificantPointDef() const { return _ToTravelwaySignificantPointDef(); }
+    //! Cast this SignificantPointDefinition into a TravelwaySignificantPointDef
+    //! @return A TravelwaySignificantPointDef or nullptr if this SignificantPointDefinition is not a TravelwaySignificantPointDef
     TravelwaySideSignificantPointDefCP ToTravelwaySideSignificantPointDef() const { return _ToTravelwaySideSignificantPointDef(); }
+    //! Cast this SignificantPointDefinition into a TravelwayStructureSignificantPointDef
+    //! @return A TravelwayStructureSignificantPointDef or nullptr if this SignificantPointDefinition is not a TravelwayStructureSignificantPointDef
     TravelwayStructureSignificantPointDefCP ToTravelwayStructureSignificantPointDef() const { return _ToTravelwayStructureSignificantPointDef(); }
 }; // SignificantPointDefinition
 
@@ -55,14 +68,16 @@ friend struct TravelwaySignificantPointDefHandler;
 protected:
     //! @private
     explicit TravelwaySignificantPointDef(CreateParams const& params) : T_Super(params) {}    
-
+    //! @private
     virtual TravelwaySignificantPointDefCP _ToTravelwaySignificantPointDef() const override { return this; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelwaySignificantPointDef)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TravelwaySignificantPointDef)
 
+    //! @private
     ROADRAILPHYSICAL_EXPORT static TravelwaySignificantPointDefPtr Create(Dgn::DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel = nullptr);
+    //! @private
     ROADRAILPHYSICAL_EXPORT static TravelwaySignificantPointDefCPtr CreateAndInsert(Dgn::DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel = nullptr);
 }; // TravelwaySignificantPointDef
 
@@ -78,14 +93,16 @@ friend struct TravelwaySideSignificantPointDefHandler;
 protected:
     //! @private
     explicit TravelwaySideSignificantPointDef(CreateParams const& params) : T_Super(params) {}
-
+    //! @private
     virtual TravelwaySideSignificantPointDefCP _ToTravelwaySideSignificantPointDef() const override { return this; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelwaySideSignificantPointDef)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TravelwaySideSignificantPointDef)
 
+    //! @private
     ROADRAILPHYSICAL_EXPORT static TravelwaySideSignificantPointDefPtr Create(Dgn::DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel = nullptr);
+    //! @private
     ROADRAILPHYSICAL_EXPORT static TravelwaySideSignificantPointDefCPtr CreateAndInsert(Dgn::DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel = nullptr);
 }; // TravelwaySideSignificantPointDef
 
@@ -101,18 +118,21 @@ friend struct TravelwayStructureSignificantPointDefHandler;
 protected:
     //! @private
     explicit TravelwayStructureSignificantPointDef(CreateParams const& params) : T_Super(params) {}
-
+    //! @private
     virtual TravelwayStructureSignificantPointDefCP _ToTravelwayStructureSignificantPointDef() const override { return this; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelwayStructureSignificantPointDef)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TravelwayStructureSignificantPointDef)
 
+    //! @private
     ROADRAILPHYSICAL_EXPORT static TravelwayStructureSignificantPointDefPtr Create(Dgn::DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel = nullptr);
+    //! @private
     ROADRAILPHYSICAL_EXPORT static TravelwayStructureSignificantPointDefCPtr CreateAndInsert(Dgn::DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel = nullptr);
 }; // TravelwayStructureSignificantPointDef
 
 
+//__PUBLISH_SECTION_END__
 //=================================================================================
 //! ElementHandler for Typical Section Point Definitions
 //! @ingroup GROUP_RoadRailPhysical
@@ -148,4 +168,6 @@ struct EXPORT_VTABLE_ATTRIBUTE TravelwayStructureSignificantPointDefHandler : Si
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwayStructureSignificantPointDef, TravelwayStructureSignificantPointDef, TravelwayStructureSignificantPointDefHandler, SignificantPointDefinitionHandler, ROADRAILPHYSICAL_EXPORT)
 }; // TravelwayStructureSignificantPointDefHandler
+
+//__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
