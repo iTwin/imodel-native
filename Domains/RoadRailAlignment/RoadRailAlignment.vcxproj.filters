@@ -46,13 +46,7 @@
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentReferent.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPair.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\RoadRailAlignment\GeometryDebug.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPairEditor.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\RoadRailAlignment\RoadRailAlignment.h">
@@ -62,9 +56,6 @@
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\RoadRailAlignment\RoadAlignmentPairEditor.h">
-      <Filter>Header Files\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPairIntersection.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentCategory.h">

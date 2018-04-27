@@ -74,7 +74,7 @@ AlignmentCPtr Alignment::GetAssociated(DgnElementCR element)
             return Alignment::Get(element.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
         }
 
-    // 6. If element is an ILinearElementSource, return its main ILinearElement if it is an Alignment.
+    // 6. If element is an ILinearElementSource, return the first ILinearElement that it realizes as an Alignment.
     if (auto iLinearElementSource = dynamic_cast<ILinearElementSourceCP>(&element))
         {
         for (auto linearElementId : iLinearElementSource->QueryLinearElements())

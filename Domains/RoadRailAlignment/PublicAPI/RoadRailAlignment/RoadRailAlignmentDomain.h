@@ -35,10 +35,20 @@ public:
     //! @param[in] dgndb The DgnDb to query
     //! @return The CodeSpecId of the Alignment partition
     ROADRAILALIGNMENT_EXPORT static Dgn::CodeSpecId QueryAlignmentCodeSpecId(Dgn::DgnDbCR dgndb);
+
+    //! @private
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnModelCR scopeModel, Utf8StringCR value);
+
+    //! @private
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR subject);    
+
+    //! Returns the partition name used for the AlignmentModel containing Design Alignments
     static Utf8CP GetDesignPartitionName() { return "Road/Rail Design Alignments"; }
+
+    //! Returns the partition name used for the AlignmentModel containing 3D Linears
     static Utf8CP Get3DLinearsPartitionName() { return "Road/Rail 3D Linears"; }
+
+    //! Returns the partition name used for the DefinitionModel containing Domain Categories
     static Utf8CP GetDomainCategoriesPartitionName() { return "Road/Rail Domain Categories"; }
 
 private:
@@ -46,7 +56,8 @@ private:
 }; // RoadRailAlignmentDomain
 
 //=======================================================================================
-//! Model containing configuration elements such as categories, view-definitions, etc.
+//! Model containing configuration elements such as view-definitions, 
+//! for a particular Subject.
 //=======================================================================================
 struct ConfigurationModel : Dgn::DefinitionModel
 {
@@ -85,6 +96,8 @@ public:
     static Utf8CP GetDomainPartitionName() { return "Road/Rail Configuration"; }
 }; // ConfigurationModel
 
+
+//__PUBLISH_SECTION_END__
 //=======================================================================================
 //! The ModelHandler for ConfigurationModel
 //=======================================================================================
@@ -93,5 +106,5 @@ struct ConfigurationModelHandler : Dgn::dgn_ModelHandler::Definition
 MODELHANDLER_DECLARE_MEMBERS(BRRA_CLASS_ConfigurationModel, ConfigurationModel, ConfigurationModelHandler, Dgn::dgn_ModelHandler::Definition, )
 }; // ConfigurationModelHandler
 
-
+//__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

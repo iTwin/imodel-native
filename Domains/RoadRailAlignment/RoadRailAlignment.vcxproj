@@ -27,9 +27,6 @@
     <ClInclude Include="PublicAPI\RoadRailAlignment\Alignment.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentCategory.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentModel.h" />
-    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPair.h" />
-    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPairEditor.h" />
-    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentPairIntersection.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentProfileViewDefinition.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentReferent.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentXSViewDefinition.h" />

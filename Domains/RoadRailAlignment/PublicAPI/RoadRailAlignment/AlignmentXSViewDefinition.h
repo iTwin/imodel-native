@@ -55,6 +55,8 @@ public:
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnViewId QuerySystemViewId(Dgn::SubjectCR subject);
 }; // AlignmentXSViewDefinition
 
+
+//__PUBLISH_SECTION_END__
 //=======================================================================================
 //! The ElementHandler for the AlignmentXSViewDefinition class
 //=======================================================================================
@@ -64,4 +66,5 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentXSViewDefinition, AlignmentXS
     AlignmentXSViewDefinitionHandler, Dgn::ViewElementHandler::SpatialView, ROADRAILALIGNMENT_EXPORT)
 }; // AlignmentXSViewDefinition
 
+//__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
