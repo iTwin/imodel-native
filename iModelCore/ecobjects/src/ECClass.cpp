@@ -1985,7 +1985,7 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
             // Don't fail if the modifier string is unknown with >EC3.x versions. Default is None.
             if (GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
                 {
-                LOG.warningv("Class '%s' has an unknown modifier '%s'. Setting to None.", this->GetFullName(), modifierString);
+                LOG.warningv("Class '%s' has an unknown modifier '%s'. Setting to None.", this->GetFullName(), modifierString.c_str());
                 return SchemaReadStatus::Success;
                 }
 
