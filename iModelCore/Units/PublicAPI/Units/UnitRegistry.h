@@ -69,7 +69,7 @@ private:
             return nullptr;
             }
 
-        auto phenomenon = Phenomenon::_Create(phenomenaName, definition);
+        auto phenomenon = new Phenomenon(phenomenaName, definition);
 
         phenomenon->m_unitsContext = this;
 
@@ -113,9 +113,12 @@ private:
             return nullptr;
             }
 
-        UnitP unit = Unit::_Create(*system, *phenomenon, unitName, definition, numerator, denominator, offset, isConstant);
-        if (nullptr == unit)
+        if (0.0 == numerator || 0.0 == denominator)
+            {
+             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->errorv("Failed to create unit %s because numerator or denominator is 0.  Factor: %.17g / %.17g  Offset: %d", unitName, numerator, denominator, offset);
             return nullptr;
+            }
+        auto unit = new Unit(*system, *phenomenon, unitName, definition, numerator, denominator, offset, isConstant);
 
         unit->m_unitsContext = this;
         phenomenon->AddUnit(*unit);
@@ -165,9 +168,18 @@ private:
             return nullptr;
             }
 
-        auto unit = Unit::_Create(*parentUnit, *unitSystem, unitName);
-        if (nullptr == unit)
+        if (parentUnit->HasOffset())
+            {
+             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->errorv("Cannot create inverted unit %s with parent %s because parent has an offset.", unitName, parentUnit->GetName().c_str());
             return nullptr;
+            }
+        if (parentUnit->IsInvertedUnit())
+            {
+             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->errorv("Cannot create inverted unit %s with parent %s because parent is an inverted unit", unitName, parentUnit->GetName().c_str());
+            return nullptr;
+            }
+
+        auto unit = new Unit(*parentUnit, *unitSystem, unitName);
 
         unit->m_unitsContext = this;
 
@@ -192,9 +204,8 @@ private:
             return nullptr;
             }
 
-        auto unitSystem = UnitSystem::_Create(name);
+        auto unitSystem = new UnitSystem(name);
         unitSystem->m_unitsContext = this;
-
         m_systems.Insert(unitSystem->GetName().c_str(), unitSystem);
 
         return unitSystem;

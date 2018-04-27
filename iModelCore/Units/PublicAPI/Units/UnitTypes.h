@@ -90,7 +90,6 @@ private:
 
 protected:
     IUnitsContextCP m_unitsContext;
-    static UnitSystemP _Create(Utf8CP name) {return new UnitSystem(name);}
 
     //! Sets the UnitsContext if it has not been previously set.
     BentleyStatus SetContext(IUnitsContextCP context) { if (nullptr != m_unitsContext) return ERROR; m_unitsContext = context; return SUCCESS; }
@@ -209,20 +208,6 @@ private:
     bool GenerateConversion(UnitCR toUnit, Conversion& conversion) const;
 
 protected:
-    // Needs to be overriden by any sub class
-    static UnitP _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant)
-        {
-        if (0.0 == numerator || 0.0 == denominator)
-            {
-            NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->debugv("Failed to create unit %s because numerator or denominator is 0.  Factor: %.17g / %.17g  Offset: %d", unitName, numerator, denominator, offset);
-            return nullptr;
-            }
-        NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->debugv("Creating unit %s  Factor: %.17g / %.17g  Offset: %d", unitName, numerator, denominator, offset);
-        return new Unit(sysName, phenomenon, unitName, definition, numerator, denominator, offset, isConstant);
-        }
-
-    UNITS_EXPORT static UnitP _Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName);
-    UNITS_EXPORT static UnitP _Create(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator);
 
     Unit(Utf8CP name) : UnitsSymbol(name) {}
     UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant);
@@ -327,7 +312,6 @@ private:
     ExpressionCR Evaluate() const;
 
 protected:
-    static PhenomenonP _Create(Utf8CP name, Utf8CP definition) {return new Phenomenon(name, definition);}
     UNITS_EXPORT Phenomenon(Utf8CP name, Utf8CP definition);
     UNITS_EXPORT virtual ~Phenomenon();
     void SetLabel(Utf8CP label) {m_displayLabel = label;}

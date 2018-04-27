@@ -141,39 +141,6 @@ Unit::~Unit()
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                      03/2016
-//--------------------------------------------------------------------------------------
-UnitP Unit::_Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName)
-    {
-    if (parentUnit.HasOffset())
-        {
-        LOG.errorv("Cannot create inverted unit %s with parent %s because parent has an offset.", unitName, parentUnit.GetName().c_str());
-        return nullptr;
-        }
-    if (parentUnit.IsInvertedUnit())
-        {
-        LOG.errorv("Cannot create inverted unit %s with parent %s because parent is an inverted unit", unitName, parentUnit.GetName().c_str());
-        return nullptr;
-        }
-
-    LOG.debugv("Creating inverted unit %s with parent unit %s", unitName, parentUnit.GetName().c_str());
-    return new Unit(parentUnit, system, unitName);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                 Kyle.Abramowitz                   03/2018
-//--------------------------------------------------------------------------------------
-UnitP Unit::_Create(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator)
-    {
-    if (0.0 == denominator)
-        {
-        LOG.errorv("Cannot create constant %s because denominator is 0.0.", name);
-        return nullptr;
-        }
-    return new Unit(phenomenon, name, definition, numerator, denominator);
-    }
-
-//--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 BentleyStatus Unit::SetPhenomenon(PhenomenonCR phenom)
