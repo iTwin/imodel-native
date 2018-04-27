@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+
 BEGIN_GRIDS_NAMESPACE
 
 //=======================================================================================
@@ -295,7 +296,7 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanRadialGridSurface : PlanGridPlanarSurface
 //=======================================================================================
 //! plan grid planar surface element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface
+struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface, BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::IBCSSerializable
     {
     DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_ElevationGridSurface, GridPlanarSurface);
     DEFINE_T_SUPER (GridPlanarSurface);
@@ -321,6 +322,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface
             explicit GRIDELEMENTS_EXPORT CreateParams (Dgn::DgnElement::CreateParams const& params)
                 : T_Super (params)
                 {
+                m_elevation = 478.0;
+                m_surface = NULL;
                 }
             };
 
@@ -363,6 +366,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface
         //! Sets Surface2d of this ElevationGridSurface
         //! @param[in]   surface        curvevector of gridSurface in local coordinates, on zero Z plane
         GRIDELEMENTS_EXPORT void                SetSurface2d (CurveVectorPtr surface);
+
+        //IBCSSerializable:
+
+        //! Serializes element data to a JSON object
+        //! @param[in]  elementData JSON object that will hold serialized data
+        GRIDELEMENTS_EXPORT void SerializeProperties(Json::Value& elementData) const override;
+
+        //! Formats serialized element data in a JSON object
+        //! @param[in]  elementData JSON object that holds serialized data
+        GRIDELEMENTS_EXPORT void FormatSerializedProperties(Json::Value& elementData) const override;
     };
 
 //=======================================================================================

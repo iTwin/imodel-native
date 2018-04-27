@@ -19,6 +19,11 @@ DEFINE_GRIDS_ELEMENT_BASE_METHODS(PlanCartesianGridSurface)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS(ElevationGridSurface)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS(SketchLineGridSurface)
 
+
+#define BCSSERIALIZABLE_ELEVSURFACE_OwnerId                          "OwnerId"
+#define BCSSERIALIZABLE_ELEVSURFACE_Elevation                        "Elevation"
+#define BCSSERIALIZABLE_ELEVSURFACE_Area                             "Area"
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -736,6 +741,41 @@ CurveVectorPtr                   ElevationGridSurface::GetSurface2d
     CurveVectorPtr surface = geometryPtr->GetAsCurveVector ();
 
     return surface;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElevationGridSurface::SerializeProperties (Json::Value& elementData) const
+    {
+    elementData[BCSSERIALIZABLE_ELEMENT_ClassName] = GetElementClass()->GetName();
+    elementData[BCSSERIALIZABLE_ELEMENT_ElementId] = GetElementId().GetValueUnchecked();
+    elementData[BCSSERIALIZABLE_ELEMENT_Name] = GetUserLabel();
+
+
+    GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
+    elementData[BCSSERIALIZABLE_ELEVSURFACE_OwnerId] = grid->GetCode().GetScopeElementId(GetDgnDb()).GetValueUnchecked();
+    elementData[BCSSERIALIZABLE_ELEVSURFACE_Elevation] = GetElevation();
+
+
+    DPoint3d centroid;
+    DVec3d   normal;
+    double   area = 0.0;
+    CurveVectorPtr surf2d = GetSurface2d();
+    if (surf2d.IsValid())
+        surf2d->CentroidNormalArea(centroid, normal, area);
+
+    elementData[BCSSERIALIZABLE_ELEVSURFACE_Area] = area;
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElevationGridSurface::FormatSerializedProperties (Json::Value& elementData) const
+    {
+    //do nothing
     }
 
 /*---------------------------------------------------------------------------------**//**

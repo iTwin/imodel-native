@@ -8,6 +8,7 @@
 #pragma once
 
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <BuildingShared/Interfaces.h>
 #include <Grids/Domain/GridsMacros.h>
 #include <ConstraintSystem/ConstraintSystemApi.h>
 
