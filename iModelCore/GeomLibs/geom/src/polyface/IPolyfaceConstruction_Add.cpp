@@ -4111,8 +4111,53 @@ void IPolyfaceConstruction::AddRegion (CurveVectorCR region)
 
 #endif
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+void IPolyfaceConstruction::AddTriangles (bvector<DTriangle3d> const &triangles, bool reverse, bvector<DTriangle3d> const *paramTriangles)
+    {
+    bool needNormals = NeedNormals ();
+    bool needParams = NeedParams ();
+    if (reverse)
+        ToggleIndexOrderAndNormalReversal ();
+    for (size_t i = 0; i < triangles.size (); i++)
+        {
+        auto &triangle = triangles[i];
+        auto normal = DVec3d::FromCrossProductToPoints (triangle.point[0], triangle.point[1], triangle.point[2]).ValidatedNormalize ();
+        if (normal.IsValid ())
+            {
+            auto pointIndexA = FindOrAddPoint (triangle.point[0]);
+            auto pointIndexB = FindOrAddPoint (triangle.point[1]);
+            auto pointIndexC = FindOrAddPoint (triangle.point[2]);
+            AddPointIndexTriangle (pointIndexA, true, pointIndexB, true, pointIndexC, true);
 
-
+            if (needNormals)
+                {
+                auto normalIndex = FindOrAddNormal (normal);
+                AddNormalIndexTriangle (normalIndex, normalIndex, normalIndex);
+                }
+            if (needParams)
+                {
+                DPoint2d uv0 = DPoint2d::From (0,0);
+                DPoint2d uv1 = DPoint2d::From (1,0);
+                DPoint2d uv2 = DPoint2d::From (0,1);
+                if (paramTriangles != nullptr && i < paramTriangles->size ())
+                    {
+                    DTriangle3d paramTriangle = paramTriangles->at(i);
+                    uv0 = DPoint2d::From (paramTriangle.point[0]);
+                    uv1 = DPoint2d::From (paramTriangle.point[1]);
+                    uv2 = DPoint2d::From (paramTriangle.point[2]);
+                    }
+                auto paramIndex0 = FindOrAddParam (uv0);
+                auto paramIndex1 = FindOrAddParam (uv1);
+                auto paramIndex2 = FindOrAddParam (uv2);
+                AddParamIndexTriangle (paramIndex0, paramIndex1, paramIndex2);
+                }
+            }
+        }
+    if (reverse)
+        ToggleIndexOrderAndNormalReversal ();
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
