@@ -41,8 +41,11 @@ TEST_F(UnitsTests, BasicECUnitCreation)
     EXPECT_EQ(phenom, unit->GetPhenomenon());
     EXPECT_EQ(system, unit->GetUnitSystem());
     EXPECT_EQ(10.0, unit->GetNumerator());
+    EXPECT_TRUE(unit->HasNumerator());
     EXPECT_EQ(1.0, unit->GetDenominator());
+    EXPECT_TRUE(unit->HasDenominator());
     EXPECT_EQ(1.0, unit->GetOffset());
+    EXPECT_TRUE(unit->HasOffset());
     EXPECT_TRUE(unit->HasUnitSystem());
 
     auto testECUnit = schema->GetUnitCP("ExampleUnit");
@@ -108,7 +111,9 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
                 EXPECT_EQ(nullptr, unit->GetUnitSystem());
                 EXPECT_DOUBLE_EQ(10.0, unit->GetNumerator());
+                EXPECT_TRUE(unit->HasNumerator());
                 EXPECT_DOUBLE_EQ(1.0, unit->GetDenominator());
+                EXPECT_TRUE(unit->HasDenominator());
                 EXPECT_FALSE(unit->HasUnitSystem());
                 break;
             case 1:
@@ -178,6 +183,10 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
                 EXPECT_EQ(system, unit->GetUnitSystem());
                 EXPECT_TRUE(unit->HasUnitSystem());
+                EXPECT_NE(nullptr, unit->GetInvertingUnit());
+                EXPECT_FALSE(unit->HasNumerator());
+                EXPECT_FALSE(unit->HasDenominator());
+                EXPECT_FALSE(unit->HasOffset());
                 break;
             }
         curCount++;
