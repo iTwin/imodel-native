@@ -77,6 +77,10 @@ ChangeSetsTaskPtr Briefcase::Pull(Http::Request::ProgressCallbackCR callback, Ta
 
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "ChangeSets pulled successfully.");
+
+        // If some previous pushes failed - try to update codes/locks now
+        m_imodelConnection->PushPendingCodesLocks(m_db)->Then([=](StatusResultCR result) {});
+
         return result;
         });
     }
@@ -130,9 +134,9 @@ StatusTaskPtr Briefcase::Merge(ChangeSets const& changeSets, ICancellationTokenP
 //@bsimethod                                     Gintare.Grazulyte             12/2017
 //---------------------------------------------------------------------------------------
 StatusTaskPtr Briefcase::Push(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR uploadCallback, 
-                              ICancellationTokenPtr cancellationToken) const
+                              ICancellationTokenPtr cancellationToken, ConflictsInfoPtr conflictsInfo) const
     {
-    return Push(description, relinquishCodesLocks, uploadCallback, IBriefcaseManager::ResponseOptions::None, cancellationToken);
+    return Push(description, relinquishCodesLocks, uploadCallback, IBriefcaseManager::ResponseOptions::None, cancellationToken, conflictsInfo);
     }
 
 //TODO: all of the parameters must be optional
@@ -145,7 +149,8 @@ Utf8CP description,
 bool relinquishCodesLocks, 
 Http::Request::ProgressCallbackCR uploadCallback, 
 IBriefcaseManager::ResponseOptions options,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr cancellationToken,
+ConflictsInfoPtr conflictsInfo
 ) const
     {
     const Utf8String methodName = "Briefcase::Push";
@@ -208,7 +213,7 @@ ICancellationTokenPtr cancellationToken
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::BeforePushChangeSetToServer);
 #endif
-    return m_imodelConnection->Push(changeSet, *m_db, relinquishCodesLocks, uploadCallback, options, cancellationToken)
+    return m_imodelConnection->Push(changeSet, *m_db, relinquishCodesLocks, uploadCallback, options, cancellationToken, conflictsInfo)
         ->Then<StatusResult>([=](StatusResultCR pushResult)
         {
 #if defined (ENABLE_BIM_CRASH_TESTS)
@@ -288,9 +293,9 @@ ChangeSetsTaskPtr Briefcase::PullAndMerge(Http::Request::ProgressCallbackCR call
 ChangeSetsTaskPtr Briefcase::PullMergeAndPush(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback,
                                               Http::Request::ProgressCallbackCR uploadCallback,
                                               ICancellationTokenPtr cancellationToken,
-                                              int attemptsCount)
+                                              int attemptsCount, ConflictsInfoPtr conflictsInfo)
     {
-    return PullMergeAndPush(description, relinquishCodesLocks, downloadCallback, uploadCallback, IBriefcaseManager::ResponseOptions::None, cancellationToken, attemptsCount);
+    return PullMergeAndPush(description, relinquishCodesLocks, downloadCallback, uploadCallback, IBriefcaseManager::ResponseOptions::None, cancellationToken, attemptsCount, conflictsInfo);
     }
 
 //TODO: all of the parameters must be optional
@@ -301,11 +306,11 @@ ChangeSetsTaskPtr Briefcase::PullMergeAndPush(Utf8CP description, bool relinquis
                                               Http::Request::ProgressCallbackCR uploadCallback,
                                               IBriefcaseManager::ResponseOptions options,
                                               ICancellationTokenPtr cancellationToken, 
-                                              int attemptsCount)
+                                              int attemptsCount, ConflictsInfoPtr conflictsInfo)
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPush";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, options, cancellationToken, attemptsCount);
+    return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, options, cancellationToken, attemptsCount, 1, 0, conflictsInfo);
     }
 
 //---------------------------------------------------------------------------------------
@@ -380,12 +385,13 @@ IBriefcaseManager::ResponseOptions options,
 ICancellationTokenPtr cancellationToken, 
 int attemptsCount, 
 int attempt, 
-int delay
+int delay,
+ConflictsInfoPtr conflictsInfo
 )
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPushRepeated";
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Attempt %d/%d.", attempt, attemptsCount);
-    auto result = PullMergeAndPushInternal(description, relinquishCodesLocks, downloadCallback, uploadCallback, options, cancellationToken)->GetResult();
+    auto result = PullMergeAndPushInternal(description, relinquishCodesLocks, downloadCallback, uploadCallback, options, cancellationToken, conflictsInfo)->GetResult();
 
     if (result.IsSuccess())
         {
@@ -432,7 +438,7 @@ int delay
 
     m_lastPullMergeAndPushEvent = Event::EventType::UnknownEventType;
     return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, options, cancellationToken, attemptsCount,
-                                    attempt + 1, 0);
+                                    attempt + 1, 0, conflictsInfo);
     }
 
 //---------------------------------------------------------------------------------------
@@ -464,7 +470,8 @@ bool relinquishCodesLocks,
 Http::Request::ProgressCallbackCR downloadCallback,
 Http::Request::ProgressCallbackCR uploadCallback,
 IBriefcaseManager::ResponseOptions options,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr cancellationToken,
+ConflictsInfoPtr conflictsInfo
 ) const
     {
     const Utf8String methodName = "Briefcase::PullMergeAndPushInternal";
@@ -506,7 +513,7 @@ ICancellationTokenPtr cancellationToken
             return;
             }
 
-        Push(description, relinquishCodesLocks, uploadCallback, options, cancellationToken)->Then([=](StatusResultCR pushResult)
+        Push(description, relinquishCodesLocks, uploadCallback, options, cancellationToken, conflictsInfo)->Then([=](StatusResultCR pushResult)
             {
             if (!pushResult.IsSuccess())
                 {

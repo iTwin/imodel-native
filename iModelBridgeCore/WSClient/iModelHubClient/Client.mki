@@ -38,6 +38,9 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiSourceDir)FileLock.h                         \
                                 $(iModelHubClientMkiSourceDir)MultiProgressCallbackHandler.h     \
                                 $(iModelHubClientMkiSourceDir)Events/EventManager.h              \
+                                $(iModelHubClientMkiSourceDir)JsonFormatters/MultiLockFormatter.h \
+                                $(iModelHubClientMkiSourceDir)JsonFormatters/MultiCodeFormatter.h \
+                                $(iModelHubClientMkiSourceDir)Storage/PendingChangeSetStorage.h   \
                                 $(iModelHubClientMkiPublicApiDir)Client/FileAccessKey.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/BaseFileInfo.h           \
                                 $(iModelHubClientMkiPublicApiDir)Client/FileInfo.h               \
@@ -51,6 +54,7 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Client/StatisticsManager.h      \
                                 $(iModelHubClientMkiPublicApiDir)Client/ChunkedWSChangeset.h     \
                                 $(iModelHubClientMkiPublicApiDir)Client/ThumbnailsManager.h      \
+                                $(iModelHubClientMkiPublicApiDir)Client/ConflictsInfo.h
 
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -122,4 +126,13 @@ $(o)StatisticsManager$(oext)               : $(iModelHubClientMkiSourceDir)Stati
 
 $(o)ChunkedWSChangeset$(oext)              : $(iModelHubClientMkiSourceDir)ChunkedWSChangeset.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
+$(o)MultiLockFormatter$(oext)              : $(iModelHubClientMkiSourceDir)JsonFormatters/MultiLockFormatter.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)MultiCodeFormatter$(oext)              : $(iModelHubClientMkiSourceDir)JsonFormatters/MultiCodeFormatter.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)PendingChangeSetStorage$(oext)         : $(iModelHubClientMkiSourceDir)Storage/PendingChangeSetStorage.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ConflictsInfo$(oext)                   : $(iModelHubClientMkiSourceDir)ConflictsInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
 $(o)ThumbnailsManager$(oext)               : $(iModelHubClientMkiSourceDir)ThumbnailsManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+

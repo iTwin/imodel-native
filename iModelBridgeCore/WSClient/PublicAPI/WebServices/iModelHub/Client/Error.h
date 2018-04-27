@@ -58,6 +58,7 @@ public:
         ChangeSetAlreadyHasVersion,
         VersionAlreadyExists,
         QueryIdsNotSpecified,
+        ConflictsAggregate,
 
         //Long Running Processes Errors
         FileIsNotYetInitialized = 100,

@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/iModelManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/iModelManager.h>
@@ -16,109 +16,6 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 iModelManager::iModelManager(iModelConnectionPtr connection) : m_connection(connection) 
     { 
     SetCancellationToken([]()->ICancellationTokenPtr { return nullptr; });
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                    Eligijus.Mauragas               01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SetCodesLocksStates(IBriefcaseManager::Response& response, IBriefcaseManager::ResponseOptions options, JsonValueCR deniedLocks, 
-                         JsonValueCR deniedCodes)
-    {
-    if (IBriefcaseManager::ResponseOptions::None != (IBriefcaseManager::ResponseOptions::LockState & options))
-        {
-        for (auto const& lockJson : deniedLocks)
-            {
-            auto rapidJson = ToRapidJson(lockJson);
-            if (!AddLockInfoToListFromErrorJson(response.LockStates(), rapidJson))
-                continue;//NEEDSWORK: log an error
-            }
-        }
-    if (IBriefcaseManager::ResponseOptions::None != (IBriefcaseManager::ResponseOptions::CodeState & options))
-        {
-        for (auto const& codeJson : deniedCodes)
-            {
-            DgnCode                  code;
-            DgnCodeState             codeState;
-            BeSQLite::BeBriefcaseId  briefcaseId;
-            auto rapidJson = ToRapidJson(codeJson);
-            if (!GetCodeFromServerJson(rapidJson, code, codeState, briefcaseId))
-                continue;//NEEDSWORK: log an error
-
-            AddCodeInfoToList(response.CodeStates(), code, codeState, briefcaseId);
-            }
-        }
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                    Algirdas.Mikoliunas             07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus iModelManager::GetResponseStatus(Result<void> result)
-    {
-    static bmap<Error::Id, RepositoryStatus> map;
-    if (map.empty())
-        {
-        map[Error::Id::LockOwnedByAnotherBriefcase]    = RepositoryStatus::LockAlreadyHeld;
-        map[Error::Id::PullIsRequired]                 = RepositoryStatus::RevisionRequired;
-        map[Error::Id::ChangeSetDoesNotExist]          = RepositoryStatus::InvalidRequest;
-        map[Error::Id::CodeStateInvalid]               = RepositoryStatus::InvalidRequest;
-        map[Error::Id::CodeReservedByAnotherBriefcase] = RepositoryStatus::CodeUnavailable;
-        map[Error::Id::CodeDoesNotExist]               = RepositoryStatus::CodeNotReserved;
-        map[Error::Id::InvalidPropertiesValues]        = RepositoryStatus::InvalidRequest;
-        map[Error::Id::iModelIsLocked]                 = RepositoryStatus::RepositoryIsLocked;
-        }
-
-    auto it = map.find(result.GetError().GetId());
-    if (it != map.end())
-        {
-        return it->second;
-        }
-
-    return RepositoryStatus::ServerUnavailable;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                    Algirdas.Mikoliunas             07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManager::Response iModelManager::HandleError(Request const& request, Result<void> result, IBriefcaseManager::RequestPurpose purpose)
-    {
-    Response           response(purpose, request.Options(), RepositoryStatus::ServerUnavailable);
-    Error&  error = result.GetError();
-
-    RepositoryStatus responseStatus = GetResponseStatus(result);
-    if (RepositoryStatus::LockAlreadyHeld == responseStatus)
-        {
-        response.SetResult(responseStatus);
-        JsonValueCR errorData = error.GetExtendedData();
-        SetCodesLocksStates(response, request.Options(), errorData[ServerSchema::Property::ConflictingLocks], nullptr);
-        }
-    else if (RepositoryStatus::RevisionRequired == responseStatus)
-        {
-        response.SetResult(responseStatus);
-        JsonValueCR errorData = error.GetExtendedData();
-        SetCodesLocksStates(response, request.Options(), errorData[ServerSchema::Property::LocksRequiresPull], 
-                            errorData[ServerSchema::Property::CodesRequiresPull]);
-        }
-    else if (RepositoryStatus::InvalidRequest == responseStatus || RepositoryStatus::RepositoryIsLocked == responseStatus)
-        {
-        response.SetResult(responseStatus);
-        }
-    else if (RepositoryStatus::CodeUnavailable == responseStatus)
-        {
-        response.SetResult(responseStatus);
-        JsonValueCR errorData = error.GetExtendedData();
-        auto errorPropertyName = Error::Id::CodeStateInvalid == error.GetId()
-            ? ServerSchema::Property::CodeStateInvalid
-            : ServerSchema::Property::ConflictingCodes;
-        SetCodesLocksStates(response, request.Options(), nullptr, errorData[errorPropertyName]);
-        }
-    else if (RepositoryStatus::CodeNotReserved == responseStatus)
-        {
-        response.SetResult(responseStatus);
-        JsonValueCR errorData = error.GetExtendedData();
-        SetCodesLocksStates(response, request.Options(), nullptr, errorData[ServerSchema::Property::CodesNotFound]);
-        }
-
-    return response;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -148,7 +45,7 @@ IBriefcaseManager::Response iModelManager::_ProcessRequest(Request const& req, D
         return IBriefcaseManager::Response(purpose, req.Options(), RepositoryStatus::Success);
         }
 
-    return HandleError(req, *result, purpose);
+    return ConvertErrorResponse(req, *result, purpose);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -170,7 +67,7 @@ RepositoryStatus iModelManager::_Demote(DgnLockSet const& locks, DgnCodeSet cons
         }
     else
         {
-        return GetResponseStatus(*result);
+        return GetErrorResponseStatus(*result);
         }
     }
 
@@ -192,7 +89,7 @@ RepositoryStatus iModelManager::_Relinquish(Resources which, DgnDbR db)
         }
     else
         {
-        return GetResponseStatus(*result);//NEEDSWORK: Use appropriate status
+        return GetErrorResponseStatus(*result);//NEEDSWORK: Use appropriate status
         }
     }
 
