@@ -2,12 +2,13 @@
 |
 |     $Source: iModelHubClient/Utils.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Utils.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <WebServices/iModelHub/Client/iModelConnection.h>
+#include <WebServices/Cache/Util/JsonUtil.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -30,6 +31,14 @@ struct LocationsAdmin : public Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin
         LocationsAdmin(BeFileNameCR temp, BeFileNameCR assets) : m_temp(temp), m_assets(assets) {}
         virtual ~LocationsAdmin() {}
     };
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             07/2017
+//---------------------------------------------------------------------------------------
+Utf8String FormatBeInt64Id(BeInt64Id int64Value)
+    {
+    return int64Value.ToString(BeInt64Id::UseHex::Yes);
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
@@ -341,6 +350,109 @@ rapidjson::Document ToRapidJson(JsonValueCR source)
     target.Parse<0>(sourceStr.c_str());
     BeAssert(!target.HasParseError());
     return target;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Algirdas.Mikoliunas             07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RepositoryStatus GetErrorResponseStatus(Result<void> result)
+    {
+    static bmap<Error::Id, RepositoryStatus> map;
+    if (map.empty())
+        {
+        map[Error::Id::LockOwnedByAnotherBriefcase]    = RepositoryStatus::LockAlreadyHeld;
+        map[Error::Id::PullIsRequired]                 = RepositoryStatus::RevisionRequired;
+        map[Error::Id::ChangeSetDoesNotExist]          = RepositoryStatus::InvalidRequest;
+        map[Error::Id::CodeStateInvalid]               = RepositoryStatus::InvalidRequest;
+        map[Error::Id::CodeReservedByAnotherBriefcase] = RepositoryStatus::CodeUnavailable;
+        map[Error::Id::CodeDoesNotExist]               = RepositoryStatus::CodeNotReserved;
+        map[Error::Id::InvalidPropertiesValues]        = RepositoryStatus::InvalidRequest;
+        map[Error::Id::iModelIsLocked]                 = RepositoryStatus::RepositoryIsLocked;
+        }
+
+    auto it = map.find(result.GetError().GetId());
+    if (it != map.end())
+        {
+        return it->second;
+        }
+
+    return RepositoryStatus::ServerUnavailable;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Eligijus.Mauragas               01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void SetCodesLocksStates(IBriefcaseManager::Response& response, IBriefcaseManager::ResponseOptions options, JsonValueCR deniedLocks, 
+                         JsonValueCR deniedCodes)
+    {
+    if (IBriefcaseManager::ResponseOptions::None != (IBriefcaseManager::ResponseOptions::LockState & options))
+        {
+        for (auto const& lockJson : deniedLocks)
+            {
+            auto rapidJson = ToRapidJson(lockJson);
+            if (!AddLockInfoToListFromErrorJson(response.LockStates(), rapidJson))
+                continue;//NEEDSWORK: log an error
+            }
+        }
+    if (IBriefcaseManager::ResponseOptions::None != (IBriefcaseManager::ResponseOptions::CodeState & options))
+        {
+        for (auto const& codeJson : deniedCodes)
+            {
+            DgnCode                  code;
+            DgnCodeState             codeState;
+            BeSQLite::BeBriefcaseId  briefcaseId;
+            auto rapidJson = ToRapidJson(codeJson);
+            if (!GetCodeFromServerJson(rapidJson, code, codeState, briefcaseId))
+                continue;//NEEDSWORK: log an error
+
+            AddCodeInfoToList(response.CodeStates(), code, codeState, briefcaseId);
+            }
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Algirdas.Mikoliunas             07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IBriefcaseManager::Response ConvertErrorResponse(IBriefcaseManager::Request const& request, Result<void> result, IBriefcaseManager::RequestPurpose purpose)
+    {
+    IBriefcaseManager::Response response(purpose, request.Options(), RepositoryStatus::ServerUnavailable);
+    Error&  error = result.GetError();
+
+    RepositoryStatus responseStatus = GetErrorResponseStatus(result);
+    if (RepositoryStatus::LockAlreadyHeld == responseStatus)
+        {
+        response.SetResult(responseStatus);
+        }
+    else if (RepositoryStatus::RevisionRequired == responseStatus)
+        {
+        response.SetResult(responseStatus);
+        }
+    else if (RepositoryStatus::InvalidRequest == responseStatus || RepositoryStatus::RepositoryIsLocked == responseStatus)
+        {
+        response.SetResult(responseStatus);
+        }
+    else if (RepositoryStatus::CodeUnavailable == responseStatus)
+        {
+        response.SetResult(responseStatus);
+        }
+    else if (RepositoryStatus::CodeNotReserved == responseStatus)
+        {
+        response.SetResult(responseStatus);
+        }
+
+    JsonValueCR errorData = error.GetExtendedData();
+    if (errorData.isMember(ServerSchema::Property::ConflictingLocks))
+        SetCodesLocksStates(response, request.Options(), errorData[ServerSchema::Property::ConflictingLocks], nullptr);
+    if (errorData.isMember(ServerSchema::Property::LocksRequiresPull) || errorData.isMember(ServerSchema::Property::CodesRequiresPull))
+        SetCodesLocksStates(response, request.Options(), errorData[ServerSchema::Property::LocksRequiresPull], errorData[ServerSchema::Property::CodesRequiresPull]);
+    if (errorData.isMember(ServerSchema::Property::CodeStateInvalid))
+        SetCodesLocksStates(response, request.Options(), nullptr, errorData[ServerSchema::Property::CodeStateInvalid]);
+    if (errorData.isMember(ServerSchema::Property::ConflictingCodes))
+        SetCodesLocksStates(response, request.Options(), nullptr, errorData[ServerSchema::Property::ConflictingCodes]);
+    if (errorData.isMember(ServerSchema::Property::CodesNotFound))
+        SetCodesLocksStates(response, request.Options(), nullptr, errorData[ServerSchema::Property::CodesNotFound]);
+
+    return response;
     }
 
 //---------------------------------------------------------------------------------------

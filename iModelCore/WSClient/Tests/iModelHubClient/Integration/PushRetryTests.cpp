@@ -397,3 +397,97 @@ TEST_F(PushRetryTests, ConfirmChangeSetTimeoutsButSucceedsOnServer)
     ChangeSetsResult pushResult = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
     EXPECT_SUCCESS(pushResult);
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Algirdas.Mikoliunas             04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PushRetryTests, CodesLocksPushAfterChangesetCreatedTimeouts)
+    {
+    //Create model in m_briefcase. This should also acquire locks automatically.
+    PhysicalModelPtr model = CreateModel(TestCodeName().c_str(), m_briefcase->GetDgnDb());
+    IHttpHandlerPtr orginalHandler = m_connection->GetHttpHandler();
+
+    std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
+    mockHandler->ForAnyRequest([=](Http::RequestCR request)
+        {
+        auto requestBody = request.GetRequestBody();
+        if (!requestBody.IsNull() && requestBody->AsString().ContainsI("ConflictStrategy"))
+            {
+            return ServerErrorResponse(request);
+            }
+
+        return orginalHandler->_PerformRequest(request)->GetResult();
+        });
+    
+    // Set other wsclient
+    IWSRepositoryClientPtr newClient = iModelHubHelpers::CreateWSClient(s_info, mockHandler);
+    m_connection->SetRepositoryClient(newClient);
+
+    // Push changeset, codes/locks push fails
+    ChangeSetsResult pushResult = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
+    EXPECT_SUCCESS(pushResult);
+
+    auto imodelManager1 = IntegrationTestsBase::_GetRepositoryManager(m_briefcase->GetDgnDb());
+    ExpectCodeState(CreateCodeReserved(model->GetModeledElement()->GetCode(), m_briefcase->GetDgnDb()), imodelManager1);
+
+    // Set back to normal client
+    m_connection->SetRepositoryClient(m_originalClient);
+
+    // Second PullMergeAndPush should upload pending codes/locks
+    pushResult = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
+    EXPECT_SUCCESS(pushResult);
+    ExpectCodeState(CreateCodeUsed(model->GetModeledElement()->GetCode(), m_briefcase->GetLastChangeSetPulled()), imodelManager1);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Algirdas.Mikoliunas             04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PushRetryTests, CodesLocksArePushedWithThirdPullMergeAndPush)
+    {
+    //Create model in m_briefcase. This should also acquire locks automatically.
+    PhysicalModelPtr model = CreateModel(TestCodeName().c_str(), m_briefcase->GetDgnDb());
+    IHttpHandlerPtr orginalHandler = m_connection->GetHttpHandler();
+
+    std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
+    mockHandler->ForAnyRequest([=](Http::RequestCR request)
+        {
+        auto requestBody = request.GetRequestBody();
+        if (!requestBody.IsNull() && requestBody->AsString().ContainsI("ConflictStrategy"))
+            {
+            return ServerErrorResponse(request);
+            }
+
+        return orginalHandler->_PerformRequest(request)->GetResult();
+        });
+    
+    // Set other wsclient
+    IWSRepositoryClientPtr newClient = iModelHubHelpers::CreateWSClient(s_info, mockHandler);
+    m_connection->SetRepositoryClient(newClient);
+
+    // Push changeset, codes/locks push fails
+    ChangeSetsResult pushResult = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
+    EXPECT_SUCCESS(pushResult);
+
+    auto imodelManager1 = IntegrationTestsBase::_GetRepositoryManager(m_briefcase->GetDgnDb());
+    ExpectCodeState(CreateCodeReserved(model->GetModeledElement()->GetCode(), m_briefcase->GetDgnDb()), imodelManager1);
+
+    // Do some more changes to iModel
+    PhysicalModelPtr model2 = CreateModel(TestCodeName(2).c_str(), m_briefcase->GetDgnDb());
+
+    // Second PullMergeAndPush codes/locks push also fails
+    pushResult = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
+    EXPECT_SUCCESS(pushResult);
+
+    // Check both changesets codes are still reserved
+    ExpectCodeState(CreateCodeReserved(model->GetModeledElement()->GetCode(), m_briefcase->GetDgnDb()), imodelManager1);
+    ExpectCodeState(CreateCodeReserved(model2->GetModeledElement()->GetCode(), m_briefcase->GetDgnDb()), imodelManager1);
+
+    // Set back to normal client
+    m_connection->SetRepositoryClient(m_originalClient);
+
+    // Second PullMergeAndPush should uploads pending codes/locks
+    pushResult = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
+    EXPECT_SUCCESS(pushResult);
+    ExpectCodeState(CreateCodeUsed(model->GetModeledElement()->GetCode(), m_briefcase->GetLastChangeSetPulled()), imodelManager1);
+    ExpectCodeState(CreateCodeUsed(model2->GetModeledElement()->GetCode(), m_briefcase->GetLastChangeSetPulled()), imodelManager1);
+    }

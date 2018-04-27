@@ -27,6 +27,7 @@
 #include <WebServices/iModelHub/Client/StatisticsManager.h>
 #include <WebServices/iModelHub/Client/ThumbnailsManager.h>
 #include <WebServices/iModelHub/Client/ChunkedWSChangeset.h>
+#include <WebServices/iModelHub/Client/ConflictsInfo.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -129,6 +130,31 @@ public:
         m_valuePattern(valuePattern), m_value("") {}
     CodeSequence(Dgn::CodeSpecId codeSpecId, Utf8StringCR scope, Utf8StringCR value, Utf8StringCR valuePattern) : m_codeSpecId(codeSpecId), 
         m_scope(scope), m_valuePattern(valuePattern), m_value(value) {}
+};
+
+//=======================================================================================
+//@bsistruct                                      Algirdas.Mikoliunas          03/2018
+//=======================================================================================
+enum class ConflictStrategy : uint8_t
+{
+    Default = 0, //!< No changes applied if conflict occurred
+    Continue = 1 << 0, //!< If conflict occurred, valid changes are applied and conflicts are returned for the user
+};
+
+//=======================================================================================
+//@bsistruct                                      Algirdas.Mikoliunas          03/2018
+//=======================================================================================
+struct ChangesetResponseOptions
+{
+    Dgn::IBriefcaseManager::ResponseOptions m_options;
+    ConflictStrategy m_conflictStrategy;
+
+public:
+    ChangesetResponseOptions(Dgn::IBriefcaseManager::ResponseOptions options, ConflictStrategy confclitStrategy = ConflictStrategy::Default):
+        m_options(options), m_conflictStrategy(confclitStrategy) {}
+
+    Dgn::IBriefcaseManager::ResponseOptions GetBriefcaseResponseOptions() const { return m_options; };
+    ConflictStrategy GetConflictStrategy() const { return m_conflictStrategy; };
 };
 
 //=======================================================================================
@@ -367,41 +393,52 @@ private:
     WSQuery CreateBetweenChangeSetsQuery(Utf8StringCR firstchangeSetId, Utf8StringCR secondChangeSetId, BeSQLite::BeGuidCR fileId) const;
 
     //! Sends a request from changeset.
-    StatusTaskPtr SendChangesetRequest(std::shared_ptr<WSChangeset> changeset, 
-                                       IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
-                                       ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Sends a request from changeset.
-    StatusTaskPtr SendChangesetRequestInternal(std::shared_ptr<WSChangeset> changeset, 
-                                               IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
-                                               ICancellationTokenPtr cancellationToken = nullptr, 
-                                               IWSRepositoryClient::RequestOptionsPtr requestOptions = nullptr) const;
-
-    StatusTaskPtr SendChunkedChangesetRequestRecursive(ChunkedWSChangeset const& changesets,
-        IBriefcaseManager::ResponseOptions options,
-        ICancellationTokenPtr cancellationToken,
-        IWSRepositoryClient::RequestOptionsPtr requestOptions,
-        uint64_t changesetIndex,
-        uint8_t attempt) const;
-
-    StatusTaskPtr SendChunkedChangesetRequestInternal(ChunkedWSChangeset const& changesets,
-        IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
+    StatusTaskPtr SendChangesetRequest(
+        std::shared_ptr<WSChangeset> changeset,
+        ChangesetResponseOptions const options = ChangesetResponseOptions(Dgn::IBriefcaseManager::ResponseOptions::All, ConflictStrategy::Default),
         ICancellationTokenPtr cancellationToken = nullptr,
         IWSRepositoryClient::RequestOptionsPtr requestOptions = nullptr) const;
 
+    //! Sends a request from changeset.
+    StatusTaskPtr SendChangesetRequestWithRetry(
+        std::shared_ptr<WSChangeset> changeset,
+        ChangesetResponseOptions options = ChangesetResponseOptions(Dgn::IBriefcaseManager::ResponseOptions::All, ConflictStrategy::Default),
+        ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    StatusTaskPtr SendChunkedChangesetRequestRecursive(
+        ChunkedWSChangeset const& changesets,
+        ChangesetResponseOptions options,
+        ICancellationTokenPtr cancellationToken,
+        IWSRepositoryClient::RequestOptionsPtr requestOptions,
+        uint64_t changesetIndex,
+        uint8_t attempt,
+        uint8_t const attemptsLimit,
+        StatusResultPtr finalResult, 
+        ConflictsInfoPtr conflictsInfo) const;
+
+    StatusTaskPtr SendChunkedChangesetRequest(
+        ChunkedWSChangeset const& changesets,
+        ChangesetResponseOptions options = ChangesetResponseOptions(Dgn::IBriefcaseManager::ResponseOptions::All, ConflictStrategy::Default),
+        ICancellationTokenPtr cancellationToken = nullptr,
+        IWSRepositoryClient::RequestOptionsPtr requestOptions = nullptr,
+        uint8_t const attemptsLimit = 3,
+        ConflictsInfoPtr conflictsInfo = nullptr) const;
+
     //! Initializes the changeSet.
-    StatusTaskPtr InitializeChangeSet(Dgn::DgnRevisionPtr changeSet, Dgn::DgnDbCR dgndb, JsonValueR pushJson, ObjectId changeSetObjectId, 
+    StatusTaskPtr InitializeChangeSet(Dgn::DgnRevisionPtr changeSet, Dgn::DgnDbR dgndb, JsonValueR pushJson, ObjectId changeSetObjectId, 
                                       bool relinquishCodesLocks, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
-                                      ICancellationTokenPtr cancellationToken = nullptr) const;
+                                      ICancellationTokenPtr cancellationToken = nullptr, ConflictsInfoPtr conflictsInfo = nullptr) const;
+
+    StatusTaskPtr PushPendingCodesLocks(Dgn::DgnDbPtr dgndb, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     // Wait while bim file is initialized
     void WaitForInitializedBIMFile(BeSQLite::BeGuid fileGuid, FileResultPtr finalResult, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Push this ChangeSet file to server.
-    StatusTaskPtr Push(DgnRevisionPtr changeSet, Dgn::DgnDbCR dgndb, bool relinquishCodesLocks, 
+    StatusTaskPtr Push(DgnRevisionPtr changeSet, Dgn::DgnDbR dgndb, bool relinquishCodesLocks, 
                        Http::Request::ProgressCallbackCR callback = nullptr,
                        IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
-                       ICancellationTokenPtr cancellationToken = nullptr) const;
+                       ICancellationTokenPtr cancellationToken = nullptr, ConflictsInfoPtr conflictsInfo = nullptr) const;
 
     static Json::Value CreateFileJson(FileInfoCR fileInfo);
 

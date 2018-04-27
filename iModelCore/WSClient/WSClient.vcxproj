@@ -181,6 +181,7 @@
     <ClCompile Include="iModelHubClient\Client.cpp" />
     <ClCompile Include="iModelHubClient\ClientHelper.cpp" />
     <ClCompile Include="iModelHubClient\CodeAdmin.cpp" />
+    <ClCompile Include="iModelHubClient\ConflictsInfo.cpp" />
     <ClCompile Include="iModelHubClient\FileAccessKey.cpp" />
     <ClCompile Include="iModelHubClient\iModelAdmin.cpp" />
     <ClCompile Include="iModelHubClient\iModelManager.cpp" />
@@ -197,8 +198,11 @@
     <ClCompile Include="iModelHubClient\Events\ChangeSetPrePushEvent.cpp" />
     <ClCompile Include="iModelHubClient\Events\ChangeSetPostPushEvent.cpp" />
     <ClCompile Include="iModelHubClient\Events\VersionEvent.cpp" />
+    <ClCompile Include="iModelHubClient\JsonFormatters\MultiCodeFormatter.cpp" />
+    <ClCompile Include="iModelHubClient\JsonFormatters\MultiLockFormatter.cpp" />
     <ClCompile Include="iModelHubClient\MultiProgressCallbackHandler.cpp" />
     <ClCompile Include="iModelHubClient\StatisticsInfo.cpp" />
+    <ClCompile Include="iModelHubClient\Storage\PendingChangeSetStorage.cpp" />
     <ClCompile Include="iModelHubClient\ThumbnailsManager.cpp" />
     <ClCompile Include="iModelHubClient\UserInfo.cpp" />
     <ClCompile Include="iModelHubClient\UserInfoManager.cpp" />
@@ -304,7 +308,10 @@
     <ClInclude Include="Connect\DelegationTokenProvider.h" />
     <ClInclude Include="Connect\WrapperTokenProvider.h" />
     <ClInclude Include="iModelHubClient\Error.xliff.h" />
+    <ClInclude Include="iModelHubClient\JsonFormatters\MultiCodeFormatter.h" />
+    <ClInclude Include="iModelHubClient\JsonFormatters\MultiLockFormatter.h" />
     <ClInclude Include="iModelHubClient\MultiProgressCallbackHandler.h" />
+    <ClInclude Include="iModelHubClient\Storage\PendingChangeSetStorage.h" />
     <ClInclude Include="iModelHubClient\Utils.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\SyncNotifier.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\RequestOptions.h" />
@@ -315,6 +322,7 @@
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChangeSetCacheManager.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChunkedWSChangeset.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ClientHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ConflictsInfo.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\FileAccessKey.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\StatisticsInfo.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\StatisticsManager.h" />

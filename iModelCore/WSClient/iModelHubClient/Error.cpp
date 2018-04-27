@@ -57,6 +57,7 @@ Error::Id Error::ErrorIdFromString(Utf8StringCR errorIdString)
         map["iModelHub.FailedToGetProjectPermissions"]             = Id::FailedToGetProjectPermissions;
         map["iModelHub.ChangeSetAlreadyHasVersion"]                = Id::ChangeSetAlreadyHasVersion;
         map["iModelHub.VersionAlreadyExists"]                      = Id::VersionAlreadyExists;
+        map["iModelHub.ConflictsAggregate"]                        = Id::ConflictsAggregate;
         }
 
     auto it = map.find(errorIdString);
@@ -108,6 +109,7 @@ bool Error::RequiresExtendedData(Id id)
         case Id::PullIsRequired:
         case Id::CodeStateInvalid:
         case Id::CodeReservedByAnotherBriefcase:
+        case Id::ConflictsAggregate:
             return true;
         default:
             return false;
@@ -217,6 +219,7 @@ Utf8StringCR Error::GetDefaultMessage(Error::Id id)
         map[Id::MergeSchemaChangesOnOpen] = ErrorLocalizedString(MESSAGE_MergeSchemaChangesOnOpen);
         map[Id::ReverseOrReinstateSchemaChangesOnOpen] = ErrorLocalizedString(MESSAGE_ReverseOrReinstateSchemaChangesOnOpen);
         map[Id::ChangeSetDoesNotExist] = ErrorLocalizedString(MESSAGE_ChangeSetDoesNotExist);
+        map[Id::ConflictsAggregate] = ErrorLocalizedString(MESSAGE_ConflictsAggregate);
 
         map[Id::EventCallbackAlreadySubscribed] = ErrorLocalizedString(MESSAGE_EventCallbackAlreadySubscribed);
         map[Id::EventServiceSubscribingError] = ErrorLocalizedString(MESSAGE_EventServiceSubscribingError);
