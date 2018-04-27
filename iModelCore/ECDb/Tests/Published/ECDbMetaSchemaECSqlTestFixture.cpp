@@ -934,7 +934,11 @@ void ECDbMetaSchemaECSqlTestFixture::AssertUnitDef(ECUnitCR expected, ECSqlState
 
         if (colName.EqualsI("Definition"))
             {
-            ASSERT_STREQ(expected.GetDefinition().c_str(), val.GetText()) << "UnitDef.Definition of " << expected.GetFullName();
+            if (expected.GetDefinition().empty())
+                ASSERT_TRUE(val.IsNull()) << "UnitDef.Definition of " << expected.GetFullName();
+            else
+                ASSERT_STREQ(expected.GetDefinition().c_str(), val.GetText()) << "UnitDef.Definition of " << expected.GetFullName();
+            
             continue;
             }
 
@@ -1030,36 +1034,36 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
 
         if (colName.EqualsI("ECInstanceId"))
             {
-            ASSERT_EQ(expected.GetId().GetValue(), val.GetId<UnitId>().GetValue()) << "FormatDef.ECInstanceId";
+            ASSERT_EQ(expected.GetId().GetValue(), val.GetId<UnitId>().GetValue()) << "FormatDef.ECInstanceId of " << expected.GetFullName();
             continue;
             }
 
         if (colName.EqualsI("ECClassId"))
             {
-            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "FormatDef")->GetId(), val.GetId<ECClassId>()) << "FormatDef.ECClassId";
+            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "FormatDef")->GetId(), val.GetId<ECClassId>()) << "FormatDef.ECClassId of " << expected.GetFullName();
             continue;
             }
 
         if (colName.EqualsI("Schema"))
             {
             ECClassId actualRelClassId;
-            ASSERT_EQ(expected.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "FormatDef.Schema";
-            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "FormatDef.Schema";
+            ASSERT_EQ(expected.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "FormatDef.Schema of " << expected.GetFullName();
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "FormatDef.Schema of " << expected.GetFullName();
             continue;
             }
 
         if (colName.EqualsI("Name"))
             {
-            ASSERT_STREQ(expected.GetName().c_str(), val.GetText()) << "FormatDef.Name";
+            ASSERT_STREQ(expected.GetName().c_str(), val.GetText()) << "FormatDef.Name of " << expected.GetFullName();
             continue;
             }
 
         if (colName.EqualsI("DisplayLabel"))
             {
             if (expected.GetIsDisplayLabelDefined())
-                ASSERT_STREQ(expected.GetInvariantDisplayLabel().c_str(), val.GetText()) << "FormatDef.DisplayLabel";
+                ASSERT_STREQ(expected.GetInvariantDisplayLabel().c_str(), val.GetText()) << "FormatDef.DisplayLabel of " << expected.GetFullName();
             else
-                ASSERT_TRUE(val.IsNull()) << "FormatDef.DisplayLabel";
+                ASSERT_TRUE(val.IsNull()) << "FormatDef.DisplayLabel of " << expected.GetFullName();
 
             continue;
             }
@@ -1067,9 +1071,9 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
         if (colName.EqualsI("Description"))
             {
             if (!expected.GetInvariantDescription().empty())
-                ASSERT_STREQ(expected.GetInvariantDescription().c_str(), val.GetText()) << "FormatDef.Description";
+                ASSERT_STREQ(expected.GetInvariantDescription().c_str(), val.GetText()) << "FormatDef.Description of " << expected.GetFullName();
             else
-                ASSERT_TRUE(val.IsNull()) << "FormatDef.Description";
+                ASSERT_TRUE(val.IsNull()) << "FormatDef.Description of " << expected.GetFullName();
 
             continue;
             }
@@ -1077,9 +1081,9 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
         if (colName.EqualsI("NumericSpec"))
             {
             if (!expected.HasNumeric())
-                ASSERT_TRUE(val.IsNull()) << "FormatDef.NumericSpec";
+                ASSERT_TRUE(val.IsNull()) << "FormatDef.NumericSpec of " << expected.GetFullName();
             else
-                ASSERT_STREQ(expected.GetNumericSpec()->ToJson(false).ToString().c_str(), val.GetText()) << "FormatDef.NumericSpec";
+                ASSERT_STREQ(expected.GetNumericSpec()->ToJson(false).ToString().c_str(), val.GetText()) << "FormatDef.NumericSpec of " << expected.GetFullName();
 
             continue;
             }
@@ -1087,9 +1091,9 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
         if (colName.EqualsI("CompositeSpacer"))
             {
             if (!expected.HasComposite() || !expected.HasCompositeSpacer())
-                ASSERT_TRUE(val.IsNull()) << "FormatDef.CompositeSpacer";
+                ASSERT_TRUE(val.IsNull()) << "FormatDef.CompositeSpacer of " << expected.GetFullName();
             else
-                ASSERT_STREQ(expected.GetCompositeSpec()->GetSpacer().c_str(), val.GetText()) << "FormatDef.CompositeSpacer";
+                ASSERT_STREQ(expected.GetCompositeSpec()->GetSpacer().c_str(), val.GetText()) << "FormatDef.CompositeSpacer of " << expected.GetFullName();
 
             continue;
             }
@@ -1099,7 +1103,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
 
     //now check the composite units
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT fcu.Label, fcu.UnitId FROM meta.FormatCompositeUnitDef fcu WHERE fcu.Format.Id=? ORDER BY fcu.Ordinal"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT fcu.Label, fcu.Unit.Id FROM meta.FormatCompositeUnitDef fcu WHERE fcu.Format.Id=? ORDER BY fcu.Ordinal"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expected.GetId()));
 
     const bool expectedHasComposite = expected.HasComposite();
@@ -1121,41 +1125,41 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
                 case 0:
                 {
                 if (expectedCompSpec->HasMajorLabel())
-                    ASSERT_STREQ(expectedCompSpec->GetMajorLabel().c_str(), actualLabel) << "FormatDef.MajorLabel";
+                    ASSERT_STREQ(expectedCompSpec->GetMajorLabel().c_str(), actualLabel) << "FormatCompositeUnitDef.MajorLabel of " << expected.GetFullName();
                 else
-                    ASSERT_TRUE(Utf8String::IsNullOrEmpty(actualLabel)) << "FormatDef.MajorLabel";
+                    ASSERT_TRUE(Utf8String::IsNullOrEmpty(actualLabel)) << "FormatCompositeUnitDef.MajorLabel of " << expected.GetFullName();
 
-                ASSERT_EQ(((ECUnitCP) expectedCompSpec->GetMajorUnit())->GetId(), actualUnitId) << "FormatDef.MajorUnit";
+                ASSERT_EQ(((ECUnitCP) expectedCompSpec->GetMajorUnit())->GetId(), actualUnitId) << "FormatCompositeUnitDef.MajorUnit of " << expected.GetFullName();
                 break;
                 }
                 case 1:
                 {
                 if (expectedCompSpec->HasMiddleLabel())
-                    ASSERT_STREQ(expectedCompSpec->GetMiddleLabel().c_str(), actualLabel) << "FormatDef.MiddleLabel";
+                    ASSERT_STREQ(expectedCompSpec->GetMiddleLabel().c_str(), actualLabel) << "FormatCompositeUnitDef.MiddleLabel of " << expected.GetFullName();
                 else
-                    ASSERT_TRUE(Utf8String::IsNullOrEmpty(actualLabel)) << "FormatDef.MiddleLabel";
+                    ASSERT_TRUE(Utf8String::IsNullOrEmpty(actualLabel)) << "FormatCompositeUnitDef.MiddleLabel of " << expected.GetFullName();
 
-                ASSERT_EQ(((ECUnitCP) expectedCompSpec->GetMiddleUnit())->GetId(), actualUnitId) << "FormatDef.MiddleUnit";
+                ASSERT_EQ(((ECUnitCP) expectedCompSpec->GetMiddleUnit())->GetId(), actualUnitId) << "FormatCompositeUnitDef.MiddleUnit of " << expected.GetFullName();
                 break;
                 }
                 case 2:
                 {
                 if (expectedCompSpec->HasMinorLabel())
-                    ASSERT_STREQ(expectedCompSpec->GetMinorLabel().c_str(), actualLabel) << "FormatDef.MinorLabel";
+                    ASSERT_STREQ(expectedCompSpec->GetMinorLabel().c_str(), actualLabel) << "FormatCompositeUnitDef.MinorLabel of " << expected.GetFullName();
                 else
-                    ASSERT_TRUE(Utf8String::IsNullOrEmpty(actualLabel)) << "FormatDef.MinorLabel";
+                    ASSERT_TRUE(Utf8String::IsNullOrEmpty(actualLabel)) << "FormatCompositeUnitDef.MinorLabel of " << expected.GetFullName();
 
-                ASSERT_EQ(((ECUnitCP) expectedCompSpec->GetMinorUnit())->GetId(), actualUnitId) << "FormatDef.MinorUnit";
+                ASSERT_EQ(((ECUnitCP) expectedCompSpec->GetMinorUnit())->GetId(), actualUnitId) << "FormatCompositeUnitDef.MinorUnit of " << expected.GetFullName();
                 break;
                 }
                 case 3:
                 {
                 if (expectedCompSpec->HasSubLabel())
-                    ASSERT_STREQ(expectedCompSpec->GetSubLabel().c_str(), actualLabel) << "FormatDef.SubLabel";
+                    ASSERT_STREQ(expectedCompSpec->GetSubLabel().c_str(), actualLabel) << "FormatCompositeUnitDef.SubLabel of " << expected.GetFullName();
                 else
-                    ASSERT_TRUE(Utf8String::IsNullOrEmpty(actualLabel)) << "FormatDef.SubLabel";
+                    ASSERT_TRUE(Utf8String::IsNullOrEmpty(actualLabel)) << "FormatCompositeUnitDef.SubLabel of " << expected.GetFullName();
 
-                ASSERT_EQ(((ECUnitCP) expectedCompSpec->GetSubUnit())->GetId(), actualUnitId) << "FormatDef.SubUnit";
+                ASSERT_EQ(((ECUnitCP) expectedCompSpec->GetSubUnit())->GetId(), actualUnitId) << "FormatCompositeUnitDef.SubUnit of " << expected.GetFullName();
                 break;
                 }
                 default:
