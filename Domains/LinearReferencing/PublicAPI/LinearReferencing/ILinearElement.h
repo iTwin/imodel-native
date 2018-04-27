@@ -36,7 +36,7 @@ public:
     Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_ILinearElementToDgnElement()); }
     //__PUBLISH_SECTION_START__
 
-    //! Get the DgnElementId of the ILinearElementSource //TODO DIEGO What is an ILinearElementSource?
+    //! Get the DgnElementId of the ILinearElementSource realizing this ILinearElement
     Dgn::DgnElementId GetILinearElementSource() const { return ToElement().GetPropertyValueId<Dgn::DgnElementId>("ILinearElementSource"); }
 
     //__PUBLISH_SECTION_END__
@@ -82,9 +82,8 @@ public:
 }; // ISpatialLinearElement
 
 //=======================================================================================
-//! Interface implemented by elements that can realize ILinearElements along which
+//! Interface implemented by elements that can realize one or more ILinearElements along which
 //! linear referencing is performed.
-//! TODO Diego Can this be made more clear?  I don't understand what is meant by "realize ILinearElements along which linear referencing is performed"
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ILinearElementSource
@@ -170,8 +169,8 @@ protected:
 }; // ILinearlyLocatedAttribution
 
 //=======================================================================================
-//! Interface implemented by elements lineraly located existing along 
-//! an ILinearElementSource.
+//! Interface implemented by elements linearly located along an ILinearElement realized
+//! by an ILinearElementSource.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ILinearlyLocatedElement : ILinearlyLocated

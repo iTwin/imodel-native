@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/LinearReferencing/DistanceExpression.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,7 +36,7 @@ public:
 
     //! Create a new instance of DistanceExpression
     //! @param distanceAlong The distance along the ILinearElement
-    //! @param lateralOffset The lateral offset from the ILinearElement //TODO DIEGO - Is the offset left or right?  +/-? From start station?
+    //! @param lateralOffset The lateral offset from the ILinearElement. Positive values on the right side.
     //! @param verticalOffset The vertical offset from the ILinearElement
     //! @param fromReferentId The id of the IReferent of interest
     //! @param distanceAlongFromReferent The distance along the alignment from \p fromReferentId
@@ -59,7 +59,7 @@ public:
     //! @return The distance along fromt he IReferent, or NullableDouble::IsNull() if not set.
     NullableDouble GetDistanceAlongFromReferent() const { return m_distanceAlongFromReferent; }
 
-    //! Get the id of the IReferent
+    //! Get the id of the IReferent of interest, if any
     //! @return The DgnElementId of the IReferent.  Returns !DgnElementId::IsValid() if not set.
     Dgn::DgnElementId GetFromReferentId() const { return m_fromReferentId; }
     
