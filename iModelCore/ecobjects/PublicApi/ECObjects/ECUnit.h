@@ -149,10 +149,10 @@ private:
     ECSchemaCR m_schema;
     UnitId m_unitId;
 
-    bool m_isDisplayLabelExplicitlyDefined;
-    bool m_isNumeratorExplicitlyDefined;
-    bool m_isDenominatorExplicitlyDefined;
-    bool m_isOffsetExplicitlyDefined;
+    bool m_isDisplayLabelExplicitlyDefined = false;
+    bool m_isNumeratorExplicitlyDefined = false;
+    bool m_isDenominatorExplicitlyDefined = false;
+    bool m_isOffsetExplicitlyDefined = false;
 
     Utf8String m_description;
     mutable Utf8String m_fullName;

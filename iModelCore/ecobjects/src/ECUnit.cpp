@@ -13,7 +13,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-ECUnit::ECUnit(ECSchemaCR schema, Utf8CP name) : Units::Unit(name), m_isDisplayLabelExplicitlyDefined(false), m_isNumeratorExplicitlyDefined(false), m_isDenominatorExplicitlyDefined(false), m_isOffsetExplicitlyDefined(false), m_schema(schema)
+ECUnit::ECUnit(ECSchemaCR schema, Utf8CP name) : Units::Unit(name), m_schema(schema)
     {
     m_unitsContext = &schema.GetUnitsContext();
     }
@@ -21,7 +21,7 @@ ECUnit::ECUnit(ECSchemaCR schema, Utf8CP name) : Units::Unit(name), m_isDisplayL
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-ECUnit::ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP unitName) : Units::Unit(parentUnit, system, unitName), m_isDisplayLabelExplicitlyDefined(false), m_isNumeratorExplicitlyDefined(false), m_isDenominatorExplicitlyDefined(false), m_isOffsetExplicitlyDefined(false), m_schema(schema)
+ECUnit::ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP unitName) : Units::Unit(parentUnit, system, unitName), m_schema(schema)
     {
     m_unitsContext = &schema.GetUnitsContext();
     }
@@ -30,7 +30,7 @@ ECUnit::ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR 
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 ECUnit::ECUnit(ECSchemaCR schema,Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator) :
-    Units::Unit(phenomenon, name, definition, numerator, denominator), m_isDisplayLabelExplicitlyDefined(false), m_isNumeratorExplicitlyDefined(false), m_isDenominatorExplicitlyDefined(false), m_isOffsetExplicitlyDefined(false), m_schema(schema)
+    Units::Unit(phenomenon, name, definition, numerator, denominator), m_schema(schema)
     {
     m_unitsContext = &schema.GetUnitsContext();
     }
@@ -39,7 +39,7 @@ ECUnit::ECUnit(ECSchemaCR schema,Units::PhenomenonCR phenomenon, Utf8CP name, Ut
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 ECUnit::ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant) :
-    Units::Unit(unitSystem, phenomenon, name, definition, numerator, denominator, offset, isConstant), m_isDisplayLabelExplicitlyDefined(false), m_isNumeratorExplicitlyDefined(false), m_isDenominatorExplicitlyDefined(false), m_isOffsetExplicitlyDefined(false), m_schema(schema)
+    Units::Unit(unitSystem, phenomenon, name, definition, numerator, denominator, offset, isConstant), m_schema(schema)
     {
     m_unitsContext = &schema.GetUnitsContext();
     }
@@ -48,7 +48,7 @@ ECUnit::ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::Phenome
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 ECUnit::ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition) :
-    Units::Unit(unitSystem, phenomenon, name, definition), m_isDisplayLabelExplicitlyDefined(false), m_isNumeratorExplicitlyDefined(false), m_isDenominatorExplicitlyDefined(false), m_isOffsetExplicitlyDefined(false), m_schema(schema)
+    Units::Unit(unitSystem, phenomenon, name, definition), m_schema(schema)
     {
     m_unitsContext = &schema.GetUnitsContext();
     }

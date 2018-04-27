@@ -1241,6 +1241,8 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
         }
 
     constant = new ECUnit(*this, phenom, name, definition, numerator, 1.0);
+    //WIP_HACK Hack to indicate that this numerator was set explicitly. Just passing numerator to the ctor doesn't do this.
+    constant->SetNumerator(numerator);
 
     if(denominator.IsValid())
         constant->SetDenominator(denominator.Value());
@@ -1268,25 +1270,31 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CreateFormat(ECFormatP& unitFormat, Utf8CP name, Utf8CP label, Utf8CP description, Formatting::NumericFormatSpecCP nfs, Formatting::CompositeValueSpecCP composite)
+ECObjectsStatus ECSchema::CreateFormat(ECFormatP& unitFormat, Utf8CP name, Utf8CP displayLabel, Utf8CP description, Formatting::NumericFormatSpecCP nfs, Formatting::CompositeValueSpecCP composite)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     unitFormat = new ECFormat(*this, name);
-    ECObjectsStatus status = unitFormat->SetDisplayLabel(label);
-    if (ECObjectsStatus::Success != status)
+    if (displayLabel != nullptr)
         {
-        delete unitFormat;
-        unitFormat = nullptr;
-        return status;
+        ECObjectsStatus status = unitFormat->SetDisplayLabel(displayLabel);
+        if (ECObjectsStatus::Success != status)
+            {
+            delete unitFormat;
+            unitFormat = nullptr;
+            return status;
+            }
         }
 
-    status = unitFormat->SetDescription(description);
-    if (ECObjectsStatus::Success != status)
+    if (description != nullptr)
         {
-        delete unitFormat;
-        unitFormat = nullptr;
-        return status;
+        ECObjectsStatus status = unitFormat->SetDescription(description);
+        if (ECObjectsStatus::Success != status)
+            {
+            delete unitFormat;
+            unitFormat = nullptr;
+            return status;
+            }
         }
 
     if (nullptr != nfs)
@@ -1294,7 +1302,7 @@ ECObjectsStatus ECSchema::CreateFormat(ECFormatP& unitFormat, Utf8CP name, Utf8C
     if (nullptr != composite)
         unitFormat->SetCompositeSpec(*composite);
 
-    status = AddSchemaChildToMap<ECFormat, FormatMap>(unitFormat, &m_formatMap, ECSchemaElementType::Format);
+    ECObjectsStatus status = AddSchemaChildToMap<ECFormat, FormatMap>(unitFormat, &m_formatMap, ECSchemaElementType::Format);
     if (ECObjectsStatus::Success != status)
         {
         delete unitFormat;
