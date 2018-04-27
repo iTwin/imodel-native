@@ -16,9 +16,9 @@
 #include <WebServices/iModelHub/Events/ChangeSetPostPushEvent.h>
 #include <WebServices/iModelHub/Client/ChangeSetInfo.h>
 #include "MultiProgressCallbackHandler.h"
-#include "JsonFormatters\MultiLockFormatter.h"
-#include "JsonFormatters\MultiCodeFormatter.h"
-#include "Storage\PendingChangeSetStorage.h"
+#include "JsonFormatters/MultiLockFormatter.h"
+#include "JsonFormatters/MultiCodeFormatter.h"
+#include "Storage/PendingChangeSetStorage.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -2360,7 +2360,7 @@ ConflictsInfoPtr                    conflictsInfo
 ) const
     {
     DgnDbP pDgnDb = &dgndb;
-    BeBriefcaseId briefcaseId = dgndb.GetBriefcaseId();
+    //BeBriefcaseId briefcaseId = dgndb.GetBriefcaseId();
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
 
     //Set ChangeSet initialization request to ECChangeSet

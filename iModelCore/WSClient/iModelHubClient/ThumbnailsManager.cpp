@@ -170,7 +170,7 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "ThumbnailsManager::GetThumbnailById";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    //double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     ObjectId thumbnail(ServerSchema::Schema::iModel, Thumbnail::GetClassName(size), thumbnailId);
 
@@ -192,7 +192,7 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "ThumbnailsManager::GetThumbnailByVersionId";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    //double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
     WSQuery query(ServerSchema::Schema::iModel, Thumbnail::GetClassName(size));
 
