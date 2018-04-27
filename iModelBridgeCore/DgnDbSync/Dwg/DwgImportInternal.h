@@ -273,7 +273,10 @@ private:
     bool ComposeLayoutTransform (TransformR trans, DwgDbObjectIdCR blockId);
     void TransformDataToBim ();
     void AddSpatialCategories (Utf8StringCR viewName);
+    // clip SpatialView attached to ViewAttachment - legacy clipping, may be removed.
     void ApplyViewportClipping (SpatialViewDefinitionR dgnView, double frontClip, double backClip);
+    // clip Sheet::ViewAttachment directly.
+    void ApplyViewportClipping (Sheet::ViewAttachmentR viewAttachment);
     bool ComputeClipperTransformation (TransformR toClipper, RotMatrixCR viewRotation);
     void ComputeEnvironment (DisplayStyle3dR displayStyle);
     bool FindEnvironmentImageFile (BeFileNameR filename) const;
