@@ -1168,7 +1168,7 @@ template<> struct HandlerTraits<dgn_ElementHandler::Element>
     static DgnElementPtr CreateInstance(dgn_ElementHandler::Element& handler, DgnDbR db) 
         {
         DgnElement::CreateParams params(db, DgnModelId(), DgnClassId());
-        params.SetHandlerCreated(true);
+        params.SetIsLoadingElement(true);
         return handler.Create(params);
         }
     static Utf8CP GetECClassName(DgnElementCR el) {return el.GetHandlerECClassName();}
