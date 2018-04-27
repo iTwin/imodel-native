@@ -2158,7 +2158,11 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                         gradientPtr->SetThematicSettings(*thematicSettings);
                         }
 
-                    elParams.SetGradient(gradientPtr.get());
+                    if (nullptr == elParams.GetGradient() || !(*elParams.GetGradient() == *gradientPtr))
+                        {
+                        elParams.SetGradient(gradientPtr.get());
+                        changed = true;
+                        }
                     }
                 }
             break;
