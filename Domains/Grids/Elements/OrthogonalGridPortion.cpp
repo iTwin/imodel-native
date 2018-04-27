@@ -189,7 +189,7 @@ double distance
         DPoint3d elementOrigin = elementPlane.origin;
         DPoint3d lastPlaneOrigin;
         DPlane3d lastPlane = (dynamic_cast<GridPlanarSurface *>(lastElement.get()))->GetPlane();
-        bsiDPlane3d_projectPoint(&lastPlane, &lastPlaneOrigin, &elementOrigin);
+        lastPlane.ProjectPoint(lastPlaneOrigin, elementOrigin);
 
         DVec3d direction = DVec3d::FromStartEnd(lastPlaneOrigin, elementOrigin);
         bsiDVec3d_normalizeInPlace(&direction);
