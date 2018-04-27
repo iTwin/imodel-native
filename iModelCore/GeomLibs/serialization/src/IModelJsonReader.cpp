@@ -702,7 +702,8 @@ PolyfaceAuxDataPtr  tryValueToPolyfaceAuxData(JsonValueCR value)
         !tryValueToPolyfaceAuxDataChannels(channels, value["channels"]))
         return nullptr;
 
-    return new PolyfaceAuxData(std::move(indices), std::move(channels));
+    return new PolyfaceAuxData(
+std::move(indices), std::move(channels));
     }
 
 PolyfaceHeaderPtr tryValueToPolyfaceHeader (JsonValueCR parentValue)
@@ -710,6 +711,8 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (JsonValueCR parentValue)
     if (parentValue.isNull ())
         return nullptr;
     JsonValueCR value = parentValue["indexedMesh"];
+    if (value.isNull ())
+        return nullptr;
     PolyfaceHeaderPtr pf = PolyfaceHeader::CreateVariableSizeIndexed ();    // this makes numPerFace 0
     JsonValueCR jNumPerFace = value["numPerFace"];
     if (jNumPerFace.isIntegral ())
