@@ -242,8 +242,10 @@ void            ViewportFactory::ComputeSpatialView (SpatialViewDefinitionR dgnV
     rotation.MultiplyTranspose (origin);
     dgnView.SetOrigin (origin);
 
+#ifdef CLIP_THROUGH_SPATIALVIEW
     // if clipped by an entity, calculate & apply a clipping vector:
     this->ApplyViewportClipping (dgnView, frontClip, backClip);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -251,6 +253,7 @@ void            ViewportFactory::ComputeSpatialView (SpatialViewDefinitionR dgnV
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ViewportFactory::ApplyViewportClipping (SpatialViewDefinitionR dgnView, double frontClip, double backClip)
     {
+    // this method clips a SpatialView which is attached to a Sheet::ViewAttachment.
     if (m_clipEntityId.IsNull())
         return;
 
@@ -259,7 +262,7 @@ void            ViewportFactory::ApplyViewportClipping (SpatialViewDefinitionR d
     if (!this->ComputeClipperTransformation(entityToClipper, viewRotation))
         return;
 
-    // the clipper plane as the same as the view plane, but the clipper constructor expects transformation matrix from clipper to model:
+    // the clipper plane is the same as the view plane, but the clipper constructor expects transformation matrix from clipper to model:
     viewRotation.InverseOf (viewRotation);
     Transform   clipperToModel = Transform::From (viewRotation, DVec3d::FromZero());
 
@@ -275,6 +278,20 @@ void            ViewportFactory::ApplyViewportClipping (SpatialViewDefinitionR d
         clipper->TransformInPlace (m_transform);
         dgnView.SetViewClip (clipper);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ViewportFactory::ApplyViewportClipping (Sheet::ViewAttachmentR viewAttachment)
+    {
+    // this method directly clips a Sheet::ViewAttachment.
+    if (m_clipEntityId.IsNull())
+        return;
+    
+    auto clipper = DwgHelper::CreateClipperFromEntity (m_clipEntityId, nullptr, nullptr, nullptr, &m_transform);
+    if (clipper.IsValid())
+        viewAttachment.SetClip (*clipper);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -640,10 +657,13 @@ void            ViewportFactory::UpdateSpatialCategories (DgnCategoryIdSet& cate
             DwgDbHandle     objHandle = syncInfo.FindLayerHandle (categoryId, fileId);
             if (!objHandle.IsNull() && (layerId = dwg.GetObjectId(objHandle)).IsValid())
                 {
-                // skip viewport frozen layer for this view:
+                // erase category from the view if the layer is viewport frozen:
                 auto found = std::find_if (frozenLayers.begin(), frozenLayers.end(), [&](DwgDbObjectId id){ return id == layerId; });
                 if (found != frozenLayers.end())
+                    {
+                    categoryIdSet.erase (categoryId);
                     continue;
+                    }
                 }
             }
 
@@ -946,6 +966,9 @@ DgnElementPtr   ViewportFactory::CreateViewAttachment (DgnModelCR sheetModel, Dg
     if (m_customScale > 1.e-5)
         viewAttachment->SetScale (1.0 / m_customScale);
 
+    // clip the view attachment
+    this->ApplyViewportClipping (*viewAttachment);
+
     return  viewAttachment;
     }
 
@@ -967,6 +990,9 @@ DgnElementPtr   ViewportFactory::UpdateViewAttachment (DgnElementId attachId, Dg
     // set view attachment scale
     if (m_customScale > 1.e-5)
         viewAttachment->SetScale (1.0 / m_customScale);
+
+    // clip the view attachment
+    this->ApplyViewportClipping (*viewAttachment);
 
     return  viewAttachment;
     }
