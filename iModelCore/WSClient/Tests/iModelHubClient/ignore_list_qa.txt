@@ -11,16 +11,6 @@ BriefcaseSchemaChangesTests.*
 SeedFileTests.ReplaceWithoutLockediModel
 
 #----------------------------------------------------------------------------------------
-#   Tests that require statistics
-#----------------------------------------------------------------------------------------
-StatisticsTests.QueryUserStatisticsWithAllStatistics
-StatisticsTests.QueryUserStatisticsWithSelectedStatistics
-StatisticsTests.QueryUsersStatisticsWithAllStatistics
-StatisticsTests.QueryUsersStatisticsWithSelectedStatistics
-StatisticsTests.QueryAllUsersStatisticsWithAllStatistics
-StatisticsTests.QueryAllUsersStatisticsWithSelectedStatistics
-
-#----------------------------------------------------------------------------------------
 #   Tests that require seed file replacement
 #----------------------------------------------------------------------------------------
 LRPTests.InitializeFileJob

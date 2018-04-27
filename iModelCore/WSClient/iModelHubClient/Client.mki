@@ -49,7 +49,8 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Client/UserInfoManager.h        \
                                 $(iModelHubClientMkiPublicApiDir)Client/StatisticsInfo.h         \
                                 $(iModelHubClientMkiPublicApiDir)Client/StatisticsManager.h      \
-                                $(iModelHubClientMkiPublicApiDir)Client/ChunkedWSChangeset.h
+                                $(iModelHubClientMkiPublicApiDir)Client/ChunkedWSChangeset.h     \
+                                $(iModelHubClientMkiPublicApiDir)Client/ThumbnailsManager.h      \
 
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -120,3 +121,5 @@ $(o)StatisticsInfo$(oext)                  : $(iModelHubClientMkiSourceDir)Stati
 $(o)StatisticsManager$(oext)               : $(iModelHubClientMkiSourceDir)StatisticsManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ChunkedWSChangeset$(oext)              : $(iModelHubClientMkiSourceDir)ChunkedWSChangeset.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ThumbnailsManager$(oext)               : $(iModelHubClientMkiSourceDir)ThumbnailsManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}

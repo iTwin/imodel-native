@@ -61,6 +61,8 @@ namespace ServerSchema
         static Utf8CP Version = "Version";
         static Utf8CP UserInfo = "UserInfo";
         static Utf8CP Statistics = "Statistics";
+        static Utf8CP SmallThumbnail = "SmallThumbnail";
+        static Utf8CP LargeThumbnail = "LargeThumbnail";
         }
     namespace Relationship
         {
@@ -69,6 +71,7 @@ namespace ServerSchema
         static Utf8CP HasCreatorInfo = "HasCreatorInfo";
         static Utf8CP CumulativeChangeSet = "CumulativeChangeSet";
         static Utf8CP HasStatistics = "HasStatistics";
+        static Utf8CP HasThumbnail = "HasThumbnail";
         }
     namespace Property
         {
