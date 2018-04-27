@@ -30,7 +30,7 @@ ECUnit::ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR 
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 ECUnit::ECUnit(ECSchemaCR schema,Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator) :
-    Units::Unit(phenomenon, name, definition, numerator, denominator), m_schema(schema)
+    Units::Unit(phenomenon, name, definition, numerator, denominator), m_isNumeratorExplicitlyDefined(true), m_isDenominatorExplicitlyDefined(true), m_schema(schema)
     {
     m_unitsContext = &schema.GetUnitsContext();
     }
@@ -39,7 +39,8 @@ ECUnit::ECUnit(ECSchemaCR schema,Units::PhenomenonCR phenomenon, Utf8CP name, Ut
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 ECUnit::ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant) :
-    Units::Unit(unitSystem, phenomenon, name, definition, numerator, denominator, offset, isConstant), m_schema(schema)
+    Units::Unit(unitSystem, phenomenon, name, definition, numerator, denominator, offset, isConstant), m_isNumeratorExplicitlyDefined(true), m_isDenominatorExplicitlyDefined(true),
+    m_isOffsetExplicitlyDefined(true), m_schema(schema)
     {
     m_unitsContext = &schema.GetUnitsContext();
     }
@@ -357,7 +358,7 @@ SchemaReadStatus ECUnit::ReadInvertedUnitXml(BeXmlNodeR unitNode, ECSchemaReadCo
         }
 
     SetParent(*ptrUnit);
-
+    SetDefinition(ptrUnit->GetDefinition().c_str());
     SetPhenomenon(*ptrUnit->GetPhenomenon());
 
     return SchemaReadStatus::Success;
