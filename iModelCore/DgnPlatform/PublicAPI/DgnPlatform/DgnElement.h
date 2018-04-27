@@ -626,7 +626,7 @@ public:
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
         void SetCode(DgnCode code) {m_code = code;}                 //!< Set the DgnCode for elements created with this CreateParams
-        void SetHandlerCreated(bool value) { m_isHandlerCreated = value; }                 //!< Set the DgnCode for elements created with this CreateParams
+        void SetHandlerCreated(bool value) { m_isHandlerCreated = value; }  //!< Set the m_isHandlerCreated flag for elements created from handler
         void SetUserLabel(Utf8CP label) {m_userLabel.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
         void SetElementId(DgnElementId id) {m_id = id;}             //!< @private
         void SetModelId(DgnModelId modelId) {m_modelId = modelId;}  //!< @private
