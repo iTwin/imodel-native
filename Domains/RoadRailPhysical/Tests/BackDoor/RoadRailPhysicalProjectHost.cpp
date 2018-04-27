@@ -156,7 +156,7 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
 
     BeAssert(BentleyStatus::SUCCESS == projectPtr->Schemas().CreateClassViewsInDb());
     RoadRailAlignmentDomain::SetUpModelHierarchy(*projectPtr->Elements().GetRootSubject());
-    RoadRailPhysicalDomain::SetUpModelHierarchy(*projectPtr->Elements().GetRootSubject());
+    RoadRailPhysicalDomain::SetUpModelHierarchy(*projectPtr->Elements().GetRootSubject(), true);
 
     return projectPtr;
     }

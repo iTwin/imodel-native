@@ -16,7 +16,6 @@ HANDLER_DEFINE_MEMBERS(PathwayElementHandler)
 HANDLER_DEFINE_MEMBERS(PathwaySeparationElementHandler)
 HANDLER_DEFINE_MEMBERS(PathwaySeparationHandler)
 HANDLER_DEFINE_MEMBERS(RailwayHandler)
-HANDLER_DEFINE_MEMBERS(RoadRailPhysicalModelHandler)
 HANDLER_DEFINE_MEMBERS(RoadwayHandler)
 
 
@@ -315,29 +314,4 @@ DgnDbStatus ILinearElementUtilities::SetRelatedCorridorPortion(ILinearElementCR 
             return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-RoadRailPhysicalModelPtr RoadRailPhysicalModel::Query(Dgn::SubjectCR parentSubject)
-    {
-    DgnDbR db = parentSubject.GetDgnDb();
-    DgnCode partitionCode = PhysicalPartition::CreateCode(parentSubject, RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
-    DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
-    PhysicalPartitionCPtr partition = db.Elements().Get<PhysicalPartition>(partitionId);
-    if (!partition.IsValid())
-        return nullptr;
-    return dynamic_cast<RoadRailPhysicalModelP>(partition->GetSubModel().get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-SubjectCPtr RoadRailPhysicalModel::GetParentSubject() const
-    {
-    auto partitionCP = dynamic_cast<PhysicalPartitionCP>(GetModeledElement().get());
-    BeAssert(partitionCP != nullptr);
-
-    return GetDgnDb().Elements().Get<Subject>(partitionCP->GetParentId());
     }

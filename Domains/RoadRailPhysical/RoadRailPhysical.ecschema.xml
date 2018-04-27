@@ -17,12 +17,6 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="RoadRailPhysicalModel" description="Container for related Road and Rail physical elements.">
-        <BaseClass>bis:PhysicalModel</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
     <ECEntityClass typeName="IMainLinearElementSource" modifier="Abstract" description="An ILinearElementSource providing an ILinearElement considered as the main linear-referencing axis for Road/Rail purposes.">
         <BaseClass>lr:ILinearElementSource</BaseClass>
         <ECCustomAttributes>

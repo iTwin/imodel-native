@@ -29,10 +29,10 @@ public:
     RoadRailPhysicalDomain();
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR, bool shouldCreatePhysicalPartition);
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnViewId SetUpDefaultViews(Dgn::SubjectCR, bvector<Dgn::DgnCategoryId> const* additionalCategoriesForSelector = nullptr);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnViewId SetUpDefaultViews(Dgn::SubjectCR, Utf8CP physicalPartitionName, bvector<Dgn::DgnCategoryId> const* additionalCategoriesForSelector = nullptr);
 
     //! The name of the default Physical partition
     static Utf8CP GetDefaultPhysicalPartitionName() { return "Road/Rail Physical"; }
@@ -59,5 +59,27 @@ public:
 private:
     WCharCP _GetSchemaRelativePath() const override { return BRRP_SCHEMA_PATH; }
 }; // RoadRailPhysicalDomain
+
+//=======================================================================================
+//! Helper methods for manipulation of Physical Models
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct PhysicalModelUtilities : NonCopyableClass
+{
+private:
+    PhysicalModelUtilities() {}
+
+public:
+    //! Query for the physical model associated with the provided physical partition
+    //! @param[in] parentSubject The parent subject of the physical model with \p modelName
+    //! @param[in] physicalPartitionName Physical Partition Name associated to the physical model requested
+    //! @return The PhysicalModel belonging to the \p parentSubject
+    ROADRAILPHYSICAL_EXPORT static Dgn::PhysicalModelPtr QueryPhysicalModel(Dgn::SubjectCR parentSubject, Utf8CP physicalPartitionName);
+
+    //! Query for the Parent Subject of a Physical Model
+    //! @param[in] model The PhysicalModel who's parent subject is being queried for.
+    //! @return The Subject of the \p model
+    ROADRAILPHYSICAL_EXPORT static Dgn::SubjectCPtr GetParentSubject(Dgn::PhysicalModelCR model);
+}; // PhysicalModelUtilities
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

@@ -226,6 +226,9 @@ public:
 //=======================================================================================
 struct ILinearElementUtilities : NonCopyableClass
 {
+private:
+    ILinearElementUtilities() {}
+
 public:
     ROADRAILPHYSICAL_EXPORT static CorridorPortionElementCPtr QueryRelatedCorridorPortion(LinearReferencing::ILinearElementCR linearElement, 
         Dgn::DgnElementId& significantPointDefId);
@@ -233,53 +236,6 @@ public:
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetRelatedCorridorPortion(LinearReferencing::ILinearElementCR linearElement, 
         CorridorPortionElementCR corridorPortion, SignificantPointDefinitionCR significantPointDef);
 }; // ILinearElementUtilities
-
-//=======================================================================================
-//! Model to contain and manage Road&Rail physical elements
-//=======================================================================================
-struct RoadRailPhysicalModel : Dgn::PhysicalModel
-{
-    DGNMODEL_DECLARE_MEMBERS(BRRP_CLASS_RoadRailPhysicalModel, Dgn::PhysicalModel);
-    friend struct RoadRailPhysicalModelHandler;
-
-public:
-    struct CreateParams : T_Super::CreateParams
-    {
-    DEFINE_T_SUPER(RoadRailPhysicalModel::T_Super::CreateParams);
-
-    //! Parameters to create a new instance of a RoadRailPhysicalModel.
-    //! @param[in] dgndb The DgnDb for the new DgnModel
-    //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
-    CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnElementId modeledElementId)
-        : T_Super(dgndb, RoadRailPhysicalModel::QueryClassId(dgndb), modeledElementId)
-        {}
-
-    //! @private
-    //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
-    CreateParams(DgnModel::CreateParams const& params) : T_Super(params) {}
-    }; // CreateParams
-
-protected:
-    explicit RoadRailPhysicalModel(CreateParams const& params) : T_Super(params) {}
-
-public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RoadRailPhysicalModel)
-
-    //! Query for the Parent Subject of this model.
-    //! @param[in] model The PhysicalModel who's parent is being queried for.
-    //! @return The Subject of the \p model
-    ROADRAILPHYSICAL_EXPORT Dgn::SubjectCPtr GetParentSubject() const;
-
-    //! Query for the physical model
-    //! @param[in] parentSubject The parent subject of the physical model with \p modelName
-    //! @return The PhysicalModel belonging to the \p parentSubject
-    ROADRAILPHYSICAL_EXPORT static RoadRailPhysicalModelPtr Query(Dgn::SubjectCR parentSubject);
-
-    //! @private
-    static RoadRailPhysicalModelPtr Create(CreateParams const& params) { return new RoadRailPhysicalModel(params); }
-    
-    static RoadRailPhysicalModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< RoadRailPhysicalModel >(id); }
-}; // RoadRailPhysicalModel
 
 
 //=================================================================================
@@ -344,14 +300,5 @@ struct EXPORT_VTABLE_ATTRIBUTE PathwaySeparationHandler : PathwaySeparationEleme
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_PathwaySeparation, PathwaySeparation, PathwaySeparationHandler, PathwaySeparationElementHandler, ROADRAILPHYSICAL_EXPORT)
 }; // PathwaySeparationHandler
-
-//=======================================================================================
-//! The ModelHandler for RoadRailPhysicalModel
-//! @private
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadRailPhysicalModelHandler : Dgn::dgn_ModelHandler::Physical
-{
-    MODELHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadRailPhysicalModel, RoadRailPhysicalModel, RoadRailPhysicalModelHandler, Dgn::dgn_ModelHandler::Physical, ROADRAILPHYSICAL_EXPORT)
-}; // RoadRailPhysicalModelHandler
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
