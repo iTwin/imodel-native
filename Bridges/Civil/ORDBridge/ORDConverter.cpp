@@ -645,7 +645,8 @@ public:
 ORDCorridorsConverter::ORDCorridorsConverter(DgnDbSync::DgnV8::Converter& converter, TransformCR unitsScaleTransform):
     m_converter(converter), m_unitsScaleTransform(unitsScaleTransform)
     {
-    m_bimPhysicalModelPtr = RoadRailBim::RoadRailPhysicalModel::Query(m_converter.GetJobSubject());
+    m_bimPhysicalModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalModel(m_converter.GetJobSubject(),
+        RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1231,7 +1232,8 @@ void ORDConverter::CreateRoadRailElements()
     auto designHorizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(GetDgnDb(), designHorizontalAlignmentModelId);
     auto linearsHorizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*linearsAlignmentModelPtr);
     auto linearsHorizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(GetDgnDb(), linearsHorizontalAlignmentModelId);
-    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalModel::Query(GetJobSubject());
+    auto physicalModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalModel(GetJobSubject(),
+        RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
 
     updateProjectExtents(*designHorizAlignmentModelCPtr, *m_ordParams, false);
     updateProjectExtents(*linearsHorizAlignmentModelCPtr, *m_ordParams, false);
@@ -1249,7 +1251,8 @@ void ORDConverter::CreateRoadRailElements()
         for (auto categoryId : additionalCategories)
             additionalCategoriesForSelector.push_back(categoryId);
 
-        auto viewId = RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(GetJobSubject(), &additionalCategoriesForSelector);
+        auto viewId = RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(GetJobSubject(), 
+            RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName(), &additionalCategoriesForSelector);
         if (viewId.IsValid())
             {
             m_defaultViewId = viewId;
@@ -1319,7 +1322,8 @@ void ORDConverter::SetUpModelFormatters(Dgn::SubjectCR jobSubject)
     {    
     auto designAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, AlignmentBim::RoadRailAlignmentDomain::GetDesignPartitionName());
     auto linearsAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, AlignmentBim::RoadRailAlignmentDomain::Get3DLinearsPartitionName());
-    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalModel::Query(jobSubject);
+    auto physicalModelPtr = RoadRailBim::PhysicalModelUtilities::QueryPhysicalModel(jobSubject,
+        RoadRailBim::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
 
     DgnV8Api::ModelInfo const& v8ModelInfo = _GetModelInfo(*GetRootModelP());
 
