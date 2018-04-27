@@ -7,44 +7,59 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		264171752077A61300A1B72B /* libiModelJs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 264171732077A61300A1B72B /* libiModelJs.a */; };
-		264171762077A61300A1B72B /* libuv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 264171742077A61300A1B72B /* libuv.a */; };
+		26586C4C209260DE00F7F53B /* ServicesTierEnvironment.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C39209260DE00F7F53B /* ServicesTierEnvironment.cpp */; };
+		26586C4D209260DE00F7F53B /* ServicesTierUvHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C3A209260DE00F7F53B /* ServicesTierUvHost.cpp */; };
+		26586C4E209260DE00F7F53B /* ServicesTierHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C3B209260DE00F7F53B /* ServicesTierHost.cpp */; };
+		26586C4F209260DE00F7F53B /* ServicesTierUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C3C209260DE00F7F53B /* ServicesTierUtilities.cpp */; };
+		26586C50209260DE00F7F53B /* ServicesTierNodeHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C3F209260DE00F7F53B /* ServicesTierNodeHost.cpp */; };
+		26586C51209260DE00F7F53B /* ServicesTierExtension.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C41209260DE00F7F53B /* ServicesTierExtension.cpp */; };
+		26586C52209260DE00F7F53B /* Utilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C43209260DE00F7F53B /* Utilities.cpp */; };
+		26586C53209260DE00F7F53B /* ServicesTierScripts.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C4A209260DE00F7F53B /* ServicesTierScripts.cpp */; };
+		26586C54209260DE00F7F53B /* node_internals.cc in Sources */ = {isa = PBXBuildFile; fileRef = 26586C4B209260DE00F7F53B /* node_internals.cc */; };
+		26586C562092614D00F7F53B /* node_api.cc in Sources */ = {isa = PBXBuildFile; fileRef = 26586C552092614D00F7F53B /* node_api.cc */; };
+		26586C612092623600F7F53B /* ECPresentationUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C582092623600F7F53B /* ECPresentationUtils.cpp */; };
+		26586C622092623600F7F53B /* IModelJsNative.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C592092623600F7F53B /* IModelJsNative.cpp */; };
+		26586C632092623600F7F53B /* JsInteropBriefcaseManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C5A2092623600F7F53B /* JsInteropBriefcaseManager.cpp */; };
+		26586C642092623600F7F53B /* TestUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C5C2092623600F7F53B /* TestUtils.cpp */; };
+		26586C652092623600F7F53B /* ECSchemaXmlContextUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C5F2092623600F7F53B /* ECSchemaXmlContextUtils.cpp */; };
+		26586C662092623600F7F53B /* JsInteropDgnDb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26586C602092623600F7F53B /* JsInteropDgnDb.cpp */; };
+		26586C6A2092642900F7F53B /* libBentley.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C68209263D700F7F53B /* libBentley.a */; };
+		26586C8B2092642B00F7F53B /* libBeOpenSSL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C6B2092642900F7F53B /* libBeOpenSSL.a */; };
+		26586C8C2092642B00F7F53B /* libECObjects.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C6C2092642900F7F53B /* libECObjects.a */; };
+		26586C8D2092642B00F7F53B /* libBentleyGeom.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C6D2092642A00F7F53B /* libBentleyGeom.a */; };
+		26586C8E2092642B00F7F53B /* libBeLibxml2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C6E2092642A00F7F53B /* libBeLibxml2.a */; };
+		26586C8F2092642B00F7F53B /* libBaseGeoCoord.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C6F2092642A00F7F53B /* libBaseGeoCoord.a */; };
+		26586C902092642B00F7F53B /* libBeCurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C702092642A00F7F53B /* libBeCurl.a */; };
+		26586C912092642B00F7F53B /* libBeHttp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C712092642A00F7F53B /* libBeHttp.a */; };
+		26586C922092642B00F7F53B /* libBeJavaScript.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C722092642A00F7F53B /* libBeJavaScript.a */; };
+		26586C932092642B00F7F53B /* liblibapr010502.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C732092642A00F7F53B /* liblibapr010502.a */; };
+		26586C942092642B00F7F53B /* libsnappy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C742092642A00F7F53B /* libsnappy.a */; };
+		26586C952092642B00F7F53B /* libBeZlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C752092642A00F7F53B /* libBeZlib.a */; };
+		26586C962092642B00F7F53B /* libBeLibJpegTurbo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C762092642A00F7F53B /* libBeLibJpegTurbo.a */; };
+		26586C972092642B00F7F53B /* libBeSQLite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C772092642A00F7F53B /* libBeSQLite.a */; };
+		26586C982092642B00F7F53B /* libDgnPlatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C782092642A00F7F53B /* libDgnPlatform.a */; };
+		26586C992092642B00F7F53B /* libfreetype2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C792092642A00F7F53B /* libfreetype2.a */; };
+		26586C9A2092642B00F7F53B /* libBePng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C7A2092642A00F7F53B /* libBePng.a */; };
+		26586C9B2092642B00F7F53B /* libBentleyGeomSerialization.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C7B2092642A00F7F53B /* libBentleyGeomSerialization.a */; };
+		26586C9C2092642B00F7F53B /* libBeCsmapStatic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C7C2092642A00F7F53B /* libBeCsmapStatic.a */; };
+		26586C9D2092642B00F7F53B /* libiModelJs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C7D2092642A00F7F53B /* libiModelJs.a */; };
+		26586C9E2092642B00F7F53B /* libBeFolly.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C7E2092642A00F7F53B /* libBeFolly.a */; };
+		26586C9F2092642B00F7F53B /* libBeSQLiteEC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C7F2092642B00F7F53B /* libBeSQLiteEC.a */; };
+		26586CA02092642B00F7F53B /* libbentleylog4cxx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C802092642B00F7F53B /* libbentleylog4cxx.a */; };
+		26586CA12092642B00F7F53B /* libECPresentation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C812092642B00F7F53B /* libECPresentation.a */; };
+		26586CA22092642B00F7F53B /* libliblog4cxx010.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C822092642B00F7F53B /* libliblog4cxx010.a */; };
+		26586CA32092642B00F7F53B /* libUnits.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C832092642B00F7F53B /* libUnits.a */; };
+		26586CA42092642B00F7F53B /* libBeIcu4c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C842092642B00F7F53B /* libBeIcu4c.a */; };
+		26586CA52092642B00F7F53B /* libBeJsonCpp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C852092642B00F7F53B /* libBeJsonCpp.a */; };
+		26586CA62092642B00F7F53B /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C862092642B00F7F53B /* liblzma.a */; };
+		26586CA72092642B00F7F53B /* libuv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C872092642B00F7F53B /* libuv.a */; };
+		26586CA82092642B00F7F53B /* liblibaprutil010504.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C882092642B00F7F53B /* liblibaprutil010504.a */; };
+		26586CA92092642B00F7F53B /* libBeXml.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C892092642B00F7F53B /* libBeXml.a */; };
+		26586CAA2092642B00F7F53B /* libBeJpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26586C8A2092642B00F7F53B /* libBeJpeg.a */; };
 		2699BBA020779C4200F763EE /* iModelJsApp.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */; };
 		2699BBA220779DAF00F763EE /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA120779DAF00F763EE /* CFNetwork.framework */; };
 		2699BBA420779DB500F763EE /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA320779DB500F763EE /* JavaScriptCore.framework */; };
 		2699BBA620779DBF00F763EE /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA520779DBE00F763EE /* CoreFoundation.framework */; };
-		2699BBC720779E1800F763EE /* log4j.dtd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA720779E1600F763EE /* log4j.dtd */; };
-		2699BBC820779E1800F763EE /* libBeOpenSSL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA820779E1600F763EE /* libBeOpenSSL.a */; };
-		2699BBC920779E1800F763EE /* libECObjects.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA920779E1600F763EE /* libECObjects.a */; };
-		2699BBCA20779E1800F763EE /* libBentleyGeom.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBAA20779E1600F763EE /* libBentleyGeom.a */; };
-		2699BBCB20779E1800F763EE /* libBeLibxml2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBAB20779E1600F763EE /* libBeLibxml2.a */; };
-		2699BBCC20779E1800F763EE /* libBaseGeoCoord.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBAC20779E1600F763EE /* libBaseGeoCoord.a */; };
-		2699BBCD20779E1800F763EE /* libBeHttp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBAD20779E1600F763EE /* libBeHttp.a */; };
-		2699BBCE20779E1800F763EE /* libBeXml.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBAE20779E1600F763EE /* libBeXml.a */; };
-		2699BBCF20779E1800F763EE /* liblibapr010502.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBAF20779E1600F763EE /* liblibapr010502.a */; };
-		2699BBD020779E1800F763EE /* libBeLibJpegTurbo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB020779E1600F763EE /* libBeLibJpegTurbo.a */; };
-		2699BBD120779E1800F763EE /* libDgnPlatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB120779E1600F763EE /* libDgnPlatform.a */; };
-		2699BBD220779E1800F763EE /* libfreetype2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB220779E1600F763EE /* libfreetype2.a */; };
-		2699BBD320779E1800F763EE /* libBentleyGeomSerialization.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB320779E1600F763EE /* libBentleyGeomSerialization.a */; };
-		2699BBD420779E1800F763EE /* libBeZlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB420779E1700F763EE /* libBeZlib.a */; };
-		2699BBD520779E1800F763EE /* libBePng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB520779E1700F763EE /* libBePng.a */; };
-		2699BBD620779E1800F763EE /* libBeCsmapStatic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB620779E1700F763EE /* libBeCsmapStatic.a */; };
-		2699BBD720779E1800F763EE /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB720779E1700F763EE /* liblzma.a */; };
-		2699BBD820779E1800F763EE /* libBeJpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB820779E1700F763EE /* libBeJpeg.a */; };
-		2699BBD920779E1800F763EE /* libBeFolly.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB920779E1700F763EE /* libBeFolly.a */; };
-		2699BBDA20779E1800F763EE /* libBentley.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBBA20779E1700F763EE /* libBentley.a */; };
-		2699BBDB20779E1800F763EE /* libBeSQLiteEC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBBB20779E1700F763EE /* libBeSQLiteEC.a */; };
-		2699BBDC20779E1800F763EE /* libbentleylog4cxx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBBC20779E1700F763EE /* libbentleylog4cxx.a */; };
-		2699BBDD20779E1800F763EE /* libECPresentation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBBD20779E1700F763EE /* libECPresentation.a */; };
-		2699BBDE20779E1800F763EE /* libliblog4cxx010.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBBE20779E1700F763EE /* libliblog4cxx010.a */; };
-		2699BBDF20779E1800F763EE /* libsnappy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBBF20779E1700F763EE /* libsnappy.a */; };
-		2699BBE020779E1800F763EE /* libBeIcu4c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC020779E1700F763EE /* libBeIcu4c.a */; };
-		2699BBE120779E1800F763EE /* libUnits.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC120779E1700F763EE /* libUnits.a */; };
-		2699BBE220779E1800F763EE /* libBeJsonCpp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC220779E1700F763EE /* libBeJsonCpp.a */; };
-		2699BBE320779E1800F763EE /* libBeJavaScript.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC320779E1800F763EE /* libBeJavaScript.a */; };
-		2699BBE420779E1800F763EE /* libBeCurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC420779E1800F763EE /* libBeCurl.a */; };
-		2699BBE520779E1800F763EE /* liblibaprutil010504.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC520779E1800F763EE /* liblibaprutil010504.a */; };
-		2699BBE620779E1800F763EE /* libBeSQLite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC620779E1800F763EE /* libBeSQLite.a */; };
 		26E6C0B62076B63E0031769D /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 26E6C0B52076B63E0031769D /* AppDelegate.mm */; };
 		26E6C0B92076B63E0031769D /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 26E6C0B82076B63E0031769D /* ViewController.mm */; };
 		26E6C0BC2076B63E0031769D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 26E6C0BA2076B63E0031769D /* Main.storyboard */; };
@@ -57,6 +72,69 @@
 /* Begin PBXFileReference section */
 		264171732077A61300A1B72B /* libiModelJs.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libiModelJs.a; sourceTree = "<group>"; };
 		264171742077A61300A1B72B /* libuv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libuv.a; sourceTree = "<group>"; };
+		26586C39209260DE00F7F53B /* ServicesTierEnvironment.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierEnvironment.cpp; path = ../../../ServicesTierEnvironment.cpp; sourceTree = "<group>"; };
+		26586C3A209260DE00F7F53B /* ServicesTierUvHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierUvHost.cpp; path = ../../../ServicesTierUvHost.cpp; sourceTree = "<group>"; };
+		26586C3B209260DE00F7F53B /* ServicesTierHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierHost.cpp; path = ../../../ServicesTierHost.cpp; sourceTree = "<group>"; };
+		26586C3C209260DE00F7F53B /* ServicesTierUtilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierUtilities.cpp; path = ../../../ServicesTierUtilities.cpp; sourceTree = "<group>"; };
+		26586C3D209260DE00F7F53B /* node_api.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_api.h; path = "../../../PublicAPI/node-addon-api/node_api.h"; sourceTree = "<group>"; };
+		26586C3E209260DE00F7F53B /* node_internals.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_internals.h; path = ../../../node_internals.h; sourceTree = "<group>"; };
+		26586C3F209260DE00F7F53B /* ServicesTierNodeHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierNodeHost.cpp; path = ../../../ServicesTierNodeHost.cpp; sourceTree = "<group>"; };
+		26586C40209260DE00F7F53B /* iModelJsUtilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsUtilities.h; path = ../../../PublicAPI/iModelJs/iModelJsUtilities.h; sourceTree = "<group>"; };
+		26586C41209260DE00F7F53B /* ServicesTierExtension.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierExtension.cpp; path = ../../../ServicesTierExtension.cpp; sourceTree = "<group>"; };
+		26586C42209260DE00F7F53B /* node_api_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_api_types.h; path = "../../../PublicAPI/node-addon-api/node_api_types.h"; sourceTree = "<group>"; };
+		26586C43209260DE00F7F53B /* Utilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Utilities.cpp; path = ../../../Utilities.cpp; sourceTree = "<group>"; };
+		26586C44209260DE00F7F53B /* iModelJs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJs.h; path = ../../../PublicAPI/iModelJs/iModelJs.h; sourceTree = "<group>"; };
+		26586C45209260DE00F7F53B /* napi-inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "napi-inl.h"; path = "../../../PublicAPI/node-addon-api/napi-inl.h"; sourceTree = "<group>"; };
+		26586C46209260DE00F7F53B /* ServicesTierUtilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ServicesTierUtilities.h; path = ../../../ServicesTierUtilities.h; sourceTree = "<group>"; };
+		26586C47209260DE00F7F53B /* iModelJsApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsApp.h; path = ../../../PublicAPI/iModelJs/iModelJsApp.h; sourceTree = "<group>"; };
+		26586C48209260DE00F7F53B /* iModelJsServicesTier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsServicesTier.h; path = ../../../PublicAPI/iModelJs/iModelJsServicesTier.h; sourceTree = "<group>"; };
+		26586C49209260DE00F7F53B /* napi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = napi.h; path = "../../../PublicAPI/node-addon-api/napi.h"; sourceTree = "<group>"; };
+		26586C4A209260DE00F7F53B /* ServicesTierScripts.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierScripts.cpp; path = ../../../ServicesTierScripts.cpp; sourceTree = "<group>"; };
+		26586C4B209260DE00F7F53B /* node_internals.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_internals.cc; path = ../../../node_internals.cc; sourceTree = "<group>"; };
+		26586C552092614D00F7F53B /* node_api.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_api.cc; path = ../../../jsc/node_api.cc; sourceTree = "<group>"; };
+		26586C582092623600F7F53B /* ECPresentationUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ECPresentationUtils.cpp; path = ../../../../iModelJsNodeAddon/ECPresentationUtils.cpp; sourceTree = "<group>"; };
+		26586C592092623600F7F53B /* IModelJsNative.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IModelJsNative.cpp; path = ../../../../iModelJsNodeAddon/IModelJsNative.cpp; sourceTree = "<group>"; };
+		26586C5A2092623600F7F53B /* JsInteropBriefcaseManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropBriefcaseManager.cpp; path = ../../../../iModelJsNodeAddon/JsInteropBriefcaseManager.cpp; sourceTree = "<group>"; };
+		26586C5B2092623600F7F53B /* ECSchemaXmlContextUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ECSchemaXmlContextUtils.h; path = ../../../../iModelJsNodeAddon/ECSchemaXmlContextUtils.h; sourceTree = "<group>"; };
+		26586C5C2092623600F7F53B /* TestUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TestUtils.cpp; path = ../../../../iModelJsNodeAddon/TestUtils.cpp; sourceTree = "<group>"; };
+		26586C5D2092623600F7F53B /* ECPresentationUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ECPresentationUtils.h; path = ../../../../iModelJsNodeAddon/ECPresentationUtils.h; sourceTree = "<group>"; };
+		26586C5E2092623600F7F53B /* IModelJsNative.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IModelJsNative.h; path = ../../../../iModelJsNodeAddon/IModelJsNative.h; sourceTree = "<group>"; };
+		26586C5F2092623600F7F53B /* ECSchemaXmlContextUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ECSchemaXmlContextUtils.cpp; path = ../../../../iModelJsNodeAddon/ECSchemaXmlContextUtils.cpp; sourceTree = "<group>"; };
+		26586C602092623600F7F53B /* JsInteropDgnDb.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropDgnDb.cpp; path = ../../../../iModelJsNodeAddon/JsInteropDgnDb.cpp; sourceTree = "<group>"; };
+		26586C672092626200F7F53B /* imodeljs-nodeaddonapi.package.version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "imodeljs-nodeaddonapi.package.version.h"; path = "../../../../iModelJsNodeAddon/imodeljs-nodeaddonapi.package.version.h"; sourceTree = "<group>"; };
+		26586C68209263D700F7F53B /* libBentley.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentley.a; sourceTree = "<group>"; };
+		26586C6B2092642900F7F53B /* libBeOpenSSL.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeOpenSSL.a; path = ../../../nuget/OpenSslNuget_iosarm64.2.0.2.17/native/lib/static/libBeOpenSSL.a; sourceTree = "<group>"; };
+		26586C6C2092642900F7F53B /* libECObjects.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libECObjects.a; sourceTree = "<group>"; };
+		26586C6D2092642A00F7F53B /* libBentleyGeom.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentleyGeom.a; sourceTree = "<group>"; };
+		26586C6E2092642A00F7F53B /* libBeLibxml2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeLibxml2.a; path = ../../../nuget/LibXml2Nuget_iosarm64.2.0.2.17/native/lib/static/libBeLibxml2.a; sourceTree = "<group>"; };
+		26586C6F2092642A00F7F53B /* libBaseGeoCoord.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBaseGeoCoord.a; sourceTree = "<group>"; };
+		26586C702092642A00F7F53B /* libBeCurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeCurl.a; path = ../../../nuget/CurlNuget_iosarm64.2.0.2.17/native/lib/static/libBeCurl.a; sourceTree = "<group>"; };
+		26586C712092642A00F7F53B /* libBeHttp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeHttp.a; sourceTree = "<group>"; };
+		26586C722092642A00F7F53B /* libBeJavaScript.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJavaScript.a; sourceTree = "<group>"; };
+		26586C732092642A00F7F53B /* liblibapr010502.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibapr010502.a; sourceTree = "<group>"; };
+		26586C742092642A00F7F53B /* libsnappy.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsnappy.a; path = ../../../nuget/CompressNuget_iosarm64.2.0.2.17/native/lib/static/libsnappy.a; sourceTree = "<group>"; };
+		26586C752092642A00F7F53B /* libBeZlib.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeZlib.a; path = ../../../nuget/CompressNuget_iosarm64.2.0.2.17/native/lib/static/libBeZlib.a; sourceTree = "<group>"; };
+		26586C762092642A00F7F53B /* libBeLibJpegTurbo.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeLibJpegTurbo.a; path = ../../../nuget/JpegTurboNuget_iosarm64.2.0.2.17/native/lib/static/libBeLibJpegTurbo.a; sourceTree = "<group>"; };
+		26586C772092642A00F7F53B /* libBeSQLite.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeSQLite.a; sourceTree = "<group>"; };
+		26586C782092642A00F7F53B /* libDgnPlatform.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libDgnPlatform.a; sourceTree = "<group>"; };
+		26586C792092642A00F7F53B /* libfreetype2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfreetype2.a; path = ../../../nuget/Freetype2Nuget_iosarm64.2.0.2.17/native/lib/static/libfreetype2.a; sourceTree = "<group>"; };
+		26586C7A2092642A00F7F53B /* libBePng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBePng.a; path = ../../../nuget/PngNuget_iosarm64.2.0.2.17/native/lib/static/libBePng.a; sourceTree = "<group>"; };
+		26586C7B2092642A00F7F53B /* libBentleyGeomSerialization.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentleyGeomSerialization.a; sourceTree = "<group>"; };
+		26586C7C2092642A00F7F53B /* libBeCsmapStatic.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeCsmapStatic.a; sourceTree = "<group>"; };
+		26586C7D2092642A00F7F53B /* libiModelJs.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libiModelJs.a; sourceTree = "<group>"; };
+		26586C7E2092642A00F7F53B /* libBeFolly.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeFolly.a; sourceTree = "<group>"; };
+		26586C7F2092642B00F7F53B /* libBeSQLiteEC.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeSQLiteEC.a; sourceTree = "<group>"; };
+		26586C802092642B00F7F53B /* libbentleylog4cxx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbentleylog4cxx.a; sourceTree = "<group>"; };
+		26586C812092642B00F7F53B /* libECPresentation.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libECPresentation.a;  sourceTree = "<group>"; };
+		26586C822092642B00F7F53B /* libliblog4cxx010.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libliblog4cxx010.a; path = ../../../nuget/Log4CxxNuget_iosarm64.2.0.2.17/native/lib/static/libliblog4cxx010.a; sourceTree = "<group>"; };
+		26586C832092642B00F7F53B /* libUnits.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libUnits.a; sourceTree = "<group>"; };
+		26586C842092642B00F7F53B /* libBeIcu4c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeIcu4c.a; path = ../../../nuget/IcuNuget_iosarm64.2.0.2.17/native/lib/static/libBeIcu4c.a; sourceTree = "<group>"; };
+		26586C852092642B00F7F53B /* libBeJsonCpp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJsonCpp.a; sourceTree = "<group>"; };
+		26586C862092642B00F7F53B /* liblzma.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblzma.a; path = ../../../nuget/CompressNuget_iosarm64.2.0.2.17/native/lib/static/liblzma.a; sourceTree = "<group>"; };
+		26586C872092642B00F7F53B /* libuv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libuv.a; sourceTree = "<group>"; };
+		26586C882092642B00F7F53B /* liblibaprutil010504.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibaprutil010504.a; path = ../../../nuget/Log4CxxNuget_iosarm64.2.0.2.17/native/lib/static/liblibaprutil010504.a; sourceTree = "<group>"; };
+		26586C892092642B00F7F53B /* libBeXml.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeXml.a; sourceTree = "<group>"; };
+		26586C8A2092642B00F7F53B /* libBeJpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJpeg.a; psourceTree = "<group>"; };
 		2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = iModelJsApp.xcconfig; sourceTree = "<group>"; };
 		2699BBA120779DAF00F763EE /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		2699BBA320779DB500F763EE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -105,7 +183,6 @@
 		26E6C0C32076B63F0031769D /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		26E6C0CB2076B8200031769D /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		3B3F6FD1208FBF4A00F27DF1 /* JsInterop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = JsInterop.cpp; path = ../../../../iModelJsNodeAddon/JsInterop.cpp; sourceTree = "<group>"; };
-		3B3F6FD22090A30700F27DF1 /* node_api.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = node_api.cc; path = ../../jsc/node_api.cc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,40 +190,39 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				264171752077A61300A1B72B /* libiModelJs.a in Frameworks */,
-				264171762077A61300A1B72B /* libuv.a in Frameworks */,
-				2699BBC720779E1800F763EE /* log4j.dtd in Frameworks */,
-				2699BBC820779E1800F763EE /* libBeOpenSSL.a in Frameworks */,
-				2699BBC920779E1800F763EE /* libECObjects.a in Frameworks */,
-				2699BBCA20779E1800F763EE /* libBentleyGeom.a in Frameworks */,
-				2699BBCB20779E1800F763EE /* libBeLibxml2.a in Frameworks */,
-				2699BBCC20779E1800F763EE /* libBaseGeoCoord.a in Frameworks */,
-				2699BBCD20779E1800F763EE /* libBeHttp.a in Frameworks */,
-				2699BBCE20779E1800F763EE /* libBeXml.a in Frameworks */,
-				2699BBCF20779E1800F763EE /* liblibapr010502.a in Frameworks */,
-				2699BBD020779E1800F763EE /* libBeLibJpegTurbo.a in Frameworks */,
-				2699BBD120779E1800F763EE /* libDgnPlatform.a in Frameworks */,
-				2699BBD220779E1800F763EE /* libfreetype2.a in Frameworks */,
-				2699BBD320779E1800F763EE /* libBentleyGeomSerialization.a in Frameworks */,
-				2699BBD420779E1800F763EE /* libBeZlib.a in Frameworks */,
-				2699BBD520779E1800F763EE /* libBePng.a in Frameworks */,
-				2699BBD620779E1800F763EE /* libBeCsmapStatic.a in Frameworks */,
-				2699BBD720779E1800F763EE /* liblzma.a in Frameworks */,
-				2699BBD820779E1800F763EE /* libBeJpeg.a in Frameworks */,
-				2699BBD920779E1800F763EE /* libBeFolly.a in Frameworks */,
-				2699BBDA20779E1800F763EE /* libBentley.a in Frameworks */,
-				2699BBDB20779E1800F763EE /* libBeSQLiteEC.a in Frameworks */,
-				2699BBDC20779E1800F763EE /* libbentleylog4cxx.a in Frameworks */,
-				2699BBDD20779E1800F763EE /* libECPresentation.a in Frameworks */,
-				2699BBDE20779E1800F763EE /* libliblog4cxx010.a in Frameworks */,
-				2699BBDF20779E1800F763EE /* libsnappy.a in Frameworks */,
-				2699BBE020779E1800F763EE /* libBeIcu4c.a in Frameworks */,
-				2699BBE120779E1800F763EE /* libUnits.a in Frameworks */,
-				2699BBE220779E1800F763EE /* libBeJsonCpp.a in Frameworks */,
-				2699BBE320779E1800F763EE /* libBeJavaScript.a in Frameworks */,
-				2699BBE420779E1800F763EE /* libBeCurl.a in Frameworks */,
-				2699BBE520779E1800F763EE /* liblibaprutil010504.a in Frameworks */,
-				2699BBE620779E1800F763EE /* libBeSQLite.a in Frameworks */,
+				26586C8B2092642B00F7F53B /* libBeOpenSSL.a in Frameworks */,
+				26586C8C2092642B00F7F53B /* libECObjects.a in Frameworks */,
+				26586C8D2092642B00F7F53B /* libBentleyGeom.a in Frameworks */,
+				26586C8E2092642B00F7F53B /* libBeLibxml2.a in Frameworks */,
+				26586C8F2092642B00F7F53B /* libBaseGeoCoord.a in Frameworks */,
+				26586C902092642B00F7F53B /* libBeCurl.a in Frameworks */,
+				26586C912092642B00F7F53B /* libBeHttp.a in Frameworks */,
+				26586C922092642B00F7F53B /* libBeJavaScript.a in Frameworks */,
+				26586C932092642B00F7F53B /* liblibapr010502.a in Frameworks */,
+				26586C942092642B00F7F53B /* libsnappy.a in Frameworks */,
+				26586C952092642B00F7F53B /* libBeZlib.a in Frameworks */,
+				26586C962092642B00F7F53B /* libBeLibJpegTurbo.a in Frameworks */,
+				26586C972092642B00F7F53B /* libBeSQLite.a in Frameworks */,
+				26586C982092642B00F7F53B /* libDgnPlatform.a in Frameworks */,
+				26586C992092642B00F7F53B /* libfreetype2.a in Frameworks */,
+				26586C9A2092642B00F7F53B /* libBePng.a in Frameworks */,
+				26586C9B2092642B00F7F53B /* libBentleyGeomSerialization.a in Frameworks */,
+				26586C9C2092642B00F7F53B /* libBeCsmapStatic.a in Frameworks */,
+				26586C9D2092642B00F7F53B /* libiModelJs.a in Frameworks */,
+				26586C9E2092642B00F7F53B /* libBeFolly.a in Frameworks */,
+				26586C9F2092642B00F7F53B /* libBeSQLiteEC.a in Frameworks */,
+				26586CA02092642B00F7F53B /* libbentleylog4cxx.a in Frameworks */,
+				26586CA12092642B00F7F53B /* libECPresentation.a in Frameworks */,
+				26586CA22092642B00F7F53B /* libliblog4cxx010.a in Frameworks */,
+				26586CA32092642B00F7F53B /* libUnits.a in Frameworks */,
+				26586CA42092642B00F7F53B /* libBeIcu4c.a in Frameworks */,
+				26586CA52092642B00F7F53B /* libBeJsonCpp.a in Frameworks */,
+				26586CA62092642B00F7F53B /* liblzma.a in Frameworks */,
+				26586CA72092642B00F7F53B /* libuv.a in Frameworks */,
+				26586CA82092642B00F7F53B /* liblibaprutil010504.a in Frameworks */,
+				26586CA92092642B00F7F53B /* libBeXml.a in Frameworks */,
+				26586CAA2092642B00F7F53B /* libBeJpeg.a in Frameworks */,
+				26586C6A2092642900F7F53B /* libBentley.a in Frameworks */,
 				2699BBA620779DBF00F763EE /* CoreFoundation.framework in Frameworks */,
 				2699BBA420779DB500F763EE /* JavaScriptCore.framework in Frameworks */,
 				2699BBA220779DAF00F763EE /* CFNetwork.framework in Frameworks */,
@@ -157,11 +233,56 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		26586C382092607E00F7F53B /* iModelJs */ = {
+			isa = PBXGroup;
+			children = (
+				26586C552092614D00F7F53B /* node_api.cc */,
+				26586C44209260DE00F7F53B /* iModelJs.h */,
+				26586C47209260DE00F7F53B /* iModelJsApp.h */,
+				26586C48209260DE00F7F53B /* iModelJsServicesTier.h */,
+				26586C40209260DE00F7F53B /* iModelJsUtilities.h */,
+				26586C45209260DE00F7F53B /* napi-inl.h */,
+				26586C49209260DE00F7F53B /* napi.h */,
+				26586C42209260DE00F7F53B /* node_api_types.h */,
+				26586C3D209260DE00F7F53B /* node_api.h */,
+				26586C4B209260DE00F7F53B /* node_internals.cc */,
+				26586C3E209260DE00F7F53B /* node_internals.h */,
+				26586C39209260DE00F7F53B /* ServicesTierEnvironment.cpp */,
+				26586C41209260DE00F7F53B /* ServicesTierExtension.cpp */,
+				26586C3B209260DE00F7F53B /* ServicesTierHost.cpp */,
+				26586C3F209260DE00F7F53B /* ServicesTierNodeHost.cpp */,
+				26586C4A209260DE00F7F53B /* ServicesTierScripts.cpp */,
+				26586C3C209260DE00F7F53B /* ServicesTierUtilities.cpp */,
+				26586C46209260DE00F7F53B /* ServicesTierUtilities.h */,
+				26586C3A209260DE00F7F53B /* ServicesTierUvHost.cpp */,
+				26586C43209260DE00F7F53B /* Utilities.cpp */,
+			);
+			path = iModelJs;
+			sourceTree = "<group>";
+		};
+		26586C57209261EA00F7F53B /* iModelJsNodeAddon */ = {
+			isa = PBXGroup;
+			children = (
+				26586C672092626200F7F53B /* imodeljs-nodeaddonapi.package.version.h */,
+				26586C582092623600F7F53B /* ECPresentationUtils.cpp */,
+				26586C5D2092623600F7F53B /* ECPresentationUtils.h */,
+				26586C5F2092623600F7F53B /* ECSchemaXmlContextUtils.cpp */,
+				26586C5B2092623600F7F53B /* ECSchemaXmlContextUtils.h */,
+				26586C592092623600F7F53B /* IModelJsNative.cpp */,
+				26586C5E2092623600F7F53B /* IModelJsNative.h */,
+				26586C5A2092623600F7F53B /* JsInteropBriefcaseManager.cpp */,
+				26586C602092623600F7F53B /* JsInteropDgnDb.cpp */,
+				26586C5C2092623600F7F53B /* TestUtils.cpp */,
+			);
+			path = iModelJsNodeAddon;
+			sourceTree = "<group>";
+		};
 		26E6C0A82076B63E0031769D = {
 			isa = PBXGroup;
 			children = (
-				3B3F6FD22090A30700F27DF1 /* node_api.cc */,
+				26586C382092607E00F7F53B /* iModelJs */,
 				26E6C0B32076B63E0031769D /* iModelJsApp */,
+				26586C57209261EA00F7F53B /* iModelJsNodeAddon */,
 				26E6C0B22076B63E0031769D /* Products */,
 				26E6C0CA2076B8200031769D /* Frameworks */,
 			);
@@ -196,6 +317,39 @@
 		26E6C0CA2076B8200031769D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				26586C6F2092642A00F7F53B /* libBaseGeoCoord.a */,
+				26586C7C2092642A00F7F53B /* libBeCsmapStatic.a */,
+				26586C702092642A00F7F53B /* libBeCurl.a */,
+				26586C7E2092642A00F7F53B /* libBeFolly.a */,
+				26586C712092642A00F7F53B /* libBeHttp.a */,
+				26586C842092642B00F7F53B /* libBeIcu4c.a */,
+				26586C722092642A00F7F53B /* libBeJavaScript.a */,
+				26586C8A2092642B00F7F53B /* libBeJpeg.a */,
+				26586C852092642B00F7F53B /* libBeJsonCpp.a */,
+				26586C762092642A00F7F53B /* libBeLibJpegTurbo.a */,
+				26586C6E2092642A00F7F53B /* libBeLibxml2.a */,
+				26586C6D2092642A00F7F53B /* libBentleyGeom.a */,
+				26586C7B2092642A00F7F53B /* libBentleyGeomSerialization.a */,
+				26586C802092642B00F7F53B /* libbentleylog4cxx.a */,
+				26586C6B2092642900F7F53B /* libBeOpenSSL.a */,
+				26586C7A2092642A00F7F53B /* libBePng.a */,
+				26586C772092642A00F7F53B /* libBeSQLite.a */,
+				26586C7F2092642B00F7F53B /* libBeSQLiteEC.a */,
+				26586C892092642B00F7F53B /* libBeXml.a */,
+				26586C752092642A00F7F53B /* libBeZlib.a */,
+				26586C782092642A00F7F53B /* libDgnPlatform.a */,
+				26586C6C2092642900F7F53B /* libECObjects.a */,
+				26586C812092642B00F7F53B /* libECPresentation.a */,
+				26586C792092642A00F7F53B /* libfreetype2.a */,
+				26586C7D2092642A00F7F53B /* libiModelJs.a */,
+				26586C732092642A00F7F53B /* liblibapr010502.a */,
+				26586C882092642B00F7F53B /* liblibaprutil010504.a */,
+				26586C822092642B00F7F53B /* libliblog4cxx010.a */,
+				26586C862092642B00F7F53B /* liblzma.a */,
+				26586C742092642A00F7F53B /* libsnappy.a */,
+				26586C832092642B00F7F53B /* libUnits.a */,
+				26586C872092642B00F7F53B /* libuv.a */,
+				26586C68209263D700F7F53B /* libBentley.a */,
 				264171732077A61300A1B72B /* libiModelJs.a */,
 				264171742077A61300A1B72B /* libuv.a */,
 				2699BBAC20779E1600F763EE /* libBaseGeoCoord.a */,
@@ -327,9 +481,25 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				26586C642092623600F7F53B /* TestUtils.cpp in Sources */,
+				26586C53209260DE00F7F53B /* ServicesTierScripts.cpp in Sources */,
 				26E6C0B92076B63E0031769D /* ViewController.mm in Sources */,
+				26586C54209260DE00F7F53B /* node_internals.cc in Sources */,
+				26586C612092623600F7F53B /* ECPresentationUtils.cpp in Sources */,
+				26586C4E209260DE00F7F53B /* ServicesTierHost.cpp in Sources */,
+				26586C4F209260DE00F7F53B /* ServicesTierUtilities.cpp in Sources */,
+				26586C4D209260DE00F7F53B /* ServicesTierUvHost.cpp in Sources */,
+				26586C52209260DE00F7F53B /* Utilities.cpp in Sources */,
+				26586C4C209260DE00F7F53B /* ServicesTierEnvironment.cpp in Sources */,
+				26586C662092623600F7F53B /* JsInteropDgnDb.cpp in Sources */,
+				26586C622092623600F7F53B /* IModelJsNative.cpp in Sources */,
+				26586C50209260DE00F7F53B /* ServicesTierNodeHost.cpp in Sources */,
+				26586C632092623600F7F53B /* JsInteropBriefcaseManager.cpp in Sources */,
 				26E6C0C42076B63F0031769D /* main.m in Sources */,
+				26586C652092623600F7F53B /* ECSchemaXmlContextUtils.cpp in Sources */,
 				26E6C0B62076B63E0031769D /* AppDelegate.mm in Sources */,
+				26586C51209260DE00F7F53B /* ServicesTierExtension.cpp in Sources */,
+				26586C562092614D00F7F53B /* node_api.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -478,6 +648,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/PublicAPI/",
 					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/VendorAPI/",
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJsNodeAddon/Delivery/imodeljs-addon-iModelJs-objs/",
 				);
 				INFOPLIST_FILE = iModelJsApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
@@ -503,6 +674,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/PublicAPI/",
 					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/VendorAPI/",
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJsNodeAddon/Delivery/imodeljs-addon-iModelJs-objs/",
 				);
 				INFOPLIST_FILE = iModelJsApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
