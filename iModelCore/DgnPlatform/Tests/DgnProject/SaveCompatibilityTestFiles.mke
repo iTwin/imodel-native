@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/DgnProject/SaveCompatibilityTestFiles.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
@@ -29,7 +29,7 @@ $(ContextDir)CompatibilityTestSeed.bim : $(CacheDir)CompatibilityTestSeed.bim
     $(LinkFirstDepToFirstTarget)
 
 # Saves the Bim produced by the ECInstancesCompatibility
-	
+
 %if exists($(TestOutputDir2)InstancesCompatibilitySeed.bim)
     $(CacheDir)InstancesCompatibilitySeed.bim : $(TestOutputDir2)InstancesCompatibilitySeed.bim
         $(CopyFirstDepToFirstTarget)
