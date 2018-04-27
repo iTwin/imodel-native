@@ -304,9 +304,9 @@
     ### Format
     - @ref BentleyApi::ECN::ECFormat::GetDisplayLabel "DisplayLabel": Modify
     - @ref BentleyApi::ECN::ECFormat::GetDescription "Description": Modify
-    - @ref BentleyApi::Formatting::Format::GetNumericSpec "NumericFormatSpec": Modify any of its attributes
-    - @ref BentleyApi::Formatting::Format::GetCompositeSpec "CompositeValueSpec": 
-        - @ref BentleyApi::Formatting::CompositeValueSpec::GetSpacer "Spacer": Modify
+    - @b GetNumericSpec: Modify any of its attributes
+    - @b GetCompositeSpec: 
+        - Spacer: Modify
         - Unit labels: Modify
 
     ### ECProperty
