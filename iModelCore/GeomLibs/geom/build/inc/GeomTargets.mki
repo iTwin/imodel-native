@@ -907,7 +907,7 @@ $(OUT_DIR)bspintersect$(OUT_EXT) : $(geomSrcGpa)bspintersect.cpp         $(OTHER
 
 $(OUT_DIR)akima$(OUT_EXT) : $(geomSrcBspline)akima.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-#$(OUT_DIR)gp_developable$(OUT_EXT) : $(geomSrcGpa)gp_developable.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+$(OUT_DIR)gp_developable$(OUT_EXT) : $(geomSrcGpa)gp_developable.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 #$(OUT_DIR)gp_polygon$(OUT_EXT) : $(geomSrcGpa)gp_polygon.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
