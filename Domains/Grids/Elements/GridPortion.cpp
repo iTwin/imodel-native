@@ -75,7 +75,7 @@ DPlane3d PlanGrid::GetPlane
 ) const
     {
     DPlane3d plane;
-    bsiDPlane3d_initFromOriginAndNormalXYZXYZ (&plane, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+    plane.InitFromOriginAndNormal(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
     YawPitchRollAngles angles = GetPlacement().GetAngles ();
     RotMatrix rotMatrix = angles.ToRotMatrix ();
     rotMatrix.Multiply (plane.normal);
