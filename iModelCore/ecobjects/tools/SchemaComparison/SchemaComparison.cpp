@@ -19,6 +19,25 @@
 
 BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::LoggingManager::GetLogger("SchemaComparison");
 
+struct ExactSearchPathSchemaFileLocater : ECN::SearchPathSchemaFileLocater
+    {
+    using ECN::SearchPathSchemaFileLocater::SearchPathSchemaFileLocater;
+    protected:
+        ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
+    public:
+        static ECN::SearchPathSchemaFileLocaterPtr CreateExactSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt = false);
+    };
+
+ECN::ECSchemaPtr ExactSearchPathSchemaFileLocater::_LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext)
+    {
+    return SearchPathSchemaFileLocater::_LocateSchema(key, ECN::SchemaMatchType::Exact, schemaContext);
+    }
+
+ECN::SearchPathSchemaFileLocaterPtr ExactSearchPathSchemaFileLocater::CreateExactSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt)
+    {
+    return new ExactSearchPathSchemaFileLocater(searchPaths, includeFilesWithNoVerExt);
+    }
+
 struct SchemaComparisonOptions
     {
     BeFileName InFileNames[NSCHEMAS];
@@ -83,7 +102,11 @@ static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& option
             if (referenceSchemasIndex >= NSCHEMAS)
                 return false;
             while (false == NoParameterNext(argc, argv, i))
-                options.ReferenceDirectories[referenceSchemasIndex].push_back(BeFileName(argv[++i]));
+                {
+                BeFileName refDir(argv[++i]);
+                refDir.AppendSeparator();
+                options.ReferenceDirectories[referenceSchemasIndex].push_back(refDir);
+                }
             for (auto const& refDirectory : options.ReferenceDirectories[referenceSchemasIndex])
                 {
                 if (!refDirectory.Contains(L"\\"))
@@ -131,10 +154,14 @@ int CompareSchemas(SchemaComparisonOptions& options)
         contexts[i]->SetPreserveElementOrder(true);
         contexts[i]->SetPreserveXmlComments(false);
 
+        bvector<WString> searchPaths;
         for (auto const& refDir : options.ReferenceDirectories[i])
             {
-            contexts[i]->AddSchemaPath(refDir.GetName());
+            searchPaths.push_back(WString(refDir.GetName()));
             }
+        
+        ECN::SearchPathSchemaFileLocaterPtr exactSchemaLocater = ExactSearchPathSchemaFileLocater::CreateExactSearchPathSchemaFileLocater(searchPaths, true);
+        contexts[i]->AddSchemaLocater(*exactSchemaLocater);
 
         ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlFile(schemas[i], options.InFileNames[i].c_str(), *contexts[i]);
         if (status != ECN::SchemaReadStatus::Success || !schemas[i].IsValid())
