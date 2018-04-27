@@ -55,6 +55,37 @@ TEST_F(UnitsTests, BasicECUnitCreation)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitsTests, LookupUnitTest)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+            <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" definition="u:M"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    auto unitContext = &schema->GetUnitsContext();
+    auto shouldBeNull = unitContext->LookupUnit("");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = unitContext->LookupUnit("banana:M");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    auto shouldNotBeNull = unitContext->LookupUnit("TestUnit");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("TestUnit", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = unitContext->LookupUnit("u:M");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("M", shouldNotBeNull->GetName().c_str());
+    bvector<Units::UnitCP> units;
+    unitContext->AllUnits(units);
+    ASSERT_EQ(unitContext->GetUnitCount(), units.size());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(UnitsTests, ECUnitContainerTest)

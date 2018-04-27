@@ -37,6 +37,37 @@ TEST_F(PhenomenonTests, BasicPhenomenonCreation)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(PhenomenonTests, LookupPhenomTest)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+            <Phenomenon typeName="TestPhenom" definition="LENGTH"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    auto unitContext = &schema->GetUnitsContext();
+    auto shouldBeNull = unitContext->LookupPhenomenon("");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = unitContext->LookupPhenomenon("banana:M");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    auto shouldNotBeNull = unitContext->LookupPhenomenon("TestPhenom");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("TestPhenom", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = unitContext->LookupPhenomenon("u:LENGTH");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("LENGTH", shouldNotBeNull->GetName().c_str());
+    bvector<Units::PhenomenonCP> phenom;
+    unitContext->AllPhenomena(phenom);
+    ASSERT_EQ(unitContext->GetPhenomenonCount(), phenom.size());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(PhenomenonTests, PhenomenonContainerTest)
