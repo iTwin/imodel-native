@@ -95,8 +95,8 @@ DwgDbObjectId       DwgDbDatabase::GetActiveUserViewportId ()
 #ifdef DWGTOOLKIT_OpenDwg
     anyvportId = this->activeViewportId ();
 #elif DWGTOOLKIT_RealDwg
-    if (Acad::eOk != acdbGetCurUserViewportId(this, anyvportId))
-        anyvportId = DwgDbObjectId ();
+    // the method returns the active viewport entity ID, not necessarily the overall viewport entity.
+    anyvportId = ::acdbGetCurVportId (this);
 #endif
     return  anyvportId;
     }
