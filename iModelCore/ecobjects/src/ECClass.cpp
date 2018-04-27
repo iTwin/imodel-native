@@ -1982,14 +1982,21 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
         {
         if (ECObjectsStatus::Success != SchemaParseUtils::ParseModifierXmlString(m_modifier, modifierString))
             {
-            LOG.errorv("Class %s has an invalid modifier attribute value %s", this->GetName().c_str(), modifierString.c_str());
+            // Don't fail if the modifier string is unknown with >EC3.x versions. Default is None.
+            if (GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+                {
+                LOG.warningv("Class '%s' has an unknown modifier '%s'. Setting to None.", this->GetFullName(), modifierString);
+                return SchemaReadStatus::Success;
+                }
+
+            LOG.errorv("Class '%s' has an invalid modifier attribute value '%s'", this->GetFullName(), modifierString.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         }
     // Modifier is required on ECRelationshipClasses in ecxml versions 3.1 and greater
     else if (IsRelationshipClass() && m_schema.OriginalECXmlVersionAtLeast (ECVersion::V3_1))
         {
-        LOG.errorv("Invalid ECSchemaXML: The ECRelationshipClass %s must contain a %s attribute", this->GetFullName(), MODIFIER_ATTRIBUTE);
+        LOG.errorv("Invalid ECSchemaXML: The ECRelationshipClass '%s' must contain a '%s' attribute", this->GetFullName(), MODIFIER_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
@@ -4221,17 +4228,22 @@ ECObjectsStatus ECRelationshipClass::SetStrength (StrengthType strength)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipClass::SetStrength (Utf8CP strength)
+ECObjectsStatus ECRelationshipClass::SetStrength(Utf8CP strength)
     {
     PRECONDITION (nullptr != strength, ECObjectsStatus::PreconditionViolated);
 
     StrengthType strengthType;
     ECObjectsStatus status = SchemaParseUtils::ParseStrengthType(strengthType, strength);
-    if (ECObjectsStatus::Success != status)
-        LOG.errorv ("Failed to parse the Strength string '%s' for ECRelationshipClass '%s'.", strength, this->GetName().c_str());
+    if (ECObjectsStatus::Success == status)
+        SetStrength(strengthType);
+    else if (GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+        {
+        LOG.warningv("ECRelationshipClass '%s' has an unknown Strength type '%s'. Setting to 'Referencing'", GetFullName(), strength);
+        return SetStrength(StrengthType::Referencing); // Default if the ECVersion is greater than the latest known version. Return so error status is not returned.
+        }
     else
-        SetStrength (strengthType);
-        
+        LOG.errorv ("Failed to parse the Strength string '%s' for ECRelationshipClass '%s'.", strength, this->GetName().c_str());
+
     return status;
     }
     

@@ -96,7 +96,7 @@ Utf8String ECTestFixture::GetDateTime ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    08/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-void deserializeSchema(ECSchemaPtr& schema, ECSchemaReadContextR context, SchemaItem const& schemaItem, SchemaReadStatus expectedStatus, bool assert = false)
+void deserializeSchema(ECSchemaPtr& schema, ECSchemaReadContextR context, SchemaItem const& schemaItem, SchemaReadStatus expectedStatus, bool assert = false, Utf8CP failureMessage = "")
     {
     if (SchemaItem::Type::File == schemaItem.GetType())
         {
@@ -104,9 +104,9 @@ void deserializeSchema(ECSchemaPtr& schema, ECSchemaReadContextR context, Schema
 
         schema = ECSchema::LocateSchema(filePath.c_str(), context);
         if (SchemaReadStatus::Success == expectedStatus)
-            ASSERT_TRUE(schema.IsValid());
+            ASSERT_TRUE(schema.IsValid()) << failureMessage;
         else
-            ASSERT_FALSE(schema.IsValid());
+            ASSERT_FALSE(schema.IsValid()) << failureMessage;
 
         return;
         }
@@ -115,47 +115,70 @@ void deserializeSchema(ECSchemaPtr& schema, ECSchemaReadContextR context, Schema
 
     if (assert)
         {
-        ASSERT_EQ(expectedStatus, readStatus);
+        ASSERT_EQ(expectedStatus, readStatus) << failureMessage;
         if (SchemaReadStatus::Success == expectedStatus)
-            ASSERT_TRUE(schema.IsValid());
+            ASSERT_TRUE(schema.IsValid()) << failureMessage;
         else 
-            ASSERT_FALSE(schema.IsValid());
+            ASSERT_FALSE(schema.IsValid()) << failureMessage;
         }
     else
         {
         EXPECT_EQ(expectedStatus, readStatus);
         if (SchemaReadStatus::Success == expectedStatus)
-            EXPECT_TRUE(schema.IsValid());
+            EXPECT_TRUE(schema.IsValid()) << failureMessage;
         else
-            EXPECT_FALSE(schema.IsValid());
+            EXPECT_FALSE(schema.IsValid()) << failureMessage;
         }    
     }
 
-void ECTestFixture::DeserializeSchema(ECSchemaPtr& schema, ECSchemaReadContextR context, SchemaItem const& schemaItem, SchemaReadStatus expectedStatus)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+void ECTestFixture::DeserializeSchema(ECSchemaPtr& schema, ECSchemaReadContextR context, SchemaItem const& schemaItem, SchemaReadStatus expectedStatus, Utf8CP failureMessage)
     {
-    deserializeSchema(schema, context, schemaItem, expectedStatus, true);
+    deserializeSchema(schema, context, schemaItem, expectedStatus, true, failureMessage);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    08/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-void ECTestFixture::ExpectSchemaDeserializationFailure(SchemaItem const& schemaItem, SchemaReadStatus expectedError)
+void ECTestFixture::ExpectSchemaDeserializationFailure(SchemaItem const& schemaItem, SchemaReadStatus expectedError, Utf8CP failureMessage)
     {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    deserializeSchema(schema, *context, schemaItem, SchemaReadStatus::InvalidECSchemaXml, false);
+    deserializeSchema(schema, *context, schemaItem, expectedError, false, failureMessage);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    08/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-void ECTestFixture::AssertSchemaDeserializationFailure(SchemaItem const& schemaItem, SchemaReadStatus expectedError)
+void ECTestFixture::AssertSchemaDeserializationFailure(SchemaItem const& schemaItem, SchemaReadStatus expectedError, Utf8CP failureMessage)
     {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    deserializeSchema(schema, *context, schemaItem, SchemaReadStatus::InvalidECSchemaXml, true);
+    deserializeSchema(schema, *context, schemaItem, expectedError, true, failureMessage);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                    03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+void ECTestFixture::RoundTripSchemaToVersionAndBack(ECSchemaPtr& schema, SchemaItem item, ECN::ECVersion toVersion, SchemaReadStatus expectedReadStatus, SchemaWriteStatus expectedWriteStatus, Utf8CP failureMessage)
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr local;
+    deserializeSchema(local, *context, item, SchemaReadStatus::Success, true, "Should be able to deserialize original schema for round trip test");
+    Utf8String outXml;
+    ASSERT_NE(nullptr, local.get());
+    ASSERT_TRUE(local->Validate());
+    ASSERT_EQ(expectedWriteStatus, local->WriteToXmlString(outXml, toVersion));
+    if (SchemaWriteStatus::Success != expectedWriteStatus)
+        return;
+    context = ECSchemaReadContext::CreateContext();
+    deserializeSchema(schema, *context, SchemaItem(outXml), expectedReadStatus, true, "Should be able to deserialize the round tripped schema");
     }
 
 //---------------------------------------------------------------------------------------
