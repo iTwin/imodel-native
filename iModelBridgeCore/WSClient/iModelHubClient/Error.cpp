@@ -156,10 +156,10 @@ Error::Error(DgnDbPtr db, BeSQLite::DbResult result)
 
 Error::Error(RevisionStatus const& status)
     {
-    if (RevisionStatus::MergeError == status)
+    if (RevisionStatus::ApplyError == status)
         {
-        m_id = Id::MergeError;
-        m_message = GetDefaultMessage(Id::MergeError);
+        m_id = Id::ApplyError;
+        m_message = GetDefaultMessage(Id::ApplyError);
         }
     else if (RevisionStatus::MergeSchemaChangesOnOpen == status)
         {
@@ -214,7 +214,7 @@ Utf8StringCR Error::GetDefaultMessage(Error::Id id)
 
         map[Id::FileIsNotBriefcase] = ErrorLocalizedString(MESSAGE_FileIsNotBriefcase);
 
-        map[Id::MergeError] = ErrorLocalizedString(MESSAGE_MergeError);
+        map[Id::ApplyError] = ErrorLocalizedString(MESSAGE_ApplyError);
         map[Id::ChangeSetManagerError] = ErrorLocalizedString(MESSAGE_ChangeSetManagerError);
         map[Id::MergeSchemaChangesOnOpen] = ErrorLocalizedString(MESSAGE_MergeSchemaChangesOnOpen);
         map[Id::ReverseOrReinstateSchemaChangesOnOpen] = ErrorLocalizedString(MESSAGE_ReverseOrReinstateSchemaChangesOnOpen);
