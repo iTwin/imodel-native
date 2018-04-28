@@ -733,7 +733,7 @@ RevisionStatus Briefcase::MergeChangeSets(ChangeSets::iterator begin, ChangeSets
             return status;
 
         if (nullptr != cancellationToken && cancellationToken->IsCanceled())
-            return RevisionStatus::MergeError;
+            return RevisionStatus::ApplyError;
         }
     return status;
     }
@@ -751,7 +751,7 @@ RevisionStatus Briefcase::ReverseChangeSets(ChangeSets::reverse_iterator rbegin,
             return status;
 
         if (nullptr != cancellationToken && cancellationToken->IsCanceled())
-            return RevisionStatus::MergeError;
+            return RevisionStatus::ApplyError;
         }
     return status;
     }

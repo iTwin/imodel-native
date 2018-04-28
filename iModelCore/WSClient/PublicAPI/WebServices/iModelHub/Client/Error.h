@@ -106,7 +106,7 @@ public:
         Canceled,
 
         //ChangeSet Manager Errors
-        MergeError = 500,
+        ApplyError = 500,
         ChangeSetManagerError,
         MergeSchemaChangesOnOpen,
         ReverseOrReinstateSchemaChangesOnOpen,
