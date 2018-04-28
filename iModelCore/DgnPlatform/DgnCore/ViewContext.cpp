@@ -942,18 +942,18 @@ bool GeometryParams::IsEquivalent(GeometryParamsCR other) const
 
     if (FillDisplay::Never != m_fillDisplay)
         {
-        // Don't compare m_fillColor/m_gradient unless sub-category appearance override is set...
         if (m_appearanceOverrides.m_fill != other.m_appearanceOverrides.m_fill)
             return false;
 
+        if (m_gradient.IsValid() != other.m_gradient.IsValid())
+            return false;
+
+        if (m_gradient.IsValid() && !(*m_gradient == *other.m_gradient))
+            return false;
+
+        // Don't compare m_fillColor unless sub-category appearance override is set...
         if (m_appearanceOverrides.m_fill)
             {
-            if (m_gradient.IsValid() != other.m_gradient.IsValid())
-                return false;
-
-            if (m_gradient.IsValid() && !(*m_gradient == *other.m_gradient))
-                return false;
-
             if (m_backgroundFill != other.m_backgroundFill)
                 return false;
 
