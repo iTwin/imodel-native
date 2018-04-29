@@ -275,16 +275,16 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens)
+RevisionStatus JsInterop::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens)
     {
     revisionPtrs.clear();
     containsSchemaChanges = false;
-    PRECONDITION(!changeSetTokens.isNull() && changeSetTokens.isArray(), BE_SQLITE_ERROR);
+    PRECONDITION(!changeSetTokens.isNull() && changeSetTokens.isArray(), RevisionStatus::FileNotFound);
 
     for (uint32_t ii = 0; ii < changeSetTokens.size(); ii++)
         {
         JsonValueCR changeSetToken = changeSetTokens[ii];
-        PRECONDITION(changeSetToken.isMember("id") && changeSetToken.isMember("pathname"), BE_SQLITE_ERROR);
+        PRECONDITION(changeSetToken.isMember("id") && changeSetToken.isMember("pathname"), RevisionStatus::FileNotFound);
 
         if (!containsSchemaChanges)
             containsSchemaChanges = changeSetToken.isMember("containsSchemaChanges") && changeSetToken["containsSchemaChanges"].asBool();
@@ -294,94 +294,90 @@ DbResult JsInterop::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& 
 
         RevisionStatus revStatus;
         DgnRevisionPtr revision = DgnRevision::Create(&revStatus, id, parentId, dbGuid);
-        if (!EXPECTED_CONDITION(revStatus == RevisionStatus::Success))
-            return BE_SQLITE_ERROR;
+        PRECONDITION(revStatus == RevisionStatus::Success, revStatus);
         BeAssert(revision.IsValid());
 
         BeFileName changeSetPathname(changeSetToken["pathname"].asCString(), true);
-        PRECONDITION(changeSetPathname.DoesPathExist(), BE_SQLITE_ERROR);
+        PRECONDITION(changeSetPathname.DoesPathExist(), RevisionStatus::FileNotFound);
 
         revision->SetRevisionChangesFile(changeSetPathname);
         revisionPtrs.push_back(revision);
         }
 
-    return BE_SQLITE_OK;
+    return RevisionStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ProcessSchemaChangeSets(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption, BeFileNameCR dbFileName)
+RevisionStatus JsInterop::ApplySchemaChangeSets(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption, BeFileNameCR dbFileName)
     {
-    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(revisions, processOption));
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(revisions, applyOption));
     DbResult result;
     DgnDbPtr dgndb = DgnDb::OpenDgnDb(&result, dbFileName, openParams);
-    POSTCONDITION(result == BE_SQLITE_OK, result);
+    POSTCONDITION(result == BE_SQLITE_OK, RevisionStatus::ApplyError);
 
     dgndb->CloseDb();
-    return BE_SQLITE_OK;
+    return RevisionStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ProcessDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption)
+RevisionStatus JsInterop::ApplyDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption)
     {
-    PRECONDITION(dgndb.IsDbOpen() && "Expected briefcase to be open when merging only data changes", BE_SQLITE_ERROR);
-
-    RevisionStatus status = dgndb.Revisions().ProcessRevisions(revisions, processOption);
-    POSTCONDITION(status == RevisionStatus::Success, BE_SQLITE_ERROR);
-
-    return BE_SQLITE_OK;
+    PRECONDITION(dgndb.IsDbOpen() && "Expected briefcase to be open when applying only data changes", RevisionStatus::ApplyError);
+    return dgndb.Revisions().ProcessRevisions(revisions, applyOption);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::ProcessChangeSets(DgnDbPtr dgndb, JsonValueCR changeSetTokens, RevisionProcessOption processOption, Utf8StringCR dbGuid, BeFileNameCR dbFileName)
+RevisionStatus JsInterop::ApplyChangeSets(DgnDbPtr dgndb, JsonValueCR changeSetTokens, RevisionProcessOption applyOption, Utf8StringCR dbGuid, BeFileNameCR dbFileName)
     {
     bvector<DgnRevisionPtr> revisionPtrs;
     bool containsSchemaChanges;
-    DbResult result = ReadChangeSets(revisionPtrs, containsSchemaChanges, dbGuid, changeSetTokens);
-    if (BE_SQLITE_OK != result)
-        return result;
+    RevisionStatus status = ReadChangeSets(revisionPtrs, containsSchemaChanges, dbGuid, changeSetTokens);
+    if (RevisionStatus::Success != status)
+        return status;
 
     bvector<DgnRevisionCP> revisions;
     for (uint32_t ii = 0; ii < revisionPtrs.size(); ii++)
         revisions.push_back(revisionPtrs[ii].get());
 
-    return containsSchemaChanges ? ProcessSchemaChangeSets(revisions, processOption, dbFileName) : ProcessDataChangeSets(*dgndb, revisions, processOption);
+    return containsSchemaChanges ? ApplySchemaChangeSets(revisions, applyOption, dbFileName) : ApplyDataChangeSets(*dgndb, revisions, applyOption);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::StartCreateChangeSet(JsonValueR changeSetInfo, DgnDbR dgndb)
+RevisionStatus JsInterop::StartCreateChangeSet(JsonValueR changeSetInfo, DgnDbR dgndb)
     {
     RevisionManagerR revisions = dgndb.Revisions();
 
     if (revisions.IsCreatingRevision())
         revisions.AbandonCreateRevision();
 
-    DgnRevisionPtr revision = revisions.StartCreateRevision(); // todo: better error reporting
-    if (revision.IsNull())
-        return BE_SQLITE_ERROR;
+    RevisionStatus status;
+    DgnRevisionPtr revision = revisions.StartCreateRevision(&status);
+    if (status != RevisionStatus::Success)
+        return status;
+    BeAssert(revision.IsValid());
 
     changeSetInfo = Json::objectValue;
     changeSetInfo[json_id()] = revision->GetId().c_str();
     changeSetInfo[json_parentId()] = revision->GetParentId().c_str();
     changeSetInfo[json_pathname()] = Utf8String(revision->GetRevisionChangesFile()).c_str();
     changeSetInfo[json_containsSchemaChanges()] = revision->ContainsSchemaChanges(dgndb) ? 1 : 0;
-    return BE_SQLITE_OK;
+    return RevisionStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::FinishCreateChangeSet(DgnDbR dgndb)
+RevisionStatus JsInterop::FinishCreateChangeSet(DgnDbR dgndb)
     {
-    RevisionStatus status = dgndb.Revisions().FinishCreateRevision();
-    return (status == RevisionStatus::Success) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+    return dgndb.Revisions().FinishCreateRevision();
     }
 
 //---------------------------------------------------------------------------------------
@@ -452,9 +448,9 @@ DbResult JsInterop::ExtractCodesFromFile(JsonValueR codes, DgnDbR dgndb, JsonVal
     {
     bvector<DgnRevisionPtr> revisionPtrs;
     bool containsSchemaChanges;
-    DbResult result = ReadChangeSets(revisionPtrs, containsSchemaChanges, dgndb.GetDbGuid().ToString(), changeSetToken);
-    if (BE_SQLITE_OK != result)
-        return result;
+    RevisionStatus status = ReadChangeSets(revisionPtrs, containsSchemaChanges, dgndb.GetDbGuid().ToString(), changeSetToken);
+    if (RevisionStatus::Success != status)
+        return BE_SQLITE_ERROR;
 
     if (revisionPtrs.empty())
         return BE_SQLITE_ERROR;

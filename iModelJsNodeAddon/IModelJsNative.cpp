@@ -778,10 +778,10 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)result);
         }
 
-    Napi::Value ProcessChangeSets(Napi::CallbackInfo const& info)
+    Napi::Value ApplyChangeSets(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, changeSetTokens, Env().Undefined());
-        REQUIRE_ARGUMENT_INTEGER(1, processOptions, Env().Undefined());
+        REQUIRE_ARGUMENT_INTEGER(1, applyOption, Env().Undefined());
         REQUIRE_ARGUMENT_BOOL(2, containsSchemaChanges, Env().Undefined());
         Json::Value jsonChangeSetTokens = Json::Value::From(changeSetTokens);
 
@@ -791,16 +791,18 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         if (containsSchemaChanges)
             CloseDgnDb();
 
-        DbResult result = JsInterop::ProcessChangeSets(m_dgndb, jsonChangeSetTokens, (RevisionProcessOption)processOptions, dbGuid, dbFileName);
-        if (BE_SQLITE_OK == result && containsSchemaChanges)
+        RevisionStatus status = JsInterop::ApplyChangeSets(m_dgndb, jsonChangeSetTokens, (RevisionProcessOption)applyOption, dbGuid, dbFileName);
+        if (RevisionStatus::Success == status && containsSchemaChanges)
             {
             DgnDbPtr db;
-            result = JsInterop::OpenDgnDb(db, dbFileName, isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite);
+            DbResult result = JsInterop::OpenDgnDb(db, dbFileName, isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite);
             if (BE_SQLITE_OK == result)
                 OnDgnDbOpened(db.get());
+            else
+                status = RevisionStatus::ApplyError;
             }
 
-        return Napi::Number::New(Env(), (int) result);
+        return Napi::Number::New(Env(), (int) status);
         }
 
     static TxnManager::TxnId TxnIdFromString(Utf8StringCR str)
@@ -868,15 +870,15 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         {
         REQUIRE_DB_TO_BE_OPEN
         Json::Value changeSetInfo;
-        DbResult result = JsInterop::StartCreateChangeSet(changeSetInfo, *m_dgndb);
-        return CreateBentleyReturnObject(result, Napi::String::New(Env(), changeSetInfo.ToString().c_str()));
+        RevisionStatus status = JsInterop::StartCreateChangeSet(changeSetInfo, *m_dgndb);
+        return CreateBentleyReturnObject(status, Napi::String::New(Env(), changeSetInfo.ToString().c_str()));
         }
 
     Napi::Value FinishCreateChangeSet(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
-        DbResult result = JsInterop::FinishCreateChangeSet(*m_dgndb);
-        return Napi::Number::New(Env(), (int) result);
+        RevisionStatus status = JsInterop::FinishCreateChangeSet(*m_dgndb);
+        return Napi::Number::New(Env(), (int) status);
         }
 
     void AbandonCreateChangeSet(Napi::CallbackInfo const& info)
@@ -1606,7 +1608,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
-            InstanceMethod("processChangeSets", &NativeDgnDb::ProcessChangeSets),
+            InstanceMethod("applyChangeSets", &NativeDgnDb::ApplyChangeSets),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryNextAvailableFileProperty", &NativeDgnDb::QueryNextAvailableFileProperty),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),

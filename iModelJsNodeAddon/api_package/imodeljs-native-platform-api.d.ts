@@ -2,7 +2,7 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  *--------------------------------------------------------------------------------------------*/
 import {
-    IModelStatus, StatusCodeWithMessage, RepositoryStatus, BentleyStatus, ChangeSetProcessOption, DbResult, DbOpcode, OpenMode, IDisposable, GuidProps
+    IModelStatus, StatusCodeWithMessage, RepositoryStatus, BentleyStatus, ChangeSetApplyOption, DbResult, DbOpcode, OpenMode, IDisposable, GuidProps, ChangeSetStatus
 } from "@bentley/bentleyjs-core";
 import { XYZProps, LowAndHighXYZ } from "@bentley/geometry-core";
 
@@ -113,20 +113,20 @@ declare class NativeDgnDb {
     closeIModel(): void;
 
     /**
-     * Process change sets
+     * Apply change sets
      * @param cachePath Path to the root of the disk cache
      */
-    processChangeSets(changeSets: string, processOptions: ChangeSetProcessOption, containsSchemaChanges: boolean): DbResult;
+    applyChangeSets(changeSets: string, processOptions: ChangeSetApplyOption, containsSchemaChanges: boolean): ChangeSetStatus;
 
     /**
      * Start creating a new change set with local changes
      */
-    startCreateChangeSet(): ErrorStatusOrResult<DbResult, string>;
+    startCreateChangeSet(): ErrorStatusOrResult<ChangeSetStatus, string>;
 
     /**
      * Finish creating a new change set with local changes
      */
-    finishCreateChangeSet(): DbResult;
+    finishCreateChangeSet(): ChangeSetStatus;
 
     /**
      * Abandon creating a new change set with local changes
