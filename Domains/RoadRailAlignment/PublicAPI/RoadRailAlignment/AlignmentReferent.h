@@ -109,6 +109,8 @@ public:
     ROADRAILALIGNMENT_EXPORT LinearReferencing::NullableDouble ToDistanceAlongFromStart(double station) const;
 }; // AlignmentStationingTranslator
 
+
+//__PUBLISH_SECTION_END__
 //=================================================================================
 //! ElementHandler for AlignmentReferent Elements
 //! @ingroup GROUP_RoadRailAlignment
@@ -129,4 +131,5 @@ struct EXPORT_VTABLE_ATTRIBUTE AlignmentStationHandler : LinearlyLocatedReferent
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentStation, AlignmentStation, AlignmentStationHandler, LinearlyLocatedReferentElementHandler, ROADRAILALIGNMENT_EXPORT)
 }; //AlignmentStationHandler
 
+//__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

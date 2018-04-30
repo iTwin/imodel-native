@@ -10,8 +10,6 @@
 //__PUBLISH_SECTION_START__
 #include "RoadRailAlignment.h"
 
-//TODO DIEGO I'm very unclear about what parts of the model we want/need to expose to SDK consumers. Does someone who's trying to get information about an alignment CARE about the model?  Or the Alignments (breakdown) model?
-
 BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 //=======================================================================================
@@ -50,20 +48,23 @@ public:
     
     //! Query for DgnElementSet containing all of the AlignmentIds in this AlignmentModel
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryAlignmentIds() const;
+
+    //! Get the subject this AlignmentModel is associated with
     ROADRAILALIGNMENT_EXPORT Dgn::SubjectCPtr GetParentSubject() const;
 
-    ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr Query(Dgn::SubjectCR parentSubject);
+    //! Query the AlignmentModel associated with a particular subject and partition name
+    ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr Query(Dgn::SubjectCR parentSubject, Utf8CP partitionName);
 
 
     //! @private
     static AlignmentModelPtr Create(CreateParams const& params) { return new AlignmentModel(params); }
 
-
+    //! @private
     static AlignmentModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< AlignmentModel >(id); }    
 }; // AlignmentModel
 
 //=======================================================================================
-//! Model to contain and manage a Horizontal Alignment element
+//! Model to contain and manage Horizontal Alignment elements
 //=======================================================================================
 struct HorizontalAlignmentModel : Dgn::SpatialLocationModel
 {
@@ -93,13 +94,16 @@ protected:
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(HorizontalAlignmentModel)
 
+    //! @private
     static HorizontalAlignmentModelPtr Create(CreateParams const& params) { return new HorizontalAlignmentModel(params); }
+
+    //! @private
     static HorizontalAlignmentModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get<HorizontalAlignmentModel>(id); }
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnModelId QueryBreakDownModelId(AlignmentModelCR model);
 }; // HorizontalAlignmentModel
 
 //=======================================================================================
-//! Model to contain and manage Vertical Alignment elements
+//! Model to contain and manage Vertical Alignment elements for a particular Alignment
 //=======================================================================================
 struct VerticalAlignmentModel : Dgn::GeometricModel2d
 {
@@ -130,11 +134,16 @@ public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(VerticalAlignmentModel)
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr GetAlignment() const;
 
+    //! @private
     static VerticalAlignmentModelPtr Create(CreateParams const& params) { return new VerticalAlignmentModel(params); }
+    //! @private
     static VerticalAlignmentModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get<VerticalAlignmentModel>(id); }
+    //! @private
     static VerticalAlignmentModelPtr GetForEdit(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get<VerticalAlignmentModel>(id); }
 }; // VerticalAlignmentModel
 
+
+//__PUBLISH_SECTION_END__
 //=======================================================================================
 //! The ModelHandler for AlignmentModel
 //! @private
@@ -162,4 +171,5 @@ struct EXPORT_VTABLE_ATTRIBUTE VerticalAlignmentModelHandler : Dgn::dgn_ModelHan
     MODELHANDLER_DECLARE_MEMBERS(BRRA_CLASS_VerticalAlignmentModel, VerticalAlignmentModel, VerticalAlignmentModelHandler, Dgn::dgn_ModelHandler::Geometric2d, ROADRAILALIGNMENT_EXPORT)
 }; // VerticalAlignmentModelHandler
 
+//__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

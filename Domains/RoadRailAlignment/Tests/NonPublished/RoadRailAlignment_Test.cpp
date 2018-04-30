@@ -15,7 +15,7 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     ASSERT_TRUE(subjectCPtr.IsValid());
     ASSERT_EQ(projectPtr->Elements().GetRootSubjectId(), subjectCPtr->GetElementId());
 
-    auto alignModelPtr = AlignmentModel::Query(*subjectCPtr);
+    auto alignModelPtr = AlignmentModel::Query(*subjectCPtr, RoadRailAlignmentDomain::GetDesignPartitionName());
 
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);

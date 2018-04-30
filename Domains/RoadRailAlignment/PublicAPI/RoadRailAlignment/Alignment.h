@@ -108,7 +108,8 @@ public:
     //! @return A DgnElementIdSet containing the DgnElementIds of each VerticalAlignment in this Alignment
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryVerticalAlignmentIds() const;
     
-    //! TODO DIEGO
+    //! Query for the ModelId containing VerticalAlignments for this Alignment.
+    //! @return The ModelId of the VerticalAlignmentModel associated with this Alignment. DgnModelId::IsValid() can be false if the Alignment does not have a vertical component.
     ROADRAILALIGNMENT_EXPORT Dgn::DgnModelId QueryVerticalAlignmentSubModelId() const;
 
     //! Query for the main Vertical/Horizontal alignments corresponding to this Alignment.
@@ -262,6 +263,7 @@ public:
 }; // VerticalAlignment
 
 
+//__PUBLISH_SECTION_END__
 //=================================================================================
 //! ElementHandler for Alignment Elements
 //! @ingroup GROUP_RoadRailAlignment
@@ -298,6 +300,7 @@ struct EXPORT_VTABLE_ATTRIBUTE VerticalAlignmentHandler : Dgn::dgn_ElementHandle
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_VerticalAlignment, VerticalAlignment, VerticalAlignmentHandler, Dgn::dgn_ElementHandler::Geometric2d, ROADRAILALIGNMENT_EXPORT)
 }; // VerticalAlignmentHandler
 
+//__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 /** @endcond */

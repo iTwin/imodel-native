@@ -79,6 +79,8 @@ public:
     //! @return The DgnViewId of this ViewDefinition.  Caller must check .IsValid() on the returned ID before using it.
 }; // AlignmentProfileViewDefinition
 
+
+//__PUBLISH_SECTION_END__
 //=======================================================================================
 //! The ElementHandler for the AlignmentProfileViewDefinition class
 //! @private
@@ -89,4 +91,5 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentProfileViewDefinition, Alignm
     AlignmentProfileViewDefinitionHandler, Dgn::ViewElementHandler::SpatialView, ROADRAILALIGNMENT_EXPORT)
 }; // AlignmentProfileViewDefinitionHandler
 
+//__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

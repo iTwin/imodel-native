@@ -35,7 +35,7 @@ public:
     //! Return the DgnCategoryId for the Vertical Alignment Category
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId GetVertical(Dgn::DgnDbR);
 
-}; // BridgePhysicalDomain
+}; // AlignmentCategory
 
 //=======================================================================================
 //! Model containing categories for RoadRails
@@ -67,13 +67,19 @@ protected:
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(RoadRailCategoryModel)
+
+    //! @private
     static RoadRailCategoryModelPtr Create(CreateParams const& params) { return new RoadRailCategoryModel(params); }
 
-    static void SetUp(Dgn::DgnDbR);
+    //! @private
     static Dgn::DgnModelId GetModelId(Dgn::DgnDbR);
+
+    //! @private
     ROADRAILALIGNMENT_EXPORT static RoadRailCategoryModelPtr GetModel(Dgn::DgnDbR);
 }; // RoadRailCategoryModel
 
+
+//__PUBLISH_SECTION_END__
 //=======================================================================================
 //! The ModelHandler for RoadRailCategoryModel
 //=======================================================================================
@@ -82,4 +88,5 @@ struct RoadRailCategoryModelHandler : Dgn::dgn_ModelHandler::Definition
 MODELHANDLER_DECLARE_MEMBERS(BRRA_CLASS_RoadRailCategoryModel, RoadRailCategoryModel, RoadRailCategoryModelHandler, Dgn::dgn_ModelHandler::Definition, )
 }; // RoadRailCategoryModelHandler
 
+//__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
