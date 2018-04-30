@@ -90,7 +90,6 @@ private:
 
 protected:
     IUnitsContextCP m_unitsContext;
-    static UnitSystemP _Create(Utf8CP name) {return new UnitSystem(name);}
 
     //! Sets the UnitsContext if it has not been previously set.
     BentleyStatus SetContext(IUnitsContextCP context) { if (nullptr != m_unitsContext) return ERROR; m_unitsContext = context; return SUCCESS; }
@@ -163,7 +162,7 @@ protected:
 
 public:
     Utf8StringCR GetName() const {return m_name;}
-    Utf8StringCR GetDefinition() const {return m_definition;}
+    virtual Utf8StringCR GetDefinition() const {return m_definition;}
     virtual bool HasNumerator() const {return 1.0 != m_numerator;}
     double GetNumerator() const {return m_numerator;}
     virtual bool HasDenominator() const {return 1.0 != m_denominator;}
@@ -209,30 +208,16 @@ private:
     bool GenerateConversion(UnitCR toUnit, Conversion& conversion) const;
 
 protected:
-    // Needs to be overriden by any sub class
-    static UnitP _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant)
-        {
-        if (0.0 == numerator || 0.0 == denominator)
-            {
-            NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->debugv("Failed to create unit %s because numerator or denominator is 0.  Factor: %.17g / %.17g  Offset: %d", unitName, numerator, denominator, offset);
-            return nullptr;
-            }
-        NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->debugv("Creating unit %s  Factor: %.17g / %.17g  Offset: %d", unitName, numerator, denominator, offset);
-        return new Unit(sysName, phenomenon, unitName, definition, numerator, denominator, offset, isConstant);
-        }
-
-    UNITS_EXPORT static UnitP _Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName);
-    UNITS_EXPORT static UnitP _Create(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator);
 
     Unit(Utf8CP name) : UnitsSymbol(name) {}
     UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant);
     UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition);
     //! Creates a constant.
     Unit(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator)
-        : UnitsSymbol(name, definition, numerator, denominator, 0) { SetPhenomenon(phenomenon); SetConstant(true);}
+        : UnitsSymbol(name, definition, numerator, denominator, 0) {SetPhenomenon(phenomenon); SetConstant(true);}
     //! Creates an inverted Unit.
     Unit(UnitCR parentUnit, UnitSystemCR system, Utf8CP name)
-        : Unit(system, *(parentUnit.GetPhenomenon()), name, parentUnit.GetDefinition().c_str(), 0, 0, 0, false)
+        : Unit(system, *(parentUnit.GetPhenomenon()), name, "", 0, 0, 0, false)
         {
         m_parent = &parentUnit;
         }
@@ -271,7 +256,8 @@ public:
     bool IsValid() const {return !m_dummyUnit;}
     UNITS_EXPORT bool IsNumber() const override;
     PhenomenonCP GetPhenomenon() const override {return m_phenomenon;} //!< Gets the Phenomenon for this Unit.
-
+    Utf8StringCR GetDefinition() const override {return (IsInvertedUnit()) ? GetParent()->GetDefinition() : T_Super::GetDefinition();}
+    bool HasDefinition() const {return !IsInvertedUnit();}
     UnitCP MultiplyUnit(UnitCR rhs) const;
     UnitCP DivideUnit(UnitCR rhs) const;
 
@@ -327,7 +313,6 @@ private:
     ExpressionCR Evaluate() const;
 
 protected:
-    static PhenomenonP _Create(Utf8CP name, Utf8CP definition) {return new Phenomenon(name, definition);}
     UNITS_EXPORT Phenomenon(Utf8CP name, Utf8CP definition);
     UNITS_EXPORT virtual ~Phenomenon();
     void SetLabel(Utf8CP label) {m_displayLabel = label;}
