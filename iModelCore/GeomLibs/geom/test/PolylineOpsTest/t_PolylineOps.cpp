@@ -1042,6 +1042,70 @@ TEST (Polyline, GreedyTriangleB)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (Polyline, GreedyDegenerate)
+    {
+    // Triangulation between a line (?!) and a rectangle
+    double a = 3.0;
+    double c = 1.0;
+    IFacetOptionsPtr surfaceOptions = IFacetOptions::CreateForSurfaces();
+    surfaceOptions->SetMaxPerFace (10);
+    IFacetOptionsPtr options = IFacetOptions::CreateForCurves ();
+    double xStep = 1.5 * a;
+    double yStep = 10.0;
+    auto tiltAngle = Angle::FromDegrees (10.0);
+    for (double yTop : bvector<double> {1, 2, 5,8})
+        {
+
+        // A closed path in the xz plane at y = yType:
+        bvector<DPoint3d> pathB {
+            DPoint3d::From (0,yTop,0),
+            DPoint3d::From (a,yTop,0),
+            DPoint3d::From (a,yTop,c),
+            DPoint3d::From (0,yTop,c),
+            DPoint3d::From (0,yTop,0)
+            };
+        SaveAndRestoreCheckTransform shifter1 (3.0 * xStep, 0,0);
+        for (bool close : {false, true})
+            {
+            SaveAndRestoreCheckTransform shifter1 (xStep, 0,0);
+            for (auto splitPoints : {0, 1, 2, 5})
+                {
+                SaveAndRestoreCheckTransform shifter2 (0, 3.0 * yStep, 0);
+                bvector<DPoint3d> pathA;
+                pathA.push_back (DPoint3d::From (0,0,0));
+                for (int i = 0; i < splitPoints; i++)
+                    pathA.push_back (DPoint3d::From (a * (i + 1) / (splitPoints + 1), 0, 0));
+                pathA.push_back(DPoint3d::From (a,0,0));
+
+                if (close)
+                    {
+                    // copy in reverse order (from one before the end)
+                    for (size_t i = pathA.size () - 1; i-- > 0;)
+                        {
+                        DPoint3d xyz = pathA[i];
+                        pathA.push_back (xyz);
+                        }
+                    }
+
+                bvector<DTriangle3d> triangleA;
+                bvector<int> indices;   
+                PolylineOps::GreedyTriangulationBetweenLinestrings (pathA, pathB, triangleA, &indices, tiltAngle);
+                Check::SaveTransformed (pathA);
+                Check::SaveTransformed (pathB);
+                Check::Shift (0, yStep, 0);
+
+                IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*surfaceOptions);
+                builder->AddTriangles (triangleA);
+                Check::SaveTransformed (builder->GetClientMeshR ());
+                }
+            }
+        }
+    Check::ClearGeometry ("Polyline.GreedyDegenerate");
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                Jean-Paul.Wenger     03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Dpoint3dOps, CompressAll)

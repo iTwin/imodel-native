@@ -123,14 +123,26 @@ static void AddTorusPipes (bvector<IGeometryPtr> &data, double majorRadius, doub
                 data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnTorusPipe (detail)));
                 }
     }
+
+static void AddCones (bvector<IGeometryPtr> &data, double radiusA, double radiusB, bool capped)
+    {
+    bvector<double>signs {1.0, -1.0};
+    // ====================
+    for (double s : signs)
+        {
+        DgnConeDetail detail(
+                DPoint3d::From (0,0,0),
+                DPoint3d::From (0,0,10.0 * s),
+                1.0, 1.0, capped);
+        data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnCone (detail)));
+        }
+    }
 static void AddSimplestSolidPrimitives (bvector<IGeometryPtr> &data, bool capped)
     {
     bvector <double>sweeps;
     sweeps.push_back (1.0);
     sweeps.push_back (-1.0);
-    bvector<double>signs;
-    signs.push_back (1.0);
-    signs.push_back (-1.0);
+    bvector<double>signs {1.0, -1.0};
 
     //double aX = 3.0;
     //double aY  = 5.0;
@@ -164,16 +176,9 @@ static void AddSimplestSolidPrimitives (bvector<IGeometryPtr> &data, bool capped
                 }
 
 
-    // ====================
-    for (double s : signs)
-        {
-        DgnConeDetail detail(
-                DPoint3d::From (0,0,0),
-                DPoint3d::From (0,0,10.0 * s),
-                1.0, 1.0, capped);
-        data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnCone (detail)));
-        }
-
+    AddCones (data, 1.0, 1.0, capped);
+    AddCones (data, 1.0, 0.5, capped);
+    AddCones (data, 0.5, 1.0, capped);
 
     // ====================
     AddBoxes (data, 1,1,10, capped);

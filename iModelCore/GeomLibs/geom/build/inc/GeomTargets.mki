@@ -446,13 +446,13 @@ $(OUT_DIR)pencil$(OUT_EXT)          : $(geomSrcFuncs)pencil.cpp         $(OTHER_
 
 $(OUT_DIR)polycoff$(OUT_EXT)        : $(geomSrcFuncs)polycoff.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)qsic$(OUT_EXT)            : $(geomSrcFuncs)qsic.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)qsic$(OUT_EXT)            : $(geomSrcFuncs)qsic.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)rctree$(OUT_EXT)          : $(geomSrcFuncs)rctree.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)rctree$(OUT_EXT)          : $(geomSrcFuncs)rctree.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)rotconic$(OUT_EXT)        : $(geomSrcFuncs)rotconic.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)rotconic$(OUT_EXT)        : $(geomSrcFuncs)rotconic.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)triquad$(OUT_EXT)         : $(geomSrcFuncs)triquad.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)triquad$(OUT_EXT)         : $(geomSrcFuncs)triquad.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)analyticroots$(OUT_EXT)   : $(geomSrcFuncs)analyticroots.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -466,7 +466,7 @@ $(OUT_DIR)XYRangeTree$(OUT_EXT)     : $(geomSrcFuncs)XYRangeTree.cpp          $(
 
 #$(OUT_DIR)XYZRangeTree$(OUT_EXT)     : $(geomSrcFuncs)XYZRangeTree.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)XYPointSearch$(OUT_EXT)     : $(geomSrcFuncs)XYPointSearch.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)XYPointSearch$(OUT_EXT)     : $(geomSrcFuncs)XYPointSearch.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)TriDiagonalSolver$(OUT_EXT)     : $(geomSrcFuncs)TriDiagonalSolver.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
