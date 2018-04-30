@@ -136,21 +136,26 @@ UIList UIUtils::GetAvailableTraits()
     {
     UIList traits;
 
-    traits.AddListEntry(UIListEntry((int) FormatTraits::ShowUnitLabel, UNITSL10N_GETSTRING(FormatTraits_ShowUnitLabel).c_str(), json_showUnitLabel()));
-    traits.AddListEntry(UIListEntry((int)FormatTraits::Use1000Separator, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), json_use1000Separator()));
-    traits.AddListEntry(UIListEntry((int) FormatTraits::TrailingZeroes, UNITSL10N_GETSTRING(FormatTraits_TrailingZeroes).c_str(), json_trailZeroes()));
+    traits.AddListEntry(UIListEntry((int) FormatTraits::ShowUnitLabel, UNITSL10N_GETSTRING(FormatTraits_ShowUnitLabel).c_str(), FormatConstant::FPN_ShowUnitLabel().c_str()));
+    traits.AddListEntry(UIListEntry((int)FormatTraits::Use1000Separator, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), FormatConstant::FPN_Use1000Separator().c_str()));
+    traits.AddListEntry(UIListEntry((int) FormatTraits::TrailingZeroes, UNITSL10N_GETSTRING(FormatTraits_TrailingZeroes).c_str(), FormatConstant::FPN_TrailZeroes().c_str()));
 
-    // the following trait does not seem to do anything.
-    //traits.AddListEntry(UIListEntry((int)FormatTraits::KeepDecimalPoint, UNITSL10N_GETSTRING(FormatTraits_KeepDecimalPoint).c_str(), json_KeepDecPnt()));
-
-   // TraitsBitToJson(jTraits, json_KeepDecPnt(), FormatTraits::KeepDecimalPoint, &ref, verbose);
-   // TraitsBitToJson(jTraits, json_KeepSingleZero(), FormatTraits::KeepSingleZero, &ref, verbose);
-   // TraitsBitToJson(jTraits, json_ZeroEmpty(), FormatTraits::ZeroEmpty, &ref, verbose);
-
-   // DFR said not to show Rounding option to user
-   // TraitsBitToJson(jTraits, json_ApplyRounding(), FormatTraits::ApplyRounding, &ref, verbose);
-
-   // TraitsBitToJson(jTraits, json_FractionDash(), FormatTraits::FractionDash, &ref, verbose);
+//    if (GetTraitBit(FormatTraits::KeepSingleZero))
+//        ret += FormatConstant::FPN_KeepSingleZero() + "|";
+//    if (GetTraitBit(FormatTraits::ZeroEmpty))
+//        ret += FormatConstant::FPN_ZeroEmpty() + "|";
+//    if (GetTraitBit(FormatTraits::KeepDecimalPoint))
+//        ret += FormatConstant::FPN_KeepDecimalPoint() + "|";
+//    if (GetTraitBit(FormatTraits::ApplyRounding))
+//        ret += FormatConstant::FPN_ApplyRounding() + "|";
+//    if (GetTraitBit(FormatTraits::FractionDash))
+//        ret += FormatConstant::FPN_FractionDash() + "|";
+//    if (GetTraitBit(FormatTraits::PrependUnitLabel))
+//        ret += FormatConstant::FPN_PrependUnitLabel() + "|";
+//    if (GetTraitBit(FormatTraits::ExponenentOnlyNegative))
+//        ret += FormatConstant::FPN_ExponentOnlyNegative() + "|";
+//    if ('|' == *(ret.end() - 1))
+//        ret = ret.substr(0, ret.size() - 1);
 
     return traits;
     }
