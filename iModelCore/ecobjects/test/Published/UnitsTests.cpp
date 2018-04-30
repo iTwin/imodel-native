@@ -49,7 +49,7 @@ TEST_F(UnitsTests, BasicECUnitCreation)
     EXPECT_EQ(1.0, unit->GetOffset());
     EXPECT_TRUE(unit->HasOffset());
     EXPECT_TRUE(unit->HasUnitSystem());
-
+    EXPECT_TRUE(unit->HasDefinition());
     auto testECUnit = schema->GetUnitCP("ExampleUnit");
     EXPECT_EQ(unit, testECUnit);
     }
@@ -1045,6 +1045,7 @@ TEST_F(ConstantTests, BasicCreation)
     EXPECT_TRUE(unit->HasDenominator());
     EXPECT_FALSE(unit->HasOffset());
     EXPECT_FALSE(unit->HasUnitSystem());
+    EXPECT_TRUE(unit->HasDefinition());
 
     auto testECUnit = schema->GetUnitCP("CONSTANT");
     EXPECT_EQ(unit, testECUnit);
