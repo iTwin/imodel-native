@@ -48,11 +48,12 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ErrorL10N, iModelHubError)
     L10N_STRING(MESSAGE_BriefcaseOutdated)                 // =="Briefcase is no longer valid. Seed file has been replaced."==
 
     //ChangeSet errors
-    L10N_STRING(MESSAGE_MergeError)                        // =="ChangeSet merge error has occured."==
+    L10N_STRING(MESSAGE_ApplyError)                        // =="Error applying change set."==
     L10N_STRING(MESSAGE_ChangeSetManagerError)             // =="ChangeSet manager error has occured."==
     L10N_STRING(MESSAGE_MergeSchemaChangesOnOpen)          // =="Briefcase needs to be reopened in order to merge changes from the server."==
     L10N_STRING(MESSAGE_ReverseOrReinstateSchemaChangesOnOpen) // =="Briefcase needs to be reopened in order to reverse or reinstate changes."==
     L10N_STRING(MESSAGE_ChangeSetDoesNotExist)             // =="ChangeSet could not be found."==
+    L10N_STRING(MESSAGE_ConflictsAggregate)                // =="Some conflicts occured during request execution."==
 
     //Code template errors
     L10N_STRING(MESSAGE_CodeSequenceRequestError)          // =="Code sequence request formatting has failed."==

@@ -262,6 +262,68 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelI
         });
     }
 
+#ifdef WIP_THUMBNAILS_API
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Andrius.Zonys                  04/2018
+//---------------------------------------------------------------------------------------
+ThumbnailImageTaskPtr Client::GetiModelThumbnail
+(
+Utf8StringCR projectId, 
+Utf8StringCR imodelId, 
+Thumbnail::Size size, 
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "ThumbnailsManager::GetiModelThumbnail";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    ObjectId thumbnailObjectId(ServerSchema::Schema::Project, Thumbnail::GetClassName(size), imodelId);
+
+    return ExecuteWithRetry<Render::Image>([=]()
+        {
+        IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
+        BeFileName thumbnailFilePath = ThumbnailsManager::BuildThumbnailPathname(imodelId);
+        return client->SendGetFileRequest(thumbnailObjectId, thumbnailFilePath, nullptr, nullptr, cancellationToken)
+            ->Then<ThumbnailImageResult>([=](const WSFileResult& fileResult)
+            {
+            if (!fileResult.IsSuccess())
+                {
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, fileResult.GetError().GetMessage().c_str());
+                return ThumbnailImageResult::Error(fileResult.GetError());
+                }
+
+            // TODO: optimize this after SendGetFileRequest function overload that returns ByteStream will be added.
+            // Write to file and read from file should not be required.
+            //-------------------------------------------------------------------------------------------
+            BeFile thumbnailFile;
+            ByteStream byteStream;
+            BeFileStatus openReadStatus = thumbnailFile.Open(thumbnailFilePath, BeFileAccess::Read);
+            if (BeFileStatus::Success == openReadStatus)
+                openReadStatus = thumbnailFile.ReadEntireFile(byteStream);
+
+            BeFileStatus closeStatus = thumbnailFile.Close();
+            BeAssert(BeFileStatus::Success == closeStatus && "Failed to close thumbnail file");
+            BeFileNameStatus deleteStatus = thumbnailFilePath.BeDeleteFile();
+            BeAssert(BeFileNameStatus::Success == deleteStatus && "Failed to delete thumbnail file");
+
+            Render::Image image = Render::Image::FromPng(byteStream.GetData(), byteStream.GetSize());
+
+            if (BeFileStatus::Success != openReadStatus)
+                {
+                Utf8String errorMessage = Utf8PrintfString("File open/read failed with '%s' status", openReadStatus);
+                return ThumbnailImageResult::Error(Error(Error::Id::DgnDbError, errorMessage));
+                }
+            //-------------------------------------------------------------------------------------------
+
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+            return ThumbnailImageResult::Success(image);
+            });
+        });
+    }
+#endif
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------

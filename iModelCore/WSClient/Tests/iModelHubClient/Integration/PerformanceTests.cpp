@@ -16,9 +16,7 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <windows.h>
-
-#define DPTEST_SCHEMA_NAME                               "DgnPlatformTest"
-#define DPTEST_TEST_MULTI_ASPECT_CLASS_NAME              "TestMultiAspect"
+#include "../Helpers/Domains/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 
@@ -26,52 +24,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_DPTEST
 
 #define EXPECT_STATUS(STAT, EXPR) EXPECT_EQ(RepositoryStatus:: STAT, (EXPR))
-
-//=======================================================================================
-// @bsiclass                                           Algirdas.Mikoliunas       05/17
-//=======================================================================================
-struct TestMultiAspect : Dgn::DgnElement::MultiAspect
-{
-    DGNASPECT_DECLARE_MEMBERS(DPTEST_SCHEMA_NAME, DPTEST_TEST_MULTI_ASPECT_CLASS_NAME, Dgn::DgnElement::MultiAspect);
-private:
-    friend struct TestMultiAspectHandler;
-
-    Utf8String m_testMultiAspectProperty;
-    BeSQLite::EC::ECCrudWriteToken const* m_token;
-
-    explicit TestMultiAspect(Utf8CP prop) : m_testMultiAspectProperty(prop) { ; }
-
-    Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override { return DgnDbStatus::Success; }
-    Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* token) override {
-        m_token = token;
-        return DgnDbStatus::Success;
-    }
-
-protected:
-    DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP, const PropertyArrayIndex &) const { return DgnDbStatus::Success; }
-    DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR, const PropertyArrayIndex &) {return DgnDbStatus::Success;}
-
-public:
-    static RefCountedPtr<TestMultiAspect> Create(Utf8CP prop) { return new TestMultiAspect(prop); }
-
-    static ECN::ECClassCP GetECClass(Dgn::DgnDbR db) { return db.Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_MULTI_ASPECT_CLASS_NAME); }
-
-    Utf8StringCR GetTestMultiAspectProperty() const { return m_testMultiAspectProperty; }
-    void SetTestMultiAspectProperty(Utf8CP s) { m_testMultiAspectProperty = s; }
-    BeSQLite::EC::ECCrudWriteToken const* GetToken() { return m_token; }
-};
-
-//=======================================================================================
-// @bsiclass                                           Algirdas.Mikoliunas       05/17
-//=======================================================================================
-struct TestMultiAspectHandler : Dgn::dgn_AspectHandler::Aspect
-{
-    DOMAINHANDLER_DECLARE_MEMBERS(DPTEST_TEST_MULTI_ASPECT_CLASS_NAME, TestMultiAspectHandler, Dgn::dgn_AspectHandler::Aspect, )
-        RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override { return new TestMultiAspect(""); }
-};
-
 /*--------------------------------------------------------------------------------------+
 * @bsistruct                                            Algirdas.Mikoliunas       05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -90,7 +45,6 @@ public:
 
 };
 
-HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler);
 DOMAIN_DEFINE_MEMBERS(MultiAspectHandlerDomain);
 
 //---------------------------------------------------------------------------------------

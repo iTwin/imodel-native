@@ -694,6 +694,46 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_DefaultUsedSchemasPassed_Success)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_DateTimeUtcProperty_Success)
+    {
+    auto cache = GetTestCache();
+
+    CachedResponseKey responseKey = StubCachedResponseKey(*cache);
+
+    StubInstances stubInstances;
+    stubInstances.Add({"TestSchema.TestClassDateTime", "Foo"}, {{"TestDateTimeUtc", "2017-06-13T10:35:35.6327308Z"}});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, stubInstances.ToWSObjectsResponse()));
+
+    Json::Value instances;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, instances));
+
+    EXPECT_EQ(1, instances.size());
+    EXPECT_EQ("2017-06-13T10:35:35.633Z", instances[0]["TestDateTimeUtc"].asString());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, CacheResponse_DateTimeUnspecifiedProperty_Success)
+    {
+    auto cache = GetTestCache();
+
+    CachedResponseKey responseKey = StubCachedResponseKey(*cache);
+
+    StubInstances stubInstances;
+    stubInstances.Add({"TestSchema.TestClassDateTime", "Foo"}, {{"TestDateTimeUnspecified", "2017-06-13T10:35:35.6327308"}});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, stubInstances.ToWSObjectsResponse()));
+
+    Json::Value instances;
+    EXPECT_EQ(CacheStatus::OK, cache->ReadResponse(responseKey, instances));
+
+    EXPECT_EQ(1, instances.size());
+    EXPECT_EQ("2017-06-13T10:35:35.633", instances[0]["TestDateTimeUnspecified"].asString());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, GetInstance_NotCached_ReturnsDataNotCachedAndNullInstance)
@@ -3415,6 +3455,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWa
     EXPECT_EQ("OldValue", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWasCachedAsPartial_TreatsIdOnlyAsReferenceAndDoesNotRejectInstance)
     {
     auto cache = GetTestCache();
@@ -3438,6 +3481,9 @@ TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsRelatedIdOnlyAndRelatedWa
     EXPECT_EQ("OldValue", ReadInstance(*cache, {"TestSchema.TestClass", "B"})["TestProperty"].asString());
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
 TEST_F(DataSourceCacheTests, CacheResponse_QuerySelectsIdOnlyForInstanceWithCachedPartialProperties_SkipsInstanceAsTreatsItAsReference)
     {
     auto cache = GetTestCache();
@@ -7155,6 +7201,17 @@ TEST_F(DataSourceCacheTests, ReadInstancesLinkedToRoot_DifferentClassInstancesLi
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_IvalidInstance_Error)
+    {
+    auto cache = GetTestCache();
+    ECInstanceKeyMultiMap map;
+    ASSERT_EQ(ERROR, cache->ReadInstanceHierarchy(ECInstanceKey(), map));
+    EXPECT_EQ(0, map.size());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_InstanceIsInResponseButHasNoResponses_ReturnsNoInstances)
     {
     auto cache = GetTestCache();
@@ -7221,10 +7278,57 @@ TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_InstanceHasResponsesCachedUnd
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheTests, ReadRootSyncDate_NoRoot_ReturnsInvalid)
+TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_EmptyRoot_ReturnsNoInstances)
     {
     auto cache = GetTestCache();
-    EXPECT_FALSE(cache->ReadRootSyncDate("NonExistingRoot").IsValid());
+    auto root = cache->FindOrCreateRoot("TestRoot");
+
+    ECInstanceKeyMultiMap map;
+    ASSERT_EQ(SUCCESS, cache->ReadInstanceHierarchy(root, map));
+
+    EXPECT_EQ(0, map.size());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_RootWithInstances_ReturnsInstances)
+    {
+    auto cache = GetTestCache();
+    auto root = cache->FindOrCreateRoot("TestRoot");
+
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("TestRoot", ObjectId("TestSchema.TestClass", "A")));
+    ASSERT_EQ(SUCCESS, cache->LinkInstanceToRoot("TestRoot", ObjectId("TestSchema.TestClass", "B")));
+
+    ECInstanceKeyMultiMap map;
+    ASSERT_EQ(SUCCESS, cache->ReadInstanceHierarchy(root, map));
+
+    ASSERT_EQ(2, map.size());
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance(ObjectId("TestSchema.TestClass", "A"))));
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance(ObjectId("TestSchema.TestClass", "B"))));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, ReadInstanceHierarchy_RootWithResponse_ReturnsResponseInstances)
+    {
+    auto cache = GetTestCache();
+    auto root = cache->FindOrCreateRoot("TestRoot");
+
+    CachedResponseKey responseKey(root, "Foo");
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    instances.Add({"TestSchema.TestClass", "B"});
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse()));
+
+    ECInstanceKeyMultiMap map;
+    ASSERT_EQ(SUCCESS, cache->ReadInstanceHierarchy(root, map));
+
+    ASSERT_EQ(2, map.size());
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance(ObjectId("TestSchema.TestClass", "A"))));
+    EXPECT_CONTAINS(map, ECDbHelper::ToPair(cache->FindInstance(ObjectId("TestSchema.TestClass", "B"))));
     }
 
 /*--------------------------------------------------------------------------------------+

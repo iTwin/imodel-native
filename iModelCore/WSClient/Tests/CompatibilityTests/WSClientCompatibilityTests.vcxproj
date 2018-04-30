@@ -33,7 +33,9 @@
   <ItemGroup>
     <None Include="CompatibilityTests.mke" />
     <None Include="RunTests\RunWSClientCompatibilityTestToolForKnownServices.bat" />
-    <None Include="RunTests\RunWSClientCompatibilityTestToolForKnownServices.config" />
+    <None Include="RunTests\RunWSClientCompatibilityTestToolForKnownServices.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="RunTests\TestReport\makereport.py" />
   </ItemGroup>
   <ItemGroup>

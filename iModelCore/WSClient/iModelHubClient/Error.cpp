@@ -57,6 +57,7 @@ Error::Id Error::ErrorIdFromString(Utf8StringCR errorIdString)
         map["iModelHub.FailedToGetProjectPermissions"]             = Id::FailedToGetProjectPermissions;
         map["iModelHub.ChangeSetAlreadyHasVersion"]                = Id::ChangeSetAlreadyHasVersion;
         map["iModelHub.VersionAlreadyExists"]                      = Id::VersionAlreadyExists;
+        map["iModelHub.ConflictsAggregate"]                        = Id::ConflictsAggregate;
         }
 
     auto it = map.find(errorIdString);
@@ -108,6 +109,7 @@ bool Error::RequiresExtendedData(Id id)
         case Id::PullIsRequired:
         case Id::CodeStateInvalid:
         case Id::CodeReservedByAnotherBriefcase:
+        case Id::ConflictsAggregate:
             return true;
         default:
             return false;
@@ -154,10 +156,10 @@ Error::Error(DgnDbPtr db, BeSQLite::DbResult result)
 
 Error::Error(RevisionStatus const& status)
     {
-    if (RevisionStatus::MergeError == status)
+    if (RevisionStatus::ApplyError == status)
         {
-        m_id = Id::MergeError;
-        m_message = GetDefaultMessage(Id::MergeError);
+        m_id = Id::ApplyError;
+        m_message = GetDefaultMessage(Id::ApplyError);
         }
     else if (RevisionStatus::MergeSchemaChangesOnOpen == status)
         {
@@ -212,11 +214,12 @@ Utf8StringCR Error::GetDefaultMessage(Error::Id id)
 
         map[Id::FileIsNotBriefcase] = ErrorLocalizedString(MESSAGE_FileIsNotBriefcase);
 
-        map[Id::MergeError] = ErrorLocalizedString(MESSAGE_MergeError);
+        map[Id::ApplyError] = ErrorLocalizedString(MESSAGE_ApplyError);
         map[Id::ChangeSetManagerError] = ErrorLocalizedString(MESSAGE_ChangeSetManagerError);
         map[Id::MergeSchemaChangesOnOpen] = ErrorLocalizedString(MESSAGE_MergeSchemaChangesOnOpen);
         map[Id::ReverseOrReinstateSchemaChangesOnOpen] = ErrorLocalizedString(MESSAGE_ReverseOrReinstateSchemaChangesOnOpen);
         map[Id::ChangeSetDoesNotExist] = ErrorLocalizedString(MESSAGE_ChangeSetDoesNotExist);
+        map[Id::ConflictsAggregate] = ErrorLocalizedString(MESSAGE_ConflictsAggregate);
 
         map[Id::EventCallbackAlreadySubscribed] = ErrorLocalizedString(MESSAGE_EventCallbackAlreadySubscribed);
         map[Id::EventServiceSubscribingError] = ErrorLocalizedString(MESSAGE_EventServiceSubscribingError);

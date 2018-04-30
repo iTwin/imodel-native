@@ -58,6 +58,7 @@ public:
         ChangeSetAlreadyHasVersion,
         VersionAlreadyExists,
         QueryIdsNotSpecified,
+        ConflictsAggregate,
 
         //Long Running Processes Errors
         FileIsNotYetInitialized = 100,
@@ -105,7 +106,7 @@ public:
         Canceled,
 
         //ChangeSet Manager Errors
-        MergeError = 500,
+        ApplyError = 500,
         ChangeSetManagerError,
         MergeSchemaChangesOnOpen,
         ReverseOrReinstateSchemaChangesOnOpen,

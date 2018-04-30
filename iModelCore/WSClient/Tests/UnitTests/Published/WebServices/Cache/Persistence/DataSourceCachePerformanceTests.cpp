@@ -113,6 +113,9 @@ std::function<size_t()> getTestedCount
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
 TEST_F(DataSourceCachePerformanceTests, CacheResponse_SameInstancesWithSameResponseKey_ConstantPerformance)
     {
     IDataSourceCachePtr cache;
@@ -146,6 +149,9 @@ TEST_F(DataSourceCachePerformanceTests, CacheResponse_SameInstancesWithSameRespo
     RunTest(onResetForRun, onNewIteration, onIterationTest, getTestedCount);
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
 TEST_F(DataSourceCachePerformanceTests, CacheResponse_IncreasingAmountOfInstancesOnNewCache_ConstantPerformance)
     {
     IDataSourceCachePtr cache;
@@ -182,6 +188,9 @@ TEST_F(DataSourceCachePerformanceTests, CacheResponse_IncreasingAmountOfInstance
     RunTest(onResetForRun, onNewIteration, onIterationTest, getTestedCount);
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
 TEST_F(DataSourceCachePerformanceTests, CacheResponse_DifferentInstancesWithDifferentResponseKeysNoQuery_ConstantPerformance)
     {
     IDataSourceCachePtr cache;
@@ -213,6 +222,9 @@ TEST_F(DataSourceCachePerformanceTests, CacheResponse_DifferentInstancesWithDiff
     RunTest(onResetForRun, onNewIteration, onIterationTest, getTestedCount);
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Vincas.Razma
+//---------------------------------------------------------------------------------------
 TEST_F(DataSourceCachePerformanceTests, CacheResponse_DifferentInstancesWithDifferentResponseKeys_ConstantPerformance)
     {
     IDataSourceCachePtr cache;

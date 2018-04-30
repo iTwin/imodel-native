@@ -1249,20 +1249,25 @@ BentleyStatus DataSourceCache::ReadInstancesConnectedToRootMap(Utf8StringCR root
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DataSourceCache::ReadInstanceHierarchy(ECInstanceKeyCR instance, ECInstanceKeyMultiMap& instancesOut)
     {
-    auto cachedKey = m_state->GetObjectInfoManager().ReadCachedInstanceKey(instance);
-    if (!cachedKey.IsValid())
-        return ERROR;
+    CacheNodeKey nodeKey;
+    if (m_state->GetRootManager().IsRootNode(instance))
+        nodeKey = CacheNodeKey(instance);
+    else
+        nodeKey = m_state->GetObjectInfoManager().ReadCachedInstanceKey(instance).GetInfoKey();
 
+    if (!nodeKey.IsValid())
+        return ERROR;
+       
     ECInstanceKeyMultiMap nodeKeys;
     ECInstanceKeyMultiMap ansestorNodes;
-    ansestorNodes.insert(ECDbHelper::ToPair(cachedKey.GetInfoKey()));
+    ansestorNodes.insert(ECDbHelper::ToPair(nodeKey));
     ECInstanceFinder::FindOptions findOptions(ECInstanceFinder::RelatedDirection::RelatedDirection_HeldChildren, UINT8_MAX);
 
     if (SUCCESS != m_state->GetECDbAdapter().GetECInstanceFinder().FindInstances(nodeKeys, ansestorNodes, findOptions))
         return ERROR;
 
     // TODO: ECDb ECInstanceFinder::FindInstances() also returns seed instances, neeed to remove them
-    ECDbHelper::Erase(nodeKeys, cachedKey.GetInfoKey());
+    ECDbHelper::Erase(nodeKeys, nodeKey);
 
     if (SUCCESS != m_state->GetObjectInfoManager().ReadCachedInstanceKeys(nodeKeys, instancesOut))
         return ERROR;

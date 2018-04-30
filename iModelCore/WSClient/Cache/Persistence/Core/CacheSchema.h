@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/CacheSchema.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,7 +11,7 @@
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 //--------------------------------------------------------------------------------------+
-// Schema definitions for WSCacheSchema ECSchema
+// Schema definitions for WSCache ECSchema
 //--------------------------------------------------------------------------------------+
 
 #define SCHEMA_CacheSchema_Major                                    2

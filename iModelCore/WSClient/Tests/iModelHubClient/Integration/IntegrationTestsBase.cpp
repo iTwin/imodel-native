@@ -135,6 +135,10 @@ DgnDbPtr IntegrationTestsBase::CreateTestDb(Utf8StringCR dbName)
     DgnDbPtr db;
     CopyAndOpen(db, s_seed, dbName);
 
+    // Create model and insert view
+    PhysicalModelPtr model = CreateModel("DefaultModel", *db);
+    InsertSpatialView(*model, "DefaultView");
+
     db->ChangeDbGuid(dbGuid);
     BeSQLite::DbResult result = db->SavePropertyString(PropertySpec("Name", "dgn_Proj"), dbName.c_str());
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, result);

@@ -152,4 +152,27 @@ DgnDbStatus InsertStyle(Utf8CP name, DgnDbR db, bool expectSuccess)
 
     return InsertStyle(style, db, expectSuccess);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Andrius.Zonys                   04/2018
+//---------------------------------------------------------------------------------------
+void InsertSpatialView(SpatialModelR model, Utf8CP name, bool isPrivate)
+    {
+    DgnDbR db = model.GetDgnDb();
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    ModelSelectorPtr modelSelector = new ModelSelector(dictionary, "");
+    modelSelector->AddModel(model.GetModelId());
+
+    OrthographicViewDefinitionPtr viewDef = new OrthographicViewDefinition(dictionary, name, *new CategorySelector(dictionary, ""), *new DisplayStyle3d(dictionary, ""), *modelSelector);
+    ASSERT_TRUE(viewDef.IsValid());
+
+    for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
+        viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
+
+    viewDef->SetIsPrivate(isPrivate);
+    viewDef->SetStandardViewRotation(StandardView::Iso);
+    viewDef->LookAtVolume(model.QueryModelRange());
+    viewDef->Insert();
+    ASSERT_TRUE(viewDef->GetViewId().IsValid());
+    }
 END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE

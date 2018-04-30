@@ -369,15 +369,21 @@ TEST_F(CodesLocksTests, RelinquishOtherUserCodesLocks)
     ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase2, true, false));
     Utf8String changeSet2 = briefcase2->GetLastChangeSetPulled();
 
-    // Briefcase1 should not be able to push his changes since one code is owned.
+    // Briefcase1 should be able to push his changes, single code conflict is returned.
     iModelHubHost::Instance().SetRepositoryAdmin(nonAdminClient->GetiModelAdmin());
-    auto pushResult = briefcase1->PullMergeAndPush()->GetResult();
+    ConflictsInfoPtr conflictsInfo = std::make_shared<ConflictsInfo>();
+    auto pushResult = briefcase1->PullMergeAndPush(nullptr, false, nullptr, nullptr, nullptr, 1, conflictsInfo)->GetResult();
     iModelHubHost::Instance().SetRepositoryAdmin(s_client->GetiModelAdmin());
-    ASSERT_FAILURE(pushResult);
-    EXPECT_EQ(Error::Id::CodeReservedByAnotherBriefcase, pushResult.GetError().GetId());
+    ASSERT_SUCCESS(pushResult);
+    // Validate if correct conflict is returned
+    EXPECT_TRUE(conflictsInfo->Any());
+    auto conflictingCodes = conflictsInfo->GetCodesConflicts();
+    EXPECT_EQ(1, conflictingCodes.size());
+    auto conflictingCode = *conflictingCodes.begin();
+    EXPECT_EQ(conflictingCode.GetCode(), modelElem3->GetCode());
 
-    iModelHubHelpers::ExpectCodesCount(briefcase1, 1);
-    iModelHubHelpers::ExpectLocksCount(briefcase1, 1);
+    iModelHubHelpers::ExpectCodesCount(briefcase1, 0);
+    iModelHubHelpers::ExpectLocksCount(briefcase1, 3);
     iModelHubHelpers::ExpectCodesCount(briefcase2, 1);
     ExpectNoCodeWithState(CreateCodeDiscarded(modelElem1->GetCode(), changeSet2), imodelManager2);
     ExpectCodeState(CreateCodeReserved(modelElem3->GetCode(), db2), imodelManager2);
