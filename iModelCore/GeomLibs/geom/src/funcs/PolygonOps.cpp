@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/PolygonOps.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -636,6 +636,109 @@ bool                 bSignedOneBasedIndices
         }
 
     return status;
+    }
+
+bool PolygonOps::FixupAndTriangulateSpaceLoops
+(
+bvector<int>        &triangleIndices,
+bvector<int>        &exteriorLoopIndices,
+bvector<DPoint3d>   &xyzOut,
+TransformR              localToWorld,
+TransformR              worldToLocal,
+bvector<bvector<DPoint3d>> const &loops
+)
+    {
+    //size_t numPoints = pXYZIn->size ();
+    bool                   status = false;
+    bvector<DPoint3d> packedPoints;
+    DPoint3d disconnect;
+    disconnect.InitDisconnect ();
+    for (auto &loop : loops)
+        {
+        for (auto &xyz : loop)
+            packedPoints.push_back (xyz);
+        packedPoints.push_back (disconnect);
+        }
+
+    if (CoordinateFrame (&packedPoints, localToWorld, worldToLocal))
+        {
+        status = FixupAndTriangulateProjectedLoops
+                    (
+                    &triangleIndices, &exteriorLoopIndices, &xyzOut,
+                    localToWorld, worldToLocal,
+                    &packedPoints, 0.0, true);
+        }
+
+    return status;
+    }
+
+bool PolygonOps::FixupAndTriangulateSpaceLoops
+(
+bvector<bvector<DPoint3d>> const &loops,
+bvector<DTriangle3d> &triangles
+)
+    {
+    triangles.clear ();
+    bvector<int> triangleIndices;
+    bvector<int> exteriorLoopIndices;
+    bvector<DPoint3d> xyzA;
+    Transform localToWorld, worldToLocal;
+    if (FixupAndTriangulateSpaceLoops (triangleIndices, exteriorLoopIndices, xyzA, localToWorld, worldToLocal, loops))
+        {
+        for (size_t i = 0; i + 3 < triangleIndices.size ()
+                && triangleIndices[i] != 0
+                && triangleIndices[i+1] != 0
+                && triangleIndices[i+2] != 0
+                && triangleIndices[i+3] == 0; i+= 4)
+            {
+            int i0 = abs (triangleIndices[i]) - 1;
+            int i1 = abs (triangleIndices[i + 1]) - 1;
+            int i2 = abs (triangleIndices[i + 2]) - 1;
+            triangles.push_back (DTriangle3d (xyzA[i0], xyzA[i1], xyzA[i2]));
+            }
+        }
+    return false;
+    }
+
+bool PolygonOps::FixupAndTriangulateProjectedLoops
+(
+bvector<bvector<DPoint3d>> const &loops,
+TransformCR localToWorld,
+TransformCR worldToLocal,
+bvector<DTriangle3d> &triangles
+)
+    {
+    triangles.clear ();
+    bvector<int> triangleIndices;
+    bvector<DPoint3d> xyzOut;
+
+    bvector<DPoint3d> packedPoints;
+    DPoint3d disconnect;
+    disconnect.InitDisconnect ();
+    for (auto &loop : loops)
+        {
+        for (auto &xyz : loop)
+            packedPoints.push_back (worldToLocal * xyz);
+        packedPoints.push_back (disconnect);
+        }
+
+    if (FixupAndTriangulateLoopsXY (&triangleIndices, nullptr, &xyzOut, &packedPoints, 0.0, 3, true, true))
+        {
+        DPoint3dOps::Multiply (&xyzOut, localToWorld);
+        for (size_t i = 0; i + 3 < triangleIndices.size ()
+                && triangleIndices[i] != 0
+                && triangleIndices[i+1] != 0
+                && triangleIndices[i+2] != 0
+                && triangleIndices[i+3] == 0; i+= 4)
+            {
+            int i0 = abs (triangleIndices[i]) - 1;
+            int i1 = abs (triangleIndices[i + 1]) - 1;
+            int i2 = abs (triangleIndices[i + 2]) - 1;
+            triangles.push_back (DTriangle3d (xyzOut[i0], xyzOut[i1], xyzOut[i2]));
+            }
+        return true;
+        }
+    return false;
     }
 
 bool PolygonOps::ReorientTriangulationIndices

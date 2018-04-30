@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/drange2d.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -95,33 +95,6 @@ DRange2dP pRange        /* <= range to be initialized */
     pRange->high.x = pRange->high.y = -DBL_MAX;
     }
 
-
-/*-----------------------------------------------------------------*//**
-*
-* Initializes a range cube with (inverted) large positive and negative
-* values.
-*
-* @param pFRange <= "float" range.
-* @see
-* @indexVerb init
-* @bsihdr                                                       EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     bsiDRange2d_initFromFRange2d
-
-(
-DRange2dP pRange,
-FRange2dCP pFRange
-)
-
-    {
-    if (bsiFRange2d_isNull (pFRange))
-        bsiDRange2d_init (pRange);
-    else
-        {
-        bsiDPoint2d_initFromFPoint2d (&pRange->low, &pFRange->low);
-        bsiDPoint2d_initFromFPoint2d (&pRange->high, &pFRange->high);
-        }
-    }
 
 #define PANIC_SIZE 1.0e100
 

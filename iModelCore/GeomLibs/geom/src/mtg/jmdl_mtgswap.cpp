@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/mtg/jmdl_mtgswap.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -954,5 +954,29 @@ MTGMask         fixedEdgeMask
                             fixedEdgeMask, MTG_NULL_MASK,
                             jmdlMTGSwap_UFlipTest, 1.0);
     return jmdlMTGSwap_flipEdges(&context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Flip triangles in the the graph to improve aspect ratio using xyz coordinates
+* in the vertex array.   Only "ruled" edges are flipped -- must run from one
+* rail to another both before and after flip.
+* @param  pFacets   <=> Containing facets
+* @param railMask => mask identifying rail edges.
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP size_t jmdlMTGFacets_flipRuledXYZ
+(
+MTGFacets               *pFacets,
+MTGMask                 railMask
+)
+    {
+    return jmdlMTGSwap_flipTrianglesToImproveQuadraticRuledXYZAspectRatio
+                (
+                &pFacets->graphHdr,
+                pFacets->vertexLabelOffset,
+                &pFacets->vertexArrayHdr,
+                MTG_PRIMARY_EDGE_MASK,
+                railMask
+                );
     }
 END_BENTLEY_GEOMETRY_NAMESPACE

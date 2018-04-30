@@ -878,11 +878,15 @@ TEST (Polyline, GreedyTriangleA)
         DPoint3d::From (0,b,0),
         DPoint3d::From (0,0,0)
         };
-    auto tiltAngle = Angle::FromDegrees (10.0);
+    IFacetOptionsPtr surfaceOptions = IFacetOptions::CreateForSurfaces();
+    surfaceOptions->SetMaxPerFace (10);
+
     IFacetOptionsPtr options = IFacetOptions::CreateForCurves ();
+    double xStep = 1.5 * a;
+    auto tiltAngle = Angle::FromDegrees (10.0);
     for (double z : bvector<double> {1,2,3})
         {
-        auto baseFrame = Check::GetTransform ();
+        SaveAndRestoreCheckTransform shifter1 (8.0 * xStep, 0,0);
         for (auto splitSize : bvector <DPoint2d> {
                 DPoint2d::From (4.0, 4.0),
                 DPoint2d::From (4.0, 2.0),
@@ -890,6 +894,8 @@ TEST (Polyline, GreedyTriangleA)
                 DPoint2d::From (2.0, 0.7)}
                 )
             {
+            SaveAndRestoreCheckTransform shifter2 (0, 3.0 * b, 0);
+
             auto pathB = pathA;
             bvector<int> indices;
             DPoint3dOps::Add (pathB, DVec3d::From (0,0,z));
@@ -901,10 +907,34 @@ TEST (Polyline, GreedyTriangleA)
             bvector<DTriangle3d> triangleA;
             PolylineOps::GreedyTriangulationBetweenLinestrings (pathA1, pathB1, triangleA, &indices, tiltAngle);
             Check::SaveTransformed (triangleA);
-            Check::Shift (0, 1.5 * b, 0);
+
+
+            Check::Shift  (xStep, 0, 0);
+            IPolyfaceConstructionPtr builder1 = IPolyfaceConstruction::Create(*surfaceOptions);
+            builder1->AddTriangles (triangleA);
+            auto mesh1 = builder1->GetClientMeshPtr ();
+            if (mesh1.IsValid ())
+                Check::SaveTransformed (*mesh1);
+
+
+#ifdef TestRuledPattern
+            Check::Shift  (xStep, 0, 0);
+            MTGFacetsP pFacets = jmdlMTGFacets_grab();
+            jmdlMTGFacets_setNormalMode(pFacets, MTG_Facets_VertexOnly, 0, 0);
+            IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*surfaceOptions);
+
+            if (jmdlMTGFacets_ruledPatternDPoint3dArrayBoundaries(pFacets,
+                pathA1.data(), static_cast<int>(pathA1.size()),
+                pathB1.data(), static_cast<int>(pathB1.size())))
+                {
+                AddMTGFacetsToIndexedPolyface(pFacets, *builder->GetClientMeshPtr(), MTG_EXTERIOR_MASK, MTG_NULL_MASK);
+                }
+            jmdlMTGFacets_drop(pFacets);
+            auto mesh = builder->GetClientMeshPtr ();
+            if (mesh.IsValid ())
+                Check::SaveTransformed (*mesh);
+#endif
             }
-        Check::SetTransform (baseFrame);
-        Check::Shift (2.0 * a, 0,0);
         }
     Check::ClearGeometry ("Polyline.GreedyTriangleA");
     }
@@ -943,23 +973,29 @@ TEST (Polyline, GreedyTriangleB)
         DPoint3d::From (0,b,0),
         DPoint3d::From (0,0,0)
         };
-    auto tiltAngle = Angle::FromDegrees (10.0);
-    double dzPath = 0.25;
+    double dzPath = 0.75;
+
+    IFacetOptionsPtr surfaceOptions = IFacetOptions::CreateForSurfaces();
+    surfaceOptions->SetMaxPerFace (10);
     IFacetOptionsPtr options = IFacetOptions::CreateForCurves ();
+    double xStep = 1.5 * a;
+    auto tiltAngle = Angle::FromDegrees (10.0);
     for (double z : bvector<double> {1, 2, 3})
         {
-        auto baseFrame = Check::GetTransform ();
+        SaveAndRestoreCheckTransform shifter1 (8.0 * xStep, 0,0);
         for (auto splitSize : bvector <DPoint2d> {
                 DPoint2d::From (4.0, 4.0),
                 DPoint2d::From (4.0, 2.0),
                 DPoint2d::From (4.0, 1.5),
                 DPoint2d::From (2.0, 0.7),
                 DPoint2d::From (0.8, 0.4),
-                DPoint2d::From (0.6, 0.35),
-                DPoint2d::From (0.3, 0.15)
+                DPoint2d::From (0.69, 0.378),
+                DPoint2d::From (0.32, 0.147)
                 }
                 )
             {
+            SaveAndRestoreCheckTransform shifter2 (0, 3.0 * b, 0);
+            auto baseFrame = Check::GetTransform ();
             auto pathB = pathA;
             bvector<int> indices;
             DPoint3dOps::Add (pathB, DVec3d::From (0,0,z));
@@ -967,18 +1003,40 @@ TEST (Polyline, GreedyTriangleB)
             auto pathB1 = SplitBySimpleLength (pathB, splitSize.y);
             bvector<DTriangle3d> triangleA;
             PolylineOps::GreedyTriangulationBetweenLinestrings (pathA1, pathB1, triangleA, &indices, tiltAngle);
-            auto baseFrame = Check::GetTransform ();
+            if (Check::True (triangleA.size () > 0))
+                {
+                IPolyfaceConstructionPtr builder1 = IPolyfaceConstruction::Create(*surfaceOptions);
+                builder1->AddTriangles (triangleA);
 
-            Check::SaveTransformed (pathA1);
-            Check::Shift (0,0, dzPath);
-            Check::SaveTransformed (triangleA);
-            Check::Shift (0,0, dzPath);
-            Check::SaveTransformed (pathB1);
-            Check::SetTransform (baseFrame);
-            Check::Shift (0, 1.5 * b, 0);
+                Check::SaveTransformed (pathA1);
+                Check::Shift (0,0, dzPath);
+//                Check::SaveTransformed (triangleA);
+                Check::SaveTransformed (builder1->GetClientMeshR ());
+                Check::Shift (0,0, dzPath);
+                Check::SaveTransformed (pathB1);
+
+                Check::SetTransform (baseFrame);
+
+
+#ifdef TestRuledPattern
+                Check::Shift  (xStep, 0, 0);
+                MTGFacetsP pFacets = jmdlMTGFacets_grab();
+                jmdlMTGFacets_setNormalMode(pFacets, MTG_Facets_VertexOnly, 0, 0);
+                IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*surfaceOptions);
+
+                if (jmdlMTGFacets_ruledPatternDPoint3dArrayBoundaries(pFacets,
+                    pathA1.data(), static_cast<int>(pathA1.size()),
+                    pathB1.data(), static_cast<int>(pathB1.size())))
+                    {
+                    AddMTGFacetsToIndexedPolyface(pFacets, *builder->GetClientMeshPtr(), MTG_EXTERIOR_MASK, MTG_NULL_MASK);
+                    }
+                jmdlMTGFacets_drop(pFacets);
+                auto mesh = builder->GetClientMeshPtr ();
+                if (mesh.IsValid ())
+                    Check::SaveTransformed (*mesh);
+#endif
+                }
             }
-        Check::SetTransform (baseFrame);
-        Check::Shift (2.0 * a, 0,0);
         }
     Check::ClearGeometry ("Polyline.GreedyTriangleB");
     }

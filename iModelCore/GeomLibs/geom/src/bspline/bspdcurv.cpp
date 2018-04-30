@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspdcurv.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -190,7 +190,8 @@ int             inNum               /* => number of points */
 
     if (numPoints == 2)
         {
-        status = bspprof_fitPoints (curve, points, 2);
+        status = curve->InitFromPoints (points, 2);
+//        status = bspprof_fitPoints (curve, points, 2);
         return status;
         }
 

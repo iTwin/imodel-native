@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceClip1.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -514,6 +514,80 @@ void EmitLoop (bvector<size_t> insideIndices, bool reverse = false)
         }
     }
 
+
+void EmitLoop (bvector<DPoint3d> xyz, bool reverse = false)
+    {
+    // chain indices are zero based?
+    size_t n = xyz.size ();
+    if (n < 3)
+        return;
+    if (NULL != m_insideMesh)
+        {
+        if (reverse)
+            for (size_t i = n; i-- > 0;)
+                {
+                size_t index = m_insideMap->AddPoint (xyz[i]);
+                m_insideMesh->PointIndex ().push_back ((int) (index+ 1));
+                }
+        else
+            for (size_t i = 0; i < n; i++)
+                {
+                size_t index = m_insideMap->AddPoint (xyz[i]);
+                m_insideMesh->PointIndex ().push_back ((int) (index+ 1));
+                }
+        m_insideMesh->PointIndex ().push_back (0);
+        }
+
+    if (NULL != m_outsideMesh)
+        {
+        // Ouside face is reversed from inside ...
+        if (!reverse)
+            for (size_t i = n; i-- > 0;)
+                {
+                size_t index = m_outsideMap->AddPoint (xyz[i]);
+                m_insideMesh->PointIndex ().push_back ((int) (index+ 1));
+                }
+        else
+            for (size_t i = 0; i < n; i++)
+                {
+                size_t index = m_outsideMap->AddPoint (xyz[i]);
+                m_insideMesh->PointIndex ().push_back ((int) (index+ 1));
+                }
+        m_outsideMesh->PointIndex ().push_back (0);
+        }
+    }
+
+
+
+// insideIndices contains zero-based indices in the inside mesh !!
+// HMMM.. This means inside mesh is required !!!!  Can't just get outside !!!
+void AssembleLoop (bvector<size_t> insideIndices, bvector<bvector<DPoint3d>> &insideLoops, bvector<bvector<DPoint3d>> &outsideLoops, bool addClosure = true )
+    {
+    // chain indices are zero based?
+    size_t n = insideIndices.size ();
+    if (n < 3)
+        return;
+    if (NULL != m_insideMesh)
+        {
+        insideLoops.push_back (bvector<DPoint3d> ());
+        for (size_t i = 0; i < n; i++)
+            insideLoops.back ().push_back (m_insideMesh->Point() [insideIndices[i]]);
+        auto xyz0 = insideLoops.back ().front();
+        if (addClosure)
+            insideLoops.back ().push_back (xyz0);
+        }
+
+    if (NULL != m_outsideMesh)
+        {
+        outsideLoops.push_back (bvector<DPoint3d> ());
+        for (size_t i = 0; i < n; i++)
+            outsideLoops.back ().push_back (m_insideMesh->Point() [insideIndices[i]]);
+        auto xyz0 = outsideLoops.back ().front();
+        if (addClosure)
+            outsideLoops.back ().push_back (xyz0);
+        }
+    }
+
 // Return true if segments are colinear.
 // @param [out] longIndex index of longer segment.
 // @param [out] shortSegmentFractions fractional positions of short segment ends on long segment.
@@ -613,6 +687,7 @@ void AnalyzeCutPlaneLoops(size_t numComplexFaces)
             beginIndex < (endIndex = m_globalEdgeData.FindEndOfPlaneCluster (beginIndex));
             beginIndex = endIndex)
         {
+        bvector<bvector<DPoint3d>> insideLoops, outsideLoops;
         startIndices.clear ();
         endIndices.clear ();
         if (m_globalEdgeData.AnalyzeCutPlane (beginIndex, endIndex, startIndices, endIndices))
@@ -628,7 +703,8 @@ void AnalyzeCutPlaneLoops(size_t numComplexFaces)
                     {
                     // Single path leaves and returns to the cut plane.  The single edge joining the start, return closes the loops.
                     m_globalEdgeData.ExtendChain (beginIndex, endIndex, startIndices[0], chainIndices, true);
-                    EmitLoop (chainIndices, reverseLoops);
+                    //EmitLoop (chainIndices, reverseLoops);
+                    AssembleLoop (chainIndices, insideLoops, outsideLoops);
                     }
                 else if (startIndices.size () == 2 && endIndices.size () == 2)
                     {
@@ -648,17 +724,21 @@ void AnalyzeCutPlaneLoops(size_t numComplexFaces)
                                 {
                                 m_globalEdgeData.ExtendChain (beginIndex, endIndex, startIndices[0], chainIndices, true);
                                 m_globalEdgeData.ExtendChain (beginIndex, endIndex, startIndices[1], chainIndices, true);
-                                EmitLoop (chainIndices, reverseLoops);
+                                //EmitLoop (chainIndices, reverseLoops);
+                                AssembleLoop (chainIndices, insideLoops, outsideLoops);
+
                                 }
                             else if (  (f0 > 1.0 && f1 > f0)
                                     || (f1 < 0.0 && f1 > f0)
                                     )
                                 {
                                 m_globalEdgeData.ExtendChain (beginIndex, endIndex, startIndices[0], chainIndices, true);
-                                EmitLoop (chainIndices, reverseLoops);
+                                //EmitLoop (chainIndices, reverseLoops);
+                                AssembleLoop (chainIndices, insideLoops, outsideLoops);
                                 chainIndices.clear ();
                                 m_globalEdgeData.ExtendChain (beginIndex, endIndex, startIndices[1], chainIndices, true);
-                                EmitLoop (chainIndices, reverseLoops);
+                                //EmitLoop (chainIndices, reverseLoops);
+                                AssembleLoop (chainIndices, insideLoops, outsideLoops);
                                 }
                             }
                         else
@@ -666,7 +746,8 @@ void AnalyzeCutPlaneLoops(size_t numComplexFaces)
                             // Join 2 chains as single face ....
                             m_globalEdgeData.ExtendChain (beginIndex, endIndex, startIndices[0], chainIndices, true);
                             m_globalEdgeData.ExtendChain (beginIndex, endIndex, startIndices[1], chainIndices, true);
-                            EmitLoop (chainIndices, reverseLoops);                            
+                            //EmitLoop (chainIndices, reverseLoops);                            
+                            AssembleLoop (chainIndices, insideLoops, outsideLoops);
                             }
                         }
                     }
@@ -687,7 +768,58 @@ void AnalyzeCutPlaneLoops(size_t numComplexFaces)
                     numLoop++;
                     chainIndices.clear ();
                     m_globalEdgeData.ExtendChain (beginIndex, endIndex, startIndex, chainIndices, false);
-                    EmitLoop (chainIndices, reverseLoops);
+                    //EmitLoop (chainIndices, reverseLoops);
+                    AssembleLoop (chainIndices, insideLoops, outsideLoops);
+                    }
+                }
+            static int s_noisy = 0;
+            if (s_noisy)
+                {
+                GEOMAPI_PRINTF (" AssembleLoopsOnPlane\n");
+                for (auto &loop : insideLoops)
+                    {
+                    GEOMAPI_PRINTF("   [\n");
+                    for (auto &xyz : loop)
+                        {
+                        GEOMAPI_PRINTF("      [%.15lg,%.15lg,%.15lg],\n", xyz.x, xyz.y, xyz.z);
+                        }
+                    GEOMAPI_PRINTF("   ]\n");
+                    }
+                }
+
+            if (insideLoops.size () > 0)
+                {
+                bvector<int> triangleIndices, outerLoopIndices;
+                Transform localToWorld, worldToLocal;
+                bvector<DPoint3d> xyzOut;
+                PolygonOps::FixupAndTriangulateSpaceLoops (triangleIndices, outerLoopIndices, xyzOut, localToWorld, worldToLocal, insideLoops);
+                if (s_noisy)
+                    {
+                    for (size_t i = 0; i < xyzOut.size (); i++)
+                        {
+                        DPoint3d xyz = xyzOut[i];
+                        GEOMAPI_PRINTF("   %d [%.15lg,%.15lg,%.15lg],\n", (int)i, xyz.x, xyz.y, xyz.z);
+                        }
+                    for (size_t i = 0; i < triangleIndices.size (); i++)
+                        {
+                        int k = triangleIndices[i];
+                        if (i == 0 || k == 0)
+                            GEOMAPI_PRINTF ("\n   ");
+                        if (k != 0)
+                            GEOMAPI_PRINTF (" %d", k);
+                        }
+                    }
+                bvector<DPoint3d> triangleXYZ;
+                for (size_t i = 0; i < triangleIndices.size (); i++)
+                    {
+                    int k = triangleIndices[i];
+                    if (k == 0)
+                        {
+                        EmitLoop (triangleXYZ, reverseLoops);
+                        triangleXYZ.clear ();
+                        }
+                    if (k != 0)
+                        triangleXYZ.push_back (xyzOut [(size_t)(abs(k) - 1)]);
                     }
                 }
             }
@@ -909,7 +1041,6 @@ GEOMDLLIMPEXP void PolyfaceCoordinateMap::AddClippedPolyface (PolyfaceQueryR sou
                 resultHasIncompleteCutPlaneFaces,
                 clipPlanes, formNewFacesOnClipPlanes, cutLoops, cutChains);
     }
-
 
 double PolyfaceQuery::BuildConvexClipPlaneSet (ConvexClipPlaneSetR planes)
     {

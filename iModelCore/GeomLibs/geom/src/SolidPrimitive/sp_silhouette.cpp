@@ -2,13 +2,123 @@
 |
 |     $Source: geom/src/SolidPrimitive/sp_silhouette.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include <Geom/MstnOnly/GeomPrivateApi.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
+static const DRange2d s_defaultParameterRange =
+            {
+                {-msGeomConst_pi, -msGeomConst_pi},
+                { msGeomConst_pi,  msGeomConst_pi}
+            };
+/*---------------------------------------------------------------------------------**//**
+* Initialize an toroid from full frame and range
+* @param pTransform         => coordinate frame.  If NULL, default is applied.
+* @param minorRadiusRatio   => radius of minor circles in the local coordinate system
+*                               where major radius is 1.
+* @param pRange             => parameter range.  If NULL, default is applied.
+* @indexVerb init
+* @bsihdr                                                       EarlinLutz      10/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public void               bsiDToroid3d_set
+
+(
+DToroid3dP pInstance,
+TransformCP pFrame,
+double          minorRadiusRatio,
+DRange2dCP pParameterRange
+)
+    {
+    bsiDToroid3d_setFrame (pInstance, pFrame);
+    bsiDToroid3d_setNaturalParameterRange (pInstance, pParameterRange);
+    pInstance->minorAxisRatio = minorRadiusRatio;
+    }
+/*---------------------------------------------------------------------------------**//**
+* Return the range of the natural parameter for the active surface patch.
+* @param pParam1Start => start value of natural parameter.
+* @param pParam1End   => end value of natural parameter.
+* @param pParam2Start => start value of natural parameter.
+* @param pParam2End   => end value of natural parameter.
+* @indexVerb parameterRange
+* @bsihdr                                                       EarlinLutz      03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     bsiDToroid3d_getScalarNaturalParameterRange
+
+(
+DToroid3dCP pToroid,
+double    *pParam1Start,
+double    *pParam1End,
+double    *pParam2Start,
+double    *pParam2End
+)
+    {
+    *pParam1Start = pToroid->parameterRange.low.x;
+    *pParam1End   = pToroid->parameterRange.high.x;
+    *pParam2Start = pToroid->parameterRange.low.y;
+    *pParam2End   = pToroid->parameterRange.high.y;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* Set the reference frame of the toroid.
+* @param pFrame => coordinate frame.  null indicates an identity transformation.
+* @indexVerb localCoordinates
+* @bsihdr                                                       EarlinLutz      10/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public void               bsiDToroid3d_setFrame
+
+(
+DToroid3dP pInstance,
+TransformCP pFrame
+)
+    {
+    if (pFrame)
+        pInstance->frame = *pFrame;
+    else
+        pInstance->frame.InitIdentity ();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* Set the parameter range of the toroid.
+* @param pParameterRange => limits of longitude and latitude.
+* @indexVerb parameterRange
+* @bsihdr                                                       EarlinLutz      10/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public void               bsiDToroid3d_setNaturalParameterRange
+
+(
+DToroid3dP pInstance,
+DRange2dCP pParameterRange
+)
+    {
+    pInstance->parameterRange = pParameterRange ? *pParameterRange : s_defaultParameterRange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Get the parameter range as start/sweep pairs.
+* @indexVerb parameterRange
+* @bsihdr                                                       EarlinLutz      03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void    bsiDToroid3d_getScalarNaturalParameterSweep
+
+(
+DToroid3dCP pInstance,
+double          *pTheta0,
+double          *pThetaSweep,
+double          *pPhi0,
+double          *pPhiSweep
+)
+    {
+    *pTheta0 = pInstance->parameterRange.low.x;
+    *pThetaSweep = pInstance->parameterRange.high.x - *pTheta0;
+
+    *pPhi0 = pInstance->parameterRange.low.y;
+    *pPhiSweep = pInstance->parameterRange.high.y - *pPhi0;
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2017

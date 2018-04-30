@@ -768,6 +768,13 @@ GEOMDLLIMPEXP bool Stroke (CurveVectorCR curves, bvector<DPoint3d> &points, size
 //! Triangulate a space polygon and add to mesh. Disconnect points separate multiple loops.
 GEOMDLLIMPEXP bool AddTriangulation (bvector<DPoint3d> const &points);
 
+//! Add all triangles to mesh.   Optionally reverse orientations.
+GEOMDLLIMPEXP void AddTriangles (
+bvector<DTriangle3d> const &triangles,                  //!< [in] xyz coordinates of triangles.
+bool reverse = false,                                   //!< [in] true to reveres orientation of all triangles (and params)
+bvector<DTriangle3d> const *paramTriangles = nullptr    //!< [in] optional vertex params.
+);
+
 //! AddTriangulation on 2 sets of points, optionally reversing each.
 //! edgeChains are created only if enabled by both edgeChainsPermitted and GetEdgeChainsRequired ().
 GEOMDLLIMPEXP void AddTriangulationPair

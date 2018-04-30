@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/pf_SearchContext.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -570,12 +570,123 @@ PolyfaceSearchContext::PolyfaceSearchContext (PolyfaceHeaderPtr & mesh, bool sor
     m_visitor = PolyfaceVisitor::Attach (*mesh, false);
     }
 
+
+static void TransferDrapeSegmentsToImprint
+(
+bvector<DrapeSegment> &drapeSegments,
+size_t tagA,
+bvector<DSegment3dSizeSize> &imprintSegments
+)
+    {
+    for (size_t i = 0; i < drapeSegments.size (); i++)
+        {
+        DSegment3dSizeSize imprint (drapeSegments[i].m_segment, i, drapeSegments[i].m_facetReadIndex);
+        imprintSegments.push_back (imprint);
+        }
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      02/2015
++--------------------------------------------------------------------------------------*/
+void PolyfaceSearchContext::DoDrapeXY_go
+(
+DSegment3dCR segment,
+size_t tagA,
+bvector<DrapeSegment> &workDrapeSegments,
+bvector<DSegment3dSizeSize> &imprintSegments
+)
+    {
+    SweepLineSegmentToMeshXY (workDrapeSegments, segment, *m_rangeTree, *m_mesh, *m_visitor);
+    TransferDrapeSegmentsToImprint (workDrapeSegments, tagA, imprintSegments);
+    }
+
+
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      02/2015
 +--------------------------------------------------------------------------------------*/
 void PolyfaceSearchContext::DoDrapeXY (DSegment3dCR segment, bvector<DrapeSegment> &drapeSegments)
     {
     SweepLineSegmentToMeshXY (drapeSegments, segment, *m_rangeTree, *m_mesh, *m_visitor);
+    }
+
+
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      02/2015
++--------------------------------------------------------------------------------------*/
+void PolyfaceSearchContext::DoDrapeXY (bvector<DPoint3d> const &linestring, bvector<DSegment3dSizeSize> &imprintSegments)
+    {
+    bvector<DrapeSegment> drapeSegments;
+    DSegment3d segment;
+    imprintSegments.clear ();
+    for (size_t i = 0; i + 1 < linestring.size (); i++)
+        {
+        segment.Init (linestring[i], linestring[i+1]);
+        DoDrapeXY_go (segment, i, drapeSegments, imprintSegments);
+        }
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      02/2015
++--------------------------------------------------------------------------------------*/
+void PolyfaceSearchContext::DoDrapeXY (bvector<DSegment3dSizeSize> const &sourceSegments, bvector<DSegment3dSizeSize> &imprintSegments)
+    {
+    bvector<DrapeSegment> drapeSegments;
+    imprintSegments.clear ();
+    for (size_t i = 0; i < sourceSegments.size (); i++)
+        {
+        DoDrapeXY_go (sourceSegments[i].GetCR (), i, drapeSegments, imprintSegments);
+        }
+    }
+
+void PolyfaceSearchContext::DoDrapeXY_recurse
+(
+CurveVectorCR curves,
+size_t &segmentCounter,
+bvector<DrapeSegment> &workDrapeSegments,
+bvector<DSegment3dSizeSize> &imprintSegments
+)
+    {
+    for (size_t i = 0; i < curves.size (); i++)
+        {
+        switch (curves[i]->GetCurvePrimitiveType ())
+            {
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+                {
+                bvector<DPoint3d> const * linestring = curves[i]->GetLineStringCP ();
+                DSegment3d segment;
+                for (size_t k = 0; k + 1 < linestring->size (); k++)
+                    {
+                    segment.Init (linestring->at(k), linestring->at(k+1));
+                    DoDrapeXY_go (segment, segmentCounter++, workDrapeSegments, imprintSegments);
+                    }
+                break;
+                }
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+                {
+                DSegment3d segment;
+                curves[i]->TryGetLine (segment);
+                DoDrapeXY_go (segment, segmentCounter++, workDrapeSegments, imprintSegments);
+                break;
+                }
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
+                {
+                DoDrapeXY_recurse (*curves[i]->GetChildCurveVectorP (), segmentCounter, workDrapeSegments, imprintSegments);
+                break;
+                }
+            }
+        }
+    }
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      02/2015
++--------------------------------------------------------------------------------------*/
+void PolyfaceSearchContext::DoDrapeXY (CurveVectorCR curves, bvector<DSegment3dSizeSize> &imprintSegments)
+    {
+    bvector<DrapeSegment> workDrapeSegments;
+    imprintSegments.clear ();
+    size_t counter = 0;
+    DoDrapeXY_recurse (curves, counter, workDrapeSegments, imprintSegments);
     }
 
 /*--------------------------------------------------------------------------------**//**

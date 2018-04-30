@@ -2,7 +2,7 @@
 #
 #  $Source: serialization/testPrototype/SerializationTest.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include    mdl.mki
@@ -14,7 +14,7 @@ srcSerializationTest    = $(_MakefilePath)
 
 %include $(_MakefilePath)geomlibsTest.mki
 
-o                       = $(geomTestOut)$(appName)/
+o                       = $(PartBuildDir)
 always:
     ~mkdir $(o)
 

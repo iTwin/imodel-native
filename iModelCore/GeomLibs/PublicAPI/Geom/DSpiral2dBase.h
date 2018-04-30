@@ -784,7 +784,7 @@ typedef DSpiral2dPlacement const &DSpiral2dPlacementCR;
 //! Note that the stored spiral is a pointer.
 //! The constructor allocates a new spiral as clone of its input.
 //! The destructor frees the spiral.
-struct DSpiral2dPlacement
+struct GEOMDLLIMPEXP DSpiral2dPlacement
 {
 DSpiral2dBaseP spiral;
 Transform frame;

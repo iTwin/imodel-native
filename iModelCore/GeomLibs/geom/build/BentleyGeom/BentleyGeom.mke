@@ -2,7 +2,7 @@
 #
 #     $Source: geom/build/BentleyGeom/BentleyGeom.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
@@ -15,13 +15,13 @@ CompileOptionsMki   = $(_MakeFilePath)BentleyGeom.mki
 buildSubDir     = geom_dll
 
 Wp64            = 1
-o               = $(geomObj)
+o               = $(PartBuildDir)
 
 #-------------------------------------------------
 # Make Directories
 #-------------------------------------------------
-$(geomObj)$(tstdir)     :   $(geomObj)$(tstdir)
-
+always:
+    !~@mkdir $(o)
 
 dirToSearch = $(geomSrcRegions)
 %include cincapnd.mki
@@ -54,7 +54,7 @@ CPchOpts = $(CCPchOpts)
 #-----------------------------------------------------------------------
 # Common dependency lists
 #-----------------------------------------------------------------------
-OUT_DIR = $(geomObj)
+OUT_DIR = $(o)
 OUT_EXT = $(oExt)
 OTHER_DEPENDENCIES = \
     $(geomSrcPubGeom)msgeomstructs.hpp  \
@@ -71,7 +71,7 @@ FileTypeControl = $(FileTypeControlCPP)
 %include $(geomBuildInc)GeomTargets.mki
 %endif
 
-$(geomObj)BentleyGeom_init$(oExt)   : $(_MakeFilePath)BentleyGeom_init.cpp ${MultiCompileDepends}
+$(o)BentleyGeom_init$(oExt)   : $(_MakeFilePath)BentleyGeom_init.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 #-----------------------------------------------------------------------
@@ -86,7 +86,7 @@ rightsNeutralFile           = $(_MakeFilePath)rightsNeutralLibraries.txt
 #-----------------------------------------------------------------------
 DLM_NAME            = BentleyGeom$(libSuffix)
 DLM_LIBDEF_SRC      = $(_MakeFilePath)
-DLM_OBJECT_DEST     = $(geomObj)
+DLM_OBJECT_DEST     = $(o)
 DLM_DEST            = $(baseGeom_bin)
 DLM_EXPORT_DEST     = $(baseGeom_lib)
 DLM_OBJECT_FILES    = $(MultiCompileObjectList)

@@ -4,7 +4,8 @@
 
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 //static int s_noisy = 0;
-
+#ifdef compile_bspcurv_offset
+// edl -- april 24 2018 remove bspcurv_offset
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -85,3 +86,4 @@ TEST(MSBspline,RecursiveOffset)
         }
     Check::ClearGeometry ("MSBsplineCurve.RecursiveOffset");
     }
+#endif

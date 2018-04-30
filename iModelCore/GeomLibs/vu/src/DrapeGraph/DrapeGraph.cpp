@@ -6,7 +6,7 @@
 |       $Date: 2010/11/17 22:01:47 $
 |     $Author: Earlin.Lutz $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -32,13 +32,12 @@ static int s_show = 0;
 
 static DRange3d vu_faceRange (VuP faceSeed)
     {
-    DRange3d range;
-    bsiDRange3d_init (&range);
+    auto range = DRange3d::NullRange ();
     VU_FACE_LOOP (currNode, faceSeed)
         {
         DPoint3d xyz;
         vu_getDPoint3d (&xyz, currNode);
-        bsiDRange3d_extendByDPoint3d (&range, &xyz);
+        range.Extend (xyz);
         }
     END_VU_FACE_LOOP (currNode, faceSeed)
     return range;

@@ -1063,3 +1063,58 @@ TEST(ClipPlaneSet,ClipToSetDifference_MultipleClips_MutlipleMasks)
         }
     Check::ClearGeometry ("ClipPlaneSet.ClipToSetDifference_MultipleClips_MutlipleMasks");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlane,ClipPlaneToRange)
+    {
+    // A range .. happens to contain the origin, but other than that avoids unit points . . 
+    DRange3d range = DRange3d::From (-3,-2,-4, 1.5, 2.2, 3.2);
+    // A segment with non-principal direction . .
+    auto segment = DSegment3d::From (-12,-3,4, 5,10, -3);
+
+    bvector<DSegment3d> edges;
+    range.GetEdges (edges);
+
+    // Various normals ....
+    for (auto normal : {
+            DVec3d::From (1,0,0),
+            DVec3d::From (0,1,0),
+            DVec3d::From (0,0,1),
+            DVec3d::From (1,1,1),
+            DVec3d::From (-1,1,1),
+            DVec3d::From (-1,1,-1),
+            })
+        {
+        SaveAndRestoreCheckTransform (0,50,0);
+        bvector<DPoint3d> outerPolygon;
+        for (auto &e : edges)
+            Check::SaveTransformed (e);
+        Check::SaveTransformed (segment);
+        bvector<DPoint3d> firstOuter, lastOuter;
+        // scatter plane origins along the segment ..
+        // clip each plane to the range
+        for (double fraction = 0.0; fraction<= 1.0; fraction+= 1.0 / 32.0)
+            {
+            auto plane = DPlane3d::FromOriginAndNormal (
+                    segment.FractionToPoint (fraction),
+                    normal
+                    );
+            bvector<DPoint3d> polygon;
+            ClipPlane::ClipPlaneToRange (range, plane, polygon, &outerPolygon);
+            if (polygon.size () > 0)
+                {
+                DPoint3dOps::AppendClosure (polygon);
+                Check::SaveTransformed (polygon);
+
+                if (firstOuter.size () == 0)
+                    firstOuter = outerPolygon;
+                lastOuter = outerPolygon;
+                }
+            }
+        Check::SaveTransformed (firstOuter);
+        Check::SaveTransformed (lastOuter);
+        }
+    Check::ClearGeometry ("ClipPlaneSet.ClipPlaneToRange");
+    }

@@ -15,7 +15,7 @@ CompileOptionsMki   = $(_MakeFilePath)BentleyGeomA.mki
 buildSubDir     = geom_dllA
 
 Wp64            = 1
-o               = $(geomObj)A/
+o               = $(PartBuildDir)A/
 
 %message geomobj is $(geomObj)
 #-------------------------------------------------

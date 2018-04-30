@@ -1053,44 +1053,6 @@ TEST(Polyface, StitchCube)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                     Earlin.Lutz  10/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST (Polyface, ClipCube_OnePlaneCuts)
-    {
-    int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
-    //static int s_printGraph = 0;
-
-    IPolyfaceConstructionPtr builder = CreateBuilder (false, false);
-    builder->GetFacetOptionsR ().SetMaxPerFace (4);
-    //varunused double mySize = SetTransformToNewGridSpot (*builder, true);
-
-    builder->AddSweptNGon (4, 2.0, 0.0, 1.0, true, true);
-    CheckCounts (builder->GetClientMeshR (), 24, 12,0,12,0,0,0);
-    ExaminePolyface (builder->GetClientMeshR (), "DiamondFrustumB");
-
-    DPoint3d xyz0 = builder->MultiplyByLocalToWorld (DPoint3d::FromXYZ (1,-2,0));
-    DPoint3d xyz1 = builder->MultiplyByLocalToWorld (DPoint3d::FromXYZ (3,3,0));
-
-    ClipPlaneSet clipper;
-    clipper.push_back (ConvexClipPlaneSet::FromXYBox (xyz0.x, xyz0.y, xyz1.x, xyz1.y));
-
-    PolyfaceHeaderPtr header1Ptr = PolyfaceHeader::CreateVariableSizeIndexed ();
-    PolyfaceHeader & header1 = *header1Ptr;
-
-    PolyfaceCoordinateMapPtr map1Ptr = PolyfaceCoordinateMap::Create (*header1Ptr);
-    //varunused PolyfaceCoordinateMap &map1 = *map1Ptr;
-
-    bool badCuts;
-    PolyfaceCoordinateMap::AddClippedPolyface (builder->GetClientMeshR (), map1Ptr.get (), NULL, badCuts, &clipper, true);
-
-    Transform outputShift = Transform::From(0,0,1.5);
-    header1.Transform (outputShift);
-    ExaminePolyface (header1, "AfterSinglePlaneCut");
-   
-    CheckCounts (header1, 18, 9,0,9,0,0,0);
-    Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17

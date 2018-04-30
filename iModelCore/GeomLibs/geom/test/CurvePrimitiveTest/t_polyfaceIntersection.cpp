@@ -3,7 +3,7 @@
 |
 |  $Source: geom/test/CurvePrimitiveTest/t_polyfaceIntersection.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -86,7 +86,7 @@ static void PrintRange (char const *name, DRange3dCR range)
 
 static void PrintPolyfaceSummary (PolyfaceHeaderCR mesh, char const *title)
     {
-    if (!Check::PrintMultiStructs ())
+    if (!Check::PrintDeepStructs ())
         return;
     printf ("\n** Polyface %s\n", title);
     size_t numVertex, numFacet, numQuad, numTriangle, numImplicitTriangle, numVisible, numInvisible;
@@ -437,86 +437,122 @@ meshB->AddPolygon (pointB);
 TestMeshIntersection (meshA, meshB, 3, 1);
 }
 
+#endif
+
+void SaveGridByVolume (bvector<PolyfaceHeaderPtr> &volumes, double dx, double dy)
+    {
+    DPoint3d origin = DPoint3d::FromZero ();
+    int numPositive = 0;
+    int numNegative = 0;
+    Check::Shift (0,dy, 0);
+    for (auto &v : volumes)
+        {
+        double signedVolume = v->SumTetrahedralVolumes (origin);
+        double ix = 0.0;
+        double iy = 0.0;
+        if (signedVolume > 0)
+            {
+            iy = 1.0;
+            ix = numPositive++;
+            }
+        else
+            {
+            iy = 2.0;
+            ix = numNegative++;
+            }
+        Check::Shift (ix * dx, iy * dy, 0);
+        Check::SaveTransformed (v);
+        Check::Shift (-ix * dx, -iy * dy, 0);
+        }
+    }
+void SaveSpread(bvector<PolyfaceHeaderPtr> &meshes)
+    {
+    auto range = DRange3d::NullRange ();
+    for (auto &m : meshes)
+        range.Extend (m->PointRange ());
+    double dx = 1.1 * range.XLength ();
+
+    for (size_t i = 0; i < meshes.size (); i++)
+        {
+        Check::SaveTransformed (meshes[i]);
+        Check::Shift (i * dx, 0, 0);
+        Check::SaveTransformed (meshes[i]);
+        Check::Shift (-(i * dx), 0, 0);
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceIntersection,Boxes)
-{
-PolyfaceHeaderPtr meshA = PolyfaceHeader::CreateVariableSizeIndexed ();
-bvector<DPoint3d> pointA;
-double a = 4.0;
-double b = 6.0;
-pointA.push_back (DPoint3d::From (0,0,0));
-pointA.push_back (DPoint3d::From (a,0,0));
-pointA.push_back (DPoint3d::From (a,a,0));
-pointA.push_back (DPoint3d::From (0,a,0));
-meshA->AddPolygon (pointA);
-static bool s_triangulate = false;
-static int s_maxPerFace = 3;
-Check::True (meshA->SweepToSolid (DVec3d::From (0,0,b), s_triangulate));
-
-PolyfaceHeaderPtr meshB = PolyfaceHeader::CreateVariableSizeIndexed ();
-meshB->CopyFrom(*meshA);
-meshB->Transform (Transform::From (DVec3d::From (1,2,3)));
-
-TestMeshIntersection (meshA, meshB, s_maxPerFace, 1);
-
-bvector<PolyfaceHeaderPtr> enclosedVolumes;
-PolyfaceQuery::MergeAndCollectVolumes (*meshA, *meshB, enclosedVolumes);
-DPoint3d origin = DPoint3d::FromZero ();
-for (size_t i = 0; i < enclosedVolumes.size (); i++)
     {
-    double v = enclosedVolumes[i]->SumTetrahedralVolumes (origin);
-    printf (" (Mesh %d)  (volume %.8g)\n", (int)i, v);
-    }
-}
+    PolyfaceHeaderPtr meshA = PolyfaceHeader::CreateVariableSizeIndexed ();
+    bvector<DPoint3d> pointA;
+    double a = 4.0;
+    double b = 6.0;
+    pointA.push_back (DPoint3d::From (0,0,0));
+    pointA.push_back (DPoint3d::From (a,0,0));
+    pointA.push_back (DPoint3d::From (a,a,0));
+    pointA.push_back (DPoint3d::From (0,a,0));
+    meshA->AddPolygon (pointA);
+    static bool s_triangulate = false;
+    // unused - static int s_maxPerFace = 3;
+    Check::True (meshA->SweepToSolid (DVec3d::From (0,0,b), s_triangulate));
 
+    PolyfaceHeaderPtr meshB = PolyfaceHeader::CreateVariableSizeIndexed ();
+    meshB->CopyFrom(*meshA);
+    meshB->Transform (Transform::From (DVec3d::From (1,2,3)));
+
+    //TestMeshIntersection (meshA, meshB, s_maxPerFace, 1);
+
+    bvector<PolyfaceHeaderPtr> enclosedVolumes;
+    PolyfaceQuery::MergeAndCollectVolumes (*meshA, *meshB, enclosedVolumes);
+    Check::SaveTransformed (meshA);
+    Check::SaveTransformed (meshB);
+    SaveGridByVolume (enclosedVolumes, 3.0 * a, 3.0 * a);
+    Check::ClearGeometry ("PolyfaceIntersection.Boxes");
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceIntersection,MultipleBoxes)
-{
-PolyfaceHeaderPtr meshA = PolyfaceHeader::CreateVariableSizeIndexed ();
-bvector<DPoint3d> pointA;
-double a = 4.0;
-double b = 6.0;
-pointA.push_back (DPoint3d::From (0,0,0));
-pointA.push_back (DPoint3d::From (a,0,0));
-pointA.push_back (DPoint3d::From (a,a,0));
-pointA.push_back (DPoint3d::From (0,a,0));
-meshA->AddPolygon (pointA);
-static bool s_triangulate = false;
-static int s_maxPerFace = 3;
-Check::True (meshA->SweepToSolid (DVec3d::From (0,0,b), s_triangulate));
-
-PolyfaceHeaderPtr meshB = PolyfaceHeader::CreateVariableSizeIndexed ();
-meshB->CopyFrom(*meshA);
-meshB->Transform (Transform::From (DVec3d::From (1,2,3)));
-
-PolyfaceHeaderPtr meshC = PolyfaceHeader::CreateVariableSizeIndexed ();
-meshC->CopyFrom(*meshA);
-meshC->Transform (Transform::From (DVec3d::From (1.5,2.5,3.5)));
-
-bvector<PolyfaceHeaderPtr> meshList;
-meshList.push_back (meshA);
-meshList.push_back (meshB);
-meshList.push_back (meshC);
-
-bvector<PolyfaceHeaderPtr> enclosedVolumes;
-PolyfaceQuery::MergeAndCollectVolumes (meshList, enclosedVolumes);
-Check::Size (7, enclosedVolumes.size (), "Single volume union");
-DPoint3d origin = DPoint3d::FromZero ();
-for (size_t i = 0; i < enclosedVolumes.size (); i++)
     {
-    double v = enclosedVolumes[i]->SumTetrahedralVolumes (origin);
-    printf (" (Mesh %d)  (volume %.8g)\n", (int)i, v);
-    }
-}
-#endif
+    PolyfaceHeaderPtr meshA = PolyfaceHeader::CreateVariableSizeIndexed ();
+    bvector<DPoint3d> pointA;
+    double a = 4.0;
+    double b = 6.0;
+    pointA.push_back (DPoint3d::From (0,0,0));
+    pointA.push_back (DPoint3d::From (a,0,0));
+    pointA.push_back (DPoint3d::From (a,a,0));
+    pointA.push_back (DPoint3d::From (0,a,0));
+    meshA->AddPolygon (pointA);
+    static bool s_triangulate = false;
+    // unused - static int s_maxPerFace = 3;
+    Check::True (meshA->SweepToSolid (DVec3d::From (0,0,b), s_triangulate));
 
-#ifdef BuildCutFilLTests
+    PolyfaceHeaderPtr meshB = PolyfaceHeader::CreateVariableSizeIndexed ();
+    meshB->CopyFrom(*meshA);
+    meshB->Transform (Transform::From (DVec3d::From (1,2,3)));
+
+    PolyfaceHeaderPtr meshC = PolyfaceHeader::CreateVariableSizeIndexed ();
+    meshC->CopyFrom(*meshA);
+    meshC->Transform (Transform::From (DVec3d::From (1.5,2.5,3.5)));
+
+    bvector<PolyfaceHeaderPtr> meshList;
+    meshList.push_back (meshA);
+    meshList.push_back (meshB);
+    meshList.push_back (meshC);
+    Check::SaveTransformed (meshA);
+    Check::SaveTransformed (meshB);
+    Check::SaveTransformed (meshC);
+    bvector<PolyfaceHeaderPtr> enclosedVolumes;
+    PolyfaceQuery::MergeAndCollectVolumes (meshList, enclosedVolumes);
+    Check::Size (7, enclosedVolumes.size (), "3 box interesection produces 7 volumes");
+    SaveGridByVolume (enclosedVolumes, 3.0 * a, 3.0 * a);
+    Check::ClearGeometry ("PolyfaceIntersection.MultipleBoxes");
+    }
+
 // Carrier for a mesh, with xy, area, volume used for sorting and cut/fill splits.
 struct CutFillPatch
 {
@@ -632,10 +668,10 @@ struct CutFillPatchArray : bvector<CutFillPatch>
       }
   };
 
-extern void PrintPolyfaceXYZ (PolyfaceHeaderR mesh, char * title, size_t maxPrintSize);
-void Print (bvector<PolyfaceHeaderPtr> &meshes, char * title, size_t maxPrintSize = 200)
+//extern void PrintPolyfaceXYZ (PolyfaceHeaderR mesh, char * title, size_t maxPrintSize);
+void Print (bvector<PolyfaceHeaderPtr> &meshes, CharCP title, size_t maxPrintSize = 200)
     {
-    if (!Check::PrintMultiStructs ())
+    if (!Check::PrintDeepStructs ())
         return;
     printf ("\n(bvector<%s> [%d]\n",title, (int)meshes.size ());
     DPoint3d origin = DPoint3d::FromZero ();
@@ -647,7 +683,7 @@ void Print (bvector<PolyfaceHeaderPtr> &meshes, char * title, size_t maxPrintSiz
                           (int)i,
                           centroidZ.x, centroidZ.y,centroidZ.z,
                           areaXYZ.z, volumeXYZ.z);
-      PrintPolyfaceXYZ (*meshes[i], "", maxPrintSize);
+      //PrintPolyfaceXYZ (*meshes[i], "", maxPrintSize);
       }
     printf(")\n");
     }
@@ -670,7 +706,8 @@ void AppendImprintSegments (bvector<DSegment3dSizeSize> const &source, bvector<D
         }
 
     }
-static int s_imprintNoisy = 20;
+static int s_imprintNoisy = 0;
+
 /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                     Earlin.Lutz  10/17
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -680,12 +717,14 @@ TEST(PolyfaceIntersection,ImprintForCutFill)
     PolyfaceHeaderPtr meshB = PolyfaceHeader::CreateVariableSizeIndexed ();
     bvector<DPoint3d> pointA;
     double a = 4.0;
+    double dy = 2.0 * a;
     pointA.push_back (DPoint3d::From (0,0,0));
     pointA.push_back (DPoint3d::From (a,0,0));
     pointA.push_back (DPoint3d::From (a,a,0));
     pointA.push_back (DPoint3d::From (0,a,0));
     meshA->AddPolygon (pointA);
     meshA->Triangulate ();
+    meshA->Compress ();
     meshA->MarkInvisibleEdges (0.01);
 #define MeshBByTranslate
 #ifdef MeshBByTranslate
@@ -708,13 +747,19 @@ TEST(PolyfaceIntersection,ImprintForCutFill)
 
 #endif
     size_t numOpen, numClosed;
+    Check::SaveTransformed (meshA);
+    Check::SaveTransformed (meshB);
     auto boundaryA = meshA->ExtractBoundaryStrings (numOpen, numClosed);
     auto boundaryB = meshB->ExtractBoundaryStrings (numOpen, numClosed);
+    Check::Shift (0, dy, 0);
+    Check::SaveTransformed (*boundaryA);
+    Check::SaveTransformed (*boundaryB);
+    Check::Shift (0, dy, 0);
     if (s_imprintNoisy)
         {
-        PrintPolyfaceXYZ (*meshA, "meshA", 200);
+        //PrintPolyfaceXYZ (*meshA, "meshA", 200);
         Check::Print (boundaryA);
-        PrintPolyfaceXYZ (*meshB, "meshB", 200);
+        //PrintPolyfaceXYZ (*meshB, "meshB", 200);
         Check::Print (boundaryB);
         }
     PolyfaceSearchContext searchA (meshA, true, true, true);
@@ -736,10 +781,20 @@ TEST(PolyfaceIntersection,ImprintForCutFill)
     PolyfaceQuery::CopyFacetsWithSegmentSplitImprint (*builderA, *meshA, imprintBonA, false);
     PolyfaceQuery::CopyFacetsWithSegmentSplitImprint (*builderB, *meshB, imprintAonB, false);
 
+    Check::SaveTransformed (builderA->GetClientMeshR ());
+    Check::Shift (0, dy, 0);
+    Check::SaveTransformed (builderB->GetClientMeshR ());
+    Check::Shift (0, dy, 0);
+
+
 
     bvector<PolyfaceHeaderPtr> componentA, componentB;
     builderA->GetClientMeshR ().PartitionByConnectivity (2, componentA);
     builderB->GetClientMeshR ().PartitionByConnectivity (2, componentB);
+    SaveSpread (componentA);
+    Check::Shift (0, dy, 0);
+    SaveSpread (componentB);
+    Check::Shift (0, dy, 0);
     DPoint3d origin = DPoint3d::From (0,0,-3);
     CutFillPatchArray patches (origin);
     patches.RegisterMeshes (componentA, 0);
@@ -751,9 +806,9 @@ TEST(PolyfaceIntersection,ImprintForCutFill)
         }
     patches.CollectClusters ();
     patches.Print (10);
+    Check::ClearGeometry ("PolyfaceIntersection.ImprintForCutFill");
     }
-
-
+#ifdef buildImprintFolded
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -768,7 +823,8 @@ TEST(PolyfaceIntersection,ImprintForCutFill)
     pointA.push_back (DPoint3d::From (0,a,0));
     meshA->AddPolygon (pointA);
     meshA->Triangulate ();
-    meshA->MarkInvisibleEdges (0.01);
+    meshA->Compress ();
+    meshA->MarkTopologicalBoundariesVisible (false);
 
     IFacetOptionsPtr options = IFacetOptions::Create ();
     IPolyfaceConstructionPtr builderB0 = IPolyfaceConstruction::Create (*options);
@@ -790,29 +846,21 @@ TEST(PolyfaceIntersection,ImprintForCutFill)
     PolyfaceHeaderPtr meshB = builderB0->GetClientMeshPtr ();
     meshB->MarkTopologicalBoundariesVisible (false);
 
+    Check::SaveTransformed (meshA);
+    Check::SaveTransformed (meshB);
+
+    Check::Shift (2.0 * a, 0, 0);
+
     size_t numOpen, numClosed;
     auto boundaryA = meshA->ExtractBoundaryStrings (numOpen, numClosed);
     auto boundaryB = meshB->ExtractBoundaryStrings (numOpen, numClosed);
-    if (s_imprintNoisy)
-        {
-        PrintPolyfaceXYZ (*meshA, "meshA", 200);
-        Check::Print (boundaryA);
-        PrintPolyfaceXYZ (*meshB, "meshB", 200);
-        Check::Print (boundaryB);
-        }
+
     PolyfaceSearchContext searchA (meshA, true, true, true);
     PolyfaceSearchContext searchB (meshB, true, true, true);
 
     bvector<DSegment3dSizeSize> imprintBonA, imprintAonB;
     searchA.DoDrapeXY (*boundaryB, imprintBonA);
     searchB.DoDrapeXY (*boundaryA, imprintAonB);
-
-    if (s_imprintNoisy)
-        {
-        Check::Print (imprintBonA, "B on A");
-        Check::Print (imprintAonB, "A on B");
-        }
-
 
     IPolyfaceConstructionPtr builderA = IPolyfaceConstruction::Create (*options);
     IPolyfaceConstructionPtr builderB = IPolyfaceConstruction::Create (*options);
@@ -823,16 +871,15 @@ TEST(PolyfaceIntersection,ImprintForCutFill)
     bvector<PolyfaceHeaderPtr> componentA, componentB;
     builderA->GetClientMeshR ().PartitionByConnectivity (2, componentA);
     builderB->GetClientMeshR ().PartitionByConnectivity (2, componentB);
+
     DPoint3d origin = DPoint3d::From (0,0,-3);
     CutFillPatchArray patches (origin);
     patches.RegisterMeshes (componentA, 0);
     patches.RegisterMeshes (componentB, 1);
-    if (s_imprintNoisy > 10)
-        {
-        Print (componentA, "componentA");
-        Print (componentB, "componentB");
-        }
+
     patches.CollectClusters ();
     patches.Print (10);
+    Check::ClearGeometry ("PolyfaceIntersection.ImprintFolded");
     }
 #endif
+

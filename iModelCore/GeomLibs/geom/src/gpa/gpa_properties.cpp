@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/gpa/gpa_properties.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1460,26 +1460,6 @@ DPoint3dR point
     return stat;
     }
 
-//! @description Generate an offset of the lines and curves.
-//! @param [in] arcAngle => If the turning angle at a vertex exceeds this angle (radians),
-//!                       an arc is created.   Passing a negative angle                   means no arcs.
-//! @param [in] chamferAngle => If the turning angle at a vertex is smaller than
-//!                       arc angle but larger than chamfer angle, a chamfer is
-//!                       created.   This angle is always forced to .99pi or less.
-//! @param [in] offsetDistance the offset distance (uniform).  Positive is to
-//!                           left of curve relative to the normal.
-//! @param [in] normal optional normal to plane of offset measurement.  Default is Z vector.
-GEOMDLLIMPEXP void     GraphicsPointArray::AddOffsetCurves
-(
-GraphicsPointArrayCR source,
-double offsetDistance,
-DVec3dCP planeNormal,
-double arcAngle,
-double chamferAngle
-)
-    {
-    jmdlGraphicsPointArray_collectOffset (this, &source, arcAngle, chamferAngle, offsetDistance, planeNormal);
-    }
 
 
 //! @description compute simple (point) intersections with a plane.

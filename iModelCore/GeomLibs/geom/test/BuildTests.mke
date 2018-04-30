@@ -18,7 +18,7 @@ BEGTEST_NAME  = $(TestDir)GeomLibs
 BEGTEST_INPUT = $(baseDir)$(TestDir)/
 BEGTEST_IGNORE= $(baseDir)ignore_list.txt
 BEGTEST_OUTPUT=$(OutputRootDir)build/GeomLibs/UnitTests/
-o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+o = $(PartBuildDir)$(BEGTEST_NAME)/
 
 %ifdef UsePublishedApi
     BEGTEST_API = $(BuildContext)SubParts/PublishedApi/GeomLibs/

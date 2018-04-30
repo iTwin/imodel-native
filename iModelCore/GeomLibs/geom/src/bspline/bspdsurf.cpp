@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspdsurf.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -11,7 +11,7 @@
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 #define BOUNDARY_JUMP_TOLERANCE 0.90
-
+#ifdef compile_in_bspdsurf
 /*----------------------------------------------------------------------+
 |                                                                       |
 | Local type definition                                                 |
@@ -182,7 +182,7 @@ int                 vNumPoints
         bspcurv_freeCurve (&curve);
         return status;
     }
-
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RBB             03/90
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -331,7 +331,7 @@ DPoint3dCP          delta
 wrapup:
     return status;
     }
-
+#ifdef compile_in_bspdsurf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RBB             03/90
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1701,7 +1701,8 @@ MSBsplineSurfacePtr MSBsplineSurface::CreateTubeSurface (MSBsplineCurveCR baseCu
     bspsurf_tubeSurface (result.get (), &traceCurve, &baseCurve, NULL, NULL, translateBaseCurve);
     return result;
     }
-
+#endif
+#ifdef compile_bspsurf_skinSurface
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BFP             02/91
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2220,7 +2221,8 @@ wrapup:
 
     return status;
     }
-
+#endif
+#ifdef compile_bsproll
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   Rolling Ball Fillet routines                                        |
@@ -2720,5 +2722,5 @@ double              uor_res            /* => UOR resolution */
 #endif
     return status;
     }
-
+#endif
 END_BENTLEY_GEOMETRY_NAMESPACE

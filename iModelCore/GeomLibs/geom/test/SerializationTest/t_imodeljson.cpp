@@ -85,3 +85,13 @@ TEST(IModelJson,ReadFiles)
             }
         }
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(IModelJson,LineSegmentInCurveCollection)
+    {
+    auto cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    cv->Add (ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3, 4,5,6)));
+    Check::SaveTransformed (*cv);
+    Check::ClearGeometry ("IModelJson.LineSegmentInCurveCollection");
+    }

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/drange3d.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -720,6 +720,24 @@ double LargestCoordinateXY () const;
 //! @param [out] box array of 8 points of the box
 //!
 void Get8Corners (DPoint3dP box) const;
+
+//!
+//!
+//! Generates 6 planes for the faces of the box.
+//!
+//! @param [out] planes array of 6 planes.  (Declared and allocated by caller)
+//! @param [in] normalLength scale factor for plane normals.  1.0 is outward unit normals, -1.0 is inward unit normals
+//!
+void Get6Planes (DPlane3d planes[6], double normalLength = 1.0) const;
+
+//!
+//!
+//! Generates individual DSegment3d for the 12 edges of the box.
+//!
+//! @param [out] edges array of 12 edges
+//!
+void GetEdges (bvector<DSegment3d> &edges) const;
+
 //!
 //!
 //! Extract the 6 bounding planes for a range cube.
