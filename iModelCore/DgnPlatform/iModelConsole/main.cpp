@@ -96,9 +96,8 @@ int wmain(int argc, WCharCP argv[])
     //set customized assert handler as default handler causes exception which makes iModelConsole crash.
     BeAssertFunctions::SetBeAssertHandler(IModelConsoleBeAssertHandler);
 
-    IModelConsole app;
-    Dgn::DgnPlatformLib::Initialize(app, false);
-    return app.Run(argc, argv);
+    Dgn::DgnPlatformLib::Initialize(IModelConsole::Singleton(), false);
+    return IModelConsole::Singleton().Run(argc, argv);
     }
 
 #ifdef __unix__

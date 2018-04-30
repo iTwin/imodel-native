@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/AreaPattern.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -255,6 +255,9 @@ public:
 
     //! Modify this PatternParams by the supplied transform.
     DGNPLATFORM_EXPORT void ApplyTransform(TransformCR transform, uint32_t options = 0);
+
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT BentleyStatus FromJson(Json::Value const& json);
 
 }; // PatternParams
 

@@ -404,7 +404,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     BeTest::SetFailOnAssert(false);
     revStatus = m_db->Revisions().MergeRevision(*revision1);
     BeTest::SetFailOnAssert(true);
-    ASSERT_TRUE(revStatus == RevisionStatus::MergeError);
+    ASSERT_TRUE(revStatus == RevisionStatus::ApplyError);
     }
 
 //---------------------------------------------------------------------------------------

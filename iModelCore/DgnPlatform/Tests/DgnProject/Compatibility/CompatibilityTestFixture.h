@@ -203,6 +203,6 @@ struct CompatibilityTestFixture : ::testing::Test
 #define BEDB_OPEN_READONLY(T, testFile)   Db T; ASSERT_EQ(BE_SQLITE_OK, T.OpenBeSQLiteDb(testFile, Db::OpenParams(Db::OpenMode::Readonly)));
 #define BEDB_OPEN_READOWRITE(T, testFile) Db T; ASSERT_EQ(BE_SQLITE_OK, T.OpenBeSQLiteDb(testFile, Db::OpenParams(Db::OpenMode::ReadWrite)));
 
-#define DGNDB_OPEN_READONLY(T, testFile)   
-#define DGNDB_OPEN_READOWRITE(T, testFile) 
+#define DGNDB_OPEN_READONLY(T, testFile)
+#define DGNDB_OPEN_READOWRITE(T, testFile)
 
