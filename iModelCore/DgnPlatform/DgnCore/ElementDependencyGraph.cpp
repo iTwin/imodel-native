@@ -105,6 +105,8 @@ struct DgnElementDependencyGraph::EdgeQueue : DgnElementDependencyGraph::TableAp
     ~EdgeQueue();
     DbResult AddEdge(DgnElementDependencyGraph::Edge&);
     DbResult StepSelectAll(DgnElementDependencyGraph::Edge& edge) {return SelectEdge(edge, *m_select);}
+    void ResetSelectAll() { m_select->Reset(); }
+
     void              ResetSelectAllOrderedByPriority() {m_selbyp->Reset();}
     DbResult StepSelectAllOrderedByPriority(DgnElementDependencyGraph::Edge& edge) {return SelectEdge(edge, *m_selbyp);}
     DbResult BindSelectByOutput(DgnElementId);
@@ -116,7 +118,7 @@ struct DgnElementDependencyGraph::EdgeQueue : DgnElementDependencyGraph::TableAp
     DbResult StepSelectHaveSharedOutput(DgnElementDependencyGraph::Edge& edge) {return SelectEdge(edge, *m_selbyso);}
 
     int GetNodeInputCount(DgnElementId);
-    bvector<DgnElementId> GetAllNodeIds();
+    bset<DgnElementId> GetAllNodeIds();
     };
 
 //=======================================================================================
@@ -584,7 +586,15 @@ void DgnElementDependencyGraph::InvokeHandler(Edge const& edge, size_t indentLev
                 }
             }
 
-        handler->_OnRootChanged(GetDgnDb(), edge.m_relId, edge.m_ein, edge.m_eout);
+        if (!edge.IsDeleted())
+            {
+            handler->_OnRootChanged(GetDgnDb(), edge.m_relId, edge.m_ein, edge.m_eout);
+            }
+        else
+            {
+            InvokeHandlerForDeletedRelationship(edge.m_relId);
+            }
+        
         m_nodes->IncrementOutputsProcessed(edge.m_ein);
         m_nodes->IncrementInputsProcessed(edge.m_eout);
         }
@@ -691,7 +701,10 @@ DgnElementDependencyGraph::EdgeQueue::EdgeQueue(DgnElementDependencyGraph& g)
     {
     if (!GetDgnDb().TableExists(EDGE_QUEUE))
         {                                                                                                   // NB default color must be 0, i.e., EdgeColor::White
-        GetDgnDb().CreateTable(EDGE_QUEUE, "ECRelationshipId INTEGER PRIMARY KEY, shared_output INTEGER DEFAULT 0, color INTEGER DEFAULT 0");
+        GetDgnDb().CreateTable(EDGE_QUEUE, "ECRelationshipId INTEGER PRIMARY KEY, SourceId INTEGER, TargetId INTEGER, ECClassId INTEGER, status INTEGER DEFAULT 0, Priority INTEGER DEFAULT 0, shared_output INTEGER DEFAULT 0, color INTEGER DEFAULT 0, Deleted INTEGER DEFAULT 0");
+        // The value of column 'Deleted' determines which method to call on the handler: 
+        //  0 - call _OnRootChanged
+        //  1 - call _ProcessDeletedDependency
 
         // *** WIP_GRAPH_PRIORITY
         //      -- currently, the Priority column is NULL unless the user happens to populate it. 
@@ -699,36 +712,36 @@ DgnElementDependencyGraph::EdgeQueue::EdgeQueue(DgnElementDependencyGraph& g)
         //      -- must change dgn.0.02.ecschema.xml to put an index on the priority column, so that ORDER BY Priority will work
         }
 
-    GetDgnDb().GetCachedStatement(m_insert, "INSERT INTO " EDGE_QUEUE " (ECRelationshipId) VALUES(?)");
+    GetDgnDb().GetCachedStatement(m_insert, "INSERT INTO " EDGE_QUEUE " (ECRelationshipId, SourceId, TargetId, ECClassId, status, Priority, Deleted) VALUES(?,?,?,?,?,?,?)");
     GetDgnDb().GetCachedStatement(m_setHaveSharedOutput, "UPDATE " EDGE_QUEUE " SET shared_output=1 WHERE ECRelationshipId=?");
     GetDgnDb().GetCachedStatement(m_setEdgeColor, "UPDATE " EDGE_QUEUE " SET color=? WHERE ECRelationshipId=?");
     GetDgnDb().GetCachedStatement(m_getEdgeColor, "SELECT color FROM " EDGE_QUEUE " WHERE ECRelationshipId=?");
 
     // NB: All select statements must specify the same columns and in the same order, as they are all processed by a single function, "SelectEdge"
 
-                  // 0                  1               2                    3           4        5      
-#define Q_SEL_COLS " Q.ECRelationshipId,E.SourceId,E.TargetId,E.ECClassId,E.status,E.Priority"
-#define Q_TABLES   " " EDGE_QUEUE " AS Q JOIN " BIS_TABLE(BIS_REL_ElementDrivesElement) " AS E ON (Q.ECRelationshipId = E.Id)"
+                  // 0                1        2        3         4      5        6
+#define Q_SEL_COLS " ECRelationshipId,SourceId,TargetId,ECClassId,status,Priority,Deleted"
+#define Q_TABLES   " " EDGE_QUEUE " "
 
     GetDgnDb().GetCachedStatement(m_select, "SELECT " Q_SEL_COLS " FROM " Q_TABLES);
-    GetDgnDb().GetCachedStatement(m_selbyp, "SELECT " Q_SEL_COLS " FROM " Q_TABLES " ORDER BY E.Priority DESC");
-    GetDgnDb().GetCachedStatement(m_selbyo, "SELECT " Q_SEL_COLS " FROM " Q_TABLES " WHERE (E.TargetId=?) ORDER BY E.Priority DESC");
-    GetDgnDb().GetCachedStatement(m_selbyso,"SELECT " Q_SEL_COLS " FROM " Q_TABLES " WHERE (Q.shared_output > 1)");
-    GetDgnDb().GetCachedStatement(m_selectNodeIds, "SELECT NodeId FROM (SELECT E.SourceId AS NodeId FROM " Q_TABLES " UNION SELECT E.TargetId FROM " Q_TABLES ")");
-    GetDgnDb().GetCachedStatement(m_countInputs, "SELECT COUNT(E.TargetId) FROM " Q_TABLES " WHERE E.TargetId=?");
+    GetDgnDb().GetCachedStatement(m_selbyp, "SELECT " Q_SEL_COLS " FROM " Q_TABLES " ORDER BY Priority DESC");
+    GetDgnDb().GetCachedStatement(m_selbyo, "SELECT " Q_SEL_COLS " FROM " Q_TABLES " WHERE (TargetId=?) ORDER BY Priority DESC");
+    GetDgnDb().GetCachedStatement(m_selbyso,"SELECT " Q_SEL_COLS " FROM " Q_TABLES " WHERE (shared_output > 1)");
+    GetDgnDb().GetCachedStatement(m_selectNodeIds, "SELECT NodeId FROM (SELECT SourceId AS NodeId FROM " EDGE_QUEUE " UNION SELECT TargetId AS NodeId FROM " EDGE_QUEUE ")");
+    GetDgnDb().GetCachedStatement(m_countInputs, "SELECT COUNT(TargetId) FROM " EDGE_QUEUE " WHERE TargetId=?");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mindaugas.Butkus                04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<DgnElementId> DgnElementDependencyGraph::EdgeQueue::GetAllNodeIds()
+bset<DgnElementId> DgnElementDependencyGraph::EdgeQueue::GetAllNodeIds()
     {
-    bvector<DgnElementId> nodeIds;
+    bset<DgnElementId> nodeIds;
     m_selectNodeIds->Reset();
 
     while (BE_SQLITE_ROW == m_selectNodeIds->Step())
         {
-        nodeIds.push_back(m_selectNodeIds->GetValueId<DgnElementId>(0));
+        nodeIds.insert(m_selectNodeIds->GetValueId<DgnElementId>(0));
         }
 
     return nodeIds;
@@ -762,12 +775,13 @@ DbResult DgnElementDependencyGraph::EdgeQueue::SelectEdge(DgnElementDependencyGr
     if (BE_SQLITE_ROW != stat)
         return stat;
 
-    edge.m_relId   = stmt.GetValueId<EC::ECInstanceId>(0);
-    edge.m_ein      = stmt.GetValueId<DgnElementId>(1);
-    edge.m_eout     = stmt.GetValueId<DgnElementId>(2);
+    edge.m_relId = stmt.GetValueId<EC::ECInstanceId>(0);
+    edge.m_ein = stmt.GetValueId<DgnElementId>(1);
+    edge.m_eout = stmt.GetValueId<DgnElementId>(2);
     edge.m_relClassId = stmt.GetValueId<ECClassId>(3);
-    edge.m_status   = stmt.GetValueInt(4);
+    edge.m_status = stmt.GetValueInt(4);
     edge.m_priority = stmt.GetValueInt64(5);
+    edge.m_deleted = stmt.GetValueBoolean(6);
 
     BeAssert(edge.IsValid());
     return BE_SQLITE_ROW;
@@ -798,6 +812,12 @@ DbResult DgnElementDependencyGraph::EdgeQueue::AddEdge(DgnElementDependencyGraph
     m_insert->Reset();
     m_insert->ClearBindings();
     m_insert->BindId(1, edge.m_relId);
+    m_insert->BindId(2, edge.m_ein);
+    m_insert->BindId(3, edge.m_eout);
+    m_insert->BindId(4, edge.m_relClassId);
+    m_insert->BindInt(5, edge.m_status);
+    m_insert->BindInt(6, edge.m_priority);
+    m_insert->BindBoolean(7, edge.m_deleted);
     auto stat = m_insert->Step();
 
     if (BeSQLiteLib::IsConstraintDbResult(stat))
@@ -898,25 +918,31 @@ void DgnElementDependencyGraph::InvokeHandlersInTopologicalOrder_OneGraph(Edge c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElementDependencyGraph::InvokeHandlersForDeletedRelationships() 
+void DgnElementDependencyGraph::InvokeHandlerForDeletedRelationship(BeSQLite::EC::ECInstanceId relId)
     {
-    for (auto const& reldata : m_txnMgr.ElementDependencies().m_deletedRels)
+    bvector<dgn_TxnTable::ElementDep::DepRelData> const& deletedRels = m_txnMgr.ElementDependencies().m_deletedRels;
+    auto deletedRel = std::find_if(deletedRels.begin(), deletedRels.end(), [relId] (dgn_TxnTable::ElementDep::DepRelData const& depRel)
         {
-        auto handler = DgnElementDependencyHandler::GetHandler().FindHandler(m_txnMgr.GetDgnDb(), DgnClassId(reldata.m_relKey.GetClassId()));
-        if (nullptr == handler)
-            continue;
+        return depRel.m_relKey.GetInstanceId() == relId;
+        });
 
-        EDGLOG(LOG_TRACE, "%sDELETED %llu:%llu(%llu,%llu) (%llx)", "", reldata.m_relKey.GetClassId().GetValue(), reldata.m_relKey.GetInstanceId().GetValue(), 
-                                                                       reldata.m_source.GetValueUnchecked(), reldata.m_target.GetValueUnchecked(),
-                                                                       (intptr_t)handler);
+    if (deletedRels.end() == deletedRel)
+        return;
 
-        if (m_processor != nullptr)
-            m_processor->_ProcessDeletedDependency(m_txnMgr.GetDgnDb(), reldata); 
-        else
-            handler->_ProcessDeletedDependency(m_txnMgr.GetDgnDb(), reldata); 
-        }
+    dgn_TxnTable::ElementDep::DepRelData const& reldata = *deletedRel;
 
-    m_txnMgr.ElementDependencies().m_deletedRels.clear();
+    auto handler = DgnElementDependencyHandler::GetHandler().FindHandler(m_txnMgr.GetDgnDb(), DgnClassId(reldata.m_relKey.GetClassId()));
+    if (nullptr == handler)
+        return;
+
+    EDGLOG(LOG_TRACE, "%sDELETED %llu:%llu(%llu,%llu) (%llx)", "", reldata.m_relKey.GetClassId().GetValue(), reldata.m_relKey.GetInstanceId().GetValue(),
+           reldata.m_source.GetValueUnchecked(), reldata.m_target.GetValueUnchecked(),
+           (intptr_t) handler);
+
+    if (m_processor != nullptr)
+        m_processor->_ProcessDeletedDependency(m_txnMgr.GetDgnDb(), reldata);
+    else
+        handler->_ProcessDeletedDependency(m_txnMgr.GetDgnDb(), reldata);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -932,7 +958,7 @@ void DgnElementDependencyGraph::InvokeHandlersInTopologicalOrder()
         InvokeHandlersInTopologicalOrder_OneGraph(edge, bvector<Edge>());
         }
 
-    InvokeHandlersForDeletedRelationships();
+    m_txnMgr.ElementDependencies().m_deletedRels.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1096,17 +1122,21 @@ void DgnElementDependencyGraph::DiscoverEdges()
     while (elementDrivesElement.StepSelectWhereRelationshipInDirectChanges(directlyChanged) == BE_SQLITE_ROW)
         queue.AddEdge(directlyChanged);
 
-    // Find and schedule the EDEs whose inputs are the outputs of deleted rels. 
-    for (auto deletedEdge : m_txnMgr.ElementDependencies().m_deletedRels)
+    // Find and schedule the EDEs which where deleted.
+    for (auto deletedRel : m_txnMgr.ElementDependencies().m_deletedRels)
         {
-        Edge affected;
-        elementDrivesElement.BindSelectByRoot(deletedEdge.m_target);
-        while (elementDrivesElement.StepSelectByRoot(affected) == BE_SQLITE_ROW)
-            queue.AddEdge(affected);
+        Edge deletedEdge;
+        deletedEdge.m_ein = deletedRel.m_source;
+        deletedEdge.m_eout = deletedRel.m_target;
+        deletedEdge.m_deleted = true;
+        deletedEdge.m_relId = deletedRel.m_relKey.GetInstanceId();
+        deletedEdge.m_relClassId = deletedRel.m_relKey.GetClassId();
+        queue.AddEdge(deletedEdge);
         }
 
     //  Find edges reachable from the initial set found above.
     Edge currEdge;
+    queue.ResetSelectAll();
     while (queue.StepSelectAll(currEdge) == BE_SQLITE_ROW)
         {
         //  Return currEdge as result
@@ -1121,24 +1151,10 @@ void DgnElementDependencyGraph::DiscoverEdges()
         elementDrivesElement.BindSelectByRoot(currEdge.m_eout);
         while (elementDrivesElement.StepSelectByRoot(affected) == BE_SQLITE_ROW)
             queue.AddEdge(affected);
-
-        //  The output of currEdge could be the *output* of other ElementDrivesElement dependencies. Those "collaborating" dependencies must also be fired.
-        bset<EC::ECInstanceId> suppliers;
-        elementDrivesElement.BindSelectByDependent(currEdge.m_eout);
-        while (elementDrivesElement.StepSelectByDependent(affected) == BE_SQLITE_ROW)
-            {
-            queue.AddEdge(affected);
-            suppliers.insert(affected.GetECRelationshipId());
-            }
-        if (suppliers.size() > 1)                                                                   
-            {
-            for (auto supplier : suppliers)
-                queue.SetHaveSharedOutput(supplier);
-            }
         }
 
     // Fill the NODES table
-    bvector<DgnElementId> nodeIds = queue.GetAllNodeIds();
+    bset<DgnElementId> nodeIds = queue.GetAllNodeIds();
     for (DgnElementId const& id : nodeIds)
         {
         m_nodes->InsertNode(id);

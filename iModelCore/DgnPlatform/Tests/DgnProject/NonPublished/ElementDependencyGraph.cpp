@@ -68,7 +68,8 @@ struct CallbackSequenceRecorder
         {
         RelationshipHandlerCallback = 0,
         AllInputsHandledCallback = 1,
-        BeforeOutputsHandledCallback = 2
+        BeforeOutputsHandledCallback = 2,
+        DeletedDependencyHandledCallback = 3
         };
 
     typedef bpair<BeInt64Id, EntryType> SequenceEntry;
@@ -83,8 +84,8 @@ struct CallbackSequenceRecorder
             CallbackSequenceRecorder& m_recorder;
 
         protected:
-            void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
-            void _ProcessDeletedDependency(Dgn::DgnDbR db, Dgn::dgn_TxnTable::ElementDep::DepRelData const& relData) override {}
+            virtual void _OnRootChanged(Dgn::DgnDbR db, ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
+            virtual void _ProcessDeletedDependency(Dgn::DgnDbR db, T_DepRelData const& relData) override;
 
         public:
             EDERelationshipCallback(CallbackSequenceRecorder& recorder) : m_recorder(recorder) {}
@@ -194,6 +195,18 @@ void CallbackSequenceRecorder::EDERelationshipCallback::_OnRootChanged
 )
     {
     m_recorder.m_sequence.push_back({relationshipId, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void CallbackSequenceRecorder::EDERelationshipCallback::_ProcessDeletedDependency
+(
+    Dgn::DgnDbR db, 
+    T_DepRelData const& relData
+)
+    {
+    m_recorder.m_sequence.push_back({relData.m_relKey.GetInstanceId(), CallbackSequenceRecorder::EntryType::DeletedDependencyHandledCallback});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -465,7 +478,6 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
     //  ----------------
     //  change e31 =>
     //  r99_31 r31_2    r2_1
-    //         r3_2
     //  ----------------
     TwiddleTime(g.e31);
 
@@ -475,15 +487,13 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
     if (true)
         {
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
-        ASSERT_EQ( rels.size() , 4 );
+        ASSERT_EQ( rels.size() , 3 );
         auto i99_31 = findRelId(rels, g.r99_31);   ASSERT_NE(i99_31  , rels.end());
         auto i31_2  = findRelId(rels, g.r31_2);    ASSERT_NE(i31_2  , rels.end());
-        auto i3_2   = findRelId(rels, g.r3_2);     ASSERT_NE(i3_2  , rels.end());
         auto i2_1   = findRelId(rels, g.r2_1);     ASSERT_NE(i2_1  , rels.end());
 
         ASSERT_LT(i99_31 , i31_2);
         ASSERT_LT(i31_2 , i2_1);
-        ASSERT_LT(i3_2 , i2_1);
         }
 
     //  ----------------
@@ -728,17 +738,13 @@ TEST_F(ElementDependencyGraph, NonDependencyOrderTest)
 
         auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
 
-        ASSERT_EQ( rels.size() , 4);
+        ASSERT_EQ( rels.size() , 3);
         auto iw2_c1    = findRelId(rels, w2_c1);     ASSERT_NE( iw2_c1,  rels.end() );
         auto iw2_w1    = findRelId(rels, w2_w1);     ASSERT_NE( iw2_w1,  rels.end() );
         auto ic1_w1    = findRelId(rels, c1_w1);     ASSERT_NE( ic1_w1,  rels.end() );
-        auto iw3_c1    = findRelId(rels, w3_c1);     ASSERT_NE( iw3_c1,  rels.end() );
 
         //  w2_c1 preceeds c1_w1 because of the explicit dependency
         ASSERT_LT( iw2_c1   ,   ic1_w1 );
-
-        //  w3_c1 is invoked because it must have another crack at its output. It preceeded c1_w1 because of the explicit dependency.
-        ASSERT_LT( iw3_c1   ,   ic1_w1 );
 
         // c1_w1 is fired before w2_w1, because c1_c1 was created first.
         ASSERT_LT( ic1_w1   ,   iw2_w1 );
@@ -758,10 +764,8 @@ void ElementDependencyGraph::TestOverlappingOrder(DgnElementCPtr r1, ECInstanceK
     m_db->SaveChanges();
 
     auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
-    ASSERT_EQ( rels.size(), 2 );
+    ASSERT_EQ( rels.size(), 1 );
     auto ir1_d3 = findRelId(rels, r1_d3);       ASSERT_NE( ir1_d3, rels.end() );
-    auto ir2_d3 = findRelId(rels, r2_d3);       ASSERT_NE( ir2_d3, rels.end() );
-    ASSERT_EQ((ir1_d3 < ir2_d3 ) , r1First );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1224,5 +1228,72 @@ TEST_F(ElementDependencyGraph, DriverBundleGroupsMultipleEDERelationships)
         ASSERT_EQ(recorder.m_sequence[0].first, b2->GetElementId());
         ASSERT_TRUE(b2_e3 == recorder.m_sequence[1].first || b2_e4 == recorder.m_sequence[1].first);
         ASSERT_TRUE(b2_e3 == recorder.m_sequence[2].first || b2_e4 == recorder.m_sequence[2].first);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementDependencyGraph, DeleteDependent_OnBeforeOutputsHandledCalled)
+    {
+    SetUpForRelationshipTests();
+
+    //  ----------------
+    //     o->e1-o      o->e3
+    //    /       \    /
+    //  b1         ->b2
+    //    \       /    \
+    //     o->e2-o      o->e4
+    //
+    // (The little "o"s represent the ECRelationships, e* - elements, b* - driver bundles)
+    //  ----------------
+
+    DriverBundleElementCPtr b1 = InsertBundle();
+
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+    DgnElementCPtr e3 = InsertElement("E3");
+    DgnElementCPtr e4 = InsertElement("E4");
+
+    DriverBundleElementCPtr b2 = InsertBundle();
+
+    ECInstanceId b1_e1 = InsertElementDrivesElementRelationship(b1, e1).GetInstanceId();
+    ECInstanceId b1_e2 = InsertElementDrivesElementRelationship(b1, e2).GetInstanceId();
+    ECInstanceId e1_b2 = InsertElementDrivesElementRelationship(e1, b2).GetInstanceId();
+    ECInstanceId e2_b2 = InsertElementDrivesElementRelationship(e2, b2).GetInstanceId();
+    ECInstanceId b2_e3 = InsertElementDrivesElementRelationship(b2, e3).GetInstanceId();
+    ECInstanceId b2_e4 = InsertElementDrivesElementRelationship(b2, e4).GetInstanceId();
+
+    m_db->SaveChanges();
+
+    if (true)
+        {
+        EDECallbackSequenceMonitor monitor;
+        CallbackSequenceRecorder const& recorder = monitor.GetRecorder();
+
+        ASSERT_EQ(DgnDbStatus::Success, e1->Delete());
+        m_db->SaveChanges();
+
+        // e1 was deleted. Expected handler call sequence:
+        //   0. b1 (before outputs handled)
+        //   1. b1_e1 (deleted dependency)
+        //   2. e1_b2 (deleted dependency)
+        //   3. b2 (all inputs handled)
+        // 4-5. b2_e3 and b2_e4
+
+        ASSERT_EQ(6, recorder.m_sequence.size());
+        ASSERT_EQ(recorder.m_sequence[0].second, CallbackSequenceRecorder::EntryType::BeforeOutputsHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[1].second, CallbackSequenceRecorder::EntryType::DeletedDependencyHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[2].second, CallbackSequenceRecorder::EntryType::DeletedDependencyHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[3].second, CallbackSequenceRecorder::EntryType::AllInputsHandledCallback);
+        ASSERT_EQ(recorder.m_sequence[4].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+        ASSERT_EQ(recorder.m_sequence[5].second, CallbackSequenceRecorder::EntryType::RelationshipHandlerCallback);
+
+        ASSERT_EQ(recorder.m_sequence[0].first, b1->GetElementId());
+        ASSERT_EQ(recorder.m_sequence[1].first, b1_e1);
+        ASSERT_EQ(recorder.m_sequence[2].first, e1_b2);
+        ASSERT_EQ(recorder.m_sequence[3].first, b2->GetElementId());
+        ASSERT_TRUE(b2_e3 == recorder.m_sequence[4].first || b2_e4 == recorder.m_sequence[4].first);
+        ASSERT_TRUE(b2_e3 == recorder.m_sequence[5].first || b2_e4 == recorder.m_sequence[5].first);
         }
     }
