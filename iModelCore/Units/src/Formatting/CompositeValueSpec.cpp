@@ -366,24 +366,30 @@ bool CompositeValueSpec::IsIdentical(CompositeValueSpecCR other) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-Json::Value CompositeValueSpec::ToJson() const
+Json::Value CompositeValueSpec::ToJson(bool excludeUnits) const
     {
     if (IsProblem()) // TODO log error;
         return Json::Value();
+
     Json::Value jCVS;
-    bool valid = false;
-    UnitProxyCP proxP;
-    jCVS[json_units()] = Json::arrayValue;
-    for (int i = 0; i < GetUnitCount(); i++)
+    bool valid = true;
+    if (!excludeUnits)
         {
-        proxP = GetProxy(i);
-        if(!proxP->IsEmpty())
+        valid = false;
+        jCVS[json_units()] = Json::arrayValue;
+        UnitProxyCP proxP = nullptr;
+        for (int i = 0; i < GetUnitCount(); i++)
             {
-            if (0 == i) // Major unit
-                valid = true;
-            jCVS[json_units()].append(proxP->ToJson());
+            proxP = GetProxy(i);
+            if (!proxP->IsEmpty())
+                {
+                if (0 == i) // Major unit
+                    valid = true;
+                jCVS[json_units()].append(proxP->ToJson());
+                }
             }
         }
+
     if (valid)
         {
         jCVS[json_includeZero()] = IsIncludeZero();
@@ -399,49 +405,58 @@ Json::Value CompositeValueSpec::ToJson() const
 //--------------------------------------------------------------------------------------
 BentleyStatus CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context)
     {
-    Utf8CP paramName;
-    Utf8String str;
     if (jval.empty())
         return ERROR;
-    bool includeZero = false;
-    Utf8String spacer;
-    Utf8String input;
+
     bvector<Units::UnitCP> units;
     bvector<Utf8String> labels;
+    if (jval.isMember(json_units()))
+        {
+        JsonValueCR unitsJson = jval[json_units()];
+        for (Json::ValueIterator iter = unitsJson.begin(); iter != unitsJson.end(); iter++)
+            {
+            UnitProxy upp;
+            upp.LoadJson(*iter, context);
+            units.push_back(upp.GetUnit());
+            labels.push_back(upp.GetLabel());
+            }
+        }
+
+    return FromJson(out, jval, units, labels);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+BentleyStatus CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, bvector<Units::UnitCP> const& units, bvector<Utf8String> const& unitLabels)
+    {
+    if (jval.empty())
+        return ERROR;
+
+    out = CompositeValueSpec(units);
+
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
-        paramName = iter.memberName();
+        Utf8CP paramName = iter.memberName();
         JsonValueCR val = *iter;
-        str = val.ToString();
-        if (BeStringUtilities::StricmpAscii(paramName, "units") == 0)
-            {
-            for (Json::ValueIterator iter = val.begin(); iter != val.end(); iter++)
-                {
-                UnitProxy upp;
-                upp.LoadJson(*iter, context);
-                units.push_back(upp.GetUnit());
-                labels.push_back(upp.GetLabel());
-                }
-            }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_includeZero()) == 0)
-            includeZero = val.asBool();
+        if (BeStringUtilities::StricmpAscii(paramName, json_includeZero()) == 0)
+            out.SetIncludeZero(val.asBool());
         else if (BeStringUtilities::StricmpAscii(paramName, json_spacer()) == 0)
-            spacer = val.asString();
+            out.SetSpacer(val.asCString());
         }
-    out = CompositeValueSpec(units);
-    out.SetIncludeZero(includeZero);
-    out.SetSpacer(spacer.c_str());
-    switch (labels.size())
+
+    switch (unitLabels.size())
         {
-        case 4:
-            out.SetSubLabel(labels[3]);
-        case 3:
-            out.SetMinorLabel(labels[2]);
-        case 2:
-            out.SetMiddleLabel(labels[1]);
-        case 1:
-            out.SetMajorLabel(labels[0]);
+            case 4:
+                out.SetSubLabel(unitLabels[3]);
+            case 3:
+                out.SetMinorLabel(unitLabels[2]);
+            case 2:
+                out.SetMiddleLabel(unitLabels[1]);
+            case 1:
+                out.SetMajorLabel(unitLabels[0]);
         }
+
     return SUCCESS;
     }
 
