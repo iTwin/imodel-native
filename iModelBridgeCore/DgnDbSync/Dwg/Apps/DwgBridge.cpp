@@ -354,6 +354,9 @@ BentleyStatus   DwgBridge::RunAsStandaloneExe (int argc, WCharCP argv[])
         return status;
         }
 
+    // tell the importer that it will be run from a standalone app:
+    GetImportOptions().SetRunAsStandaloneApp (true);
+
     // Run the bridge
     status = iModelBridgeSacAdapter::Execute (*this, params);
 
