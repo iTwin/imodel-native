@@ -764,7 +764,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
 
     auto roadwayPtr = RoadRailBim::Roadway::Create(*bimCorridorCPtr);
     roadwayPtr->SetMainLinearElement(bimMainAlignmentPtr.get());
-    if (roadwayPtr->Insert((int32_t)RoadRailBim::PathwayElement::Order::LeftMost).IsNull())
+    if (roadwayPtr->Insert(RoadRailBim::PathwayElement::Order::LeftMost).IsNull())
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
