@@ -64,7 +64,7 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
 
     auto leftRoadwayPtr = Roadway::Create(*corridorPtr);
     leftRoadwayPtr->SetMainLinearElement(alignmentPtr.get());
-    ASSERT_TRUE(leftRoadwayPtr->Insert((int32_t)PathwayElement::Order::LeftMost).IsValid());
+    ASSERT_TRUE(leftRoadwayPtr->Insert(PathwayElement::Order::LeftMost).IsValid());
 
     ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedCorridorPortion(*alignmentPtr, *leftRoadwayPtr, *clPointDefPtr));
 

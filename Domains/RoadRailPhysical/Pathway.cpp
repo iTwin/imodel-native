@@ -192,7 +192,7 @@ PathwayElementCPtr PathwayElement::QueryByCode(PhysicalModelCR model, Utf8String
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-PathwayElementCPtr PathwayElement::Insert(int32_t order, DgnDbStatus* status)
+PathwayElementCPtr PathwayElement::Insert(Order order, DgnDbStatus* status)
     {
     auto retVal = GetDgnDb().Elements().Insert<PathwayElement>(*this, status);
 

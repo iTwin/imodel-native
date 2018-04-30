@@ -116,7 +116,8 @@ public:
 }; // CorridorPortionElement
 
 //=======================================================================================
-//! 
+//! A long, narrow physical stretch or a Corridor specially constructed for a particular 
+//! travel type.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
 struct PathwayElement : CorridorPortionElement
@@ -134,7 +135,27 @@ protected:
     virtual RoadwayCP _ToRoadway() const { return nullptr; }
 
 public:
-    enum class Order: int32_t { LeftMost = 0, RightMost = 1000 };
+    //=======================================================================================
+    //! Order of a Pathway in its Corridor (left to right)
+    //! @ingroup GROUP_RoadRailPhysical
+    //=======================================================================================
+    struct Order
+    { 
+    private:
+        int32_t m_order;
+
+        Order() {}
+
+    public:
+        Order(int32_t order) : m_order(order) {}
+
+        operator int32_t() { return m_order; }
+
+        bool IsValid() { return m_order >= LeftMost && m_order <= RightMost; }
+
+        static const int32_t LeftMost = 0;
+        static const int32_t RightMost = 1000;
+    };
 
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwayElement)
@@ -156,7 +177,7 @@ public:
     //! @return A Roadway or nullptr if this Pathway is not a Roadway
     RoadwayCP ToRoadway() const { return _ToRoadway(); }
 
-    ROADRAILPHYSICAL_EXPORT PathwayElementCPtr Insert(int32_t order, Dgn::DgnDbStatus* status = nullptr);
+    ROADRAILPHYSICAL_EXPORT PathwayElementCPtr Insert(Order order, Dgn::DgnDbStatus* status = nullptr);
 }; // PathwayElement
 
 //=======================================================================================
