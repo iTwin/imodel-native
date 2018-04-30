@@ -595,7 +595,7 @@ void UnitNameMappings::AddMappings()
     AddECMapping("CUB.M/SEC", "UNITS:CUB_M_PER_SEC");
     AddECMapping("CUB.MILE", "UNITS:CUB_MILE");
     AddECMapping("CUB.MM", "UNITS:CUB_MM");
-    AddECMapping("CUB.MU", "UNITS:CUB_MU");
+    AddECMapping("CUB.MU", "UNITS:CUB_UM");
     AddECMapping("CUB.YRD", "UNITS:CUB_YRD");
     AddECMapping("CUSTOMER", "UNITS:PERSON");
     AddECMapping("DAY", "UNITS:DAY");
@@ -843,7 +843,7 @@ void UnitNameMappings::AddMappings()
     AddECMapping("MOL/SEC", "UNITS:MOL_PER_SEC");
     AddECMapping("MPH", "UNITS:MPH");
     AddECMapping("MS", "UNITS:MS");
-    AddECMapping("MU", "UNITS:MU");
+    AddECMapping("MU", "UNITS:UM");
     AddECMapping("MVA", "UNITS:MVA");
     AddECMapping("N", "UNITS:N");
     AddECMapping("N/CUB.FT", "UNITS:N_PER_CUB_FT");
@@ -918,7 +918,7 @@ void UnitNameMappings::AddMappings()
     AddECMapping("SQ.M/SEC", "UNITS:SQ_M_PER_SEC");
     AddECMapping("SQ.MILE", "UNITS:SQ_MILE");
     AddECMapping("SQ.MM", "UNITS:SQ_MM");
-    AddECMapping("SQ.MU", "UNITS:SQ_MU");
+    AddECMapping("SQ.MU", "UNITS:SQ_UM");
     AddECMapping("SQ.US_SURVEY_CHAIN", "UNITS:SQ_US_SURVEY_CHAIN");
     AddECMapping("SQ.US_SURVEY_FT", "UNITS:SQ_US_SURVEY_FT");
     AddECMapping("SQ.US_SURVEY_IN", "UNITS:SQ_US_SURVEY_IN");
