@@ -118,6 +118,12 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
+    <ECEntityClass typeName="TestDriverBundle">
+        <BaseClass>bis:DriverBundleElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="TestElement2d">
         <BaseClass>bis:AnnotationElement2d</BaseClass>
         <ECCustomAttributes>
