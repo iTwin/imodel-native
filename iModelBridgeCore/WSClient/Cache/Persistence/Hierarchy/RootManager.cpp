@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/RootManager.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -38,6 +38,14 @@ m_rootWeakRelationshipClass(m_dbAdapter.GetECRelationshipClass(SCHEMA_CacheSchem
 m_rootInserter(dbAdapter.GetECDb(), *m_rootClass),
 m_rootUpdater(m_dbAdapter.GetECDb(), *m_rootClass, ECSqlUpdater_Options_IgnoreSystemAndFailReadOnlyProperties)
     {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RootManager::IsRootNode(ECInstanceKeyCR instanceKey)
+    {
+    return m_rootClass->GetId() == instanceKey.GetClassId();
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2015

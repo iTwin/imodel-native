@@ -49,6 +49,7 @@
     <ClCompile Include="Integration\SchemaVersionTests.cpp" />
     <ClCompile Include="Integration\SeedFileTests.cpp" />
     <ClCompile Include="Integration\StatisticsTests.cpp" />
+    <ClCompile Include="Integration\ThumbnailsTests.cpp" />
     <ClCompile Include="Integration\UserInfoTests.cpp" />
     <ClCompile Include="Integration\VersionsTests.cpp" />
     <ClCompile Include="Integration\WebsiteSeedFileTests.cpp" />

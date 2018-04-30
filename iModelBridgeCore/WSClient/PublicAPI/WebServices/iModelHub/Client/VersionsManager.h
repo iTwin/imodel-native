@@ -44,14 +44,18 @@ private:
 public:
     //! Returns all versions available in the server.
     //! @param[in] cancellationToken
+    //! @param[in] thumbnailsToSelect Thumbnails sizes to select
     //! @return Asynchronous task that has the collection of Versions information as the result.
-    IMODELHUBCLIENT_EXPORT VersionsInfoTaskPtr GetAllVersions(ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT VersionsInfoTaskPtr GetAllVersions(ICancellationTokenPtr cancellationToken = nullptr, 
+                                                              Thumbnail::Size thumbnailsToSelect = Thumbnail::Size::None) const;
 
     //! Returns version with specified id
     //! @param[in] versionId
     //! @param[in] cancellationToken
+    //! @param[in] thumbnailsToSelect Thumbnails sizes to select
     //! @return Asynchronous task that has the Version information as the result.
-    IMODELHUBCLIENT_EXPORT VersionInfoTaskPtr GetVersionById(Utf8StringCR versionId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT VersionInfoTaskPtr GetVersionById(Utf8StringCR versionId, ICancellationTokenPtr cancellationToken = nullptr, 
+                                                             Thumbnail::Size thumbnailsToSelect = Thumbnail::Size::None) const;
 
     //! Creates new version associated with ChangeSet
     //! @param[in] version

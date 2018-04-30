@@ -61,6 +61,8 @@ namespace ServerSchema
         static Utf8CP Version = "Version";
         static Utf8CP UserInfo = "UserInfo";
         static Utf8CP Statistics = "Statistics";
+        static Utf8CP SmallThumbnail = "SmallThumbnail";
+        static Utf8CP LargeThumbnail = "LargeThumbnail";
         }
     namespace Relationship
         {
@@ -69,6 +71,7 @@ namespace ServerSchema
         static Utf8CP HasCreatorInfo = "HasCreatorInfo";
         static Utf8CP CumulativeChangeSet = "CumulativeChangeSet";
         static Utf8CP HasStatistics = "HasStatistics";
+        static Utf8CP HasThumbnail = "HasThumbnail";
         }
     namespace Property
         {
@@ -107,6 +110,7 @@ namespace ServerSchema
         static Utf8CP ReleasedWithChangeSetIndex = "ReleasedWithChangeSetIndex";
         static Utf8CP ConflictingLocks = "ConflictingLocks";
         static Utf8CP LocksRequiresPull = "LocksRequiresPull";
+        static Utf8CP LocksNotFound = "LocksNotFound";
         static Utf8CP CodesRequiresPull = "CodesRequiresPull";
         static Utf8CP EventServiceSASToken = "EventServiceSASToken";
         static Utf8CP BaseAddress = "BaseAddress";
@@ -144,6 +148,7 @@ namespace ServerSchema
         static Utf8CP DetailedError_Locks = "DetailedError_Locks";
         static Utf8CP DetailedError_Codes = "DetailedError_Codes";
         static Utf8CP SetMaximumInstances = "DetailedError_MaximumInstances";
+        static Utf8CP ConflictStrategy = "ConflictStrategy";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     static Utf8CP DiscardReservedCodes = "DiscardReservedCodes";
@@ -204,8 +209,13 @@ void AddCodeInfoToList (DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCo
 bool GetCodeSequenceFromServerJson(RapidJsonValueCR serverJson, CodeSequence& codeSequence);
 rapidjson::Document ToRapidJson(JsonValueCR source);
 
+void SetCodesLocksStates(IBriefcaseManager::Response& response, IBriefcaseManager::ResponseOptions options, JsonValueCR deniedLocks, JsonValueCR deniedCodes);
+RepositoryStatus GetErrorResponseStatus(Result<void> result);
+IBriefcaseManager::Response ConvertErrorResponse(IBriefcaseManager::Request const& request, Result<void> result, IBriefcaseManager::RequestPurpose purpose);
+
 bool ContainsSchemaChanges(ChangeSets const& changeSets, DgnDbR db);
 void ConvertToChangeSetPointersVector(ChangeSets changeSets, bvector<DgnRevisionCP>& pointersVector);
+Utf8String FormatBeInt64Id(BeInt64Id int64Value);
 
 //=======================================================================================
 //@bsiclass                                      Algirdas.Mikoliunas             10/2016

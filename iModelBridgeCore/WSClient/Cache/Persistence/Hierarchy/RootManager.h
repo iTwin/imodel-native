@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Hierarchy/RootManager.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -109,6 +109,7 @@ struct RootManager
 
         bool IsNodeConnectedToAnyOfRoots(const bset<CacheRootKey>& rootKeys, CacheNodeKeyCR nodeKey);
         bool IsNodeInRoot(CacheRootKeyCR rootKey, CacheNodeKeyCR nodeKey);
+        bool IsRootNode(ECInstanceKeyCR instanceKey);
 
         BentleyStatus GetNodesConnectedToRoots(const bset<CacheRootKey> roots, ECInstanceKeyMultiMap& nodesOut, uint8_t depth = UINT8_MAX);
         BentleyStatus GetNodesLinkedToRoot(Utf8StringCR rootName, ECInstanceKeyMultiMap& nodesOut);

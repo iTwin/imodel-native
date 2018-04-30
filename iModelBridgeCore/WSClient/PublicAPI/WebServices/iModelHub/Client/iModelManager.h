@@ -27,9 +27,6 @@ private:
     iModelConnectionPtr                     m_connection;
     std::function<ICancellationTokenPtr()>  m_cancellationToken;
 
-    Response                     HandleError(Request const& request, Result<void> result, IBriefcaseManager::RequestPurpose purpose);
-    static RepositoryStatus      GetResponseStatus(Result<void> result);
-
 protected:
     iModelManager(iModelConnectionPtr connection);
 

@@ -6,20 +6,24 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "iModelTestsBase.h"
+#include "../Helpers/Domains/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_DPTEST
 
 static const Utf8CP s_iModelName = "LocksTests";
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Karolis.Dziedzelis              11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct LocksTests : public iModelTestsBase
+struct LocksTests : public iModelTestsBase, TestElementDrivesElementHandler::Callback
     {
-    iModelInfoPtr               m_info;
+    iModelInfoPtr   m_info;
+    DgnElementCPtr  m_onRootChangedElement = nullptr;
+    bool            m_indirectElementUpdated = false;
 
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
@@ -46,6 +50,30 @@ struct LocksTests : public iModelTestsBase
         iModelResult result = IntegrationTestsBase::CreateiModel(db);
         ASSERT_SUCCESS(result);
         m_info = result.GetValue();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Diego.Pinate    04/18
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void _OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target) override
+        {
+        if (m_onRootChangedElement.IsNull())
+            return;
+
+        // Update an element to test dependency changes don't generate locks in ExtractLocks call
+        EXPECT_TRUE(m_onRootChangedElement.IsValid());
+        DgnElementPtr elementEdit = db.Elements().GetForEdit<DgnElement>(m_onRootChangedElement->GetElementId());
+
+        elementEdit->SetUserLabel("Updated label OnRootChanged");
+        EXPECT_TRUE(elementEdit->Update().IsValid());
+        m_indirectElementUpdated = true;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Diego.Pinate    04/18
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void _ProcessDeletedDependency(DgnDbR db, dgn_TxnTable::ElementDep::DepRelData const& relData) override
+        {
         }
     };
 
@@ -358,15 +386,15 @@ TEST_F(LocksTests, FailingLocksResponseOptions)
     EXPECT_EQ(RepositoryStatus::Success, db2.BriefcaseManager().PrepareForModelDelete(req, *model2_1, IBriefcaseManager::PrepareAction::Acquire)); 
     EXPECT_EQ(DgnDbStatus::Success, model2_1->Delete());
     db2.SaveChanges();
-     iModelHubHelpers::ExpectLocksCount(briefcase1, 5);
-     iModelHubHelpers::ExpectLocksCount(briefcase2, 2);
+    iModelHubHelpers::ExpectLocksCount(briefcase1, 5);
+    iModelHubHelpers::ExpectLocksCount(briefcase2, 2);
 
-    StatusResult result1 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All)->GetResult();
-    ASSERT_FAILURE(result1);
-    EXPECT_EQ(Error::Id::LockOwnedByAnotherBriefcase, result1.GetError().GetId());
-    JsonValueCR error1 = result1.GetError().GetExtendedData();
-    EXPECT_EQ(1, error1["ConflictingLocks"].size());
-
+    ConflictsInfoPtr conflictsInfo = std::make_shared<ConflictsInfo>();
+    StatusResult result1 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All, nullptr, conflictsInfo)->GetResult();
+    ASSERT_SUCCESS(result1);
+    EXPECT_TRUE(conflictsInfo->Any());
+    EXPECT_EQ(1, conflictsInfo->GetLocksConflicts().size());
+    
     LockRequest lockRequest;
     lockRequest.Insert(*model2_1, LockLevel::Exclusive);
     db1.BriefcaseManager().ClearUserHeldCodesLocks();
@@ -430,15 +458,19 @@ TEST_F(LocksTests, RelinquishOtherUserLocks)
     EXPECT_EQ(RepositoryStatus::Success, db2.BriefcaseManager().PrepareForModelDelete(req, *model1_2, IBriefcaseManager::PrepareAction::Acquire));
     EXPECT_EQ(DgnDbStatus::Success, model1_2->Delete());
     db2.SaveChanges();
-     iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
-     iModelHubHelpers::ExpectLocksCount(briefcase2, 2);
+    iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
+    iModelHubHelpers::ExpectLocksCount(briefcase2, 2);
 
-    // Briefcase1 should not be able to push his changes since one lock is owned.
+    // Briefcase1 should be able to push his changes, since conflict should be returned.
     iModelHubHost::Instance().SetRepositoryAdmin(nonAdminClient->GetiModelAdmin());
-    auto pushResult = briefcase1->PullMergeAndPush()->GetResult();
-    EXPECT_EQ(Error::Id::LockOwnedByAnotherBriefcase, pushResult.GetError().GetId());
-     iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
-     iModelHubHelpers::ExpectLocksCount(briefcase2, 2);
+    ConflictsInfoPtr conflictsInfo = std::make_shared<ConflictsInfo>();
+    auto pushResult = briefcase1->PullMergeAndPush(nullptr, false, nullptr, nullptr, nullptr, 1, conflictsInfo)->GetResult();
+    ASSERT_SUCCESS(pushResult);
+    EXPECT_TRUE(conflictsInfo->Any());
+    EXPECT_EQ(1, conflictsInfo->GetLocksConflicts().size());
+
+    iModelHubHelpers::ExpectLocksCount(briefcase1, 5);
+    iModelHubHelpers::ExpectLocksCount(briefcase2, 2);
 
     // Briefcase1 should not be able to release all other briefcase locks.
     result = briefcase1->GetiModelConnection().RelinquishCodesLocks(briefcase2->GetBriefcaseId())->GetResult();
@@ -453,7 +485,7 @@ TEST_F(LocksTests, RelinquishOtherUserLocks)
     pushResult = briefcase2->PullMergeAndPush()->GetResult();
     EXPECT_SUCCESS(pushResult);
 
-    iModelHubHelpers::ExpectLocksCountById(briefcase1, 1, false, LockableId(*model3), LockableId(model1->GetDgnDb()));
+    iModelHubHelpers::ExpectLocksCountById(briefcase1, 2, false, LockableId(*model3), LockableId(model1->GetDgnDb()));
     iModelHubHelpers::ExpectLocksCountById(briefcase1, 3, false, LockableId(*model1), LockableId(*model2), LockableId(model1->GetDgnDb()));
     }
 
@@ -737,4 +769,62 @@ TEST_F(LocksTests, WorkflowUpdateElementWithExclusiveModelLock)
     VerifyLocalAndServerLocks(briefcase, lockDbId, LockLevel::Shared, true, true);
     VerifyLocalAndServerLocks(briefcase, lockModelId, LockLevel::Exclusive, true, true);
     VerifyLocalAndServerLocks(briefcase, lockElementId, LockLevel::Exclusive, true, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// In Component Modeling we have a "definition" and "instances" of the definition. 
+// A user should be able to edit the "definition" while another user moves or interacts with the placed instances.
+// When the "definition" is updated, a handler for my specific ElementDrivesElement relationship updates all 
+// "instances" so that they mirror what the "definition" contains now.
+// "Definition" modification should not require DgnLocks for "instances".
+// http://tfs.bentley.com/tfs/ProductLine/Platform%20Technology/_workitems/edit/883714
+//@bsimethod                                     Algirdas.Mikoliunas           04/2018
+//---------------------------------------------------------------------------------------
+TEST_F(LocksTests, IndirectChangesShouldNotBeExtractedAsRequiredLocks)
+    {
+    CreateTestiModel();
+    auto briefcase = AcquireAndOpenBriefcase();
+    DgnDbR db = briefcase->GetDgnDb();
+
+    // Import domain and schema
+    DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+    SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(db);
+
+    auto createdModel = CreateModel(TestCodeName().c_str(), db);
+
+    // Create two elements and insert the relationship between them
+    DgnElementCPtr root = CreateElement(*createdModel, true);
+    DgnElementCPtr dependent = CreateElement(*createdModel, true);
+    TestElementDrivesElementHandler::SetCallback(this);
+    TestElementDrivesElementHandler::Insert(db, root->GetElementId(), dependent->GetElementId());
+    db.SaveChanges();
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, true));
+
+    // Set the dependent as the element that we will update in the _OnRootChanged call
+    m_onRootChangedElement = dependent;
+
+    // Update element. db.SaveChanges() triggers _OnRootChanged()
+    DgnElementPtr rootEdit = root->CopyForEdit();
+    IBriefcaseManager::Request req;
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementUpdate(req, *rootEdit, IBriefcaseManager::PrepareAction::Acquire));
+    rootEdit->SetUserLabel("New Root Label");
+    DgnDbStatus status;
+    EXPECT_TRUE(db.Elements().Update<DgnElement>(*rootEdit).IsValid());
+    db.SaveChanges();
+    ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase, true, false));
+    
+    // Check lock for dependent element was not acquired
+    EXPECT_TRUE(m_indirectElementUpdated);
+    LockableIdSet locks;
+    locks.insert(LockableId(*dependent));
+    iModelHubHelpers::ExpectLocksCountById(briefcase, 0, false, locks);
+
+    // Check lock for root element is acquired
+    locks.clear();
+    locks.insert(LockableId(*rootEdit));
+    iModelHubHelpers::ExpectLocksCountByLevelAndId(briefcase, 1, true, locks, LockLevel::Exclusive);
+
+    // Get rid of the static callback pointer
+    TestElementDrivesElementHandler::SetCallback(nullptr);
+    m_onRootChangedElement = nullptr;
     }

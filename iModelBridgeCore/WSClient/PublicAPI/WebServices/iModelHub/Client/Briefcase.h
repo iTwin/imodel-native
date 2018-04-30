@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/iModelHub/Client/Briefcase.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,13 +43,13 @@ private:
                                                Http::Request::ProgressCallbackCR downloadCallback = nullptr, 
                                                Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
-                                               ICancellationTokenPtr cancellationToken = nullptr) const;
+                                               ICancellationTokenPtr cancellationToken = nullptr, ConflictsInfoPtr conflictsInfo = nullptr) const;
     ChangeSetsTaskPtr PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, 
                                                Http::Request::ProgressCallbackCR downloadCallback = nullptr, 
                                                Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::None,
                                                ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1, int attempt = 1, 
-                                               int delay = 0);
+                                               int delay = 0, ConflictsInfoPtr conflictsInfo = nullptr);
 
     RevisionStatus AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets, ICancellationTokenPtr cancellationToken = nullptr) const;
     RevisionStatus MergeChangeSets(ChangeSets::iterator begin, ChangeSets::iterator end, RevisionManagerR changeSetManager, ICancellationTokenPtr cancellationToken) const;
@@ -98,21 +98,25 @@ public:
     //! @param[in] uploadCallback Upload progress callback.
     //! @param[in] options
     //! @param[in] cancellationToken
+    //! @param[in] conflictsInfo Retruns codes/locks conflicts that occured during push
     //! @return Asynchronous task that returns success or an error and pushed ChangeSet.
     IMODELHUBCLIENT_EXPORT StatusTaskPtr Push(Utf8CP description, bool relinquishCodesLocks,
                                               Http::Request::ProgressCallbackCR uploadCallback, 
                                               IBriefcaseManager::ResponseOptions options,
-                                              ICancellationTokenPtr cancellationToken = nullptr) const;
+                                              ICancellationTokenPtr cancellationToken = nullptr,
+                                              ConflictsInfoPtr conflictsInfo = nullptr) const;
 
     //! Send the outgoing ChangeSets.
     //! @param[in] description ChangeSet description.
     //! @param[in] relinquishCodesLocks Delete all currently held locks and codes.
     //! @param[in] uploadCallback Upload progress callback.
     //! @param[in] cancellationToken
+    //! @param[in] conflictsInfo Retruns codes/locks conflicts that occured during push
     //! @return Asynchronous task that returns success or an error and pushed ChangeSet.
     IMODELHUBCLIENT_EXPORT StatusTaskPtr Push(Utf8CP description = nullptr, bool relinquishCodesLocks = false,
                                               Http::Request::ProgressCallbackCR uploadCallback = nullptr,
-                                              ICancellationTokenPtr cancellationToken = nullptr) const;
+                                              ICancellationTokenPtr cancellationToken = nullptr, 
+                                              ConflictsInfoPtr conflictsInfo = nullptr) const;
 
     //! Pull and merge incomming changeSets.
     //! @param[in] callback Download progress callback.
@@ -128,12 +132,14 @@ public:
     //! @param[in] uploadCallback Upload progress callback.
     //! @param[in] cancellationToken
     //! @param[in] attemptsCount Maximum count of retries if fail.
+    //! @param[in] conflictsInfo Retruns codes/locks conflicts that occured during push
     //! @return Blocking task that returns success or an error and list of pulled and merged ChangeSet.
     IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr PullMergeAndPush(Utf8CP description = nullptr, bool relinquishCodesLocks = false,
                                                               Http::Request::ProgressCallbackCR downloadCallback = nullptr,
                                                               Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                               ICancellationTokenPtr cancellationToken = nullptr,
-                                                              int attemptsCount = 1);
+                                                              int attemptsCount = 1, 
+                                                              ConflictsInfoPtr conflictsInfo = nullptr);
 
     //! Pull and merge incomming ChangeSets and then send the outgoing ChangeSets.
     //! @param[in] description ChangeSet description.
@@ -143,13 +149,15 @@ public:
     //! @param[in] options
     //! @param[in] cancellationToken
     //! @param[in] attemptsCount Maximum count of retries if fail.
+    //! @param[in] conflictsInfo Retruns codes/locks conflicts that occured during push
     //! @return Blocking task that returns success or an error and list of pulled and merged ChangeSet.
     IMODELHUBCLIENT_EXPORT ChangeSetsTaskPtr PullMergeAndPush(Utf8CP description, bool relinquishCodesLocks,
                                                               Http::Request::ProgressCallbackCR downloadCallback,
                                                               Http::Request::ProgressCallbackCR uploadCallback,
                                                               IBriefcaseManager::ResponseOptions options,
                                                               ICancellationTokenPtr cancellationToken = nullptr, 
-                                                              int attemptsCount = 1);
+                                                              int attemptsCount = 1, 
+                                                              ConflictsInfoPtr conflictsInfo = nullptr);
 
     //! Returns true if briefcase is up to date and there are no ChangeSets pending. This will end up sending request to the server.
     //! @param[in] cancellationToken

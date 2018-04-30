@@ -911,12 +911,12 @@ TEST_F(CodesTests, FailingCodesResponseOptions)
     db2.SaveChanges();
 
     db1.SaveChanges();
-    StatusResult result1 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All)->GetResult();
-    ASSERT_FAILURE(result1);
-    EXPECT_EQ(Error::Id::CodeReservedByAnotherBriefcase, result1.GetError().GetId());
-    JsonValueCR error1 = result1.GetError().GetExtendedData();
-    EXPECT_EQ(1, error1["ConflictingCodes"].size());
-
+    ConflictsInfoPtr conflictsInfo = std::make_shared<ConflictsInfo>();
+    StatusResult result1 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::All, nullptr, conflictsInfo)->GetResult();
+    ASSERT_SUCCESS(result1);
+    EXPECT_TRUE(conflictsInfo->Any());
+    EXPECT_EQ(1, conflictsInfo->GetCodesConflicts().size());
+    
     DgnCodeSet codes;
     codes.insert(partition1_1->GetCode());
     db1.BriefcaseManager().ClearUserHeldCodesLocks();
