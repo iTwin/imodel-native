@@ -164,7 +164,7 @@ BentleyStatus PatternParams::FromJson(Json::Value const& json)
 
             line.m_angle = JsonUtils::ToAngle(json["defLines"][i]["angle"]).Radians();
             JsonUtils::DPoint2dFromJson(line.m_through, json["defLines"][i]["through"]);
-            JsonUtils::DPoint2dFromJson(line.m_through, json["defLines"][i]["offset"]);
+            JsonUtils::DPoint2dFromJson(line.m_offset, json["defLines"][i]["offset"]);
             line.m_nDashes = std::min((short) json["defLines"][i]["dashes"].size(), (short) MAX_DWG_HATCH_LINE_DASHES);
 
             for (short iDash=0; iDash < line.m_nDashes; iDash++)
