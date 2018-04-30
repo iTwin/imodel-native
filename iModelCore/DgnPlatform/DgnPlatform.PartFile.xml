@@ -71,7 +71,7 @@
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
         <SubPart PartName="PsolidShim"/>
         <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
-        <SubPart PartName="BeJavaScript"        PartFile="BePortableUi" Repository="BePortableUi"/>
+        <SubPart PartName="BeJavaScript" PartFile="BeJavaScript/BeJavaScript" Repository="Bentley"/>
         <SubPart PartName="nodejs"            PartFile="nodejs"       Repository="Thirdparty-nodejs" />
         <SubPart PartName="typescript"          PartFile="typescript"   Repository="Thirdparty-typescript" />
         <SubPart LibType="Static" PartName="Compress" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
@@ -202,9 +202,20 @@
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
         </Bindings>
     </Part>
-	
-	<!-- Compatibility Test -->
-	<Part Name="UnitTests-Compatibility" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Compatibility">
+
+    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
+        <SubPart PartName="PublishedApi" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
+    </Part>
+
+    <!-- ********************************************************************************************** -->
+    <!-- Compatibility Tests -->
+    <!-- ********************************************************************************************** -->
+
+    <Part Name="UnitTests-Compatibility" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Compatibility">
         <!-- <SubPart PartName="PrewireForUnitTests" /> -->
         <SubPart PartName="TestFixtureForUnitTests" />
         <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
@@ -212,66 +223,39 @@
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Compatibility" SourceName="Delivery/UnitTests/Objects/Compatibility"/>
         </Bindings>
     </Part>
-	
-	 <Part Name="DgnPlatform-Compatibility-Dynamic" DeferType="BuildUnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
-		<SubPart PartName="UnitTests-Compatibility"/>
-	  </Part>
 
-	  <Part Name="DgnPlatform-Compatibility-Static" DeferType="BuildUnitTests" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
-		<SubPart PartName="UnitTests-Compatibility" LibType="Static" />
-	  </Part>
+    <Part Name="DgnPlatform-Compatibility-Dynamic" DeferType="BuildUnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="UnitTests-Compatibility"/>
+    </Part>
+
+    <Part Name="DgnPlatform-Compatibility-Static" DeferType="BuildUnitTests" ExcludePlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+        <SubPart PartName="UnitTests-Compatibility" LibType="Static" />
+    </Part>
 
     <Product Name="DgnPlatform-Compatibility">
-		<SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
-		<SubPart PartName="DgnPlatform-Compatibility-Static" />
-		<SubPart PartName="DgnPlatform-Compatibility-Dynamic" />
-		<Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="DgnPlatform-Compatibility-Static" />
+        <SubPart PartName="DgnPlatform-Compatibility-Dynamic" />
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-  
-  <!--                *************** -->
-  <!--                **** gtest **** -->
-  <!--                *************** -->
-  <!--Product Name="GTest-DgnClientFx-TestCollection-Performance" -->
-	<Product Name="GTest-DgnPlatform-Compatibility">
-    <SubPart PartName="TestingProjects-Documents-DgnDb" PartFile="DgnClientSdkTestData" Repository="DgnClientSdkTestData"/>
-    <Directories DirectoryListName="TestingProjectsDataDirList"/>
-    <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
-    <SubPart PartName="GTest-DgnPlatform-Compatibility"/>
-  </Product>
-
-  <!-- Test data that is needed for Performance tests only. -->
-  <ProductDirectoryList ListName="TestingProjectsDataDirList">
-        <ProductDirectory Name="TestingProjects-Documents-DgnDb" Path="TestingProjectsData" Deliver="true"/>
-    </ProductDirectoryList>
-
-  <ProductDirectoryList ListName="DgnClientFxTestsDirList">
-      <ProductDirectory Name="TestsBackdoorIncludes" Path="TestsBackDoor"/>
-  </ProductDirectoryList>
-  
-  <Part Name="Gtest-DgnPlatform-Compatibility" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnCompatibility -dTEST_COLLECTION_PRODUCT=DgnPlatform-Compatibility -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
-    <SubProduct ProductName="DgnPlatform-Compatibility"/>
-    <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-    <Bindings>
-      <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnCompatibility/Assemblies/*</Files>
-      <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnCompatibility/Assets" />
-    </Bindings>
-  </Part>
-
-  <Part Name="RunGtest-DgnPlatform-Compatibility" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GTest-DgnPlatform-Compatibility -dGTEST_NAME=DgnCompatibility -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DgnCompatibility" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-    <SubProduct ProductName="GTest-DgnPlatform-Compatibility" />
-    <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
-  </Part>
-  
-  
-	<!--     Compatibility -->
-	
-    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
-        <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
-        <SubPart PartName="PublishedApi" />
+    <Part Name="Gtest-DgnPlatform-Compatibility" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnCompatibility -dTEST_COLLECTION_PRODUCT=DgnPlatform-Compatibility -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubProduct ProductName="DgnPlatform-Compatibility"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="DgnPlatform/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnCompatibility/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnCompatibility/Assets" />
         </Bindings>
+    </Part>
+
+    <Product Name="GTest-DgnPlatform-Compatibility">
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="GTest-DgnPlatform-Compatibility"/>
+    </Product>
+
+    <Part Name="RunGtest-DgnPlatform-Compatibility" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GTest-DgnPlatform-Compatibility -dGTEST_NAME=DgnCompatibility -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DgnCompatibility" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="GTest-DgnPlatform-Compatibility" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->

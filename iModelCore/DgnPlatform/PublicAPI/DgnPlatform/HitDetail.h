@@ -147,7 +147,11 @@ public:
     //! @private
     void SetGeometryStreamEntryId(GeometryStreamEntryId geomId) {m_geomId = geomId;}
 
-    DGNPLATFORM_EXPORT bool FillGPA (GPArrayR, bool singleSegment = true) const;
+    //! <ul>
+    //! <li>Return the current geometry as an ICurvePrimitive.
+    //! <li>If singleSegment is requested and the current geometry is a segment select within a linestring, only return that segment.
+    //! </ul>
+    DGNPLATFORM_EXPORT bool GetCurvePrimitive (ICurvePrimitivePtr &curve, bool singleSegment)const;
     DGNPLATFORM_EXPORT bool GetArc(DEllipse3dR) const;
     DGNPLATFORM_EXPORT bool GetSegment(DSegment3dR) const;
     DGNPLATFORM_EXPORT size_t GetSegmentNumber() const;

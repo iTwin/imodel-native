@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/DgnDbTestUtils/DgnPlatformTestDomain.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -19,6 +19,7 @@ USING_NAMESPACE_BENTLEY_DGN
 DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 HANDLER_DEFINE_MEMBERS(ImodelJsTestElementHandler)
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
+HANDLER_DEFINE_MEMBERS(TestDriverBundleHandler)
 HANDLER_DEFINE_MEMBERS(TestSpatialLocationHandler)
 HANDLER_DEFINE_MEMBERS(TestPhysicalTypeHandler)
 HANDLER_DEFINE_MEMBERS(TestGraphicalType2dHandler)
@@ -30,6 +31,7 @@ HANDLER_DEFINE_MEMBERS(TestGroupHandler)
 HANDLER_DEFINE_MEMBERS(TestElementDrivesElementHandler)
 
 bool TestElementDrivesElementHandler::s_shouldFail;
+TestDriverBundle::Callback* TestDriverBundle::s_callback = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/16
@@ -274,6 +276,33 @@ void TestElement::ChangeElement(double len)
     GeometryBuilderPtr builder = GeometryBuilder::Create(*this);
     builder->Append(*computeShape(len));
     builder->Finish(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TestDriverBundlePtr TestDriverBundle::Create(DgnDbR db, DgnModelId mid)
+    {
+    DgnClassId classId = QueryClassId(db);
+    return new TestDriverBundle(CreateParams(db, mid, classId));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestDriverBundle::_OnAllInputsHandled()
+    {
+    if (nullptr != s_callback)
+        s_callback->_OnAllInputsHandled(GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mindaugas.Butkus                04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestDriverBundle::_OnBeforeOutputsHandled()
+    {
+    if (nullptr != s_callback)
+        s_callback->_OnBeforeOutputsHandled(GetElementId());
     }
 
 //---------------------------------------------------------------------------------------
@@ -550,6 +579,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     {
     RegisterHandler(ImodelJsTestElementHandler::GetHandler());
     RegisterHandler(TestElementHandler::GetHandler());
+    RegisterHandler(TestDriverBundleHandler::GetHandler());
     RegisterHandler(TestSpatialLocationHandler::GetHandler());
     RegisterHandler(TestPhysicalTypeHandler::GetHandler());
     RegisterHandler(TestGraphicalType2dHandler::GetHandler());
@@ -559,7 +589,6 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "
     RegisterHandler(TestUniqueAspectHandler::GetHandler());
     RegisterHandler(TestMultiAspectHandler::GetHandler());
     RegisterHandler(TestElementDrivesElementHandler::GetHandler());
-    
     }
 
 TestElementDrivesElementHandler::Callback* TestElementDrivesElementHandler::s_callback = nullptr;

@@ -340,6 +340,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId,  bool makePersis
                     stmt->GetValueGuid(Column::FederationGuid));
 
     createParams.SetElementId(elementId);
+    createParams.SetIsLoadingElement(true);
 
     return LoadElement(createParams, stmt->GetValueText(Column::JsonProps), makePersistent);
     }

@@ -2158,7 +2158,11 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                         gradientPtr->SetThematicSettings(*thematicSettings);
                         }
 
-                    elParams.SetGradient(gradientPtr.get());
+                    if (nullptr == elParams.GetGradient() || !(*elParams.GetGradient() == *gradientPtr))
+                        {
+                        elParams.SetGradient(gradientPtr.get());
+                        changed = true;
+                        }
                     }
                 }
             break;
@@ -6001,6 +6005,7 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
     {
     Render::GeometryParams params = GetGeometryParams();
     int n = input.size();
+    bool checkedSubGraphics = false;
 
     for (int i = 0; i < n; i++)
         {
@@ -6248,8 +6253,32 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
             }
         else if (entry.isMember("subRange"))
             {
-            // Don't care about values, presence of subRange used to trigger creation of sub-graphics with local ranges to optimize picking/range testing...
-            SetAppendAsSubGraphics();
+            // NOTE: Presence of subRange tag is all we care about, values aren't used as they will be computed from geometry...
+            if (checkedSubGraphics)
+                break;
+
+            // NOTE: Worth including range whenever there are multiple primitives, not just when multiple primitives follow the subRange tag...
+            if (n > 2 && i+1 < n)
+                {
+                size_t iGeom = 0;
+
+                for (int j = 0; j < n; j++)
+                    {
+                    Json::Value entry = input[j];
+
+                    // Check for known non-geometry tags...for counting purposes, a GeometryPart is considered geometry (i.e. stream includes mix of part instances and primitives)...
+                    if (!entry.isObject() || entry.isMember("appearance") || entry.isMember("styleMod") || entry.isMember("fill") || entry.isMember("pattern") || entry.isMember("material") || entry.isMember("subRange"))
+                        continue;
+
+                    if (++iGeom > 1)
+                        break;
+                    }
+
+                if (iGeom > 1)
+                    SetAppendAsSubGraphics(); // This will do nothing if a GeometryPart is being created, or a GeometryPart instance is being inserted...
+                }
+
+            checkedSubGraphics = true;
             }
         else if (entry.isMember("textString"))
             {
@@ -6338,7 +6367,10 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
             {
             bvector<IGeometryPtr> geometry;
 
-            if (!IModelJson::TryIModelJsonValueToGeometry(entry, geometry) || 1 != geometry.size())
+            if (!IModelJson::TryIModelJsonValueToGeometry(entry, geometry))
+                continue; // Should a tag we don't recognize be considered an error? Should at least log an error...
+            
+            if (1 != geometry.size())
                 return false; // Should only ever be a single entry...
 
             if (!Append(params))
