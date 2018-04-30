@@ -162,7 +162,7 @@ protected:
 
 public:
     Utf8StringCR GetName() const {return m_name;}
-    Utf8StringCR GetDefinition() const {return m_definition;}
+    virtual Utf8StringCR GetDefinition() const {return m_definition;}
     virtual bool HasNumerator() const {return 1.0 != m_numerator;}
     double GetNumerator() const {return m_numerator;}
     virtual bool HasDenominator() const {return 1.0 != m_denominator;}
@@ -214,10 +214,10 @@ protected:
     UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition);
     //! Creates a constant.
     Unit(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator)
-        : UnitsSymbol(name, definition, numerator, denominator, 0) { SetPhenomenon(phenomenon); SetConstant(true);}
+        : UnitsSymbol(name, definition, numerator, denominator, 0) {SetPhenomenon(phenomenon); SetConstant(true);}
     //! Creates an inverted Unit.
     Unit(UnitCR parentUnit, UnitSystemCR system, Utf8CP name)
-        : Unit(system, *(parentUnit.GetPhenomenon()), name, parentUnit.GetDefinition().c_str(), 0, 0, 0, false)
+        : Unit(system, *(parentUnit.GetPhenomenon()), name, "", 0, 0, 0, false)
         {
         m_parent = &parentUnit;
         }
@@ -256,7 +256,8 @@ public:
     bool IsValid() const {return !m_dummyUnit;}
     UNITS_EXPORT bool IsNumber() const override;
     PhenomenonCP GetPhenomenon() const override {return m_phenomenon;} //!< Gets the Phenomenon for this Unit.
-
+    Utf8StringCR GetDefinition() const override {return (IsInvertedUnit()) ? GetParent()->GetDefinition() : T_Super::GetDefinition();}
+    bool HasDefinition() const {return !IsInvertedUnit();}
     UnitCP MultiplyUnit(UnitCR rhs) const;
     UnitCP DivideUnit(UnitCR rhs) const;
 
