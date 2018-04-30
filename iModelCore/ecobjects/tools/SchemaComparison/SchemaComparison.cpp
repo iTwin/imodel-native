@@ -19,22 +19,43 @@
 
 BentleyApi::NativeLogging::ILogger* s_logger = BentleyApi::NativeLogging::LoggingManager::GetLogger("SchemaComparison");
 
+struct ExactSearchPathSchemaFileLocater : ECN::SearchPathSchemaFileLocater
+    {
+    using ECN::SearchPathSchemaFileLocater::SearchPathSchemaFileLocater;
+    protected:
+        ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
+    public:
+        static ECN::SearchPathSchemaFileLocaterPtr CreateExactSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt = false);
+    };
+
+ECN::ECSchemaPtr ExactSearchPathSchemaFileLocater::_LocateSchema(ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext)
+    {
+    return SearchPathSchemaFileLocater::_LocateSchema(key, ECN::SchemaMatchType::Exact, schemaContext);
+    }
+
+ECN::SearchPathSchemaFileLocaterPtr ExactSearchPathSchemaFileLocater::CreateExactSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt)
+    {
+    return new ExactSearchPathSchemaFileLocater(searchPaths, includeFilesWithNoVerExt);
+    }
+
 struct SchemaComparisonOptions
     {
     BeFileName InFileNames[NSCHEMAS];
     bvector<BeFileName> ReferenceDirectories[NSCHEMAS];
+    bool NoStandardSchemas;
     };
 
 static void ShowUsage(const char* progName)
     {
     std::fprintf(stderr,
-                 "\n%s -i <inputSchemaPath> <inputSchemaPath> [-r directories]\n%s\n%s\n%s\n%s\n%s\n",
+                 "\n%s -i <inputSchemaPath> <inputSchemaPath> [-r directories]\n%s\n%s\n%s\n%s\n%s\n%s\n",
                  progName,
                  "Tool to compare and check for differences between two ECSchemas.\nReturns the number of differences between provided ECSchemas on success, -1 on error.\n",
                  "options:",
                  " -h --help                         show this help message and exit",
                  " -i        FILE0 [FILE1 ... FILEN] specify input schemas",
-                 " -r --ref  DIR0  [DIR1  ... DIRN]  other directories for reference schemas");
+                 " -r --ref  DIR0  [DIR1  ... DIRN]  other directories for reference schemas",
+                 " --NoStandardSchemas               do not initialize SchemaReadContext with standard schemas directory");
     }
 
 static bool NoParameterNext(int argc, char** argv, int index)
@@ -50,11 +71,16 @@ static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& option
     size_t inFileIndex = 0;
     size_t referenceSchemasIndex = 0;
     bool allInputFilesDefined = false;
+    options.NoStandardSchemas = false;
     for (int i = 1; i < argc; ++i)
         {
         if (0 == std::strcmp(argv[i], "-h") || 0 == std::strcmp(argv[i], "--help"))
             {
             return false;
+            }
+        if (0 == std::strcmp(argv[i], "--NoStandardSchemas"))
+            {
+            options.NoStandardSchemas = true;
             }
         else if (0 == std::strcmp(argv[i], "-i"))
             {
@@ -76,7 +102,11 @@ static bool TryParseInput(int argc, char** argv, SchemaComparisonOptions& option
             if (referenceSchemasIndex >= NSCHEMAS)
                 return false;
             while (false == NoParameterNext(argc, argv, i))
-                options.ReferenceDirectories[referenceSchemasIndex].push_back(BeFileName(argv[++i]));
+                {
+                BeFileName refDir(argv[++i]);
+                refDir.AppendSeparator();
+                options.ReferenceDirectories[referenceSchemasIndex].push_back(refDir);
+                }
             for (auto const& refDirectory : options.ReferenceDirectories[referenceSchemasIndex])
                 {
                 if (!refDirectory.Contains(L"\\"))
@@ -124,10 +154,14 @@ int CompareSchemas(SchemaComparisonOptions& options)
         contexts[i]->SetPreserveElementOrder(true);
         contexts[i]->SetPreserveXmlComments(false);
 
+        bvector<WString> searchPaths;
         for (auto const& refDir : options.ReferenceDirectories[i])
             {
-            contexts[i]->AddSchemaPath(refDir.GetName());
+            searchPaths.push_back(WString(refDir.GetName()));
             }
+        
+        ECN::SearchPathSchemaFileLocaterPtr exactSchemaLocater = ExactSearchPathSchemaFileLocater::CreateExactSearchPathSchemaFileLocater(searchPaths, true);
+        contexts[i]->AddSchemaLocater(*exactSchemaLocater);
 
         ECN::SchemaReadStatus status = ECN::ECSchema::ReadFromXmlFile(schemas[i], options.InFileNames[i].c_str(), *contexts[i]);
         if (status != ECN::SchemaReadStatus::Success || !schemas[i].IsValid())
@@ -197,9 +231,16 @@ int main(int argc, char** argv)
     BeSQLite::BeSQLiteLib::Initialize(tempDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
     BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
 
-    ECN::ECSchemaReadContext::Initialize(workingDirectory);
-    s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
-
+    if (progOptions.NoStandardSchemas)
+        {
+        s_logger->infov(L"Skipping initialization of ECSchemaReadContext");
+        }
+    else
+        {
+        ECN::ECSchemaReadContext::Initialize(workingDirectory);
+        s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);    
+        }
+    
     int comparisonResult = CompareSchemas(progOptions);
 
     BeSQLite::L10N::Shutdown();

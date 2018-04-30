@@ -59,7 +59,6 @@
   <ItemGroup>
     <ClCompile Include="Published\AccessorTests.cpp" />
     <ClCompile Include="Published\AdhocPropertyTests.cpp" />
-    <ClCompile Include="Published\BuildInstanceAndSerializeToXML.cpp" />
     <ClCompile Include="Published\CalculatedPropertyTests.cpp" />
     <ClCompile Include="Published\CustomAttributeUnitsConversionTests.cpp" />
     <ClCompile Include="Published\CustomAttributeConversionsTest.cpp" />
@@ -88,6 +87,7 @@
     <ClCompile Include="Published\PhenomenonTests.cpp" />
     <ClCompile Include="Published\PropertyCategoryTests.cpp" />
     <ClCompile Include="Published\PropertyTests.cpp" />
+    <ClCompile Include="Published\SchemaCompatiblityTests.cpp" />
     <ClCompile Include="Published\SchemaCopyTests.cpp" />
     <ClCompile Include="Published\SchemaDeserializationConversionTests.cpp" />
     <ClCompile Include="Published\SchemaDeserializationTests.cpp" />
