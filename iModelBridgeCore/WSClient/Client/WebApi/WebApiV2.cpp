@@ -516,7 +516,7 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
-    return request.PerformAsync()->Then<WSChangesetResult>([this] (HttpResponse& response)
+    return request.PerformAsync()->Then<WSChangesetResult>([] (HttpResponse& response)
         {
         if (HttpStatus::OK != response.GetHttpStatus())
             {
