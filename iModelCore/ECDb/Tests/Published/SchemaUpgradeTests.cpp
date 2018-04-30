@@ -9676,7 +9676,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
 
     assertFormat(*schema, "MyFormat", "My Format", "", 
                  JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"), 
-                 JsonValue(R"json({"spacer": "-", "units": [
+                 JsonValue(R"json({"spacer": "-", "includeZero": true, "units": [
                               {
                                 "name": "u:CM",
                                 "label": "cm"

@@ -593,7 +593,8 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
             return ERROR;
         }
 
-    if (!unit.GetDefinition().empty())
+    //WIP_UNITS check for inverted unit must be replaced by HasDefinition
+    if (!unit.IsInvertedUnit() && !unit.GetDefinition().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(defParamIx, unit.GetDefinition(), Statement::MakeCopy::No))
             return ERROR;
@@ -657,7 +658,7 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
         return ERROR;
         }
 
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Format "(SchemaId,Name,DisplayLabel,Description,NumericSpec,CompositeSpacer) VALUES(?,?,?,?,?,?)");
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Format "(SchemaId,Name,DisplayLabel,Description,NumericSpec,CompositeSpec) VALUES(?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -666,7 +667,7 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
     const int labelParamIx = 3;
     const int descParamIx = 4;
     const int numericSpecParamIx = 5;
-    const int compositeSpacerParamIx = 6;
+    const int compositeSpecParamIx = 6;
 
     if (BE_SQLITE_OK != stmt->BindId(schemaIdParamIx, format.GetSchema().GetId()))
         return ERROR;
@@ -697,9 +698,13 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
         {
         Formatting::CompositeValueSpecCR spec = *format.GetCompositeSpec();
 
-        if (spec.HasSpacer())
+        //Composite Spec Units are persisted in its own table to leverage FKs to the Units table
+        Json::Value json = spec.ToJson(true);
+        BeAssert(!json.isMember(Formatting::json_units()));
+
+        if (!json.isNull())
             {
-            if (BE_SQLITE_OK != stmt->BindText(compositeSpacerParamIx, spec.GetSpacer(), Statement::MakeCopy::Yes))
+            if (BE_SQLITE_OK != stmt->BindText(compositeSpecParamIx, json.ToString(), Statement::MakeCopy::Yes))
                 return ERROR;
             }
         }

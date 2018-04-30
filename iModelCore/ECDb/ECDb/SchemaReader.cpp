@@ -1019,9 +1019,9 @@ BentleyStatus SchemaReader::ReadFormat(ECN::ECFormatCP& format, Context& ctx, EC
     const int displayLabelColIx = 2;
     const int descriptionColIx = 3;
     const int numSpecColIx = 4;
-    const int compositeSpacerColIx = 5;
+    const int compositeSpecColIx = 5;
 
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,NumericSpec,CompositeSpacer FROM [%s]." TABLE_Format " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,NumericSpec,CompositeSpec FROM [%s]." TABLE_Format " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
 
@@ -1053,14 +1053,14 @@ BentleyStatus SchemaReader::ReadFormat(ECN::ECFormatCP& format, Context& ctx, EC
             return ERROR;
         }
 
-    Utf8CP compositeSpacer = stmt->IsColumnNull(compositeSpacerColIx) ? nullptr : stmt->GetValueText(compositeSpacerColIx);
+    Utf8CP compSpecJsonStr = stmt->IsColumnNull(compositeSpecColIx) ? nullptr : stmt->GetValueText(compositeSpecColIx);
 
     ECSchemaR schema = *schemaKey->m_cachedSchema;
     ECFormatP newFormat = nullptr;
     if (ECObjectsStatus::Success != schema.CreateFormat(newFormat, name, displayLabel, description, hasNumericSpec ? &numSpec : nullptr))
         return ERROR;
 
-    if (SUCCESS != ReadFormatComposite(ctx, *newFormat, id, compositeSpacer))
+    if (SUCCESS != ReadFormatComposite(ctx, *newFormat, id, compSpecJsonStr))
         return ERROR;
 
     if (newFormat->IsProblem())
@@ -1076,7 +1076,7 @@ BentleyStatus SchemaReader::ReadFormat(ECN::ECFormatCP& format, Context& ctx, EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   04/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, FormatId formatId, Utf8CP compositeSpacer) const
+BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, FormatId formatId, Utf8CP compositeSpecJsonWithoutUnits) const
     {
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Label,UnitId FROM [%s]." TABLE_FormatCompositeUnit " WHERE FormatId=? ORDER BY Ordinal", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
@@ -1103,32 +1103,27 @@ BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, 
 
     if (units.empty()) // format doesn't have a composite spec
         {
-        BeAssert(Utf8String::IsNullOrEmpty(compositeSpacer));
+        BeAssert(Utf8String::IsNullOrEmpty(compositeSpecJsonWithoutUnits));
         return SUCCESS;
         }
 
     const size_t labelCount = labels.size();
-
     BeAssert(labelCount <= 4 && units.size() <= 4);
-	Formatting::CompositeValueSpec spec;
+
+    Formatting::CompositeValueSpec spec;
 	bool compStatus = Formatting::CompositeValueSpec::CreateCompositeSpec(spec, units);
 	if (!compStatus)
 		return ERROR;
 
-    if (!Utf8String::IsNullOrEmpty(compositeSpacer))
-        spec.SetSpacer(compositeSpacer);
+    if (!Utf8String::IsNullOrEmpty(compositeSpecJsonWithoutUnits))
+        {
+        Json::Value compSpecJson;
+        if (!Json::Reader::Parse(compositeSpecJsonWithoutUnits, compSpecJson))
+            return ERROR;
 
-    if (labelCount >= 1 && !labels[0].empty())
-        spec.SetMajorLabel(labels[0]);
-
-    if (labelCount >= 2 && !labels[1].empty())
-        spec.SetMiddleLabel(labels[1]);
-
-    if (labelCount >= 3 && !labels[2].empty())
-        spec.SetMinorLabel(labels[2]);
-
-    if (labelCount >= 4 && !labels[3].empty())
-        spec.SetSubLabel(labels[3]);
+        if (SUCCESS != Formatting::CompositeValueSpec::FromJson(spec, compSpecJson, units, labels))
+            return ERROR;
+        }
 
     if (spec.IsProblem())
         return ERROR;

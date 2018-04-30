@@ -1088,12 +1088,12 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
             continue;
             }
 
-        if (colName.EqualsI("CompositeSpacer"))
+        if (colName.EqualsI("CompositeSpec"))
             {
-            if (!expected.HasComposite() || !expected.HasCompositeSpacer())
-                ASSERT_TRUE(val.IsNull()) << "FormatDef.CompositeSpacer of " << expected.GetFullName();
+            if (!expected.HasComposite())
+                ASSERT_TRUE(val.IsNull()) << "FormatDef.CompositeSpec of " << expected.GetFullName();
             else
-                ASSERT_STREQ(expected.GetCompositeSpec()->GetSpacer().c_str(), val.GetText()) << "FormatDef.CompositeSpacer of " << expected.GetFullName();
+                ASSERT_STREQ(expected.GetCompositeSpec()->ToJson(true).ToString().c_str(), val.GetText()) << "FormatDef.CompositeSpec of " << expected.GetFullName();
 
             continue;
             }

@@ -162,7 +162,7 @@
         <ECProperty propertyName="DisplayLabel" typeName="string"/>
         <ECProperty propertyName="Description" typeName="string"/>
         <ECProperty propertyName="NumericSpec" typeName="string" extendedTypeName="JSON"/>
-        <ECProperty propertyName="CompositeSpacer" typeName="string"/>
+        <ECProperty propertyName="CompositeSpec" typeName="string" description="CompositeSpec without units. Composite units are held by FormatCompositeUnitDef" extendedTypeName="JSON"/>
     </ECEntityClass>
     <ECEntityClass typeName="FormatCompositeUnitDef" description="FormatCompositeUnit" displayLabel="FormatCompositeUnit" modifier="Sealed">
         <ECCustomAttributes>
