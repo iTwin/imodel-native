@@ -65,7 +65,7 @@ for standard in roomDict:
         output = "    group = InsertGroup(*system, \""+category+"\");\n"
         f.write(output);
         for name in roomDict[standard][category]:
-            output = "    Insert"+standard+"(*system, *group, \""+name+"\");\n"
+            output = "    InsertClassification(*system, \""+name+"\", \""+ name +"\", \"\", group.get(), nullptr);\n"
             f.write(output);
 f.write('    }\n\nEND_CLASSIFICATIONSYSTEMS_NAMESPACE\n')
 f.close()

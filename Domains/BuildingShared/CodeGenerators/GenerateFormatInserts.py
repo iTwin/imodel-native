@@ -18,13 +18,6 @@ def CheckFiles(Files):
             return 1
     return 0
 
-def ParseType(name):
-    if name.find('MasterFormat') is not -1:
-        return "MasterFormat"
-    elif name.find('UniFormat') is not -1:
-        return "UniFormat"
-    return "OmniClass"
-
 def EscapeChars(string):
     string = string.encode('ascii', 'backslashreplace')
     string = re.sub(r'\\', r'\\\\', string)
@@ -38,23 +31,23 @@ def RemoveLF(string):
 def ParseSection(section, level, t): 
     for subsection in section.findall('Section'):
         if level is levelcount:
-            output ="    " + t + "ClassDefinitionPtr subsection" + str(level) + t + ";\n"
+            output ="    ClassificationPtr subsection" + str(level) + t + ";\n"
             f.write(output)
             global levelcount
             levelcount+=1
-        if level is 0:
-            name = RemoveLF(EscapeChars(subsection.find('Name').text))
-            code = RemoveLF(subsection.find('Code').text)
-            output = "    subsection0" + t + " = Insert" + t + "(*" + func(t) + "System, \"" + code + "\", \"" + name + "\", nullptr);\n"
-        elif subsection.find('Name').text is None:
+        if subsection.find('Name').text is None:
             return subsection.find('Code').text
         else:
             output = ""
             name = RemoveLF(EscapeChars(subsection.find('Name').text))
             code = RemoveLF(subsection.find('Code').text)
             for i in range(0, level):
-                output+="    "
-            output += "    subsection"+ str(level) + t + " = Insert" + t + "(*" + func(t) + "System, \"" + code + "\", \"" + name + "\", subsection" + str(level-1) + t + ".get());\n"
+				output+="    "
+            output += "    subsection"+ str(level) + t + " = InsertClassification(*" + func(t) + "System, \"" + name + "\", \"" + code + "\", \"\", nullptr, "
+	    if level is 0:
+                output += "nullptr);\n"
+            else: 
+                output += "subsection" + str(level-1) + t + ".get());\n"
         f.write(output)
         if subsection.findall('Section'):
             level+=1
@@ -65,8 +58,7 @@ def ParseSection(section, level, t):
                 print("Parent " + subsection.find('Code').text + " child " + status + " was skipped")
             level-=1
     return 0
-#TODO SetCode for Classification system, Try and get method
-#fileList = os.listdir(sys.argv[1])
+#TODO remove duplicate code at Recursion
 types = ['UniFormat','MasterFormat','OmniClass']
 
 
@@ -107,16 +99,8 @@ tp = re.sub("Generated", "", tp)
 tp = re.sub("Inserts.cpp", "", tp)
 f.write('void ClassificationSystemsDomain::Insert' + tp + 'Definitions(Dgn::DgnDbR db) const\n')
 f.write('    {\n')
-
 f.write('    ClassificationSystemCPtr ' + func(t) + 'System = TryAndGetSystem(db, "' + t + '");\n')
-#f.write('    ClassificationSystemPtr UniFormatSystem = InsertSystem(db, "UniFormat");\n')
-#f.write('    ClassificationSystemPtr MasterFormatSystem = InsertSystem(db, "MasterFormat");\n')
-
 ParseSection(root, 0, t)
-#           while subsection.findall('Section'):
-#            for subsection in section.findall('Section'):
-#                output = "    subsection = Insert" + t + "(*" + t + "System, \"" + subsection.find('Code').text + "\", \"" + subsection.find('Name').text + "\", *master);\n"
-#                f.write(output)
 f.write('    }\n\nEND_CLASSIFICATIONSYSTEMS_NAMESPACE\n')
 f.close()
 
