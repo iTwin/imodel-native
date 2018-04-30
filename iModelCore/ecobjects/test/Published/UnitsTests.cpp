@@ -220,6 +220,7 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 break;
             case 5:
                 ASSERT_TRUE(unit->IsInvertedUnit());
+                EXPECT_FALSE(unit->HasDefinition());
                 EXPECT_STREQ("Inverted Unit", unit->GetInvariantDescription().c_str());
                 EXPECT_STREQ("Inverted Unit", unit->GetInvariantDisplayLabel().c_str());
                 EXPECT_TRUE(unit->GetIsDescriptionDefined());
@@ -752,6 +753,8 @@ TEST_F(InvertedUnitsTests, BasicCreation)
     EXPECT_TRUE(invertedUnit->GetIsDisplayLabelDefined());
     EXPECT_TRUE(invertedUnit->GetIsDescriptionDefined());
     EXPECT_EQ(unit, invertedUnit->GetInvertingUnit());
+    EXPECT_FALSE(invertedUnit->HasDefinition());
+    EXPECT_STREQ(unit->GetDefinition().c_str(), invertedUnit->GetDefinition().c_str());
     }
 
 //---------------------------------------------------------------------------------------
