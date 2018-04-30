@@ -385,14 +385,14 @@
         </Bindings>
     </Part>
 
-    <Part Name="BisJson1Importer" BentleyBuildMakeFile="BimTeleporter/BimImporter/lib/BisJson1Importer.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static">
+    <Part Name="BisJson1Importer" BentleyBuildMakeFile="BimTeleporter/BimImporter/lib/BisJson1Importer.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="Planning"                    PartFile="Planning"         Repository="DgnDomains-Planning"/>
         <SubPart PartName="TeleporterPublicAPI"/>
         <Bindings>
             <Libs ProductDirectoryName="BimTeleporterLibs" Required="false">Delivery/$(libprefix)BisJson1Importer$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BisJson1Importer$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)BisJson1Importer$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/BisJson1Importer_en-US.sqlang.db3</Files>
         </Bindings>
     </Part>
@@ -423,12 +423,12 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnDb0601ToBimConverter" BentleyBuildMakeFile="BimTeleporter/src/DgnDbToBimConverter.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static">
+    <Part Name="DgnDb0601ToBimConverter" BentleyBuildMakeFile="BimTeleporter/src/DgnDbToBimConverter.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static" ApiNumber="B02">
         <SubPart PartName="BisJson1Importer"/>
         <SubPart PartName="BisJson1Exporter0601" PartFile="BimTeleporter" />
         <Bindings>
             <Libs ProductDirectoryName="BimTeleporterLibs" Required="false">Delivery/$(libprefix)DgnDbToBimConverter$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)DgnDbToBimConverter$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)DgnDbToBimConverter$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 

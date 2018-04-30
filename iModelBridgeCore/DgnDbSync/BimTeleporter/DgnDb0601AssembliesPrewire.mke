@@ -24,7 +24,6 @@ DeliveryDgnDbPlatformLibs=$(Delivery)DgnDbLibs/
 SourceAssets = $(DgnDbDgnPlatformBase)assets/
 
 DgnDbDlls = $(DgndbDgnPlatformLibDir)
-%warn DgnDbDlls=$(DgnDbDlls)
 
 %if !defined (ApiNumber)
     ApiNumber = G06
@@ -67,8 +66,6 @@ $(Delivery)BeHttp$(ApiNumber).dll : $(DgnDbDlls)BeHttp$(ApiNumber).dll
 $(Delivery)BeFolly$(ApiNumber).dll : $(DgnDbDlls)BeFolly$(ApiNumber).dll
 
 %if "x64" == $(TARGET_PROCESSOR_ARCHITECTURE)
-$(Delivery)libv8.dll : $(DgnDbDlls)libv8.dll
-
 $(Delivery)bentleylog4cxx$(ApiNumber).dll : $(DgnDbDlls)bentleylog4cxx$(ApiNumber).dll
 
 %endif
@@ -123,7 +120,6 @@ always:
 DGNDB_VERSIONEDAPI_INPUTDIR = $(DgndbDgnPlatformIncludeDir)
 DGNDB_VERSIONEDAPI_OUTPUTDIR = $(OutputRootDir)build/SdkDistribution/
 
-%warn including $(DGNDB_VERSIONEDAPI_INPUTDIR)
 always:
     ~mkdir $(DGNDB_VERSIONEDAPI_INPUTDIR)
     ~mkdir $(DGNDB_VERSIONEDAPI_OUTPUTDIR)

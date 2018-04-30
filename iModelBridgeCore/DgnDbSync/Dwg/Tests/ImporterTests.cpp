@@ -162,3 +162,11 @@ BentleyApi::WStringCR ImporterTests::GetDwgBridgeRegistryKey ()
     EXPECT_FALSE (s_dwgBridgeRegistryKey.empty()) << "Cannot get DwgBridge registry key!";
     return  s_dwgBridgeRegistryKey;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::Utf8String  ImporterTests::BuildModelspaceModelname (BeFileNameCR dwgFilename)
+    {
+    return Utf8PrintfString ("Model[%ls]", dwgFilename.GetFileNameWithoutExtension().c_str());
+    }

@@ -706,9 +706,11 @@ void Converter::ConvertViewGroup(DgnViewId& firstView, DgnV8Api::ViewGroup& vg, 
     // now process the view z order stacked views...
     for (UInt32 iView = 0; iView < DgnV8Api::MAX_VIEWS; ++iView)
         {
-        int viewIndex;
+        int viewIndex = viewZOrderStack[iView];
+        if (viewIndex <= 0 || viewIndex >= DgnV8Api::MAX_VIEWS)
+            continue;
 
-        if (0 == (viewIndex = viewZOrderStack[iView]) || !viewOnZStack[--viewIndex])
+        if (!viewOnZStack[--viewIndex])
             continue;
 
         viewOnZStack[viewIndex] = false; // once we have processed a view ignore any repeats for it...

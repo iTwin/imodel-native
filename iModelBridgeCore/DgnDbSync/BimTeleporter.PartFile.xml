@@ -3,7 +3,7 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
     <Part Name="DgnDb0601Assemblies" BentleyBuildMakeFile="BimTeleporter/DgnDb0601AssembliesPrewire.mke">
-        <NuGetPackage targetFramework="native">DgnDb_1_6_ForTeleporterNuget</NuGetPackage>
+        <NuGetPackage targetFramework="native">DgnDb_1_6_ForUpgraderNuget</NuGetPackage>
         <Bindings>
             <Assemblies ProductDirectoryName="DgnDbAssemblies" Required="false">
                 Delivery/*.dll,
@@ -14,12 +14,12 @@
         </Bindings>
     </Part>
 
-    <Part Name="BisJson1Exporter0601" BentleyBuildMakeFile="BimTeleporter/BimExporter0601/lib/BisJson1Exporter0601.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static">
+    <Part Name="BisJson1Exporter0601" BentleyBuildMakeFile="BimTeleporter/BimExporter0601/lib/BisJson1Exporter0601.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static" ApiNumber="B02">
         <SubPart PartName="DgnDb0601Assemblies"/>
         <SubPart PartFile="DgnDbSync" PartName="TeleporterPublicAPI"/>
         <Bindings>
             <Libs ProductDirectoryName="BimTeleporterLibs" Required="false">Delivery/$(libprefix)BisJson1Exporter0601$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BisJson1Exporter0601$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)BisJson1Exporter0601$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
