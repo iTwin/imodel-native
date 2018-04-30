@@ -319,12 +319,13 @@ bool GeomDetail::GetArc(DEllipse3dR ellipse) const
 
     return true;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeomDetail::FillGPA (GPArrayR gpa, bool singleSegment) const
+//! <ul>
+//! <li>Return the current geometry as an ICurvePrimitive.
+//! <li>If singleSegment is requested and the current geometry is a segment select within a linestring, only return that segment.
+//! </ul>
+DGNPLATFORM_EXPORT bool GeomDetail::GetCurvePrimitive (ICurvePrimitivePtr &curve, bool singleSegment) const
     {
+    curve = nullptr;
     if (!m_primitive.IsValid())
         return false;
 
@@ -332,36 +333,12 @@ bool GeomDetail::FillGPA (GPArrayR gpa, bool singleSegment) const
 
     if (singleSegment && GetSegment(segment))
         {
-        gpa.Add(segment.point, 2);
+        curve = ICurvePrimitive::CreateLine (segment);
         }
     else
         {
-        switch (m_primitive->GetCurvePrimitiveType())
-            {
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
-                gpa.Add(m_primitive->GetLineCP ()->point, 2);
-                break;
-
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-                gpa.Add(&m_primitive->GetLineStringCP ()->front(), (int) m_primitive->GetLineStringCP ()->size());
-                break;
-
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
-                gpa.Add(*m_primitive->GetArcCP ());
-                break;
-
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
-                gpa.Add(*m_primitive->GetProxyBsplineCurveCP ());
-                break;
-
-            default:
-                return false;
-            }
+        curve = m_primitive->Clone ();
         }
-
     return true;
     }
 

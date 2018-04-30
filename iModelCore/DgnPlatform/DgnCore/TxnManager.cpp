@@ -812,7 +812,7 @@ RevisionStatus TxnManager::MergeDbSchemaChangesInRevision(DgnRevisionCR revision
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false);
-        return RevisionStatus::MergeError;
+        return RevisionStatus::ApplyError;
         }
 
     if (dbSchemaChanges.IsEmpty())
@@ -820,7 +820,7 @@ RevisionStatus TxnManager::MergeDbSchemaChangesInRevision(DgnRevisionCR revision
 
     result = ApplyDbSchemaChangeSet(dbSchemaChanges);
     if (BE_SQLITE_OK != result)
-        return RevisionStatus::MergeError;
+        return RevisionStatus::ApplyError;
 
     return RevisionStatus::Success;
     }
@@ -835,7 +835,7 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
     if (!EXPECTED_CONDITION(result == BE_SQLITE_OK && "Could not apply/merge data changes in revision"))
         {
         BeAssert(false);
-        return RevisionStatus::MergeError;
+        return RevisionStatus::ApplyError;
         }
 
     RevisionStatus status = RevisionStatus::Success;

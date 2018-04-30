@@ -5,13 +5,7 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
-
-#include "ECDbTests.h"
-#include "TestHelper.h"
 #include "CompatibilityTestFixture.h"
-
-BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct CompatibilityBeDb : CompatibilityTestFixture
     {
@@ -25,8 +19,6 @@ BEDB_TESTFILE(EmptyFile)
     Db db;
     db.CreateNewDb(GetResolvedFilePath());
     }
-
-
 
 //===========================================================Test===========================================================
 //---------------------------------------------------------------------------------------
@@ -52,4 +44,3 @@ TEST_F(CompatibilityBeDb, OpenAllVersionInReadWriteMode)
         }
     }
 
-END_ECDBUNITTESTS_NAMESPACE

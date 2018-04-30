@@ -6,13 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-#include "ECDbTests.h"
-#include "TestHelper.h"
 #include "CompatibilityTestFixture.h"
-
-BEGIN_ECDBUNITTESTS_NAMESPACE
-
 
 struct CompatibilityDgnDb : CompatibilityTestFixture
     {};
@@ -47,4 +41,3 @@ TEST_F(CompatibilityDgnDb, OpenAllVersionInReadWriteMode)
     //    }
     }
 
-END_ECDBUNITTESTS_NAMESPACE

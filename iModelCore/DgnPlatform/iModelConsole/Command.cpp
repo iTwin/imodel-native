@@ -9,6 +9,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeTextFile.h>
 #include <Bentley/Nullable.h>
+#include <Bentley/PerformanceLogger.h>
 #include "Command.h"
 #include "iModelConsole.h"
 #include <numeric>
@@ -637,7 +638,8 @@ Utf8String ChangeCommand::_GetUsage() const
     {
     return " .change tracking [on|off]      Enable / pause change tracking. Pausing does not create a revision.\r\n"
            "         attachcache [cache path] attaches (and creates if necessary) the change cache file.\r\n"
-           "         extractsummary         creates a revision and extracts a change summary from it.\r\n";
+           "         extractsummary [changeset file] if a changeset file is specified, a change summary is created from it.\r\n"
+           "                                Otherwise a revision from the current local changes is created and the summary extracted from it.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -712,33 +714,80 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             return;
             }
 
-        IModelConsoleChangeTracker* tracker = session.GetFileR().GetTracker();
-        if (tracker == nullptr)
-            {
-            IModelConsole::WriteErrorLine("No changes tracked so far. Make sure to enable change tracking before extracting a change summary.");
-            return;
-            }
-
-        if (!tracker->HasChanges())
-            {
-            IModelConsole::WriteErrorLine("No changes tracked.");
-            return;
-            }
-
         IModelConsoleChangeSet changeset;
-        if (changeset.FromChangeTrack(*tracker) != BE_SQLITE_OK)
+
+        const bool fromFile = args.size() == 2;
+        if (fromFile)
             {
-            IModelConsole::WriteErrorLine("Failed to retrieve changeset.");
-            return;
+            BeFileName changesetFilePath(args[1].c_str(), true);
+            if (!changesetFilePath.DoesPathExist())
+                {
+                IModelConsole::WriteErrorLine("Failed to extract change summary. ChangeSet file %s does not exist.", changesetFilePath.GetNameUtf8().c_str());
+                return;
+                }
+
+            if (session.GetFile().GetType() != SessionFile::Type::IModel)
+                {
+                IModelConsole::WriteErrorLine("No iModel open. Extracting change summaries from changeset file is not supported for ECDb files");
+                return;
+                }
+
+            PERFLOG_START("iModelConsole", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
+            Dgn::RevisionChangesFileReader fs(changesetFilePath, session.GetFile().GetAs<IModelFile>().GetDgnDbHandle());
+            BeSQLite::ChangeGroup group;
+            if (BE_SQLITE_OK != fs.ToChangeGroup(group))
+                {
+                IModelConsole::WriteErrorLine("Failed to extract change summary. Could not read ChangeSet file %s into a ChangeGroup.", changesetFilePath.GetNameUtf8().c_str());
+                return;
+                }
+            PERFLOG_START("iModelConsole", "ExtractChangeSummary>Read ChangeSet File into ChangeGroup");
+
+            PERFLOG_START("iModelConsole", "ExtractChangeSummary>Create ChangeSet from ChangeGroup");
+            if (BE_SQLITE_OK != changeset.FromChangeGroup(group))
+                {
+                IModelConsole::WriteErrorLine("Failed to extract change summary. Could not create ChangeSet object from ChangeGroup object for ChangeSet file '%s'.", changesetFilePath.GetNameUtf8().c_str());
+                return;
+                }
+            PERFLOG_FINISH("iModelConsole", "ExtractChangeSummary>Create ChangeSet from ChangeGroup");
+            }
+        else
+            {
+            IModelConsoleChangeTracker* tracker = session.GetFileR().GetTracker();
+            if (tracker == nullptr)
+                {
+                IModelConsole::WriteErrorLine("No changes tracked so far. Make sure to enable change tracking before extracting a change summary.");
+                return;
+                }
+
+            if (!tracker->HasChanges())
+                {
+                IModelConsole::WriteErrorLine("No changes tracked.");
+                return;
+                }
+
+            if (changeset.FromChangeTrack(*tracker) != BE_SQLITE_OK)
+                {
+                IModelConsole::WriteErrorLine("Failed to retrieve changeset from local changes.");
+                return;
+                }
             }
 
+        PERFLOG_START("iModelConsole", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
         ECInstanceKey changeSummaryKey;
         if (session.GetFileR().GetECDbHandle()->ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset)) != SUCCESS)
             {
             IModelConsole::WriteErrorLine("Failed to extract change summary.");
             return;
             }
+        PERFLOG_FINISH("iModelConsole", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
 
+        if (fromFile)
+            {
+            IModelConsole::WriteLine("Successfully extracted ChangeSummary (Id: %s) from ChangeSet file.", changeSummaryKey.GetInstanceId().ToString().c_str());
+            return;
+            }
+
+        IModelConsoleChangeTracker* tracker = session.GetFileR().GetTracker();
         const bool trackingWasOn = tracker->IsTracking();
         tracker->EndTracking();//end the changeset
         IModelConsole::WriteLine("Successfully created revision and extracted ChangeSummary (Id: %s) from it.", changeSummaryKey.GetInstanceId().ToString().c_str());
@@ -845,6 +894,12 @@ void ImportCommand::RunImportSchema(Session& session, std::vector<Utf8String> co
 
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext(false, true);
     context->AddSchemaLocater(session.GetFile().GetECDbHandle()->GetSchemaLocater());
+
+    BeFileName schemaAssetsFolder = Dgn::DgnPlatformLib::GetHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+
+    BeFileName schemaSearchPath(schemaAssetsFolder);
+    schemaSearchPath.AppendToPath(L"ECSchemas").AppendToPath(L"Domain");
+    context->AddSchemaPath(schemaSearchPath);
 
     bvector<BeFileName> ecschemaFilePaths;
 

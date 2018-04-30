@@ -1165,7 +1165,12 @@ template<> struct HandlerTraits<dgn_ElementHandler::Element>
     typedef DgnElement T_Instantiation;
 
     static DgnDomain::Handler* GetBaseHandler() {return &dgn_ElementHandler::Element::GetHandler();}
-    static DgnElementPtr CreateInstance(dgn_ElementHandler::Element& handler, DgnDbR db) {return handler.Create(DgnElement::CreateParams(db, DgnModelId(), DgnClassId()));}
+    static DgnElementPtr CreateInstance(dgn_ElementHandler::Element& handler, DgnDbR db) 
+        {
+        DgnElement::CreateParams params(db, DgnModelId(), DgnClassId());
+        params.SetIsLoadingElement(true);
+        return handler.Create(params);
+        }
     static Utf8CP GetECClassName(DgnElementCR el) {return el.GetHandlerECClassName();}
     static Utf8CP GetSuperECClassName(DgnElementCR el) {return el.GetSuperHandlerECClassName();}
     static Utf8CP GetCppClassName() {return "DgnElement";}

@@ -7,14 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "ECDbTests.h"
-#include "TestHelper.h"
 #include "CompatibilityTestFixture.h"
 
 #include <Bentley/Bentley.h>
 #include <Bentley/BeDirectoryIterator.h>
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
 //================================ProfileManager::Profile================================
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
@@ -483,4 +480,3 @@ bool CompatibilityTestFixture::HasNewProfile(BeFileName const& fileName) { retur
 bool CompatibilityTestFixture::HasOldProfile(BeFileName const& fileName) { return ProfileManager::CompareFileVersion(fileName) < 0; }
 bool CompatibilityTestFixture::HasCurrentProfile(BeFileName const& fileName) { return ProfileManager::CompareFileVersion(fileName) == 0; }
 
-END_ECDBUNITTESTS_NAMESPACE
