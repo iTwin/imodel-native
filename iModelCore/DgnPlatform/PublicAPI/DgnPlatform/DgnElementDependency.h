@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnElementDependency.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,6 +61,25 @@ public:
 };
 
 //=======================================================================================
+//! Interface for element nodes in the dependency graph.
+// @bsiclass                                              Mindaugas.Butkus  04/18
+//=======================================================================================
+struct IDependencyGraphNode
+    {
+    protected:
+        friend struct DgnElementDependencyGraph;
+
+        //! Called by DgnElementDependencyGraph after all incoming ElementDrivesElement ECRelationships have been handled.
+        //! Call Txns::ReportError to reject an invalid change. The reported error can be classified as fatal or just a warning.
+        virtual void _OnAllInputsHandled() = 0;
+
+        //! Called by DgnElementDependencyGraph before handling the first ElementDrivesElement ECRelationship where this node is the source
+        //! and only if there are no incoming ElementDrivesElement ECRelationships.
+        //! Call Txns::ReportError to reject an invalid change. The reported error can be classified as fatal or just a warning.
+        virtual void _OnBeforeOutputsHandled() = 0;
+    };
+
+//=======================================================================================
 //! Element dependency graph calls DgnElementDependencyHandler in the correct order when a transaction is "validated".
 //! Called by Txns::CheckTxnBoundary.
 //! 
@@ -103,6 +122,7 @@ public:
 struct DgnElementDependencyGraph
 {
     struct EdgeQueue;
+    struct Nodes;
     struct TableApi;
     struct ElementDrivesElement;
 
@@ -167,6 +187,7 @@ struct DgnElementDependencyGraph
         BeSQLite::EC::ECInstanceId m_relId;
         ECN::ECClassId m_relClassId;
         int64_t       m_priority;
+        bool m_deleted; // if true - represents a deleted relationship
         union {
             struct {
                 uint32_t      m_status:8;           // NB: size must match EdgeStatus
@@ -175,7 +196,7 @@ struct DgnElementDependencyGraph
             uint32_t    m_flags;
             };
 
-        Edge() : m_priority(0), m_flags(0) {;}
+        Edge() : m_priority(0), m_flags(0), m_deleted(false) {;}
 
       public:
         //! Get the element that is the "input" to this dependency.
@@ -197,6 +218,8 @@ struct DgnElementDependencyGraph
         bool IsDeferred() const {return (m_status & EDGESTATUS_Deferred) != 0;}
         //! Test if this edge is marked as having failed
         bool IsFailed() const {return (m_status & EDGESTATUS_Failed) != 0;}
+        //! Test if this edge represents a deleted relationship
+        bool IsDeleted() const { return m_deleted; }
         };
 
     friend struct Edge;
@@ -224,6 +247,7 @@ private:
     TxnManager&             m_txnMgr;
     ElementDrivesElement*   m_elementDrivesElement;
     EdgeQueue*              m_edgeQueue;
+    Nodes*                  m_nodes;
     IEdgeProcessor*         m_processor;
 
     void Init();
@@ -252,7 +276,7 @@ private:
     void InvokeHandlersInTopologicalOrder_OneGraph(Edge const&, bvector<Edge> const& pathToSupplier);
 
     void InvokeHandlersInDependencyOrder();
-    void InvokeHandlersForDeletedRelationships();
+    void InvokeHandlerForDeletedRelationship(BeSQLite::EC::ECInstanceId relId);
 
     BeSQLite::DbResult SetFailedEdgeStatusInDb(Edge const&, bool failed);
     BeSQLite::DbResult UpdateEdgeStatusInDb(Edge const&, EdgeStatus);
