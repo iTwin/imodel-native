@@ -1241,8 +1241,6 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
         }
 
     constant = new ECUnit(*this, phenom, name, definition, numerator, 1.0);
-    //WIP_HACK Hack to indicate that this numerator was set explicitly. Just passing numerator to the ctor doesn't do this.
-    constant->SetNumerator(numerator);
 
     if(denominator.IsValid())
         constant->SetDenominator(denominator.Value());
