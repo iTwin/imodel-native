@@ -7,17 +7,62 @@
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
-
+#include <fstream>
+#include <sstream>
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
+struct UnitConversionTests : ECTestFixture {};
 struct UnitsTests : ECTestFixture {};
 struct InvertedUnitsTests : ECTestFixture {};
 struct ConstantTests : ECTestFixture {};
 struct UnitsDeserializationTests : ECTestFixture {};
 struct InvertedUnitsDeserializationTests: ECTestFixture {};
 struct ConstantDeserializationTests: ECTestFixture {};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitConversionTests, UnitConversionsMatchOldConversions)
+    {
+    auto path = ECTestFixture::GetTestDataPath(L"ec31UnitConversions.csv");
+    std::ifstream ifs(path.c_str(), std::ifstream::in);
+    std::string line;
+    auto s = GetUnitsSchema();
+    auto toDouble = [](Utf8StringCR d)
+        {
+        std::istringstream iss(d.c_str());
+        double val = 0.0;
+        iss >> val;
+        return val;
+        };
+    while (std::getline(ifs, line))
+        {
+        bvector<Utf8String> split;
+        BeStringUtilities::Split(line.c_str(), ",", split);
+        ASSERT_EQ(4, split.size());
+        auto fromName = split[0];
+        auto toName = split[2];
+        auto orig = toDouble(split[1]);
+        auto conv = toDouble(split[3]);
+        auto from = Units::UnitNameMappings::TryGetECNameFromNewName(fromName.c_str());
+        auto to = Units::UnitNameMappings::TryGetECNameFromNewName(toName.c_str());
+        ASSERT_NE(nullptr, from);
+        ASSERT_NE(nullptr, to);
+
+        // From Schema
+        Utf8String alias;
+        Utf8String name;
+        ECClass::ParseClassName(alias, name, from);
+        auto fromSchema = s->GetUnitCP(name.c_str());
+        ECClass::ParseClassName(alias, name, to);
+        auto toSchema = s->GetUnitCP(name.c_str());
+        double converted;
+        fromSchema->Convert(converted, orig, toSchema);
+        ASSERT_DOUBLE_EQ(converted, conv);
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                  02/2018
