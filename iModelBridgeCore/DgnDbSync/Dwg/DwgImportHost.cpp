@@ -203,14 +203,21 @@ bool            DwgImportHost::FindXrefFile (WStringR outFile, WCharCP inFile, D
     else
         return  false;
     
-    // if looks like a relative path, try to resolve it
+    // if the importer is run from ProjectWise, or the path is relative to a DMS folder, try resolving path per PW rule:
+    auto    isDmsFolder = checkFile.StartsWith (L"..\\dms");
+    if (isDmsFolder || !m_importer->GetOptions().IsRunAsStandaloneApp())
+        {
+        if (ResolveProjectWiseDms(outFile, checkFile, basePath))
+            return  true;
+
+        // Not resolved per PW rule - remove the DMS folder if present and fall through to other scenarios:
+        if (isDmsFolder)
+            checkFile.assign (checkFile.substr(checkFile.find(L'\\', 6) + 1, checkFile.size() - 1));
+        }
+
+    // if looks like a standard relative path, try resolving it to the full path:
     if (checkFile.StartsWith(L".."))
         {
-        // if it seems like a PW downloaded folder ..\dms, try PW folders:
-        if (checkFile.StartsWith(L"..\\dms"))
-            return  ResolveProjectWiseDms (outFile, checkFile, basePath);
-
-        // otherwise, try resolving a true relative path:
         BeFileName  resolved;
         if (BSISUCCESS == BeFileName::ResolveRelativePath(resolved, inFile, basePath.c_str())&& resolved.DoesPathExist())
             {

@@ -323,6 +323,7 @@ public:
         bool                m_preferRenderableGeometry;
         Utf8String          m_namePrefix;
         bool                m_includeDwgPathInMaterialSearchPaths;
+        bool                m_runAsStandaloneApp;
 
     public:
         Options ()
@@ -340,6 +341,7 @@ public:
             m_pointCloudLevelOfDetails = 1;
             m_preferRenderableGeometry = false;
             m_includeDwgPathInMaterialSearchPaths = false;
+            m_runAsStandaloneApp = false;
             }
 
         void SetInputRootDir (BentleyApi::BeFileNameCR fileName) {m_rootDir = fileName;}
@@ -362,6 +364,7 @@ public:
         void SetPreferRenderableGeometry (bool forRendering) { m_preferRenderableGeometry = forRendering; }
         void SetNamePrefix (Utf8CP prefix) { m_namePrefix.assign(prefix); }
         void SetDwgPathInMaterialSearch (bool v) { m_includeDwgPathInMaterialSearchPaths = v; }
+        void SetRunAsStandaloneApp (bool v) { m_runAsStandaloneApp = v; }
 
         BeFileNameCR GetInputRootDir() const {return m_rootDir;}
         BeFileNameCR GetConfigFile() const {return m_configFile;}
@@ -387,6 +390,7 @@ public:
         bool IsRenderableGeometryPrefered () const { return m_preferRenderableGeometry; }
         Utf8StringCR GetNamePrefix () const { return m_namePrefix; }
         bool IsDwgPathInMaterialSearch () const { return m_includeDwgPathInMaterialSearchPaths; }
+        bool IsRunAsStandaloneApp () const { return m_runAsStandaloneApp; }
         };  // Options : iModelBridge::Params
 
     struct GeometryOptions : public IDwgDrawOptions
@@ -840,6 +844,7 @@ public:
         L10N_STRING(WrongBriefcaseManager)       // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
         L10N_STRING(UpdateDoesNotChangeClass)    // =="Update cannot change the class of an element. Element: %s. Proposed class: %s."==
         L10N_STRING(MissingJobDefinitionModel)   // =="Missing JobDefinitionModel for %s"==
+        L10N_STRING(CircularXrefIgnored)         // =="Circular xRef %s is ignored"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Progress messages for the conversion process

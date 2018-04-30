@@ -86,6 +86,8 @@ $(o)ImportPointClouds$(oext): $(baseDir)ImportPointClouds.cpp $(DwgDepends) $(Dg
 
 $(o)ImportLights$(oext)     : $(baseDir)ImportLights.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
+$(o)ImportXrefs$(oext)      : $(baseDir)ImportXrefs.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
 $(o)DwgHelper$(oext)        : $(baseDir)DwgHelper.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)DwgSyncInfo$(oext)      : $(baseDir)DwgSyncInfo.cpp $(DwgDepends) $(DgnDbSyncDepends) ${MultiCompileDepends}
