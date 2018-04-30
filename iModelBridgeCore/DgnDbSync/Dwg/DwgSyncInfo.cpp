@@ -672,7 +672,7 @@ DbResult DwgSyncInfo::DwgModelMapping::Insert(Db& db) const
     stmt.BindId(col++, m_id);
     stmt.BindInt(col++, m_source.GetDwgFileId().GetValue());
     stmt.BindInt64(col++, m_source.GetDwgModelId().GetValue());
-    stmt.BindInt(col++, m_instanceId);
+    stmt.BindInt64(col++, m_instanceId);
     stmt.BindText(col++, m_dwgName, Statement::MakeCopy::No);
     stmt.BindInt(col++, static_cast<int>(m_sourceType));
     if (m_transform.IsIdentity())
@@ -704,7 +704,7 @@ DbResult DwgSyncInfo::DwgModelMapping::Update (Db& db) const
     stmt.BindId(col++, m_id);
     stmt.BindInt(col++, m_source.GetDwgFileId().GetValue());
     stmt.BindInt(col++, m_source.GetDwgModelId().GetValue());
-    stmt.BindInt(col++, m_instanceId);
+    stmt.BindInt64(col++, m_instanceId);
     stmt.BindText(col++, m_dwgName, Statement::MakeCopy::No);
     stmt.BindInt(col++, static_cast<int>(m_sourceType));
     if (m_transform.IsIdentity())

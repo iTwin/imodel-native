@@ -27,6 +27,14 @@ DgnElementId QueryElementId (DgnDbCR db, Utf8CP className, Utf8CP codeValue) con
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String  BuildSpatialElementCode (Utf8StringCR modelname, DwgDbHandleCR entityHandle) const
+    {
+    return Utf8PrintfString ("%s:%llx", modelname.c_str(), entityHandle.AsUInt64());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbHandle AddCircle (Utf8StringR codeValue) const
@@ -39,7 +47,7 @@ DwgDbHandle AddCircle (Utf8StringR codeValue) const
     EXPECT_TRUE (!entityHandle.IsNull());
 
     // save off the CodeValue
-    codeValue.Sprintf ("Model:%llx", entityHandle.AsUInt64());
+    codeValue = BuildSpatialElementCode (BuildModelspaceModelname(m_dwgFileName), entityHandle);
 
     editor.SaveFile ();
     return  entityHandle;
@@ -94,10 +102,11 @@ void ExtractPlacementOrigins (DPoint3dArrayR origins, T_EntityHandles handles) c
     auto db = OpenExistingDgnDb (m_dgnDbFileName, Db::OpenMode::Readonly);
     EXPECT_TRUE (db.IsValid());
 
+    auto modelname = BuildModelspaceModelname (m_dwgFileName);
     auto iter = db->Elements().MakeIterator (BIS_SCHEMA(BIS_CLASS_SpatialElement));
     for (auto& handle : handles)
         {
-        Utf8PrintfString codeValue("Model:%llx", handle.AsUInt64());
+        auto codeValue = BuildSpatialElementCode (modelname, handle);
         for (auto& entry : iter)
             {
             if (codeValue.EqualsI(entry.GetCodeValue()))
@@ -261,7 +270,8 @@ TEST_F(BasicTests, UpdateElements_DeleteMove)
     EXPECT_TRUE (db->IsDbOpen());
 
     // is the deleted element in the DgnDb
-    Utf8PrintfString    codeValue("Model:%llx", deleteHandle.AsUInt64());
+    auto modelname = BuildModelspaceModelname (m_dwgFileName);
+    auto codeValue = BuildSpatialElementCode (modelname, deleteHandle);
     auto id = QueryElementId(*db, GENERIC_CLASS_PhysicalObject, codeValue.c_str());
     EXPECT_FALSE (id.IsValid());
 
@@ -269,7 +279,7 @@ TEST_F(BasicTests, UpdateElements_DeleteMove)
     auto iter = db->Elements().MakeIterator (BIS_SCHEMA(BIS_CLASS_SpatialElement));
     for (auto& handle : handles)
         {
-        Utf8PrintfString codeValue("Model:%llx", handle.AsUInt64());
+        auto codeValue = BuildSpatialElementCode (modelname, handle);
         for (auto& entry : iter)
             {
             if (codeValue.EqualsI(entry.GetCodeValue()))

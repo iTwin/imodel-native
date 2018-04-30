@@ -2550,15 +2550,15 @@ static bool     PrepareEntityForImport (DrawParameters& drawParams, GeometryFact
         if (DwgDbStatus::Success == insert->OpenSpatialFilter(spatialFilter, DwgDbOpenMode::ForRead))
             factory.SetSpatialFilter (spatialFilter.get());
 
-        // create shared parts for the block
-        factory.SetIsAssembly (true);
-
         // set outermost part namespace as "blockname-fileId"
         DwgDbBlockTableRecordPtr    block(insert->GetBlockTableRecordId(), DwgDbOpenMode::ForRead);
         if (block.OpenStatus() == DwgDbStatus::Success)
             {
             Utf8PrintfString    partNamespace("%ls-%d", block->GetName().c_str(), DwgSyncInfo::GetDwgFileId(*block->GetDatabase()));
             factory.PushPartNamespace (partNamespace);
+
+            // create shared parts for named blocks
+            factory.SetIsAssembly (!block->IsAnonymous());
             }
         }
 

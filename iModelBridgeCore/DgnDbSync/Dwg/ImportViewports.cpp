@@ -242,8 +242,10 @@ void            ViewportFactory::ComputeSpatialView (SpatialViewDefinitionR dgnV
     rotation.MultiplyTranspose (origin);
     dgnView.SetOrigin (origin);
 
+#ifdef CLIP_THROUGH_SPATIALVIEW
     // if clipped by an entity, calculate & apply a clipping vector:
     this->ApplyViewportClipping (dgnView, frontClip, backClip);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -251,6 +253,7 @@ void            ViewportFactory::ComputeSpatialView (SpatialViewDefinitionR dgnV
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ViewportFactory::ApplyViewportClipping (SpatialViewDefinitionR dgnView, double frontClip, double backClip)
     {
+    // this method clips a SpatialView which is attached to a Sheet::ViewAttachment.
     if (m_clipEntityId.IsNull())
         return;
 
@@ -259,7 +262,7 @@ void            ViewportFactory::ApplyViewportClipping (SpatialViewDefinitionR d
     if (!this->ComputeClipperTransformation(entityToClipper, viewRotation))
         return;
 
-    // the clipper plane as the same as the view plane, but the clipper constructor expects transformation matrix from clipper to model:
+    // the clipper plane is the same as the view plane, but the clipper constructor expects transformation matrix from clipper to model:
     viewRotation.InverseOf (viewRotation);
     Transform   clipperToModel = Transform::From (viewRotation, DVec3d::FromZero());
 
@@ -275,6 +278,20 @@ void            ViewportFactory::ApplyViewportClipping (SpatialViewDefinitionR d
         clipper->TransformInPlace (m_transform);
         dgnView.SetViewClip (clipper);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ViewportFactory::ApplyViewportClipping (Sheet::ViewAttachmentR viewAttachment)
+    {
+    // this method directly clips a Sheet::ViewAttachment.
+    if (m_clipEntityId.IsNull())
+        return;
+    
+    auto clipper = DwgHelper::CreateClipperFromEntity (m_clipEntityId, nullptr, nullptr, nullptr, &m_transform);
+    if (clipper.IsValid())
+        viewAttachment.SetClip (*clipper);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -640,10 +657,13 @@ void            ViewportFactory::UpdateSpatialCategories (DgnCategoryIdSet& cate
             DwgDbHandle     objHandle = syncInfo.FindLayerHandle (categoryId, fileId);
             if (!objHandle.IsNull() && (layerId = dwg.GetObjectId(objHandle)).IsValid())
                 {
-                // skip viewport frozen layer for this view:
+                // erase category from the view if the layer is viewport frozen:
                 auto found = std::find_if (frozenLayers.begin(), frozenLayers.end(), [&](DwgDbObjectId id){ return id == layerId; });
                 if (found != frozenLayers.end())
+                    {
+                    categoryIdSet.erase (categoryId);
                     continue;
+                    }
                 }
             }
 
@@ -770,6 +790,7 @@ DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8Stri
     this->ComputeSpatialView (*view);
 
     view->SetIsPrivate (m_isPrivate);
+    view->SetUserLabel (DwgImporter::DataStrings::GetString(DwgImporter::DataStrings::ModelView()).c_str());
 
     // insert the view to BIM
     if (!view.IsValid() || view->Insert().IsNull())
@@ -864,6 +885,7 @@ DgnViewId       ViewportFactory::CreateSheetView (DgnModelId modelId, Utf8String
     this->ComputeSheetView (*view.get());
 
     view->SetIsPrivate (m_isPrivate);
+    view->SetUserLabel (DwgImporter::DataStrings::GetString(DwgImporter::DataStrings::LayoutView()).c_str());
 
     // now insert the new view into DB:
     if (view->Insert().IsNull())
@@ -944,6 +966,9 @@ DgnElementPtr   ViewportFactory::CreateViewAttachment (DgnModelCR sheetModel, Dg
     if (m_customScale > 1.e-5)
         viewAttachment->SetScale (1.0 / m_customScale);
 
+    // clip the view attachment
+    this->ApplyViewportClipping (*viewAttachment);
+
     return  viewAttachment;
     }
 
@@ -965,6 +990,9 @@ DgnElementPtr   ViewportFactory::UpdateViewAttachment (DgnElementId attachId, Dg
     // set view attachment scale
     if (m_customScale > 1.e-5)
         viewAttachment->SetScale (1.0 / m_customScale);
+
+    // clip the view attachment
+    this->ApplyViewportClipping (*viewAttachment);
 
     return  viewAttachment;
     }
@@ -1146,6 +1174,7 @@ DgnViewId   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecordCR d
         return viewId;
         }
         
+    // build a view factory for either importing or updating:
     ViewportFactory factory(*this, dwgVport);
 
     if (this->IsUpdating())
@@ -1158,24 +1187,8 @@ DgnViewId   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecordCR d
             }
         }
 
-    Utf8String                  layoutName;
-    DwgDbBlockTableRecordPtr    modelspace (m_modelspaceId, DwgDbOpenMode::ForRead);
-    if (!modelspace.IsNull())
-        {
-        DwgDbLayoutPtr  layout (modelspace->GetLayoutId(), DwgDbOpenMode::ForRead);
-        if (!layout.IsNull())
-            layoutName.Assign (layout->GetName().c_str());
-        }
-    if (layoutName.empty())
-        layoutName.assign ("ModelSpace");
-   
-    Utf8String  vportName = Utf8String (dwgVport.GetName().c_str());
-    if (vportName.empty())
-        vportName.assign ("View");
-    else if (vportName.StartsWith("*"))
-        vportName.erase (0, 1);
-
-    Utf8PrintfString    viewName ("%s - %s", layoutName, vportName);
+    // set Model view name as the model name (also the same as the layout name):
+    Utf8String  viewName = rootModel->GetName ();
 
     viewId = factory.CreateSpatialView (rootModel->GetModelId(), viewName);
 
@@ -1254,24 +1267,25 @@ BentleyStatus   DwgImporter::_ImportPaperspaceViewport (DgnModelR model, Transfo
         return  BSIERROR;
         }
    
-    // set sheet view name as "LayoutName - View"
-    Utf8PrintfString    viewName ("%s - View", layoutName);
-    ViewportFactory     factory (*this, *viewport.get(), &layout);
+    // build a view factory for either importing or updating:
+    ViewportFactory factory (*this, *viewport.get(), &layout);
+    DwgDbObjectId   viewportId = viewport->GetObjectId ();
+    DgnViewId       sheetViewId;
 
-    DgnViewId   sheetViewId;
     if (this->IsUpdating())
         {
-        sheetViewId = m_syncInfo.FindView (viewport->GetObjectId(), DwgSyncInfo::View::Type::PaperspaceViewport);
+        sheetViewId = m_syncInfo.FindView (viewportId, DwgSyncInfo::View::Type::PaperspaceViewport);
         if (sheetViewId.IsValid())
             return factory.UpdateSheetView (sheetViewId);
         }
 
+    // set sheet view name as the model name (also the layout name):
+    Utf8String  viewName = model.GetName ();
     sheetViewId = factory.CreateSheetView (model.GetModelId(), viewName);
     if (!sheetViewId.IsValid())
         return  BSIERROR;
 
     // a sheet has been created - cache the results:
-    DwgDbObjectId       viewportId = viewport->GetObjectId ();
     m_paperspaceViews.insert (T_PaperspaceView(sheetViewId, viewportId));
 
     // do not let the default view unset; override it if a valid active layout exists:

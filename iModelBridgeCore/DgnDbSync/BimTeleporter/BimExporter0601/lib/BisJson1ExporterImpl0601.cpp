@@ -1546,6 +1546,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
     statement->BindId(1, parentModel);
     JsonECSqlSelectAdapter jsonAdapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
     jsonAdapter.SetStructArrayAsString(true);
+    jsonAdapter.SetPreferNativeDgnTypes(true);
     Utf8String prefix = m_dgndb->Schemas().GetECSchema(schemaName)->GetNamespacePrefix();
 
     ECClassCP ecClass = m_dgndb->Schemas().GetECClass(schemaName, className);

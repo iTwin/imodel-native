@@ -442,10 +442,11 @@ BentleyStatus   DwgHelper::UpdateViewFlagsFromVisualStyle (ViewFlags& viewFlags,
         DwgGiVisualStyleProperties::EdgeModel visibleEdges = var.AsEnum ();
         switch (visibleEdges)
             {
+            // WIP - support displaying isolines around a round body?
+            case DwgGiVisualStyleProperties::EdgeModel::Isolines:
             case DwgGiVisualStyleProperties::EdgeModel::NoEdges:
                 viewFlags.SetShowVisibleEdges (false);
                 break;
-            case DwgGiVisualStyleProperties::EdgeModel::Isolines:
             case DwgGiVisualStyleProperties::EdgeModel::FacetEdges:
             default:
                 viewFlags.SetShowVisibleEdges (true);

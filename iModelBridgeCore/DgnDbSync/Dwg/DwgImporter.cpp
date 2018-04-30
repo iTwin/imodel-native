@@ -424,13 +424,21 @@ Utf8String      DwgImporter::_ComputeModelName (DwgDbBlockTableRecordCR block, U
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String      DwgImporter::ComputeModelName (Utf8StringR proposedName, BeFileNameCR baseFilename, BeFileNameCR refPath, Utf8CP inSuffix, DgnClassId modelType)
     {
+    bool        hasRule = false;
     ImportRule  modelMergeEntry;
     if (BSISUCCESS == this->SearchForMatchingRule(modelMergeEntry, proposedName, baseFilename))
         {
         Utf8String      computedName;
-        if (SUCCESS == modelMergeEntry.ComputeNewName(computedName, proposedName, baseFilename))
+        if (BSISUCCESS == modelMergeEntry.ComputeNewName(computedName, proposedName, baseFilename))
+            {
             proposedName = computedName;
+            hasRule = true;
+            }
         }
+
+    // unless user has a rule for a layout, append the base file name:
+    if (!hasRule && m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel) == modelType)
+        proposedName += "[" + Utf8String(baseFilename) + "]";
 
     DgnModels&  models = m_dgndb->Models ();
     models.ReplaceInvalidCharacters (proposedName, models.GetIllegalCharacters(), '_');
@@ -1242,7 +1250,44 @@ BentleyStatus   DwgImporter::_ImportSpaces ()
         m_modelspaceUnits = m_options.GetUnspecifiedBlockUnits ();
 
     // save off active viewport - either a modelspace viewport(timemode=1) or a layout viewport(tilemode=0):
-    m_activeViewportId = m_dwgdb->GetTILEMODE() ? m_dwgdb->GetActiveModelspaceViewportId() : m_dwgdb->GetActiveUserViewportId();
+    if (m_dwgdb->GetTILEMODE())
+        {
+        // modelspace is active
+        m_activeViewportId = m_dwgdb->GetActiveModelspaceViewportId();
+        }
+    else if (this->IsUpdating())
+        {
+        // a layout is active, try find the active layout viewport if updating:
+        auto manager = DwgImportHost::GetHost().GetLayoutManager ();
+        if (!manager.IsNull() && manager->IsValid())
+            {
+            DwgDbLayoutPtr layout (manager->FindActiveLayout(m_dwgdb.get()), DwgDbOpenMode::ForRead);
+            if (layout.OpenStatus() == DwgDbStatus::Success)
+                {
+                DwgDbObjectIdArray  viewports;
+                if (layout->GetViewports(viewports) > 0)
+                    {
+                    // layout has the overal viewport exists
+                    m_activeViewportId = viewports.front ();
+                    }
+                else
+                    {
+                    // layout not visited - try finding the first viewport
+                    DwgDbBlockTableRecordPtr block(manager->GetActiveLayoutBlock(m_dwgdb.get()), DwgDbOpenMode::ForRead);
+                    if (block.OpenStatus() == DwgDbStatus::Success)
+                        m_activeViewportId = LayoutFactory::FindOverallViewport (*block);
+                    }
+                }
+            }
+
+        }
+
+    // if updating, we may not even have a chance to process layouts, so find and set active viewport now:
+    if (this->IsUpdating() && m_activeViewportId.IsValid())
+        {
+        DwgSyncInfo::View::Type viewtype = m_dwgdb->GetTILEMODE() ? DwgSyncInfo::View::Type::ModelspaceViewport : DwgSyncInfo::View::Type::PaperspaceViewport;
+        m_defaultViewId = m_syncInfo.FindView (m_activeViewportId, viewtype);
+        }
 
     return  BSISUCCESS;
     }

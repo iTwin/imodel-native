@@ -345,9 +345,11 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
             {
             Utf8String  filename(BeFileName::GetFileNameWithoutExtension (dwg->GetFileName().c_str()).c_str());
             schemaName += "_" + filename;
+            if (!ECNameValidation::IsValidName(schemaName.c_str()))
+                ECNameValidation::EncodeToValidName (schemaName, schemaName.c_str());
             }
 
-        ECObjectsStatus status = ECSchema::CreateSchema (attrdefSchema, schemaName, SCHEMAAlias_AttributeDefinitions, 1, 0, 0);
+        status = ECSchema::CreateSchema (attrdefSchema, schemaName, SCHEMAAlias_AttributeDefinitions, 1, 0, 0);
         if (ECObjectsStatus::Success == status)
             {
             // set label

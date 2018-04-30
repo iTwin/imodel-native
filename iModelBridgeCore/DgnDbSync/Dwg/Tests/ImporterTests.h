@@ -56,6 +56,7 @@ public:
     static BentleyApi::WString GetOutRoot();
     static BentleyApi::BeFileName GetIBimFileName(BentleyApi::BeFileName& inFile);
     static BentleyApi::WStringCR GetDwgBridgeRegistryKey ();
+    static BentleyApi::Utf8String BuildModelspaceModelname (BeFileNameCR dwgFilename);
 
     static void DeleteExistingDgnDb(BentleyApi::BeFileNameCR);
     static DgnDbPtr OpenExistingDgnDb(BentleyApi::BeFileNameCR projectName, DgnDb::OpenMode mode = DgnDb::OpenMode::ReadWrite);
