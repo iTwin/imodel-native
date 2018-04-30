@@ -18,8 +18,14 @@
         <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
     </ECEntityClass>
   
-    <ECEntityClass typeName="Classification" modifier="Abstract" displayLabel="ClassificationSystem ClassDefinition" description="The ClassDefinition used to store classificationSystem data.">
+    <ECEntityClass typeName="Classification" displayLabel="ClassificationSystem ClassDefinition" description="The ClassDefinition used to store classificationSystem data.">
         <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
+        <ECProperty propertyName="ClassificationId" typeName="string" displayLabel="ClassificationId"/>
+        <ECProperty propertyName="Description" typeName="string" displayLabel="Description"/>
         <ECNavigationProperty propertyName="Group" relationshipName="ClassificationIsInClassificationGroup" direction="Forward" description="Group this definition belong to" />
         <ECNavigationProperty propertyName="Specialization" relationshipName="ClassificationSpecializesClassification" direction="Forward" description="Classification this Specializes in" />
     </ECEntityClass>
@@ -42,67 +48,12 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ClassificationSpecializesClassification" modifier="None" strength="referencing" description="a relationship">
-        <Source multiplicity="(0..*)" roleLabel="Specializes" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="specializes" polymorphic="true">
             <Class class="Classification"/>
         </Source>
-        <Target multiplicity="(1..1)" roleLabel="In" polymorphic="true">
+        <Target multiplicity="(1..1)" roleLabel="is specialized" polymorphic="true">
             <Class class="Classification"/>
          </Target>
-    </ECRelationshipClass>
-  
-    <ECEntityClass typeName="CIBSEClassDefinition" displayLabel="CIBSE ClassDefinition" description="The ClassDefinition used to store CIBSE classificationSystem data">
-        <BaseClass>Classification</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="ASHRAEClassDefinition" displayLabel="ASHRAE ClassDefinition" modifier="Abstract" description="The ClassDefinition used to store ASHRAE classificationSystem type data">
-        <BaseClass>Classification</BaseClass>
-        <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="ASHRAE2004ClassDefinition" displayLabel="ASHRAE2004 ClassDefinition" description="The ClassDefinition used to store ASHRAE2004 classificationSystem data">
-        <BaseClass>ASHRAEClassDefinition</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    
-    <ECEntityClass typeName="ASHRAE2010ClassDefinition" displayLabel="ASHRAE2010 ClassDefinition" description="The ClassDefinition used to store ASHRAE2010 classificationSystem data">
-        <BaseClass>ASHRAEClassDefinition</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    
-    <ECEntityClass typeName="OmniClassClassDefinition" displayLabel="OmniClass ClassDefinition" description="The ClassDefinition used to store OmniClass classificationSystem data">
-        <BaseClass>Classification</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
-        <ECProperty propertyName="Description" typeName="string" displayLabel="Description"/>
-        <ECProperty propertyName="OmniClassID" typeName="string" displayLabel="OmniClassID"/>
-    </ECEntityClass>
-    
-    <ECEntityClass typeName="MasterFormatClassDefinition" displayLabel="MasterFormat ClassDefinition" description="The ClassDefinition used to store MasterFormat classificationSystem data">
-        <BaseClass>Classification</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
-        <ECProperty propertyName="Description" typeName="string" displayLabel="Description"/>
-    </ECEntityClass>
-    
-    <ECEntityClass typeName="UniFormatClassDefinition" displayLabel="UniFormat ClassDefinition" description="The ClassDefinition used to store UniFormat classificationSystem data">
-        <BaseClass>Classification</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
-        <ECProperty propertyName="Description" typeName="string" displayLabel="Description"/>
-    </ECEntityClass>
+    </ECRelationshipClass> 
     
 </ECSchema>

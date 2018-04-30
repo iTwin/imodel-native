@@ -9,44 +9,20 @@
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
+
 struct ClassificationSystemHandler : Dgn::dgn_ElementHandler::Definition
     {
     ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem, ClassificationSystem, ClassificationSystemHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
     };
 
+struct ClassificationHandler : Dgn::dgn_ElementHandler::Definition
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_Classification, Classification, ClassificationHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
+    };
+
 struct ClassificationGroupHandler : Dgn::dgn_ElementHandler::GroupInformation
     {
     ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationGroup, ClassificationGroup, ClassificationGroupHandler, Dgn::dgn_ElementHandler::GroupInformation, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
-    };
-
-struct CIBSEClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_CIBSEClassDefinition, CIBSEClassDefinition, CIBSEClassDefinitionHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
-    };
-
-struct OmniClassClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_OmniClassClassDefinition, OmniClassClassDefinition, OmniClassClassDefinitionHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
-    };
-
-struct ASHRAE2004ClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ASHRAE2004ClassDefinition, ASHRAE2004ClassDefinition, ASHRAE2004ClassDefinitionHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
-    };
-
-struct ASHRAE2010ClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ASHRAE2010ClassDefinition, ASHRAE2010ClassDefinition, ASHRAE2010ClassDefinitionHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
-    };
-
-struct MasterFormatClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_MasterFormatClassDefinition, MasterFormatClassDefinition, MasterFormatClassDefinitionHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
-    };
-
-struct UniFormatClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_UniFormatClassDefinition, UniFormatClassDefinition, UniFormatClassDefinitionHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
     };
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE

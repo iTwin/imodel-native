@@ -26,13 +26,8 @@ DOMAIN_DEFINE_MEMBERS(ClassificationSystemsDomain)
 ClassificationSystemsDomain::ClassificationSystemsDomain () : Dgn::DgnDomain(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, "ClassificationSystems Domain", 1)
     {
     RegisterHandler(ClassificationSystemHandler::GetHandler());
+    RegisterHandler(ClassificationHandler::GetHandler());
     RegisterHandler(ClassificationGroupHandler::GetHandler());
-    RegisterHandler(CIBSEClassDefinitionHandler::GetHandler());
-    RegisterHandler(OmniClassClassDefinitionHandler::GetHandler());
-    RegisterHandler(ASHRAE2004ClassDefinitionHandler::GetHandler());
-    RegisterHandler(ASHRAE2010ClassDefinitionHandler::GetHandler());
-    RegisterHandler(MasterFormatClassDefinitionHandler::GetHandler());
-    RegisterHandler(UniFormatClassDefinitionHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------
@@ -51,9 +46,10 @@ void ClassificationSystemsDomain::_OnSchemaImported
 Dgn::DgnDbR db
 ) const
     {
+    ClassificationSystemsDomain::InsertDomainAuthorities(db);
     ClassificationSystemsDomain::InsertStandardDefinitionSystems(db);
-    //ClassificationSystemsDomain::InsertMasterFormatDefinition(db);
-    ClassificationSystemsDomain::InsertUniFormatDefinitions(db);
+    ClassificationSystemsDomain::InsertMasterFormatDefinitions(db);
+    //ClassificationSystemsDomain::InsertUniFormatDefinitions(db);
     /*ClassificationSystemsDomain::InsertOmniClass11Definitions(db);
     ClassificationSystemsDomain::InsertOmniClass12Definitions(db);
     ClassificationSystemsDomain::InsertOmniClass13_2006Definitions(db);
@@ -73,6 +69,39 @@ Dgn::DgnDbR db
         //TODO call my Generated Method
         //TODO all methods
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              04/2018
+//---------------------------------------------------------------------------------------
+void ClassificationSystemsDomain::InsertDomainAuthorities(Dgn::DgnDbR db) const
+    {
+    InsertCodeSpec(db, CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              04/2017
+//---------------------------------------------------------------------------------------
+void ClassificationSystemsDomain::InsertCodeSpec(Dgn::DgnDbR db, Utf8CP name) const
+    {
+    Dgn::CodeSpecPtr codeSpec = Dgn::CodeSpec::Create(db, name);
+    BeAssert(codeSpec.IsValid());
+    if (codeSpec.IsValid())
+        {
+        codeSpec->Insert();
+        BeAssert(codeSpec->GetCodeSpecId().IsValid());
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              04/2018
+//---------------------------------------------------------------------------------------
+Dgn::DgnCode ClassificationSystemsDomain::GetSystemCode
+(
+Dgn::DgnDbR db,
+Utf8CP name
+) const
+    {
+    return Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), db.Elements().GetRootSubjectId(), name);
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              04/2018
 //---------------------------------------------------------------------------------------
@@ -82,16 +111,17 @@ Dgn::DgnDbR db,
 Utf8CP name
 ) const
     {
-    Dgn::DgnCode code = Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), Dgn::DgnElementId(), name);
+    Dgn::DgnCode code = GetSystemCode(db, name);
     ClassificationSystemPtr classSystem = ClassificationSystem::Create(db, name);
+    classSystem->SetCode(code);
     if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classSystem.get(), BeSQLite::DbOpcode::Insert, "ClassificationSystem : Insertion"))
         {
-        classSystem->SetCode(code);
         classSystem->Insert();
         return classSystem;
         }
     return nullptr;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              04/2018
 //---------------------------------------------------------------------------------------
@@ -101,7 +131,8 @@ Dgn::DgnDbR db,
 Utf8CP name
 ) const
     {
-    Dgn::DgnCode code = Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), Dgn::DgnElementId() , name);
+    //TODO Insert CodeSpec (Check BuildingDomain) 
+    Dgn::DgnCode code = GetSystemCode(db, name);
     Dgn::DgnElementId id = db.Elements().QueryElementIdByCode(code);
     if (id.IsValid()) 
         {
@@ -133,103 +164,30 @@ Utf8CP name
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Martynas.Saulius              03/2018
-//---------------------------------------------------------------------------------------
-void ClassificationSystemsDomain::InsertCIBSE 
-(
-ClassificationSystemCR system,
-ClassificationGroupCR group,
-Utf8CP name
-) const
-    {
-    CIBSEClassDefinitionPtr classDefinition = CIBSEClassDefinition::Create(system, group, name);
-    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinition.get(), BeSQLite::DbOpcode::Insert, "CIBSEClassDefinition : Insertion"))
-        {
-        classDefinition->Insert();
-        }
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Martynas.Saulius              03/2018
-//---------------------------------------------------------------------------------------
-void ClassificationSystemsDomain::InsertASHRAE2004 
-(
-ClassificationSystemCR system,
-ClassificationGroupCR group,
-Utf8CP name
-) const
-    {
-    ASHRAE2004ClassDefinitionPtr classDefinition = ASHRAE2004ClassDefinition::Create(system, group, name);
-    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinition.get(), BeSQLite::DbOpcode::Insert, "ASHRAE2004ClassDefinition : Insertion"))
-        {
-        classDefinition->Insert();
-        }
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Martynas.Saulius              03/2018
-//---------------------------------------------------------------------------------------
-void ClassificationSystemsDomain::InsertASHRAE2007 
-(
-ClassificationSystemCR system,
-ClassificationGroupCR group,
-Utf8CP name
-) const
-    {
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Martynas.Saulius              03/2018
-//---------------------------------------------------------------------------------------
-void ClassificationSystemsDomain::InsertASHRAE2010 
-(
-ClassificationSystemCR system,
-ClassificationGroupCR group,
-Utf8CP name
-) const
-    {
-    ASHRAE2010ClassDefinitionPtr classDefinition = ASHRAE2010ClassDefinition::Create(system, group, name);
-    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinition.get(), BeSQLite::DbOpcode::Insert, "ASHRAE2010ClassDefinition : Insertion"))
-        {
-        classDefinition->Insert();
-        }
-    }
-//---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              04/2018
 //---------------------------------------------------------------------------------------
-UniFormatClassDefinitionPtr ClassificationSystemsDomain::InsertUniFormat
+ClassificationPtr ClassificationSystemsDomain::InsertClassification
 (
 ClassificationSystemCR system, 
-Utf8CP code, 
 Utf8CP name, 
-UniFormatClassDefinitionCP specializes
-) const 
-    {
-        return nullptr;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Martynas.Saulius              04/2018
-//---------------------------------------------------------------------------------------
-MasterFormatClassDefinitionPtr ClassificationSystemsDomain::InsertMasterFormat
-(
-    ClassificationSystemCR system,
-    Utf8CP code,
-    Utf8CP name,
-    MasterFormatClassDefinitionCP specializes
+Utf8CP id, 
+Utf8CP description, 
+ClassificationGroupCP group, 
+ClassificationCP specializes
 ) const
     {
+    ClassificationPtr classification = Classification::Create(system, name, id, description, group, specializes);
+    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classification.get(), BeSQLite::DbOpcode::Insert, "Classification : Insertion"))
+        {
+        classification->Insert();
+        return classification;
+        }
     return nullptr;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Martynas.Saulius              04/2018
-//---------------------------------------------------------------------------------------
-OmniClassClassDefinitionPtr ClassificationSystemsDomain::InsertOmniClass
-(
-    ClassificationSystemCR system,
-    Utf8CP code,
-    Utf8CP name,
-    OmniClassClassDefinitionCP specializes
-) const
-    {
-    return nullptr;
-    }
+
+
+
+
 
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
