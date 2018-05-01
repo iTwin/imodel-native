@@ -387,9 +387,8 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     presFUSes.push_back("CM");
     EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(real)", presFUSes, schema));
     EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
-    EXPECT_EQ(2, presFormatStrings.size());
+    EXPECT_EQ(1, presFormatStrings.size());
     EXPECT_STRCASEEQ("f:DefaultRealU[u:CM]", presFormatStrings[0].c_str());
-    EXPECT_STRCASEEQ("f:DefaultReal[u:MM]", presFormatStrings[1].c_str());
     }
     {
     persUnitName.clear();
@@ -398,9 +397,8 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     presFUSes.push_back("CM(real4u)");
     EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(real)", presFUSes, schema));
     EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
-    EXPECT_EQ(2, presFormatStrings.size());
+    EXPECT_EQ(1, presFormatStrings.size());
     EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM]", presFormatStrings[0].c_str());
-    EXPECT_STRCASEEQ("f:DefaultReal[u:MM]", presFormatStrings[1].c_str());
     }
     {
     persUnitName.clear();
@@ -420,10 +418,9 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     presFUSes.push_back("CM(real4u)");
     EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(real)", presFUSes, schema));
     EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
-    EXPECT_EQ(3, presFormatStrings.size());
+    EXPECT_EQ(2, presFormatStrings.size());
     EXPECT_STRCASEEQ("f:DefaultReal[u:DM]", presFormatStrings[0].c_str());
     EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM]", presFormatStrings[1].c_str());
-    EXPECT_STRCASEEQ("f:DefaultReal[u:MM]", presFormatStrings[2].c_str());
     }
     {
     persUnitName.clear();
@@ -432,9 +429,8 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     presFUSes.push_back("DM(fi8)");
     EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnitName, presFormatStrings, "MM(fi8)", presFUSes, schema));
     EXPECT_STRCASEEQ("u:MM", persUnitName.c_str());
-    EXPECT_EQ(2, presFormatStrings.size());
+    EXPECT_EQ(1, presFormatStrings.size());
     EXPECT_STRCASEEQ("f:AmerFI", presFormatStrings[0].c_str());
-    EXPECT_STRCASEEQ("f:AmerFI", presFormatStrings[1].c_str());
     }
     }
 
@@ -1298,7 +1294,7 @@ Utf8CP KindOfQuantitySerializationTest::s_testSchemaXml = R"xml(<?xml version="1
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="Units" version="01.00" alias="u"/>
         <ECSchemaReference name="Formats" version="01.00" alias="f"/>
-        <KindOfQuantity typeName="TestKoQ" relativeError="10e-3" persistenceUnit="u:M" presentationUnits="f:DefaultRealU" />
+        <KindOfQuantity typeName="TestKoQ" relativeError="10e-3" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:CM]" />
     </ECSchema>)xml";
 
 //---------------------------------------------------------------------------------------
@@ -1324,7 +1320,7 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     auto persist = koq->GetPersistenceUnit();
     auto pres = koq->GetDefaultPresentationFormat();
     EXPECT_STRCASEEQ("M", persist->GetName().c_str());
-    EXPECT_STRCASEEQ("DefaultRealU", pres->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU[u:CM]", pres->GetName().c_str());
     }
 
     // EC3.1
@@ -1340,7 +1336,7 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     auto persist = koq->GetPersistenceUnit();
     auto pres = koq->GetDefaultPresentationFormat();
     EXPECT_STRCASEEQ("M", persist->GetName().c_str());
-    EXPECT_STRCASEEQ("DefaultRealU", pres->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU[u:CM]", pres->GetName().c_str());
     }
 
     // EC3.2
@@ -1357,7 +1353,7 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     auto pres = koq->GetDefaultPresentationFormat();
     EXPECT_STRCASEEQ("M", persist->GetName().c_str());
     ASSERT_NE(nullptr, persist);
-    EXPECT_STRCASEEQ("DefaultRealU", pres->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU[u:CM]", pres->GetName().c_str());
     }
 
     // Latest EC Version
@@ -1566,6 +1562,50 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTrip)
 //=======================================================================================
 //! KindOfQuantityUpgradeTest
 //=======================================================================================
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityUpgradeTest, ec31_noPersistenceFormatIfPresentationFUSesDefined)
+    {
+    SchemaItem schema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
+                        displayLabel="My KindOfQuantity" persistenceUnit="CM" relativeError=".5"
+                        presentationUnits="FT;IN" />
+        </ECSchema>)xml");
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schemaP;
+    DeserializeSchema(schemaP, *schemaContext, schema);
+    auto koq = schemaP->GetKindOfQuantityCP("MyKindOfQuantity");
+    ASSERT_NE(nullptr, koq);
+    EXPECT_EQ(2, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("DefaultRealU[u:FT]", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU[u:IN]", koq->GetPresentationFormats()[1].GetName().c_str());
+}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                   04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityUpgradeTest, ec31_persistenceFormatShouldBeDefaultIfNoPresentationFUSes)
+    {
+    SchemaItem schema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
+                        displayLabel="My KindOfQuantity" persistenceUnit="CM" relativeError=".5" />
+        </ECSchema>)xml");
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schemaP;
+    DeserializeSchema(schemaP, *schemaContext, schema);
+    auto koq = schemaP->GetKindOfQuantityCP("MyKindOfQuantity");
+    ASSERT_NE(nullptr, koq);
+    EXPECT_EQ(0, koq->GetPresentationFormats().size());
+    EXPECT_STRCASEEQ("DefaultRealU[u:CM]", koq->GetDefaultPresentationFormat()->GetName().c_str());
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018

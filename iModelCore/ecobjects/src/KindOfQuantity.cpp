@@ -425,6 +425,11 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
                 return SchemaReadStatus::InvalidECSchemaXml; // Logging in ParsePresentationUnit
             first = false;
             }
+        if (presentationFormats.size() > 0 && m_presentationFormats.size() > presentationFormats.size())
+            {
+            // There is a persitence format that is unecessary
+            m_presentationFormats.erase(m_presentationFormats.end() - 1); // Delete the persitence format. It will always be at the end
+            }
         }
     return SchemaReadStatus::Success;
     }
@@ -756,7 +761,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
         }
 
     // If we have a persistence FUS with a specified format. Put it at the end
-    if (!persistenceFormat.empty())
+    if (!persistenceFormat.empty() && formatStrings.size() == 0)
         {
         Utf8String unqualifiedPersFormat;
         if(ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPersFormat, persistenceFormat))
@@ -936,7 +941,11 @@ NamedFormatCP KindOfQuantity::GetOrCreateCachedPersistenceFormat() const
         if (Units::Unit::AreEqual(m_persFormatCache.Value().GetCompositeMajorUnit(), m_persistenceUnit))
             return &m_persFormatCache.Value();
         }
-    m_persFormatCache = NamedFormat(oldDefaultFormatName);
+    Utf8String name = oldDefaultFormatName;
+    name += "[";
+    name += m_persistenceUnit->GetQualifiedName(GetSchema());
+    name += "]";
+    m_persFormatCache = NamedFormat(name);
     m_persFormatCache.ValueR().SetNumericSpec(Formatting::NumericFormatSpec::DefaultFormat());
     auto comp = Formatting::CompositeValueSpec(*m_persistenceUnit);
     comp.SetMajorLabel(m_persistenceUnit->GetDisplayLabel().c_str());
