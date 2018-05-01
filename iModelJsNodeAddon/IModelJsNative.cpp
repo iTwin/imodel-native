@@ -778,6 +778,16 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)result);
         }
 
+    Napi::Value DumpChangeSet(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, changeSetToken, Env().Undefined());
+        Json::Value jsonChangeSetToken = Json::Value::From(changeSetToken);
+
+        RevisionStatus status = JsInterop::DumpChangeSet(*m_dgndb, jsonChangeSetToken);
+        return Napi::Number::New(Env(), (int)status);
+        }
+
     Napi::Value ApplyChangeSets(Napi::CallbackInfo const& info)
         {
         REQUIRE_ARGUMENT_STRING(0, changeSetTokens, Env().Undefined());
@@ -791,7 +801,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         if (containsSchemaChanges)
             CloseDgnDb();
 
-        RevisionStatus status = JsInterop::ApplyChangeSets(m_dgndb, jsonChangeSetTokens, (RevisionProcessOption)applyOption, dbGuid, dbFileName);
+        RevisionStatus status = JsInterop::ApplyChangeSets(*m_dgndb, jsonChangeSetTokens, (RevisionProcessOption)applyOption, dbGuid, dbFileName);
         if (RevisionStatus::Success == status && containsSchemaChanges)
             {
             DgnDbPtr db;
@@ -1609,6 +1619,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
             InstanceMethod("applyChangeSets", &NativeDgnDb::ApplyChangeSets),
+            InstanceMethod("dumpChangeSet", &NativeDgnDb::DumpChangeSet),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryNextAvailableFileProperty", &NativeDgnDb::QueryNextAvailableFileProperty),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
