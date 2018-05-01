@@ -1754,8 +1754,14 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {        
-    assert(!"Should not be called");
-    return false;    
+    SMSQLiteFilePtr sqliteFilePtr;
+
+    sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::Graph, true, true);
+    assert(sqliteFilePtr.IsValid() == true);
+
+    dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, sqliteFilePtr);
+
+    return true;
     }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
