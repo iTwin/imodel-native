@@ -267,12 +267,10 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance)
     {
     //This test will verify that the xml deserializer will not fail on mismatched or malformed properties.
-
-    
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
-    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath("MismatchedSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"MismatchedSchema.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SchemaReadStatus::Success, schemaStatus);
 
@@ -281,108 +279,106 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
     IECInstancePtr  testInstance;
     InstanceReadStatus instanceStatus;
 
-    instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath("MismatchedInstance.xml").c_str(), *instanceContext);
+    instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"MismatchedInstance.xml").c_str(), *instanceContext);
 
     EXPECT_EQ (InstanceReadStatus::Success, instanceStatus);
     //Testing a struct with type errors in its values
     ECValue ecValue;
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.BinaryArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays0.BinaryArray",0));
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.BooleanArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays0.BooleanArray",0));
     EXPECT_TRUE (ecValue.GetBoolean());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.DateTimeArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays0.DateTimeArray",0));
     EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.DoubleArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays0.DoubleArray",0));
     EXPECT_EQ (1.2, ecValue.GetDouble());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.IntArray",1));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays0.IntArray",1));
     EXPECT_EQ (7, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.LongArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays0.LongArray",0));
     EXPECT_EQ (300, ecValue.GetLong());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.Point2dArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays0.Point2dArray",0));
     EXPECT_EQ (0, ecValue.GetPoint2d().x);
     EXPECT_EQ (1, ecValue.GetPoint2d().y);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.Point3dArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays0.Point3dArray",0));
     EXPECT_EQ (0, ecValue.GetPoint3d().x);
     EXPECT_EQ (1, ecValue.GetPoint3d().y);
     EXPECT_EQ (0, ecValue.GetPoint3d().z);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.StringArray",0));
-    EXPECT_STREQ (ecValue.GetString(), "Test");
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays0.StringArray",0));
+    EXPECT_STREQ (ecValue.GetUtf8CP(), "Test");
 
     // Testing a struct that misformatted values
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.BinaryArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays1.BinaryArray",0));
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.BooleanArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays1.BooleanArray",0));
     EXPECT_TRUE (ecValue.GetBoolean());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.DateTimeArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays1.DateTimeArray",0));
     EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.DoubleArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays1.DoubleArray",0));
     EXPECT_EQ (1.2, ecValue.GetDouble());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.IntArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays1.IntArray",0));
     EXPECT_EQ (7, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.LongArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays1.LongArray",0));
     EXPECT_EQ (300, ecValue.GetLong());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point2dArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point2dArray",0));
     EXPECT_EQ (0, ecValue.GetPoint2d().x);
     EXPECT_EQ (1, ecValue.GetPoint2d().y);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point3dArray",0));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point3dArray",0));
     EXPECT_EQ (0, ecValue.GetPoint3d().x);
     EXPECT_EQ (1, ecValue.GetPoint3d().y);
     EXPECT_EQ (0, ecValue.GetPoint3d().z);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.StringArray",0));
-    EXPECT_STREQ (ecValue.GetString(), "");
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.StringArray",6));
-    EXPECT_STREQ (ecValue.GetString(), "Test");
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays1.StringArray",0));
+    EXPECT_STREQ (ecValue.GetUtf8CP(), "");
+    EC_EXPECT_SUCCESS(testInstance->GetValue (ecValue, "FormattedStructWithArrays1.StringArray",6));
+    EXPECT_STREQ(ecValue.GetUtf8CP(), "Test");
 
     //Testing a struct with few errors among entirely bad structs in the same array
     ECValue badStructArrayMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (badStructArrayMember, "ArrayOfBadStructs",2));
+    EC_EXPECT_SUCCESS(testInstance->GetValue (badStructArrayMember, "ArrayOfBadStructs",2));
     IECInstancePtr  structInstance = badStructArrayMember.GetStruct();
     EXPECT_TRUE (structInstance.IsValid());
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "BinaryMember"));
+    EC_EXPECT_SUCCESS(structInstance->GetValue (ecValue, "BinaryMember"));
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "BooleanMember"));
+    EC_EXPECT_SUCCESS(structInstance->GetValue (ecValue, "BooleanMember"));
     EXPECT_TRUE (ecValue.GetBoolean());
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "DateTimeMember"));
+    EC_EXPECT_SUCCESS(structInstance->GetValue (ecValue, "DateTimeMember"));
     EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "DoubleMember"));
+    EC_EXPECT_SUCCESS(structInstance->GetValue (ecValue, "DoubleMember"));
     EXPECT_EQ (1.2, ecValue.GetDouble());
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "IntMember"));
+    EC_EXPECT_SUCCESS(structInstance->GetValue (ecValue, "IntMember"));
     EXPECT_EQ (7, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "LongMember"));
+    EC_EXPECT_SUCCESS(structInstance->GetValue (ecValue, "LongMember"));
     EXPECT_EQ (300, ecValue.GetLong());
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "Point2dMember"));
+    EC_EXPECT_SUCCESS(structInstance->GetValue (ecValue, "Point2dMember"));
     EXPECT_EQ (0, ecValue.GetPoint2d().x);
     EXPECT_EQ (1, ecValue.GetPoint2d().y);
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "Point3dMember"));
+    EC_EXPECT_SUCCESS(structInstance->GetValue (ecValue, "Point3dMember"));
     EXPECT_EQ (0, ecValue.GetPoint3d().x);
     EXPECT_EQ (1, ecValue.GetPoint3d().y);
     EXPECT_EQ (0, ecValue.GetPoint3d().z);
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "StringMember"));
-    EXPECT_STREQ (ecValue.GetString(), "Test");
-
-    schemaOwner = NULL;
+    EC_EXPECT_SUCCESS(structInstance->GetValue (ecValue, "StringMember"));
+    EXPECT_STREQ (ecValue.GetUtf8CP(), "Test");
     };
 #endif
 
@@ -453,15 +449,14 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingInstanceWithEm
     EXPECT_STREQ (ecValue.GetUtf8CP(), "");
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.StringArray",6));
     EXPECT_STREQ (ecValue.GetUtf8CP(), "Test");
-    };
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Caleb.Shafer                   01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance)
     {
-    
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -477,15 +472,14 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
 
     Utf8String str = testInstance->ToString("").c_str();
     VerifyTestInstance (testInstance.get(), false);
-    };
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
     {
-    
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -498,7 +492,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingEmptyInstance)
     InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_EmptyInstance.xml").c_str(), *instanceContext);
 
     EXPECT_EQ (InstanceReadStatus::Success, instanceStatus);
-    };
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Caleb.Shafer                   01/2017  
@@ -635,9 +629,9 @@ TEST_F(InstanceSerializationTest, TestInstanceConversionOfPointxdWorksOnStructAn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
+void VerifyPolymorphismInstance (IECInstanceCP testInstance)
     {
-    ECValue     ecValue;
+    ECValue ecValue;
     EXPECT_EQ (ECObjectsStatus::Success, testInstance->GetValue (ecValue, "InRootClass"));
     EXPECT_EQ (-1, ecValue.GetInteger());
 
@@ -686,8 +680,7 @@ void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphismInstance)
     {
-    
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"Polymorphism.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -1165,6 +1158,163 @@ TEST_F(InstanceSerializationTest, TestSerializeNullValues)
     ASSERT_TRUE(readbackInstance.IsValid());
     InSchemaClassLocater classLocater(*schema);
     EXPECT_EQ(BSISUCCESS, JsonECInstanceConverter::JsonToECInstance(*readbackInstance, instanceJson["TestClass"], classLocater));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Specify the ECSchema that contains all the class/struct definitions
+* @bsimethod                                                    BillSteinbock   02/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECSchemaPtr CreateTestSchema ()
+    {
+    Utf8CP schemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                    "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                    "    <ECClass typeName=\"SampleDataClass\" isStruct=\"True\" isDomainClass=\"True\">"
+                    "        <ECProperty propertyName=\"Name\"           typeName=\"string\" />"
+                    "        <ECProperty propertyName=\"ID\"             typeName=\"int\" />"
+                    "        <ECProperty propertyName=\"StartPoint\"     typeName=\"point3d\" />"
+                    "        <ECProperty propertyName=\"EndPoint\"       typeName=\"point3d\" />"
+                    "        <ECProperty propertyName=\"XYSize\"         typeName=\"point2d\" />"
+                    "        <ECProperty propertyName=\"Length\"         typeName=\"double\"  />"
+                    "        <ECArrayProperty propertyName=\"Readings\"  typeName=\"long\" />"
+                    "        <ECProperty propertyName=\"Field_Tested\"   typeName=\"boolean\"  />"
+                    "    </ECClass>"
+                    "</ECSchema>";
+
+    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema; 
+    SchemaReadStatus status = ECSchema::ReadFromXmlString (schema, schemaXML, *schemaContext);
+    EXPECT_EQ (SchemaReadStatus::Success, status);  
+    
+    return schema;
+    }
+
+//=========================================================
+// Native structure
+//=========================================================
+struct  SampleData
+    {
+    // struct data
+    Utf8String                  m_name;
+    int                      m_id;
+    DPoint3d                 m_startPoint;
+    DPoint3d                 m_endPoint;
+    DPoint2d                 m_xySize;
+    double                   m_length;
+    uint32_t                 m_numReadings;
+    int64_t*                   m_readings;
+    bool                     m_tested;
+
+    SampleData (int id, uint32_t numReadings)
+        {
+        m_name.Sprintf ("Sample_%d", id);
+        m_id = id;
+        m_numReadings = numReadings;
+
+        if (numReadings > 0)
+            {
+            m_readings = (int64_t*) calloc (m_numReadings, sizeof(int64_t));
+            for (uint32_t i=0; i<m_numReadings; i++)
+                m_readings[i] = (int64_t)i*100;     
+            }
+        else
+            {
+            m_readings = NULL;
+            }
+
+        m_length = id * 3.75;
+
+        m_startPoint.x = id * 1.0;
+        m_startPoint.y = id * 1.0;
+        m_startPoint.z = id * 1.0;
+
+        m_endPoint.x = id * 1.0 + 100.0;
+        m_endPoint.y = id * 1.0 + 100.0;
+        m_endPoint.z = id * 1.0 + 100.0;
+
+        m_xySize.x = id * 0.5;
+        m_xySize.y = id * 1.0 + 0.5;
+
+        m_tested = (0 == id%2);   
+        }
+
+    ~SampleData ()
+        {
+        if (m_readings)
+            free (m_readings);
+        }
+    };
+
+//=========================================================
+// SampleDataInstanceManager - holds schema and enabler that will be
+// needed to create standalone instances. 
+//=========================================================
+struct  SampleDataInstanceManager
+    {
+    // Instance support
+    StandaloneECEnablerPtr   m_enabler;
+    ECSchemaPtr              m_schema;
+
+    SampleDataInstanceManager ()
+        {
+        // create the test schema (the created schema is added to the schema cache m_schemaOwner
+        m_schema = CreateTestSchema();
+
+        // get the class that represents the native SampleData stuct and get the enabler that will be used to create instances
+        ECClassP ecClass = m_schema->GetClassP ("SampleDataClass");
+        if (ecClass != NULL)
+            m_enabler = ecClass->GetDefaultStandaloneEnabler();
+        else
+            m_enabler = NULL;
+        }
+
+    // Method to populate a standalone instance from a struct
+    StandaloneECInstancePtr CreateInstance(SampleData& data)
+        {
+        if (!m_enabler.IsValid())
+            return NULL;
+
+        // create an empty instance
+        ECN::StandaloneECInstancePtr instance = m_enabler->CreateInstance();
+
+        // populate the instance
+        instance->SetValue("Name",         ECValue (data.m_name.c_str()));
+        instance->SetValue("ID",           ECValue (data.m_id));
+        instance->SetValue("StartPoint",   ECValue (data.m_startPoint));
+        instance->SetValue("EndPoint",     ECValue (data.m_endPoint));
+        instance->SetValue("XYSize",       ECValue (data.m_xySize));
+        instance->SetValue("Length",       ECValue (data.m_length));
+        instance->SetValue("Field_Tested", ECValue (data.m_tested));
+
+        if (data.m_numReadings > 0)
+            {
+            // add room for the array members and then set the values for each
+            instance->AddArrayElements("Readings", data.m_numReadings);
+            for (uint32_t i=0; i<data.m_numReadings; i++)
+                instance->SetValue("Readings", ECValue (data.m_readings[i]), i);
+            }
+
+        return instance;
+        }
+    };
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    BillSteinbock   02/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceSerializationTest, BuildInstanceAndSerializeToXML)
+    {
+    SampleDataInstanceManager instanceManager;
+    Utf8String ecInstanceXml;
+
+    for (int i = 0; i<5; i++)
+        {
+        SampleData sampleData(i, (uint32_t)(i % 2) * 3);
+        ECN::StandaloneECInstancePtr testInstance = instanceManager.CreateInstance(sampleData);
+        ASSERT_TRUE(testInstance.IsValid());
+
+        InstanceWriteStatus status2 = testInstance->WriteToXmlString(ecInstanceXml, true, false);
+        EXPECT_EQ(InstanceWriteStatus::Success, status2);
+        }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

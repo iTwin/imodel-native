@@ -98,11 +98,9 @@ ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR alias, Utf8Strin
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECEnumeration::SetType(PrimitiveType value)
     {
-    if (!GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
-        { 
-        if (value != PRIMITIVETYPE_Integer && value != PRIMITIVETYPE_String)
-            return ECObjectsStatus::DataTypeNotSupported;
-        }
+    if (value != PRIMITIVETYPE_Integer && value != PRIMITIVETYPE_String
+        && !GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest)) // If is it greater than we know about allow the parsed primitive type to be set.
+        return ECObjectsStatus::DataTypeNotSupported;
 
     m_primitiveType = value;
     return ECObjectsStatus::Success;
@@ -116,7 +114,13 @@ ECObjectsStatus ECEnumeration::SetTypeName(Utf8CP typeName)
     PrimitiveType primitiveType;
     ECObjectsStatus status = SchemaParseUtils::ParsePrimitiveType(primitiveType, typeName);
     if (ECObjectsStatus::Success != status)
-        return status;
+        {
+        if (!GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            return status;
+
+        LOG.warningv("ECEnumeration '%s' has an unknown backing type '%s'. Setting to string", GetFullName().c_str(), typeName);
+        primitiveType = PRIMITIVETYPE_String;
+        }
 
     return SetType(primitiveType);
     }

@@ -36,9 +36,6 @@
     <ClCompile Include="Published\CustomAttributeTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\BuildInstanceAndSerializeToXML.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECRelationshipTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -154,6 +151,9 @@
       <Filter>Source Files\Units</Filter>
     </ClCompile>
     <ClCompile Include="Published\SchemaComparerTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaCompatiblityTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Published\SchemaDeserializationTests.cpp">
