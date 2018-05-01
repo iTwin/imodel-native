@@ -18,7 +18,6 @@ baseDir         = $(_MakeFilePath)
 #this means we can use CGAL with the modules that were licensed to us
 %include $(BuildContext)SubParts/Files/LicensedComponents.mki
 
-DgnPlatformV8LibDir = ${BuildContext}/SubParts/DgnV8Libs/
 
 dirToSearch=$(BuildContext)VendorAPI/Boost
 %include cincapnd.mki
@@ -34,8 +33,6 @@ always:
 #----------------------------------------------------------------------
 always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
-
-always:
    @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
    @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
    @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"

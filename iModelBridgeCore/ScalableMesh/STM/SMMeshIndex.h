@@ -98,7 +98,7 @@ inline bool IsClosedFeature(ISMStore::FeatureType type)
     DTMFeatureType dtmType = (DTMFeatureType)type;
     return dtmType == DTMFeatureType::Hole || dtmType == DTMFeatureType::Island || dtmType == DTMFeatureType::Void || dtmType == DTMFeatureType::BreakVoid ||
         dtmType == DTMFeatureType::Polygon || dtmType == DTMFeatureType::Region || dtmType == DTMFeatureType::Contour || dtmType == DTMFeatureType::Hull ||
-        dtmType == DTMFeatureType::DrapeVoid;
+        dtmType == DTMFeatureType::TinHull || dtmType == DTMFeatureType::DrapeVoid;
     }
 
 inline bool IsClosedPolygon(const bvector<DPoint3d>& vec)
@@ -1033,7 +1033,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         SharedTextureManager m_texMgr;
 
+        
         std::vector<std::future<bool>> m_textureWorkerTasks;
+        WorkerThreadPoolPtr            m_texturingThreadPoolPtr;
+
         bvector < RefCountedPtr<EditOperation> > m_edits;
 #if 0
         SMMeshIndex<POINT, EXTENT>* m_smTerrain;
