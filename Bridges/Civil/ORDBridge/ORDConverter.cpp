@@ -1200,14 +1200,14 @@ void ORDConverter::AssociateGeneratedAlignments()
 
         if (corridorCPtr.IsValid() && bimAlignmentCPtr.IsValid())
             {
-            auto roadwayId = corridorCPtr->QueryOrderedPathwayIds()[0];
-            if (!roadwayId.IsValid())
+            auto pathwayId = corridorCPtr->QueryOrderedPathwayIds()[0];
+            if (!pathwayId.IsValid())
                 continue;
 
-            auto roadwayCPtr = RoadRailBim::Roadway::Get(GetDgnDb(), roadwayId);
-            if (roadwayCPtr.IsValid())
+            auto pathwayCPtr = RoadRailBim::PathwayElement::Get(GetDgnDb(), pathwayId);
+            if (pathwayCPtr.IsValid())
                 {
-                RoadRailBim::ILinearElementUtilities::SetRelatedCorridorPortion(*bimAlignmentCPtr, *roadwayCPtr, *pointDefCPtr);
+                RoadRailBim::ILinearElementUtilities::SetRelatedCorridorPortion(*bimAlignmentCPtr, *pathwayCPtr, *pointDefCPtr);
                 // TODO: enable after EAP
                 /*if (Utf8String::IsNullOrEmpty(bimAlignmentCPtr->GetUserLabel()))
                     setGeneratedAlignmentLabel(bimAlignmentCPtr->GetElementId(), *roadwayCPtr, *pointDefCPtr);*/
