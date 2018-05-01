@@ -332,6 +332,15 @@ public:
 
     //! Puts the given graphic into a batch.
     DGNPLATFORM_EXPORT Render::GraphicPtr CreateTileGraphic(Render::GraphicR graphic, DgnModelId modelId) const;
+
+    struct Counts
+    {
+        size_t      m_total = 0;
+        size_t      m_displayable = 0;
+        uint32_t    m_maxDepth = 0;
+    };
+
+    void Count(Counts& counts) const;
 };
 
 /*=================================================================================**//**
