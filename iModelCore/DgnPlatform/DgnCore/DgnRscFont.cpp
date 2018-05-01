@@ -51,6 +51,7 @@ public:
     DRange2d _GetRange() const override { return m_range; }
     DRange2d _GetExactRange() const override { return m_exactRange; }
     BentleyStatus _FillGpa(GPArrayR) const override;
+    CurveVectorPtr _GetCurveVector (bool &isFilled) const override;
     bool _IsBlank() const override { return m_isBlank; }
     static DgnRscGlyph* CreateUnitSpaceGlyph();
     void SetWidthDirect(double width, double exactWidth) { m_range.high.x = width; m_exactRange.high.x = exactWidth; }
@@ -182,6 +183,98 @@ static bool fixDirection(DPoint2dP pts, size_t nPts, RscGlyphElementType ptType)
         }
 
     return false;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz     05/2018
+//---------------------------------------------------------------------------------------
+static void CaptureAndReset (bvector<CurveVectorPtr> &completedPaths, CurveVectorPtr &currentPath)
+    {
+    if (currentPath.IsValid () && currentPath->size () > 0)
+        completedPaths.push_back (currentPath);
+    currentPath = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Earlin.Lutz     05/2018
+//---------------------------------------------------------------------------------------
+CurveVectorPtr DgnRscGlyph::_GetCurveVector (bool &isFilled) const
+    {
+    static bool s_nocv = false;
+    if (s_nocv)
+        return nullptr;
+    bvector<CurveVectorPtr> completedPaths;
+    CurveVectorPtr currentPath = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    isFilled = false;
+
+    // Can be null when no default glyph exists and layout needs a blank unit cube glyph.
+    if ((nullptr == m_data) || (0 == m_glyphDataOffset.size))
+        return currentPath;     // EDL -- really?  How is this going to flow through?
+
+    bvector<Byte> glyphDataBuffer;
+    glyphDataBuffer.reserve (m_glyphDataOffset.size);
+    if (SUCCESS != m_data->_ReadGlyphData (glyphDataBuffer, (size_t)m_glyphDataOffset.offset, (size_t)m_glyphDataOffset.size))
+        return nullptr;
+
+    RscGlyphData const* glyphData = (RscGlyphData const*)&glyphDataBuffer[0];
+    if (0 == glyphData->numElems)
+        return nullptr;
+
+    bool hasLines = false;
+    bool hasPolys = false;
+
+    bvector<DPoint2d> tPts;
+    for (RscGlyphElementIterator curr ((RscGlyphElement const*)(glyphData + 1), (size_t)glyphData->numElems); curr.IsValid (); curr = curr.ToNext ())
+        {
+        size_t nPts = (size_t)curr->numVerts;
+        RscFontPoint2d const* glyphPoint = curr->vertice;
+        RscFontPoint2d const* glyphEnd = (glyphPoint + nPts);
+
+        tPts.clear ();
+        for (; glyphPoint < glyphEnd; ++glyphPoint)
+            tPts.push_back (DPoint2d::From (glyphPoint->x * m_ascenderScaleFactor, glyphPoint->y * m_ascenderScaleFactor));
+
+        if (fixDirection (&tPts[0], nPts, (RscGlyphElementType)curr->type))
+            continue;
+        currentPath->Add (ICurvePrimitive::CreateLineString (tPts, 0.0));
+
+        switch (curr->type)
+            {
+            case RSCGLYPHELEMENT_Line:
+                hasLines = true;
+                break;
+
+            case RSCGLYPHELEMENT_Poly:
+            case RSCGLYPHELEMENT_PolyHoles:
+                hasPolys = true;
+                CaptureAndReset (completedPaths, currentPath);
+                break;
+
+            case RSCGLYPHELEMENT_PolyHole:
+            case RSCGLYPHELEMENT_PolyHoleFinal:
+                CaptureAndReset (completedPaths, currentPath);
+                break;
+            }
+        }
+
+    CaptureAndReset (completedPaths, currentPath);
+
+    if (completedPaths.size () == 0)
+        return nullptr;
+
+    // Is it possible to have a mix of poly and path?
+    if (hasPolys)
+        {
+        for (auto & loop : completedPaths)
+            loop->SetBoundaryType (CurveVector::BOUNDARY_TYPE_Outer);
+        }
+
+    if (completedPaths.size () == 1)
+        return completedPaths[0];
+
+    auto result = CurveVector::Create (hasPolys ? CurveVector::BOUNDARY_TYPE_ParityRegion : CurveVector::BOUNDARY_TYPE_None);
+    for (auto &child : completedPaths)
+        result->Add (child);
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
