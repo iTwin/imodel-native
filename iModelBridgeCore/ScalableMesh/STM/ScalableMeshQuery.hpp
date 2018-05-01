@@ -1255,21 +1255,37 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(m_meshNode->GetPtsIndicePtr());
 
         ScalableMeshMeshWithGraphPtr meshPtr;
+        ScalableMeshMeshPtr myMeshPtr;
+        if (m_meshNode->IsFromCesium())
+        {
+            myMeshPtr = ScalableMeshMesh::Create();
+            myMeshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
+            myMeshPtr->RemoveDuplicates();
+        }
         if (graphPtr->GetSize() > 1)
            meshPtr = ScalableMeshMeshWithGraph::Create(graphPtr->EditData(), ArePoints3d());
         else
             {
             MTGGraph * graph = new MTGGraph();
             bvector<int> componentPointsId;
-            CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
+
+
+            if (m_meshNode->IsFromCesium())
+            {
+                CreateGraphFromIndexBuffer(graph, (const long*)myMeshPtr->GetFaceIndexes(), (int)myMeshPtr->GetNbFaceIndexes(), (int)myMeshPtr->GetNbPoints(), componentPointsId, myMeshPtr->GetPoints());
+            }
+            else
+                CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
 
             meshPtr = ScalableMeshMeshWithGraph::Create(graph, ArePoints3d());
             }
 
 
         
-        int status = meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
-        assert(status == SUCCESS);
+        int status = m_meshNode->IsFromCesium() ?
+            meshPtr->AppendMesh(myMeshPtr->GetNbPoints(), myMeshPtr->EditPoints(), myMeshPtr->GetNbFaceIndexes(), myMeshPtr->GetFaceIndexes(), 0, 0, 0, 0, 0, 0) :
+            meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);;
+        assert(status == SUCCESS); 
         meshP = meshPtr.get();
         }
     else
@@ -1438,22 +1454,38 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(m_meshNode->GetPtsIndicePtr());
 
         ScalableMeshMeshWithGraphPtr meshPtr;
+        ScalableMeshMeshPtr myMeshPtr;
+        if (m_meshNode->IsFromCesium())
+        {
+            myMeshPtr = ScalableMeshMesh::Create();
+            myMeshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
+            myMeshPtr->RemoveDuplicates();
+        }
         if (graphPtr->GetSize() > 1)
             meshPtr = ScalableMeshMeshWithGraph::Create(graphPtr->EditData(), ArePoints3d());
         else
             {
             MTGGraph * graph = new MTGGraph();
             bvector<int> componentPointsId;
-            CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
+            if (m_meshNode->IsFromCesium())
+            {
+                CreateGraphFromIndexBuffer(graph, (const long*)myMeshPtr->GetFaceIndexes(), (int)myMeshPtr->GetNbFaceIndexes(), (int)myMeshPtr->GetNbPoints(), componentPointsId, myMeshPtr->GetPoints());
+            }
+            else
+                CreateGraphFromIndexBuffer(graph, (const long*)&(*ptIndices)[0], (int)ptIndices->size(), (int)pointsPtr->size(), componentPointsId, (&pointsPtr->operator[](0)));
 
             meshPtr = ScalableMeshMeshWithGraph::Create(graph, ArePoints3d());
             }
 
 
 
-        int status = meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
+        int status = m_meshNode->IsFromCesium() ? 
+            meshPtr->AppendMesh(myMeshPtr->GetNbPoints(), myMeshPtr->EditPoints(), myMeshPtr->GetNbFaceIndexes(), myMeshPtr->GetFaceIndexes(), 0, 0, 0, 0, 0, 0) :
+            meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);;
         assert(status == SUCCESS);
         meshP = meshPtr.get();
+        myMeshPtr = nullptr;
+
         }
     else
         {
