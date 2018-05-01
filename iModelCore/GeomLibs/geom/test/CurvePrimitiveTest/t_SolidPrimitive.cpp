@@ -2739,22 +2739,16 @@ void testSilhouette (IGeometryPtr &g, DPoint4dCR eyePoint)
 
         }
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                     Earlin.Lutz  11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(SolidPrimitive,Silhouette)
+void testSilhouettes (bvector<IGeometryPtr> &geometry)
     {
     Check::QuietFailureScope scoper;
-    DPoint4d eyePointA = DPoint4d::From (0,-1,2, 1);
-    DPoint4d eyePointB = DPoint4d::From (0,-3,2, 1);
+    DPoint4d eyePointA = DPoint4d::From (0,-5,10, 1);
+    DPoint4d eyePointB = DPoint4d::From (0,-15,10, 1);
     DPoint4d eyePointC = DPoint4d::From (0,0,20, 1);
     DPoint4d eyePointD = DPoint4d::From (20,0,0, 1);
+    // APRIL 30 2018 -- after removing RotConic, the new special case logic
+    // misses the perspective-from-z-axis !! (double roots not counted correctly)
 
-
-    bvector<IGeometryPtr> geometry;
-//    SampleGeometryCreator::AddSimplestSolidPrimitives (geometry, true);
-//    SampleGeometryCreator::AddAllSolidTypes (geometry);
-    SampleGeometryCreator::AddTorusPipes (geometry, 1, 0.1, true);
     for (size_t i = 0; i < geometry.size (); i++)
         {
         SaveAndRestoreCheckTransform shifter (30,0,0);
@@ -2766,6 +2760,40 @@ TEST(SolidPrimitive,Silhouette)
         Check::Shift (0,40,0);
         testSilhouette (geometry[i], eyePointD);
         }
+
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(SolidPrimitive,SilhouetteTorusPipe)
+    {
+    bvector<IGeometryPtr> geometry;
+    SampleGeometryCreator::AddTorusPipes (geometry, 1, 0.1, true);
+    testSilhouettes (geometry);
+    Check::ClearGeometry ("SolidPrimitive.SilhouetteTorusPipe");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(SolidPrimitive,SilhouetteCone)
+    {
+    bvector<IGeometryPtr> geometry;
+    SampleGeometryCreator::AddCones (geometry, 1, 1, true);
+    SampleGeometryCreator::AddCones (geometry, 1, 0.1, true);
+    testSilhouettes (geometry);
+    Check::ClearGeometry ("SolidPrimitive.SilhouetteCone");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(SolidPrimitive,Silhouette)
+    {
+    bvector<IGeometryPtr> geometry;
+    SampleGeometryCreator::AddSimplestSolidPrimitives (geometry, true);
+    SampleGeometryCreator::AddAllSolidTypes (geometry);
+    testSilhouettes (geometry);
     Check::ClearGeometry ("SolidPrimitive.Silhouette");
     }
 
