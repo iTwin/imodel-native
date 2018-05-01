@@ -198,4 +198,13 @@
         </ECCustomAttributes>
         <ECProperty propertyName="AssociatedFacet" typeName="AssociatedFacetEnum" />
     </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsAssociatedFacetAspect" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="owns">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by">
+            <Class class="AssociatedFacetAspect"/>
+        </Target>
+    </ECRelationshipClass>
 </ECSchema>
