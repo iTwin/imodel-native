@@ -9658,15 +9658,19 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
         else
             {
             ASSERT_TRUE(format->HasNumeric()) << schema.GetFullSchemaName() << ":" << name;
-            ASSERT_EQ(numericSpec, JsonValue(format->GetNumericSpec()->ToJson(false))) << schema.GetFullSchemaName() << ":" << name;
+            Json::Value jval;
+            format->GetNumericSpec()->ToJson(jval, false);
+            ASSERT_EQ(numericSpec, JsonValue(jval)) << schema.GetFullSchemaName() << ":" << name;
             }
 
         if (compSpec.m_value.isNull())
             ASSERT_FALSE(format->HasComposite()) << schema.GetFullSchemaName() << ":" << name;
         else
             {
+            Json::Value jval;
+            format->GetCompositeSpec()->ToJson(jval);
             ASSERT_TRUE(format->HasComposite()) << schema.GetFullSchemaName() << ":" << name;
-            ASSERT_EQ(compSpec, JsonValue(format->GetCompositeSpec()->ToJson())) << schema.GetFullSchemaName() << ":" << name;
+            ASSERT_EQ(compSpec, JsonValue(jval)) << schema.GetFullSchemaName() << ":" << name;
             }
         };
 

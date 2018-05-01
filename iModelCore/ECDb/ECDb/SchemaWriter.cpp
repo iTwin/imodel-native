@@ -689,7 +689,8 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
 
     if (format.HasNumeric())
         {
-        Json::Value json = format.GetNumericSpec()->ToJson(false);
+        Json::Value json;
+        format.GetNumericSpec()->ToJson(json, false);
         if (BE_SQLITE_OK != stmt->BindText(numericSpecParamIx, json.ToString(), Statement::MakeCopy::Yes))
             return ERROR;
         }
@@ -699,7 +700,8 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
         Formatting::CompositeValueSpecCR spec = *format.GetCompositeSpec();
 
         //Composite Spec Units are persisted in its own table to leverage FKs to the Units table
-        Json::Value json = spec.ToJson(false, true);
+        Json::Value json;
+        spec.ToJson(json, false, true);
         BeAssert(!json.isMember(Formatting::json_units()));
 
         if (!json.isNull())

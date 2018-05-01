@@ -1083,7 +1083,11 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
             if (!expected.HasNumeric())
                 ASSERT_TRUE(val.IsNull()) << "FormatDef.NumericSpec of " << expected.GetFullName();
             else
-                ASSERT_STREQ(expected.GetNumericSpec()->ToJson(false).ToString().c_str(), val.GetText()) << "FormatDef.NumericSpec of " << expected.GetFullName();
+                {
+                Json::Value jval;
+                expected.GetNumericSpec()->ToJson(jval, false);
+                ASSERT_STREQ(jval.ToString().c_str(), val.GetText()) << "FormatDef.NumericSpec of " << expected.GetFullName();
+                }
 
             continue;
             }
@@ -1093,7 +1097,11 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
             if (!expected.HasComposite())
                 ASSERT_TRUE(val.IsNull()) << "FormatDef.CompositeSpec of " << expected.GetFullName();
             else
-                ASSERT_STREQ(expected.GetCompositeSpec()->ToJson(true).ToString().c_str(), val.GetText()) << "FormatDef.CompositeSpec of " << expected.GetFullName();
+                {
+                Json::Value jval;
+                expected.GetCompositeSpec()->ToJson(jval, false, true);
+                ASSERT_STREQ(jval.ToString().c_str(), val.GetText()) << "FormatDef.CompositeSpec of " << expected.GetFullName();
+                }
 
             continue;
             }
