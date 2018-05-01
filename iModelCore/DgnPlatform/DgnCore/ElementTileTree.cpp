@@ -680,8 +680,8 @@ private:
     uint32_t        m_maxElements;
     LoadContextCR   m_loadContext;
     DgnElementIdSet const*  m_skipElems;
+    size_t          m_numSkipped = 0;
     bool            m_aborted = false;
-    bool            m_anySkipped = false;
     bool            m_is2d;
 
     bool CheckStop() { return m_aborted || (m_aborted = m_loadContext.WasAborted()); }
@@ -694,7 +694,7 @@ private:
         if (m_entries.size() > m_maxElements)
             {
             m_entries.erase(--m_entries.end()); // remove the smallest element.
-            m_anySkipped = true;
+            ++m_numSkipped;
             }
         }
 
@@ -726,7 +726,7 @@ private:
         if (0.0 == sizeSq || sizeSq >= m_minRangeDiagonalSquared)
             Insert(sizeSq, entry.m_id);
         else
-            m_anySkipped = true;
+            ++m_numSkipped;
         
         return Stop::No;
         }
@@ -738,7 +738,8 @@ public:
         rangeIndex.Traverse(*this);
         }
 
-    bool AnySkipped() const { return m_anySkipped; }
+    bool AnySkipped() const { return 0 < m_numSkipped; }
+    size_t GetNumSkipped() const { return m_numSkipped; }
     Entries const& GetEntries() const { return m_entries; }
     uint32_t GetMaxElements() const { return m_maxElements; }
 };
@@ -2603,18 +2604,24 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
 
     // Determine whether or not to subdivide this tile
     bool canSkipSubdivision = tile.GetTolerance() <= s_maxLeafTolerance;
-    if (canSkipSubdivision && !isPartialTile && m_geometries.IsComplete() && !loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor() && !m_elementCollector.AnySkipped() && m_elementCollector.GetEntries().size() <= s_minElementsPerTile)
+    if (canSkipSubdivision && !isPartialTile && !loadContext.WasAborted() && !tile.IsLeaf() && !tile.HasZoomFactor())
         {
-        // If no elements were skipped and only a small number of elements exist within this tile's range:
-        //  - Make it a leaf tile, if it contains no curved geometry; otherwise
-        //  - Mark it so that it will have only a single child tile, containing the same geometry faceted at a higher resolution
-        // Note: element count is obviously a coarse heuristic as we have no idea the complexity of each element's geometry
-        // Also note that if we're a child of a tile with zoom factor, we already have our own (higher) zoom factor
-        if (!m_geometries.ContainsCurves())
-            tile.SetIsLeaf();
-        else
+        if (m_geometries.IsComplete() && !m_elementCollector.AnySkipped() && m_elementCollector.GetEntries().size() <= s_minElementsPerTile)
+            {
+            // We didn't skip any elements and only a small number of elements exist within this tile's range.
+            if (!m_geometries.ContainsCurves())
+                tile.SetIsLeaf();
+            else
+                tile.SetZoomFactor(1.0);
+            }
+        else if (m_elementCollector.GetEntries().size() + m_elementCollector.GetNumSkipped() < s_minElementsPerTile)
+            {
+            // We skipped some elements within this tile's range, but did not exceed the min elements per tile limitation. Don't subdivide.
+            // (TFS#884193 - vast tile ranges containing a handful of teeny-tiny elements)
             tile.SetZoomFactor(1.0);
+            }
         }
+
 
     // Facet all geometry thus far collected to produce meshes.
     Render::Primitives::GeometryCollection collection;
