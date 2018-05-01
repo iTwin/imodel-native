@@ -750,6 +750,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         Json::Value opts = Json::Value::From(optsJsonStr);
         Json::Value elementJson;  // ouput
         auto status = JsInterop::GetElement(elementJson, GetDgnDb(), opts);
+        
         Napi::Value jsValue = NapiUtils::Convert(Env(), elementJson);
         return CreateBentleyReturnObject(status, jsValue);
         }

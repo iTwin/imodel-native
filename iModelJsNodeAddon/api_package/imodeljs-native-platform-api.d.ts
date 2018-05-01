@@ -452,6 +452,7 @@ declare class NativeDgnDb {
      * @param props the stringified version of the FilePropertyProps
      * @param value the value to save. If undefined, the file property is deleted.
      * @returns 0 if property was saved (or deleted), error status otherwise
+     * @note 
      */
     saveFileProperty(props: string, value: string | ArrayBuffer | undefined): number;
 

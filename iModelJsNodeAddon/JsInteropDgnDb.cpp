@@ -17,13 +17,11 @@ using namespace IModelJsNative;
 BE_JSON_NAME(baseClasses)
 BE_JSON_NAME(code)
 BE_JSON_NAME(customAttributes)
-//BE_JSON_NAME(description)
 BE_JSON_NAME(direction)
 BE_JSON_NAME(displayLabel)
 BE_JSON_NAME(ecclass)
 BE_JSON_NAME(extendedType)
 BE_JSON_NAME(federationGuid)
-// BE_JSON_NAME(id)
 BE_JSON_NAME(isCustomHandled)
 BE_JSON_NAME(isCustomHandledOrphan);
 BE_JSON_NAME(kindOfQuantity)
