@@ -6,7 +6,7 @@
 //:>       $Date: 2011/04/27 17:17:56 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -106,7 +106,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 #endif
         
         vector<DPoint3d> points;
-
+		vector<DPoint3d> points2d;
 
         
         for (size_t i = 0; i < pointsPtr->size(); ++i)
@@ -116,10 +116,18 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 points.push_back((*pointsPtr)[i]);
                 if (fabs(points.back().x) < 1e-8) points.back().x =0;
                 if (fabs(points.back().y) < 1e-8) points.back().y = 0;
+				points2d.push_back(points.back());
+				points2d.back().z = 0;
                 }
             }
 
+		//bclib doesn't like colinear points, even when they're not exactly colinear, but just fall on the same 2d line.
+		bool isColinear = (bsiGeom_isDPoint3dArrayColinear(&points2d.front(), (int)points2d.size(), 1e-5)); //We use the same tolerance as bclib here, even though normally we use 1e-8 otherwise
 
+		if (isColinear) //We can't triangulate tiles where all points are colinear. we'll attempt to stitch them w/o meshing first
+		{
+			return true;
+		}
 		bool skipHull = false;
         BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = node->GetLinearFeaturesPtr();
@@ -1403,16 +1411,22 @@ template<class POINT, class EXTENT> void ScalableMesh2DDelaunayMesher<POINT, EXT
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {    
 #if SM_TRACE_MESH_STATS
-    LOG_SET_PATH("E:\\output\\scmesh\\2016-07-15\\")
-    LOG_SET_PATH_W("E:\\output\\scmesh\\2016-07-15\\")
-    //LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
-    //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
+	LOG_SET_PATH("E:\\output\\scmesh\\2016-07-15\\")
+		LOG_SET_PATH_W("E:\\output\\scmesh\\2016-07-15\\")
+		//LOGSTRING_NODE_INFO(node, LOG_PATH_STR)
+		//LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
 #endif
 
 	//	LOG_SET_PATH("c:\\work\\tmp\\")
- 	//LOG_SET_PATH_W("c:\\work\\tmp\\")
+	//LOG_SET_PATH_W("c:\\work\\tmp\\")
 
-    if (node->m_nodeHeader.m_nbFaceIndexes == 0) return true;
+		bool shouldExtractBoundary = true;
+		if (node->m_nodeHeader.m_nbFaceIndexes == 0 && node->m_nodeHeader.m_nodeCount <= 4) return true;
+		else if (node->m_nodeHeader.m_nbFaceIndexes == 0) //this is an unmeshed node. Try to save it...
+		{
+			shouldExtractBoundary = false;
+		}
+
     //bool hasPtsToTrack = false;
    /* DPoint3d pts[3] = { DPoint3d::From(431508.19, 4500522, 0),
         DPoint3d::From(434180.54, 4506349.5, 0) ,
@@ -1425,6 +1439,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
   //  if (NULL == meshGraphP) return true;
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
     MTGGraph meshGraph;
+	if(shouldExtractBoundary)
         {
         if (s_useThreadsInStitching) node->LockGraph();
         meshGraph = *(graphPtr->GetData());
@@ -1479,6 +1494,10 @@ bvector<bvector<DPoint3d>> boundary;
 bvector<bvector<DPoint3d>> stitchedNeighborsBoundary;
 std::vector<EXTENT> stitchedNeighborsExtents;
 
+
+if (!shouldExtractBoundary)
+stitchedPoints.insert(stitchedPoints.end(), nodePoints.begin(), nodePoints.end());
+
 addedMask = meshGraph.GrabMask();
 //std::string s;
 for (size_t& neighborInd : neighborIndices)
@@ -1510,6 +1529,7 @@ for (size_t& neighborInd : neighborIndices)
                 s += "NEIGHBOR NODE SIZE "+std::to_string(node->m_apNeighborNodes[neighborInd][neighborSubInd]->size())+" THIS NODE'S SIZE "+std::to_string(node->size())+
                    ( node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] ? " NODE STITCHED \n" : " NOT STITCHED \n");*/
                 
+				if(shouldExtractBoundary)
                     SelectPointsToStitch(stitchedPoints, node, &meshGraph, node->m_apNeighborNodes[neighborInd][neighborSubInd]->GetContentExtent(), nullptr);
                                       
                    // s += " CURRENT N OF POINTS TO STITCH " + std::to_string(stitchedPoints.size()) + "\n";
@@ -1564,6 +1584,7 @@ for (size_t& neighborInd : neighborIndices)
         }
     node->m_nodeHeader.m_apAreNeighborNodesStitched[neighborInd] = true;
     }
+    if(shouldExtractBoundary)
     GetGraphExteriorBoundary(&meshGraph, boundary, &nodePoints[0], true);
     //mesh aggregated points
     MTGGraph meshGraphStitched;
@@ -1577,7 +1598,11 @@ for (size_t& neighborInd : neighborIndices)
     extentMin = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(node->m_nodeHeader.m_nodeExtent));
     extentMax = DPoint3d::FromXYZ(ExtentOp<EXTENT>::GetXMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(node->m_nodeHeader.m_nodeExtent));
 
-if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
+	std::vector<DPoint3d> stitchedPoints2d = stitchedPoints;
+	for (auto&pt : stitchedPoints2d) pt.z = 0;
+	bool isColinear = (bsiGeom_isDPoint3dArrayColinear(&stitchedPoints2d.front(), (int)stitchedPoints2d.size(), 1e-5));
+
+if (stitchedPoints.size() != 0 &&!isColinear)// return false; //nothing to stitch here
     {
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr dtmPtr;
     int status = CreateBcDTM(dtmPtr);
