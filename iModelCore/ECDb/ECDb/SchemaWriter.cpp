@@ -699,7 +699,7 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
         Formatting::CompositeValueSpecCR spec = *format.GetCompositeSpec();
 
         //Composite Spec Units are persisted in its own table to leverage FKs to the Units table
-        Json::Value json = spec.ToJson(true);
+        Json::Value json = spec.ToJson(false, true);
         BeAssert(!json.isMember(Formatting::json_units()));
 
         if (!json.isNull())
