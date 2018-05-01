@@ -233,8 +233,8 @@ public:
     //! Serializes this to JSON. The JSON will only contain values which differ from their initial state, or have been explicitly set
     //! to the current state.
     //!
+    //! @param[out] out the json value populated with this spec's fields
     //! @param[in] verbose Specifies whether to include default values.
-    //! @param[out] the json value populated with this spec's fields
     //! @return false on error (if the spec has a problem)
     UNITS_EXPORT bool ToJson(Json::Value& out, bool verbose) const;
 
