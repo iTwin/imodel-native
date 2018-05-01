@@ -27,7 +27,7 @@ struct ConstantDeserializationTests: ECTestFixture {};
 TEST_F(UnitConversionTests, UnitConversionsMatchOldConversions)
     {
     auto path = ECTestFixture::GetTestDataPath(L"ec31UnitConversions.csv");
-    std::ifstream ifs(path.c_str(), std::ifstream::in);
+    std::ifstream ifs = std::ifstream(Utf8String(path.c_str()).c_str(), std::ifstream::in);
     std::string line;
     auto s = GetUnitsSchema();
     auto toDouble = [](Utf8StringCR d)

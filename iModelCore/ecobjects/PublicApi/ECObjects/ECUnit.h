@@ -289,7 +289,6 @@ private:
 
     ECFormat(ECSchemaCR schema, Utf8StringCR name);
     bool _ToJson(Json::Value& out, bool verbose) const override;
-
 public:
     ECOBJECTS_EXPORT ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this Format is defined in.
 
