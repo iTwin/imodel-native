@@ -218,22 +218,10 @@
                 <Name>Algeria</Name>
                 <Members>
                   <Member>
-                    <KeyName>Voirol1875.NordAlgerie</KeyName>
+                    <KeyName>Voirol1875A.NordAlgerie</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:30491</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Voirol1875.Sud Algerie</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30492</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102491</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102492</KeyName>
+                    <KeyName>Voirol1875A.Sud Algerie</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:102591</KeyName>
@@ -3138,171 +3126,179 @@
               </Group>
               <Group>
                 <Name>Japan</Name>
-                <Members>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-I</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30161</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-II</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30162</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-III</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30163</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-IV</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30164</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-V</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30165</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-VI</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30166</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-VII</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30167</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-VIII</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30168</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-IX</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30169</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-X</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30170</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-XI</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30171</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-XII</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30172</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-XIII</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30173</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-XIV</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30174</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-XV</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30175</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-XVI</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30176</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-XVII</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30177</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-XVIII</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30178</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Tokyo.PlnRctCS-XIX</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:30179</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>TOKYO.UTM-51N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3092</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>TOKYO.UTM-52N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3093</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>TOKYO.UTM-53N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3094</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>TOKYO.UTM-54N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3095</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>TOKYO.UTM-55N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3096</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102151</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102152</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102153</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102154</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102155</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102156</KeyName>
-                  </Member>
-                </Members>
                 <Groups>
+                  <Group>
+                    <Name>Tokyo</Name>
+                    <Members>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-I</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-II</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-III</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-IV</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-V</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-VI</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-VII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-VIII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-IX</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-X</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-XI</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-XII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-XIII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-XIV</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-XV</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-XVI</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-XVII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-XVIII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.PlnRctCS-XIX</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.UTM-51N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.UTM-52N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.UTM-53N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.UTM-54N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo.UTM-55N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:102156</KeyName>
+                      </Member>					  
+                    </Members>
+                  </Group>				
+                  <Group>
+                    <Name>Tokyo-Grid</Name>
+                    <Members>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-I</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-II</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-III</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-IV</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-V</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-VI</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-VII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-VIII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-IX</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-X</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-XI</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-XII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-XIII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-XIV</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-XV</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-XVI</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-XVII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-XVIII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.CS-XIX</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.UTM-51N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.UTM-52N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.UTM-53N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.UTM-54N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.UTM-55N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.UTM-HA-51N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.UTM-HA-52N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.UTM-HA-53N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.UTM-HA-54N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Tokyo-Grid.UTM-HA-55N</KeyName>
+                      </Member>
+                    </Members>
+                  </Group>				  
                   <Group>
                     <Name>JGD2000</Name>
                     <Members>
@@ -3395,6 +3391,98 @@
                       </Member>
                     </Members>
                   </Group>
+                  <Group>
+                    <Name>JGD2011</Name>
+                    <Members>
+                      <Member>
+                        <KeyName>JGD2011.CS-I</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-II</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-III</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-IV</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-V</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-VI</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-VII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-VIII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-IX</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-X</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-XI</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-XII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-XIII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-XIV</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-XV</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-XVI</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-XVII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-XVIII</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.CS-XIX</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.UTM-51N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.UTM-52N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.UTM-53N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.UTM-54N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.UTM-55N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.UTM-HA-51N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.UTM-HA-52N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.UTM-HA-53N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.UTM-HA-54N</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>JGD2011.UTM-HA-55N</KeyName>
+                      </Member>
+                    </Members>
+                  </Group>				  
                 </Groups>
               </Group>
               <Group>
@@ -30016,6 +30104,29 @@
                 </Members>
               </Group>
               <Group>
+                <Name>Algeria</Name>
+                <Members>
+                  <Member>
+                    <KeyName>Voirol1875.NordAlgerie</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30491</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Voirol1875.Sud Algerie</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30492</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102491</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102492</KeyName>
+                  </Member>		
+                </Members>
+              </Group>				  
+              <Group>
                 <Name>Austria</Name>
                 <Members>
                   <Member>
@@ -30494,6 +30605,93 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:3101</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30161</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30162</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30163</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30164</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30165</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30166</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30167</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30168</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30169</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30170</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30171</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30172</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30173</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30174</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30175</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30176</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30177</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30178</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:30179</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:3092</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:3093</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:3094</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:3095</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:3096</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102151</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102152</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102153</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102154</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102155</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -32571,7 +32769,7 @@
                 <Name>Algeria</Name>
                 <Members>
                   <Member>
-                    <KeyName>Voirol1875.LL</KeyName>
+                    <KeyName>Voirol1875_1.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4304</KeyName>
@@ -33203,10 +33401,10 @@
                     <KeyName>Tokyo</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4301</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>JGD2000.LL</KeyName>
+                  </Member>
+				  <Member>
+                    <KeyName>JGD2011.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -36247,6 +36445,12 @@
                </Member>
                <Member>
                  <KeyName>EuropLibyan79.LL</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>EPSG:4301</KeyName>
+               </Member>			   
+               <Member>
+                 <KeyName>Voirol1875_1.LL</KeyName>
                </Member>
             </Members>
           </Group>
