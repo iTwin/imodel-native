@@ -3230,7 +3230,8 @@ Utf8CP TileCache::GetCurrentVersion()
     //  4: Prevent unused vertices from ending up in meshes due to degenerate triangles (detect degenerates *before* adding vertices)
     //  5: Ensure curved, stroked curve vectors are treated as curved
     //  6: Treat transparency < 15 as opaque (affects mesh batching)
-    return "6";
+    //  7: Fix out-of-control subdivision in specific cases (TFS#884193, TFS#886685)
+    return "7";
     }
 
 /*---------------------------------------------------------------------------------**//**
