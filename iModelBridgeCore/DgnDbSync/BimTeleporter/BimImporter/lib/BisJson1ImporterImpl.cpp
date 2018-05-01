@@ -168,9 +168,9 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
     else if (objectType.Equals(JSON_TYPE_Element))
         reader = new ElementReader(this);
     else if (objectType.Equals(JSON_TYPE_GeometricElement2d))
-        reader = new GeometricElementReader(this, false);
+        reader = new GeometricElementReader(this);
     else if (objectType.Equals(JSON_TYPE_GeometricElement3d))
-        reader = new GeometricElementReader(this, true);
+        reader = new GeometricElementReader(this);
     else if (objectType.Equals(JSON_TYPE_GeometryPart))
         reader = new GeometryPartReader(this);
     else if (objectType.Equals(JSON_TYPE_Subject))

@@ -673,7 +673,7 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
         GroupInformationPartitionCPtr gip = GroupInformationPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asCString());
         if (!gip.IsValid())
             {
-            GetLogger().errorv("Failed to create a GroupInformationPartition for %" PRIu64 "", oldInstanceId);
+            GetLogger().errorv("Failed to create a GroupInformationPartition for %s", oldInstanceId.ToString().c_str());
             return ERROR;
             }
         newId = gip->GetElementId();
@@ -1032,7 +1032,6 @@ BentleyStatus ViewDefinitionReader::_Read(Json::Value& viewDefinition)
         ECJsonUtilities::JsonToPoint3d(origin, viewDefinition["Origin"]);
 
         bool isCameraOn = viewDefinition["IsCameraOn"].asBool();
-        bool isPrivate = viewDefinition["IsPrivate"].asBool();
 
         DgnElementId modelSelectorId = GetMappedElementId(viewDefinition, "ModelSelector");
         if (!modelSelectorId.IsValid())

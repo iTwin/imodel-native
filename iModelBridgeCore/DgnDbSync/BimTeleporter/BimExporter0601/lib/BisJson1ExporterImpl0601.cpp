@@ -49,7 +49,6 @@ static Utf8CP const JSON_TYPE_LinkTable = "LinkTable";
 static Utf8CP const JSON_TYPE_ElementGroupsMembers = "ElementGroupsMembers";
 static Utf8CP const JSON_TYPE_ElementHasLinks = "ElementHasLinks";
 static Utf8CP const JSON_TYPE_AnnotationTextStyle = "AnnotationTextStyle";
-static Utf8CP const JSON_TYPE_Plan = "Plan";
 static Utf8CP const JSON_TYPE_Texture = "Texture";
 static Utf8CP const JSON_TYPE_WorkBreakdown = "WorkBreakdown";
 static Utf8CP const JSON_TYPE_Activity = "Activity";
@@ -132,13 +131,13 @@ struct PrintfProgressMeter : BentleyApi::Dgn::DgnProgressMeter
             }
 
         void ForceNextUpdateToDisplay() { m_timeOfLastUpdate = m_timeOfLastSpinnerUpdate = 0; }
-        virtual void _Hide() override
+        void _Hide() override
             {
             Utf8PrintfString msg("    %-123.123s %-16.16s", "", "");
             printf("%s\r", msg.c_str());
             }
 
-        virtual Abort _ShowProgress() override
+        Abort _ShowProgress() override
             {
             if (m_aborted)
                 return ABORT_Yes;
@@ -170,7 +169,7 @@ struct PrintfProgressMeter : BentleyApi::Dgn::DgnProgressMeter
             return ABORT_No;
             }
 
-        virtual void _SetCurrentStepName(Utf8CP stepName) override
+        void _SetCurrentStepName(Utf8CP stepName) override
             {
             T_Super::_SetCurrentStepName(stepName); // decrements step count
 
@@ -189,7 +188,7 @@ struct PrintfProgressMeter : BentleyApi::Dgn::DgnProgressMeter
             UpdateDisplay();
             }
 
-        virtual void _SetCurrentTaskName(Utf8CP taskName) override
+        void _SetCurrentTaskName(Utf8CP taskName) override
             {
             T_Super::_SetCurrentTaskName(taskName); // decrements task count
 
@@ -234,15 +233,8 @@ Utf8String IdToString(Utf8CP idString)
 //---------------+---------------+---------------+---------------+---------------+-------
 BisJson1ExporterImpl::BisJson1ExporterImpl(wchar_t const* dbPath, wchar_t const* tempPath, wchar_t const* assetsPath) : m_dbPath(dbPath), m_tempPath(tempPath), m_assetsPath(assetsPath)
     {
-    m_meter = new PrintfProgressMeter();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            04/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-BisJson1ExporterImpl::~BisJson1ExporterImpl()
-    {
-    delete m_meter;
+    static PrintfProgressMeter printfProgress;
+    SetProgressMeter(&printfProgress);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1520,7 +1512,7 @@ void RenameConflictMembers(Json::Value& obj, Utf8CP prefix, Utf8CP member)
     {
     for (auto const& id : obj.getMemberNames())
         {
-        if (0 == stricmp(id.c_str(), member))
+        if (0 == BeStringUtilities::Stricmp(id.c_str(), member))
             {
             Utf8PrintfString tmp("%s_%s_", prefix, member);
             obj[tmp.c_str()] = obj[id];
@@ -1766,7 +1758,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
             }
         else if (element->GetCodeAuthority()->GetName().Equals("DgnV8"))
             {
-            Utf8PrintfString value("%s-%s", obj["Code"]["Namespace"].asString(), obj["Code"]["Value"].asString());
+            Utf8PrintfString value("%s-%s", obj["Code"]["Namespace"].asCString(), obj["Code"]["Value"].asCString());
             obj[BIS_ELEMENT_PROP_CodeValue] = value.c_str();
             }
         else if (element->GetCodeAuthority()->GetName().Equals("ConstructionPlanning_WorkAreaHierarchy"))
@@ -1800,7 +1792,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
                 // This is a bit of a hack.  But we sometimes end up with duplicate MaterialElements that differ by CodeNamespace.
                 if (!Utf8String::IsNullOrEmpty(element->GetCode().GetNamespace().c_str()))
                     {
-                    Utf8PrintfString value("%s-%s", obj["Code"]["Namespace"].asString(), obj["Code"]["Value"].asString());
+                    Utf8PrintfString value("%s-%s", obj["Code"]["Namespace"].asCString(), obj["Code"]["Value"].asCString());
                     obj[BIS_ELEMENT_PROP_CodeValue] = value.c_str();
                     }
                 }
@@ -1916,8 +1908,6 @@ BentleyStatus BisJson1ExporterImpl::ExportElementAspects(Json::Value& out, ECCla
 
     while (BE_SQLITE_ROW == statement->Step())
         {
-        ECInstanceId actualElementId = statement->GetValueId<ECInstanceId>(0);
-
         auto& entry = out.append(Json::ValueType::objectValue);
         entry[JSON_TYPE_KEY] = JSON_TYPE_ElementAspect;
         entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);

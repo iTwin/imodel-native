@@ -16,6 +16,17 @@
 #define END_BIM_TELEPORTER_NAMESPACE   } } }
 
 //__PUBLISH_SECTION_END__
+#if defined (__GNUC__) || defined (__clang__)
+    #define EXPORT_ATTRIBUTE        __attribute__((visibility ("default")))
+#elif defined (_WIN32) // Windows && WinRT
+    #if !defined (CREATE_STATIC_LIBRARIES)
+        #define EXPORT_ATTRIBUTE        __declspec(dllexport)
+        #define IMPORT_ATTRIBUTE        __declspec(dllimport)
+    #else
+        #define EXPORT_ATTRIBUTE        __declspec(dllexport)
+        #define IMPORT_ATTRIBUTE        __declspec(dllexport)
+    #endif
+#endif
 
 #ifndef BIM_TELEPORTER_EXPORT
 #if defined (__BIM_TELEPORTER_BUILD__)

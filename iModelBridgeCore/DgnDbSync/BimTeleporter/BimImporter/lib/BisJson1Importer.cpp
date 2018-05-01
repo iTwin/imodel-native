@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <windows.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/GenericDomain.h>

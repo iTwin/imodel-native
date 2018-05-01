@@ -379,13 +379,13 @@
         <SubPart PartName="DwgConverter" PartFile="DwgConverter"/>
     </Part>
 
-    <Part Name="TeleporterPublicApi" BentleyBuildMakeFile="BimTeleporter/BimTeleporter.prewire.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static">
+    <Part Name="TeleporterPublicApi" BentleyBuildMakeFile="BimTeleporter/BimTeleporter.prewire.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64">
         <Bindings>
             <PublicAPI Domain="BimTeleporter" />
         </Bindings>
     </Part>
 
-    <Part Name="BisJson1Importer" BentleyBuildMakeFile="BimTeleporter/BimImporter/lib/BisJson1Importer.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static" ApiNumber="B02">
+    <Part Name="BisJson1Importer" BentleyBuildMakeFile="BimTeleporter/BimImporter/lib/BisJson1Importer.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="Planning"                    PartFile="Planning"         Repository="DgnDomains-Planning"/>
@@ -423,7 +423,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnDb0601ToBimConverter" BentleyBuildMakeFile="BimTeleporter/src/DgnDbToBimConverter.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static" ApiNumber="B02">
+    <Part Name="DgnDb0601ToBimConverter" BentleyBuildMakeFile="BimTeleporter/src/DgnDbToBimConverter.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
         <SubPart PartName="BisJson1Importer"/>
         <SubPart PartName="BisJson1Exporter0601" PartFile="BimTeleporter" />
         <Bindings>

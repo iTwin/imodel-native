@@ -23,9 +23,7 @@ namespace BentleyG0601
     }
 
 #ifdef __BIM_TELEPORTER_BUILD__
-#define BIM_EXPORTER_EXPORT __declspec(dllexport)
-#else
-#define BIM_EXPORTER_EXPORT __declspec(dllimport)
+#define BIM_EXPORTER_EXPORT EXPORT_ATTRIBUTE
 #endif
 
 BEGIN_BIM_TELEPORTER_NAMESPACE

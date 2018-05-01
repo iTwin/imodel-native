@@ -41,13 +41,13 @@ BentleyStatus SchemaFlattener::CopyFlatCustomAttributes(ECN::IECCustomAttributeC
         ECN::ECSchemaPtr flatCustomAttributeSchema = m_flattenedRefs[instance->GetClass().GetSchema().GetName()];
         if (!flatCustomAttributeSchema.IsValid())
             {
-            LOG.warningv("Failed to find ECSchema '%s' for custom attribute '%'.  Skipping custom attribute.", Utf8String(instance->GetClass().GetFullName()));
+            LOG.warningv("Failed to find ECSchema '%s' for custom attribute '%'.  Skipping custom attribute.", Utf8String(instance->GetClass().GetFullName()).c_str());
             continue;
             }
         ECN::IECInstancePtr copiedCA = instance->CreateCopyThroughSerialization(*flatCustomAttributeSchema);
         if (!copiedCA.IsValid())
             {
-            LOG.warningv("Failed to copy custom attribute '%s'. Skipping custom attribute.", Utf8String(instance->GetClass().GetFullName()));
+            LOG.warningv("Failed to copy custom attribute '%s'. Skipping custom attribute.", Utf8String(instance->GetClass().GetFullName()).c_str());
             continue;
             }
         if (!ECN::ECSchema::IsSchemaReferenced(*targetContainer.GetContainerSchema(), *flatCustomAttributeSchema))

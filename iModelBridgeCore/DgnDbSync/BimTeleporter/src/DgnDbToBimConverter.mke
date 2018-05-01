@@ -18,13 +18,13 @@ o = $(OutputRootDir)Build/DgnDbSync/$(appName)/
 always:
     ~mkdir $(o)
 
-PublicApi = $(SrcRoot)DgnDbSync\PublicApi\BimTeleporter/
+PublicApi = $(SrcRoot)DgnDbSync/PublicApi/BimTeleporter/
 
 HeaderFiles = $(PublicApi)DgnDbToBimConverter.h $(PublicApi)BisJson1Exporter0601.h $(PublicApi)BisJson1Importer.h
 
-$(o)DgnDbToBimConverter.obj: $(baseDir)DgnDbToBimConverter.cpp $(HeaderFiles)
+$(o)DgnDbToBimConverter$(oext): $(baseDir)DgnDbToBimConverter.cpp $(HeaderFiles)
 
-$(o)InteropHostProvider.obj: $(baseDir)InteropHostProvider.cpp $(HeaderFiles) $(baseDir)InteropHostProvider.h
+$(o)InteropHostProvider$(oext): $(baseDir)InteropHostProvider.cpp $(HeaderFiles) $(baseDir)InteropHostProvider.h
 
 
 #----------------------------------------------------------------------
@@ -37,21 +37,21 @@ DLM_DEST        = $(o)
 DLM_NAME        = $(appname)
 DLM_OBJECT_DEST     = $(o)
 DLM_EXPORT_DEST     = $(o)
-DLM_OBJECT_FILES    = $(o)DgnDbToBimConverter.obj $(o)InteropHostProvider.obj
+DLM_OBJECT_FILES    = $(o)DgnDbToBimConverter$(oext) $(o)InteropHostProvider$(oext)
 DLM_NOINITFUN   = 1
 DLM_NOENTRY     = 1
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)BisJson1Exporter0601.lib
-LINKER_LIBRARIES  + $(BuildContext)Delivery/BisJson1Importer.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLite.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLiteEC.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)ECObjects.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeFolly.lib
-LINKER_LIBRARIES  + user32.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BisJson1Exporter0601$(libext)
+LINKER_LIBRARIES  + $(BuildContext)Delivery/BisJson1Importer$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+LINKER_LIBRARIES  + user32$(libext)
 
 %include $(sharedMki)LinkLibrary.mki
 

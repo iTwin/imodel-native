@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
-#include <windows.h>
 #include <BimTeleporter/BimTeleporter.h>
 
 #include <DgnDb06Api/Bentley/Bentley.h>

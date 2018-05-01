@@ -190,15 +190,13 @@ struct GeometryReader : ElementReader
 struct GeometricElementReader : GeometryReader
     {
     DEFINE_T_SUPER(GeometryReader);
-    private:
-        bool m_is3d;
 
     protected:
         BentleyStatus _OnElementCreated(DgnElementR element, ECN::IECInstanceR properties) override;
         Utf8CP _GetElementType() override { return "GeometricElement"; }
 
     public:
-        GeometricElementReader(BisJson1ImporterImpl* importer, bool is3d) : GeometryReader(importer), m_is3d(is3d) {}
+        GeometricElementReader(BisJson1ImporterImpl* importer) : GeometryReader(importer) {}
 
     };
 

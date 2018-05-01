@@ -26,9 +26,7 @@ namespace BentleyB0200
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
 #ifdef __BIM_TELEPORTER_BUILD__
-#define BIM_IMPORTER_EXPORT __declspec(dllexport)
-#else
-#define BIM_IMPORTER_EXPORT __declspec(dllimport)
+#define BIM_IMPORTER_EXPORT EXPORT_ATTRIBUTE
 #endif
 
 struct BisJson1ImporterImpl;

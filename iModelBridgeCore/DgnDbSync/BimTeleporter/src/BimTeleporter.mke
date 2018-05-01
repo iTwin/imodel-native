@@ -16,7 +16,7 @@ o = $(OutputRootDir)Build/DgnDbSync/$(appName)/
 always:
     ~mkdir $(o)
 
-PublicApi = $(SrcRoot)DgnDbSync\PublicApi\BimTeleporter/
+PublicApi = $(SrcRoot)DgnDbSync/PublicApi/BimTeleporter/
 
 HeaderFiles = $(PublicApi)BimTeleporter.h $(PublicApi)BisJson1Exporter0601.h $(PublicApi)BisJson1Importer.h
 
