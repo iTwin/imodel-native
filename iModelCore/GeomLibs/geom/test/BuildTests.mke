@@ -17,7 +17,7 @@ baseDir = $(_MakeFilePath)
 BEGTEST_NAME  = $(TestDir)GeomLibs
 BEGTEST_INPUT = $(baseDir)$(TestDir)/
 BEGTEST_IGNORE= $(baseDir)ignore_list.txt
-BEGTEST_OUTPUT=$(OutputRootDir)build/GeomLibs/UnitTests/
+BEGTEST_OUTPUT=$(OutputRootDir)build/geomlibs/UnitTests/
 o = $(PartBuildDir)$(BEGTEST_NAME)/
 
 %ifdef UsePublishedApi

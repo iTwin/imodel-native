@@ -19,7 +19,7 @@ GUNITTEST_NOEXEC = 1
 #       Compile the unit tests
 #----------------------------------------------------------------------
 BEGTEST_NAME=GeomLibsTest
-BEGTEST_OUTPUT=$(OutputRootDir)build/GeomLibs/
+BEGTEST_OUTPUT=$(OutputRootDir)build/geomlibs/
 %include compileUnitTests.mki
 
 #----------------------------------------------------------------------

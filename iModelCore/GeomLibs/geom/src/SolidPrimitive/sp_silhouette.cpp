@@ -369,7 +369,7 @@ typedef struct
     } ParamRange;
 static const double s_toroidalQuadTol = 1.0e-12;
 static const double s_toroidalFilterFraction = 0.1;  /* Filter away points closer than this fraction of angular tolerance */
-static const double s_lineUnitCircleIntersectionTolerance = 1.0e-12;
+// unused - static const double s_lineUnitCircleIntersectionTolerance = 1.0e-12;
 
 /*----------------------------------------------------------------*//**
 *
