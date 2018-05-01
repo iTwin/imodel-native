@@ -432,7 +432,7 @@ public:
     //! Returns the name of Unit in this if one is available
     Utf8CP GetName() const {if (nullptr == m_unit) return nullptr; return m_unit->GetName().c_str();}
     BEU::UnitCP GetUnit() const {return m_unit;}
-    UNITS_EXPORT Json::Value ToJson() const;
+    UNITS_EXPORT Json::Value ToJson(bool verbose = false) const;
     bool IsEmpty() const {return nullptr == m_unit;}
     bool IsIdentical(UnitProxyCR other) const {return BEU::Unit::AreEqual(m_unit, other.m_unit) && m_unitLabel.Equals(other.m_unitLabel);}
 };
@@ -508,7 +508,7 @@ public:
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit, BEU::UnitCR subUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
-    UNITS_EXPORT Json::Value ToJson(bool excludeUnits = false) const;
+    UNITS_EXPORT Json::Value ToJson(bool verbose = false, bool excludeUnits = false) const;
     UNITS_EXPORT static BentleyStatus FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context);
     UNITS_EXPORT static BentleyStatus FromJson(CompositeValueSpecR out, JsonValueCR jsonWithoutUnits, bvector<BEU::UnitCP> const& units, bvector<Utf8String> const& unitLabels);
 

@@ -366,7 +366,7 @@ bool CompositeValueSpec::IsIdentical(CompositeValueSpecCR other) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-Json::Value CompositeValueSpec::ToJson(bool excludeUnits) const
+Json::Value CompositeValueSpec::ToJson(bool verbose, bool excludeUnits) const
     {
     if (IsProblem()) // TODO log error;
         return Json::Value();
@@ -385,7 +385,7 @@ Json::Value CompositeValueSpec::ToJson(bool excludeUnits) const
                 {
                 if (0 == i) // Major unit
                     valid = true;
-                jCVS[json_units()].append(proxP->ToJson());
+                jCVS[json_units()].append(proxP->ToJson(verbose));
                 }
             }
         }
@@ -467,7 +467,7 @@ BentleyStatus CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-Json::Value UnitProxy::ToJson() const
+Json::Value UnitProxy::ToJson(bool verbose) const
     {
     Json::Value jUP;
 
@@ -475,6 +475,8 @@ Json::Value UnitProxy::ToJson() const
         jUP[json_name()] = m_unit->GetName().c_str();
     if (!m_unitLabel.empty())
         jUP[json_label()] = m_unitLabel.c_str();
+    else if (verbose)
+        jUP[json_label()] = m_unit->GetLabel().c_str();
     return jUP;
     }
 
