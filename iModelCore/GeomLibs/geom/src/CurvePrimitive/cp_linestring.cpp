@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/cp_linestring.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -30,7 +30,19 @@ CurvePrimitiveLineString::CurvePrimitiveLineString (DPoint3dCP points, size_t nP
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-CurvePrimitiveLineString::CurvePrimitiveLineString (bvector<DPoint3d> points) {m_points = points;}
+CurvePrimitiveLineString::CurvePrimitiveLineString (bvector<DPoint2d> const &points, double z)
+    {
+    if (points.size () > 0)
+        {
+        for (auto &xy : points)
+            m_points.push_back (DPoint3d::From (xy.x, xy.y, z));
+        }
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+CurvePrimitiveLineString::CurvePrimitiveLineString (bvector<DPoint3d> const &points) {m_points = points;}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
@@ -628,6 +640,7 @@ bool CurvePrimitiveLineString::_WireCentroid(double &length, DPoint3dR centroid,
     }
 
 
+ICurvePrimitive* CurvePrimitiveLineString::Create (bvector<DPoint2d> const &points, double z) {return new CurvePrimitiveLineString (points, z);}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
@@ -785,6 +798,11 @@ ICurvePrimitivePtr ICurvePrimitive::CreateLineString (DPoint3dCP points, size_t 
 ICurvePrimitivePtr ICurvePrimitive::CreateLineString (bvector<DPoint3d> const &points)
     {return CurvePrimitiveLineString::Create (&points[0], points.size ());}
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      05/2018
++--------------------------------------------------------------------------------------*/
+ICurvePrimitivePtr ICurvePrimitive::CreateLineString (bvector<DPoint2d> const &points, double z)
+    {return CurvePrimitiveLineString::Create (points, z);}
 
 
 /*--------------------------------------------------------------------------------**//**

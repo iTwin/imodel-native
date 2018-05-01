@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/cpstructs.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*=================================================================================**//**
@@ -139,7 +139,8 @@ protected:
 
 bvector<DPoint3d>   m_points;
 explicit CurvePrimitiveLineString(DPoint3dCP points, size_t nPoints);
-explicit CurvePrimitiveLineString(bvector<DPoint3d> points);
+explicit CurvePrimitiveLineString(bvector<DPoint3d> const &points);
+explicit CurvePrimitiveLineString(bvector<DPoint2d> const &points, double z);
 explicit CurvePrimitiveLineString();
 
 ICurvePrimitivePtr _Clone() const override;
@@ -201,6 +202,7 @@ bool _TrySetStart (DPoint3dCR xyz) override;
 bool _TrySetEnd (DPoint3dCR xyz) override;
 public:
 GEOMDLLIMPEXP static ICurvePrimitive* Create (DPoint3dCP points, size_t nPoints);
+GEOMDLLIMPEXP static ICurvePrimitive* Create (bvector<DPoint2d> const &points, double z = 0.0);
 }; // CurvePrimitiveLineString
 
 
