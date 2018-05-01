@@ -618,13 +618,15 @@ public:
         DgnElementId        m_id;
         DgnElementId        m_parentId;
         DgnClassId          m_parentRelClassId;
+        bool                m_isLoadingElement;
 
         DGNPLATFORM_EXPORT CreateParams(DgnDbR, JsonValueCR);
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parentId=DgnElementId(), DgnClassId parentRelClassId=DgnClassId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid())
-            : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parentId), m_parentRelClassId(parentRelClassId), m_federationGuid(federationGuid) {SetUserLabel(label);}
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parentId=DgnElementId(), DgnClassId parentRelClassId=DgnClassId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid(), bool isLoadingElement = false)
+            : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parentId), m_parentRelClassId(parentRelClassId), m_federationGuid(federationGuid), m_isLoadingElement(isLoadingElement) {SetUserLabel(label);}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
         void SetCode(DgnCode code) {m_code = code;}                 //!< Set the DgnCode for elements created with this CreateParams
+        void SetIsLoadingElement(bool value) { m_isLoadingElement = value; }  //!< Set the m_isLoadingElement flag for elements that are being loaded 
         void SetUserLabel(Utf8CP label) {m_userLabel.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
         void SetElementId(DgnElementId id) {m_id = id;}             //!< @private
         void SetModelId(DgnModelId modelId) {m_modelId = modelId;}  //!< @private
