@@ -374,4 +374,47 @@ TEST_F(CompositeValueSpecJsonTest, JsonTest)
     EXPECT_TRUE(comp.ToJson().ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(comp.ToJson(), root);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                      04/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(CompositeValueSpecJsonTest, JsonVerboseTest)
+    {
+    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    spec.SetSpacer("-");
+    auto json = spec.ToJson();
+
+    auto expectedJson = R"json({
+                                "includeZero": true,
+                                "spacer": "-",
+                                "units": [
+                                        {
+                                        "name": "MILE",
+                                        "label": "mi"
+                                        },
+                                        {
+                                        "name": "YRD",
+                                        "label": "yd"
+                                        },
+                                        {
+                                        "name": "FT",
+                                        "label": "ft"
+                                        },
+                                        {
+                                        "name": "IN",
+                                        "label": "in"
+                                        }
+                                    ]
+                                })json";
+    Json::Value root;
+    Json::Reader::Parse(expectedJson, root);
+    EXPECT_TRUE(root.ToString() == spec.ToJson(true).ToString()) << FormattingTestUtils::JsonComparisonString(spec.ToJson(true), root);
+
+    //FromJson
+    CompositeValueSpec comp;
+    CompositeValueSpec::FromJson(comp, root, s_unitsContext);
+
+    EXPECT_TRUE(comp.ToJson(true).ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(comp.ToJson(true), root);
+    }
+
+
 END_BENTLEY_FORMATTEST_NAMESPACE
