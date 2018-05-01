@@ -243,6 +243,7 @@ private:
     ECFormatCP m_ecFormat;
 
 protected:
+    bool _ToJson(Json::Value& out, bool verbose) const override;
     void SetParentFormat(ECFormatCP parent) {m_ecFormat = parent;}
 
 public:
@@ -284,9 +285,10 @@ private:
     SchemaReadStatus ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Nullable<Utf8String>>& labels);
 
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
-    SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
+    bool ToJsonInternal(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
     ECFormat(ECSchemaCR schema, Utf8StringCR name);
+    bool _ToJson(Json::Value& out, bool verbose) const override;
 
 public:
     ECOBJECTS_EXPORT ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this Format is defined in.
@@ -305,11 +307,6 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
     //! Returns the invariant description of this Format.
     Utf8StringCR GetInvariantDescription() const {return m_description;}
-
-    //! Write the Format as a standalone schema child in the ECSchemaJSON format.
-    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
-    //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
-    ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
 
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system).
     FormatId GetId() const {BeAssert(HasId()); return m_formatId;}

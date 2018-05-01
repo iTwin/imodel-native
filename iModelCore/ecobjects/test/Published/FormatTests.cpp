@@ -150,7 +150,7 @@ TEST_F(FormatTest, SerializeStandaloneUnitFormat)
     ufmt->SetCompositeSpec(comp);
 
     Json::Value schemaJson;
-    ASSERT_EQ(SchemaWriteStatus::Success, ufmt->WriteJson(schemaJson, true));
+    ufmt->ToJson(schemaJson, false);
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneFormat.ecschema.json"));

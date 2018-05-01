@@ -1,7 +1,6 @@
 ﻿{
   "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemaitem",
   "schema": "ExampleSchema",
-  "schemaVersion": "03.02.00",
   "schemaItemType": "Format",
   "name": "AmerMYFI4",
   "label": "myfi4",
@@ -15,6 +14,7 @@
   "uomSeparator": " ",
   "composite": {
     "spacer": "-",
+    "includeZero": true,
     "units": [
       {
         "name": "u:MILE",

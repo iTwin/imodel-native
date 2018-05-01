@@ -39,6 +39,18 @@ ECObjectsStatus ECFormat::SetSchema(ECSchemaCR schema)
 ECFormat::ECFormat(ECSchemaCR schema, Utf8StringCR name) : NamedFormat(name.c_str(), this), m_isDisplayLabelExplicitlyDefined(false), m_schema(&schema), m_fullName(schema.GetName() + ":" + name) {}
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECFormat::_ToJson(Json::Value& out, bool verbose) const
+    {
+    if (!T_Super::_ToJson(out, verbose))
+        return false;
+    if (!ToJsonInternal(out, true, verbose))
+        return false;
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 Utf8StringCR ECFormat::GetFullName() const
@@ -46,6 +58,43 @@ Utf8StringCR ECFormat::GetFullName() const
     if (m_fullName.size() == 0)
         m_fullName = GetSchema().GetName() + ":" + GetName();
     return m_fullName;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 04/2018
+//--------------------------------------------------------------------------------------
+bool NamedFormat::_ToJson(Json::Value& out, bool verbose) const
+    {
+    if (!GetNumericSpec()->ToJson(out, false))
+        return false;
+    
+    if (HasComposite())
+        {
+        auto comp = GetCompositeSpec();
+        auto& compElement = out[FORMAT_JSON_COMPOSITE_ELEMENT];
+        if (!comp->ToJson(compElement, verbose, true))
+            return false;
+        
+        auto writeUnit = [&](Nullable<Utf8String> label, Units::UnitCP unit, Json::Value& unitsArray)
+            {
+            auto& unitElement = unitsArray.append(Json::Value(Json::objectValue));
+            if(label.IsValid())
+               unitElement[COMPOSITE_UNIT_LABEL_ATTRIBUTE] = label.Value().c_str();
+            unitElement[NAME_ATTRIBUTE] = ((ECUnitCP)unit)->GetQualifiedName(GetParentFormat()->GetSchema()).c_str();
+            };
+
+        compElement[FORMAT_COMPOSITE_UNITS_ELEMENT] = Json::Value(Json::arrayValue);
+        auto& unitArray = compElement[FORMAT_COMPOSITE_UNITS_ELEMENT];
+        if (HasCompositeMajorUnit())
+            writeUnit((comp->HasMajorLabel() || verbose) ? comp->GetMajorLabel() : nullptr, comp->GetMajorUnit(), unitArray);
+        if (HasCompositeMiddleUnit())
+            writeUnit((comp->HasMiddleLabel() || verbose) ? comp->GetMiddleLabel() : nullptr, comp->GetMiddleUnit(), unitArray);
+        if (HasCompositeMinorUnit())
+            writeUnit((comp->HasMinorLabel() || verbose) ? comp->GetMinorLabel() : nullptr, comp->GetMinorUnit(), unitArray);
+        if (HasCompositeSubUnit())
+            writeUnit((comp->HasSubLabel() || verbose) ? comp->GetSubLabel() : nullptr, comp->GetSubUnit(), unitArray);
+        }
+    return true;
     }
 
 //--------------------------------------------------------------------------------------
@@ -418,7 +467,7 @@ SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVers
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECFormat::WriteJson(Json::Value & outValue, bool standalone, bool includeSchemaVersion) const
+bool ECFormat::ToJsonInternal(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
     {
     // Common properties to all Schema children
     if (standalone)
@@ -435,40 +484,7 @@ SchemaWriteStatus ECFormat::WriteJson(Json::Value & outValue, bool standalone, b
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
     if (!Utf8String::IsNullOrEmpty(GetInvariantDescription().c_str()))
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
-    if (HasNumeric())
-        {
-        auto num = GetNumericSpec()->ToJson(false);
-        for (Json::ValueIterator iter = num.begin(); iter != num.end(); iter++)
-            {
-            outValue[iter.memberName()] = *iter;
-            }
-        }
-    
-    if (HasComposite())
-        {
-        auto comp = GetCompositeSpec();
-        auto& compElement = outValue[FORMAT_JSON_COMPOSITE_ELEMENT];
-        if (comp->HasSpacer())
-            compElement[COMPOSITE_SPACER_ATTRIBUTE] = comp->GetSpacer().c_str();
-        auto writeUnit = [&](Nullable<Utf8String> label, Units::UnitCP unit, Json::Value& unitsArray)
-            {
-            auto& unitElement = unitsArray.append(Json::Value(Json::objectValue));
-            if(label.IsValid())
-               unitElement[COMPOSITE_UNIT_LABEL_ATTRIBUTE] = label.Value().c_str();
-            unitElement[NAME_ATTRIBUTE] = ((ECUnitCP)unit)->GetQualifiedName(GetSchema()).c_str();
-            };
-        compElement[FORMAT_COMPOSITE_UNITS_ELEMENT] = Json::Value(Json::arrayValue);
-        auto& unitArray = compElement[FORMAT_COMPOSITE_UNITS_ELEMENT];
-        if (HasCompositeMajorUnit())
-            writeUnit(comp->HasMajorLabel() ? comp->GetMajorLabel() : nullptr, comp->GetMajorUnit(), unitArray);
-        if (HasCompositeMiddleUnit())
-            writeUnit(comp->HasMiddleLabel() ? comp->GetMiddleLabel() : nullptr, comp->GetMiddleUnit(), unitArray);
-        if (HasCompositeMinorUnit())
-            writeUnit(comp->HasMinorLabel() ? comp->GetMinorLabel() : nullptr, comp->GetMinorUnit(), unitArray);
-        if (HasCompositeSubUnit())
-            writeUnit(comp->HasSubLabel() ? comp->GetSubLabel() : nullptr, comp->GetSubUnit(), unitArray);
-        }
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -485,14 +501,6 @@ Utf8StringCR ECFormat::GetDisplayLabel() const
 Utf8StringCR ECFormat::GetDescription() const
     {
     return GetSchema().GetLocalizedStrings().GetFormatDescription(*this, GetInvariantDescription());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Kyle.Abramowitz                   03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECFormat::WriteJson(Json::Value& outValue, bool includeSchemaVersion) const
-    {
-    return WriteJson(outValue, true, includeSchemaVersion);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
