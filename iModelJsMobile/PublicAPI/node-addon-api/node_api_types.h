@@ -139,6 +139,8 @@ public:
 };
 
 struct napi_ref__ {
+    JSValueRef value;
+    uint32_t refCount;
 };
 
 struct napi_handle_scope__ {

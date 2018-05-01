@@ -1412,29 +1412,30 @@ napi_status napi_wrap(napi_env env,
                       napi_finalize finalize_cb,
                       void* finalize_hint,
                       napi_ref* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, js_object);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, js_object);
 
-  //JSContextRef ctx = env->GetContext();
-  auto set = JSObjectSetPrivate((JSObjectRef)js_object, native_object);
-  BeAssert(set);
+//    JSContextRef ctx = env->GetContext();
+    auto set = JSObjectSetPrivate((JSObjectRef)js_object, native_object);
+    BeAssert(set);
+    napi_create_reference(env, js_object, 1, result);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_unwrap(napi_env env, napi_value obj, void** result) {
-  // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
-  // JS exceptions.
-  CHECK_ENV(env);
+    // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
+    // JS exceptions.
+    CHECK_ENV(env);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
-  *result = JSObjectGetPrivate((JSObjectRef)obj);
+    //  JSContextRef ctx = env->GetContext();
+    // TODO
+    *result = JSObjectGetPrivate((JSObjectRef)obj);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1490,16 +1491,22 @@ napi_status napi_create_reference(napi_env env,
                                   napi_value value,
                                   uint32_t initial_refcount,
                                   napi_ref* result) {
-  // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
-  // JS exceptions.
-  CHECK_ENV(env);
-  CHECK_ARG(env, value);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+    JSContextRef ctx = env->GetContext();
+    napi_ref__* ref = new napi_ref__();
+    ref->value = value;
+    ref->refCount = initial_refcount;
+    uint32_t count = initial_refcount;
+    while (count != 0) {
+        JSValueProtect(ctx, value);
+        count--;
+    };
+    *result = ref;
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 // Deletes a reference. The referenced value is released, and may be GC'd unless
@@ -1508,15 +1515,18 @@ napi_status napi_create_reference(napi_env env,
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_delete_reference(napi_env env, napi_ref ref) {
-  // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
-  // JS exceptions.
-  CHECK_ENV(env);
-  CHECK_ARG(env, ref);
+    CHECK_ENV(env);
+    CHECK_ARG(env, ref);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+    JSContextRef ctx = env->GetContext();
+    uint32_t count = ref->refCount;
+    while (count != 0) {
+        JSValueUnprotect(ctx, ref->value);
+        count--;
+    }
+    delete ref;
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 // Increments the reference count, optionally returning the resulting count.
@@ -1528,15 +1538,17 @@ napi_status napi_delete_reference(napi_env env, napi_ref ref) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_reference_ref(napi_env env, napi_ref ref, uint32_t* result) {
-  // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
-  // JS exceptions.
-  CHECK_ENV(env);
-  CHECK_ARG(env, ref);
+    CHECK_ENV(env);
+    CHECK_ARG(env, ref);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+    JSContextRef ctx = env->GetContext();
+    ref->refCount++;
+    JSValueProtect(ctx, ref->value);
+    if (result != NULL) {
+        *result = ref->refCount;
+    }
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 // Decrements the reference count, optionally returning the resulting count. If
@@ -1547,15 +1559,17 @@ napi_status napi_reference_ref(napi_env env, napi_ref ref, uint32_t* result) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_reference_unref(napi_env env, napi_ref ref, uint32_t* result) {
-  // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
-  // JS exceptions.
-  CHECK_ENV(env);
-  CHECK_ARG(env, ref);
+    CHECK_ENV(env);
+    CHECK_ARG(env, ref);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+    JSContextRef ctx = env->GetContext();
+    ref->refCount--;
+    JSValueUnprotect(ctx, ref->value);
+    if (result != NULL) {
+        *result = ref->refCount;
+    }
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 // Attempts to get a referenced value. If the reference is weak, the value might
@@ -1567,16 +1581,16 @@ napi_status napi_reference_unref(napi_env env, napi_ref ref, uint32_t* result) {
 napi_status napi_get_reference_value(napi_env env,
                                      napi_ref ref,
                                      napi_value* result) {
-  // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
-  // JS exceptions.
-  CHECK_ENV(env);
-  CHECK_ARG(env, ref);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, ref);
+    CHECK_ARG(env, result);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+    JSContextRef ctx = env->GetContext();
+    if (result != NULL) {
+        *result = ref->value;
+    }
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
