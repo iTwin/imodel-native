@@ -133,6 +133,11 @@ declare class NativeDgnDb {
      */
     abandonCreateChangeSet(): void;
 
+    /** 
+     * Dumps a change set
+     */
+    dumpChangeSet(changeSet: string): void;
+
     /**
      * Extract codes from change set that is being created
      */

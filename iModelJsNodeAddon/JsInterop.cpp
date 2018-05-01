@@ -275,6 +275,41 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
+RevisionStatus JsInterop::ReadChangeSet(DgnRevisionPtr& revisionPtr, Utf8StringCR dbGuid, JsonValueCR changeSetToken)
+    {
+    PRECONDITION(changeSetToken.isMember("id") && changeSetToken.isMember("pathname"), RevisionStatus::FileNotFound);
+
+    Utf8String id = changeSetToken["id"].asString();
+    Utf8String parentId = changeSetToken["parentId"].asString();
+
+    RevisionStatus revStatus;
+    DgnRevisionPtr revision = DgnRevision::Create(&revStatus, id, parentId, dbGuid);
+    PRECONDITION(revStatus == RevisionStatus::Success, revStatus);
+    BeAssert(revision.IsValid());
+
+    BeFileName changeSetPathname(changeSetToken["pathname"].asCString(), true);
+    PRECONDITION(changeSetPathname.DoesPathExist(), RevisionStatus::FileNotFound);
+
+    revision->SetRevisionChangesFile(changeSetPathname);
+    return RevisionStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 01/18
+//---------------------------------------------------------------------------------------
+RevisionStatus JsInterop::DumpChangeSet(DgnDbR dgndb, JsonValueCR changeSetToken)
+    {
+    DgnRevisionPtr revision;
+    RevisionStatus status = ReadChangeSet(revision, dgndb.GetDbGuid().ToString(), changeSetToken);
+    if (RevisionStatus::Success != status)
+        return status;
+    revision->Dump(dgndb);
+    return RevisionStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 01/18
+//---------------------------------------------------------------------------------------
 RevisionStatus JsInterop::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens)
     {
     revisionPtrs.clear();
@@ -284,23 +319,15 @@ RevisionStatus JsInterop::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, 
     for (uint32_t ii = 0; ii < changeSetTokens.size(); ii++)
         {
         JsonValueCR changeSetToken = changeSetTokens[ii];
-        PRECONDITION(changeSetToken.isMember("id") && changeSetToken.isMember("pathname"), RevisionStatus::FileNotFound);
+
+        DgnRevisionPtr revision;
+        RevisionStatus status = ReadChangeSet(revision, dbGuid, changeSetToken);
+        if (RevisionStatus::Success != status)
+            return status;
 
         if (!containsSchemaChanges)
             containsSchemaChanges = changeSetToken.isMember("containsSchemaChanges") && changeSetToken["containsSchemaChanges"].asBool();
 
-        Utf8String id = changeSetToken["id"].asString();
-        Utf8String parentId = changeSetToken["parentId"].asString();
-
-        RevisionStatus revStatus;
-        DgnRevisionPtr revision = DgnRevision::Create(&revStatus, id, parentId, dbGuid);
-        PRECONDITION(revStatus == RevisionStatus::Success, revStatus);
-        BeAssert(revision.IsValid());
-
-        BeFileName changeSetPathname(changeSetToken["pathname"].asCString(), true);
-        PRECONDITION(changeSetPathname.DoesPathExist(), RevisionStatus::FileNotFound);
-
-        revision->SetRevisionChangesFile(changeSetPathname);
         revisionPtrs.push_back(revision);
         }
 
@@ -333,7 +360,7 @@ RevisionStatus JsInterop::ApplyDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionC
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-RevisionStatus JsInterop::ApplyChangeSets(DgnDbPtr dgndb, JsonValueCR changeSetTokens, RevisionProcessOption applyOption, Utf8StringCR dbGuid, BeFileNameCR dbFileName)
+RevisionStatus JsInterop::ApplyChangeSets(DgnDbR dgndb, JsonValueCR changeSetTokens, RevisionProcessOption applyOption, Utf8StringCR dbGuid, BeFileNameCR dbFileName)
     {
     bvector<DgnRevisionPtr> revisionPtrs;
     bool containsSchemaChanges;
@@ -345,7 +372,7 @@ RevisionStatus JsInterop::ApplyChangeSets(DgnDbPtr dgndb, JsonValueCR changeSetT
     for (uint32_t ii = 0; ii < revisionPtrs.size(); ii++)
         revisions.push_back(revisionPtrs[ii].get());
 
-    return containsSchemaChanges ? ApplySchemaChangeSets(revisions, applyOption, dbFileName) : ApplyDataChangeSets(*dgndb, revisions, applyOption);
+    return containsSchemaChanges ? ApplySchemaChangeSets(revisions, applyOption, dbFileName) : ApplyDataChangeSets(dgndb, revisions, applyOption);
     }
 
 //---------------------------------------------------------------------------------------
