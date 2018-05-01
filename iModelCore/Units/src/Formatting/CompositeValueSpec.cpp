@@ -366,17 +366,16 @@ bool CompositeValueSpec::IsIdentical(CompositeValueSpecCR other) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-Json::Value CompositeValueSpec::ToJson(bool excludeUnits) const
+bool CompositeValueSpec::ToJson(Json::Value& out, bool verbose, bool excludeUnits) const
     {
-    if (IsProblem()) // TODO log error;
-        return Json::Value();
+    if (IsProblem())
+        return false;
 
-    Json::Value jCVS;
     bool valid = true;
     if (!excludeUnits)
         {
         valid = false;
-        jCVS[json_units()] = Json::arrayValue;
+        out[json_units()] = Json::arrayValue;
         UnitProxyCP proxP = nullptr;
         for (int i = 0; i < GetUnitCount(); i++)
             {
@@ -385,19 +384,19 @@ Json::Value CompositeValueSpec::ToJson(bool excludeUnits) const
                 {
                 if (0 == i) // Major unit
                     valid = true;
-                jCVS[json_units()].append(proxP->ToJson());
+                out[json_units()].append(proxP->ToJson(verbose));
                 }
             }
         }
 
     if (valid)
         {
-        jCVS[json_includeZero()] = IsIncludeZero();
+        out[json_includeZero()] = IsIncludeZero();
         if (m_spacer.length() > 0)
-            jCVS[json_spacer()] = m_spacer.c_str();
+            out[json_spacer()] = m_spacer.c_str();
         }
 
-    return jCVS;
+    return valid;
     }
 
 //--------------------------------------------------------------------------------------
@@ -467,7 +466,7 @@ BentleyStatus CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-Json::Value UnitProxy::ToJson() const
+Json::Value UnitProxy::ToJson(bool verbose) const
     {
     Json::Value jUP;
 
@@ -475,6 +474,8 @@ Json::Value UnitProxy::ToJson() const
         jUP[json_name()] = m_unit->GetName().c_str();
     if (!m_unitLabel.empty())
         jUP[json_label()] = m_unitLabel.c_str();
+    else if (verbose)
+        jUP[json_label()] = m_unit->GetLabel().c_str();
     return jUP;
     }
 

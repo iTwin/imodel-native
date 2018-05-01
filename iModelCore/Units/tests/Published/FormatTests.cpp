@@ -444,7 +444,8 @@ TEST_F(FormatJsonTest, FormatDecimal)
     spec.SetMinorLabel("cactus pear");
     spec.SetSubLabel("dragonfruit");
     spec.SetSpacer("-");
-    auto json = spec.ToJson();
+    Json::Value json;
+    spec.ToJson(json);
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
                              "decSeparator" : ".",
@@ -481,13 +482,16 @@ TEST_F(FormatJsonTest, FormatDecimal)
                              })json";
     Json::Value root;
     Json::Reader::Parse(expectedJson, root);
-    EXPECT_TRUE(root.ToString() == f.ToJson(true).ToString()) << FormattingTestUtils::JsonComparisonString(f.ToJson(true), root);
+    Json::Value jval;
+    f.ToJson(jval, true);
+    EXPECT_TRUE(root.ToString() == jval.ToString()) << FormattingTestUtils::JsonComparisonString(jval, root);
 
     // FromJson
     Format newF;
     Format::FromJson(newF, root, s_unitsContext);
-
-    EXPECT_TRUE(newF.ToJson(true).ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newF.ToJson(true), root);
+    Json::Value newJval;
+    newF.ToJson(newJval, true);
+    EXPECT_TRUE(newJval.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newJval, root);
     }
 
 //--------------------------------------------------------------------------------------
@@ -504,7 +508,8 @@ TEST_F(FormatJsonTest, FormatFractional)
     spec.SetMinorLabel("cactus pear");
     spec.SetSubLabel("dragonfruit");
     spec.SetSpacer("-");
-    auto json = spec.ToJson();
+    Json::Value json;
+    spec.ToJson(json);
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
                              "decSeparator" : ".",
@@ -541,13 +546,16 @@ TEST_F(FormatJsonTest, FormatFractional)
                              })json";
     Json::Value root;
     Json::Reader::Parse(expectedJson, root);
-    EXPECT_TRUE(root.ToString() == f.ToJson(true).ToString()) << FormattingTestUtils::JsonComparisonString(f.ToJson(true), root);
+    Json::Value jval;
+    f.ToJson(jval, true);
+    EXPECT_TRUE(root.ToString() == jval.ToString()) << FormattingTestUtils::JsonComparisonString(jval, root);
 
     // FromJson
     Format newF;
     Format::FromJson(newF, root, s_unitsContext);
-
-    EXPECT_TRUE(newF.ToJson(true).ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newF.ToJson(true), root);
+    Json::Value newJval;
+    newF.ToJson(newJval, true);
+    EXPECT_TRUE(newJval.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newJval, root);
     }
 
 //--------------------------------------------------------------------------------------
@@ -564,7 +572,8 @@ TEST_F(FormatJsonTest, FormatScientific)
     spec.SetMinorLabel("cactus pear");
     spec.SetSubLabel("dragonfruit");
     spec.SetSpacer("-");
-    auto json = spec.ToJson();
+    Json::Value json;
+    spec.ToJson(json);
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
                              "decSeparator" : ".",
@@ -602,13 +611,16 @@ TEST_F(FormatJsonTest, FormatScientific)
                              })json";
     Json::Value root;
     Json::Reader::Parse(expectedJson, root);
-    EXPECT_TRUE(root.ToString() == f.ToJson(true).ToString()) << FormattingTestUtils::JsonComparisonString(f.ToJson(true), root);
+    Json::Value jval;
+    f.ToJson(jval, true);
+    EXPECT_TRUE(root.ToString() == jval.ToString()) << FormattingTestUtils::JsonComparisonString(jval, root);
 
     // FromJson
     Format newF;
     Format::FromJson(newF, root, s_unitsContext);
-
-    EXPECT_TRUE(newF.ToJson(true).ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newF.ToJson(true), root);
+    Json::Value newJval;
+    newF.ToJson(newJval, true);
+    EXPECT_TRUE(newJval.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newJval, root);
     }
 
 //--------------------------------------------------------------------------------------
@@ -626,7 +638,8 @@ TEST_F(FormatJsonTest, FormatStation)
     spec.SetMinorLabel("cactus pear");
     spec.SetSubLabel("dragonfruit");
     spec.SetSpacer("-");
-    auto json = spec.ToJson();
+    Json::Value json;
+    spec.ToJson(json);
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
                              "decSeparator" : ".",
@@ -665,12 +678,15 @@ TEST_F(FormatJsonTest, FormatStation)
                              })json";
     Json::Value root;
     Json::Reader::Parse(expectedJson, root);
-    EXPECT_TRUE(root.ToString() == f.ToJson(true).ToString()) << FormattingTestUtils::JsonComparisonString(f.ToJson(true), root);
+    Json::Value jval;
+    f.ToJson(jval, true);
+    EXPECT_TRUE(root.ToString() == jval.ToString()) << FormattingTestUtils::JsonComparisonString(jval, root);
 
     // FromJson
     Format newF;
     Format::FromJson(newF, root, s_unitsContext);
-
-    EXPECT_TRUE(newF.ToJson(true).ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newF.ToJson(true), root);
+    Json::Value newJval;
+    newF.ToJson(newJval, true);
+    EXPECT_TRUE(newJval.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(newJval, root);
     }
 END_BENTLEY_FORMATTEST_NAMESPACE

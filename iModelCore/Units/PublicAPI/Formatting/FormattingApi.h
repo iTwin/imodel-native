@@ -233,8 +233,10 @@ public:
     //! Serializes this to JSON. The JSON will only contain values which differ from their initial state, or have been explicitly set
     //! to the current state.
     //!
+    //! @param[out] out the json value populated with this spec's fields
     //! @param[in] verbose Specifies whether to include default values.
-    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+    //! @return false on error (if the spec has a problem)
+    UNITS_EXPORT bool ToJson(Json::Value& out, bool verbose) const;
 
     UNITS_EXPORT static NumericFormatSpecCR DefaultFormat();
 
@@ -432,7 +434,7 @@ public:
     //! Returns the name of Unit in this if one is available
     Utf8CP GetName() const {if (nullptr == m_unit) return nullptr; return m_unit->GetName().c_str();}
     BEU::UnitCP GetUnit() const {return m_unit;}
-    UNITS_EXPORT Json::Value ToJson() const;
+    UNITS_EXPORT Json::Value ToJson(bool verbose = false) const;
     bool IsEmpty() const {return nullptr == m_unit;}
     bool IsIdentical(UnitProxyCR other) const {return BEU::Unit::AreEqual(m_unit, other.m_unit) && m_unitLabel.Equals(other.m_unitLabel);}
 };
@@ -508,7 +510,7 @@ public:
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit, BEU::UnitCR subUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
-    UNITS_EXPORT Json::Value ToJson(bool excludeUnits = false) const;
+    UNITS_EXPORT bool ToJson(Json::Value& out, bool verbose = false, bool excludeUnits = false) const;
     UNITS_EXPORT static BentleyStatus FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context);
     UNITS_EXPORT static BentleyStatus FromJson(CompositeValueSpecR out, JsonValueCR jsonWithoutUnits, bvector<BEU::UnitCP> const& units, bvector<Utf8String> const& unitLabels);
 
@@ -623,6 +625,8 @@ private:
     CompositeValueSpec  m_compositeSpec;
     FormatProblemDetail m_problem;
 
+    UNITS_EXPORT virtual bool _ToJson(Json::Value& out, bool verbose) const;
+
 public:
     // TODO: Attempt to remove these methods from the public API================
     UNITS_EXPORT static void FromJson(FormatR out, Utf8CP jsonString, BEU::IUnitsContextCP context = nullptr);
@@ -630,6 +634,7 @@ public:
     // !TODO====================================================================
 
     Format() : m_specType(FormatSpecType::None), m_explicitlyDefinedComposite(false), m_problem(FormatProblemCode::NotInitialized) {};
+    virtual ~Format(){}
     UNITS_EXPORT Format(FormatCR other);
     UNITS_EXPORT Format(NumericFormatSpecCR numSpec);
     UNITS_EXPORT Format(NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec);
@@ -643,7 +648,7 @@ public:
     UNITS_EXPORT bool IsIdentical(FormatCR other) const;
 
     //! Creates a Json::Value representing this.
-    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+    virtual bool ToJson(Json::Value& out, bool verbose) const {return _ToJson(out, verbose);}
 
     FormatSpecType GetSpecType() const { return m_specType; }
 

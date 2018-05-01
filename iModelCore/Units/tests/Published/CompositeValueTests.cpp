@@ -339,7 +339,8 @@ TEST_F(CompositeValueSpecJsonTest, JsonTest)
     spec.SetMinorLabel("cactus pear");
     spec.SetSubLabel("dragonfruit");
     spec.SetSpacer("-");
-    auto json = spec.ToJson();
+    Json::Value json;
+    spec.ToJson(json);
 
     auto expectedJson = R"json({
                                 "includeZero": true,
@@ -365,13 +366,63 @@ TEST_F(CompositeValueSpecJsonTest, JsonTest)
                                 })json";
     Json::Value root;
     Json::Reader::Parse(expectedJson, root);
-    EXPECT_TRUE(root.ToString() == spec.ToJson().ToString()) << FormattingTestUtils::JsonComparisonString(spec.ToJson(), root);
+    Json::Value comp;
+    spec.ToJson(comp);
+    EXPECT_TRUE(root.ToString() == comp.ToString()) << FormattingTestUtils::JsonComparisonString(comp, root);
 
     //FromJson
-    CompositeValueSpec comp;
-    CompositeValueSpec::FromJson(comp, root, s_unitsContext);
-
-    EXPECT_TRUE(comp.ToJson().ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(comp.ToJson(), root);
+    CompositeValueSpec compSpec;
+    CompositeValueSpec::FromJson(compSpec, root, s_unitsContext);
+    Json::Value roundTrip;
+    compSpec.ToJson(roundTrip);
+    EXPECT_TRUE(roundTrip.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(roundTrip, root);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                      04/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(CompositeValueSpecJsonTest, JsonVerboseTest)
+    {
+    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    spec.SetSpacer("-");
+    Json::Value json;
+    spec.ToJson(json);
+
+    auto expectedJson = R"json({
+                                "includeZero": true,
+                                "spacer": "-",
+                                "units": [
+                                        {
+                                        "name": "MILE",
+                                        "label": "mi"
+                                        },
+                                        {
+                                        "name": "YRD",
+                                        "label": "yd"
+                                        },
+                                        {
+                                        "name": "FT",
+                                        "label": "ft"
+                                        },
+                                        {
+                                        "name": "IN",
+                                        "label": "in"
+                                        }
+                                    ]
+                                })json";
+    Json::Value root;
+    Json::Reader::Parse(expectedJson, root);
+    Json::Value comp;
+    spec.ToJson(comp, true);
+    EXPECT_TRUE(root.ToString() == comp.ToString()) << FormattingTestUtils::JsonComparisonString(comp, root);
+
+    //FromJson
+    CompositeValueSpec compSpec;
+    CompositeValueSpec::FromJson(compSpec, root, s_unitsContext);
+    Json::Value roundTrip;
+    compSpec.ToJson(roundTrip, true);
+    EXPECT_TRUE(roundTrip.ToString() == root.ToString()) << FormattingTestUtils::JsonComparisonString(roundTrip, root);
+    }
+
 
 END_BENTLEY_FORMATTEST_NAMESPACE
