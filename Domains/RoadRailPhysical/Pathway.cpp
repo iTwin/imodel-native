@@ -197,13 +197,12 @@ PathwayElementCPtr PathwayElement::Insert(Order order, DgnDbStatus* status)
     auto retVal = GetDgnDb().Elements().Insert<PathwayElement>(*this, status);
 
     auto relClassCP = GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_CorridorRefersToOrderedPathways)->GetRelationshipClassCP();
-    auto relEnablerP = relClassCP->GetDefaultStandaloneEnabler();
-    auto relInstPtr = relEnablerP->CreateInstance();
+    auto relEnablerPtr = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClassCP);
+    auto relInstPtr = relEnablerPtr->CreateRelationshipInstance();
     relInstPtr->SetValue("MemberPriority", ECValue(order));
 
     ECInstanceKey key;
-    GetDgnDb().InsertLinkTableRelationship(key, *relClassCP, retVal->GetParentId(), retVal->GetElementId(), 
-        dynamic_cast<IECRelationshipInstanceCP>(relInstPtr.get()));
+    GetDgnDb().InsertLinkTableRelationship(key, *relClassCP, retVal->GetParentId(), retVal->GetElementId(), relInstPtr.get());
 
     return retVal;
     }
