@@ -738,7 +738,7 @@ BeXmlWriterR xmlWriter
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes(Json::Value& outValue) const
+bool IECCustomAttributeContainer::WriteCustomAttributes(Json::Value& outValue) const
     {
     outValue = Json::Value(Json::ValueType::arrayValue);
     for (IECInstancePtr pInstance : GetCustomAttributes(false))
@@ -748,7 +748,7 @@ SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes(Json::Value
         outValue.append(instanceJson);
         }
 
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

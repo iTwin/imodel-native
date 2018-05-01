@@ -103,15 +103,15 @@ SchemaWriteStatus UnitSystem::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVe
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus UnitSystem::WriteJson(Json::Value& outValue, bool includeSchemaVersion) const
+bool UnitSystem::ToJson(Json::Value& outValue, bool includeSchemaVersion) const
     {
-    return WriteJson(outValue, true, includeSchemaVersion);
+    return ToJson(outValue, true, includeSchemaVersion);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus UnitSystem::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+bool UnitSystem::ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
     {
     // Common properties to all Schema children
     if (standalone)
@@ -130,7 +130,7 @@ SchemaWriteStatus UnitSystem::WriteJson(Json::Value& outValue, bool standalone, 
     if (GetIsDescriptionDefined())
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
 
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

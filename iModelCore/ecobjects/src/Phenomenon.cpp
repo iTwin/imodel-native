@@ -135,15 +135,15 @@ SchemaWriteStatus Phenomenon::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVe
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus Phenomenon::WriteJson(Json::Value& outValue, bool includeSchemaVersion) const
+bool Phenomenon::ToJson(Json::Value& outValue, bool includeSchemaVersion) const
     {
-    return WriteJson(outValue, true, includeSchemaVersion);
+    return ToJson(outValue, true, includeSchemaVersion);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus Phenomenon::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+bool Phenomenon::ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
     {
     // Common properties to all Schema children
     if (standalone)
@@ -163,7 +163,7 @@ SchemaWriteStatus Phenomenon::WriteJson(Json::Value& outValue, bool standalone, 
     if (GetIsDescriptionDefined())
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
 
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

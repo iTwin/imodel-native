@@ -3140,31 +3140,29 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ec
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECSchema::WriteToJsonValue(Json::Value& ecSchemaJsonValue) const
+bool ECSchema::WriteToJsonValue(Json::Value& ecSchemaJsonValue) const
     {
     ecSchemaJsonValue.clear();
     SchemaJsonWriter schemaWriter(ecSchemaJsonValue, *this);
 
-    SchemaWriteStatus status;
-    if (SchemaWriteStatus::Success != (status = schemaWriter.Serialize()))
-        return status;
+    if (!schemaWriter.Serialize())
+        return false;
 
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECSchema::WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify) const
+bool ECSchema::WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify) const
     {
     Json::Value jsonSchema;
 
-    SchemaWriteStatus status;
-    if (SchemaWriteStatus::Success != (status = WriteToJsonValue(jsonSchema)))
-        return status;
+    if (!WriteToJsonValue(jsonSchema))
+        return false;
 
     ecSchemaJsonString = minify ? jsonSchema.ToString() : jsonSchema.toStyledString();
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

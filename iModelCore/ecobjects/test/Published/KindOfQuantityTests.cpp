@@ -537,7 +537,7 @@ TEST_F(KindOfQuantityTest, SerializeStandaloneItemKindOfQuantity)
     koq->SetRelativeError(3);
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, koq->WriteJson(schemaJson, true));
+    EXPECT_TRUE(koq->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneKindOfQuantity.ecschema.json"));

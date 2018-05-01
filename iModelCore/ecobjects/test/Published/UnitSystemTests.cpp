@@ -140,7 +140,7 @@ TEST_F(UnitSystemTest, StandaloneSchemaChildUnitSystem)
     schema->CreateUnitSystem(system, "ExampleUnitSystem", "ExampleUnitSystemLabel", "ExampleUnitSystemDescription");
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, system->WriteJson(schemaJson, true));
+    EXPECT_TRUE(system->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneUnitSystem.ecschema.json"));

@@ -41,7 +41,7 @@ private:
     SchemaReadStatus ReadXml(BeXmlNodeR unitSystemNode, ECSchemaReadContextR context);
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
-    SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
+    bool ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
     UnitSystem(ECSchemaCR schema, Utf8CP name);
 
@@ -71,7 +71,7 @@ public:
     //! Write the UnitSystem as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
-    ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
+    ECOBJECTS_EXPORT bool ToJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
 };
 
 //=======================================================================================
@@ -99,7 +99,7 @@ private:
 
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
-    SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
+    bool ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
     Phenomenon(ECSchemaCR schema, Utf8CP name);
     Phenomenon(ECSchemaCR schema, Utf8CP name, Utf8CP definition);
@@ -129,7 +129,7 @@ public:
     //! Write the Phenomenon as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
-    ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
+    ECOBJECTS_EXPORT bool ToJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
 
     ECUnitCP GetSIUnit() const {return (ECUnitCP) T_Super::GetSIUnit();}
 };
@@ -172,9 +172,9 @@ private:
     SchemaWriteStatus WriteInvertedUnitXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
     SchemaWriteStatus WriteConstantXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
-    SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
-    SchemaWriteStatus WriteInvertedUnitJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
-    SchemaWriteStatus WriteConstantJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
+    bool ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
+    bool InvertedUnitToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
+    bool ConstantToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
     ECUnit(ECSchemaCR schema, Utf8CP name);
     ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP unitName); //!< Creates and inverted unit
@@ -219,15 +219,15 @@ public:
     //! Write the ECUnit as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
-    ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
+    ECOBJECTS_EXPORT bool ToJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
     //! Write the inverted ECUnit as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
-    ECOBJECTS_EXPORT SchemaWriteStatus WriteInvertedUnitJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
+    ECOBJECTS_EXPORT bool InvertedUnitToJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
     //! Write the constant ECUnit as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
-    ECOBJECTS_EXPORT SchemaWriteStatus WriteConstantJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
+    ECOBJECTS_EXPORT bool ConstantToJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
 };
 
 //=======================================================================================

@@ -145,7 +145,7 @@ TEST_F(PhenomenonTests, StandaloneSchemaChildPhenomenon)
     schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH*LENGTH", "ExamplePhenomenonLabel", "ExamplePhenomenonDescription");
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, phenom->WriteJson(schemaJson, true));
+    EXPECT_TRUE(phenom->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
 

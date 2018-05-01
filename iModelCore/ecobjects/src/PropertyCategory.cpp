@@ -121,7 +121,7 @@ SchemaWriteStatus PropertyCategory::WriteXml(BeXmlWriterR xmlWriter, ECVersion e
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus PropertyCategory::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+bool PropertyCategory::ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
     {
     // Common properties to all Schema items
     if (standalone)
@@ -142,7 +142,7 @@ SchemaWriteStatus PropertyCategory::WriteJson(Json::Value& outValue, bool standa
 
     // Property Category properties
     outValue[PRIORITY_ATTRIBUTE] = GetPriority();
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

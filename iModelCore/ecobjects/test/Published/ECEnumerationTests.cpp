@@ -470,7 +470,7 @@ TEST_F(ECEnumerationTest, SerializeStandaloneEnumeration)
     EC_ASSERT_SUCCESS(enumeration->CreateEnumerator(enumeratorC, "EnumeratorC", 3));
     enumeratorC->SetDisplayLabel("AnotherVal");
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, enumeration->WriteJson(schemaJson, true));
+    EXPECT_TRUE(enumeration->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECEnumeration.ecschema.json"));

@@ -496,31 +496,31 @@ SchemaWriteStatus ECUnit::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersio
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus ECUnit::WriteJson(Json::Value& outValue, bool includeSchemaVersion) const
+bool ECUnit::ToJson(Json::Value& outValue, bool includeSchemaVersion) const
     {
-    return WriteJson(outValue, true, includeSchemaVersion);
+    return ToJson(outValue, true, includeSchemaVersion);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus ECUnit::WriteInvertedUnitJson(Json::Value& outValue, bool includeSchemaVersion) const
+bool ECUnit::InvertedUnitToJson(Json::Value& outValue, bool includeSchemaVersion) const
     {
-    return WriteInvertedUnitJson(outValue, true, includeSchemaVersion);
+    return InvertedUnitToJson(outValue, true, includeSchemaVersion);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus ECUnit::WriteConstantJson(Json::Value& outValue, bool includeSchemaVersion) const
+bool ECUnit::ConstantToJson(Json::Value& outValue, bool includeSchemaVersion) const
     {
-    return WriteConstantJson(outValue, true, includeSchemaVersion);
+    return ConstantToJson(outValue, true, includeSchemaVersion);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus ECUnit::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+bool ECUnit::ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
     {
     // Common properties to all Schema children
     if (standalone)
@@ -550,13 +550,13 @@ SchemaWriteStatus ECUnit::WriteJson(Json::Value& outValue, bool standalone, bool
     if (HasDenominator())
         outValue[DENOMINATOR_ATTRIBUTE] = GetDenominator();
 
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus ECUnit::WriteInvertedUnitJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const 
+bool ECUnit::InvertedUnitToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const 
     {
     // Common properties to all Schema children
     if (standalone)
@@ -577,13 +577,13 @@ SchemaWriteStatus ECUnit::WriteInvertedUnitJson(Json::Value& outValue, bool stan
     if (GetIsDescriptionDefined())
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
 
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-SchemaWriteStatus ECUnit::WriteConstantJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const 
+bool ECUnit::ConstantToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const 
     {
     // Common properties to all Schema children
     if (standalone)
@@ -607,7 +607,7 @@ SchemaWriteStatus ECUnit::WriteConstantJson(Json::Value& outValue, bool standalo
     if (GetIsDescriptionDefined())
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
 
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

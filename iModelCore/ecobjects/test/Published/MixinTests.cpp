@@ -683,7 +683,7 @@ TEST_F(MixinTest, SerializeStandaloneMixin)
     mixin->SetClassModifier(ECClassModifier::Abstract);
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, mixin->WriteJson(schemaJson, true));
+    EXPECT_TRUE(mixin->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneMixin.ecschema.json"));

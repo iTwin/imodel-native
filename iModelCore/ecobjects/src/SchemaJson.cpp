@@ -21,7 +21,7 @@ SchemaJsonWriter::SchemaJsonWriter(Json::Value& jsonRoot, ECSchemaCR ecSchema) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::WriteSchemaReferences()
+bool SchemaJsonWriter::WriteSchemaReferences()
     {
     auto jsonRefArr = Json::Value(Json::ValueType::arrayValue);
     for (auto const& pair : m_ecSchema.GetReferencedSchemas())
@@ -35,197 +35,197 @@ SchemaWriteStatus SchemaJsonWriter::WriteSchemaReferences()
     if (0 != jsonRefArr.size())
         m_jsonRoot[ECJSON_REFERENCES_ATTRIBUTE] = jsonRefArr;
 
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::WriteClass(ECClassCR ecClass)
+bool SchemaJsonWriter::WriteClass(ECClassCR ecClass)
     {
     // Don't write any classes that aren't in the schema we're writing.
     if (&(ecClass.GetSchema()) != &m_ecSchema)
-        return SchemaWriteStatus::Success;
+        return true;
 
     Json::Value& itemObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][ecClass.GetName()];
-    return ecClass._WriteJson(itemObj, false, false, false);
+    return ecClass._ToJson(itemObj, false, false, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::WriteEnumeration(ECEnumerationCR ecEnumeration)
+bool SchemaJsonWriter::WriteEnumeration(ECEnumerationCR ecEnumeration)
     {
     // Don't write any enumerations that aren't in the schema we're writing.
     if (&(ecEnumeration.GetSchema()) != &m_ecSchema)
-        return SchemaWriteStatus::Success;
+        return true;
 
     Json::Value& itemObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][ecEnumeration.GetName()];
-    return ecEnumeration.WriteJson(itemObj, false, false);
+    return ecEnumeration.ToJson(itemObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::WriteKindOfQuantity(KindOfQuantityCR kindOfQuantity)
+bool SchemaJsonWriter::WriteKindOfQuantity(KindOfQuantityCR kindOfQuantity)
     {
     // Don't write any KOQs that aren't in the schema we're writing.
     if (&(kindOfQuantity.GetSchema()) != &m_ecSchema)
-        return SchemaWriteStatus::Success;
+        return true;
 
     Json::Value& itemObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][kindOfQuantity.GetName()];
-    return kindOfQuantity.WriteJson(itemObj, false, false);
+    return kindOfQuantity.ToJson(itemObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::WritePropertyCategory(PropertyCategoryCR propertyCategory)
+bool SchemaJsonWriter::WritePropertyCategory(PropertyCategoryCR propertyCategory)
     {
     // Don't write any elements that aren't in the schema we're writing.
     if (&(propertyCategory.GetSchema()) != &m_ecSchema)
-        return SchemaWriteStatus::Success;
+        return true;
 
     Json::Value& itemObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][propertyCategory.GetName()];
-    return propertyCategory.WriteJson(itemObj, false, false);
+    return propertyCategory.ToJson(itemObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz             02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::WriteUnitSystem(UnitSystemCR unitSystem)
+bool SchemaJsonWriter::WriteUnitSystem(UnitSystemCR unitSystem)
     {
     // Don't write any elements that aren't in the schema we're writing.
     if (&(unitSystem.GetSchema()) != &m_ecSchema)
-        return SchemaWriteStatus::Success;
+        return true;
 
     Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][unitSystem.GetName()];
-    return unitSystem.WriteJson(childObj, false, false);
+    return unitSystem.ToJson(childObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz             02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::WritePhenomenon(PhenomenonCR phenomenon)
+bool SchemaJsonWriter::WritePhenomenon(PhenomenonCR phenomenon)
     {
     // Don't write any elements that aren't in the schema we're writing.
     if (&(phenomenon.GetSchema()) != &m_ecSchema)
-        return SchemaWriteStatus::Success;
+        return true;
 
     Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][phenomenon.GetName()];
-    return phenomenon.WriteJson(childObj, false, false);
+    return phenomenon.ToJson(childObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz             02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::WriteUnit(ECUnitCR unit)
+bool SchemaJsonWriter::WriteUnit(ECUnitCR unit)
     {
     // Don't write any elements that aren't in the schema we're writing.
     if (&(unit.GetSchema()) != &m_ecSchema)
-        return SchemaWriteStatus::Success;
+        return true;
 
     Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][unit.GetName()];
-    return unit.WriteJson(childObj, false, false);
+    return unit.ToJson(childObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz             02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::WriteInvertedUnit(ECUnitCR invertedUnit)
+bool SchemaJsonWriter::WriteInvertedUnit(ECUnitCR invertedUnit)
     {
     // Don't write any elements that aren't in the schema we're writing.
     if (&(invertedUnit.GetSchema()) != &m_ecSchema)
-        return SchemaWriteStatus::Success;
+        return true;
 
     Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][invertedUnit.GetName()];
-    return invertedUnit.WriteInvertedUnitJson(childObj, false, false);
+    return invertedUnit.InvertedUnitToJson(childObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz             02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::WriteConstant(ECUnitCR constant)
+bool SchemaJsonWriter::WriteConstant(ECUnitCR constant)
     {
     // Don't write any elements that aren't in the schema we're writing.
     if (&(constant.GetSchema()) != &m_ecSchema)
-        return SchemaWriteStatus::Success;
+        return true;
 
     Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][constant.GetName()];
-    return constant.WriteConstantJson(childObj, false, false);
+    return constant.ConstantToJson(childObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::WriteSchemaItems()
+bool SchemaJsonWriter::WriteSchemaItems()
     {
     m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE] = Json::Value(Json::ValueType::objectValue);
-    SchemaWriteStatus status;
 
     for (auto const ecClass : m_ecSchema.GetClasses())
         {
-        if (SchemaWriteStatus::Success != (status = WriteClass(*ecClass)))
-            return status;
+        if (!WriteClass(*ecClass))
+            return false;
         }
 
     for (auto const enumeration : m_ecSchema.GetEnumerations())
         {
-        if (SchemaWriteStatus::Success != (status = WriteEnumeration(*enumeration)))
-            return status;
+        if (!WriteEnumeration(*enumeration))
+            return false;
         }
 
     for (auto const koq : m_ecSchema.GetKindOfQuantities())
         {
-        if (SchemaWriteStatus::Success != (status = WriteKindOfQuantity(*koq)))
-            return status;
+        if (!WriteKindOfQuantity(*koq))
+            return false;
         }
 
     for (auto const pc : m_ecSchema.GetPropertyCategories())
         {
-        if (SchemaWriteStatus::Success != (status = WritePropertyCategory(*pc)))
-            return status;
+        if (!WritePropertyCategory(*pc))
+            return false;
         }
 
     for (auto const us : m_ecSchema.GetUnitSystems())
         {
-        if (SchemaWriteStatus::Success != (status = WriteUnitSystem(*us)))
-            return status;
+        if (!WriteUnitSystem(*us))
+            return false;
         }
 
     for (auto const ph : m_ecSchema.GetPhenomena())
         {
-        if (SchemaWriteStatus::Success != (status = WritePhenomenon(*ph)))
-            return status;
+        if (!WritePhenomenon(*ph))
+            return false;
         }
 
     for (auto const ecu : m_ecSchema.GetUnits())
         {
+        bool status = true;
         if (ecu->IsInvertedUnit())
             status = WriteInvertedUnit(*ecu);
         else if (ecu->IsConstant())
             status = WriteConstant(*ecu);
         else
             status = WriteUnit(*ecu);
-        if(SchemaWriteStatus::Success != status)
+        if (!status)
             return status;
         }
 
     if (0 == m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE].size())
         m_jsonRoot.removeMember(ECJSON_SCHEMA_ITEMS_ATTRIBUTE);
 
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::Serialize()
+bool SchemaJsonWriter::Serialize()
     {
     if (m_ecSchema.GetECVersion() < ECVersion::V3_1)
         {
         LOG.errorv("Schema Serialization Violation: JSON serialization only supported for schemas with ECVersion 3.1 or later.");
-        return SchemaWriteStatus::FailedToCreateJson;
+        return false;
         }
 
     m_jsonRoot = Json::Value(Json::ValueType::objectValue);
@@ -240,20 +240,19 @@ SchemaWriteStatus SchemaJsonWriter::Serialize()
     if (m_ecSchema.GetInvariantDescription().length())
         m_jsonRoot[DESCRIPTION_ATTRIBUTE] = m_ecSchema.GetInvariantDescription();
 
-    SchemaWriteStatus status;
-    if (SchemaWriteStatus::Success != (status = WriteSchemaReferences()))
-        return status;
+    if (!WriteSchemaReferences())
+        return false;
 
     Json::Value customAttributesArr;
-    if (SchemaWriteStatus::Success != (status = m_ecSchema.WriteCustomAttributes(customAttributesArr)))
-        return status;
+    if (!m_ecSchema.WriteCustomAttributes(customAttributesArr))
+        return false;
     if (!customAttributesArr.empty())
         m_jsonRoot[ECJSON_CUSTOM_ATTRIBUTES_ELEMENT] = customAttributesArr;
 
-    if (SchemaWriteStatus::Success != (status = WriteSchemaItems()))
-        return status;
+    if (!WriteSchemaItems())
+        return false;
 
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

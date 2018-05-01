@@ -172,7 +172,7 @@ SchemaWriteStatus ECEnumeration::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecX
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECEnumeration::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
+bool ECEnumeration::ToJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
     {
     // Common properties to all Schema items
     if (standalone)
@@ -212,12 +212,12 @@ SchemaWriteStatus ECEnumeration::WriteJson(Json::Value& outValue, bool standalon
         else if (GetTypeName() == EC_PRIMITIVE_TYPENAME_STRING)
             enumeratorObj[ENUMERATOR_VALUE_ATTRIBUTE] = Json::Value(enumerator->GetString());
         else
-            return SchemaWriteStatus::FailedToCreateJson;
+            return false;
         enumeratorArr.append(enumeratorObj);
         }
     outValue[ECJSON_ENUMERATOR_ELEMENT] = enumeratorArr;
 
-    return SchemaWriteStatus::Success;
+    return true;
     }
 
 //---------------------------------------------------------------------------------------

@@ -406,7 +406,7 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithNoItems)
     ECSchemaPtr schema = SchemaJsonSerializationTest::CreateSchemaWithNoItems();
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToJsonValue(schemaJson));
+    EXPECT_TRUE(schema->WriteToJsonValue(schemaJson));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithNoItems.ecschema.json").c_str());
@@ -521,7 +521,7 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
 
     // Test the schema
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToJsonValue(schemaJson));
+    EXPECT_TRUE(schema->WriteToJsonValue(schemaJson));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithItems.ecschema.json"));

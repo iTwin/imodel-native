@@ -949,7 +949,7 @@ TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClass)
     relationshipClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, relationshipClass->WriteJson(schemaJson, true));
+    EXPECT_TRUE(relationshipClass->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECRelationshipClass.ecschema.json"));
@@ -998,7 +998,7 @@ TEST_F(ECRelationshipClassTest, SerializeStandaloneRelationshipClassWithAbstract
     relationshipClass->GetTarget().AddClass(*classA);
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, relationshipClass->WriteJson(schemaJson, true));
+    EXPECT_TRUE(relationshipClass->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StadaloneECRelationshipClassWithAbstractConstraint.ecschema.json"));
@@ -1043,7 +1043,7 @@ TEST_F(ECRelationshipClassTest, InheritedConstraintCustomAttributesShouldNotBeSe
     derivedRelationshipClass->GetTarget().SetRoleLabel("TargetRoleLabel");
 
     Json::Value relationshipClassJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, derivedRelationshipClass->WriteJson(relationshipClassJson, true));
+    EXPECT_TRUE(derivedRelationshipClass->ToJson(relationshipClassJson, true));
 
     Json::Value testDataJson;
     BeFileName relClassTestDataFile(ECTestFixture::GetTestDataPath(L"ECJson/RelationshipConstraintInheritedCustomAttributes.ecschema.json"));

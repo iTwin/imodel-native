@@ -128,7 +128,7 @@ TEST_F(PropertyCategoryTest, StandaloneSchemaItemPropertyCategory)
     prop->SetPriority(5);
 
     Json::Value schemaJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, prop->WriteJson(schemaJson, true));
+    EXPECT_TRUE(prop->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandalonePropertyCategory.ecschema.json"));
