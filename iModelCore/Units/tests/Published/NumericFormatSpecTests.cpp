@@ -281,14 +281,16 @@ TEST_F(NumericFormatSpecJsonTest, SerializeDecimalType)
     NumericFormatSpec format;
 
     {
-    Json::Value basicJson = format.ToJson(false);
+    Json::Value basicJson;
+    format.ToJson(basicJson, false);
     EXPECT_FALSE(basicJson.empty());
     EXPECT_EQ(1, (uint32_t)basicJson.size()) << "Incorrect number of default Decimal attributes.";
     JsonValueCR firstValue = basicJson[json_type()];
     ValidateJson_Type(firstValue, PresentationType::Decimal);
     }
     {
-    Json::Value verboseJson = format.ToJson(true);
+    Json::Value verboseJson;
+    format.ToJson(verboseJson, true);
     EXPECT_FALSE(verboseJson.empty());
     EXPECT_EQ(9, (uint32_t)verboseJson.size()) << "Incorrect number of Decimal attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);
@@ -304,14 +306,16 @@ TEST_F(NumericFormatSpecJsonTest, SerializeScientific)
     format.SetPresentationType(PresentationType::Scientific);
 
     {
-    Json::Value basicJson = format.ToJson(false);
+    Json::Value basicJson;
+    format.ToJson(basicJson, false);
     EXPECT_FALSE(basicJson.empty());
     EXPECT_EQ(2, (uint32_t)basicJson.size()) << "Incorrect number of default Scientific attributes.";
     JsonValueCR firstValue = basicJson[json_type()];
     ValidateJson_Type(firstValue, PresentationType::Scientific);
     }
     {
-    Json::Value verboseJson = format.ToJson(true);
+    Json::Value verboseJson;
+    format.ToJson(verboseJson, true);
     EXPECT_FALSE(verboseJson.empty());
     EXPECT_EQ(10, (uint32_t)verboseJson.size()) << "Incorrect number of Scientific attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);
@@ -327,7 +331,8 @@ TEST_F(NumericFormatSpecJsonTest, SerializeStation)
     format.SetPresentationType(PresentationType::Station);
 
     {
-    Json::Value basicJson = format.ToJson(false);
+    Json::Value basicJson;
+    format.ToJson(basicJson, false);
     EXPECT_FALSE(basicJson.empty());
     EXPECT_EQ(2, (uint32_t)basicJson.size()) << "Incorrect number of default Station attributes.";
     JsonValueCR firstValue = basicJson[json_type()];
@@ -338,7 +343,8 @@ TEST_F(NumericFormatSpecJsonTest, SerializeStation)
     EXPECT_EQ(0, offsetSize.asUInt());
     }
     {
-    Json::Value verboseJson = format.ToJson(true);
+    Json::Value verboseJson;
+    format.ToJson(verboseJson, true);
     EXPECT_FALSE(verboseJson.empty());
     EXPECT_EQ(11, (uint32_t)verboseJson.size()) << "Incorrect number of Station attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);
@@ -354,12 +360,14 @@ TEST_F(NumericFormatSpecJsonTest, SerializeFractional)
     format.SetPresentationType(PresentationType::Fractional);
 
     {
-    Json::Value basicJson = format.ToJson(false);
+    Json::Value basicJson;
+    format.ToJson(basicJson, false);
     EXPECT_FALSE(basicJson.empty());
     EXPECT_EQ(1, (uint32_t)basicJson.size()) << "Incorrect number of default Fractional attributes.";
     }
     {
-    Json::Value verboseJson = format.ToJson(true);
+    Json::Value verboseJson;
+    format.ToJson(verboseJson, true);
     EXPECT_FALSE(verboseJson.empty());
     EXPECT_EQ(9, (uint32_t)verboseJson.size()) << "Incorrect number of Fractional attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);

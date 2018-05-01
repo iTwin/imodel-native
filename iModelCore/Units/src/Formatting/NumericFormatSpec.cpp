@@ -169,22 +169,20 @@ BentleyStatus NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jv
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //---------------------------------------------------------------------------------------
-Json::Value NumericFormatSpec::ToJson(bool verbose)const
+bool NumericFormatSpec::ToJson(Json::Value& out, bool verbose) const
     {
-    Json::Value jNFC;
-
-    jNFC[json_type()] = Utils::GetPresentationTypeString(GetPresentationType());
+    out[json_type()] = Utils::GetPresentationTypeString(GetPresentationType());
     
     // Always show ScientificType if the type is Scientific.
     if (PresentationType::Scientific == GetPresentationType())
-        jNFC[json_scientificType()] = Utils::GetScientificTypeString(GetScientificType());
+        out[json_scientificType()] = Utils::GetScientificTypeString(GetScientificType());
 
     if (PresentationType::Station == GetPresentationType())
         {
         // Always serialize offsetSize for station.
-        jNFC[json_stationOffsetSize()] = GetStationOffsetSize();
+        out[json_stationOffsetSize()] = GetStationOffsetSize();
         if (verbose || HasStationSeparator())
-            jNFC[json_stationSeparator()] = Utf8String(1, GetStationSeparator());
+            out[json_stationSeparator()] = Utf8String(1, GetStationSeparator());
         }
 
     // Common between all Types
@@ -193,35 +191,35 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
         switch (m_presentationType)
             {
             case PresentationType::Fractional:
-                jNFC[json_precision()] = Utils::FractionalPrecisionDenominator(m_fractPrecision);
+                out[json_precision()] = Utils::FractionalPrecisionDenominator(m_fractPrecision);
                 break;
             case PresentationType::Decimal:
             case PresentationType::Scientific:
             case PresentationType::Station:
             default:
-                jNFC[json_precision()] = Utils::DecimalPrecisionToInt(m_decPrecision);
+                out[json_precision()] = Utils::DecimalPrecisionToInt(m_decPrecision);
                 break;
             }
         }
 
     if(verbose || HasSignOption())
-        jNFC[json_showSignOption()] = Utils::GetSignOptionString(m_signOption);
+        out[json_showSignOption()] = Utils::GetSignOptionString(m_signOption);
     if (verbose || HasRoundingFactor())
-        jNFC[json_roundFactor()] = GetRoundingFactor();
+        out[json_roundFactor()] = GetRoundingFactor();
     if (verbose || HasFormatTraits())
-        jNFC[json_formatTraits()] = FormatTraitsToJson(verbose);
+        out[json_formatTraits()] = FormatTraitsToJson(verbose);
     if (verbose || HasDecimalSeparator())
-        jNFC[json_decSeparator()] = Utf8String(1, GetDecimalSeparator());
+        out[json_decSeparator()] = Utf8String(1, GetDecimalSeparator());
     if (verbose || HasThousandsSeparator())
-        jNFC[json_thousandSeparator()] = Utf8String(1, GetThousandSeparator());
+        out[json_thousandSeparator()] = Utf8String(1, GetThousandSeparator());
     if (verbose || HasUomSeparator())
-        jNFC[json_uomSeparator()] = GetUomSeparator();
+        out[json_uomSeparator()] = GetUomSeparator();
     if (verbose || HasMinWidth())
-        jNFC[json_minWidth()] = GetMinWidth();
+        out[json_minWidth()] = GetMinWidth();
     if (verbose || HasFormatTraits())
-        jNFC[json_formatTraits()] = GetFormatTraitsString();
+        out[json_formatTraits()] = GetFormatTraitsString();
 
-    return jNFC;
+    return true;
     }
 
 //---------------------------------------------------------------------------------------

@@ -520,17 +520,19 @@ FormatCR Format::DefaultFormat()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-Json::Value Format::ToJson(bool verbose) const
+bool Format::_ToJson(Json::Value& out, bool verbose) const
     {
-    Json::Value jNFS;
-    auto num = m_numericSpec.ToJson(verbose);
-    for (Json::ValueIterator iter = num.begin(); iter != num.end(); iter++)
-        {
-        jNFS[iter.memberName()] = *iter;
-        }
+    if (!m_numericSpec.ToJson(out, verbose))
+        return false;
+
     if (HasComposite())
-        jNFS[json_composite()] = m_compositeSpec.ToJson();
-    return jNFS;
+        {
+        auto& compNode = out[json_composite()] = Json::objectValue;
+        if (!m_compositeSpec.ToJson(compNode, verbose))
+            return false;
+        }
+
+    return true;
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

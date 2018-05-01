@@ -195,12 +195,13 @@ bvector<TraitJsonKeyMap> TraitJsonKeyMap::TraitJsonKeySet()
 //----------------------------------------------------------------------------------------
 void FormattingTestUtils::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
     {
-    Json::Value jval = nfs.ToJson(true);
+    Json::Value jval;
+    EXPECT_TRUE(nfs.ToJson(jval, true));
     Utf8String str = jval.ToString();
     NumericFormatSpec nfs1;
     NumericFormatSpec::FromJson(nfs1, jval);
     EXPECT_TRUE(nfs.IsIdentical(nfs1));
-    jval = nfs.ToJson(false);
+    EXPECT_TRUE(nfs.ToJson(jval, false));
     NumericFormatSpec::FromJson(nfs1, jval);
     EXPECT_TRUE(nfs.IsIdentical(nfs1));
     }

@@ -366,17 +366,16 @@ bool CompositeValueSpec::IsIdentical(CompositeValueSpecCR other) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-Json::Value CompositeValueSpec::ToJson(bool verbose, bool excludeUnits) const
+bool CompositeValueSpec::ToJson(Json::Value& out, bool verbose, bool excludeUnits) const
     {
-    if (IsProblem()) // TODO log error;
-        return Json::Value();
+    if (IsProblem())
+        return false;
 
-    Json::Value jCVS;
     bool valid = true;
     if (!excludeUnits)
         {
         valid = false;
-        jCVS[json_units()] = Json::arrayValue;
+        out[json_units()] = Json::arrayValue;
         UnitProxyCP proxP = nullptr;
         for (int i = 0; i < GetUnitCount(); i++)
             {
@@ -385,19 +384,19 @@ Json::Value CompositeValueSpec::ToJson(bool verbose, bool excludeUnits) const
                 {
                 if (0 == i) // Major unit
                     valid = true;
-                jCVS[json_units()].append(proxP->ToJson(verbose));
+                out[json_units()].append(proxP->ToJson(verbose));
                 }
             }
         }
 
     if (valid)
         {
-        jCVS[json_includeZero()] = IsIncludeZero();
+        out[json_includeZero()] = IsIncludeZero();
         if (m_spacer.length() > 0)
-            jCVS[json_spacer()] = m_spacer.c_str();
+            out[json_spacer()] = m_spacer.c_str();
         }
 
-    return jCVS;
+    return valid;
     }
 
 //--------------------------------------------------------------------------------------
