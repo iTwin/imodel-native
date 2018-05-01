@@ -144,17 +144,18 @@ public:
     private:
         int32_t m_order;
 
-        Order() {}
-
     public:
+        Order() : m_order(Invalid) {}
         Order(int32_t order) : m_order(order) {}
 
         operator int32_t() { return m_order; }
+        bool operator< (Order const& right) const { return m_order < right.m_order; }
 
         bool IsValid() { return m_order >= LeftMost && m_order <= RightMost; }
 
         static const int32_t LeftMost = 0;
         static const int32_t RightMost = 1000;
+        static const int32_t Invalid = LeftMost - 1;
     };
 
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayElement)
