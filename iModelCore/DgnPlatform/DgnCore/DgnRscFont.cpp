@@ -50,8 +50,7 @@ public:
     T_Id _GetId() const override { return m_glyphId; }
     DRange2d _GetRange() const override { return m_range; }
     DRange2d _GetExactRange() const override { return m_exactRange; }
-    BentleyStatus _FillGpa(GPArrayR) const override;
-    CurveVectorPtr _GetCurveVector (bool &isFilled) const override;
+    CurveVectorPtr _GetCurveVector () const override;
     bool _IsBlank() const override { return m_isBlank; }
     static DgnRscGlyph* CreateUnitSpaceGlyph();
     void SetWidthDirect(double width, double exactWidth) { m_range.high.x = width; m_exactRange.high.x = exactWidth; }
@@ -128,23 +127,6 @@ RscGlyphElementIterator RscGlyphElementIterator::ToNext()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     08/2012
-//---------------------------------------------------------------------------------------
-static void addPtsToGPA(GPArrayR gpa, bvector<DPoint2d>& pts)
-    {
-    DPoint3d dPoint;
-    dPoint.z = 0.0;
-
-    for (bvector<DPoint2d>::const_iterator curr = pts.begin(); pts.end() != curr; ++curr)
-        {
-        dPoint.x = curr->x;
-        dPoint.y = curr->y;
-
-        gpa.Add(&dPoint);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
 // Outer polys should be CW, and holes should be CCW.
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
@@ -197,14 +179,13 @@ static void CaptureAndReset (bvector<CurveVectorPtr> &completedPaths, CurveVecto
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Earlin.Lutz     05/2018
 //---------------------------------------------------------------------------------------
-CurveVectorPtr DgnRscGlyph::_GetCurveVector (bool &isFilled) const
+CurveVectorPtr DgnRscGlyph::_GetCurveVector () const
     {
     static bool s_nocv = false;
     if (s_nocv)
         return nullptr;
     bvector<CurveVectorPtr> completedPaths;
     CurveVectorPtr currentPath = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-    isFilled = false;
 
     // Can be null when no default glyph exists and layout needs a blank unit cube glyph.
     if ((nullptr == m_data) || (0 == m_glyphDataOffset.size))
@@ -277,83 +258,6 @@ CurveVectorPtr DgnRscGlyph::_GetCurveVector (bool &isFilled) const
     return result;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DgnRscGlyph::_FillGpa(GPArrayR gpa) const
-    {
-    // Can be null when no default glyph exists and layout needs a blank unit cube glyph.
-    if ((nullptr == m_data) || (0 == m_glyphDataOffset.size))
-        return SUCCESS;
-
-    bvector<Byte> glyphDataBuffer;
-    glyphDataBuffer.reserve(m_glyphDataOffset.size);
-    if (SUCCESS != m_data->_ReadGlyphData(glyphDataBuffer, (size_t)m_glyphDataOffset.offset, (size_t)m_glyphDataOffset.size))
-        return ERROR;
-
-    RscGlyphData const* glyphData = (RscGlyphData const*)&glyphDataBuffer[0];
-    if (0 == glyphData->numElems)
-        return ERROR;
-
-    bool hasLines = false;
-    bool hasPolys = false;
-
-    for (RscGlyphElementIterator curr((RscGlyphElement const*)(glyphData + 1), (size_t)glyphData->numElems); curr.IsValid(); curr = curr.ToNext())
-        {
-        size_t nPts = (size_t)curr->numVerts;
-        RscFontPoint2d const* glyphPoint = curr->vertice;
-        RscFontPoint2d const* glyphEnd = (glyphPoint + nPts);
-        bvector<DPoint2d> tPts;
-
-        for (; glyphPoint < glyphEnd; ++glyphPoint)
-            {
-            DPoint2d pt2d;
-            pt2d.x = (glyphPoint->x * m_ascenderScaleFactor);
-            pt2d.y = (glyphPoint->y * m_ascenderScaleFactor);
-
-            tPts.push_back(pt2d);
-            }
-
-        if (fixDirection(&tPts[0], nPts, (RscGlyphElementType)curr->type))
-            continue;
-
-        int firstPtNum = gpa.GetCount();
-        addPtsToGPA(gpa, tPts);
-
-        gpa.MarkBreak();
-
-        GraphicsPoint* firstPt = gpa.GetPtr(firstPtNum);
-        switch (curr->type)
-            {
-            case RSCGLYPHELEMENT_Line:
-                hasLines = true;
-                firstPt->mask |= HMASK_RSC_LINE;
-                break;
-
-            case RSCGLYPHELEMENT_Poly:
-            case RSCGLYPHELEMENT_PolyHoles:
-                hasPolys = true;
-                firstPt->mask |= HMASK_RSC_POLY;
-                gpa.MarkMajorBreak();
-                break;
-
-            case RSCGLYPHELEMENT_PolyHole:
-            case RSCGLYPHELEMENT_PolyHoleFinal:
-                firstPt->mask |= HMASK_RSC_HOLE;
-                gpa.MarkMajorBreak();
-                break;
-            }
-        }
-
-    // Add major break so we can transform individual glyphs.
-    gpa.MarkMajorBreak();
-
-    // Since QV won't draw any lines if fill is on, we can't turn it on if the glyph has any lines in it.
-    if (!hasLines || (hasPolys && m_isFilled))
-        gpa.SetArrayMask(HPOINT_ARRAYMASK_FILL);
-
-    return SUCCESS;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015

@@ -1327,8 +1327,7 @@ void  InitGlyphCurves() const
         {
         if (nullptr != glyphs[iGlyph])
             {
-            bool            isFilled = false;
-            CurveVectorPtr  glyphCurveVector = glyphs[iGlyph]->GetCurveVector(isFilled);
+            CurveVectorPtr  glyphCurveVector = glyphs[iGlyph]->GetCurveVector();
 
             if (glyphCurveVector.IsValid())
                 {
