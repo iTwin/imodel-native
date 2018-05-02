@@ -23,6 +23,7 @@ struct SchemaReferenceTest : ECTestFixture {};
 struct SchemaCreationTest : ECTestFixture {};
 struct SchemaLocateTest : ECTestFixture {};
 struct SchemaKeyComparisonTest : ECTestFixture {};
+struct SchemaKeyTest : ECTestFixture {};
 struct SchemaCacheTest : ECTestFixture {};
 struct SchemaChecksumTest : ECTestFixture {};
 struct SchemaImmutableTest : ECTestFixture {};
@@ -1837,6 +1838,76 @@ TEST_F(SchemaKeyComparisonTest, VerifyNotMatchesOperator)
     EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaNotTest", 1, 0));
     EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaTest", 2, 0));
     EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaTest", 1, 1));
+    }
+
+//=======================================================================================
+//! SchemaKeyTest
+//=======================================================================================
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                      Kyle.Abramowitz           05/2018
+//---------------+---------------+---------------+---------------+---------------+-----
+TEST_F(SchemaKeyTest, TestParseSchemaVersionString)
+    {
+    uint32_t r;
+    uint32_t w;
+    uint32_t m;
+
+    EXPECT_EQ(ECObjectsStatus::Success, SchemaKey::ParseVersionString(r, w, m, ""));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionString(r, w, m, "0"));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionString(r, w, m, "0."));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionString(r, w, m, ".0"));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionString(r, w, m, "."));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionString(r, w, m, ".."));
+
+    EC_EXPECT_SUCCESS(SchemaKey::ParseVersionString(r, w, m, "0.0"));
+    EXPECT_EQ(0, r);
+    EXPECT_EQ(0, w);
+    EXPECT_EQ(0, m);
+
+    EC_EXPECT_SUCCESS(SchemaKey::ParseVersionString(r, w, m, "1.2"));
+    EXPECT_EQ(1, r);
+    EXPECT_EQ(0, w);
+    EXPECT_EQ(2, m);
+
+    EC_EXPECT_SUCCESS(SchemaKey::ParseVersionString(r, w, m, "0.0.0"));
+    EXPECT_EQ(0, r);
+    EXPECT_EQ(0, w);
+    EXPECT_EQ(0, m);
+
+    EC_EXPECT_SUCCESS(SchemaKey::ParseVersionString(r, w, m, "1.2.3"));
+    EXPECT_EQ(1, r);
+    EXPECT_EQ(2, w);
+    EXPECT_EQ(3, m);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                      Kyle.Abramowitz           05/2018
+//---------------+---------------+---------------+---------------+---------------+-----
+TEST_F(SchemaKeyTest, TestParseSchemaVersionStringStrict)
+    {
+    uint32_t r;
+    uint32_t w;
+    uint32_t m;
+
+    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionStringStrict(r, w, m, ""));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionStringStrict(r, w, m, "0"));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionStringStrict(r, w, m, "0."));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionStringStrict(r, w, m, ".0"));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionStringStrict(r, w, m, "."));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionStringStrict(r, w, m, ".."));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionStringStrict(r, w, m, "0.0"));
+    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionStringStrict(r, w, m, "1.2"));
+
+    EC_EXPECT_SUCCESS(SchemaKey::ParseVersionStringStrict(r, w, m, "0.0.0"));
+    EXPECT_EQ(0, r);
+    EXPECT_EQ(0, w);
+    EXPECT_EQ(0, m);
+
+    EC_EXPECT_SUCCESS(SchemaKey::ParseVersionStringStrict(r, w, m, "1.2.3"));
+    EXPECT_EQ(1, r);
+    EXPECT_EQ(2, w);
+    EXPECT_EQ(3, m);
     }
 
 //=======================================================================================
