@@ -128,7 +128,7 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
     // Test successfully validates latest schema
     {
     Utf8String schemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "       <BaseClass>bis:Element</BaseClass>"
@@ -182,7 +182,7 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     // Test unsuccessful validation of reference to standard schema
     {
     Utf8String schemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "   <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "   <ECEntityClass typeName='TestClass'>"
         "       <BaseClass>bis:Element</BaseClass>"
@@ -198,14 +198,14 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
 
     // Use an updated ECDbMap schema as a reference
     Utf8String refXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='ECDbMap' alias='ts' version='2.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='ECDbMap' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "   <ECEntityClass typeName='TestClass'/>"
         "</ECSchema>";
     ECSchemaPtr refSchema;
     ECSchema::ReadFromXmlString(refSchema, refXml.c_str(), *context);
 
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='01.00.00' alias='bis'/>"
         "    <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ref'/>"
         "    <ECEntityClass typeName='TestClass'>"
@@ -228,7 +228,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     // schemaName does not contain "dynamic" and does not need the DynamicSchema custom attribute.
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='FunkMachine' alias='fnk' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='FunkMachine' alias='fnk' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "</ECSchema>";
     InitContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
@@ -238,7 +238,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     // schemaName contains "Dynamic" and schema has the DynamicSchema custom attribute.
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='DynamicFunkMachine' alias='fnk' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='DynamicFunkMachine' alias='fnk' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECCustomAttributes>"
         "        <DynamicSchema xmlns='CoreCustomAttributes.01.00'/>"
         "    </ECCustomAttributes>"
@@ -251,7 +251,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     // schemaName contains "dynamic" and does not have the DynamicSchema custom attribute.
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='dynamicFunkMachine' alias='fnk' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='dynamicFunkMachine' alias='fnk' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "</ECSchema>";
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
@@ -261,7 +261,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     // schemaName contains "dYnAmic" and does not have the DynamicSchema custom attribute.
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='dYnAmicFuNkMAcHinE' alias='fnk' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='dYnAmicFuNkMAcHinE' alias='fnk' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "</ECSchema>";
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
@@ -271,7 +271,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     // schemaName contains "Dynamic" and does not have the DynamicSchema custom attribute.
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='DynamicFunkMachine' alias='fnk' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='DynamicFunkMachine' alias='fnk' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "</ECSchema>";
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
@@ -281,7 +281,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     // schemaName contains "Dyanamic" as part of the word "Dynamically" and does not have the DynamicSchema custom attribute.
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='SomeDynamicallyGeneratedSchema' alias='fnk' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='SomeDynamicallyGeneratedSchema' alias='fnk' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "</ECSchema>";
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
@@ -291,7 +291,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     // schemaName contains "Dyanamic" surrounded by underscores and does not have the DynamicSchema custom attribute.
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='Some_Dynamic_Schema' alias='fnk' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='Some_Dynamic_Schema' alias='fnk' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "</ECSchema>";
     InitContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
@@ -308,7 +308,7 @@ TEST_F(SchemaValidatorTests, RootEntityClassesMustDeriveFromBisHierarchy)
     // Entity class derives from a bis element.
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='GoodTestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -322,7 +322,7 @@ TEST_F(SchemaValidatorTests, RootEntityClassesMustDeriveFromBisHierarchy)
     // Entity class "DerivedTestClass" derives from an entity class "BaseTestClass" that derives from a bis element.
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='BaseTestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -339,7 +339,7 @@ TEST_F(SchemaValidatorTests, RootEntityClassesMustDeriveFromBisHierarchy)
     // Entity class written as a single tag does not derive from a bis element.
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='BadTestClass'/>"
         "</ECSchema>";
@@ -351,7 +351,7 @@ TEST_F(SchemaValidatorTests, RootEntityClassesMustDeriveFromBisHierarchy)
     // Entity class written with an opening and closing tag does not derive from a bis element.
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='BadTestClass'/>"
         "</ECSchema>";
@@ -363,13 +363,13 @@ TEST_F(SchemaValidatorTests, RootEntityClassesMustDeriveFromBisHierarchy)
     // Entity class is a derived class but does not derive from a bis element.
     {
     Utf8String refSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='ECDbMap' alias='ref' version='2.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='ECDbMap' alias='ref' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECEntityClass typeName='BaseTestClass'/>"
         "</ECSchema>";
     InitBisContextWithSchemaXml(refSchemaXml.c_str());
     
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ref'/>"
         "    <ECEntityClass typeName='BadDerivedTestClass'>"
@@ -454,7 +454,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     // Element Aspect Relationship Tests
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'/>"
         "    <ECEntityClass typeName='ElementMultiAspect' modifier='Abstract' description='ElementMultiAspect Description'/>"
         "    <ECEntityClass typeName='ElementAspect' modifier='Abstract' displayLabel='Element Aspect' description='Element Aspect Description'/>"
@@ -468,7 +468,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'/>"
         "    <ECEntityClass typeName='ElementAspect' modifier='Abstract' displayLabel='Element Aspect' description='Element Aspect Description'/>"
         "    <ECEntityClass typeName='ElementMultiAspect' modifier='None' displayLabel='Element Multi-Aspect' description='An Element Multi-Aspect Description'>"
@@ -501,7 +501,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'/>"
         "    <ECEntityClass typeName='ElementAspect' modifier='Abstract' displayLabel='Element Aspect' description='Element Aspect Description'/>"
         "    <ECEntityClass typeName='ElementMultiAspect' modifier='None' displayLabel='Element Multi-Aspect' description='An Element Multi-Aspect Description'>"
@@ -534,7 +534,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'/>"
         "    <ECEntityClass typeName='ElementMultiAspect' modifier='Abstract' description='ElementMultiAspect Description'/>"
         "    <ECEntityClass typeName='ElementAspect' modifier='Abstract' displayLabel='Element Aspect' description='Element Aspect Description'/>"
@@ -548,7 +548,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='Schema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='Schema1' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -570,7 +570,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'/>"
         "    <ECEntityClass typeName='ElementAspect' modifier='Abstract' displayLabel='Element Aspect' description='Element Aspect Description'/>"
         "    <ECEntityClass typeName='ElementMultiAspect' modifier='None' displayLabel='Element Multi-Aspect' description='An Element Multi-Aspect Description'>"
@@ -603,7 +603,7 @@ TEST_F(SchemaValidatorTests, BisCoreMultiAspectTests)
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'/>"
         "    <ECEntityClass typeName='ElementAspect' modifier='None' displayLabel='Element Aspect' description='Element Aspect Description'/>"
         "    <ECEntityClass typeName='ElementMultiAspect' modifier='None' displayLabel='Element Multi-Aspect' description='An Element Multi-Aspect Description'>"
@@ -646,7 +646,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     {
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'/>"
         "    <ECEntityClass typeName='ElementUniqueAspect' modifier='Abstract' description='ElementUniqueAspect Description'/>"
         "    <ECEntityClass typeName='ElementAspect' modifier='Abstract' displayLabel='Element Aspect' description='Element Aspect Description'/>"
@@ -660,7 +660,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'/>"
         "    <ECEntityClass typeName='ElementAspect' modifier='Abstract' displayLabel='Element Aspect' description='Element Aspect Description'/>"
         "    <ECEntityClass typeName='ElementUniqueAspect' modifier='None' displayLabel='Element Multi-Aspect' description='An Element Multi-Aspect Description'>"
@@ -692,7 +692,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'/>"
         "    <ECEntityClass typeName='ElementAspect' modifier='Abstract' displayLabel='Element Aspect' description='Element Aspect Description'/>"
         "    <ECEntityClass typeName='ElementUniqueAspect' modifier='None' displayLabel='Element Multi-Aspect' description='An Element Multi-Aspect Description'>"
@@ -725,7 +725,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'/>"
         "    <ECEntityClass typeName='ElementUniqueAspect' modifier='Abstract' description='ElementMultiAspect Description'/>"
         "    <ECEntityClass typeName='ElementAspect' modifier='Abstract' displayLabel='Element Aspect' description='Element Aspect Description'/>"
@@ -739,7 +739,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='Schema1' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='Schema1' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -761,7 +761,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'/>"
         "    <ECEntityClass typeName='ElementAspect' modifier='Abstract' displayLabel='Element Aspect' description='Element Aspect Description'/>"
         "    <ECEntityClass typeName='ElementUniqueAspect' modifier='None' displayLabel='Element Multi-Aspect' description='An Element Multi-Aspect Description'>"
@@ -794,7 +794,7 @@ TEST_F(SchemaValidatorTests, BisCoreUniqueAspectTests)
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECEntityClass typeName='Element' modifier='Abstract' description='Element Description'/>"
         "    <ECEntityClass typeName='ElementAspect' modifier='Abstract' displayLabel='Element Aspect' description='Element Aspect Description'/>"
         "    <ECEntityClass typeName='ElementUniqueAspect' modifier='None' displayLabel='Element Multi-Aspect' description='An Element Multi-Unique Description'>"
@@ -838,7 +838,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     {
     // Class may not implement both bis:IParentElement and bis:ISubModeledElement
     Utf8String bisSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BisCore' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>" +
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>" +
             R"xml(<ECSchemaReference name="CoreCustomAttributes" version="1.0.0" alias="CoreCA"/>
 
             <ECEntityClass typeName="IParentElement" modifier="Abstract" description="IParentElement Description">
@@ -867,7 +867,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     ASSERT_TRUE(validator.Validate(*schema)) << "BisCore succeeds validation";
 
     Utf8String badBisElementXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BadSchemaThatUsesBis' alias='bis' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BadSchemaThatUsesBis' alias='bis' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='BadClass' modifier='Abstract' description='BadClass Description'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -881,7 +881,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     ASSERT_FALSE(validator.Validate(*schema2)) << "Schema implements both IParentElement and ISubModeledElement so validation should fail.";
 
     Utf8String goodBisElementXml1 = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='GoodSchemaThatUsesBis1' alias='bis' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='GoodSchemaThatUsesBis1' alias='bis' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='BadClass' modifier='Abstract' description='BadClass Description'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -894,7 +894,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     ASSERT_TRUE(validator.Validate(*schema3)) << "Schema implements only IParentElement so validation should succeed.";
 
     Utf8String goodBisElementXml2 = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='GoodSchemaThatUsesBis2' alias='bis' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='GoodSchemaThatUsesBis2' alias='bis' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='BadClass' modifier='Abstract' description='BadClass Description'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -914,7 +914,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
     {
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClassBad'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -928,7 +928,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='SourceClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -953,7 +953,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClassGood1'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -966,7 +966,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClassGood2'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -979,7 +979,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='SourceClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1005,7 +1005,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='SourceClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1029,7 +1029,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='TestSchemaStruct' alias='tss' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='TestSchemaStruct' alias='tss' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECStructClass typeName='AStruct'>"
         "        <ECProperty propertyName='Banana' typeName='long'/>"
         "    </ECStructClass>"
@@ -1048,7 +1048,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassConstraintMayNotBeAbstractIfOnlyOn
     {
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='ConstraintTestSchemaFail' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='ConstraintTestSchemaFail' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1077,7 +1077,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassConstraintMayNotBeAbstractIfOnlyOn
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='AbstractTestSchemaSucceed' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='AbstractTestSchemaSucceed' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='BaseClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1123,7 +1123,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassMayNotHaveHoldingStrength)
     {
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1143,7 +1143,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassMayNotHaveHoldingStrength)
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1172,7 +1172,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     // Source = 0..*
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1193,7 +1193,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     // Source = 1..*
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1214,7 +1214,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     // Source = 0..1
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1235,7 +1235,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     // Source = 1..1
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1257,7 +1257,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     // Target = 0..*
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1278,7 +1278,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     // Target = 1..*
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1299,7 +1299,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     // Target = 0..1
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1320,7 +1320,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     // Target = 1..1
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1342,7 +1342,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     // Source = 0..*
     {
     Utf8String badSchemaNoDirection = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1363,7 +1363,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
     // Source = 0..1
     {
     Utf8String goodSchemaNoDirection = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='StandardSchemaReferenced' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1390,7 +1390,7 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
     {
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BadSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BadSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1410,7 +1410,7 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:Element</BaseClass>"
@@ -1437,7 +1437,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     {
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BadSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BadSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECSchemaReference name='Units' version='01.00.00' alias='u'/>"
         "    <ECEntityClass typeName='TestClass'>"
@@ -1451,7 +1451,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BadSchema2' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BadSchema2' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECSchemaReference name='Units' version='01.00.00' alias='u'/>"
         "    <ECEntityClass typeName='TestClass'>"
@@ -1465,7 +1465,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='BadSchema3' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='BadSchema3' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECSchemaReference name='Units' version='01.00.00' alias='u'/>"
         "    <ECEntityClass typeName='TestClass'>"
@@ -1479,7 +1479,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECSchemaReference name='Units' version='01.00.00' alias='u'/>"
         "    <ECEntityClass typeName='TestClass'>"
@@ -1493,7 +1493,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     }
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='GoodSchema2' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='GoodSchema2' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
         "    <ECSchemaReference name='Units' version='01.00.00' alias='u'/>"
         "    <ECEntityClass typeName='TestClass'>"
@@ -1514,7 +1514,7 @@ TEST_F(SchemaValidatorTests, StructsShouldNotHaveBaseClasses)
     {
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECStructClass typeName='BaseClass'>"
         "        <ECProperty propertyName='Length' typeName='double'/>"
         "    </ECStructClass>"
@@ -1528,7 +1528,7 @@ TEST_F(SchemaValidatorTests, StructsShouldNotHaveBaseClasses)
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECStructClass typeName='BaseClass'>"
         "        <ECProperty propertyName='Length' typeName='double'/>"
         "    </ECStructClass>"
@@ -1550,7 +1550,7 @@ TEST_F(SchemaValidatorTests, CustomAttributesShouldNotHaveBaseClasses)
     {
     {
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECCustomAttributeClass typeName='BaseClass'>"
         "        <ECProperty propertyName='Length' typeName='double'/>"
         "    </ECCustomAttributeClass>"
@@ -1564,7 +1564,7 @@ TEST_F(SchemaValidatorTests, CustomAttributesShouldNotHaveBaseClasses)
     }
     {
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECCustomAttributeClass typeName='BaseClass'>"
         "        <ECProperty propertyName='Length' typeName='double'/>"
         "    </ECCustomAttributeClass>"
@@ -1585,7 +1585,7 @@ TEST_F(SchemaValidatorTests, CustomAttributesShouldNotHaveBaseClasses)
 TEST_F(SchemaValidatorTests, TestSchemaReferenceVersion)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="SchemaReferencedVersion" alias="srv" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="SchemaReferencedVersion" alias="srv" version="1.00.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
                 <BaseClass>bis:Element</BaseClass>
@@ -1593,7 +1593,7 @@ TEST_F(SchemaValidatorTests, TestSchemaReferenceVersion)
         </ECSchema>)xml";
 
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.00.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
             <ECSchemaReference name="RefSchema" version="01.00.00" alias="ref"/>
             <ECEntityClass typeName="TestClass">

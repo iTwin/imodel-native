@@ -40,7 +40,7 @@ TEST_F(UnitSystemTest, BasicUnitSystemCreation)
 TEST_F(UnitSystemTest, LookupSystemTest)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
             <UnitSystem typeName="TestSystem"/>
         </ECSchema>)xml";
@@ -156,7 +156,7 @@ TEST_F(UnitSystemTest, StandaloneSchemaChildUnitSystem)
 TEST_F(UnitSystemDeserializationTest, BasicRoundTripTest)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         </ECSchema>)xml";
 
@@ -196,7 +196,7 @@ TEST_F(UnitSystemDeserializationTest, MissingOrInvalidName)
     {
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <UnitSystem displayLabel="Unit System" description="This is an awesome new Unit System without a name"/>
     </ECSchema>)xml";
 
@@ -206,7 +206,7 @@ TEST_F(UnitSystemDeserializationTest, MissingOrInvalidName)
     }
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <UnitSystem typeName="" displayLabel="Unit System" description="This is an awesome new Unit System with an empty name"/>
     </ECSchema>)xml";
 
@@ -217,7 +217,7 @@ TEST_F(UnitSystemDeserializationTest, MissingOrInvalidName)
 
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <UnitSystem typeName="....." displayLabel="Unit System" description="This is an awesome new Unit System with an empty name"/>
     </ECSchema>)xml";
 
@@ -233,7 +233,7 @@ TEST_F(UnitSystemDeserializationTest, MissingOrInvalidName)
 TEST_F(UnitSystemDeserializationTest, MissingDisplayLabel)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <UnitSystem typeName="aUniqueUnitSystem" description="This is an awesome new Unit System"/>
     </ECSchema>)xml";
 
@@ -252,7 +252,7 @@ TEST_F(UnitSystemDeserializationTest, MissingDisplayLabel)
 TEST_F(UnitSystemDeserializationTest, MissingDescription)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <UnitSystem typeName="aUniqueUnitSystem"/>
     </ECSchema>)xml";
 

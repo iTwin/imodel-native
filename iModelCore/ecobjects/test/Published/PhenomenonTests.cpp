@@ -42,7 +42,7 @@ TEST_F(PhenomenonTests, BasicPhenomenonCreation)
 TEST_F(PhenomenonTests, LookupPhenomTest)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
             <Phenomenon typeName="TestPhenom" definition="LENGTH"/>
         </ECSchema>)xml";
@@ -212,7 +212,7 @@ TEST_F(PhenomenonTests, AllUnitsInPhenomenaAreConvertibleBetweenEachOther)
 TEST_F(PhenomenonDeserializationTest, BasicRoundTripTest)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         </ECSchema>)xml";
 
@@ -253,7 +253,7 @@ TEST_F(PhenomenonDeserializationTest, BasicRoundTripTest)
 TEST_F(PhenomenonDeserializationTest, DuplicatePhenomenonNames)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         </ECSchema>)xml";
@@ -270,7 +270,7 @@ TEST_F(PhenomenonDeserializationTest, DuplicatePhenomenonNames)
 TEST_F(PhenomenonDeserializationTest, DuplicateSchemaChildNames)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <PropertyCategory typeName="TestPhenomenon"/>
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         </ECSchema>)xml";
@@ -287,12 +287,12 @@ TEST_F(PhenomenonDeserializationTest, DuplicateSchemaChildNames)
 TEST_F(PhenomenonDeserializationTest, MissingOrInvalidName)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon without a name"/>
     </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize phenomenon with missing name");
 
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon with an empty name"/>
     </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to derserialize schema with an empty name");
     }
@@ -303,7 +303,7 @@ TEST_F(PhenomenonDeserializationTest, MissingOrInvalidName)
 TEST_F(PhenomenonDeserializationTest, MissingDisplayLabel)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="aUniquePhenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
     </ECSchema>)xml";
 
@@ -322,7 +322,7 @@ TEST_F(PhenomenonDeserializationTest, MissingDisplayLabel)
 TEST_F(PhenomenonDeserializationTest, MissingDescription)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="aUniquePhenomenon" definition="LENGTH*LENGTH" displayLabel="Label"/>
     </ECSchema>)xml";
 
@@ -341,12 +341,12 @@ TEST_F(PhenomenonDeserializationTest, MissingDescription)
 TEST_F(PhenomenonDeserializationTest, MissingOrEmptyDefinition)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="aUniquePhenomenon" displayLabel="Phenomenon" description="This is an awesome new Phenomenon"/>
     </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize phenomenon with missing definition");
 
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="aUniquePhenomenon" displayLabel="Phenomenon" definition="" description="This is an awesome new Phenomenon"/>
     </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize phenomenon with empty definition");
     }
