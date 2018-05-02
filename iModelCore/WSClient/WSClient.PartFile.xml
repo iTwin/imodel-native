@@ -596,7 +596,7 @@
 
     <Part
         Name="WSClient_en_L10N"
-        BentleyBuildMakeFile="../bsicommon/sqlang/mki/XliffsToDb.mke"
+        BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/WSClient/sqlang/WSClient_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="WebServicesClient"/>
