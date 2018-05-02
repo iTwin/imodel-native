@@ -993,7 +993,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
             {
             //cache inverted units as they need their inverting unit to be exist before. They are loaded once the regular units have been loaded.
             UnitId invertingUnitId = stmt->GetValueId<UnitId>(colIndexes.m_invertingUnitId);
-            BeAssert(stmt->IsColumnNull(colIndexes.m_isConstant) && stmt->IsColumnNull(colIndexes.m_definition) && stmt->IsColumnNull(colIndexes.m_numerator) && stmt->IsColumnNull(colIndexes.m_denominator) && stmt->IsColumnNull(colIndexes.m_offset));
+            BeAssert(stmt->IsColumnNull(colIndexes.m_definition) && stmt->IsColumnNull(colIndexes.m_numerator) && stmt->IsColumnNull(colIndexes.m_denominator) && stmt->IsColumnNull(colIndexes.m_offset));
             invertedUnitInfos.push_back(InvertedUnitInfo(id, *schema, name, invertingUnitId, displayLabel, description, *us));
             continue;
             }

@@ -617,12 +617,8 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
             return ERROR;
         }
 
-    // WIP_UNITS replace with unit.HasIsConstant once implemented
-    if (!unit.IsInvertedUnit())
-        {
-        if (BE_SQLITE_OK != stmt->BindBoolean(isConstantParamIx, unit.IsConstant()))
-            return ERROR;
-        }
+    if (BE_SQLITE_OK != stmt->BindBoolean(isConstantParamIx, unit.IsConstant()))
+        return ERROR;
 
     if (invertingUnit != nullptr)
         {

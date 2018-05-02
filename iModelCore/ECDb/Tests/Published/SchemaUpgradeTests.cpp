@@ -9668,7 +9668,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
             {
             ASSERT_TRUE(format->HasNumeric()) << schema.GetFullSchemaName() << ":" << name;
             Json::Value jval;
-            format->GetNumericSpec()->ToJson(jval, false);
+            ASSERT_TRUE(format->GetNumericSpec()->ToJson(jval, false));
             ASSERT_EQ(numericSpec, JsonValue(jval)) << schema.GetFullSchemaName() << ":" << name;
             }
 
@@ -9677,7 +9677,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
         else
             {
             Json::Value jval;
-            format->GetCompositeSpec()->ToJson(jval);
+            ASSERT_TRUE(format->GetCompositeSpec()->ToJson(jval));
             ASSERT_TRUE(format->HasComposite()) << schema.GetFullSchemaName() << ":" << name;
             ASSERT_EQ(compSpec, JsonValue(jval)) << schema.GetFullSchemaName() << ":" << name;
             }
