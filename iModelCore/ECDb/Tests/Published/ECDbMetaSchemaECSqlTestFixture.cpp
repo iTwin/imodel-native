@@ -934,7 +934,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertUnitDef(ECUnitCR expected, ECSqlState
 
         if (colName.EqualsI("Definition"))
             {
-            if (expected.GetDefinition().empty())
+            if (!expected.HasDefinition())
                 ASSERT_TRUE(val.IsNull()) << "UnitDef.Definition of " << expected.GetFullName();
             else
                 ASSERT_STREQ(expected.GetDefinition().c_str(), val.GetText()) << "UnitDef.Definition of " << expected.GetFullName();
