@@ -65,7 +65,7 @@ BisJson1Importer::BisJson1Importer(const wchar_t* bimPath) : m_outputPath(bimPat
 //---------------+---------------+---------------+---------------+---------------+-------
 BisJson1Importer::~BisJson1Importer()
     {
-    //delete m_importer;
+    delete m_importer;
     delete m_queue;
     }
 
