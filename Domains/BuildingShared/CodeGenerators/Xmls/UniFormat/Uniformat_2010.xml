@@ -1,0 +1,787 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Table>
+    <Name>2010 Edition UniFormat - Levels One through Three</Name>
+    <Source>The Construction Specifications Institute (CSI)</Source>
+    <Version>Major Version No=&apos;UniFormat 2010 Edition - Numbers and Titles&apos;  Major Date=&apos;Date:  August 2010&apos;  Minor Version No=&apos;UniFormat 2010 Edition - Numbers and Titles&apos;  Minor Date=&apos;Date:  August 2010&apos;  Major=&apos;&apos;  Minor=&apos;&apos; </Version>
+    <Section>
+        <Code>0I</Code>
+        <Name>INTRODUCTION</Name>
+        <Section>
+            <Code>10</Code>
+            <Name>PROJECT DESCRIPTION</Name>
+            <Section>
+                <Code>1010</Code>
+                <Name>Project Summary</Name>
+            </Section>
+            <Section>
+                <Code>1020</Code>
+                <Name>Project Program</Name>
+            </Section>
+            <Section>
+                <Code>1030</Code>
+                <Name>Project Criteria</Name>
+            </Section>
+            <Section>
+                <Code>1040</Code>
+                <Name>Existing Conditions</Name>
+            </Section>
+            <Section>
+                <Code>1050</Code>
+                <Name>Owner’s Work</Name>
+            </Section>
+            <Section>
+                <Code>1090</Code>
+                <Name>Funding</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>20</Code>
+            <Name>OWNER DEVELOPMENT</Name>
+            <Section>
+                <Code>2010</Code>
+                <Name>Site Acquisition</Name>
+            </Section>
+            <Section>
+                <Code>2020</Code>
+                <Name>Permits</Name>
+            </Section>
+            <Section>
+                <Code>2030</Code>
+                <Name>Professional Services</Name>
+            </Section>
+            <Section>
+                <Code>2050</Code>
+                <Name>Other Activities</Name>
+            </Section>
+            <Section>
+                <Code>2080</Code>
+                <Name>Budget Project Contingencies</Name>
+            </Section>
+            <Section>
+                <Code>2090</Code>
+                <Name>Budget Financing</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>30</Code>
+            <Name>PROCUREMENT REQUIREMENTS</Name>
+            <Section>
+                <Code>3010</Code>
+                <Name>Project Delivery</Name>
+            </Section>
+            <Section>
+                <Code>3020</Code>
+                <Name>Solicitation</Name>
+            </Section>
+            <Section>
+                <Code>3030</Code>
+                <Name>Instructions for Procurement</Name>
+            </Section>
+            <Section>
+                <Code>3040</Code>
+                <Name>Available Project Information</Name>
+            </Section>
+            <Section>
+                <Code>3050</Code>
+                <Name>Procurement Forms and Supplements</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>40</Code>
+            <Name>CONTRACTING REQUIREMENTS</Name>
+            <Section>
+                <Code>4010</Code>
+                <Name>Contracting Forms and Supplements</Name>
+            </Section>
+            <Section>
+                <Code>4020</Code>
+                <Name>Project Forms</Name>
+            </Section>
+            <Section>
+                <Code>4030</Code>
+                <Name>Conditions of the Contract</Name>
+            </Section>
+            <Section>
+                <Code>4040</Code>
+                <Name>Revisions, Clarifications, and Modifications</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>A</Code>
+        <Name>SUBSTRUCTURE</Name>
+        <Section>
+            <Code>A10</Code>
+            <Name>FOUNDATIONS</Name>
+            <Section>
+                <Code>A1010</Code>
+                <Name>Standard Foundations</Name>
+            </Section>
+            <Section>
+                <Code>A1020</Code>
+                <Name>Special Foundations</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>A20</Code>
+            <Name>SUBGRADE ENCLOSURES</Name>
+            <Section>
+                <Code>A2010</Code>
+                <Name>Walls for Subgrade Enclosures</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>A40</Code>
+            <Name>SLABS-ON-GRADE</Name>
+            <Section>
+                <Code>A4010</Code>
+                <Name>Standard Slabs-on-Grade</Name>
+            </Section>
+            <Section>
+                <Code>A4020</Code>
+                <Name>Structural Slabs-on-Grade</Name>
+            </Section>
+            <Section>
+                <Code>A4030</Code>
+                <Name>Slab Trenches</Name>
+            </Section>
+            <Section>
+                <Code>A4040</Code>
+                <Name>Pits and Bases</Name>
+            </Section>
+            <Section>
+                <Code>A4090</Code>
+                <Name>Slab-On-Grade Supplementary Components</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>A60</Code>
+            <Name>WATER AND GAS MITIGATION</Name>
+            <Section>
+                <Code>A6010</Code>
+                <Name>Building Subdrainage</Name>
+            </Section>
+            <Section>
+                <Code>A6020</Code>
+                <Name>Off-Gassing Mitigation</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>A90</Code>
+            <Name>SUBSTRUCTURE RELATED ACTIVITIES</Name>
+            <Section>
+                <Code>A9010</Code>
+                <Name>Substructure Excavation</Name>
+            </Section>
+            <Section>
+                <Code>A9020</Code>
+                <Name>Construction Dewatering</Name>
+            </Section>
+            <Section>
+                <Code>A9030</Code>
+                <Name>Excavation Support</Name>
+            </Section>
+            <Section>
+                <Code>A9040</Code>
+                <Name>Soil Treatment</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>B</Code>
+        <Name>SHELL</Name>
+        <Section>
+            <Code>B10</Code>
+            <Name>SUPERSTRUCTURE</Name>
+            <Section>
+                <Code>B1010</Code>
+                <Name>Floor Construction</Name>
+            </Section>
+            <Section>
+                <Code>B1020</Code>
+                <Name>Roof Construction</Name>
+            </Section>
+            <Section>
+                <Code>B1080</Code>
+                <Name>Stairs</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>B20</Code>
+            <Name>EXTERIOR VERTICAL ENCLOSURES</Name>
+            <Section>
+                <Code>B2010</Code>
+                <Name>Exterior Walls</Name>
+            </Section>
+            <Section>
+                <Code>B2020</Code>
+                <Name>Exterior Windows</Name>
+            </Section>
+            <Section>
+                <Code>B2050</Code>
+                <Name>Exterior Doors and Grilles</Name>
+            </Section>
+            <Section>
+                <Code>B2070</Code>
+                <Name>Exterior Louvers and Vents</Name>
+            </Section>
+            <Section>
+                <Code>B2080</Code>
+                <Name>Exterior Wall Appurtenances</Name>
+            </Section>
+            <Section>
+                <Code>B2090</Code>
+                <Name>Exterior Wall Specialties</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>B30</Code>
+            <Name>EXTERIOR HORIZONTAL ENCLOSURES</Name>
+            <Section>
+                <Code>B3010</Code>
+                <Name>Roofing</Name>
+            </Section>
+            <Section>
+                <Code>B3020</Code>
+                <Name>Roof Appurtenances</Name>
+            </Section>
+            <Section>
+                <Code>B3040</Code>
+                <Name>Traffic Bearing Horizontal Enclosures</Name>
+            </Section>
+            <Section>
+                <Code>B3060</Code>
+                <Name>Horizontal Openings</Name>
+            </Section>
+            <Section>
+                <Code>B3080</Code>
+                <Name>Overhead Exterior Enclosures</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>C</Code>
+        <Name>INTERIORS</Name>
+        <Section>
+            <Code>C10</Code>
+            <Name>INTERIOR CONSTRUCTION</Name>
+            <Section>
+                <Code>C1010</Code>
+                <Name>Interior Partitions</Name>
+            </Section>
+            <Section>
+                <Code>C1020</Code>
+                <Name>Interior Windows</Name>
+            </Section>
+            <Section>
+                <Code>C1030</Code>
+                <Name>Interior Doors</Name>
+            </Section>
+            <Section>
+                <Code>C1040</Code>
+                <Name>Interior Grilles and Gates</Name>
+            </Section>
+            <Section>
+                <Code>C1060</Code>
+                <Name>Raised Floor Construction</Name>
+            </Section>
+            <Section>
+                <Code>C1070</Code>
+                <Name>Suspended Ceiling Construction</Name>
+            </Section>
+            <Section>
+                <Code>C1090</Code>
+                <Name>Interior Specialties</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>C20</Code>
+            <Name>INTERIOR FINISHES</Name>
+            <Section>
+                <Code>C2010</Code>
+                <Name>Wall Finishes</Name>
+            </Section>
+            <Section>
+                <Code>C2020</Code>
+                <Name>Interior Fabrications</Name>
+            </Section>
+            <Section>
+                <Code>C2030</Code>
+                <Name>Flooring</Name>
+            </Section>
+            <Section>
+                <Code>C2040</Code>
+                <Name>Stair Finishes</Name>
+            </Section>
+            <Section>
+                <Code>C2050</Code>
+                <Name>Ceiling Finishes</Name>
+            </Section>
+            <Section>
+                <Code>C2090</Code>
+                <Name>Interior Finish Schedules</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>D</Code>
+        <Name>SERVICES</Name>
+        <Section>
+            <Code>D10</Code>
+            <Name>CONVEYING</Name>
+            <Section>
+                <Code>D1010</Code>
+                <Name>Vertical Conveying Systems</Name>
+            </Section>
+            <Section>
+                <Code>D1030</Code>
+                <Name>Horizontal Conveying</Name>
+            </Section>
+            <Section>
+                <Code>D1050</Code>
+                <Name>Material Handling</Name>
+            </Section>
+            <Section>
+                <Code>D1080</Code>
+                <Name>Operable Access Systems</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>D20</Code>
+            <Name>PLUMBING</Name>
+            <Section>
+                <Code>D2010</Code>
+                <Name>Domestic Water Distribution</Name>
+            </Section>
+            <Section>
+                <Code>D2020</Code>
+                <Name>Sanitary Drainage</Name>
+            </Section>
+            <Section>
+                <Code>D2030</Code>
+                <Name>Building Support Plumbing Systems</Name>
+            </Section>
+            <Section>
+                <Code>D2050</Code>
+                <Name>General Service Compressed-Air</Name>
+            </Section>
+            <Section>
+                <Code>D2060</Code>
+                <Name>Process Support Plumbing Systems</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>D30</Code>
+            <Name>HEATING, VENTILATION, AND AIR CONDITIONING (HVAC)</Name>
+            <Section>
+                <Code>D3010</Code>
+                <Name>Facility Fuel Systems</Name>
+            </Section>
+            <Section>
+                <Code>D3020</Code>
+                <Name>Heating Systems</Name>
+            </Section>
+            <Section>
+                <Code>D3030</Code>
+                <Name>Cooling Systems</Name>
+            </Section>
+            <Section>
+                <Code>D3050</Code>
+                <Name>Facility HVAC Distribution Systems</Name>
+            </Section>
+            <Section>
+                <Code>D3060</Code>
+                <Name>Ventilation</Name>
+            </Section>
+            <Section>
+                <Code>D3070</Code>
+                <Name>Special Purpose HVAC Systems</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>D40</Code>
+            <Name>FIRE PROTECTION</Name>
+            <Section>
+                <Code>D4010</Code>
+                <Name>Fire Suppression</Name>
+            </Section>
+            <Section>
+                <Code>D4030</Code>
+                <Name>Fire Protection Specialties</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>D50</Code>
+            <Name>ELECTRICAL</Name>
+            <Section>
+                <Code>D5010</Code>
+                <Name>Facility Power Generation</Name>
+            </Section>
+            <Section>
+                <Code>D5020</Code>
+                <Name>Electrical Service and Distribution</Name>
+            </Section>
+            <Section>
+                <Code>D5030</Code>
+                <Name>General Purpose Electrical Power</Name>
+            </Section>
+            <Section>
+                <Code>D5040</Code>
+                <Name>Lighting</Name>
+            </Section>
+            <Section>
+                <Code>D5080</Code>
+                <Name>Miscellaneous Electrical Systems</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>D60</Code>
+            <Name>COMMUNICATIONS</Name>
+            <Section>
+                <Code>D6010</Code>
+                <Name>Data Communications</Name>
+            </Section>
+            <Section>
+                <Code>D6020</Code>
+                <Name>Voice Communications</Name>
+            </Section>
+            <Section>
+                <Code>D6030</Code>
+                <Name>Audio-Video Communication</Name>
+            </Section>
+            <Section>
+                <Code>D6060</Code>
+                <Name>Distributed Communications and Monitoring</Name>
+            </Section>
+            <Section>
+                <Code>D6090</Code>
+                <Name>Communications Supplementary Components</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>D70</Code>
+            <Name>ELECTRONIC SAFETY AND SECURITY</Name>
+            <Section>
+                <Code>D7010</Code>
+                <Name>Access Control and Intrusion Detection</Name>
+            </Section>
+            <Section>
+                <Code>D7030</Code>
+                <Name>Electronic Surveillance</Name>
+            </Section>
+            <Section>
+                <Code>D7050</Code>
+                <Name>Detection and Alarm</Name>
+            </Section>
+            <Section>
+                <Code>D7070</Code>
+                <Name>Electronic Monitoring and Control</Name>
+            </Section>
+            <Section>
+                <Code>D7090</Code>
+                <Name>Electronic Safety and Security Supplementary Components</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>D80</Code>
+            <Name>INTEGRATED AUTOMATION</Name>
+            <Section>
+                <Code>D8010</Code>
+                <Name>Integrated Automation Facility Controls</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>E</Code>
+        <Name>EQUIPMENT AND FURNISHINGS</Name>
+        <Section>
+            <Code>E10</Code>
+            <Name>EQUIPMENT</Name>
+            <Section>
+                <Code>E1010</Code>
+                <Name>Vehicle and Pedestrian Equipment</Name>
+            </Section>
+            <Section>
+                <Code>E1030</Code>
+                <Name>Commercial Equipment</Name>
+            </Section>
+            <Section>
+                <Code>E1040</Code>
+                <Name>Institutional Equipment</Name>
+            </Section>
+            <Section>
+                <Code>E1060</Code>
+                <Name>Residential Equipment</Name>
+            </Section>
+            <Section>
+                <Code>E1070</Code>
+                <Name>Entertainment and Recreational Equipment</Name>
+            </Section>
+            <Section>
+                <Code>E1090</Code>
+                <Name>Other Equipment</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>E20</Code>
+            <Name>FURNISHINGS</Name>
+            <Section>
+                <Code>E2010</Code>
+                <Name>Fixed Furnishings</Name>
+            </Section>
+            <Section>
+                <Code>E2050</Code>
+                <Name>Movable Furnishings</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>F</Code>
+        <Name>SPECIAL CONSTRUCTION AND DEMOLITION</Name>
+        <Section>
+            <Code>F10</Code>
+            <Name>SPECIAL CONSTRUCTION</Name>
+            <Section>
+                <Code>F1010</Code>
+                <Name>Integrated Construction</Name>
+            </Section>
+            <Section>
+                <Code>F1020</Code>
+                <Name>Special Structures</Name>
+            </Section>
+            <Section>
+                <Code>F1030</Code>
+                <Name>Special Function Construction</Name>
+            </Section>
+            <Section>
+                <Code>F1050</Code>
+                <Name>Special Facility Components</Name>
+            </Section>
+            <Section>
+                <Code>F1060</Code>
+                <Name>Athletic and Recreational Special Construction</Name>
+            </Section>
+            <Section>
+                <Code>F1080</Code>
+                <Name>Special Instrumentation</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>F20</Code>
+            <Name>FACILITY REMEDIATION</Name>
+            <Section>
+                <Code>F2010</Code>
+                <Name>Hazardous Materials Remediation</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>F30</Code>
+            <Name>DEMOLITION</Name>
+            <Section>
+                <Code>F3010</Code>
+                <Name>Structure Demolition</Name>
+            </Section>
+            <Section>
+                <Code>F3030</Code>
+                <Name>Selective Demolition</Name>
+            </Section>
+            <Section>
+                <Code>F3050</Code>
+                <Name>Structure Moving</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>G</Code>
+        <Name>SITEWORK</Name>
+        <Section>
+            <Code>G10</Code>
+            <Name>SITE PREPARATION</Name>
+            <Section>
+                <Code>G1010</Code>
+                <Name>Site Clearing</Name>
+            </Section>
+            <Section>
+                <Code>G1020</Code>
+                <Name>Site Elements Demolition</Name>
+            </Section>
+            <Section>
+                <Code>G1030</Code>
+                <Name>Site Element Relocations</Name>
+            </Section>
+            <Section>
+                <Code>G1050</Code>
+                <Name>Site Remediation</Name>
+            </Section>
+            <Section>
+                <Code>G1070</Code>
+                <Name>Site Earthwork</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>G20</Code>
+            <Name>SITE IMPROVEMENTS</Name>
+            <Section>
+                <Code>G2010</Code>
+                <Name>Roadways</Name>
+            </Section>
+            <Section>
+                <Code>G2020</Code>
+                <Name>Parking Lots</Name>
+            </Section>
+            <Section>
+                <Code>G2030</Code>
+                <Name>Pedestrian Plazas and Walkways</Name>
+            </Section>
+            <Section>
+                <Code>G2040</Code>
+                <Name>Airfields</Name>
+            </Section>
+            <Section>
+                <Code>G2050</Code>
+                <Name>Athletic, Recreational, and Playfield Areas</Name>
+            </Section>
+            <Section>
+                <Code>G2060</Code>
+                <Name>Site Development</Name>
+            </Section>
+            <Section>
+                <Code>G2080</Code>
+                <Name>Landscaping</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>G30</Code>
+            <Name>LIQUID AND GAS SITE UTILITIES</Name>
+            <Section>
+                <Code>G3010</Code>
+                <Name>Water Utilities</Name>
+            </Section>
+            <Section>
+                <Code>G3020</Code>
+                <Name>Sanitary Sewerage Utilities</Name>
+            </Section>
+            <Section>
+                <Code>G3030</Code>
+                <Name>Storm Drainage Utilities</Name>
+            </Section>
+            <Section>
+                <Code>G3050</Code>
+                <Name>Site Energy Distribution</Name>
+            </Section>
+            <Section>
+                <Code>G3060</Code>
+                <Name>Site Fuel Distribution</Name>
+            </Section>
+            <Section>
+                <Code>G3090</Code>
+                <Name>Liquid and Gas Site Utilities Supplementary Components</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>G40</Code>
+            <Name>ELECTRICAL SITE IMPROVEMENTS</Name>
+            <Section>
+                <Code>G4010</Code>
+                <Name>Site Electric Distribution Systems</Name>
+            </Section>
+            <Section>
+                <Code>G4050</Code>
+                <Name>Site Lighting</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>G50</Code>
+            <Name>SITE COMMUNICATIONS</Name>
+            <Section>
+                <Code>G5010</Code>
+                <Name>Site Communications Systems</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>G90</Code>
+            <Name>MISCELLANEOUS SITE CONSTRUCTION</Name>
+            <Section>
+                <Code>G9010</Code>
+                <Name>Tunnels</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>Z</Code>
+        <Name>GENERAL</Name>
+        <Section>
+            <Code>Z10</Code>
+            <Name>GENERAL REQUIREMENTS</Name>
+            <Section>
+                <Code>Z1010</Code>
+                <Name>Price and Payment Procedures</Name>
+            </Section>
+            <Section>
+                <Code>Z1020</Code>
+                <Name>Administrative Requirements</Name>
+            </Section>
+            <Section>
+                <Code>Z1040</Code>
+                <Name>Quality Requirements</Name>
+            </Section>
+            <Section>
+                <Code>Z1050</Code>
+                <Name>Temporary Facilities and Controls</Name>
+            </Section>
+            <Section>
+                <Code>Z1060</Code>
+                <Name>Product Requirements</Name>
+            </Section>
+            <Section>
+                <Code>Z1070</Code>
+                <Name>Execution and Closeout Requirements</Name>
+            </Section>
+            <Section>
+                <Code>Z1090</Code>
+                <Name>Life Cycle Activities</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>Z70</Code>
+            <Name>TAXES, PERMITS, INSURANCE AND BONDS</Name>
+            <Section>
+                <Code>Z7010</Code>
+                <Name>Taxes</Name>
+            </Section>
+            <Section>
+                <Code>Z7030</Code>
+                <Name>License Fees</Name>
+            </Section>
+            <Section>
+                <Code>Z7050</Code>
+                <Name>Permit Costs</Name>
+            </Section>
+            <Section>
+                <Code>Z7070</Code>
+                <Name>Bond Fees</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>Z90</Code>
+            <Name>FEES AND CONTINGENCIES</Name>
+            <Section>
+                <Code>Z9010</Code>
+                <Name>Overhead</Name>
+            </Section>
+            <Section>
+                <Code>Z9030</Code>
+                <Name>Profit</Name>
+            </Section>
+            <Section>
+                <Code>Z9050</Code>
+                <Name>Construction Contingencies</Name>
+            </Section>
+            <Section>
+                <Code>Z9090</Code>
+                <Name>Financing Costs</Name>
+            </Section>
+        </Section>
+    </Section>
+</Table>

@@ -1,0 +1,2855 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Table>
+    <Name>Table 36 - Information</Name>
+    <Source>The Secretariat for the OCCS Development Committee</Source>
+    <Version>Major Version No=&apos; Edition:1.0&apos;  Major Date=&apos;2006-03-28 Release&apos;  Minor Version No=&apos; Edition:1.0&apos;  Minor Date=&apos;2006-03-28 Release&apos;  Major=&apos;&apos;  Minor=&apos;&apos; </Version>
+    <Section>
+        <Code>36-11 00 00</Code>
+        <Name>GENERAL REFERENCES</Name>
+        <Section>
+            <Code>36-11 11 00</Code>
+            <Name>Indexes</Name>
+        </Section>
+        <Section>
+            <Code>36-11 13 00</Code>
+            <Name>Encyclopedias</Name>
+            <Section>
+                <Code>36-11 13 11</Code>
+                <Name>Wikipedia</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 15 00</Code>
+            <Name>Ontologies</Name>
+            <Section>
+                <Code>36-11 15 11</Code>
+                <Name>Taxonomies</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 17 00</Code>
+            <Name>Terminology References</Name>
+            <Section>
+                <Code>36-11 17 11</Code>
+                <Name>Dictionaries</Name>
+            </Section>
+            <Section>
+                <Code>36-11 17 13</Code>
+                <Name>Glossaries</Name>
+            </Section>
+            <Section>
+                <Code>36-11 17 15</Code>
+                <Name>Lexicons</Name>
+            </Section>
+            <Section>
+                <Code>36-11 17 17</Code>
+                <Name>Thesauri</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 19 00</Code>
+            <Name>Catalogs</Name>
+            <Section>
+                <Code>36-11 19 11</Code>
+                <Name>Product Catalogs</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 21 00</Code>
+            <Name>Product Literature</Name>
+        </Section>
+        <Section>
+            <Code>36-11 23 00</Code>
+            <Name>Directories</Name>
+            <Section>
+                <Code>36-11 23 11</Code>
+                <Name>Membership Directories</Name>
+            </Section>
+            <Section>
+                <Code>36-11 23 13</Code>
+                <Name>Professional Directories</Name>
+            </Section>
+            <Section>
+                <Code>36-11 23 15</Code>
+                <Name>Manufacturer Directories</Name>
+            </Section>
+            <Section>
+                <Code>36-11 23 17</Code>
+                <Name>Telephone Directories</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 25 00</Code>
+            <Name>Manuals</Name>
+            <Section>
+                <Code>36-11 25 11</Code>
+                <Name>Equipment Manuals</Name>
+            </Section>
+            <Section>
+                <Code>36-11 25 13</Code>
+                <Name>Software Manuals</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 27 00</Code>
+            <Name>Handbooks</Name>
+            <Section>
+                <Code>36-11 27 11</Code>
+                <Name>Engineering Handbooks</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 29 00</Code>
+            <Name>Guides</Name>
+            <Section>
+                <Code>36-11 29 11</Code>
+                <Name>Business Practice Guides</Name>
+                <Section>
+                    <Code>36-11 29 11 11</Code>
+                    <Name>Promotional Guides</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 29 11 13</Code>
+                    <Name>Accounting Guides</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 29 11 15</Code>
+                    <Name>Human Relations Guides</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 29 11 17</Code>
+                    <Name>Insurance Guides</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-11 29 13</Code>
+                <Name>Professional Practice Guides</Name>
+                <Section>
+                    <Code>36-11 29 13 11</Code>
+                    <Name>Sustainable Practice Guides (e.g. LEED)</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 29 13 13</Code>
+                    <Name>Computer Technology Guides</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 29 13 15</Code>
+                    <Name>Process Management Guides</Name>
+                    <Section>
+                        <Code>36-11 29 13 15 11</Code>
+                        <Name>Change Management Guides</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-11 29 15</Code>
+                <Name>Information Management Guides</Name>
+            </Section>
+            <Section>
+                <Code>36-11 29 17</Code>
+                <Name>Resource Scheduling Guides</Name>
+            </Section>
+            <Section>
+                <Code>36-11 29 19</Code>
+                <Name>Educational Guides</Name>
+                <Section>
+                    <Code>36-11 29 19 11</Code>
+                    <Name>Registration Guides</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 31 00</Code>
+            <Name>Standards</Name>
+            <Section>
+                <Code>36-11 31 11</Code>
+                <Name>Classification Standards</Name>
+                <Section>
+                    <Code>36-11 31 11 11</Code>
+                    <Name>Metadata Standards</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-11 31 13</Code>
+                <Name>Technical Standards</Name>
+            </Section>
+            <Section>
+                <Code>36-11 31 15</Code>
+                <Name>Production Standards</Name>
+                <Section>
+                    <Code>36-11 31 15 11</Code>
+                    <Name>BIM Standards</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 31 15 13</Code>
+                    <Name>CAD Standards</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-11 31 17</Code>
+                <Name>Performance Standards</Name>
+                <Section>
+                    <Code>36-11 31 17 11</Code>
+                    <Name>Sustainability Standards (e.g. LEED)</Name>
+                    <Section>
+                        <Code>36-11 31 17 11 11</Code>
+                        <Name>Energy Efficiency Standards</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 31 17 13</Code>
+                    <Name>Environmental Standards</Name>
+                    <Section>
+                        <Code>36-11 31 17 13 11</Code>
+                        <Name>Indoor Air Quality (IAQ) Standards</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 31 17 15</Code>
+                    <Name>Test Standards (e.g ASTM)</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-11 31 19</Code>
+                <Name>Product / Material Standards</Name>
+            </Section>
+            <Section>
+                <Code>36-11 31 21</Code>
+                <Name>Design Standards</Name>
+            </Section>
+            <Section>
+                <Code>36-11 31 23</Code>
+                <Name>Quality Management Standards (e.g. ISO)</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 33 00</Code>
+            <Name>Model Documents</Name>
+            <Section>
+                <Code>36-11 33 11</Code>
+                <Name>Master Specifications</Name>
+            </Section>
+            <Section>
+                <Code>36-11 33 13</Code>
+                <Name>Standard Procurement Documents</Name>
+            </Section>
+            <Section>
+                <Code>36-11 33 15</Code>
+                <Name>Standard Forms</Name>
+            </Section>
+            <Section>
+                <Code>36-11 33 17</Code>
+                <Name>Standard Forms of Agreement</Name>
+                <Section>
+                    <Code>36-11 33 17 11</Code>
+                    <Name>American Institute of Architects</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 33 17 13</Code>
+                    <Name>ConsensusDocs</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 33 17 15</Code>
+                    <Name>Engineers Joint Council Documents Committee</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 35 00</Code>
+            <Name>Books</Name>
+            <Section>
+                <Code>36-11 35 11</Code>
+                <Name>General and Introductory Books</Name>
+            </Section>
+            <Section>
+                <Code>36-11 35 13</Code>
+                <Name>Design Interest and Theory Books</Name>
+            </Section>
+            <Section>
+                <Code>36-11 35 15</Code>
+                <Name>Drawing and Presentation Books</Name>
+            </Section>
+            <Section>
+                <Code>36-11 35 17</Code>
+                <Name>History and Styles Books</Name>
+            </Section>
+            <Section>
+                <Code>36-11 35 19</Code>
+                <Name>Building Science and Technology Books</Name>
+            </Section>
+            <Section>
+                <Code>36-11 35 21</Code>
+                <Name>Project Type Portfolios</Name>
+            </Section>
+            <Section>
+                <Code>36-11 35 23</Code>
+                <Name>Project Portfolios</Name>
+            </Section>
+            <Section>
+                <Code>36-11 35 25</Code>
+                <Name>Practicioner Portfolios</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 37 00</Code>
+            <Name>Periodicals</Name>
+        </Section>
+        <Section>
+            <Code>36-11 39 00</Code>
+            <Name>Newspapers</Name>
+            <Section>
+                <Code>36-11 39 11</Code>
+                <Name>Newsletters</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 41 00</Code>
+            <Name>Tables</Name>
+            <Section>
+                <Code>36-11 41 11</Code>
+                <Name>Measurement Conversion Tables</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 43 00</Code>
+            <Name>Reports</Name>
+            <Section>
+                <Code>36-11 43 11</Code>
+                <Name>Evaluation Reports</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 45 00</Code>
+            <Name>Articles</Name>
+        </Section>
+        <Section>
+            <Code>36-11 47 00</Code>
+            <Name>Lists</Name>
+        </Section>
+        <Section>
+            <Code>36-11 49 00</Code>
+            <Name>Building Codes</Name>
+            <Section>
+                <Code>36-11 49 11</Code>
+                <Name>International Building Codes</Name>
+            </Section>
+            <Section>
+                <Code>36-11 49 13</Code>
+                <Name>Federal Building Codes</Name>
+            </Section>
+            <Section>
+                <Code>36-11 49 15</Code>
+                <Name>State/Provincial Building Codes</Name>
+            </Section>
+            <Section>
+                <Code>36-11 49 17</Code>
+                <Name>County Building Codes</Name>
+            </Section>
+            <Section>
+                <Code>36-11 49 19</Code>
+                <Name>Municipal/City Building Codes</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 51 00</Code>
+            <Name>Legal Information</Name>
+            <Section>
+                <Code>36-11 51 11</Code>
+                <Name>Primary Legislation</Name>
+                <Section>
+                    <Code>36-11 51 11 11</Code>
+                    <Name>International Legislation</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 51 11 13</Code>
+                    <Name>Federal Legislation</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 51 11 15</Code>
+                    <Name>State/Provincial Legislation</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 51 11 17</Code>
+                    <Name>County Legislation</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 51 11 19</Code>
+                    <Name>Municipal/City Legislation</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-11 51 13</Code>
+                <Name>Secondary Legislation</Name>
+                <Section>
+                    <Code>36-11 51 13 11</Code>
+                    <Name>Regulations</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 51 13 13</Code>
+                    <Name>Ordinances</Name>
+                    <Section>
+                        <Code>36-11 51 13 13 11</Code>
+                        <Name>Zoning Ordinances</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 51 13 15</Code>
+                    <Name>Bylaws</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-11 51 15</Code>
+                <Name>Professional Practice Registration Legislation</Name>
+            </Section>
+            <Section>
+                <Code>36-11 51 17</Code>
+                <Name>Case Law</Name>
+            </Section>
+            <Section>
+                <Code>36-11 51 19</Code>
+                <Name>Legal Documents</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 53 00</Code>
+            <Name>Economic Information</Name>
+            <Section>
+                <Code>36-11 53 11</Code>
+                <Name>Economic Forecasts</Name>
+            </Section>
+            <Section>
+                <Code>36-11 53 13</Code>
+                <Name>Financial Information</Name>
+                <Section>
+                    <Code>36-11 53 13 11</Code>
+                    <Name>Mortgage Tables</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 53 13 13</Code>
+                    <Name>Property Tax Information</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 55 00</Code>
+            <Name>Planning Information</Name>
+            <Section>
+                <Code>36-11 55 11</Code>
+                <Name>Regional Planning Information</Name>
+                <Section>
+                    <Code>36-11 55 11 11</Code>
+                    <Name>Population Density</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 55 11 13</Code>
+                    <Name>Fire Hazards</Name>
+                    <Section>
+                        <Code>36-11 55 11 13 11</Code>
+                        <Name>Fire Sources</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 11 13 13</Code>
+                        <Name>Fire Danger, probability</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 11 13 15</Code>
+                        <Name>Fire Severity</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-11 55 13</Code>
+                <Name>Facility Planning Information</Name>
+                <Section>
+                    <Code>36-11 55 13 11</Code>
+                    <Name>Facility Occupancy Planning</Name>
+                    <Section>
+                        <Code>36-11 55 13 11 11</Code>
+                        <Name>Age</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 11 13</Code>
+                        <Name>Gender</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 11 15</Code>
+                        <Name>Body Properties</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 11 17</Code>
+                        <Name>User Groups</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 11 19</Code>
+                        <Name>Organizational Groups</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 11 21</Code>
+                        <Name>Demographics</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 11 23</Code>
+                        <Name>Occupancy Type</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 55 13 13</Code>
+                    <Name>Non-Human Occupancy Information</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 55 13 15</Code>
+                    <Name>Amenity Concerns</Name>
+                    <Section>
+                        <Code>36-11 55 13 15 11</Code>
+                        <Name>Noise Concerns</Name>
+                        <Section>
+                            <Code>36-11 55 13 15 11 11</Code>
+                            <Name>External Noise Concerns</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-11 55 13 15 11 13</Code>
+                            <Name>Internal Noise Concerns</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-11 55 13 15 11 15</Code>
+                            <Name>Impact Noise Concerns</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-11 55 13 15 11 17</Code>
+                            <Name>Equipment Noise Concerns</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 15 13</Code>
+                        <Name>Air Circulation Information</Name>
+                        <Section>
+                            <Code>36-11 55 13 15 13 11</Code>
+                            <Name>Air Leakage Information</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-11 55 13 15 13 13</Code>
+                            <Name>Air Infiltration Information</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-11 55 13 15 13 15</Code>
+                            <Name>Air Tightness Information</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 15 15</Code>
+                        <Name>Water Leakage Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 15 17</Code>
+                        <Name>Thermal Conditions Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 15 19</Code>
+                        <Name>Condensation Information</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 55 13 17</Code>
+                    <Name>Health Concerns</Name>
+                    <Section>
+                        <Code>36-11 55 13 17 11</Code>
+                        <Name>Hygiene</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 17 13</Code>
+                        <Name>Ergonomics</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 17 15</Code>
+                        <Name>Special Needs (ADA)</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 55 13 19</Code>
+                    <Name>Artificial Heat Sources</Name>
+                    <Section>
+                        <Code>36-11 55 13 19 11</Code>
+                        <Name>Radiant Heat </Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 55 13 21</Code>
+                    <Name>Hazardous Materials Information</Name>
+                    <Section>
+                        <Code>36-11 55 13 21 11</Code>
+                        <Name>Explosion Danger</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 21 13</Code>
+                        <Name>Toxicity of Materials</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 55 13 23</Code>
+                    <Name>Safety Information</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 55 13 25</Code>
+                    <Name>Fire Safety</Name>
+                    <Section>
+                        <Code>36-11 55 13 25 11</Code>
+                        <Name>Egress Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 25 13</Code>
+                        <Name>Fire Prevention Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 25 15</Code>
+                        <Name>Fire Fighting Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 25 17</Code>
+                        <Name>Fire Mitigation Information</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 55 13 27</Code>
+                    <Name>Accident Prevention Information</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 55 13 29</Code>
+                    <Name>Explosion Mitigation Information</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 55 13 31</Code>
+                    <Name>Security Information</Name>
+                    <Section>
+                        <Code>36-11 55 13 31 11</Code>
+                        <Name>External Security Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 31 13</Code>
+                        <Name>Internal Security Information</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 55 13 33</Code>
+                    <Name>Sociological Concerns</Name>
+                    <Section>
+                        <Code>36-11 55 13 33 11</Code>
+                        <Name>Customs Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 13 33 13</Code>
+                        <Name>Cultural Information</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 55 13 35</Code>
+                    <Name>Economic Concerns</Name>
+                </Section>
+                <Section>
+                    <Code>36-11 55 13 37</Code>
+                    <Name>Work Requirements</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-11 55 15</Code>
+                <Name>Environmental Planning Information</Name>
+                <Section>
+                    <Code>36-11 55 15 11</Code>
+                    <Name>Atmospheric and Meteorological Planning Information</Name>
+                    <Section>
+                        <Code>36-11 55 15 11 11</Code>
+                        <Name>Sunlight Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 11 13</Code>
+                        <Name>Design Temperature</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 11 15</Code>
+                        <Name>Precipitation Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 11 17</Code>
+                        <Name>Humidity Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 11 19</Code>
+                        <Name>Wind Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 11 21</Code>
+                        <Name>Lightning Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 11 23</Code>
+                        <Name>Air Pollution Information</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 55 15 13</Code>
+                    <Name>Physiographic Planning Information</Name>
+                    <Section>
+                        <Code>36-11 55 15 13 11</Code>
+                        <Name>Land Area Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 13 13</Code>
+                        <Name>Water Bodies Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 13 15</Code>
+                        <Name>Natural Shelter Information</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 55 15 15</Code>
+                    <Name>Geological Planning Information</Name>
+                    <Section>
+                        <Code>36-11 55 15 15 11</Code>
+                        <Name>Siesmic Activity Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 15 13</Code>
+                        <Name>Volcanic Activity Information</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 55 15 17</Code>
+                    <Name>Pollution Planning Information</Name>
+                    <Section>
+                        <Code>36-11 55 15 17 11</Code>
+                        <Name>Air Pollution Information</Name>
+                        <Section>
+                            <Code>36-11 55 15 17 11 11</Code>
+                            <Name>Acid Rain Information</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-11 55 15 17 11 13</Code>
+                            <Name>Ozone Concentration Information</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 17 13</Code>
+                        <Name>Noise Information</Name>
+                        <Section>
+                            <Code>36-11 55 15 17 13 11</Code>
+                            <Name>Existing Noise Information</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-11 55 15 17 13 13</Code>
+                            <Name>Site Equipment Noise Information</Name>
+                        </Section>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-11 55 15 19</Code>
+                    <Name>Site Biological Characteristics</Name>
+                    <Section>
+                        <Code>36-11 55 15 19 11</Code>
+                        <Name>Microorganism </Name>
+                        <Section>
+                            <Code>36-11 55 15 19 11 11</Code>
+                            <Name>Mold, Mildew</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-11 55 15 19 11 13</Code>
+                            <Name>Fungal</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-11 55 15 19 11 15</Code>
+                            <Name>Bacterial, Viral</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 19 13</Code>
+                        <Name>Plant</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 19 15</Code>
+                        <Name>Insect Infestation</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 19 17</Code>
+                        <Name>Bird Nesting, Attack</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-11 55 15 19 19</Code>
+                        <Name>Animal Nesting, Infestation</Name>
+                    </Section>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 57 00</Code>
+            <Name>Marketing/Promotional Information</Name>
+            <Section>
+                <Code>36-11 57 11</Code>
+                <Name>Pamphlets</Name>
+            </Section>
+            <Section>
+                <Code>36-11 57 13</Code>
+                <Name>Brochures</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 59 00</Code>
+            <Name>Images</Name>
+            <Section>
+                <Code>36-11 59 11</Code>
+                <Name>Videos</Name>
+            </Section>
+            <Section>
+                <Code>36-11 59 13</Code>
+                <Name>Slide Shows</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 61 00</Code>
+            <Name>Maps</Name>
+            <Section>
+                <Code>36-11 61 11</Code>
+                <Name>USGS Maps</Name>
+            </Section>
+            <Section>
+                <Code>36-11 61 13</Code>
+                <Name>Roadmaps</Name>
+                <Section>
+                    <Code>36-11 63 11</Code>
+                    <Name>Organizational Calendars</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-11 63 00</Code>
+            <Name>Calendars</Name>
+        </Section>
+        <Section>
+            <Code>36-11 65 00</Code>
+            <Name>Other General Documentation</Name>
+            <Section>
+                <Code>36-11 65 11</Code>
+                <Name>Wiki</Name>
+            </Section>
+            <Section>
+                <Code>36-11 65 13</Code>
+                <Name>Bookmarks</Name>
+            </Section>
+            <Section>
+                <Code>36-11 65 15</Code>
+                <Name>Blogs</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>36-51 00 00</Code>
+        <Name>OFFICE RESOURCES</Name>
+        <Section>
+            <Code>36-51 11 00</Code>
+            <Name>Office Business Practice Guidelines</Name>
+            <Section>
+                <Code>36-51 11 11</Code>
+                <Name>Promotional Guidelines</Name>
+            </Section>
+            <Section>
+                <Code>36-51 11 13</Code>
+                <Name>Communication Guidelines</Name>
+            </Section>
+            <Section>
+                <Code>36-51 11 15</Code>
+                <Name>Legal Guidelines</Name>
+                <Section>
+                    <Code>36-51 11 15 11</Code>
+                    <Name>Contract Guidelines</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-51 11 17</Code>
+                <Name>Insurance Guidelines</Name>
+            </Section>
+            <Section>
+                <Code>36-51 11 19</Code>
+                <Name>Accounting Guidelines</Name>
+            </Section>
+            <Section>
+                <Code>36-51 11 21</Code>
+                <Name>Human Relation Guidelines</Name>
+                <Section>
+                    <Code>36-51 11 21 11</Code>
+                    <Name>Employee Handbook</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-51 33 00</Code>
+            <Name>Office Professional Practice Guidelines</Name>
+            <Section>
+                <Code>36-51 33 11</Code>
+                <Name>Design Guidelines</Name>
+            </Section>
+            <Section>
+                <Code>36-51 33 13</Code>
+                <Name>Modeling Guidelines</Name>
+            </Section>
+            <Section>
+                <Code>36-51 33 15</Code>
+                <Name>Documentation Guidelines</Name>
+            </Section>
+            <Section>
+                <Code>36-51 33 17</Code>
+                <Name>Quality Management Guidelines</Name>
+                <Section>
+                    <Code>36-51 33 17 11</Code>
+                    <Name>Quality Assurance Quality Control (QAQC) Plan</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-51 53 00</Code>
+            <Name>Office Standard Documents</Name>
+            <Section>
+                <Code>36-51 53 11</Code>
+                <Name>Office Promotional Information</Name>
+                <Section>
+                    <Code>36-51 53 11 11</Code>
+                    <Name>Website Information</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 53 11 13</Code>
+                    <Name>Promotional Literature</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-51 53 13</Code>
+                <Name>Office Forms of Agreement</Name>
+                <Section>
+                    <Code>36-51 53 13 11</Code>
+                    <Name>Attachments</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 53 13 13</Code>
+                    <Name>Exhibits</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-51 53 15</Code>
+                <Name>Office Graphics</Name>
+                <Section>
+                    <Code>36-51 53 15 11</Code>
+                    <Name>Logos</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-51 53 17</Code>
+                <Name>Office Forms</Name>
+                <Section>
+                    <Code>36-51 53 17 11</Code>
+                    <Name>Correspondence</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 53 17 13</Code>
+                    <Name>Transmittals</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 53 17 15</Code>
+                    <Name>Memoranda</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 53 17 17</Code>
+                    <Name>Reports</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 53 17 19</Code>
+                    <Name>Invoices</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 53 17 21</Code>
+                    <Name>Business Cards</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 53 17 23</Code>
+                    <Name>Envelops</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 53 17 25</Code>
+                    <Name>Logs</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-51 73 00</Code>
+            <Name>Office Model Templates</Name>
+            <Section>
+                <Code>36-51 73 11</Code>
+                <Name>Model Content</Name>
+                <Section>
+                    <Code>36-51 73 11 11</Code>
+                    <Name>Model Graphical Content</Name>
+                    <Section>
+                        <Code>36-51 73 11 11 11</Code>
+                        <Name>Graphical Content based on BIM rules</Name>
+                        <Section>
+                            <Code>36-51 73 11 11 11 11</Code>
+                            <Name>Parametric Content</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 11 11 13</Code>
+                            <Name>Non-parametric Content</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-51 73 11 11 13</Code>
+                        <Name>Graphical Content based on simple geometric rules</Name>
+                        <Section>
+                            <Code>36-51 73 11 11 13 11</Code>
+                            <Name>Massing/Volumes</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 11 13 13</Code>
+                            <Name>Surfaces</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 11 13 15</Code>
+                            <Name>Lines</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 11 13 17</Code>
+                            <Name>Points</Name>
+                        </Section>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-51 73 11 13</Code>
+                    <Name>Model Annotation Content</Name>
+                    <Section>
+                        <Code>36-51 73 11 13 11</Code>
+                        <Name>Properties</Name>
+                        <Section>
+                            <Code>36-51 73 11 13 11 11</Code>
+                            <Name>Object classification schemes</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 11 13</Code>
+                            <Name>Object geometries</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 11 15</Code>
+                            <Name>Object quantities</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 11 17</Code>
+                            <Name>Geospatial Information</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 11 19</Code>
+                            <Name>Zones/Rooms/Spaces</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 11 21</Code>
+                            <Name>Products/Materials</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 11 23</Code>
+                            <Name>Calculated Values</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 11 25</Code>
+                            <Name>Unit Cost Data</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 11 27</Code>
+                            <Name>References</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-51 73 11 13 13</Code>
+                        <Name>Tags</Name>
+                        <Section>
+                            <Code>36-51 73 11 13 13 11</Code>
+                            <Name>Area Tags</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 13 13</Code>
+                            <Name>Element Tags</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 13 15</Code>
+                            <Name>Material Tags</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-51 73 11 13 15</Code>
+                        <Name>Annotations</Name>
+                        <Section>
+                            <Code>36-51 73 11 13 15 11</Code>
+                            <Name>General Notes File</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 15 13</Code>
+                            <Name>Material Keynotes File</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-51 73 11 13 17</Code>
+                        <Name>Symbols</Name>
+                        <Section>
+                            <Code>36-51 73 11 13 17 11</Code>
+                            <Name>Horizontal Grids</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 17 13</Code>
+                            <Name>Vertical Levels</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 17 15</Code>
+                            <Name>Callouts</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 17 17</Code>
+                            <Name>Section Cuts</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 11 13 17 19</Code>
+                            <Name>View Labels</Name>
+                        </Section>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-51 73 13</Code>
+                <Name>Model Views</Name>
+                <Section>
+                    <Code>36-51 73 13 11</Code>
+                    <Name>Graphical Views of Model</Name>
+                    <Section>
+                        <Code>36-51 73 13 11 11</Code>
+                        <Name>3D Views</Name>
+                        <Section>
+                            <Code>36-51 73 13 11 11 11</Code>
+                            <Name>Diagrams</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 11 11 13</Code>
+                            <Name>Axonometrics</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 11 11 15</Code>
+                            <Name>Perspectives</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 11 11 17</Code>
+                            <Name>Rendered Views</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 11 11 19</Code>
+                            <Name>Animations</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-51 73 13 11 13</Code>
+                        <Name>2D Horizontal Views</Name>
+                        <Section>
+                            <Code>36-51 73 13 11 13 11</Code>
+                            <Name>Site Plans</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 11 13 13</Code>
+                            <Name>Floor Plans</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 11 13 15</Code>
+                            <Name>Large-scale Views</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 11 13 17</Code>
+                            <Name>Detail/s</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-51 73 13 11 15</Code>
+                        <Name>2D Vertical Views:</Name>
+                        <Section>
+                            <Code>36-51 73 13 11 15 11</Code>
+                            <Name>Site-Building Section/Elevations</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 11 15 13</Code>
+                            <Name>Element Section/Elevations</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 11 15 15</Code>
+                            <Name>Details</Name>
+                        </Section>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-51 73 13 13</Code>
+                    <Name>Non-graphical Reports of Model</Name>
+                    <Section>
+                        <Code>36-51 73 13 13 11</Code>
+                        <Name>Schedules</Name>
+                        <Section>
+                            <Code>36-51 73 13 13 11 11</Code>
+                            <Name>Sheet Indexes</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 13 11 13</Code>
+                            <Name>Area Schedules</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 13 11 15</Code>
+                            <Name>Element Schedules</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 13 11 17</Code>
+                            <Name>Material Schedules</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 13 11 19</Code>
+                            <Name>Keynote Schedules</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-51 73 13 13 11 21</Code>
+                            <Name>Revision Log</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-51 73 13 13 13</Code>
+                        <Name>Legends</Name>
+                        <Section>
+                            <Code>36-51 73 13 13 13 11</Code>
+                            <Name>Color Schemes</Name>
+                        </Section>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-51 73 15</Code>
+                <Name>Sheet Templates</Name>
+                <Section>
+                    <Code>36-51 73 15 11</Code>
+                    <Name>Title Blocks</Name>
+                    <Section>
+                        <Code>36-51 73 15 11 11</Code>
+                        <Name>Image Board Title Blocks</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-51 73 15 11 13</Code>
+                        <Name>Design Presentation Title Blocks</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-51 73 15 11 15</Code>
+                        <Name>Contract Drawing Title Blocks</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-51 73 15 13</Code>
+                    <Name>Model Views</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 73 15 15</Code>
+                    <Name>Legends</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 73 15 17</Code>
+                    <Name>Schedules</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-51 75 00</Code>
+            <Name>Office Masters</Name>
+            <Section>
+                <Code>36-51 75 11</Code>
+                <Name>Office Project Schedules</Name>
+            </Section>
+            <Section>
+                <Code>36-51 75 13</Code>
+                <Name>Office Specifications</Name>
+            </Section>
+            <Section>
+                <Code>36-51 75 15</Code>
+                <Name>Office Drawings</Name>
+                <Section>
+                    <Code>36-51 75 15 11</Code>
+                    <Name>Office Details</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-51 75 17</Code>
+                <Name>Office Calendars</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-51 91 00</Code>
+            <Name>Office Financial Management Documents</Name>
+            <Section>
+                <Code>36-51 91 11</Code>
+                <Name>Time Sheets</Name>
+            </Section>
+            <Section>
+                <Code>36-51 91 13</Code>
+                <Name>Cash Flow/ Revenue/ Expenses</Name>
+            </Section>
+            <Section>
+                <Code>36-51 91 15</Code>
+                <Name>Assets/Liabilities</Name>
+            </Section>
+            <Section>
+                <Code>36-51 91 17</Code>
+                <Name>Gross Revenue</Name>
+            </Section>
+            <Section>
+                <Code>36-51 91 19</Code>
+                <Name>Project multipliers/ breakeven/ earnings</Name>
+            </Section>
+            <Section>
+                <Code>36-51 91 21</Code>
+                <Name>Project Budgets</Name>
+                <Section>
+                    <Code>36-51 91 21 11</Code>
+                    <Name>Direct Labor by Discipline</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 91 21 13</Code>
+                    <Name>Expenses</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 91 21 15</Code>
+                    <Name>Consultant Expenses</Name>
+                </Section>
+                <Section>
+                    <Code>36-51 91 21 17</Code>
+                    <Name>Contingencies</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-51 79 00</Code>
+            <Name>Other Office Resources</Name>
+        </Section>
+    </Section>
+    <Section>
+        <Code>36-71 00 00</Code>
+        <Name>PROJECT INFORMATION</Name>
+        <Section>
+            <Code>36-71 11 00</Code>
+            <Name>Project Identifications</Name>
+            <Section>
+                <Code>36-71 11 11</Code>
+                <Name>Project Name</Name>
+            </Section>
+            <Section>
+                <Code>36-71 11 13</Code>
+                <Name>Project Numbers</Name>
+            </Section>
+            <Section>
+                <Code>36-71 11 15</Code>
+                <Name>Project Location</Name>
+                <Section>
+                    <Code>36-71 11 15 11</Code>
+                    <Name>Geographical Location</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 11 15 13</Code>
+                    <Name>Street Address</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 11 15 15</Code>
+                    <Name>Legal Description</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-71 15 00</Code>
+            <Name>Real Property Transfer Information</Name>
+            <Section>
+                <Code>36-71 15 11</Code>
+                <Name>Deeds</Name>
+            </Section>
+            <Section>
+                <Code>36-71 15 13</Code>
+                <Name>Leases</Name>
+            </Section>
+            <Section>
+                <Code>36-71 15 15</Code>
+                <Name>Trusts</Name>
+            </Section>
+            <Section>
+                <Code>36-71 15 17</Code>
+                <Name>Easements</Name>
+            </Section>
+            <Section>
+                <Code>36-71 15 19</Code>
+                <Name>Covenants</Name>
+            </Section>
+            <Section>
+                <Code>36-71 15 21</Code>
+                <Name>Rights-of-Way</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-71 26 00</Code>
+            <Name>Project Management Information</Name>
+            <Section>
+                <Code>36-71 26 11</Code>
+                <Name>Project Requests for Proposals</Name>
+            </Section>
+            <Section>
+                <Code>36-71 26 13</Code>
+                <Name>Project Proposals</Name>
+                <Section>
+                    <Code>36-71 26 13 11</Code>
+                    <Name>Description of Services</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 26 15</Code>
+                <Name>Project Schedules</Name>
+                <Section>
+                    <Code>36-71 26 15 11</Code>
+                    <Name>Project Schedule / Workplan</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 26 17</Code>
+                <Name>Project Financials</Name>
+                <Section>
+                    <Code>36-71 26 17 11</Code>
+                    <Name>Proforma analysis</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 26 17 13</Code>
+                    <Name>Lender Requirements</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 26 17 15</Code>
+                    <Name>Leasing Assistance</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 26 19</Code>
+                <Name>Project Fee/Expense Information</Name>
+                <Section>
+                    <Code>36-71 26 19 11</Code>
+                    <Name>Design Fee Worksheet</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 26 19 13</Code>
+                    <Name>Accounting Report/s</Name>
+                    <Section>
+                        <Code>36-71 26 19 13 11</Code>
+                        <Name>Progress Reports</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 19 13 13</Code>
+                        <Name>Billing Reports</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 19 13 15</Code>
+                        <Name>Unbilled Labor Reports</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 19 13 17</Code>
+                        <Name>Expense Reports</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 19 13 19</Code>
+                        <Name>Estimate to Complete (ETC)</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 19 13 21</Code>
+                        <Name>Estimate at Completion</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 19 13 23</Code>
+                        <Name>Percent Complete</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 19 13 25</Code>
+                        <Name>Invoicing/Payment Schedule</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 19 13 27</Code>
+                        <Name>Accounts Receivable Aging </Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 26 19 15</Code>
+                    <Name>Invoices</Name>
+                    <Section>
+                        <Code>36-71 26 19 15 11</Code>
+                        <Name>Owner / Client Invoices</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 19 15 13</Code>
+                        <Name>Consultant Invoices</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 19 15 15</Code>
+                        <Name>Vendor Invoices</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 26 19 17</Code>
+                    <Name>Expenses</Name>
+                    <Section>
+                        <Code>36-71 26 19 17 11</Code>
+                        <Name>Reimbursable Expenses</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 19 17 13</Code>
+                        <Name>Non-reimbursable Expenses</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 26 19 19</Code>
+                    <Name>Phase Codes</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 26 21</Code>
+                <Name>Project Agreements</Name>
+                <Section>
+                    <Code>36-71 26 21 11</Code>
+                    <Name>Scope of Work Clarifications / Items List</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 26 21 13</Code>
+                    <Name>General Conditions</Name>
+                    <Section>
+                        <Code>36-71 26 21 13 11</Code>
+                        <Name>Supplementary Conditions</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 26 21 15</Code>
+                    <Name>Project Delivery Method</Name>
+                    <Section>
+                        <Code>36-71 26 21 15 11</Code>
+                        <Name>BIM Execution Plan</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 26 21 17</Code>
+                    <Name>Multiple-Party</Name>
+                    <Section>
+                        <Code>36-71 26 21 17 11</Code>
+                        <Name>Single Purpose Entity Agreement</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 26 21 19</Code>
+                    <Name>Two-Party</Name>
+                    <Section>
+                        <Code>36-71 26 21 19 11</Code>
+                        <Name>Owner / Designer</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 31 21 19 13</Code>
+                        <Name>Designer / Consultants</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 21 19 12</Code>
+                        <Name>Owner / Contractor</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 26 21 21</Code>
+                    <Name>Notices to Proceed</Name>
+                    <Section>
+                        <Code>36-71 26 21 21 11</Code>
+                        <Name>Primary Designer</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 21 21 13</Code>
+                        <Name>Consultants</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 26 23</Code>
+                <Name>Project Team Information</Name>
+                <Section>
+                    <Code>36-71 26 23 11</Code>
+                    <Name>Team Directory</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 26 23 13</Code>
+                    <Name>Organization Chart</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 26 25</Code>
+                <Name>Project General Information</Name>
+                <Section>
+                    <Code>36-71 26 25 11</Code>
+                    <Name>Project Summary Sheet</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 26 25 13</Code>
+                    <Name>Project Description / Profile</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 26 25 15</Code>
+                    <Name>Project History</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 26 25 17</Code>
+                    <Name>Project Master Forms</Name>
+                    <Section>
+                        <Code>36-71 26 25 17 11</Code>
+                        <Name>QAQC / TQM Checklists</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 25 17 13</Code>
+                        <Name>Metadata (File name/path; date)</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 26 25 19</Code>
+                    <Name>Mailing List/s</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 26 25 21</Code>
+                    <Name>Marketing Information</Name>
+                    <Section>
+                        <Code>36-71 26 25 21 11</Code>
+                        <Name>Project Narrative</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 25 21 13</Code>
+                        <Name>Owner Release / Approvals</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 25 21 15</Code>
+                        <Name>Promotional Material</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 25 21 17</Code>
+                        <Name>Marketing Imagery</Name>
+                        <Section>
+                            <Code>36-71 26 25 21 17 11</Code>
+                            <Name>Photographs</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-71 26 25 21 17 13</Code>
+                            <Name>Videos</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-71 26 25 21 17 15</Code>
+                            <Name>Virtual Design Presentations</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-71 26 25 21 17 17</Code>
+                            <Name>Animations</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 25 21 19</Code>
+                        <Name>Media Publications</Name>
+                        <Section>
+                            <Code>36-71 26 25 21 19 11</Code>
+                            <Name>Press Releases</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-71 26 25 21 19 13</Code>
+                            <Name>Magazine publications</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-71 26 25 21 21</Code>
+                        <Name>Design Awards</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 26 27</Code>
+                <Name>Project Information Management</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-71 31 00</Code>
+            <Name>Project Communications</Name>
+            <Section>
+                <Code>36-71 31 11</Code>
+                <Name>Agenda</Name>
+            </Section>
+            <Section>
+                <Code>36-71 31 13</Code>
+                <Name>Minutes</Name>
+                <Section>
+                    <Code>36-71 31 13 11</Code>
+                    <Name>Hearings</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 31 13 13</Code>
+                    <Name>Conferences</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 31 13 15</Code>
+                    <Name>Meetings</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 31 13 17</Code>
+                    <Name>Telephone</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 31 15</Code>
+                <Name>Action Items</Name>
+            </Section>
+            <Section>
+                <Code>36-71 31 17</Code>
+                <Name>Email</Name>
+            </Section>
+            <Section>
+                <Code>36-71 31 19</Code>
+                <Name>Transmittals</Name>
+            </Section>
+            <Section>
+                <Code>36-71 31 21</Code>
+                <Name>Facsimile</Name>
+            </Section>
+            <Section>
+                <Code>36-71 31 23</Code>
+                <Name>Correspondence</Name>
+            </Section>
+            <Section>
+                <Code>36-71 31 25</Code>
+                <Name>Memoranda</Name>
+            </Section>
+            <Section>
+                <Code>36-71 31 27</Code>
+                <Name>Directives / Notices</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-71 45 00</Code>
+            <Name>Project Scope Information</Name>
+            <Section>
+                <Code>36-71 45 11</Code>
+                <Name>Quantity Surveys</Name>
+            </Section>
+            <Section>
+                <Code>36-71 45 13</Code>
+                <Name>Area Quantity Scope Schedules</Name>
+            </Section>
+            <Section>
+                <Code>36-71 45 15</Code>
+                <Name>Element Quantity Scope Schedules</Name>
+            </Section>
+            <Section>
+                <Code>36-71 45 17</Code>
+                <Name>Work-Result Scope Schedules</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-71 67 00</Code>
+            <Name>Project Cost Information</Name>
+            <Section>
+                <Code>36-71 67 11</Code>
+                <Name>Project Budget Information</Name>
+                <Section>
+                    <Code>36-71 67 11 11</Code>
+                    <Name>Area Unit Costs</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 67 11 13</Code>
+                    <Name>Area-based Budget Analyses</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 67 13</Code>
+                <Name>Cost Estimate Information</Name>
+                <Section>
+                    <Code>36-71 67 13 11</Code>
+                    <Name>Element-based Cost Estimates</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 67 13 13</Code>
+                    <Name>Work-result-based Cost Estimates</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 67 13 15</Code>
+                    <Name>Element Unit Prices</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 67 13 17</Code>
+                    <Name>Material / Product Unit Prices</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 67 15</Code>
+                <Name>Guaranteed Maximum Price</Name>
+                <Section>
+                    <Code>36-71 67 15 11</Code>
+                    <Name>Initial GMP</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 67 15 13</Code>
+                    <Name>Revised GMP</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 67 17</Code>
+                <Name>Cost Performance Analyses</Name>
+                <Section>
+                    <Code>36-71 67 17 11</Code>
+                    <Name>Life Cycle Cost Analyses</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 67 17 13</Code>
+                    <Name>Cost Additions and Reductions Reports</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 67 17 15</Code>
+                    <Name>Design Changes due to value engineering</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 67 19</Code>
+                <Name>Buyout / Bid Information</Name>
+                <Section>
+                    <Code>36-71 67 19 11</Code>
+                    <Name>Bid Tabulation</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 67 19 13</Code>
+                    <Name>Subcontractor Bids</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 67 19 15</Code>
+                    <Name>Material Supplier Bids</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-71 81 00</Code>
+            <Name>Project Existing Condition Information</Name>
+            <Section>
+                <Code>36-71 81 11</Code>
+                <Name>Site and Surrounding Area Transportation Information</Name>
+                <Section>
+                    <Code>36-71 81 11 11</Code>
+                    <Name>Public Transportation</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 81 11 13</Code>
+                    <Name>Private Vehicle Traffic Studies</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 81 11 15</Code>
+                    <Name>Service Vehicle Information</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 81 11 17</Code>
+                    <Name>Emergency Vehicle Information</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 81 11 19</Code>
+                    <Name>Vehicular Traffic Density</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 81 13</Code>
+                <Name>Land Planning Information</Name>
+                <Section>
+                    <Code>36-71 81 13 11</Code>
+                    <Name>Land Use Planning Information</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 81 13 13</Code>
+                    <Name>Zoning Information</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 81 15</Code>
+                <Name>Existing Environmental Information</Name>
+                <Section>
+                    <Code>36-71 81 15 11</Code>
+                    <Name>Site Atmospheric and Meteorological Characteristics</Name>
+                    <Section>
+                        <Code>36-71 81 15 11 11</Code>
+                        <Name>Site Sunlight</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 15 11 13</Code>
+                        <Name>Site Temperature</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 15 11 15</Code>
+                        <Name>Site Precipitation</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 15 11 17</Code>
+                        <Name>Site Humidity</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 15 11 19</Code>
+                        <Name>Site Wind</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 15 11 21</Code>
+                        <Name>Site Lightning</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 15 11 23</Code>
+                        <Name>Site Air Pollution</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 81 15 13</Code>
+                    <Name>Geological Site Charateristics</Name>
+                    <Section>
+                        <Code>36-71 81 15 13 11</Code>
+                        <Name>Site Siesmic Activity</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 15 13 13</Code>
+                        <Name>Site Volcanic Activity</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 81 15 15</Code>
+                <Name>Existing Site Information</Name>
+                <Section>
+                    <Code>36-71 81 15 15 11</Code>
+                    <Name>Site Legal Information</Name>
+                    <Section>
+                        <Code>36-71 81 15 15 11 11</Code>
+                        <Name>Legal Description: Meets and Bounds</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 81 15 15 13</Code>
+                    <Name>Existing Site Images</Name>
+                    <Section>
+                        <Code>36-71 81 15 15 13 11</Code>
+                        <Name>Site Photographs</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 81 15 15 15</Code>
+                    <Name>Archaeological Surveys</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 81 15 15 17</Code>
+                    <Name>Geophysical Site Data</Name>
+                    <Section>
+                        <Code>36-71 81 15 15 17 11</Code>
+                        <Name>Land Survey / Site Measurements</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 15 15 17 13</Code>
+                        <Name>Site Topographic Data</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 15 15 17 15</Code>
+                        <Name>Site Physiographic Data</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 15 15 17 17</Code>
+                        <Name>Existing Site Improvements</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 15 15 17 19</Code>
+                        <Name>Site Utility Data</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 81 15 21</Code>
+                    <Name>Geotechnical Site Data</Name>
+                    <Section>
+                        <Code>36-71 81 15 21 11</Code>
+                        <Name>Soils Report</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 81 15 23</Code>
+                    <Name>Environmental Assessment Information</Name>
+                    <Section>
+                        <Code>36-71 81 15 23 11</Code>
+                        <Name>Existing Material Information</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 15 23 13</Code>
+                        <Name>Existing Hazardous Material Information</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 81 15 25</Code>
+                    <Name>Human-generated Environmental Information</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 81 15 27</Code>
+                    <Name>Biological-general (non-human) Impact Information</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 81 15 29</Code>
+                    <Name>Existing Conditions Reports</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 81 17</Code>
+                <Name>Existing Facility Information</Name>
+                <Section>
+                    <Code>36-71 81 17 11</Code>
+                    <Name>Existing Facility Images</Name>
+                    <Section>
+                        <Code>36-71 81 17 11 11</Code>
+                        <Name>Photographs of existing conditions</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 81 17 13</Code>
+                    <Name>Existing Facility Documentation</Name>
+                    <Section>
+                        <Code>36-71 81 17 13 11</Code>
+                        <Name>Drawings of existing conditions</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 17 13 13</Code>
+                        <Name>Specifications (for existing improvements)</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 81 17 15</Code>
+                    <Name>Existing Facility Surveys</Name>
+                    <Section>
+                        <Code>36-71 81 17 15 11</Code>
+                        <Name>Facility Measurement Documents</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 17 15 13</Code>
+                        <Name>Evaluation Reports</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 17 15 15</Code>
+                        <Name>Existing Elements Surveys</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 81 17 15 17</Code>
+                        <Name>Existing Materials Surveys</Name>
+                        <Section>
+                            <Code>36-71 81 17 15 17 11</Code>
+                            <Name>Existing Hazardous Material Surveys</Name>
+                        </Section>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 81 17 17</Code>
+                    <Name>Historical Facility Data</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-71 87 00</Code>
+            <Name>Project Information Models</Name>
+            <Section>
+                <Code>36-71 87 11</Code>
+                <Name>Composite Models</Name>
+                <Section>
+                    <Code>36-71 87 11 11</Code>
+                    <Name>Native File Modeling/Models</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 87 11 13</Code>
+                    <Name>Non-native File Modeling/Models</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 87 13</Code>
+                <Name>Analytical Models/Worksets</Name>
+                <Section>
+                    <Code>36-71 87 13 11</Code>
+                    <Name>Performance-based Models</Name>
+                    <Section>
+                        <Code>36-71 87 13 11 11</Code>
+                        <Name>Site Utilization Models</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 87 13 11 13</Code>
+                        <Name>Solar Impact Models</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 87 13 13</Code>
+                    <Name>Cost-based Models</Name>
+                    <Section>
+                        <Code>36-71 87 13 13 11</Code>
+                        <Name>Financial Models</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 87 13 13 13</Code>
+                        <Name>Cost Models</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 87 13 13 15</Code>
+                        <Name>Energy Models</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 87 13 13 17</Code>
+                        <Name>Life Cycle Models</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 87 13 15</Code>
+                    <Name>Time-based Models</Name>
+                    <Section>
+                        <Code>36-71 87 13 15 11</Code>
+                        <Name>Construction Sequence Models</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 87 13 15 13</Code>
+                        <Name>Temporary Construction Models</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 87 13 17</Code>
+                <Name>Computer-Aided Design</Name>
+                <Section>
+                    <Code>36-71 87 13 17 11</Code>
+                    <Name>Composite Drawing Sets</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 87 13 17 13</Code>
+                    <Name>Discipline Drawing Sets</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>36-71 91 00</Code>
+            <Name>Project Documentation</Name>
+            <Section>
+                <Code>36-71 91 11</Code>
+                <Name>Predesign Information</Name>
+                <Section>
+                    <Code>36-71 91 11 11</Code>
+                    <Name>Feasibility Studies</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 13</Code>
+                    <Name>Design Standards</Name>
+                    <Section>
+                        <Code>36-71 91 11 13 11</Code>
+                        <Name>Sustainable Design Standards</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 15</Code>
+                    <Name>Programmatic Data</Name>
+                    <Section>
+                        <Code>36-71 91 11 15 11</Code>
+                        <Name>Owner Guidelines / Requirements</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 15 13</Code>
+                        <Name>Project Goals</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 15 15</Code>
+                        <Name>Program Requirements Matrix</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 15 17</Code>
+                        <Name>Predesign Notes</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 15 19</Code>
+                        <Name>Program Plan</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 17</Code>
+                    <Name>Photographic Images</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 19</Code>
+                    <Name>Predesign Reviews</Name>
+                    <Section>
+                        <Code>36-71 91 11 19 11</Code>
+                        <Name>Zoning Review</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 21</Code>
+                    <Name>Element/Assembly/Systems Criteria</Name>
+                    <Section>
+                        <Code>36-71 91 11 21 11</Code>
+                        <Name>Element/Assembly/Systems Considered</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 21 13</Code>
+                        <Name>Element/Assembly/Systems Selected</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 23</Code>
+                    <Name>Product/Material Criteria</Name>
+                    <Section>
+                        <Code>36-71 91 11 23 11</Code>
+                        <Name>Materials Considered</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 23 13</Code>
+                        <Name>Materials Selected</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 25</Code>
+                    <Name>Reports / Studies</Name>
+                    <Section>
+                        <Code>36-71 91 11 25 11</Code>
+                        <Name>Accessibility Studies</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 91 11 27</Code>
+                <Name>Design Documentation</Name>
+                <Section>
+                    <Code>36-71 91 11 27 11</Code>
+                    <Name>Program Plan</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 27 13</Code>
+                    <Name>Design Sketches</Name>
+                    <Section>
+                        <Code>36-71 91 11 27 13 11</Code>
+                        <Name>Composite Sketches</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 27 13 13</Code>
+                        <Name>3D Sketches</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 27 13 15</Code>
+                        <Name>Plan Sketches</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 27 13 17</Code>
+                        <Name>Elevation / Section Sketches</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 29</Code>
+                    <Name>Renderings and Animations</Name>
+                    <Section>
+                        <Code>36-71 91 11 29 11</Code>
+                        <Name>Hand-drawn Renderings</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 29 13</Code>
+                        <Name>Software-generated Renderings</Name>
+                        <Section>
+                            <Code>36-71 91 11 29 13 11</Code>
+                            <Name>Animations</Name>
+                        </Section>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 31</Code>
+                    <Name>Models</Name>
+                    <Section>
+                        <Code>36-71 91 11 31 11</Code>
+                        <Name>Hand-fabricated Models</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 31 13</Code>
+                        <Name>3D printer produced Models</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 33</Code>
+                    <Name>Design Drawings</Name>
+                    <Section>
+                        <Code>36-71 91 11 33 11</Code>
+                        <Name>CompositeDrawings</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 33 13</Code>
+                        <Name>3D Drawings</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 33 15</Code>
+                        <Name>Plan Drawings</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 33 17</Code>
+                        <Name>Elevation / Section Drawings</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 35</Code>
+                    <Name>Design Drawing Document Sets</Name>
+                    <Section>
+                        <Code>36-71 91 11 35 11</Code>
+                        <Name>Phase Milestone Sets</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 35 13</Code>
+                        <Name>Presentations</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 35 15</Code>
+                        <Name>Design Competition Submittals</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 37</Code>
+                    <Name>Outline Specifications</Name>
+                    <Section>
+                        <Code>36-71 91 11 37 11</Code>
+                        <Name>Preliminary Project Descriptions</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 37 13</Code>
+                        <Name>Work-results Summary</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 39</Code>
+                    <Name>Design Reviews</Name>
+                    <Section>
+                        <Code>36-71 91 11 39 11</Code>
+                        <Name>Entitlement Documents</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 11 39 13</Code>
+                        <Name>Code Analyses</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 11 41</Code>
+                    <Name>Scans</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 91 13</Code>
+                <Name>Contract Documents</Name>
+                <Section>
+                    <Code>36-71 91 13 10</Code>
+                    <Name>Agreements</Name>
+                    <Section>
+                        <Code>36-71 91 13 10 11</Code>
+                        <Name>Stipulated Sum Agreement (Single-Prime Contract) </Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 10 15</Code>
+                        <Name>Stipulated Sum Agreement (Multiple-Prime Contract) </Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 10 19</Code>
+                        <Name>Construction Management Agreement (Single-Prime Contract) </Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 10 23</Code>
+                        <Name>Construction Management Agreement (Multiple-Prime Contract) </Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 10 27</Code>
+                        <Name>Cost Plus-Fee Agreement (Single-Prime Contract) </Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 10 31</Code>
+                        <Name>Cost-Plus-Fee Agreement (Multiple-Prime Contract) </Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 10 35</Code>
+                        <Name>Unit Price Agreement (Single-Prime Contract) </Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 10 39</Code>
+                        <Name>Unit Price Agreement (Multiple-Prime Contract) </Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 10 43</Code>
+                        <Name>Design/Build Agreement (Single-Prime Contract) </Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 10 47</Code>
+                        <Name>Design/Build Agreement (Multiple-Prime Contract) </Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 10 51</Code>
+                        <Name>Purchase Agreement </Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 10 55</Code>
+                        <Name>Performance Contract </Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 10 59</Code>
+                        <Name>Integrated Project Delivery Agreement </Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 13 11</Code>
+                    <Name>Drawing Files / Views</Name>
+                    <Section>
+                        <Code>36-71 91 13 11 11</Code>
+                        <Name>3D Views</Name>
+                        <Section>
+                            <Code>36-71 91 13 11 11 11</Code>
+                            <Name>Diagrams</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-71 91 13 11 11 13</Code>
+                            <Name>Axonometrics</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-71 91 13 11 11 15</Code>
+                            <Name>Perspectives</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 11 13</Code>
+                        <Name>2D Horizontal Views</Name>
+                        <Section>
+                            <Code>36-71 91 13 11 13 11</Code>
+                            <Name>Site Plans</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-71 91 13 11 13 13</Code>
+                            <Name>Floor Plans</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-71 91 13 11 13 15</Code>
+                            <Name>Large-scale Plan Views</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-71 91 13 11 13 17</Code>
+                            <Name>Plan Detail/s</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 11 15</Code>
+                        <Name>2D Vertical Views:</Name>
+                        <Section>
+                            <Code>36-71 91 13 11 15 11</Code>
+                            <Name>Site-Building Section/Elevations</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-71 91 13 11 15 13</Code>
+                            <Name>Element Section/Elevations</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-71 91 13 11 15 15</Code>
+                            <Name>Vertical Details</Name>
+                        </Section>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 13 13</Code>
+                    <Name>Sheets</Name>
+                    <Section>
+                        <Code>36-71 91 13 13 11</Code>
+                        <Name>Sheet Index</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 13 13</Code>
+                        <Name>Finish Sheets</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 13 15</Code>
+                        <Name>Worksheets</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 13 15</Code>
+                    <Name>Contract Drawing Document Sets (Deliverables)</Name>
+                    <Section>
+                        <Code>36-71 91 13 15 11</Code>
+                        <Name>Cartoon Set</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 15 13</Code>
+                        <Name>Drawing Sets</Name>
+                        <Section>
+                            <Code>36-71 91 13 15 13 11</Code>
+                            <Name>Photographic Documentation</Name>
+                        </Section>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 13 17</Code>
+                    <Name>Project Manuals</Name>
+                    <Section>
+                        <Code>36-71 91 13 17 11</Code>
+                        <Name>Bidding and Contract Requirements</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 17 13</Code>
+                        <Name>Technical Specifications</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 17 15</Code>
+                        <Name>Material / Element Schedules</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 17 17</Code>
+                        <Name>Detail Manual</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 13 19</Code>
+                    <Name>Modifications</Name>
+                    <Section>
+                        <Code>36-71 91 13 19 11</Code>
+                        <Name>Addenda</Name>
+                        <Section>
+                            <Code>36-71 91 13 19 11 11</Code>
+                            <Name>Clarifications</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-71 91 13 19 11 13</Code>
+                            <Name>Minor Changes in the Work</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 19 13</Code>
+                        <Name>Change Orders</Name>
+                        <Section>
+                            <Code>36-71 91 13 19 13 11</Code>
+                            <Name>Changes in Contract Sum</Name>
+                        </Section>
+                        <Section>
+                            <Code>36-71 91 13 19 13 13</Code>
+                            <Name>Changes in Contract Time</Name>
+                        </Section>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 19 15</Code>
+                        <Name>Construction Change Directives</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 13 19 17</Code>
+                        <Name>Supplemental Drawings (SK)</Name>
+                        <Section>
+                            <Code>36-71 91 13 19 17 11</Code>
+                            <Name>Supplemental Drawing Log</Name>
+                        </Section>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 91 15</Code>
+                <Name>Procurement Information</Name>
+                <Section>
+                    <Code>36-71 91 15 11</Code>
+                    <Name>Request for Qualifications</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 15 13</Code>
+                    <Name>Requests For Bid Proposals</Name>
+                    <Section>
+                        <Code>36-71 91 15 13 11</Code>
+                        <Name>Advertisement for Bids</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 15 13 13</Code>
+                        <Name>Instructions to Bidders or Proposers</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 15 13 15</Code>
+                        <Name>Bid Specifications</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 15 13 17</Code>
+                        <Name>Bidders Log</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 15 13 19</Code>
+                        <Name>Bid Drawing Index</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 15 13 21</Code>
+                        <Name>Alternates / Options</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 15 15</Code>
+                    <Name>Requests For Clarification (RFC)</Name>
+                    <Section>
+                        <Code>36-71 91 15 15 11</Code>
+                        <Name>RFC Log</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 15 17</Code>
+                    <Name>Requests for Prior Approval</Name>
+                    <Section>
+                        <Code>36-71 91 15 17 11</Code>
+                        <Name>Prior Approval Procedures</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 15 19</Code>
+                    <Name>Addenda</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 15 21</Code>
+                    <Name>Pre-Bid Conferences</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 15 23</Code>
+                    <Name>Bid Proposals</Name>
+                    <Section>
+                        <Code>36-71 91 15 23 11</Code>
+                        <Name>Bid Tabulation</Name>
+                    </Section>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 91 17</Code>
+                <Name>Construction Information</Name>
+                <Section>
+                    <Code>36-71 91 17 11</Code>
+                    <Name>Notice to Proceed</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 13</Code>
+                    <Name>Construction Schedules</Name>
+                    <Section>
+                        <Code>36-71 91 17 13 11</Code>
+                        <Name>Submittal Schedules</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 15</Code>
+                    <Name>Requests for Substitution</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 17</Code>
+                    <Name>Requests For Information (RFI)</Name>
+                    <Section>
+                        <Code>36-71 91 17 17 11</Code>
+                        <Name>RFI Log</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 19</Code>
+                    <Name>Submittals</Name>
+                    <Section>
+                        <Code>36-71 91 17 19 11</Code>
+                        <Name>Submittal Log</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 17 19 13</Code>
+                        <Name>Material Safety Data Sheets (MSDS)</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 21</Code>
+                    <Name>Requests For Change (RFC)</Name>
+                    <Section>
+                        <Code>36-71 91 17 21 11</Code>
+                        <Name>RFC Log</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 23</Code>
+                    <Name>Change Directives</Name>
+                    <Section>
+                        <Code>36-71 91 17 23 11</Code>
+                        <Name>Change Directive Log</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 25</Code>
+                    <Name>Change Authorizations</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 27</Code>
+                    <Name>Requests for Change Order</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 29</Code>
+                    <Name>Changes to Contract Sum / Contract Time</Name>
+                    <Section>
+                        <Code>36-71 91 17 29 11</Code>
+                        <Name>Change Order Log</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 31</Code>
+                    <Name>Allowance Payment Authorizations</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 33</Code>
+                    <Name>Payment Authorizations</Name>
+                    <Section>
+                        <Code>36-71 91 17 33 11</Code>
+                        <Name>Schedule of Values</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 17 33 13</Code>
+                        <Name>Payment Log</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 17 33 15</Code>
+                        <Name>Draft Payment Authorizations</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 17 33 17</Code>
+                        <Name>Approved Payment Authorizations</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 35</Code>
+                    <Name>Field Reports</Name>
+                    <Section>
+                        <Code>36-71 91 17 35 11</Code>
+                        <Name>Special Inspection Reports</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 37</Code>
+                    <Name>Test Reports (Table 22 Work Results)</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 39</Code>
+                    <Name>Photographic Construction Record</Name>
+                    <Section>
+                        <Code>36-71 91 17 39 11</Code>
+                        <Name>Web-cam Images</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 41</Code>
+                    <Name>As-Built Measurements</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 17 43</Code>
+                    <Name>Construction Techniques Information</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 91 19</Code>
+                <Name>Closeout Information</Name>
+                <Section>
+                    <Code>36-71 91 19 11</Code>
+                    <Name>Closeout Requirement Lists</Name>
+                    <Section>
+                        <Code>36-71 91 19 11 11</Code>
+                        <Name>Closeout Submittals</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 19 13</Code>
+                    <Name>Certificate of Substantial Completion</Name>
+                    <Section>
+                        <Code>36-71 91 19 13 11</Code>
+                        <Name>List of Corrective Work (Punch List)</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 19 15</Code>
+                    <Name>Certificates of Occupancy</Name>
+                    <Section>
+                        <Code>36-71 91 19 15 11</Code>
+                        <Name>Temporary Certificates of Occupancy</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 19 17</Code>
+                    <Name>Notice of Final Completion</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 19 19</Code>
+                    <Name>Record Documents</Name>
+                    <Section>
+                        <Code>36-71 91 19 19 11</Code>
+                        <Name>Record Drawings</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 19 19 13</Code>
+                        <Name>Record Project Manual</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 19 19 15</Code>
+                        <Name>Record Modification Documents</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 19 21</Code>
+                    <Name>Operations &amp; Maintenance Manuals</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 19 23</Code>
+                    <Name>Completed Project Photographs</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 19 25</Code>
+                    <Name>Post-Construction Reviews</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 91 21</Code>
+                <Name>Move Information</Name>
+                <Section>
+                    <Code>36-71 91 21 11</Code>
+                    <Name>Move Schediule</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 21 13</Code>
+                    <Name>Move Coordination Plan</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 91 23</Code>
+                <Name>Construction Claims</Name>
+                <Section>
+                    <Code>36-71 91 23 11</Code>
+                    <Name>Insurance Company Communications</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 23 13</Code>
+                    <Name>Issues</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 23 15</Code>
+                    <Name>Claims</Name>
+                    <Section>
+                        <Code>36-71 91 23 15 11</Code>
+                        <Name>Claims Log</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 23 17</Code>
+                    <Name>Claims Consultant</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>36-71 91 25</Code>
+                <Name>Facility Operation Information</Name>
+                <Section>
+                    <Code>36-71 91 25 11</Code>
+                    <Name>Facility Management Database</Name>
+                    <Section>
+                        <Code>36-71 91 25 11 11</Code>
+                        <Name>Graphical Backgrounds</Name>
+                    </Section>
+                    <Section>
+                        <Code>36-71 91 25 11 13</Code>
+                        <Name>Data Attributes</Name>
+                    </Section>
+                </Section>
+                <Section>
+                    <Code>36-71 91 25 13</Code>
+                    <Name>Operation &amp; Maintenance (O&amp;M) Manuals</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 25 15</Code>
+                    <Name>Instructional and Training Materials</Name>
+                </Section>
+                <Section>
+                    <Code>36-71 91 25 17</Code>
+                    <Name>Maintenance Records</Name>
+                </Section>
+            </Section>
+        </Section>
+    </Section>
+</Table>

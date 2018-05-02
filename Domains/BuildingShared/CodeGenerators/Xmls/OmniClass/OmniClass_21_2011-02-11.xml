@@ -1,0 +1,2575 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Table>
+    <Name>Table 21 - Elements</Name>
+    <Source>Construction Specifications Institute (CSI)</Source>
+    <Version>Major Version No=&apos;OmniClass License Rev&apos;  Major Date=&apos;21st July 2011&apos;  Minor Version No=&apos;OmniClass License Rev&apos;  Minor Date=&apos;21st July 2011&apos;  Major=&apos;&apos;  Minor=&apos;&apos; </Version>
+    <Section>
+        <Code>21-01 00 00</Code>
+        <Name>Substructure</Name>
+        <Section>
+            <Code>21-01 10</Code>
+            <Name>Foundations</Name>
+            <Section>
+                <Code>21-01 10 10</Code>
+                <Name>Standard Foundations</Name>
+                <Section>
+                    <Code>21-01 10 10 10</Code>
+                    <Name>Wall Foundations</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 10 10 30</Code>
+                    <Name>Column Foundations</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 10 10 90</Code>
+                    <Name>Standard Foundation Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-01 10 20</Code>
+                <Name>Special Foundations</Name>
+                <Section>
+                    <Code>21-01 10 20 10</Code>
+                    <Name>Driven Piles</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 10 20 15</Code>
+                    <Name>Bored Piles</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 10 20 20</Code>
+                    <Name>Caissons</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 10 20 30</Code>
+                    <Name>Special Foundation Walls</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 10 20 40</Code>
+                    <Name>Foundation Anchors</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 10 20 50</Code>
+                    <Name>Underpinning</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 10 20 60</Code>
+                    <Name>Raft Foundations</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 10 20 70</Code>
+                    <Name>Pile Caps</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 10 20 80</Code>
+                    <Name>Grade Beams</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-01 20</Code>
+            <Name>Subgrade Enclosures</Name>
+            <Section>
+                <Code>21-01 20 10</Code>
+                <Name>Walls for Subgrade Enclosures</Name>
+                <Section>
+                    <Code>21-01 20 10 10</Code>
+                    <Name>Subgrade Enclosure Wall Construction</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 20 10 20</Code>
+                    <Name>Subgrade Enclosure Wall Interior Skin</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 20 10 90</Code>
+                    <Name>Subgrade Enclosure Wall Supplementary Components</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-01 40</Code>
+            <Name>Slabs-On-Grade</Name>
+            <Section>
+                <Code>21-01 40 10</Code>
+                <Name>Standard Slabs-on-Grade</Name>
+            </Section>
+            <Section>
+                <Code>21-01 40 20</Code>
+                <Name>Structural Slabs-on-Grade</Name>
+            </Section>
+            <Section>
+                <Code>21-01 40 30</Code>
+                <Name>Slab Trenches</Name>
+            </Section>
+            <Section>
+                <Code>21-01 40 40</Code>
+                <Name>Pits and Bases</Name>
+            </Section>
+            <Section>
+                <Code>21-01 40 90</Code>
+                <Name>Slab-On-Grade Supplementary Components</Name>
+                <Section>
+                    <Code>21-01 40 90 10</Code>
+                    <Name>Perimeter Insulation</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 40 90 20</Code>
+                    <Name>Vapor Retarder</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 40 90 30</Code>
+                    <Name>Waterproofing</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 40 90 50</Code>
+                    <Name>Mud Slab</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 40 90 60</Code>
+                    <Name>Subbase Layer</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-01 60</Code>
+            <Name>Water and Gas Mitigation</Name>
+            <Section>
+                <Code>21-01 60 10</Code>
+                <Name>Building Subdrainage</Name>
+                <Section>
+                    <Code>21-01 60 10 10</Code>
+                    <Name>Foundation Drainage</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 60 10 20</Code>
+                    <Name>Underslab Drainage</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-01 60 20</Code>
+                <Name>Off-Gassing Mitigation</Name>
+                <Section>
+                    <Code>21-01 60 20 10</Code>
+                    <Name>Radon Mitigation</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 60 20 50</Code>
+                    <Name>Methane Mitigation</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-01 90</Code>
+            <Name>Substructure Related Activities</Name>
+            <Section>
+                <Code>21-01 90 10</Code>
+                <Name>Substructure Excavation</Name>
+                <Section>
+                    <Code>21-01 90 10 10</Code>
+                    <Name>Backfill and Compaction</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-01 90 20</Code>
+                <Name>Construction Dewatering</Name>
+            </Section>
+            <Section>
+                <Code>21-01 90 30</Code>
+                <Name>Excavation Support</Name>
+                <Section>
+                    <Code>21-01 90 30 10</Code>
+                    <Name>Anchor Tiebacks</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 90 30 20</Code>
+                    <Name>Cofferdams</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 90 30 40</Code>
+                    <Name>Cribbing and Walers</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 90 30 60</Code>
+                    <Name>Ground Freezing</Name>
+                </Section>
+                <Section>
+                    <Code>21-01 90 30 70</Code>
+                    <Name>Slurry Walls</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-01 90 40</Code>
+                <Name>Soil Treatment</Name>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>21-02 00 00</Code>
+        <Name>Shell</Name>
+        <Section>
+            <Code>21-02 10</Code>
+            <Name>Superstructure</Name>
+            <Section>
+                <Code>21-02 10 10</Code>
+                <Name>Floor Construction</Name>
+                <Section>
+                    <Code>21-02 10 10 10</Code>
+                    <Name>Floor Structural Frame</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 10 10 20</Code>
+                    <Name>Floor Decks, Slabs, and Toppings</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 10 10 30</Code>
+                    <Name>Balcony Floor Construction</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 10 10 40</Code>
+                    <Name>Mezzanine Floor Construction</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 10 10 50</Code>
+                    <Name>Ramps</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 10 10 90</Code>
+                    <Name>Floor Construction Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-02 10 20</Code>
+                <Name>Roof Construction</Name>
+                <Section>
+                    <Code>21-02 10 20 10</Code>
+                    <Name>Roof Structural Frame</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 10 20 20</Code>
+                    <Name>Roof Decks, Slabs, and Sheathing</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 10 20 30</Code>
+                    <Name>Canopy Construction</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 10 20 90</Code>
+                    <Name>Roof Construction Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-02 10 80</Code>
+                <Name>Stairs</Name>
+                <Section>
+                    <Code>21-02 10 80 10</Code>
+                    <Name>Stair Construction</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 10 80 30</Code>
+                    <Name>Stair Soffits</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 10 80 50</Code>
+                    <Name>Stair Railings</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 10 80 60</Code>
+                    <Name>Fire Escapes</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 10 80 70</Code>
+                    <Name>Metal Walkways</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 10 80 80</Code>
+                    <Name>Ladders</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-02 20</Code>
+            <Name>Exterior Vertical Enclosures</Name>
+            <Section>
+                <Code>21-02 20 10</Code>
+                <Name>Exterior Walls</Name>
+                <Section>
+                    <Code>21-02 20 10 10</Code>
+                    <Name>Exterior Wall Veneer</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 10 20</Code>
+                    <Name>Exterior Wall Construction</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 10 30</Code>
+                    <Name>Exterior Wall Interior Skin</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 10 40</Code>
+                    <Name>Fabricated Exterior Wall Assemblies</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 10 50</Code>
+                    <Name>Parapets</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 10 60</Code>
+                    <Name>Equipment Screens</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 10 80</Code>
+                    <Name>Exterior Wall Supplementary Components</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 10 90</Code>
+                    <Name>Exterior Wall Opening Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-02 20 20</Code>
+                <Name>Exterior Windows</Name>
+                <Section>
+                    <Code>21-02 20 20 10</Code>
+                    <Name>Exterior Operating Windows</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 20 20</Code>
+                    <Name>Exterior Fixed Windows</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 20 30</Code>
+                    <Name>Exterior Window Wall</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 20 50</Code>
+                    <Name>Exterior Special Function Windows</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-02 20 50</Code>
+                <Name>Exterior Doors and Grilles</Name>
+                <Section>
+                    <Code>21-02 20 50 10</Code>
+                    <Name>Exterior Entrance Doors</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 50 20</Code>
+                    <Name>Exterior Utility Doors</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 50 30</Code>
+                    <Name>Exterior Oversize Doors</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 50 40</Code>
+                    <Name>Exterior Special Function Doors</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 50 60</Code>
+                    <Name>Exterior Grilles</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 50 70</Code>
+                    <Name>Exterior Gates</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 50 90</Code>
+                    <Name>Exterior Door Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-02 20 70</Code>
+                <Name>Exterior Louvers and Vents</Name>
+                <Section>
+                    <Code>21-02 20 70 10</Code>
+                    <Name>Exterior Louvers</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 70 50</Code>
+                    <Name>Exterior Vents</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-02 20 80</Code>
+                <Name>Exterior Wall Appurtenances</Name>
+                <Section>
+                    <Code>21-02 20 80 10</Code>
+                    <Name>Exterior Fixed Grilles and Screens</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 80 30</Code>
+                    <Name>Exterior Opening Protection Devices</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 80 50</Code>
+                    <Name>Exterior Balcony Walls and Railings</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 80 70</Code>
+                    <Name>Exterior Fabrications</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 20 80 80</Code>
+                    <Name>Bird Control Devices</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-02 20 90</Code>
+                <Name>Exterior Wall Specialties</Name>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-02 30</Code>
+            <Name>Exterior Horizontal Enclosures</Name>
+            <Section>
+                <Code>21-02 30 10</Code>
+                <Name>Roofing</Name>
+                <Section>
+                    <Code>21-02 30 10 10</Code>
+                    <Name>Steep Slope Roofing</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 30 10 50</Code>
+                    <Name>Low-Slope Roofing</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 30 10 70</Code>
+                    <Name>Canopy Roofing</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 30 10 90</Code>
+                    <Name>Roofing Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-02 30 20</Code>
+                <Name>Roof Appurtenances</Name>
+                <Section>
+                    <Code>21-02 30 20 10</Code>
+                    <Name>Roof Accessories</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 30 20 30</Code>
+                    <Name>Roof Specialties</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 30 20 70</Code>
+                    <Name>Rainwater Management</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-02 30 40</Code>
+                <Name>Traffic Bearing Horizontal Enclosures</Name>
+                <Section>
+                    <Code>21-02 30 40 10</Code>
+                    <Name>Traffic Bearing Coatings</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 30 40 30</Code>
+                    <Name>Horizontal Waterproofing Membrane</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 30 40 50</Code>
+                    <Name>Wear Surfaces</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 30 40 90</Code>
+                    <Name>Horizontal Enclosure Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-02 30 60</Code>
+                <Name>Horizontal Openings</Name>
+                <Section>
+                    <Code>21-02 30 60 10</Code>
+                    <Name>Roof Windows and Skylights</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 30 60 50</Code>
+                    <Name>Vents and Hatches</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 30 60 90</Code>
+                    <Name>Horizontal Opening Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-02 30 80</Code>
+                <Name>Overhead Exterior Enclosures</Name>
+                <Section>
+                    <Code>21-02 30 80 10</Code>
+                    <Name>Exterior Ceilings</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 30 80 20</Code>
+                    <Name>Exterior Soffits</Name>
+                </Section>
+                <Section>
+                    <Code>21-02 30 80 30</Code>
+                    <Name>Exterior Bulkheads</Name>
+                </Section>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>21-03 00 00</Code>
+        <Name>Interiors</Name>
+        <Section>
+            <Code>21-03 10</Code>
+            <Name>Interior Construction</Name>
+            <Section>
+                <Code>21-03 10 10</Code>
+                <Name>Interior Partitions</Name>
+                <Section>
+                    <Code>21-03 10 10 10</Code>
+                    <Name>Interior Fixed Partitions</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 10 20</Code>
+                    <Name>Interior Glazed Partitions</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 10 40</Code>
+                    <Name>Interior Demountable Partitions</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 10 50</Code>
+                    <Name>Interior Operable Partitions</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 10 70</Code>
+                    <Name>Interior Screens</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 10 90</Code>
+                    <Name>Interior Partition Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-03 10 20</Code>
+                <Name>Interior Windows</Name>
+                <Section>
+                    <Code>21-03 10 20 10</Code>
+                    <Name>Interior Operating Windows</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 20 20</Code>
+                    <Name>Interior Fixed Windows</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 20 50</Code>
+                    <Name>Interior Special Function Windows</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 20 90</Code>
+                    <Name>Interior Window Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-03 10 30</Code>
+                <Name>Interior Doors</Name>
+                <Section>
+                    <Code>21-03 10 30 10</Code>
+                    <Name>Interior Swinging Doors</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 30 20</Code>
+                    <Name>Interior Entrance Doors</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 30 25</Code>
+                    <Name>Interior Sliding Doors</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 30 30</Code>
+                    <Name>Interior Folding Doors</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 30 40</Code>
+                    <Name>Interior Coiling Doors</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 30 50</Code>
+                    <Name>Interior Panel Doors</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 30 70</Code>
+                    <Name>Interior Special Function Doors</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 30 80</Code>
+                    <Name>Interior Access Doors and Panels</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 30 90</Code>
+                    <Name>Interior Door Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-03 10 40</Code>
+                <Name>Interior Grilles and Gates</Name>
+                <Section>
+                    <Code>21-03 10 40 10</Code>
+                    <Name>Interior Grilles</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 40 50</Code>
+                    <Name>Interior Gates</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-03 10 60</Code>
+                <Name>Raised Floor Construction</Name>
+                <Section>
+                    <Code>21-03 10 60 10</Code>
+                    <Name>Access Flooring</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 60 30</Code>
+                    <Name>Platform/Stage Floors</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-03 10 70</Code>
+                <Name>Suspended Ceiling Construction</Name>
+                <Section>
+                    <Code>21-03 10 70 10</Code>
+                    <Name>Acoustical Suspended Ceilings</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 70 20</Code>
+                    <Name>Suspended Plaster and Gypsum Board Ceilings</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 70 50</Code>
+                    <Name>Specialty Suspended Ceilings</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 70 70</Code>
+                    <Name>Special Function Suspended Ceilings</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 70 90</Code>
+                    <Name>Ceiling Suspension Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-03 10 90</Code>
+                <Name>Interior Specialties</Name>
+                <Section>
+                    <Code>21-03 10 90 10</Code>
+                    <Name>Interior Railings and Handrails</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 90 15</Code>
+                    <Name>Interior Louvers</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 90 20</Code>
+                    <Name>Information Specialties</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 90 25</Code>
+                    <Name>Compartments and Cubicles</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 90 30</Code>
+                    <Name>Service Walls</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 90 35</Code>
+                    <Name>Wall and Door Protection</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 90 40</Code>
+                    <Name>Toilet, Bath, and Laundry Accessories</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 90 45</Code>
+                    <Name>Interior Gas Lighting</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 90 50</Code>
+                    <Name>Fireplaces and Stoves</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 90 60</Code>
+                    <Name>Safety Specialties</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 90 70</Code>
+                    <Name>Storage Specialties</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 10 90 90</Code>
+                    <Name>Other Interior Specialties</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-03 20</Code>
+            <Name>Interior Finishes</Name>
+            <Section>
+                <Code>21-03 20 10</Code>
+                <Name>Wall Finishes</Name>
+                <Section>
+                    <Code>21-03 20 10 10</Code>
+                    <Name>Tile Wall Finish</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 10 20</Code>
+                    <Name>Wall Paneling</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 10 30</Code>
+                    <Name>Wall Coverings</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 10 35</Code>
+                    <Name>Wall Carpeting</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 10 50</Code>
+                    <Name>Stone Facing</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 10 60</Code>
+                    <Name>Special Wall Surfacing</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 10 70</Code>
+                    <Name>Wall Painting and Coating</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 10 80</Code>
+                    <Name>Acoustical Wall Treatment</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 10 90</Code>
+                    <Name>Wall Finish Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-03 20 20</Code>
+                <Name>Interior Fabrications</Name>
+            </Section>
+            <Section>
+                <Code>21-03 20 30</Code>
+                <Name>Flooring</Name>
+                <Section>
+                    <Code>21-03 20 30 10</Code>
+                    <Name>Flooring Treatment</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 30 20</Code>
+                    <Name>Tile Flooring</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 30 30</Code>
+                    <Name>Specialty Flooring</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 30 40</Code>
+                    <Name>Masonry Flooring</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 30 45</Code>
+                    <Name>Wood Flooring</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 30 50</Code>
+                    <Name>Resilient Flooring</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 30 60</Code>
+                    <Name>Terrazzo Flooring</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 30 70</Code>
+                    <Name>Fluid-Applied Flooring</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 30 75</Code>
+                    <Name>Carpeting</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 30 80</Code>
+                    <Name>Athletic Flooring</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 30 85</Code>
+                    <Name>Entrance Flooring</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 30 90</Code>
+                    <Name>Flooring Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-03 20 40</Code>
+                <Name>Stair Finishes</Name>
+                <Section>
+                    <Code>21-03 20 40 20</Code>
+                    <Name>Tile Stair Finish</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 40 40</Code>
+                    <Name>Masonry Stair Finish</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 40 45</Code>
+                    <Name>Wood Stair Finish</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 40 50</Code>
+                    <Name>Resilient Stair Finish</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 40 60</Code>
+                    <Name>Terrazzo Stair Finish</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 40 75</Code>
+                    <Name>Carpeted Stair Finish</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-03 20 50</Code>
+                <Name>Ceiling Finishes</Name>
+                <Section>
+                    <Code>21-03 20 50 10</Code>
+                    <Name>Plaster and Gypsum Board Finish</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 50 20</Code>
+                    <Name>Ceiling Paneling</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 50 70</Code>
+                    <Name>Ceiling Painting and Coating</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 50 80</Code>
+                    <Name>Acoustical Ceiling Treatment</Name>
+                </Section>
+                <Section>
+                    <Code>21-03 20 50 90</Code>
+                    <Name>Ceiling Finish Supplementary Components</Name>
+                </Section>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>21-04 00 00</Code>
+        <Name>Services</Name>
+        <Section>
+            <Code>21-04 10</Code>
+            <Name>Conveying</Name>
+            <Section>
+                <Code>21-04 10 10</Code>
+                <Name>Vertical Conveying Systems</Name>
+                <Section>
+                    <Code>21-04 10 10 10</Code>
+                    <Name>Elevators</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 10 20</Code>
+                    <Name>Lifts</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 10 30</Code>
+                    <Name>Escalators</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 10 50</Code>
+                    <Name>Dumbwaiters</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 10 60</Code>
+                    <Name>Moving Ramps</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 10 30</Code>
+                <Name>Horizontal Conveying</Name>
+                <Section>
+                    <Code>21-04 10 30 10</Code>
+                    <Name>Moving Walks</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 30 30</Code>
+                    <Name>Turntables</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 30 50</Code>
+                    <Name>Passenger Loading Bridges</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 30 70</Code>
+                    <Name>People Movers</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 10 50</Code>
+                <Name>Material Handling</Name>
+                <Section>
+                    <Code>21-04 10 50 10</Code>
+                    <Name>Cranes</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 50 20</Code>
+                    <Name>Hoists</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 50 30</Code>
+                    <Name>Derricks</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 50 40</Code>
+                    <Name>Conveyors</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 50 50</Code>
+                    <Name>Baggage Handling Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 50 60</Code>
+                    <Name>Chutes</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 50 70</Code>
+                    <Name>Pneumatic Tube Systems</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 10 80</Code>
+                <Name>Operable Access Systems</Name>
+                <Section>
+                    <Code>21-04 10 80 10</Code>
+                    <Name>Suspended Scaffolding</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 80 20</Code>
+                    <Name>Rope Climbers</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 80 30</Code>
+                    <Name>Elevating Platforms</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 80 40</Code>
+                    <Name>Powered Scaffolding</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 10 80 50</Code>
+                    <Name>Building Envelope Access</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-04 20</Code>
+            <Name>Plumbing</Name>
+            <Section>
+                <Code>21-04 20 10</Code>
+                <Name>Domestic Water Distribution</Name>
+                <Section>
+                    <Code>21-04 20 10 10</Code>
+                    <Name>Facility Potable-Water Storage Tanks</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 10 20</Code>
+                    <Name>Domestic Water Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 10 40</Code>
+                    <Name>Domestic Water Piping</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 10 60</Code>
+                    <Name>Plumbing Fixtures</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 10 90</Code>
+                    <Name>Domestic Water Distribution Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 20 20</Code>
+                <Name>Sanitary Drainage</Name>
+                <Section>
+                    <Code>21-04 20 20 10</Code>
+                    <Name>Sanitary Sewerage Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 20 30</Code>
+                    <Name>Sanitary Sewerage Piping</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 20 90</Code>
+                    <Name>Sanitary Drainage Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 20 30</Code>
+                <Name>Building Support Plumbing Systems</Name>
+                <Section>
+                    <Code>21-04 20 30 10</Code>
+                    <Name>Stormwater Drainage Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 30 20</Code>
+                    <Name>Stormwater Drainage Piping</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 30 30</Code>
+                    <Name>Facility Stormwater Drains</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 30 60</Code>
+                    <Name>Gray Water Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 30 90</Code>
+                    <Name>Building Support Plumbing System Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 20 50</Code>
+                <Name>General Service Compressed-Air</Name>
+            </Section>
+            <Section>
+                <Code>21-04 20 60</Code>
+                <Name>Process Support Plumbing Systems</Name>
+                <Section>
+                    <Code>21-04 20 60 10</Code>
+                    <Name>Compressed-Air Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 60 20</Code>
+                    <Name>Vacuum Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 60 30</Code>
+                    <Name>Gas Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 60 40</Code>
+                    <Name>Chemical-Waste Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 60 50</Code>
+                    <Name>Processed Water Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 20 60 90</Code>
+                    <Name>Process Support Plumbing System Supplementary Components</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-04 30</Code>
+            <Name>Heating, Ventilation, and Air Conditioning (HVAC)</Name>
+            <Section>
+                <Code>21-04 30 10</Code>
+                <Name>Facility Fuel Systems</Name>
+                <Section>
+                    <Code>21-04 30 10 10</Code>
+                    <Name>Fuel Piping</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 10 30</Code>
+                    <Name>Fuel Pumps</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 10 50</Code>
+                    <Name>Fuel Storage Tanks</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 30 20</Code>
+                <Name>Heating Systems</Name>
+                <Section>
+                    <Code>21-04 30 20 10</Code>
+                    <Name>Heat Generation</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 20 30</Code>
+                    <Name>Thermal Heat Storage</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 20 70</Code>
+                    <Name>Decentralized Heating Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 20 90</Code>
+                    <Name>Heating System Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 30 30</Code>
+                <Name>Cooling Systems</Name>
+                <Section>
+                    <Code>21-04 30 30 10</Code>
+                    <Name>Central Cooling</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 30 30</Code>
+                    <Name>Evaporative Air-Cooling</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 30 50</Code>
+                    <Name>Thermal Cooling Storage</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 30 70</Code>
+                    <Name>Decentralized Cooling</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 30 90</Code>
+                    <Name>Cooling System Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 30 50</Code>
+                <Name>Facility HVAC Distribution Systems</Name>
+                <Section>
+                    <Code>21-04 30 50 10</Code>
+                    <Name>Facility Hydronic Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 50 30</Code>
+                    <Name>Facility Steam Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 50 50</Code>
+                    <Name>HVAC Air Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 50 90</Code>
+                    <Name>Facility Distribution Systems Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 30 60</Code>
+                <Name>Ventilation</Name>
+                <Section>
+                    <Code>21-04 30 60 10</Code>
+                    <Name>Supply Air</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 60 20</Code>
+                    <Name>Return Air</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 60 30</Code>
+                    <Name>Exhaust Air</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 60 40</Code>
+                    <Name>Outside Air</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 60 60</Code>
+                    <Name>Air-to-Air Energy Recovery</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 60 70</Code>
+                    <Name>HVAC Air Cleaning</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 30 60 90</Code>
+                    <Name>Ventilation Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 30 70</Code>
+                <Name>Special Purpose HVAC Systems</Name>
+                <Section>
+                    <Code>21-04 30 70 10</Code>
+                    <Name>Snow Melting</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-04 40</Code>
+            <Name>Fire Protection</Name>
+            <Section>
+                <Code>21-04 40 10</Code>
+                <Name>Fire Suppression</Name>
+                <Section>
+                    <Code>21-04 40 10 10</Code>
+                    <Name>Water-Based Fire-Suppression</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 40 10 50</Code>
+                    <Name>Fire-Extinguishing</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 40 10 90</Code>
+                    <Name>Fire Suppression Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 40 30</Code>
+                <Name>Fire Protection Specialties</Name>
+                <Section>
+                    <Code>21-04 40 30 10</Code>
+                    <Name>Fire Protection Cabinets</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 40 30 30</Code>
+                    <Name>Fire Extinguishers</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 40 30 50</Code>
+                    <Name>Breathing Air Replenishment Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 40 30 70</Code>
+                    <Name>Fire Extinguisher Accessories</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-04 50</Code>
+            <Name>Electrical</Name>
+            <Section>
+                <Code>21-04 50 10</Code>
+                <Name>Facility Power Generation</Name>
+                <Section>
+                    <Code>21-04 50 10 10</Code>
+                    <Name>Packaged Generator Assemblies</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 10 20</Code>
+                    <Name>Battery Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 10 30</Code>
+                    <Name>Photovoltaic Collectors</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 10 40</Code>
+                    <Name>Fuel Cells</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 10 60</Code>
+                    <Name>Power Filtering and Conditioning</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 10 70</Code>
+                    <Name>Transfer Switches</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 10 90</Code>
+                    <Name>Facility Power Generation Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 50 20</Code>
+                <Name>Electrical Service and Distribution</Name>
+                <Section>
+                    <Code>21-04 50 20 10</Code>
+                    <Name>Electrical Service</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 20 30</Code>
+                    <Name>Power Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 20 70</Code>
+                    <Name>Facility Grounding</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 20 90</Code>
+                    <Name>Electrical Service and Distribution Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 50 30</Code>
+                <Name>General Purpose Electrical Power</Name>
+                <Section>
+                    <Code>21-04 50 30 10</Code>
+                    <Name>Branch Wiring System</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 30 50</Code>
+                    <Name>Wiring Devices</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 30 90</Code>
+                    <Name>General Purpose Electrical Power Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 50 40</Code>
+                <Name>Lighting</Name>
+                <Section>
+                    <Code>21-04 50 40 10</Code>
+                    <Name>Lighting Control</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 40 20</Code>
+                    <Name>Branch Wiring for Lighting</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 40 50</Code>
+                    <Name>Lighting Fixtures</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 40 90</Code>
+                    <Name>Lighting Supplementary Components</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 50 80</Code>
+                <Name>Miscellaneous Electrical Systems</Name>
+                <Section>
+                    <Code>21-04 50 80 10</Code>
+                    <Name>Lightning Protection</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 80 40</Code>
+                    <Name>Cathodic Protection</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 80 70</Code>
+                    <Name>Transient Voltage Suppression</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 50 80 90</Code>
+                    <Name>Miscellaneous Electrical Systems Supplementary Components</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-04 60</Code>
+            <Name>Communications</Name>
+            <Section>
+                <Code>21-04 60 10</Code>
+                <Name>Data Communications</Name>
+                <Section>
+                    <Code>21-04 60 10 10</Code>
+                    <Name>Data Communications Network Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 60 10 20</Code>
+                    <Name>Data Communications Hardware</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 60 10 30</Code>
+                    <Name>Data Communications Peripheral Data Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 60 10 50</Code>
+                    <Name>Data Communications Software</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 60 10 60</Code>
+                    <Name>Data Communication Program and Integration Services</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 60 20</Code>
+                <Name>Voice Communications</Name>
+                <Section>
+                    <Code>21-04 60 20 10</Code>
+                    <Name>Voice Communications Switching and Routing Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 60 20 20</Code>
+                    <Name>Voice Communications Terminal Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 60 20 30</Code>
+                    <Name>Voice Communications Messaging</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 60 20 40</Code>
+                    <Name>Call Accounting</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 60 20 50</Code>
+                    <Name>Call Management</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 60 30</Code>
+                <Name>Audio-Video Communication</Name>
+                <Section>
+                    <Code>21-04 60 30 10</Code>
+                    <Name>Audio-Video Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 60 30 50</Code>
+                    <Name>Electronic Digital Systems</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 60 60</Code>
+                <Name>Distributed Communications and Monitoring</Name>
+                <Section>
+                    <Code>21-04 60 60 10</Code>
+                    <Name>Distributed Audio-Video Communications Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 60 60 30</Code>
+                    <Name>Healthcare Communications and Monitoring</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 60 60 50</Code>
+                    <Name>Distributed Systems</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 60 90</Code>
+                <Name>Communications Supplementary Components</Name>
+                <Section>
+                    <Code>21-04 60 90 10</Code>
+                    <Name>Supplementary Components</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-04 70</Code>
+            <Name>Electronic Safety and Security</Name>
+            <Section>
+                <Code>21-04 70 10</Code>
+                <Name>Access Control and Intrusion Detection</Name>
+                <Section>
+                    <Code>21-04 70 10 10</Code>
+                    <Name>Access Control</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 70 10 50</Code>
+                    <Name>Intrusion Detection</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 70 30</Code>
+                <Name>Electronic Surveillance</Name>
+                <Section>
+                    <Code>21-04 70 30 10</Code>
+                    <Name>Video Surveillance</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 70 30 50</Code>
+                    <Name>Electronic Personal Protection</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 70 50</Code>
+                <Name>Detection and Alarm</Name>
+                <Section>
+                    <Code>21-04 70 50 10</Code>
+                    <Name>Fire Detection and Alarm</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 70 50 20</Code>
+                    <Name>Radiation Detection and Alarm</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 70 50 30</Code>
+                    <Name>Fuel-Gas Detection and Alarm</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 70 50 40</Code>
+                    <Name>Fuel-Oil Detection and Alarm</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 70 50 50</Code>
+                    <Name>Refrigeration Detection and Alarm</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 70 50 60</Code>
+                    <Name>Water Intrusion Detection and Alarm</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 70 70</Code>
+                <Name>Electronic Monitoring and Control</Name>
+                <Section>
+                    <Code>21-04 70 70 10</Code>
+                    <Name>Electronic Detention Monitoring and Control</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-04 70 90</Code>
+                <Name>Electronic Safety and Security Supplementary Components</Name>
+                <Section>
+                    <Code>21-04 70 90 10</Code>
+                    <Name>Supplementary Components</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-04 80</Code>
+            <Name>Integrated Automation</Name>
+            <Section>
+                <Code>21-04 80 10</Code>
+                <Name>Integrated Automation Facility Controls</Name>
+                <Section>
+                    <Code>21-04 80 10 10</Code>
+                    <Name>Integrated Automation Control of Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 80 10 20</Code>
+                    <Name>Integrated Automation Control of Conveying Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 80 10 30</Code>
+                    <Name>Integrated Automation Control of Fire-Suppression Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 80 10 40</Code>
+                    <Name>Integrated Automation Control of Plumbing Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 80 10 50</Code>
+                    <Name>Integrated Automation Control of HVAC Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 80 10 60</Code>
+                    <Name>Integrated Automation Control of Electrical Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 80 10 70</Code>
+                    <Name>Integrated Automation Control of Communication Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 80 10 80</Code>
+                    <Name>Integrated Automation Control of Electronic Safety and Security Systems</Name>
+                </Section>
+                <Section>
+                    <Code>21-04 80 10 90</Code>
+                    <Name>Integrated Automation Supplementary Components</Name>
+                </Section>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>21-05 00 00</Code>
+        <Name>Equipment and Furnishings</Name>
+        <Section>
+            <Code>21-05 10</Code>
+            <Name>Equipment</Name>
+            <Section>
+                <Code>21-05 10 10</Code>
+                <Name>Vehicle and Pedestrian Equipment</Name>
+                <Section>
+                    <Code>21-05 10 10 10</Code>
+                    <Name>Vehicle Servicing Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 10 30</Code>
+                    <Name>Interior Parking Control Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 10 50</Code>
+                    <Name>Loading Dock Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 10 70</Code>
+                    <Name>Interior Pedestrian Control Equipment</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-05 10 30</Code>
+                <Name>Commercial Equipment</Name>
+                <Section>
+                    <Code>21-05 10 30 10</Code>
+                    <Name>Mercantile and Service Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 30 20</Code>
+                    <Name>Vault Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 30 25</Code>
+                    <Name>Teller and Service Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 30 30</Code>
+                    <Name>Refrigerated Display Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 30 35</Code>
+                    <Name>Commercial Laundry and Dry Cleaning Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 30 40</Code>
+                    <Name>Maintenance Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 30 50</Code>
+                    <Name>Hospitality Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 30 55</Code>
+                    <Name>Unit Kitchens</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 30 60</Code>
+                    <Name>Photographic Processing Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 30 70</Code>
+                    <Name>Postal, Packaging, and Shipping Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 30 75</Code>
+                    <Name>Office Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 30 80</Code>
+                    <Name>Foodservice Equipment</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-05 10 40</Code>
+                <Name>Institutional Equipment</Name>
+                <Section>
+                    <Code>21-05 10 40 10</Code>
+                    <Name>Educational and Scientific Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 40 20</Code>
+                    <Name>Healthcare Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 40 40</Code>
+                    <Name>Religious Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 40 60</Code>
+                    <Name>Security Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 40 70</Code>
+                    <Name>Detention Equipment</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-05 10 60</Code>
+                <Name>Residential Equipment</Name>
+                <Section>
+                    <Code>21-05 10 60 10</Code>
+                    <Name>Residential Appliances</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 60 50</Code>
+                    <Name>Retractable Stairs</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 60 70</Code>
+                    <Name>Residential Ceiling Fans</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-05 10 70</Code>
+                <Name>Entertainment and Recreational Equipment</Name>
+                <Section>
+                    <Code>21-05 10 70 10</Code>
+                    <Name>Theater and Stage Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 70 20</Code>
+                    <Name>Musical Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 70 50</Code>
+                    <Name>Athletic Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 70 60</Code>
+                    <Name>Recreational Equipment</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-05 10 90</Code>
+                <Name>Other Equipment</Name>
+                <Section>
+                    <Code>21-05 10 90 10</Code>
+                    <Name>Solid Waste Handling Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 90 30</Code>
+                    <Name>Agricultural Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 90 40</Code>
+                    <Name>Horticultural Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 10 90 60</Code>
+                    <Name>Decontamination Equipment</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-05 20</Code>
+            <Name>Furnishings</Name>
+            <Section>
+                <Code>21-05 20 10</Code>
+                <Name>Fixed Furnishings</Name>
+                <Section>
+                    <Code>21-05 20 10 10</Code>
+                    <Name>Fixed Art</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 20 10 20</Code>
+                    <Name>Window Treatments</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 20 10 30</Code>
+                    <Name>Casework</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 20 10 70</Code>
+                    <Name>Fixed Multiple Seating</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 20 10 90</Code>
+                    <Name>Other Fixed Furnishings</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-05 20 50</Code>
+                <Name>Movable Furnishings</Name>
+                <Section>
+                    <Code>21-05 20 50 10</Code>
+                    <Name>Movable Art</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 20 50 30</Code>
+                    <Name>Furniture</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 20 50 40</Code>
+                    <Name>Accessories</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 20 50 60</Code>
+                    <Name>Movable Multiple Seating</Name>
+                </Section>
+                <Section>
+                    <Code>21-05 20 50 90</Code>
+                    <Name>Other Movable Furnishings</Name>
+                </Section>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>21-06 00 00</Code>
+        <Name>Special Construction  and Demolition</Name>
+        <Section>
+            <Code>21-06 10</Code>
+            <Name>Special Construction</Name>
+            <Section>
+                <Code>21-06 10 10</Code>
+                <Name>Integrated Construction</Name>
+                <Section>
+                    <Code>21-06 10 10 10</Code>
+                    <Name>Building Modules</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 10 50</Code>
+                    <Name>Manufactured/Fabricated Rooms</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 10 70</Code>
+                    <Name>Modular Mezzanines</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-06 10 20</Code>
+                <Name>Special Structures</Name>
+                <Section>
+                    <Code>21-06 10 20 10</Code>
+                    <Name>Fabric Structures</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 20 20</Code>
+                    <Name>Space Frames</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 20 30</Code>
+                    <Name>Geodesic Structures</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 20 40</Code>
+                    <Name>Manufacturer-Engineered Structures</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 20 60</Code>
+                    <Name>Manufactured Canopies</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 20 65</Code>
+                    <Name>Rammed Earth Construction</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 20 70</Code>
+                    <Name>Towers</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-06 10 30</Code>
+                <Name>Special Function Construction</Name>
+                <Section>
+                    <Code>21-06 10 30 10</Code>
+                    <Name>Sound and Vibration Control</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 30 30</Code>
+                    <Name>Seismic Control</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 30 50</Code>
+                    <Name>Radiation Protection</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-06 10 50</Code>
+                <Name>Special Facility Components</Name>
+                <Section>
+                    <Code>21-06 10 50 10</Code>
+                    <Name>Pools</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 50 20</Code>
+                    <Name>Interior Fountains</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 50 30</Code>
+                    <Name>Interior Water Features</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 50 40</Code>
+                    <Name>Aquariums</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 50 50</Code>
+                    <Name>Amusement Park Structures and Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 50 60</Code>
+                    <Name>Ice Rinks</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 50 70</Code>
+                    <Name>Animal Containment</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-06 10 60</Code>
+                <Name>Athletic and Recreational Special Construction</Name>
+                <Section>
+                    <Code>21-06 10 60 10</Code>
+                    <Name>Indoor Soccer Boards</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 60 20</Code>
+                    <Name>Safety Netting</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 60 30</Code>
+                    <Name>Arena Football Boards</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 60 40</Code>
+                    <Name>Floor Sockets</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 60 50</Code>
+                    <Name>Athletic and Recreational Court Walls</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 60 60</Code>
+                    <Name>Demountable Athletic Surfaces</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-06 10 80</Code>
+                <Name>Special Instrumentation</Name>
+                <Section>
+                    <Code>21-06 10 80 10</Code>
+                    <Name>Stress Instrumentation</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 80 20</Code>
+                    <Name>Seismic Instrumentation</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 80 40</Code>
+                    <Name>Meteorological Instrumentation</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 10 80 60</Code>
+                    <Name>Earth Movement Monitoring</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-06 20</Code>
+            <Name>Facility Remediation</Name>
+            <Section>
+                <Code>21-06 20 10</Code>
+                <Name>Hazardous Materials Remediation</Name>
+                <Section>
+                    <Code>21-06 20 10 10</Code>
+                    <Name>Transportation and Disposal of Hazardous Materials</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 20 10 20</Code>
+                    <Name>Asbestos Remediation</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 20 10 30</Code>
+                    <Name>Lead Remediation</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 20 10 40</Code>
+                    <Name>Polychlorinate Biphenyl Remediation</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 20 10 50</Code>
+                    <Name>Mold Remediation</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-06 30</Code>
+            <Name>Demolition</Name>
+            <Section>
+                <Code>21-06 30 10</Code>
+                <Name>Structure Demolition</Name>
+                <Section>
+                    <Code>21-06 30 10 10</Code>
+                    <Name>Building Demolition</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 30 10 30</Code>
+                    <Name>Tower Demolition</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 30 10 50</Code>
+                    <Name>Bridge Demolition</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 30 10 70</Code>
+                    <Name>Dam Demolition</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-06 30 30</Code>
+                <Name>Selective Demolition</Name>
+                <Section>
+                    <Code>21-06 30 30 10</Code>
+                    <Name>Selective Building Demolition</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 30 30 30</Code>
+                    <Name>Selective Interior Demolition</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 30 30 50</Code>
+                    <Name>Selective Bridge Demolition</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 30 30 70</Code>
+                    <Name>Selective Historic Demolition</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-06 30 50</Code>
+                <Name>Structure Moving</Name>
+                <Section>
+                    <Code>21-06 30 50 10</Code>
+                    <Name>Structure Relocation</Name>
+                </Section>
+                <Section>
+                    <Code>21-06 30 50 30</Code>
+                    <Name>Structure Raising</Name>
+                </Section>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>21-07 00 00</Code>
+        <Name>Sitework</Name>
+        <Section>
+            <Code>21-07 10</Code>
+            <Name>Site Preparation</Name>
+            <Section>
+                <Code>21-07 10 10</Code>
+                <Name>Site Clearing</Name>
+                <Section>
+                    <Code>21-07 10 10 10</Code>
+                    <Name>Clearing and Grubbing</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 10 30</Code>
+                    <Name>Tree and Shrub Removal and Trimming</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 10 50</Code>
+                    <Name>Earth Stripping and Stockpiling</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 10 20</Code>
+                <Name>Site Elements Demolition</Name>
+                <Section>
+                    <Code>21-07 10 20 10</Code>
+                    <Name>Utility Demolition</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 20 30</Code>
+                    <Name>Infrastructure Demolition</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 20 50</Code>
+                    <Name>Selective Site Demolition</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 10 30</Code>
+                <Name>Site Element Relocations</Name>
+                <Section>
+                    <Code>21-07 10 30 10</Code>
+                    <Name>Utility Relocation</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 10 50</Code>
+                <Name>Site Remediation</Name>
+                <Section>
+                    <Code>21-07 10 50 10</Code>
+                    <Name>Physical Decontamination</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 50 15</Code>
+                    <Name>Chemical Decontamination</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 50 20</Code>
+                    <Name>Thermal Decontamination</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 50 25</Code>
+                    <Name>Biological Decontamination</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 50 30</Code>
+                    <Name>Remediation Soil Stabilization</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 50 40</Code>
+                    <Name>Site Containment</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 50 45</Code>
+                    <Name>Sinkhole Remediation</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 50 50</Code>
+                    <Name>Hazardous Waste Drum Handling</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 50 60</Code>
+                    <Name>Contaminated Site Material Removal</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 50 80</Code>
+                    <Name>Water Remediation</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 10 70</Code>
+                <Name>Site Earthwork</Name>
+                <Section>
+                    <Code>21-07 10 70 10</Code>
+                    <Name>Grading</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 70 20</Code>
+                    <Name>Excavation and Fill</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 70 30</Code>
+                    <Name>Embankments</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 70 35</Code>
+                    <Name>Erosion and Sedimentation Controls</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 70 40</Code>
+                    <Name>Soil Stabilization</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 70 45</Code>
+                    <Name>Rock Stabilization</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 70 50</Code>
+                    <Name>Soil Reinforcement</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 70 55</Code>
+                    <Name>Slope Protection</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 70 60</Code>
+                    <Name>Gabions</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 70 65</Code>
+                    <Name>Riprap</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 70 70</Code>
+                    <Name>Wetlands</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 70 80</Code>
+                    <Name>Earth Dams</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 10 70 90</Code>
+                    <Name>Site Soil Treatment</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-07 20</Code>
+            <Name>Site Improvements</Name>
+            <Section>
+                <Code>21-07 20 10</Code>
+                <Name>Roadways</Name>
+                <Section>
+                    <Code>21-07 20 10 10</Code>
+                    <Name>Roadway Pavement</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 10 20</Code>
+                    <Name>Roadway Curbs and Gutters</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 10 40</Code>
+                    <Name>Roadway Appurtenances</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 10 70</Code>
+                    <Name>Roadway Lighting</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 10 80</Code>
+                    <Name>Vehicle Fare Collection</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 20 20</Code>
+                <Name>Parking Lots</Name>
+                <Section>
+                    <Code>21-07 20 20 10</Code>
+                    <Name>Parking Lot Pavement</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 20 20</Code>
+                    <Name>Parking Lot Curbs and Gutters</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 20 40</Code>
+                    <Name>Parking Lot Appurtenances</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 20 70</Code>
+                    <Name>Parking Lot Lighting</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 20 80</Code>
+                    <Name>Exterior Parking Control Equipment</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 20 30</Code>
+                <Name>Pedestrian Plazas and Walkways</Name>
+                <Section>
+                    <Code>21-07 20 30 10</Code>
+                    <Name>Pedestrian Pavement</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 30 20</Code>
+                    <Name>Pedestrian Pavement Curbs and Gutters</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 30 30</Code>
+                    <Name>Exterior Steps and Ramps</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 30 40</Code>
+                    <Name>Pedestrian Pavement Appurtenances</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 30 70</Code>
+                    <Name>Plaza and Walkway Lighting</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 30 80</Code>
+                    <Name>Exterior Pedestrian Control Equipment</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 20 40</Code>
+                <Name>Airfields</Name>
+                <Section>
+                    <Code>21-07 20 40 10</Code>
+                    <Name>Aviation Pavement</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 40 20</Code>
+                    <Name>Aviation Pavement Curbs and Gutters</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 40 40</Code>
+                    <Name>Aviation Pavement Appurtenances</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 40 70</Code>
+                    <Name>Airfield Lighting</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 40 80</Code>
+                    <Name>Airfield Signaling and Control Equipment</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 20 50</Code>
+                <Name>Athletic, Recreational, and Playfield Areas</Name>
+                <Section>
+                    <Code>21-07 20 50 10</Code>
+                    <Name>Athletic Areas</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 50 30</Code>
+                    <Name>Recreational Areas</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 50 50</Code>
+                    <Name>Playfield Areas</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 20 60</Code>
+                <Name>Site Development</Name>
+                <Section>
+                    <Code>21-07 20 60 10</Code>
+                    <Name>Exterior Fountains</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 60 20</Code>
+                    <Name>Fences and Gates</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 60 25</Code>
+                    <Name>Site Furnishings</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 60 30</Code>
+                    <Name>Exterior Signage</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 60 35</Code>
+                    <Name>Flagpoles</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 60 40</Code>
+                    <Name>Covers and Shelters</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 60 45</Code>
+                    <Name>Exterior Gas Lighting</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 60 50</Code>
+                    <Name>Site Equipment</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 60 60</Code>
+                    <Name>Retaining Walls</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 60 70</Code>
+                    <Name>Site Bridges</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 60 80</Code>
+                    <Name>Site Screening Devices</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 60 85</Code>
+                    <Name>Site Specialties</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 20 80</Code>
+                <Name>Landscaping</Name>
+                <Section>
+                    <Code>21-07 20 80 10</Code>
+                    <Name>Planting Irrigation</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 80 20</Code>
+                    <Name>Turf and Grasses</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 80 30</Code>
+                    <Name>Plants</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 80 50</Code>
+                    <Name>Planting Accessories</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 80 70</Code>
+                    <Name>Landscape Lighting</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 20 80 80</Code>
+                    <Name>Landscaping Activities</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-07 30</Code>
+            <Name>Liquid and Gas Site Utilities</Name>
+            <Section>
+                <Code>21-07 30 10</Code>
+                <Name>Water Utilities</Name>
+                <Section>
+                    <Code>21-07 30 10 10</Code>
+                    <Name>Site Domestic Water Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 10 30</Code>
+                    <Name>Site Fire Protection Water Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 10 50</Code>
+                    <Name>Site Irrigation Water Distribution</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 30 20</Code>
+                <Name>Sanitary Sewerage Utilities</Name>
+                <Section>
+                    <Code>21-07 30 20 10</Code>
+                    <Name>Sanitary Sewerage Utility Connection</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 20 20</Code>
+                    <Name>Sanitary Sewerage Piping</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 20 40</Code>
+                    <Name>Utility Septic Tanks</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 20 50</Code>
+                    <Name>Sanitary Sewerage Structures</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 20 60</Code>
+                    <Name>Sanitary Sewerage Lagoons</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 30 30</Code>
+                <Name>Storm Drainage Utilities</Name>
+                <Section>
+                    <Code>21-07 30 30 10</Code>
+                    <Name>Storm Drainage Utility Connection</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 30 20</Code>
+                    <Name>Storm Drainage Piping</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 30 30</Code>
+                    <Name>Culverts</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 30 40</Code>
+                    <Name>Site Storm Water Drains</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 30 50</Code>
+                    <Name>Storm Drainage Pumps</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 30 60</Code>
+                    <Name>Site Subdrainage</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 30 70</Code>
+                    <Name>Storm Drainage Ponds and Reservoirs</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 30 50</Code>
+                <Name>Site Energy Distribution</Name>
+                <Section>
+                    <Code>21-07 30 50 10</Code>
+                    <Name>Site Hydronic Heating Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 50 20</Code>
+                    <Name>Site Steam Energy Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 50 40</Code>
+                    <Name>Site Hydronic Cooling Distribution</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 30 60</Code>
+                <Name>Site Fuel Distribution</Name>
+                <Section>
+                    <Code>21-07 30 60 10</Code>
+                    <Name>Site Gas Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 60 20</Code>
+                    <Name>Site Fuel-Oil Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 60 30</Code>
+                    <Name>Site Gasoline Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 60 40</Code>
+                    <Name>Site Diesel Fuel Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 30 60 60</Code>
+                    <Name>Site Aviation Fuel Distribution</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 30 90</Code>
+                <Name>Liquid and Gas Site Utilities Supplementary Components</Name>
+                <Section>
+                    <Code>21-07 30 90 10</Code>
+                    <Name>Supplementary Components</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-07 40</Code>
+            <Name>Electrical Site Improvements</Name>
+            <Section>
+                <Code>21-07 40 10</Code>
+                <Name>Site Electric Distribution Systems</Name>
+                <Section>
+                    <Code>21-07 40 10 10</Code>
+                    <Name>Electrical Utility Services</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 40 10 20</Code>
+                    <Name>Electric Transmission and Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 40 10 30</Code>
+                    <Name>Electrical Substations</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 40 10 40</Code>
+                    <Name>Electrical Transformers</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 40 10 50</Code>
+                    <Name>Electrical Switchgear and Protection Devices</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 40 10 70</Code>
+                    <Name>Site Grounding</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 40 10 90</Code>
+                    <Name>Electrical Distribution System Instrumentation and Controls</Name>
+                </Section>
+            </Section>
+            <Section>
+                <Code>21-07 40 50</Code>
+                <Name>Site Lighting</Name>
+                <Section>
+                    <Code>21-07 40 50 10</Code>
+                    <Name>Area Lighting</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 40 50 20</Code>
+                    <Name>Flood Lighting</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 40 50 50</Code>
+                    <Name>Building Illumination</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 40 50 90</Code>
+                    <Name>Exterior Lighting Supplementary Components</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-07 50</Code>
+            <Name>Site Communications</Name>
+            <Section>
+                <Code>21-07 50 10</Code>
+                <Name>Site Communications Systems</Name>
+                <Section>
+                    <Code>21-07 50 10 10</Code>
+                    <Name>Site Communications Structures</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 50 10 30</Code>
+                    <Name>Site Communications Distribution</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 50 10 50</Code>
+                    <Name>Wireless Communications Distribution</Name>
+                </Section>
+            </Section>
+        </Section>
+        <Section>
+            <Code>21-07 90</Code>
+            <Name>Miscellaneous Site Construction</Name>
+            <Section>
+                <Code>21-07 90 10</Code>
+                <Name>Tunnels</Name>
+                <Section>
+                    <Code>21-07 90 10 10</Code>
+                    <Name>Vehicular Tunnels</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 90 10 20</Code>
+                    <Name>Pedestrian Tunnels</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 90 10 40</Code>
+                    <Name>Service Tunnels</Name>
+                </Section>
+                <Section>
+                    <Code>21-07 90 10 90</Code>
+                    <Name>Tunnel Construction Related Activities</Name>
+                </Section>
+            </Section>
+        </Section>
+    </Section>
+    <Section>
+        <Code>OmniClass Number</Code>
+        <Name>Level 1 Title</Name>
+    </Section>
+</Table>

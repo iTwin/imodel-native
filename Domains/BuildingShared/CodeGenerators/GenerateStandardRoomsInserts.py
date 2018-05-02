@@ -1,5 +1,5 @@
 #-----------------------------------------------------------
-# Generate script by Martynas.Saulius              03/2018
+# Generate script by Martynas.Saulius              04/2018
 #-----------------------------------------------------------
 import sys
 import xml.etree.ElementTree as ET
@@ -23,7 +23,7 @@ root = tree.getroot()
 f = open(sys.argv[2], 'w')
 f.write('''/*--------------------------------------------------------------------------------------+
 |
-|  $Source: CodeGenerators/GenerateClassificationInserts.py $
+|  $Source: CodeGenerators/GenerateStandardRoomsInserts.py $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -31,8 +31,19 @@ f.write('''/*-------------------------------------------------------------------
 //===========================================================================================
 // WARNING: This is an automatically generated code for building classification inserts 
 // WARNING: To generate, call "bb -r BuildingShared -f BuildingShared -p CodeGenerators b -c"
-//===========================================================================================\n''')
-f.write('void ClassificationSystemsDomain::InsertDefinitionSystems(Dgn::DgnDbR db) const\n')
+//===========================================================================================\n
+
+#include <ClassificationSystems/ClassificationSystemsApi.h>
+#include <DgnClientFx/DgnClientApp.h>
+#include <BuildingShared\BuildingSharedApi.h>
+
+
+namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
+
+BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE\n''')
+
+
+f.write('void ClassificationSystemsDomain::InsertStandardDefinitionSystems(Dgn::DgnDbR db) const\n')
 f.write('    {\n')
 f.write('    ClassificationSystemPtr system;\n')
 f.write('    ClassificationGroupPtr group;\n')
@@ -54,9 +65,9 @@ for standard in roomDict:
         output = "    group = InsertGroup(*system, \""+category+"\");\n"
         f.write(output);
         for name in roomDict[standard][category]:
-            output = "    Insert"+standard+"(*system, *group, \""+name+"\");\n"
+            output = "    InsertClassification(*system, \""+name+"\", \""+ name +"\", \"\", group.get(), nullptr);\n"
             f.write(output);
-f.write('    }\n')
+f.write('    }\n\nEND_CLASSIFICATIONSYSTEMS_NAMESPACE\n')
 f.close()
 for standard in roomDict:
     print(standard + "\n")
