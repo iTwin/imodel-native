@@ -593,8 +593,7 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
             return ERROR;
         }
 
-    //WIP_UNITS check for inverted unit must be replaced by HasDefinition
-    if (!unit.IsInvertedUnit() && !unit.GetDefinition().empty())
+    if (unit.HasDefinition())
         {
         if (BE_SQLITE_OK != stmt->BindText(defParamIx, unit.GetDefinition(), Statement::MakeCopy::No))
             return ERROR;

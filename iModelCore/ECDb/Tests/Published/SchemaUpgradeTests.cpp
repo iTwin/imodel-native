@@ -9637,10 +9637,19 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_formats.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                 <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
-                                    <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                                    <Format typeName="Format1" displayLabel="Format 1" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                                            precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                                    </Format>
+                                    <Format typeName="Format2" displayLabel="Format 2" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
                                             precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
                                         <Composite spacer="-">
                                             <Unit label="cm">u:CM</Unit>
+                                            <Unit label="mm">u:MM</Unit>
+                                        </Composite>
+                                    </Format>
+                                    <Format typeName="Format3" displayLabel="Format 3" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                                            precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                                        <Composite spacer="+" includeZero="False">
                                             <Unit label="mm">u:MM</Unit>
                                         </Composite>
                                     </Format>
@@ -9678,17 +9687,30 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
     ASSERT_TRUE(schema != nullptr);
 
-    assertFormat(*schema, "MyFormat", "My Format", "", 
+    assertFormat(*schema, "Format1", "Format 1", "",
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
+                 JsonValue());
+
+    assertFormat(*schema, "Format2", "Format 2", "", 
                  JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"), 
                  JsonValue(R"json({"spacer": "-", "includeZero": true, "units": [
                               {
-                                "name": "u:CM",
+                                "name": "CM",
                                 "label": "cm"
                               },
                               {
-                                "name": "u:MM",
+                                "name": "MM",
                                 "label": "mm"
                               }]})json"));
+
+    assertFormat(*schema, "Format3", "Format 3", "",
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
+                 JsonValue(R"json({"spacer": "+", "includeZero": false, "units": [
+                              {
+                                "name": "MM",
+                                "label": "mm"
+                              }]})json"));
+
     }
 
     }

@@ -396,6 +396,44 @@ ECFormatCP SchemaManager::Dispatcher::GetFormat(Utf8StringCR schemaNameOrAlias, 
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+UnitSystemCP SchemaManager::Dispatcher::GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode mode, Utf8CP tableSpace) const
+    {
+    Iterable iterable = GetIterable(tableSpace);
+    if (!iterable.IsValid())
+        return nullptr;
+
+    for (TableSpaceSchemaManager const* manager : iterable)
+        {
+        UnitSystemCP system = manager->GetUnitSystem(schemaNameOrAlias, systemName, mode);
+        if (system != nullptr)
+            return system;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+PhenomenonCP SchemaManager::Dispatcher::GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode mode, Utf8CP tableSpace) const
+    {
+    Iterable iterable = GetIterable(tableSpace);
+    if (!iterable.IsValid())
+        return nullptr;
+
+    for (TableSpaceSchemaManager const* manager : iterable)
+        {
+        PhenomenonCP phen = manager->GetPhenomenon(schemaNameOrAlias, phenName, mode);
+        if (phen != nullptr)
+            return phen;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyCategoryCP SchemaManager::Dispatcher::GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR catName, SchemaLookupMode mode, Utf8CP tableSpace) const

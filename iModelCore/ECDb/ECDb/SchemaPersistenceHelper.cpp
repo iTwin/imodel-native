@@ -758,5 +758,28 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationFormats(KindOfQ
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  05/2018
+//---------------------------------------------------------------------------------------
+Utf8String SchemaPersistenceHelper::SerializeNumericSpec(Formatting::NumericFormatSpecCR spec)
+    {
+    Json::Value json;
+    if (!spec.ToJson(json, false))
+        return Utf8String();
+
+    return json.ToString();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  05/2018
+//---------------------------------------------------------------------------------------
+Utf8String SchemaPersistenceHelper::SerializeCompositeSpecWithoutUnits(Formatting::CompositeValueSpecCR spec)
+    {
+    Json::Value json;
+    if (!spec.ToJson(json, false, true))
+        return Utf8String();
+
+    return json.ToString();
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

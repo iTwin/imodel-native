@@ -107,6 +107,16 @@ ECUnitCP SchemaManager::GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR uni
 ECFormatCP SchemaManager::GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR formatName, SchemaLookupMode mode, Utf8CP tableSpace) const { return m_dispatcher->GetFormat(schemaNameOrAlias, formatName, mode, tableSpace); }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+UnitSystemCP SchemaManager::GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR unitSystemName, SchemaLookupMode mode, Utf8CP tableSpace) const { return m_dispatcher->GetUnitSystem(schemaNameOrAlias, unitSystemName, mode, tableSpace); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+PhenomenonCP SchemaManager::GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode mode, Utf8CP tableSpace) const { return m_dispatcher->GetPhenomenon(schemaNameOrAlias, phenName, mode, tableSpace); }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyCategoryCP SchemaManager::GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR catName, SchemaLookupMode mode, Utf8CP tableSpace) const { return m_dispatcher->GetPropertyCategory(schemaNameOrAlias, catName, mode, tableSpace); }

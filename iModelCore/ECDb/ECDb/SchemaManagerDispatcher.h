@@ -65,7 +65,9 @@ public:
     ECN::ECEnumerationCP GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetEnumeration(schemaNameOrAlias, enumName, mode); }
     ECN::ECEnumerationId GetEnumerationId(ECN::ECEnumerationCR ecenum) const { return m_reader.GetEnumerationId(ecenum); }
 
+    ECN::UnitSystemCP GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetUnitSystem(schemaNameOrAlias, systemName, mode); }
     ECN::UnitSystemId GetUnitSystemId(ECN::UnitSystemCR us) const { return m_reader.GetUnitSystemId(us); }
+    ECN::PhenomenonCP GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetPhenomenon(schemaNameOrAlias, phenName, mode); }
     ECN::PhenomenonId GetPhenomenonId(ECN::PhenomenonCR ph) const { return m_reader.GetPhenomenonId(ph); }
     ECN::UnitId GetUnitId(ECN::ECUnitCR unit) const { return m_reader.GetUnitId(unit); }
     ECN::FormatId GetFormatId(ECN::ECFormatCR format) const { return m_reader.GetFormatId(format); }
@@ -254,6 +256,8 @@ struct SchemaManager::Dispatcher final
         ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::ECUnitCP GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unitName, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::ECFormatCP GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR formatName, SchemaLookupMode, Utf8CP tableSpace) const;
+        ECN::UnitSystemCP GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode, Utf8CP tableSpace) const;
+        ECN::PhenomenonCP GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::PropertyCategoryCP GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR propertyCategoryName, SchemaLookupMode, Utf8CP tableSpace) const;
 
         void ClearCache(Utf8CP tableSpace) const;

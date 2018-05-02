@@ -95,7 +95,6 @@ struct SchemaReader final
                 mutable std::map<ECN::PhenomenonId, ECN::PhenomenonCP> m_phenomenonCache;
                 mutable std::map<ECN::UnitId, ECN::ECUnitCP> m_unitCache;
                 mutable std::map<ECN::FormatId, ECN::ECFormatCP> m_formatCache;
-                mutable bool m_unitsAreLoaded = false;
                 mutable bmap<Utf8String, bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>, CompareIUtf8Ascii> m_classIdCache;
             public:
                 explicit ReaderCache(ECDb const& ecdb) : m_ecdb(ecdb) {}
@@ -107,6 +106,7 @@ struct SchemaReader final
                 ECN::PropertyCategoryCP Find(ECN::PropertyCategoryId id) const { auto it = m_propCategoryCache.find(id); return it != m_propCategoryCache.end() ? it->second : nullptr; }
                 ECN::UnitSystemCP Find(ECN::UnitSystemId id) const { auto it = m_unitSystemCache.find(id); return it != m_unitSystemCache.end() ? it->second : nullptr;}
                 ECN::PhenomenonCP Find(ECN::PhenomenonId id) const { auto it = m_phenomenonCache.find(id); return it != m_phenomenonCache.end() ? it->second : nullptr; }
+                bool IsUnitCacheEmpty() const { return m_unitCache.empty(); }
                 ECN::ECUnitCP Find(ECN::UnitId id) const { auto it = m_unitCache.find(id); return it != m_unitCache.end() ? it->second : nullptr; }
                 ECN::ECFormatCP Find(ECN::FormatId id) const { auto it = m_formatCache.find(id); return it != m_formatCache.end() ? it->second : nullptr; }
 
@@ -142,15 +142,16 @@ struct SchemaReader final
         BentleyStatus LoadRelationshipConstraintFromDb(ECN::ECRelationshipClassP&, Context&, ECN::ECClassId constraintClassId, ECN::ECRelationshipEnd) const;
         BentleyStatus LoadRelationshipConstraintClassesFromDb(ECN::ECRelationshipConstraintR, Context&, ECRelationshipConstraintId constraintId) const;
         BentleyStatus LoadSchemaDefinition(SchemaDbEntry*&, bvector<SchemaDbEntry*>& newlyLoadedSchemas, ECN::ECSchemaId) const;
+        BentleyStatus LoadUnits(Context&) const;
 
         BentleyStatus ReadSchema(SchemaDbEntry*&, Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         BentleyStatus ReadEnumeration(ECN::ECEnumerationCP&, Context&, ECN::ECEnumerationId) const;
-        
+
         BentleyStatus ReadKindOfQuantity(ECN::KindOfQuantityCP&, Context&, ECN::KindOfQuantityId) const;
-        BentleyStatus ReadUnitSystem(ECN::UnitSystemCP&, Context&, ECN::UnitSystemId) const;
-        BentleyStatus ReadPhenomenon(ECN::PhenomenonCP&, Context&, ECN::PhenomenonId) const;
-        BentleyStatus ReadUnit(ECN::ECUnitCP&, Context&, ECN::UnitId) const;
-        BentleyStatus ReadInvertedUnit(ECN::ECUnitCP&, Context&, ECN::UnitId unitId, ECN::UnitId invertingUnitId, SchemaDbEntry&, Utf8CP name, Utf8CP displayLabel, Utf8CP description, ECN::UnitSystemCR) const;
+
+        BentleyStatus ReadUnits(Context&) const;
+        BentleyStatus ReadUnitSystems(Context&) const;
+        BentleyStatus ReadPhenomena(Context&) const;
         BentleyStatus ReadFormat(ECN::ECFormatCP&, Context&, ECN::FormatId) const;
         BentleyStatus ReadFormatComposite(Context&, ECN::ECFormat&, ECN::FormatId, Utf8CP compositeSpacer) const;
         BentleyStatus ReadPropertyCategory(ECN::PropertyCategoryCP&, Context&, ECN::PropertyCategoryId) const;
@@ -190,8 +191,9 @@ struct SchemaReader final
         ECN::ECPropertyId GetPropertyId(ECN::ECPropertyCR) const;
         ECN::ECPropertyId GetPropertyId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, Utf8StringCR propertyName, SchemaLookupMode mode) const { return SchemaPersistenceHelper::GetPropertyId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), className.c_str(), propertyName.c_str(), mode); }
 
-        BentleyStatus ReadUnits() const;
+        ECN::UnitSystemCP GetUnitSystem(Utf8StringCR schemaName, Utf8StringCR systemName, SchemaLookupMode) const;
         ECN::UnitSystemId GetUnitSystemId(ECN::UnitSystemCR) const;
+        ECN::PhenomenonCP GetPhenomenon(Utf8StringCR schemaName, Utf8StringCR phenName, SchemaLookupMode) const;
         ECN::PhenomenonId GetPhenomenonId(ECN::PhenomenonCR) const;
         ECN::ECUnitCP GetUnit(Utf8StringCR schemaName, Utf8StringCR unitName, SchemaLookupMode) const;
         ECN::UnitId GetUnitId(ECN::ECUnitCR) const;

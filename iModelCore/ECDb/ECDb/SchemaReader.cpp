@@ -529,6 +529,25 @@ PropertyCategoryId SchemaReader::GetPropertyCategoryId(PropertyCategoryCR cat) c
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+UnitSystemCP SchemaReader::GetUnitSystem(Utf8StringCR schemaNameOrAlias, Utf8StringCR systemName, SchemaLookupMode schemaLookupMode) const
+    {
+    UnitSystemId id = SchemaPersistenceHelper::GetUnitSystemId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), systemName.c_str(), schemaLookupMode);
+    if (!id.IsValid())
+        return nullptr;
+
+    Context ctx;
+    if (SUCCESS != LoadUnits(ctx))
+        return nullptr;
+
+    if (SUCCESS != ctx.Postprocess(*this))
+        return nullptr;
+
+    return m_cache.Find(id);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   02/2018
 //---------------------------------------------------------------------------------------
 UnitSystemId SchemaReader::GetUnitSystemId(UnitSystemCR us) const
@@ -548,6 +567,25 @@ UnitSystemId SchemaReader::GetUnitSystemId(UnitSystemCR us) const
         }
 
     return id;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+PhenomenonCP SchemaReader::GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode schemaLookupMode) const
+    {
+    PhenomenonId id = SchemaPersistenceHelper::GetPhenomenonId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), phenName.c_str(), schemaLookupMode);
+    if (!id.IsValid())
+        return nullptr;
+
+    Context ctx;
+    if (SUCCESS != LoadUnits(ctx))
+        return nullptr;
+
+    if (SUCCESS != ctx.Postprocess(*this))
+        return nullptr;
+
+    return m_cache.Find(id);
     }
 
 //---------------------------------------------------------------------------------------
@@ -582,15 +620,13 @@ ECUnitCP SchemaReader::GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unit
         return nullptr;
 
     Context ctx;
-
-    ECUnitCP unit = nullptr;
-    if (SUCCESS != ReadUnit(unit, ctx, unitId))
+    if (SUCCESS != LoadUnits(ctx))
         return nullptr;
 
     if (SUCCESS != ctx.Postprocess(*this))
         return nullptr;
 
-    return unit;
+    return m_cache.Find(unitId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -801,214 +837,233 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationCP& ecEnum, Context& ct
     return SUCCESS;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaReader::ReadUnitSystems(Context& ctx) const
+    {
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description FROM [%s]." TABLE_UnitSystem, GetTableSpace().GetName().c_str()).c_str());
+    if (stmt == nullptr)
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        const UnitSystemId id = stmt->GetValueId<UnitSystemId>(0);
+
+        const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(1);
+        SchemaDbEntry* schemaKey = nullptr;
+        if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
+            return ERROR;
+
+        Utf8CP usName = stmt->GetValueText(2);
+        Utf8CP displayLabel = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(3);
+        Utf8CP description = stmt->IsColumnNull(4) ? nullptr : stmt->GetValueText(4);
+
+        UnitSystemP newSystem = nullptr;
+        if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateUnitSystem(newSystem, usName, displayLabel, description))
+            return ERROR;
+
+        newSystem->SetId(id);
+        m_cache.Insert(*newSystem);
+        schemaKey->m_loadedTypeCount++;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaReader::ReadPhenomena(Context& ctx) const
+    {
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description,Definition FROM [%s]." TABLE_Phenomenon, GetTableSpace().GetName().c_str()).c_str());
+    if (stmt == nullptr)
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        const PhenomenonId id = stmt->GetValueId<PhenomenonId>(0);
+
+        const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(1);
+        SchemaDbEntry* schemaKey = nullptr;
+        if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
+            return ERROR;
+
+        Utf8CP name = stmt->GetValueText(2);
+        Utf8CP displayLabel = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(3);
+        Utf8CP description = stmt->IsColumnNull(4) ? nullptr : stmt->GetValueText(4);
+        Utf8CP definition = stmt->IsColumnNull(5) ? nullptr : stmt->GetValueText(5);
+
+        PhenomenonP newPhen = nullptr;
+        if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreatePhenomenon(newPhen, name, definition, displayLabel, description))
+            return ERROR;
+
+        newPhen->SetId(id);
+        m_cache.Insert(*newPhen);
+        schemaKey->m_loadedTypeCount++;
+        }
+
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    04/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadUnits() const
+BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
     {
-
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    02/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadUnitSystem(ECN::UnitSystemCP& system, Context& ctx, ECN::UnitSystemId id) const
-    {
-    BeMutexHolder ecdbLock(GetECDbMutex());
-    system = m_cache.Find(id);
-    if (system != nullptr)
+    //no mutex holder as it is expected that this method is always called from another ReadXX method that does hold a mutex already
+    if (!m_cache.IsUnitCacheEmpty())
         return SUCCESS;
 
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description FROM [%s]." TABLE_UnitSystem " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Numerator,Denominator,Offset,IsConstant,InvertingUnitId FROM [%s]." TABLE_Unit, GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(1, id))
-        return ERROR;
-
-    if (BE_SQLITE_ROW != stmt->Step())
-        return ERROR;
-
-    const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(0);
-    SchemaDbEntry* schemaKey = nullptr;
-    if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
-        return ERROR;
-
-    Utf8CP usName = stmt->GetValueText(1);
-    Utf8CP displayLabel = stmt->IsColumnNull(2) ? nullptr : stmt->GetValueText(2);
-    Utf8CP description = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(3);
-
-    UnitSystemP newSystem = nullptr;
-    if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateUnitSystem(newSystem, usName, displayLabel, description))
-        return ERROR;
-
-    newSystem->SetId(id);
-    m_cache.Insert(*newSystem);
-    schemaKey->m_loadedTypeCount++;
-    system = newSystem;
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    02/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadPhenomenon(ECN::PhenomenonCP& phen, Context& ctx, ECN::PhenomenonId id) const
-    {
-    BeMutexHolder ecdbLock(GetECDbMutex());
-    phen = m_cache.Find(id);
-    if (phen != nullptr)
-        return SUCCESS;
-
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,Definition FROM [%s]." TABLE_Phenomenon " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
-    if (stmt == nullptr)
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, id))
-        return ERROR;
-
-    if (BE_SQLITE_ROW != stmt->Step())
-        return ERROR;
-
-    const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(0);
-    SchemaDbEntry* schemaKey = nullptr;
-    if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
-        return ERROR;
-
-    Utf8CP name = stmt->GetValueText(1);
-    Utf8CP displayLabel = stmt->IsColumnNull(2) ? nullptr : stmt->GetValueText(2);
-    Utf8CP description = stmt->IsColumnNull(3) ? nullptr : stmt->GetValueText(3);
-    Utf8CP definition = stmt->IsColumnNull(4) ? nullptr : stmt->GetValueText(4);
-
-    PhenomenonP newPhen = nullptr;
-    if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreatePhenomenon(newPhen, name, definition, displayLabel, description))
-        return ERROR;
-
-    newPhen->SetId(id);
-    m_cache.Insert(*newPhen);
-    schemaKey->m_loadedTypeCount++;
-    phen = newPhen;
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    02/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadUnit(ECN::ECUnitCP& unit, Context& ctx, ECN::UnitId id) const
-    {
-    BeMutexHolder ecdbLock(GetECDbMutex());
-    unit = m_cache.Find(id);
-    if (unit != nullptr)
-        return SUCCESS;
-
-    const int schemaIdIx = 0;
-    const int nameIx = 1;
-    const int displayLabelColIx = 2;
-    const int descriptionColIx = 3;
-    const int phIdColIx = 4;
-    const int usIdColIx = 5;
-    const int definitionColIx = 6;
-    const int numeratorColIx = 7;
-    const int denominatorColIx = 8;
-    const int offsetColIx = 9;
-    const int isConstantColIx = 10;
-    const int invertingUnitIdColIx = 11;
-
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Numerator,Denominator,Offset,IsConstant,InvertingUnitId FROM [%s]." TABLE_Unit " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
-    if (stmt == nullptr)
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, id))
-        return ERROR;
-
-    if (BE_SQLITE_ROW != stmt->Step())
-        return ERROR;
-
-    const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(schemaIdIx);
-    SchemaDbEntry* schemaKey = nullptr;
-    if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
-        return ERROR;
-
-    Utf8CP name = stmt->GetValueText(nameIx);
-    Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
-    Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
-
-    UnitSystemCP us = nullptr;
-    if (!stmt->IsColumnNull(usIdColIx))
+    struct UnitColumnIndexes final
         {
-        UnitSystemId usId = stmt->GetValueId<UnitSystemId>(usIdColIx);
-        if (SUCCESS != ReadUnitSystem(us, ctx, usId))
+        int m_unitId = 0;
+        int m_schemaId = 1;
+        int m_name = 2;
+        int m_displayLabel = 3;
+        int m_description = 4;
+        int m_phenId = 5;
+        int m_unitSystemId = 6;
+        int m_definition = 7;
+        int m_numerator = 8;
+        int m_denominator = 9;
+        int m_offset = 10;
+        int m_isConstant = 11;
+        int m_invertingUnitId = 12;
+        };
+
+    UnitColumnIndexes colIndexes;
+
+    struct InvertedUnitInfo
+        {
+        ECN::UnitId m_id;
+        SchemaDbEntry* m_schema = nullptr;
+        Utf8String m_name;
+        ECN::UnitId m_invertingUnitId;
+        Nullable<Utf8String> m_displayLabel;
+        Nullable<Utf8String> m_description;
+        ECN::UnitSystemCP m_unitSystem = nullptr;
+
+        InvertedUnitInfo(ECN::UnitId id, SchemaDbEntry& schema, Utf8CP name, ECN::UnitId invertingUnitId, Utf8CP displayLabel, Utf8CP description, UnitSystemCR system) :
+            m_id(id), m_schema(&schema), m_name(name), m_invertingUnitId(invertingUnitId), m_unitSystem(&system)
+            {
+            if (displayLabel != nullptr)
+                m_displayLabel = Utf8String(displayLabel);
+
+            if (description != nullptr)
+                m_description = Utf8String(description);
+            }
+
+        Utf8CP GetDisplayLabel() const { return m_displayLabel.IsValid() ? m_displayLabel.Value().c_str() : nullptr; }
+        Utf8CP GetDescription() const { return m_description.IsValid() ? m_description.Value().c_str() : nullptr; }
+        };
+
+    std::vector<InvertedUnitInfo> invertedUnitInfos;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        UnitId id = stmt->GetValueId<UnitId>(colIndexes.m_unitId);
+        const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(colIndexes.m_schemaId);
+        SchemaDbEntry* schema = nullptr;
+        if (SUCCESS != ReadSchema(schema, ctx, schemaId, false))
             return ERROR;
-        }
 
-    if (!stmt->IsColumnNull(invertingUnitIdColIx))
-        {
-        UnitId invertingUnitId = stmt->GetValueId<UnitId>(invertingUnitIdColIx);
-        //cache inverted units as they need their inverting unit to be exist before
-        BeAssert(stmt->IsColumnNull(isConstantColIx) && stmt->IsColumnNull(definitionColIx) && stmt->IsColumnNull(numeratorColIx) && stmt->IsColumnNull(denominatorColIx) && stmt->IsColumnNull(offsetColIx));
-        return ReadInvertedUnit(unit, ctx, id, invertingUnitId, *schemaKey, name, displayLabel, description, *us);
-        }
+        Utf8CP name = stmt->GetValueText(colIndexes.m_name);
+        Utf8CP displayLabel = stmt->IsColumnNull(colIndexes.m_displayLabel) ? nullptr : stmt->GetValueText(colIndexes.m_displayLabel);
+        Utf8CP description = stmt->IsColumnNull(colIndexes.m_description) ? nullptr : stmt->GetValueText(colIndexes.m_description);
 
-    const bool isConstant = stmt->GetValueBoolean(isConstantColIx);
-    const PhenomenonId phId = stmt->GetValueId<PhenomenonId>(phIdColIx);
-    PhenomenonCP ph = nullptr;
-    if (SUCCESS != ReadPhenomenon(ph, ctx, phId))
-        return ERROR;
+        UnitSystemCP us = nullptr;
+        if (!stmt->IsColumnNull(colIndexes.m_unitSystemId))
+            {
+            UnitSystemId usId = stmt->GetValueId<UnitSystemId>(colIndexes.m_unitSystemId);
+            us = m_cache.Find(usId);
+            if (us == nullptr)
+                {
+                BeAssert(false && "UnitSystems should have been loaded before Units");
+                return ERROR;
+                }
+            }
 
-    BeAssert((isConstant && us == nullptr) || (!isConstant && us != nullptr));
-    BeAssert(!stmt->IsColumnNull(definitionColIx));
-    Utf8CP definition = stmt->IsColumnNull(definitionColIx) ? nullptr : stmt->GetValueText(definitionColIx);
+        if (!stmt->IsColumnNull(colIndexes.m_invertingUnitId))
+            {
+            //cache inverted units as they need their inverting unit to be exist before. They are loaded once the regular units have been loaded.
+            UnitId invertingUnitId = stmt->GetValueId<UnitId>(colIndexes.m_invertingUnitId);
+            BeAssert(stmt->IsColumnNull(colIndexes.m_isConstant) && stmt->IsColumnNull(colIndexes.m_definition) && stmt->IsColumnNull(colIndexes.m_numerator) && stmt->IsColumnNull(colIndexes.m_denominator) && stmt->IsColumnNull(colIndexes.m_offset));
+            invertedUnitInfos.push_back(InvertedUnitInfo(id, *schema, name, invertingUnitId, displayLabel, description, *us));
+            continue;
+            }
 
-    Nullable<double> numerator;
-    if (!stmt->IsColumnNull(numeratorColIx))
-        numerator = stmt->GetValueDouble(numeratorColIx);
-
-    Nullable<double> denominator;
-    if (!stmt->IsColumnNull(denominatorColIx))
-        denominator = stmt->GetValueDouble(denominatorColIx);
-
-    Nullable<double> offset;
-    if (!stmt->IsColumnNull(offsetColIx))
-        offset = stmt->GetValueDouble(offsetColIx);
-
-    ECSchemaR schema = *schemaKey->m_cachedSchema;
-    ECUnitP newUnit = nullptr;
-    if (isConstant)
-        {
-        BeAssert(numerator != nullptr && "Constant unit expects numerator not to be null");
-        if (ECObjectsStatus::Success != schema.CreateConstant(newUnit, name, definition, *ph, numerator.Value(), denominator, displayLabel, description))
+        const bool isConstant = stmt->GetValueBoolean(colIndexes.m_isConstant);
+        const PhenomenonId phId = stmt->GetValueId<PhenomenonId>(colIndexes.m_phenId);
+        PhenomenonCP ph = m_cache.Find(phId);
+        if (ph == nullptr)
+            {
+            BeAssert(false && "Phenomena should have been loaded before Units");
             return ERROR;
+            }
+
+        BeAssert((isConstant && us == nullptr) || (!isConstant && us != nullptr));
+        BeAssert(!stmt->IsColumnNull(colIndexes.m_definition));
+        Utf8CP definition = stmt->IsColumnNull(colIndexes.m_definition) ? nullptr : stmt->GetValueText(colIndexes.m_definition);
+
+        Nullable<double> numerator;
+        if (!stmt->IsColumnNull(colIndexes.m_numerator))
+            numerator = stmt->GetValueDouble(colIndexes.m_numerator);
+
+        Nullable<double> denominator;
+        if (!stmt->IsColumnNull(colIndexes.m_denominator))
+            denominator = stmt->GetValueDouble(colIndexes.m_denominator);
+
+        Nullable<double> offset;
+        if (!stmt->IsColumnNull(colIndexes.m_offset))
+            offset = stmt->GetValueDouble(colIndexes.m_offset);
+
+        ECUnitP newUnit = nullptr;
+        if (isConstant)
+            {
+            BeAssert(numerator != nullptr && "Constant unit expects numerator not to be null");
+            if (ECObjectsStatus::Success != schema->m_cachedSchema->CreateConstant(newUnit, name, definition, *ph, numerator.Value(), denominator, displayLabel, description))
+                return ERROR;
+            }
+        else
+            {
+            if (ECObjectsStatus::Success != schema->m_cachedSchema->CreateUnit(newUnit, name, definition, *ph, *us, numerator, denominator, offset, displayLabel, description))
+                return ERROR;
+            }
+
+        newUnit->SetId(id);
+        m_cache.Insert(*newUnit);
+        schema->m_loadedTypeCount++;
         }
-    else
+
+    //now load inverted units as their inverting units have been loaded now
+    for (InvertedUnitInfo const& invertedUnitInfo : invertedUnitInfos)
         {
-        if (ECObjectsStatus::Success != schema.CreateUnit(newUnit, name, definition, *ph, *us, numerator, denominator, offset, displayLabel, description))
+        SchemaDbEntry& schema = *invertedUnitInfo.m_schema;
+        ECUnitCP invertingUnit = m_cache.Find(invertedUnitInfo.m_invertingUnitId);
+        if (invertingUnit == nullptr)
+            {
+            BeAssert("Inverting unit for an inverted unit should have been loaded already");
             return ERROR;
+            }
+
+        ECUnitP newUnit = nullptr;
+        if (ECObjectsStatus::Success != schema.m_cachedSchema->CreateInvertedUnit(newUnit, *invertingUnit, invertedUnitInfo.m_name.c_str(), *invertedUnitInfo.m_unitSystem,
+                                                                                  invertedUnitInfo.GetDisplayLabel(), invertedUnitInfo.GetDescription()))
+            {
+            return ERROR;
+            }
+
+        newUnit->SetId(invertedUnitInfo.m_id);
+        m_cache.Insert(*newUnit);
+        schema.m_loadedTypeCount++;
         }
 
-    newUnit->SetId(id);
-    m_cache.Insert(*newUnit);
-    schemaKey->m_loadedTypeCount++;
-    unit = newUnit;
-    return SUCCESS;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   04/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaReader::ReadInvertedUnit(ECN::ECUnitCP& invertedUnit, Context& ctx, ECN::UnitId unitId, ECN::UnitId invertingUnitId, SchemaDbEntry& schemaKey, Utf8CP name, Utf8CP displayLabel, Utf8CP description, ECN::UnitSystemCR unitSystem) const
-    {
-    ECUnitCP invertingUnit = nullptr;
-    if (SUCCESS != ReadUnit(invertingUnit, ctx, invertingUnitId))
-        return ERROR;
-
-    ECUnitP newInvertedUnit = nullptr;
-    if (ECObjectsStatus::Success != schemaKey.m_cachedSchema->CreateInvertedUnit(newInvertedUnit, *invertingUnit, name, unitSystem, displayLabel, description))
-        return ERROR;
-
-    newInvertedUnit->SetId(unitId);
-    m_cache.Insert(*newInvertedUnit);
-    schemaKey.m_loadedTypeCount++;
-    invertedUnit = newInvertedUnit;
     return SUCCESS;
     }
 
@@ -1094,30 +1149,39 @@ BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, 
         return ERROR;
 
     bvector<Utf8String> labels;
-    bvector<Units::UnitCP> units;
+    bvector<ECN::UnitId> unitIds;
     while (BE_SQLITE_ROW == stmt->Step())
         {
         Utf8CP label = stmt->GetValueText(0);
         labels.push_back(label);
 
-        UnitId unitId = stmt->GetValueId<UnitId>(1);
-        ECUnitCP unit = nullptr;
-        if (SUCCESS != ReadUnit(unit, ctx, unitId))
-            return ERROR;
-
-        units.push_back(unit);
+        unitIds.push_back(stmt->GetValueId<UnitId>(1));
         }
     stmt = nullptr;
 
-    if (units.empty()) // format doesn't have a composite spec
+    if (unitIds.empty()) // format doesn't have a composite spec
         {
         BeAssert(Utf8String::IsNullOrEmpty(compositeSpecJsonWithoutUnits));
         return SUCCESS;
         }
 
     const size_t labelCount = labels.size();
-    BeAssert(labelCount <= 4 && units.size() <= 4);
+    BeAssert(labelCount <= 4 && unitIds.size() <= 4);
 
+    if (SUCCESS != LoadUnits(ctx))
+        return ERROR;
+
+    bvector<Units::UnitCP> units;
+    for (UnitId unitId : unitIds)
+        {
+        ECUnitCP unit = m_cache.Find(unitId);
+        if (unit == nullptr)
+            {
+            BeAssert(false && "Units should have been loaded before creating the Format CompositeSpec");
+            return ERROR;
+            }
+        units.push_back(unit);
+        }
     Formatting::CompositeValueSpec spec;
 	bool compStatus = Formatting::CompositeValueSpec::CreateCompositeSpec(spec, units);
 	if (!compStatus)
@@ -1148,6 +1212,11 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
     koq = m_cache.Find(koqId);
     if (koq != nullptr)
         return SUCCESS;
+
+    if (SUCCESS != LoadUnits(ctx))
+        return ERROR;
+
+    BeAssert(!m_cache.IsUnitCacheEmpty());
 
     const int schemaIdIx = 0;
     const int nameIx = 1;
@@ -1195,17 +1264,10 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
     // PersistenceUnit
     // The persistence unit is persisted as fully qualified name to preserve backwards compatibility
     BeAssert(!Utf8String::IsNullOrEmpty(persUnitFullName));
-
-    auto lookupUnit = [this, &ctx] (Utf8StringCR unitAlias, Utf8StringCR unitName)
+    auto lookupUnit = [this] (Utf8StringCR unitAlias, Utf8StringCR unitName)
         {
         BeAssert(!unitAlias.empty());
-        UnitId persUnitId = SchemaPersistenceHelper::GetUnitId(GetECDb(), GetTableSpace(), unitAlias.c_str(), unitName.c_str(), SchemaLookupMode::ByAlias);
-
-        ECUnitCP persUnit = nullptr;
-        if (SUCCESS != ReadUnit(persUnit, ctx, persUnitId))
-            return (ECUnitCP) nullptr;
-
-        return persUnit;
+        return m_schemaManager.GetUnit(unitAlias, unitName, SchemaLookupMode::ByAlias);
         };
 
     if (ECObjectsStatus::Success != newKoq->AddPersistenceUnitByName(persUnitFullName, lookupUnit))
@@ -1485,64 +1547,30 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
 
     stmt = nullptr;
 
-    // Load UnitSystems
-    stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_UnitSystem " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
-    if (stmt == nullptr)
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaKey->GetId()))
-        return ERROR;
-
-    while (BE_SQLITE_ROW == stmt->Step())
+    // Load Units (are loaded at once for unit conversion API)
+    if (m_cache.IsUnitCacheEmpty())
         {
-        UnitSystemCP system = nullptr;
-        if (SUCCESS != ReadUnitSystem(system, ctx, stmt->GetValueId<UnitSystemId>(0)))
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Unit " WHERE SchemaId=:schemaid UNION ALL "
+                                                   "SELECT Id FROM [%s]." TABLE_UnitSystem " WHERE SchemaId=:schemaid UNION ALL "
+                                                   "SELECT Id FROM [%s]." TABLE_Phenomenon " WHERE SchemaId=:schemaid", GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str(), GetTableSpace().GetName().c_str()).c_str());
+        if (stmt == nullptr)
             return ERROR;
 
-        if (ecSchemaKey->IsFullyLoaded())
-            return SUCCESS;
-        }
-    stmt = nullptr;
-
-    // Load Phenomena
-    stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Phenomenon " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
-    if (stmt == nullptr)
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaKey->GetId()))
-        return ERROR;
-
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
-        PhenomenonCP phen = nullptr;
-        if (SUCCESS != ReadPhenomenon(phen, ctx, stmt->GetValueId<PhenomenonId>(0)))
+        if (BE_SQLITE_OK != stmt->BindId(stmt->GetParameterIndex(":schemaid"), ecSchemaKey->GetId()))
             return ERROR;
 
-        if (ecSchemaKey->IsFullyLoaded())
-            return SUCCESS;
+        const bool schemaHasUnits = BE_SQLITE_ROW == stmt->Step();
+        stmt = nullptr;
+
+        if (schemaHasUnits)
+            {
+            if (SUCCESS != LoadUnits(ctx))
+                return ERROR;
+
+            if (ecSchemaKey->IsFullyLoaded())
+                return SUCCESS;
+            }
         }
-
-    stmt = nullptr;
-
-    // Load Units
-    stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Unit " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
-    if (stmt == nullptr)
-        return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaKey->GetId()))
-        return ERROR;
-
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
-        ECUnitCP unit = nullptr;
-        if (SUCCESS != ReadUnit(unit, ctx, stmt->GetValueId<UnitId>(0)))
-            return ERROR;
-
-        if (ecSchemaKey->IsFullyLoaded())
-            return SUCCESS;
-        }
-
-    stmt = nullptr;
 
     // Load Formats
     stmt = GetCachedStatement(Utf8PrintfString("SELECT Id FROM [%s]." TABLE_Format " WHERE SchemaId=?", GetTableSpace().GetName().c_str()).c_str());
@@ -2380,6 +2408,25 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintClassesFromDb(ECRelationsh
         }
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaReader::LoadUnits(Context& ctx) const
+    {
+    BeMutexHolder ecdbLock(GetECDbMutex());
+
+    if (!m_cache.IsUnitCacheEmpty())
+        return SUCCESS;
+
+    if (SUCCESS != ReadUnitSystems(ctx))
+        return ERROR;
+
+    if (SUCCESS != ReadPhenomena(ctx))
+        return ERROR;
+
+    return ReadUnits(ctx);
     }
 
 //---------------------------------------------------------------------------------------

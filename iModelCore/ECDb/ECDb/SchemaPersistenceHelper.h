@@ -81,8 +81,8 @@ public:
     static BentleyStatus SerializeKoqPresentationFormats(Utf8StringR jsonStr, bvector<Utf8String> const& presFormats);
     static BentleyStatus DeserializeKoqPresentationFormats(ECN::KindOfQuantityR, TableSpaceSchemaManager const&, Utf8CP jsonStr);
 
-    static Utf8String SerializeNumericSpec(Formatting::NumericFormatSpecCR spec) { return spec.ToJson(false).ToString(); }
-    static Utf8String SerializeCompositeSpecWithoutUnits(Formatting::CompositeValueSpecCR spec) { return spec.ToJson(true).ToString(); }
+    static Utf8String SerializeNumericSpec(Formatting::NumericFormatSpecCR);
+    static Utf8String SerializeCompositeSpecWithoutUnits(Formatting::CompositeValueSpecCR);
 
     //!Safe method to cast an integer value to the ECClassType enum.
     //!It makes sure the integer is a valid value for the enum.
