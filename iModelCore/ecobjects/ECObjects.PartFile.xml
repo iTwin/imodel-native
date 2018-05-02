@@ -316,6 +316,14 @@
         </Bindings>
     </Part>
 
+    <Part Name="ECObjectsTools-NuGetPackage" BMakeFile="tools\ECObjectsTools.NuGetPackage.mke"  OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubProduct ProductName="ECObjectsTools"/>
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\ECObjectsTools\ECObjectsTools.*.nupkg</Files>
+        </Bindings>
+    </Part>
+
     <!-- *************** -->
     <!-- **** Tools **** -->
     <!-- *************** -->
