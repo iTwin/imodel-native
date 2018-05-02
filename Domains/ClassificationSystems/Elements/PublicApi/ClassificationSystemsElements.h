@@ -22,18 +22,12 @@ BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem : Dgn::DefinitionElement
     {
     DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem, Dgn::DefinitionElement);
-    private:
-        BE_PROP_NAME(Name)
 
     protected:
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationSystem(CreateParams const& params) : T_Super(params) {}
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationSystem(CreateParams const& params, Utf8CP name);
         friend struct ClassificationSystemHandler;
         friend struct ClassificationSystemsDomain;
-
-        //! Sets the name of this ClassificationSystem
-        //! @param[in]  name   new name for this ClassificationSystem
-        void SetName(Utf8CP name) { SetPropertyValue(prop_Name(), name); }
 
         virtual void _OnInserted(Dgn::DgnElementP copiedFrom) const override;
 
@@ -50,7 +44,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem : Dgn::DefinitionElement
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemPtr Create(Dgn::DgnDbR db, Utf8CP name);
 
         //! Gets the name of this ClassificationSystem
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetCode().GetValueUtf8(); }
 
     };
 

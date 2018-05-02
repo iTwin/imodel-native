@@ -15,7 +15,6 @@
         <ECCustomAttributes>
           <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
     </ECEntityClass>
   
     <ECEntityClass typeName="Classification" displayLabel="ClassificationSystem ClassDefinition" description="The ClassDefinition used to store classificationSystem data.">
