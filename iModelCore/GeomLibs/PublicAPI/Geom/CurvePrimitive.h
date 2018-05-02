@@ -377,6 +377,11 @@ GEOMDLLIMPEXP static ICurvePrimitivePtr CreateLineString (DPoint3dCP points, siz
 //! @param [in] points source coordinates.
 GEOMDLLIMPEXP static ICurvePrimitivePtr CreateLineString (bvector<DPoint3d> const &points);
 
+//! Allocate and fill a new linestring
+//! @param [in] points source coordinates.
+//! @param [in] z z coordinate to apply when DPoint2d is copied to DPoint3d
+GEOMDLLIMPEXP static ICurvePrimitivePtr CreateLineString (bvector<DPoint2d> const &points, double z = 0.0);
+
 //! Allocate and fill a new elliptic arc
 //! @param [in] ellipse source ellipse.
 GEOMDLLIMPEXP static ICurvePrimitivePtr CreateArc (DEllipse3dCR ellipse);
