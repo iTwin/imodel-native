@@ -467,10 +467,10 @@ private:
     static size_t const indxMinor  = 2;
     static size_t const indxSub    = 3;
 
-    double m_ratio[indxSub];
-    bool m_includeZero; // TODO: Not currently used in the formatting code, needs to be fixed.
-    bool m_explicitlyDefinedSpacer;
-    Utf8String m_spacer;
+    double m_ratio[indxSub] = {0};
+    bool m_includeZero = true; // TODO: Not currently used in the formatting code, needs to be fixed.
+    bool m_explicitlyDefinedSpacer = false;
+    Utf8String m_spacer = FormatConstant::DefaultSpacer();
     FormatProblemDetail m_problem;
     bvector<UnitProxy> mutable m_proxys;
 
