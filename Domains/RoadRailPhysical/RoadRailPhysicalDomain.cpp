@@ -40,8 +40,6 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(PathwayElementHandler::GetHandler());
     RegisterHandler(RailwayHandler::GetHandler());
     RegisterHandler(RoadwayHandler::GetHandler());    
-    RegisterHandler(PathwaySeparationElementHandler::GetHandler());
-    RegisterHandler(PathwaySeparationHandler::GetHandler());
 
     RegisterHandler(AssociatedFacetAspectHandler::GetHandler());
     }

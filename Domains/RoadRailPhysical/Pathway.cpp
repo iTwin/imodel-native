@@ -13,8 +13,6 @@
 HANDLER_DEFINE_MEMBERS(CorridorHandler)
 HANDLER_DEFINE_MEMBERS(CorridorPortionElementHandler)
 HANDLER_DEFINE_MEMBERS(PathwayElementHandler)
-HANDLER_DEFINE_MEMBERS(PathwaySeparationElementHandler)
-HANDLER_DEFINE_MEMBERS(PathwaySeparationHandler)
 HANDLER_DEFINE_MEMBERS(RailwayHandler)
 HANDLER_DEFINE_MEMBERS(RoadwayHandler)
 
@@ -128,24 +126,6 @@ bvector<DgnElementId> Corridor::QueryOrderedPathwayIds() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bset<Corridor::PathwaySeparationInfo> Corridor::QueryPathwaySeparationInfos() const
-    {
-    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId, PathwayLeftSide.Id, PathwayRightSide.Id FROM "
-        BRRP_SCHEMA(BRRP_CLASS_PathwaySeparationElement) " WHERE Parent.Id = ?;");
-    BeAssert(stmtPtr.IsValid());
-
-    stmtPtr->BindId(1, GetElementId());
-
-    bset<PathwaySeparationInfo> retVal;
-    while (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
-        retVal.insert(PathwaySeparationInfo(stmtPtr->GetValueId<DgnElementId>(0), stmtPtr->GetValueId<DgnElementId>(1), stmtPtr->GetValueId<DgnElementId>(2)));
-
-    return retVal;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 CorridorPtr Corridor::Create(PhysicalModelR model)
@@ -237,27 +217,6 @@ RailwayPtr Railway::Create(CorridorCR corridor)
     createParams.m_parentRelClassId = corridor.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_CorridorAssemblesPortions);
 
     return new Railway(createParams);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-PathwaySeparationPtr PathwaySeparation::Create(CorridorCR corridor, ILinearElementCR linearElement,
-    PathwayElementCR leftPathway, PathwayElementCR rightPathway)
-    {
-    if (!corridor.GetElementId().IsValid() || !leftPathway.GetElementId().IsValid() || !rightPathway.GetElementId().IsValid())
-        return nullptr;
-
-    CreateParams createParams(corridor.GetDgnDb(), corridor.GetModelId(), QueryClassId(corridor.GetDgnDb()),
-        RoadRailCategory::GetRoadway(corridor.GetDgnDb())); // TODO - proper category?
-    createParams.m_parentId = corridor.GetElementId();
-    createParams.m_parentRelClassId = corridor.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_CorridorAssemblesPortions);
-
-    PathwaySeparationPtr retVal(new PathwaySeparation(createParams));
-    retVal->SetPathwayLeftSide(leftPathway);
-    retVal->SetPathwayRightSide(rightPathway);
-
-    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**

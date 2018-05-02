@@ -60,8 +60,6 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_Railway                                          "Railway"
 #define BRRP_CLASS_Roadway                                          "Roadway"
 #define BRRP_CLASS_SignificantPointDefinition                       "SignificantPointDefinition"
-#define BRRP_CLASS_PathwaySeparationElement                         "PathwaySeparationElement"
-#define BRRP_CLASS_PathwaySeparation                                "PathwaySeparation"
 #define BRRP_CLASS_TravelwaySideSignificantPointDef                 "TravelwaySideSignificantPointDef"
 #define BRRP_CLASS_TravelwaySignificantPointDef                     "TravelwaySignificantPointDef"
 #define BRRP_CLASS_TravelwayStructureSignificantPointDef            "TravelwayStructureSignificantPointDef"
@@ -159,8 +157,6 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(AssociatedFacetAspect)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(Corridor)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorPortionElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwaySeparationElement)
-ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwaySeparation)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailPhysicalModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(SignificantPointDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelwaySideSignificantPointDef)

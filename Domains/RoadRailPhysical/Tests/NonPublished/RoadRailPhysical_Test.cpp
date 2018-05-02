@@ -72,16 +72,11 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
     rightRoadwayPtr->SetMainLinearElement(alignmentPtr.get());
     ASSERT_TRUE(rightRoadwayPtr->Insert((int32_t)PathwayElement::Order::RightMost).IsValid());
 
-    auto sepPortionPtr = PathwaySeparation::Create(*corridorPtr, *alignmentPtr, *leftRoadwayPtr, *rightRoadwayPtr);
-    ASSERT_TRUE(sepPortionPtr->Insert().IsValid());
-
     ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedCorridorPortion(*alignmentPtr, *rightRoadwayPtr, *clPointDefPtr));
 
     auto pathwayIds = corridorCPtr->QueryOrderedPathwayIds();
     ASSERT_EQ(2, pathwayIds.size());
     ASSERT_EQ(leftRoadwayPtr->GetElementId(), pathwayIds[0]);
     ASSERT_EQ(rightRoadwayPtr->GetElementId(), pathwayIds[1]);
-
-    ASSERT_EQ(1, corridorCPtr->QueryPathwaySeparationInfos().size());
 #pragma endregion
     }

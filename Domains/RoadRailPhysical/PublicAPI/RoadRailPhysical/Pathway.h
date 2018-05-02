@@ -44,21 +44,6 @@ protected:
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const override { return *this; }
 
 public:
-    struct PathwaySeparationInfo
-    {
-        Dgn::DgnElementId m_elementId, m_leftPathwayId, m_rightPathwayId;
-
-        PathwaySeparationInfo() {}
-        PathwaySeparationInfo(Dgn::DgnElementId elementId, Dgn::DgnElementId leftPathwayId, Dgn::DgnElementId rightPathwayId) : 
-            m_elementId(elementId), m_leftPathwayId(leftPathwayId), m_rightPathwayId(rightPathwayId) {}
-
-        Dgn::DgnElementId GetElementId() const { return m_elementId; }
-        Dgn::DgnElementId GetLeftPathwayId() const { return m_leftPathwayId; }
-        Dgn::DgnElementId GetRightPathwayId() const { return m_rightPathwayId; }
-
-        bool operator< (PathwaySeparationInfo const& right) const { return m_elementId < right.m_elementId; }
-    }; // PathwaySeparationInfo
-
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(Corridor)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(Corridor)
 
@@ -75,8 +60,6 @@ public:
 
     //! Query for Pathways assembled by this Corridor in left-to-right order
     ROADRAILPHYSICAL_EXPORT bvector<Dgn::DgnElementId> QueryOrderedPathwayIds() const;
-    //! Query for Pathway Separations assembled by this Corridor
-    ROADRAILPHYSICAL_EXPORT bset<PathwaySeparationInfo> QueryPathwaySeparationInfos() const;
 
     //! @private
     ROADRAILPHYSICAL_EXPORT static CorridorPtr Create(Dgn::PhysicalModelR model);
@@ -100,7 +83,6 @@ protected:
     //! @private
     virtual PathwayElementCP _ToPathway() const { return nullptr; }
     //! @private
-    virtual PathwaySeparationElementCP _ToPathwaySeparation() const { return nullptr; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(CorridorPortionElement)
@@ -109,10 +91,6 @@ public:
     //! Cast this CorridorPortionElement into a Pathway
     //! @return A Pathway or nullptr if this CorridorPortionElement is not a Pathway
     PathwayElementCP ToPathway() const { return _ToPathway(); }
-
-    //! Cast this CorridorPortionElement into a PathwaySeparation
-    //! @return A PathwaySeparation or nullptr if this CorridorPortionElement is not a PathwaySeparation
-    PathwaySeparationElementCP ToPathwaySeparation() const { return _ToPathwaySeparation(); }
 }; // CorridorPortionElement
 
 //=======================================================================================
@@ -229,56 +207,6 @@ public:
 }; // Railway
 
 //=======================================================================================
-//! A CorridorPortion specially constructed to separate two Pathways.
-//! @ingroup GROUP_RoadRailPhysical
-//=======================================================================================
-struct PathwaySeparationElement : CorridorPortionElement
-{
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_PathwaySeparationElement, CorridorPortionElement);
-    friend struct PathwaySeparationElementHandler;
-
-protected:
-    //! @private
-    explicit PathwaySeparationElement(CreateParams const& params) : T_Super(params) {}
-
-public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwaySeparationElement)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwaySeparationElement)
-
-    //! Get the Pathway located at the left side of this Separation
-    Dgn::DgnElementId GetPathwayIdLeftSide() const { return GetPropertyValueId<Dgn::DgnElementId>("PathwayLeftSide"); }
-    //! Get the Pathway located at the right side of this Separation
-    Dgn::DgnElementId GetPathwayIdRightSide() const { return GetPropertyValueId<Dgn::DgnElementId>("PathwayRightSide"); }
-
-    //! @private
-    void SetPathwayLeftSide(PathwayElementCR leftPathway) { SetPropertyValue("PathwayLeftSide", leftPathway.GetElementId()); }
-    //! @private
-    void SetPathwayRightSide(PathwayElementCR rightPathway) { SetPropertyValue("PathwayRightSide", rightPathway.GetElementId()); }
-}; // PathwaySeparationElement
-
-//=======================================================================================
-//! A generic PathwaySeparationElement.
-//! @ingroup GROUP_RoadRailPhysical
-//=======================================================================================
-struct PathwaySeparation : PathwaySeparationElement
-{
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_PathwaySeparation, PathwaySeparationElement);
-    friend struct PathwaySeparationHandler;
-
-protected:
-    //! @private
-    explicit PathwaySeparation(CreateParams const& params) : T_Super(params) {}
-
-public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwaySeparation)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(PathwaySeparation)
-
-    //! @private
-    ROADRAILPHYSICAL_EXPORT static PathwaySeparationPtr Create(CorridorCR corridor, LinearReferencing::ILinearElementCR linearElement, 
-        PathwayElementCR leftPathway, PathwayElementCR rightPathway);
-}; // PathwaySeparation
-
-//=======================================================================================
 //! Utility class facilitating some operations against ILinearElements in the 
 //! context of the Road/Rail discipline.
 //! @ingroup GROUP_RoadRailPhysical
@@ -345,24 +273,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RailwayHandler : PathwayElementHandler
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_Railway, Railway, RailwayHandler, PathwayElementHandler, ROADRAILPHYSICAL_EXPORT)
 }; // RailwayHandler
-
-//=================================================================================
-//! ElementHandler for Pathway Separation Elements
-//! @ingroup GROUP_RoadRailPhysical
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PathwaySeparationElementHandler : CorridorPortionElementHandler
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_PathwaySeparationElement, PathwaySeparationElement, PathwaySeparationElementHandler, CorridorPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
-}; // PathwaySeparationElementHandler
-
-//=================================================================================
-//! ElementHandler for Pathway Separation Elements
-//! @ingroup GROUP_RoadRailPhysical
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PathwaySeparationHandler : PathwaySeparationElementHandler
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_PathwaySeparation, PathwaySeparation, PathwaySeparationHandler, PathwaySeparationElementHandler, ROADRAILPHYSICAL_EXPORT)
-}; // PathwaySeparationHandler
 
 //__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
