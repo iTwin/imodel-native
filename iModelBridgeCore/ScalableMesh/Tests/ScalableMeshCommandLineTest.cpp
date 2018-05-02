@@ -603,6 +603,7 @@ void RunDTMClipTest()
         }
 
 
+
 void RunPrecisionTest(WString& stmFileName)
     {
 
@@ -1178,7 +1179,7 @@ void RunDTMTriangulateTest2()
 
 	BC_DTM_OBJ* bcDtmP = 0;
 
-	bcdtmRead_fromFileDtmObject(&bcDtmP, L"C:\\work\\tmp\\test.bcdtm");
+	bcdtmRead_fromFileDtmObject(&bcDtmP, L"C:\\work\\2018q2\\CS\\test.tin");
 	bcdtmObject_triangulateDtmObject(bcDtmP);
 	TerrainModel::BcDTMPtr dtm = TerrainModel::BcDTM::CreateFromDtmHandle(*bcDtmP);
 	bvector<DPoint3d> bound;
@@ -1863,9 +1864,9 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 
     //DarylsTestFunction();
    // RunDTMClipTest();
-   // RunDTMTriangulateTest2();
+    RunDTMTriangulateTest2();
 	//RunCompareLineTest();
-	RunEnumerateTest();
+	//RunEnumerateTest();
 	//RunMergePolygons();
    //RunDTMSTMTriangulateTest();
    // RunSelectPointsTest();
