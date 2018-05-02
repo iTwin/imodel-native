@@ -275,7 +275,7 @@ DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-RevisionStatus JsInterop::ReadChangeSet(DgnRevisionPtr& revisionPtr, Utf8StringCR dbGuid, JsonValueCR changeSetToken)
+RevisionStatus JsInterop::ReadChangeSet(DgnRevisionPtr& revision, Utf8StringCR dbGuid, JsonValueCR changeSetToken)
     {
     PRECONDITION(changeSetToken.isMember("id") && changeSetToken.isMember("pathname"), RevisionStatus::FileNotFound);
 
@@ -283,7 +283,7 @@ RevisionStatus JsInterop::ReadChangeSet(DgnRevisionPtr& revisionPtr, Utf8StringC
     Utf8String parentId = changeSetToken["parentId"].asString();
 
     RevisionStatus revStatus;
-    DgnRevisionPtr revision = DgnRevision::Create(&revStatus, id, parentId, dbGuid);
+    revision = DgnRevision::Create(&revStatus, id, parentId, dbGuid);
     PRECONDITION(revStatus == RevisionStatus::Success, revStatus);
     BeAssert(revision.IsValid());
 
