@@ -405,13 +405,21 @@ BentleyStatus   GradientSymb::FromJson(Json::Value const& json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value     GradientSymb::ToJson () const
     {
-    Json::Value     value;
+    Json::Value value;
 
-    value["mode"]  = (int) GetMode();
-    value["flags"] = (int) GetFlags();
-    value["angle"] = JsonUtils::FromAngle(Angle::FromRadians(GetAngle()));
-    value["tint"]  = GetTint();
-    value["shift"] = GetShift();
+    value["mode"] = (int) GetMode();
+
+    if (Flags::None != GetFlags())
+        value["flags"] = (int) GetFlags();
+
+    if (0.0 != GetAngle())
+        value["angle"] = JsonUtils::FromAngle(Angle::FromRadians(GetAngle()));
+
+    if (0.0 != GetTint())
+        value["tint"] = GetTint();
+
+    if (0.0 != GetShift())
+        value["shift"] = GetShift();
 
     ColorDef    color;
     double      keyValue;
@@ -425,7 +433,8 @@ Json::Value     GradientSymb::ToJson () const
 
         value["keys"].append(keyJson);
         }
-    if (GetMode() == Mode::Thematic && m_thematicSettings.IsValid())
+
+    if (Mode::Thematic == GetMode() && m_thematicSettings.IsValid())
         value["thematicSettings"] = m_thematicSettings->ToJson();
     
     return value;

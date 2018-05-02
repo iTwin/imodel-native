@@ -4497,7 +4497,8 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
 
                 if (0 != ppfb->fill())
                     {
-                    value["transparency"] = Json::Value(ppfb->transparency());
+                    if (0.0 != ppfb->transparency())
+                        value["transparency"] = Json::Value(ppfb->transparency());
 
                     if (0 == ppfb->mode())
                         {

@@ -186,7 +186,8 @@ Json::Value PatternParams::ToJson() const
     {
     Json::Value value;
 
-    JsonUtils::DPoint3dToJson(value["origin"], m_origin);
+    if (!m_origin.IsEqual(DPoint3d::FromZero()))
+        JsonUtils::DPoint3dToJson(value["origin"], m_origin);
 
     if (!m_rMatrix.IsIdentity())
         {
@@ -195,10 +196,17 @@ Json::Value PatternParams::ToJson() const
         value["rotation"] = JsonUtils::YawPitchRollToJson(angles);
         }
 
-    value["space1"] = Json::Value(m_space1);
-    value["space2"] = Json::Value(m_space2);
-    value["angle1"] = JsonUtils::FromAngle(Angle::FromRadians(m_angle1));
-    value["angle2"] = JsonUtils::FromAngle(Angle::FromRadians(m_angle2));
+    if (0.0 != m_space1)
+        value["space1"] = Json::Value(m_space1);
+
+    if (0.0 != m_space2)
+        value["space2"] = Json::Value(m_space2);
+
+    if (0.0 != m_angle1)
+        value["angle1"] = JsonUtils::FromAngle(Angle::FromRadians(m_angle1));
+
+    if (0.0 != m_angle2)
+        value["angle2"] = JsonUtils::FromAngle(Angle::FromRadians(m_angle2));
 
     if (0.0 != m_scale && 1.0 != m_scale)
         value["scale"] = Json::Value(m_scale);
@@ -209,8 +217,11 @@ Json::Value PatternParams::ToJson() const
     if (m_useWeight)
         value["weight"] = Json::Value(m_weight);
 
-    value["invisibleBoundary"] = Json::Value(m_invisibleBoundary);
-    value["snappable"] = Json::Value(m_snappable);
+    if (m_invisibleBoundary)
+        value["invisibleBoundary"] = Json::Value(m_invisibleBoundary);
+
+    if (m_snappable)
+        value["snappable"] = Json::Value(m_snappable);
 
     if (m_symbolId.IsValid())
         value["symbolId"] = m_symbolId.ToHexStr();
@@ -221,9 +232,14 @@ Json::Value PatternParams::ToJson() const
             {
             Json::Value defLine;
 
-            defLine["angle"] = JsonUtils::FromAngle(Angle::FromRadians(line.m_angle));
-            JsonUtils::DPoint2dToJson(defLine["through"], line.m_through);
-            JsonUtils::DPoint2dToJson(defLine["offset"], line.m_offset);
+            if (0.0 != line.m_angle)
+                defLine["angle"] = JsonUtils::FromAngle(Angle::FromRadians(line.m_angle));
+
+            if (!line.m_through.IsEqual(DPoint2d::FromZero()))
+                JsonUtils::DPoint2dToJson(defLine["through"], line.m_through);
+
+            if (!line.m_offset.IsEqual(DPoint2d::FromZero()))
+                JsonUtils::DPoint2dToJson(defLine["offset"], line.m_offset);
 
             for (int iDash=0; iDash < line.m_nDashes; ++iDash)
                 defLine["dashes"].append(Json::Value(line.m_dashes[iDash]));
