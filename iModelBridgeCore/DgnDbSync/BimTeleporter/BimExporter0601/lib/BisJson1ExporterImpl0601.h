@@ -170,7 +170,6 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
 
     public:
         BisJson1ExporterImpl(wchar_t const* dbPath, wchar_t const* tempPath, wchar_t const* assetsPath);
-        ~BisJson1ExporterImpl();
         bool OpenDgnDb();
         void SetProgressMeter(DgnProgressMeter* meter) { m_meter = meter; }
         bool ExportDgnDb();
