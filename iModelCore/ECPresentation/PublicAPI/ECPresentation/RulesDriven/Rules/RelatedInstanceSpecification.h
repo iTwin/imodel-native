@@ -39,6 +39,9 @@ struct RelatedInstanceSpecification : HashableBase
         //! Reads specification from XML.
         ECPRESENTATION_EXPORT bool ReadXml(BeXmlNodeP xmlNode);
 
+        //! Reads specification from Json.
+        ECPRESENTATION_EXPORT bool ReadJson(JsonValueCR json);
+
         //! Writes the specification to xml node.
         ECPRESENTATION_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
 

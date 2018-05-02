@@ -555,3 +555,86 @@ bvector<PresentationRuleSetPtr> SupplementalRuleSetLocater::_LocateRuleSets(Utf8
         ruleset->SetRuleSetId(rulesetId);
     return rulesets;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<PresentationRuleSetPtr> SimpleRuleSetLocater::_LocateRuleSets(Utf8CP ruleSetId) const
+    {
+    bvector<PresentationRuleSetPtr> ruleSets;
+    if (ruleSetId == nullptr)
+        {
+        for (auto entry : m_cached)
+            {
+            BeAssert(entry.second->GetRuleSetId().Equals(entry.first));
+            ruleSets.push_back(entry.second);
+            }
+        return ruleSets;
+        }
+
+    auto iter = m_cached.find(ruleSetId);
+    if (iter != m_cached.end())
+        {
+        BeAssert(iter->second->GetRuleSetId().Equals(iter->first));
+        ruleSets.push_back(iter->second);
+        }
+
+    return ruleSets;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8String> SimpleRuleSetLocater::_GetRuleSetIds() const
+    {
+    bvector<Utf8String> ruleSetIds;
+    for (auto entry : m_cached)
+        {
+        BeAssert(entry.second->GetRuleSetId().Equals(entry.first));
+        ruleSetIds.push_back(entry.first);
+        }
+    return ruleSetIds;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimpleRuleSetLocater::AddRuleSet(PresentationRuleSetR ruleSet)
+    {
+    auto iter = m_cached.find(ruleSet.GetRuleSetId());
+    if (iter != m_cached.end())
+        {
+        BeAssert(iter->second->GetRuleSetId().Equals(iter->first));
+        OnRulesetDisposed(*iter->second);
+        m_cached.erase(iter);
+        }
+    
+    m_cached.Insert(ruleSet.GetRuleSetId(), &ruleSet);
+    OnRulesetCreated(ruleSet);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimpleRuleSetLocater::RemoveRuleSet(Utf8StringCR ruleSetId)
+    {
+    auto iter = m_cached.find(ruleSetId);
+    if (iter != m_cached.end())
+        {
+        BeAssert(iter->second->GetRuleSetId().Equals(iter->first));
+        OnRulesetDisposed(*iter->second);
+        m_cached.erase(iter);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimpleRuleSetLocater::Clear()
+    {
+    for (auto entry : m_cached)
+        {
+        OnRulesetDisposed(*entry.second);
+        }
+    m_cached.clear();
+    }

@@ -8,6 +8,7 @@
 #include <ECPresentationPch.h>
 
 #include "PresentationRuleXmlConstants.h"
+#include "PresentationRuleJsonConstants.h"
 #include <ECPresentation/RulesDriven/Rules/CommonTools.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
@@ -109,7 +110,7 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     //Required:
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_ruleSetId, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID))
         {
-        ECPRENSETATION_RULES_LOG.errorv ("Invalid PresentationRuleSetXML: %s element must contain a %s attribute", PRESENTATION_RULE_SET_XML_NODE_NAME, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID);
+        ECPRENSETATION_RULES_LOG.errorv (INVALID_XML, PRESENTATION_RULE_SET_XML_NODE_NAME, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID);
         return false;
         }
 
@@ -156,6 +157,45 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     CommonTools::LoadRulesFromXmlNode <ContentModifier>   (ruleSetNode, m_contentModifiers, CONTENTMODIEFIER_XML_NODE_NAME);
     CommonTools::LoadRulesFromXmlNode <InstanceLabelOverride> (ruleSetNode, m_instanceLabelOverrides, INSTANCE_LABEL_OVERRIDE_XML_NODE_NAME);
     
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PresentationRuleSet::ReadJson(JsonValueCR json)
+    {
+    //Required
+    m_ruleSetId = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESETID].asCString("");
+    if (m_ruleSetId.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, PRESENTATION_RULE_SET_JSON_NAME, PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULESETID);
+        return false;
+        }
+
+    //Optional
+    m_supportedSchemas = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS].asCString("");
+    m_isSupplemental = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_ISSUPPLEMENTAL].asBool(false);
+    m_supplementationPurpose = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_SUPPLEMENTATIONPURPOSE].asCString("");
+    m_versionMajor = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_VERSIONMAJOR].asInt(1);
+    m_versionMinor = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_VERSIONMINOR].asInt(0);
+
+    CommonTools::LoadRulesFromJson<ContentModifier>(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_CONTENTMODIFIERS], m_contentModifiers);
+    CommonTools::LoadRulesFromJson<UserSettingsGroup>(json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_USERSETTINGS], m_userSettings);
+
+    JsonValueCR rulesJson = json[PRESENTATION_RULE_SET_JSON_ATTRIBUTE_RULES];
+    CommonTools::LoadRulesFromJson<CheckBoxRule>(rulesJson, m_checkBoxRules, CHECKBOX_RULE_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<GroupingRule>(rulesJson, m_groupingRules, GROUPING_RULE_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<ImageIdOverride>(rulesJson, m_imageIdRules, IMAGE_ID_OVERRIDE_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<LabelOverride>(rulesJson, m_labelOverrides, LABEL_OVERRIDE_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<SortingRule>(rulesJson, m_sortingRules, SORTING_RULE_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<StyleOverride>(rulesJson, m_styleOverrides, STYLE_OVERRIDE_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<ChildNodeRule>(rulesJson, m_childNodesRules, CHILD_NODE_RULE_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<RootNodeRule>(rulesJson, m_rootNodesRules, ROOT_NODE_RULE_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<ContentRule>(rulesJson, m_contentRules, CONTENT_RULE_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<InstanceLabelOverride>(rulesJson, m_instanceLabelOverrides, INSTANCE_LABEL_OVERRIDE_JSON_TYPE);
+
+
     return true;
     }
 
@@ -264,6 +304,35 @@ bool PresentationRuleSet::WriteToXmlFile (WCharCP xmlFilePath)
     WriteXml (*xmlDom.get());
 
     return BEXML_Success == xmlDom->ToFile(xmlFilePath, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), BeXmlDom::FILE_ENCODING_Utf8);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonValue(JsonValueCR json)
+    {
+    ECPRENSETATION_RULES_LOG.debugv("About to read PrsentationRuleSet from Json::Value.");
+
+    PresentationRuleSetPtr ruleSet = new PresentationRuleSet();
+    if (json != Json::nullValue && ruleSet->ReadJson(json))
+        return ruleSet;
+    ECPRENSETATION_RULES_LOG.errorv("Failed to load PresentationRuleSet from json string.");
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationRuleSetPtr PresentationRuleSet::ReadFromJsonString(Utf8StringCR jsonString)
+    {
+    ECPRENSETATION_RULES_LOG.debugv("About to read PrsentationRuleSet from json string.");
+    Json::Value json = Json::Reader::DoParse(jsonString);
+
+    PresentationRuleSetPtr ruleSet = new PresentationRuleSet();
+    if (json != Json::nullValue && ruleSet->ReadJson(json))
+        return ruleSet;
+    ECPRENSETATION_RULES_LOG.errorv("Failed to load PresentationRuleSet from json string.");
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

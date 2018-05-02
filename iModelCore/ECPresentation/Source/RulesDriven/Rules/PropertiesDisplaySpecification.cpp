@@ -2,11 +2,12 @@
 |
 |     $Source: Source/RulesDriven/Rules/PropertiesDisplaySpecification.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/CommonTools.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
@@ -24,11 +25,33 @@ bool PropertiesDisplaySpecification::ReadXml(BeXmlNodeP xmlNode)
         m_isDisplayed = false;
     
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_propertyNames, PROPERTIES_DISPLAY_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAMES))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, m_isDisplayed ? DISPLAYED_PROPERTIES_SPECIFICATION_XML_NODE_NAME : HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME, PROPERTIES_DISPLAY_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAMES);
         return false;
-
+        }
     if (BEXML_Success != xmlNode->GetAttributeInt32Value(m_priority, PROPERTIES_DISPLAY_SPECIFICATION_XML_ATTRIBUTE_PRIORITY))
         m_priority = 1000;
     
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PropertiesDisplaySpecification::ReadJson(JsonValueCR json)
+    {
+    //Required
+    m_propertyNames = json[PROPERTIES_DISPLAY_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES].asCString("");
+    if (m_propertyNames.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, PROPERTIES_DISPLAY_SPECIFICATION_JSON_NAME, PROPERTIES_DISPLAY_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES);
+        return false;
+        }
+
+    //Optional
+    m_isDisplayed = json[PROPERTIES_DISPLAY_SPECIFICATION_JSON_ATTRIBUTE_ISDISPLAYED].asBool(true);
+    m_priority = json[PROPERTIES_DISPLAY_SPECIFICATION_JSON_ATTRIBUTE_PRIORITY].asInt(1000);
+
     return true;
     }
 

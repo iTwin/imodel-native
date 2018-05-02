@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
@@ -45,6 +46,15 @@ bool ImageIdOverride::_ReadXml (BeXmlNodeP xmlNode)
         m_imageIdExpression = "";
 
     return ConditionalCustomizationRule::_ReadXml (xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ImageIdOverride::_ReadJson(JsonValueCR json)
+    {
+    m_imageIdExpression = json[IMAGE_ID_OVERRIDE_JSON_ATTRIBUTE_IMAGEID].asCString("");
+    return ConditionalCustomizationRule::_ReadJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**

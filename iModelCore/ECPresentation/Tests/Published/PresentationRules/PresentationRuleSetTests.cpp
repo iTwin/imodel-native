@@ -16,6 +16,280 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct PresentationRuleSetTests : PresentationRulesTests
     {
     };
+    
+Utf8CP RuleSetJsonString = R"({
+        "ruleSetId": "Items",
+        "versionMajor": 5,
+        "versionMinor": 3,
+        "supportedSchemas": "supportedSchema",
+        "isSupplemental": false,
+        "supplementalPurpose": "supplementalPurpose",
+        "rules": [
+            {
+                "type": "RootNode",
+                "specifications": [
+                    {
+                        "type": "AllInstanceNodes",
+                        "groupByClass": true,
+                        "groupByLabel": true
+                    }
+                ]
+            },
+            {
+                "type": "RootNode",
+                "condition": "TestCondition",
+                "priority": 12,
+                "onlyIfNotHandled": true,
+                "specifications": [
+                    {
+                        "type": "AllInstanceNodes",
+                        "groupByClass": true,
+                        "groupByLabel": true
+                    }
+                ]
+            },
+            {
+                "type": "ChildNode",
+                "specifications": [
+                    {
+                        "type": "AllInstanceNodes",
+                        "groupByClass": true,
+                        "groupByLabel": true
+                    }
+                ]
+            },
+            {
+                "type": "ChildNode",
+                "condition": "ParentNode.IsSearchNode",
+                "priority": 58,
+                "onlyIfNotHandled": true,
+                "specifications": [
+                    {
+                        "type": "SearchResultInstanceNodes",
+                        "groupByClass": true,
+                        "groupByLabel": true
+                    }
+                ]
+            },
+            {
+                "type": "Content",
+                "specifications": [
+                    {
+                        "type": "ContentInstancesOfSpecificClasses",
+                        "classNames": "dgn:Model",
+                        "arePolymorphic": true,
+                        "showImages": true,
+                        "calculatedPropertiesSpecification": [
+                            {
+                                "label": "Label1",
+                                "priority": 1000,
+                                "value": "Value1"
+                            },
+                            {
+                                "label": "Label2",
+                                "priority": 2000,
+                                "value": "Value2"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "type": "Content",
+                "condition": "ParentNode.IsClassNode",
+                "priority": 97,
+                "onlyIfNotHandled": true
+            },
+            {
+                "type": "ImageId",
+                "imageIdExpression": "NewImageId1"
+            },
+            {
+                "type": "ImageId",
+                "condition": "ParentNode.IsClassGroupingNode",
+                "imageIdExpression": "NewImageId2",
+                "priority": 0
+            },
+            {
+                "type": "CheckBox"
+            },
+            {
+                "type": "Grouping",
+                "schemaName": "schemaName",
+                "className": "className"
+            },
+            {
+                "type": "InstanceLabel"
+            },
+            {
+                "type": "Label"
+            },
+            {
+                "type": "Sorting"
+            },
+            {
+                "type": "Style"
+            }
+        ],
+        "contentModifiers": [
+            { },
+            { }
+        ],
+        "userSettings": [
+            { },
+            { }
+        ]
+    })";
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRuleSetTests, LoadsFromJsonString)
+    {
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(RuleSetJsonString);
+
+    EXPECT_FALSE(ruleSet.IsNull());
+    EXPECT_STREQ("Items", ruleSet->GetRuleSetId().c_str());
+    EXPECT_STREQ("supportedSchema", ruleSet->GetSupportedSchemas().c_str());
+    EXPECT_FALSE(ruleSet->GetIsSupplemental());
+    EXPECT_EQ(5, ruleSet->GetVersionMajor());
+    EXPECT_EQ(3, ruleSet->GetVersionMinor());
+
+    EXPECT_EQ(1, ruleSet->GetCheckBoxRules().size());
+    EXPECT_EQ(1, ruleSet->GetGroupingRules().size());
+    EXPECT_EQ(1, ruleSet->GetInstanceLabelOverrides().size());
+    EXPECT_EQ(1, ruleSet->GetLabelOverrides().size());
+    EXPECT_EQ(1, ruleSet->GetSortingRules().size());
+    EXPECT_EQ(1, ruleSet->GetStyleOverrides().size());
+    EXPECT_EQ(2, ruleSet->GetContentModifierRules().size());
+    EXPECT_EQ(2, ruleSet->GetUserSettings().size());
+
+    // Check for root node rules
+    EXPECT_EQ(2, ruleSet->GetRootNodesRules().size());
+    EXPECT_STREQ("", ruleSet->GetRootNodesRules()[0]->GetCondition().c_str());
+    EXPECT_EQ(1000, ruleSet->GetRootNodesRules()[0]->GetPriority());
+    EXPECT_FALSE(ruleSet->GetRootNodesRules()[0]->GetOnlyIfNotHandled());
+    EXPECT_STREQ("TestCondition", ruleSet->GetRootNodesRules()[1]->GetCondition().c_str());
+    EXPECT_EQ(12, ruleSet->GetRootNodesRules()[1]->GetPriority());
+    EXPECT_TRUE(ruleSet->GetRootNodesRules()[1]->GetOnlyIfNotHandled());
+
+    // Check for child node rules
+    EXPECT_EQ(2, ruleSet->GetChildNodesRules().size());
+    EXPECT_STREQ("", ruleSet->GetChildNodesRules()[0]->GetCondition().c_str());
+    EXPECT_EQ(1000, ruleSet->GetChildNodesRules()[0]->GetPriority());
+    EXPECT_FALSE(ruleSet->GetChildNodesRules()[0]->GetOnlyIfNotHandled());
+    EXPECT_STREQ("ParentNode.IsSearchNode", ruleSet->GetChildNodesRules()[1]->GetCondition().c_str());
+    EXPECT_EQ(58, ruleSet->GetChildNodesRules()[1]->GetPriority());
+    EXPECT_TRUE(ruleSet->GetChildNodesRules()[1]->GetOnlyIfNotHandled());
+
+    // Check for content rules
+    EXPECT_EQ(2, ruleSet->GetContentRules().size());    
+    EXPECT_STREQ("", ruleSet->GetContentRules()[0]->GetCondition().c_str());
+    EXPECT_EQ(1000, ruleSet->GetContentRules()[0]->GetPriority());
+    EXPECT_FALSE(ruleSet->GetContentRules()[0]->GetOnlyIfNotHandled());
+    EXPECT_EQ(1, ruleSet->GetContentRules()[0]->GetSpecifications().size()); 
+    EXPECT_EQ(2, ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties().size()); 
+    CalculatedPropertiesSpecificationP specification1 = ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties()[0];
+    EXPECT_EQ("Label1", specification1->GetLabel());
+    EXPECT_EQ(1000, specification1->GetPriority());
+    EXPECT_EQ("Value1", specification1->GetValue());         
+    CalculatedPropertiesSpecificationP specification2 = ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties()[1];
+    EXPECT_EQ("Label2", specification2->GetLabel());
+    EXPECT_EQ(2000, specification2->GetPriority());
+    EXPECT_EQ("Value2", specification2->GetValue());
+
+    EXPECT_EQ(2, ruleSet->GetContentRules().size());    
+    EXPECT_STREQ("ParentNode.IsClassNode", ruleSet->GetContentRules()[1]->GetCondition().c_str());
+    EXPECT_EQ(97, ruleSet->GetContentRules()[1]->GetPriority());
+    EXPECT_TRUE(ruleSet->GetContentRules()[1]->GetOnlyIfNotHandled());
+
+    // Check for ImageIdOverride rules
+    EXPECT_EQ(2, ruleSet->GetImageIdOverrides().size());
+    EXPECT_STREQ("", ruleSet->GetImageIdOverrides()[0]->GetCondition().c_str());
+    EXPECT_STREQ("NewImageId1", ruleSet->GetImageIdOverrides()[0]->GetImageId().c_str());
+    EXPECT_EQ(1000, ruleSet->GetImageIdOverrides()[0]->GetPriority());
+
+    EXPECT_STREQ("ParentNode.IsClassGroupingNode", ruleSet->GetImageIdOverrides()[1]->GetCondition().c_str());
+    EXPECT_STREQ("NewImageId2", ruleSet->GetImageIdOverrides()[1]->GetImageId().c_str());
+    EXPECT_EQ(0, ruleSet->GetImageIdOverrides()[1]->GetPriority());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRuleSetTests, LoadsFromJsonValue)
+    {
+    Json::Value json = Json::Reader::DoParse(RuleSetJsonString);
+    EXPECT_FALSE(json.isNull());
+
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonValue(json);
+
+    EXPECT_FALSE(ruleSet.IsNull());
+    EXPECT_STREQ("Items", ruleSet->GetRuleSetId().c_str());
+    EXPECT_STREQ("supportedSchema", ruleSet->GetSupportedSchemas().c_str());
+    EXPECT_FALSE(ruleSet->GetIsSupplemental());
+    EXPECT_EQ(5, ruleSet->GetVersionMajor());
+    EXPECT_EQ(3, ruleSet->GetVersionMinor());
+
+    EXPECT_EQ(1, ruleSet->GetCheckBoxRules().size());
+    EXPECT_EQ(1, ruleSet->GetGroupingRules().size());
+    EXPECT_EQ(1, ruleSet->GetInstanceLabelOverrides().size());
+    EXPECT_EQ(1, ruleSet->GetLabelOverrides().size());
+    EXPECT_EQ(1, ruleSet->GetSortingRules().size());
+    EXPECT_EQ(1, ruleSet->GetStyleOverrides().size());
+    EXPECT_EQ(2, ruleSet->GetContentModifierRules().size());
+    EXPECT_EQ(2, ruleSet->GetUserSettings().size());
+
+    // Check for root node rules
+    EXPECT_EQ(2, ruleSet->GetRootNodesRules().size());
+    EXPECT_STREQ("", ruleSet->GetRootNodesRules()[0]->GetCondition().c_str());
+    EXPECT_EQ(1000, ruleSet->GetRootNodesRules()[0]->GetPriority());
+    EXPECT_FALSE(ruleSet->GetRootNodesRules()[0]->GetOnlyIfNotHandled());
+    EXPECT_STREQ("TestCondition", ruleSet->GetRootNodesRules()[1]->GetCondition().c_str());
+    EXPECT_EQ(12, ruleSet->GetRootNodesRules()[1]->GetPriority());
+    EXPECT_TRUE(ruleSet->GetRootNodesRules()[1]->GetOnlyIfNotHandled());
+
+    // Check for child node rules
+    EXPECT_EQ(2, ruleSet->GetChildNodesRules().size());
+    EXPECT_STREQ("", ruleSet->GetChildNodesRules()[0]->GetCondition().c_str());
+    EXPECT_EQ(1000, ruleSet->GetChildNodesRules()[0]->GetPriority());
+    EXPECT_FALSE(ruleSet->GetChildNodesRules()[0]->GetOnlyIfNotHandled());
+    EXPECT_STREQ("ParentNode.IsSearchNode", ruleSet->GetChildNodesRules()[1]->GetCondition().c_str());
+    EXPECT_EQ(58, ruleSet->GetChildNodesRules()[1]->GetPriority());
+    EXPECT_TRUE(ruleSet->GetChildNodesRules()[1]->GetOnlyIfNotHandled());
+
+    // Check for content rules
+    EXPECT_EQ(2, ruleSet->GetContentRules().size());    
+    EXPECT_STREQ("", ruleSet->GetContentRules()[0]->GetCondition().c_str());
+    EXPECT_EQ(1000, ruleSet->GetContentRules()[0]->GetPriority());
+    EXPECT_FALSE(ruleSet->GetContentRules()[0]->GetOnlyIfNotHandled());
+    EXPECT_EQ(1, ruleSet->GetContentRules()[0]->GetSpecifications().size()); 
+    EXPECT_EQ(2, ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties().size()); 
+    CalculatedPropertiesSpecificationP specification1 = ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties()[0];
+    EXPECT_EQ("Label1", specification1->GetLabel());
+    EXPECT_EQ(1000, specification1->GetPriority());
+    EXPECT_EQ("Value1", specification1->GetValue());         
+    CalculatedPropertiesSpecificationP specification2 = ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties()[1];
+    EXPECT_EQ("Label2", specification2->GetLabel());
+    EXPECT_EQ(2000, specification2->GetPriority());
+    EXPECT_EQ("Value2", specification2->GetValue());
+
+    EXPECT_EQ(2, ruleSet->GetContentRules().size());    
+    EXPECT_STREQ("ParentNode.IsClassNode", ruleSet->GetContentRules()[1]->GetCondition().c_str());
+    EXPECT_EQ(97, ruleSet->GetContentRules()[1]->GetPriority());
+    EXPECT_TRUE(ruleSet->GetContentRules()[1]->GetOnlyIfNotHandled());
+
+    // Check for ImageIdOverride rules
+    EXPECT_EQ(2, ruleSet->GetImageIdOverrides().size());
+    EXPECT_STREQ("", ruleSet->GetImageIdOverrides()[0]->GetCondition().c_str());
+    EXPECT_STREQ("NewImageId1", ruleSet->GetImageIdOverrides()[0]->GetImageId().c_str());
+    EXPECT_EQ(1000, ruleSet->GetImageIdOverrides()[0]->GetPriority());
+
+    EXPECT_STREQ("ParentNode.IsClassGroupingNode", ruleSet->GetImageIdOverrides()[1]->GetCondition().c_str());
+    EXPECT_STREQ("NewImageId2", ruleSet->GetImageIdOverrides()[1]->GetImageId().c_str());
+    EXPECT_EQ(0, ruleSet->GetImageIdOverrides()[1]->GetPriority());
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               06/2012
@@ -116,6 +390,50 @@ TEST_F(PresentationRuleSetTests, LoadsFromXml)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                    Aidas.Kilinskas                   04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRuleSetTests, LoadsFromJsonStringWithDefaultValues)
+    {
+    Utf8CP jsonString = R"({"ruleSetId":"Items"})";
+
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(jsonString);
+    EXPECT_FALSE(ruleSet.IsNull());
+    EXPECT_STREQ("Items", ruleSet->GetRuleSetId().c_str());
+    EXPECT_STREQ("", ruleSet->GetSupportedSchemas().c_str());
+    EXPECT_STREQ("", ruleSet->GetSupplementationPurpose().c_str());
+    EXPECT_STREQ("", ruleSet->GetPreferredImage().c_str());
+    EXPECT_STREQ("", ruleSet->GetSearchClasses().c_str());
+    EXPECT_STREQ("", ruleSet->GetExtendedData().c_str());
+    EXPECT_FALSE(ruleSet->GetIsSupplemental());
+    EXPECT_TRUE(ruleSet->GetIsSearchEnabled());
+    EXPECT_EQ(1, ruleSet->GetVersionMajor());
+    EXPECT_EQ(0, ruleSet->GetVersionMinor());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                    Aidas.Kilinskas                   04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRuleSetTests, LoadsFromJsonValueWithDefaultValues)
+    {
+    Utf8CP jsonString = R"({"ruleSetId":"Items"})";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonValue(json);
+    EXPECT_FALSE(ruleSet.IsNull());
+    EXPECT_STREQ("Items", ruleSet->GetRuleSetId().c_str());
+    EXPECT_STREQ("", ruleSet->GetSupportedSchemas().c_str());
+    EXPECT_STREQ("", ruleSet->GetSupplementationPurpose().c_str());
+    EXPECT_STREQ("", ruleSet->GetPreferredImage().c_str());
+    EXPECT_STREQ("", ruleSet->GetSearchClasses().c_str());
+    EXPECT_STREQ("", ruleSet->GetExtendedData().c_str());
+    EXPECT_FALSE(ruleSet->GetIsSupplemental());
+    EXPECT_TRUE(ruleSet->GetIsSearchEnabled());
+    EXPECT_EQ(1, ruleSet->GetVersionMajor());
+    EXPECT_EQ(0, ruleSet->GetVersionMinor());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PresentationRuleSetTests, LoadsFromXmlWithDefaultValues)
@@ -140,6 +458,17 @@ TEST_F(PresentationRuleSetTests, LoadsFromXmlWithDefaultValues)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                    Aidas.Kilinskas                   04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRuleSetTests, LoadsFromJsonStringFailsWhenJsonIsInvalid)
+    {
+    Utf8CP jsonString ="{";
+
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(jsonString);
+    EXPECT_TRUE(ruleSet.IsNull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PresentationRuleSetTests, LoadsFromXmlFailsWhenXmlIsInvalid)
@@ -149,6 +478,17 @@ TEST_F(PresentationRuleSetTests, LoadsFromXmlFailsWhenXmlIsInvalid)
         )";
 
     PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromXmlString(ruleSetXmlString);
+    EXPECT_TRUE(ruleSet.IsNull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRuleSetTests, LoadsFromJsonFailsWhenRuleSetIdIsNotSpecified)
+    {
+    Utf8CP jsonString = "{}";
+
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(jsonString);
     EXPECT_TRUE(ruleSet.IsNull());
     }
 

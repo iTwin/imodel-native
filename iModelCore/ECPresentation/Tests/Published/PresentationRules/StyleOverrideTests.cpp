@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/StyleOverrideTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -17,6 +17,42 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct StyleOverrideTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(StyleOverrideTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "foreColor": "fore",
+        "backColor": "back",
+        "fontStyle": "font"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    StyleOverride override;
+    EXPECT_TRUE(override.ReadJson(json));
+    EXPECT_STREQ("fore", override.GetForeColor().c_str());
+    EXPECT_STREQ("back", override.GetBackColor().c_str());
+    EXPECT_STREQ("font", override.GetFontStyle().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(StyleOverrideTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    StyleOverride override;
+    EXPECT_TRUE(override.ReadJson(json));
+    EXPECT_STREQ("", override.GetForeColor().c_str());
+    EXPECT_STREQ("", override.GetBackColor().c_str());
+    EXPECT_STREQ("", override.GetFontStyle().c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017

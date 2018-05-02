@@ -2,11 +2,12 @@
 |
 |     $Source: Source/RulesDriven/Rules/SelectedNodeInstancesSpecification.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
@@ -74,6 +75,19 @@ bool SelectedNodeInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
 
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_acceptablePolymorphically, SELECTED_NODE_INSTANCES_SPECIFICATION_XML_ATTRIBUTE_ACCEPTABLEPOLYMORPHICALLY))
         m_acceptablePolymorphically = false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SelectedNodeInstancesSpecification::_ReadJson(JsonValueCR json)
+    {
+    m_onlyIfNotHandled = json[COMMON_JSON_ATTRIBUTE_ONLYIFNOTHANDLED].asBool(false);
+    m_acceptableSchemaName = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLESCHEMANAME].asCString("");
+    m_acceptableClassNames = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLECLASSNAMES].asCString("");
+    m_acceptablePolymorphically = json[SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_ATTRIBUTE_ACCEPTABLEPOLYMORPHICALLY].asBool(false);
 
     return true;
     }

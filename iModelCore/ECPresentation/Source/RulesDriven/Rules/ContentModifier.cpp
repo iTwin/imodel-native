@@ -2,11 +2,12 @@
 |
 |     $Source: Source/RulesDriven/Rules/ContentModifier.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
@@ -74,7 +75,27 @@ bool ContentModifier::_ReadXml(BeXmlNodeP xmlNode)
         CommonTools::LoadSpecificationsFromXmlNode<PropertyEditorsSpecification, PropertyEditorsSpecificationList>(xmlPropertyNode, m_propertyEditors, PROPERTY_EDITORS_SPECIFICATION_XML_CHILD_NAME);
     
     return true;
-    }   
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentModifier::_ReadJson(JsonValueCR json)
+    {
+    m_className = json[CONTENTMODIEFIER_JSON_ATTRIBUTE_CLASSNAME].asCString("");
+    m_schemaName = json[CONTENTMODIEFIER_JSON_ATTRIBUTE_SCHEMANAME].asCString("");
+
+    CommonTools::LoadSpecificationsFromJson<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>
+        (json[CONTENTMODIEFIER_JSON_ATTRIBUTE_CALCULATEDPROPERTIES], m_calculatedProperties);
+    CommonTools::LoadSpecificationsFromJson<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>
+        (json[CONTENTMODIEFIER_JSON_ATTRIBUTE_RELATEDPROPERTIES], m_relatedProperties);
+    CommonTools::LoadSpecificationsFromJson<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>
+        (json[CONTENTMODIEFIER_JSON_ATTRIBUTE_PROPERTYDISPLAYSPECIFICATIONS], m_propertiesDisplaySpecification);
+    CommonTools::LoadSpecificationsFromJson<PropertyEditorsSpecification, PropertyEditorsSpecificationList>
+        (json[CONTENTMODIEFIER_JSON_ATTRIBUTE_PROPERTYEDITORS], m_propertyEditors);
+
+    return true;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                 05/2017

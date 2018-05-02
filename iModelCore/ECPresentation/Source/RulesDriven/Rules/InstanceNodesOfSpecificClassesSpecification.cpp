@@ -2,11 +2,12 @@
 |
 |     $Source: Source/RulesDriven/Rules/InstanceNodesOfSpecificClassesSpecification.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
@@ -64,7 +65,7 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_classNames, COMMON_XML_ATTRIBUTE_CLASSNAMES))
         {
-        ECPRENSETATION_RULES_LOG.errorv ("Invalid InstanceNodesOfSpecificClassesSpecificationXML: %s element must contain a %s attribute", INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES);
+        ECPRENSETATION_RULES_LOG.errorv (INVALID_XML, INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES);
         return false;
         }
 
@@ -83,6 +84,29 @@ bool InstanceNodesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNode)
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_instanceFilter, COMMON_XML_ATTRIBUTE_INSTANCEFILTER))
         m_instanceFilter = "";
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceNodesOfSpecificClassesSpecification::_ReadJson(JsonValueCR json)
+    {
+    //Required:
+    m_classNames = json[COMMON_JSON_ATTRIBUTE_CLASSNAMES].asCString("");
+    if (m_classNames.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_NAME, COMMON_JSON_ATTRIBUTE_CLASSNAMES);
+        return false;
+        }
+
+    //Optional:
+    m_arePolymorphic = json[COMMON_JSON_ATTRIBUTE_AREPOLYMORPHIC].asBool(false);
+    m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
+    m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
+    m_showEmptyGroups = json[COMMON_JSON_ATTRIBUTE_SHOWEMPTYGROUPS].asBool(false);
+    m_instanceFilter = json[COMMON_JSON_ATTRIBUTE_INSTANCEFILTER].asCString("");
 
     return true;
     }

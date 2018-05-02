@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
+#include "PresentationRuleCommonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/CommonTools.h>
 #include <ECPresentation/RulesDriven/Rules/RelatedInstanceNodesSpecification.h>
@@ -18,11 +19,11 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 +---------------+---------------+---------------+---------------+---------------+------*/
 RuleTargetTree CommonTools::ParseTargetTreeString (Utf8CP targetTreeString)
     {
-    if (0 == strcmp (targetTreeString, COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE))
+    if (0 == strcmp (targetTreeString, COMMON_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE))
         return TargetTree_MainTree;
-    else  if (0 == strcmp (targetTreeString, COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_SELECTIONTREE))
+    else  if (0 == strcmp (targetTreeString, COMMON_ATTRIBUTE_VALUE_TARGET_TREE_SELECTIONTREE))
         return TargetTree_SelectionTree;
-    else  if (0 == strcmp (targetTreeString, COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_BOTH))
+    else  if (0 == strcmp (targetTreeString, COMMON_ATTRIBUTE_VALUE_TARGET_TREE_BOTH))
         return TargetTree_Both;
     else
         return TargetTree_MainTree; //default
@@ -34,13 +35,13 @@ RuleTargetTree CommonTools::ParseTargetTreeString (Utf8CP targetTreeString)
 Utf8CP CommonTools::FormatTargetTreeString (RuleTargetTree targetTree)
     {
     if (TargetTree_MainTree == targetTree)
-        return COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE;
+        return COMMON_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE;
     else if (TargetTree_SelectionTree == targetTree)
-        return COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_SELECTIONTREE;
+        return COMMON_ATTRIBUTE_VALUE_TARGET_TREE_SELECTIONTREE;
     else if (TargetTree_Both == targetTree)
-        return COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_BOTH;
+        return COMMON_ATTRIBUTE_VALUE_TARGET_TREE_BOTH;
     else
-        return COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE;
+        return COMMON_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -48,11 +49,11 @@ Utf8CP CommonTools::FormatTargetTreeString (RuleTargetTree targetTree)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RequiredRelationDirection CommonTools::ParseRequiredDirectionString (Utf8CP value)
     {
-    if (0 == strcmp (value, COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BOTH))
+    if (0 == strcmp (value, COMMON_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BOTH))
         return RequiredRelationDirection_Both;
-    else  if (0 == strcmp (value, COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_FORWARD))
+    else  if (0 == strcmp (value, COMMON_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_FORWARD))
         return RequiredRelationDirection_Forward;
-    else  if (0 == strcmp (value, COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BACKWARD))
+    else  if (0 == strcmp (value, COMMON_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BACKWARD))
         return RequiredRelationDirection_Backward;
     else
         return RequiredRelationDirection_Both; //default
@@ -64,13 +65,13 @@ RequiredRelationDirection CommonTools::ParseRequiredDirectionString (Utf8CP valu
 Utf8CP CommonTools::FormatRequiredDirectionString (RequiredRelationDirection direction)
     {
     if (RequiredRelationDirection_Both == direction)
-        return COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BOTH;
+        return COMMON_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BOTH;
     else if (RequiredRelationDirection_Forward == direction)
-        return COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_FORWARD;
+        return COMMON_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_FORWARD;
     else if (RequiredRelationDirection_Backward == direction)
-        return COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BACKWARD;
+        return COMMON_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BACKWARD;
     else
-        return COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BOTH;
+        return COMMON_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BOTH;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -78,9 +79,9 @@ Utf8CP CommonTools::FormatRequiredDirectionString (RequiredRelationDirection dir
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelationshipMeaning CommonTools::ParseRelationshipMeaningString(Utf8CP value)
     {
-    if (0 == strcmp(value, COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_SAMEINSTANCE))
+    if (0 == strcmp(value, COMMON_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_SAMEINSTANCE))
         return RelationshipMeaning::SameInstance;
-    if (0 == strcmp(value, COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE))
+    if (0 == strcmp(value, COMMON_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE))
         return RelationshipMeaning::RelatedInstance;
     return RelationshipMeaning::RelatedInstance; //default
     }
@@ -91,10 +92,10 @@ RelationshipMeaning CommonTools::ParseRelationshipMeaningString(Utf8CP value)
 Utf8CP CommonTools::FormatRelationshipMeaningString(RelationshipMeaning meaning)
     {
     if (RelationshipMeaning::SameInstance == meaning)
-        return COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_SAMEINSTANCE;
+        return COMMON_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_SAMEINSTANCE;
     if (RelationshipMeaning::RelatedInstance == meaning)
-        return COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE;
-    return COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE;
+        return COMMON_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE;
+    return COMMON_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE;
     }
 
 /*---------------------------------------------------------------------------------**//**

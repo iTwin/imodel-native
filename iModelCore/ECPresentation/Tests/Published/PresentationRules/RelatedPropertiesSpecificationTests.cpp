@@ -19,6 +19,54 @@ struct RelatedPropertiesSpecificationsTests : PresentationRulesTests
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+	    "relationshipClassNames": "Relationship:Names",
+	    "relatedClassNames": "Related:Class,Names",
+	    "requiredDirection": "Backward",
+	    "propertyNames": "Property,Names",
+	    "relationshipMeaning": "SameInstance",
+	    "isPolymorphic": true,
+	    "nestedRelatedProperties": [{}]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    RelatedPropertiesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("Related:Class,Names", spec.GetRelatedClassNames().c_str());
+    EXPECT_STREQ("Relationship:Names", spec.GetRelationshipClassNames().c_str());
+    EXPECT_STREQ("Property,Names", spec.GetPropertyNames().c_str());
+    EXPECT_EQ(RequiredRelationDirection_Backward, spec.GetRequiredRelationDirection());
+    EXPECT_EQ(RelationshipMeaning::SameInstance, spec.GetRelationshipMeaning());
+    EXPECT_TRUE(spec.IsPolymorphic());
+    EXPECT_EQ(1, spec.GetNestedRelatedProperties().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    RelatedPropertiesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("", spec.GetRelatedClassNames().c_str());
+    EXPECT_STREQ("", spec.GetRelationshipClassNames().c_str());
+    EXPECT_STREQ("", spec.GetPropertyNames().c_str());
+    EXPECT_EQ(RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
+    EXPECT_EQ(RelationshipMeaning::RelatedInstance, spec.GetRelationshipMeaning());
+    EXPECT_FALSE(spec.IsPolymorphic());
+    EXPECT_EQ(0, spec.GetNestedRelatedProperties().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelatedPropertiesSpecificationsTests, LoadsFromXml)

@@ -7,17 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
-
-#define COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE                              "MainTree"
-#define COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_SELECTIONTREE                         "SelectionTree"
-#define COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_BOTH                                  "Both"
-
-#define COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BOTH                           "Both"
-#define COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_FORWARD                        "Forward"
-#define COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BACKWARD                       "Backward"
-
-#define COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_SAMEINSTANCE                 "SameInstance"
-#define COMMON_XML_ATTRIBUTE_VALUE_RELATIONSHIP_MEANING_RELATEDINSTANCE              "RelatedInstance"
+#define INVALID_XML                                                                   "Invalid %s xml node: Attibute %s is not specified or has incorrect value."
 
 #define COMMON_XML_ATTRIBUTE_PRIORITY                                                 "Priority"
 #define COMMON_XML_ATTRIBUTE_GROUPBYCLASS                                             "GroupByClass"

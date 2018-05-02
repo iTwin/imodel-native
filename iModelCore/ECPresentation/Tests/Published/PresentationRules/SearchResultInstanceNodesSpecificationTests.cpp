@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/SearchResultInstanceNodesSpecificationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -37,6 +37,26 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, CopyConstructorCopiesSpecifi
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "schemaName": "TestSchema",
+        "className": "TestClass",
+        "query": "QueryString"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    StringQuerySpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("TestSchema", spec.GetSchemaName().c_str());
+    EXPECT_STREQ("TestClass", spec.GetClassName().c_str());
+    EXPECT_STREQ("QueryString", spec.GetQuery().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_LoadsFromXml)
@@ -53,6 +73,54 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_Loa
     EXPECT_STREQ("TestSchema", spec.GetSchemaName().c_str());
     EXPECT_STREQ("TestClass", spec.GetClassName().c_str());
     EXPECT_STREQ("QueryString", spec.GetQuery().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_LoadFromJsonFailsWhenSchemaNameIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "className": "TestClass",
+        "query": "QueryString"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    StringQuerySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_LoadFromJsonFailsWhenClassNameIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "schemaName": "TestSchema",
+        "query": "QueryString"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    StringQuerySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_LoadFromJsonFailsWhenQueryStringIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "schemaName": "TestSchema",
+        "className": "TestClass"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    StringQuerySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -104,6 +172,26 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, StringQuerySpecification_Loa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecification_LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "schemaName": "TestSchema",
+        "className": "TestClass",
+        "parentPropertyName": "parent"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    ECPropertyValueQuerySpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("TestSchema", spec.GetSchemaName().c_str());
+    EXPECT_STREQ("TestClass", spec.GetClassName().c_str());
+    EXPECT_STREQ("parent", spec.GetParentPropertyName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecification_LoadFromXml)
@@ -120,6 +208,54 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecific
     EXPECT_STREQ("TestSchema", spec.GetSchemaName().c_str());
     EXPECT_STREQ("TestClass", spec.GetClassName().c_str());
     EXPECT_STREQ("parent", spec.GetParentPropertyName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecification_LoadFromJsonFailsWhenSchemaNameIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "className": "TestClass",
+        "parentPropertyName": "parent"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ECPropertyValueQuerySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecification_LoadFromJsonFailsWhenClassNameIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "schemaName": "TestSchema",
+        "parentPropertyName": "parent"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ECPropertyValueQuerySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecification_LoadFromJsonFailsWhenParentNameIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "schemaName": "TestSchema",
+        "className": "TestClass"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ECPropertyValueQuerySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -168,6 +304,56 @@ TEST_F(SearchResultInstanceNodesSpecificationTests, ECPropertyValueQuerySpecific
     
     ECPropertyValueQuerySpecification spec;
     EXPECT_FALSE(spec.ReadXml(xml->GetRootElement()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "groupByClass": false,
+        "groupByLabel": false,
+        "queries": [
+            {
+                "type": "StringQuery",
+                "schemaName": "TestSchema",
+                "className": "TestClass",
+                "query": "QueryString"
+            },
+            {
+                "type": "ECPropertyQuery",
+                "schemaName": "TestSchema",
+                "className": "TestClass",
+                "parentPropertyName": "parent"
+            }
+        ]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    
+    SearchResultInstanceNodesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_FALSE(spec.GetGroupByClass());
+    EXPECT_FALSE(spec.GetGroupByLabel());
+    EXPECT_EQ(2, spec.GetQuerySpecifications().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SearchResultInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    SearchResultInstanceNodesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_TRUE(spec.GetGroupByClass());
+    EXPECT_TRUE(spec.GetGroupByLabel());
+    EXPECT_TRUE(spec.GetQuerySpecifications().empty());
     }
 
 /*---------------------------------------------------------------------------------**//**

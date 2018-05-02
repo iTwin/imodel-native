@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/LocalizationResourceKeyDefinition.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -52,6 +52,15 @@ bool LocalizationResourceKeyDefinition::_ReadXml (BeXmlNodeP xmlNode)
 
     return true;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LocalizationResourceKeyDefinition::_ReadJson(JsonValueCR json)
+    {
+    return false;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

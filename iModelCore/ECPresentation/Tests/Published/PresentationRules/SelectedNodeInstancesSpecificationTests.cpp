@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/SelectedNodeInstancesSpecificationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -16,6 +16,46 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct SelectedNodeInstancesSpecificationTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SelectedNodeInstancesSpecificationTests, LoadFromJson)
+    {
+    static Utf8CP jsonString = R"({
+	    "onlyIfNotHandled": true,
+	    "acceptableSchemaName": "TestSchema",
+	    "acceptableClassNames": "ClassA",
+	    "acceptablePolymorphically": true
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    SelectedNodeInstancesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_TRUE(spec.GetOnlyIfNotHandled());
+    EXPECT_TRUE(spec.GetAcceptablePolymorphically());
+    EXPECT_STREQ("TestSchema", spec.GetAcceptableSchemaName().c_str());
+    EXPECT_STREQ("ClassA", spec.GetAcceptableClassNames().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SelectedNodeInstancesSpecificationTests, LoadFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    SelectedNodeInstancesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_FALSE(spec.GetOnlyIfNotHandled());
+    EXPECT_FALSE(spec.GetAcceptablePolymorphically());
+    EXPECT_STREQ("", spec.GetAcceptableSchemaName().c_str());
+    EXPECT_STREQ("", spec.GetAcceptableClassNames().c_str());
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Aidas.Vaiksnoras                12/2017

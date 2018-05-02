@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
+
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/CommonTools.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
@@ -15,16 +17,14 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubCondition::SubCondition () : m_condition ("")
-    {
-    }
+SubCondition::SubCondition() : m_condition("")
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubCondition::SubCondition (Utf8StringCR condition) : m_condition (condition)
-    {
-    }
+SubCondition::SubCondition(Utf8StringCR condition) : m_condition(condition)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
@@ -39,37 +39,63 @@ SubCondition::SubCondition(SubConditionCR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubCondition::~SubCondition ()
+SubCondition::~SubCondition()
     {
-    CommonTools::FreePresentationRules (m_subConditions);
-    CommonTools::FreePresentationRules (m_specifications);
+    CommonTools::FreePresentationRules(m_subConditions);
+    CommonTools::FreePresentationRules(m_specifications);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SubCondition::ReadXml (BeXmlNodeP xmlNode)
+bool SubCondition::ReadXml(BeXmlNodeP xmlNode)
     {
-    if (BEXML_Success != xmlNode->GetAttributeStringValue (m_condition, PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION))
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_condition, PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION))
         m_condition = "";
 
-    CommonTools::LoadSpecificationsFromXmlNode<SubCondition, SubConditionList> (xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<SubCondition, SubConditionList>(xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME);
 
-    for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
+    for (BeXmlNodeP child = xmlNode->GetFirstChild(BEXMLNODE_Element); NULL != child; child = child->GetNextSibling(BEXMLNODE_Element))
         {
-        if (0 == BeStringUtilities::Stricmp (child->GetName (), ALL_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<AllInstanceNodesSpecification, ChildNodeSpecificationList> (child, m_specifications);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), ALL_RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<AllRelatedInstanceNodesSpecification, ChildNodeSpecificationList> (child, m_specifications);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), CUSTOM_NODE_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<CustomNodeSpecification, ChildNodeSpecificationList> (child, m_specifications);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<InstanceNodesOfSpecificClassesSpecification, ChildNodeSpecificationList> (child, m_specifications);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<RelatedInstanceNodesSpecification, ChildNodeSpecificationList> (child, m_specifications);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<SearchResultInstanceNodesSpecification, ChildNodeSpecificationList> (child, m_specifications);
+        if (0 == BeStringUtilities::Stricmp(child->GetName(), ALL_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<AllInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), ALL_RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<AllRelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), CUSTOM_NODE_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<CustomNodeSpecification, ChildNodeSpecificationList>(child, m_specifications);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<InstanceNodesOfSpecificClassesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<RelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<SearchResultInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
         }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SubCondition::ReadJson(JsonValueCR json)
+    {
+    m_condition = json[PRESENTATION_RULE_JSON_ATTRIBUTE_CONDITION].asCString("");
+
+    CommonTools::LoadSpecificationsFromJson<SubCondition, SubConditionList>(json[SUB_CONDITION_JSON_ATTRIBUTE_SUBCONDITIONS], m_subConditions);
+
+    JsonValueCR specificationsJson = json[SUB_CONDITION_JSON_ATTRIBUTE_SPECIFICATIONS];
+    CommonTools::LoadRulesFromJson<AllInstanceNodesSpecification, ChildNodeSpecificationList>
+        (specificationsJson, m_specifications, ALL_INSTANCE_NODES_SPECIFICATION_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<AllRelatedInstanceNodesSpecification, ChildNodeSpecificationList>
+        (specificationsJson, m_specifications, ALL_RELATED_INSTANCE_NODES_SPECIFICATION_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<CustomNodeSpecification, ChildNodeSpecificationList>
+        (specificationsJson, m_specifications, CUSTOM_NODE_SPECIFICATION_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<InstanceNodesOfSpecificClassesSpecification, ChildNodeSpecificationList>
+        (specificationsJson, m_specifications, INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<RelatedInstanceNodesSpecification, ChildNodeSpecificationList>
+        (specificationsJson, m_specifications, RELATED_INSTANCE_NODES_SPECIFICATION_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<SearchResultInstanceNodesSpecification, ChildNodeSpecificationList>
+        (specificationsJson, m_specifications, SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_JSON_TYPE);
 
     return true;
     }
@@ -77,25 +103,25 @@ bool SubCondition::ReadXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SubCondition::WriteXml (BeXmlNodeP xmlNode) const
+void SubCondition::WriteXml(BeXmlNodeP xmlNode) const
     {
-    BeXmlNodeP ruleNode = xmlNode->AddEmptyElement (SUB_CONDITION_XML_NODE_NAME);
+    BeXmlNodeP ruleNode = xmlNode->AddEmptyElement(SUB_CONDITION_XML_NODE_NAME);
 
-    ruleNode->AddAttributeStringValue (PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION, m_condition.c_str ());
+    ruleNode->AddAttributeStringValue(PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION, m_condition.c_str());
 
-    CommonTools::WriteRulesToXmlNode<SubCondition,           SubConditionList>           (ruleNode, m_subConditions);
-    CommonTools::WriteRulesToXmlNode<ChildNodeSpecification, ChildNodeSpecificationList> (ruleNode, m_specifications);
+    CommonTools::WriteRulesToXmlNode<SubCondition, SubConditionList>(ruleNode, m_subConditions);
+    CommonTools::WriteRulesToXmlNode<ChildNodeSpecification, ChildNodeSpecificationList>(ruleNode, m_specifications);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR SubCondition::GetCondition (void) { return m_condition;  }
+Utf8StringCR SubCondition::GetCondition(void) { return m_condition; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubConditionList const& SubCondition::GetSubConditions (void) const { return m_subConditions;  }
+SubConditionList const& SubCondition::GetSubConditions(void) const { return m_subConditions; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
@@ -110,7 +136,7 @@ void SubCondition::AddSubCondition(SubConditionR subCondition)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeSpecificationList const& SubCondition::GetSpecifications (void) const { return m_specifications; }
+ChildNodeSpecificationList const& SubCondition::GetSpecifications(void) const { return m_specifications; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
@@ -150,17 +176,15 @@ MD5 SubCondition::_ComputeHash(Utf8CP parentHash) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeRule::ChildNodeRule () : m_targetTree (TargetTree_MainTree), m_stopFurtherProcessing (false)
-    {
-    }
+ChildNodeRule::ChildNodeRule() : m_targetTree(TargetTree_MainTree), m_stopFurtherProcessing(false)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeRule::ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
-    : ConditionalPresentationRule(condition, priority, onlyIfNotHandled), m_targetTree (targetTree), m_stopFurtherProcessing (false)
-    {
-    }
+ChildNodeRule::ChildNodeRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
+    : ConditionalPresentationRule(condition, priority, onlyIfNotHandled), m_targetTree(targetTree), m_stopFurtherProcessing(false)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
@@ -176,17 +200,17 @@ ChildNodeRule::ChildNodeRule(ChildNodeRuleCR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeRule::~ChildNodeRule ()
+ChildNodeRule::~ChildNodeRule()
     {
-    CommonTools::FreePresentationRules (m_subConditions);
-    CommonTools::FreePresentationRules (m_specifications);
-    CommonTools::FreePresentationRules (m_customizationRules);
+    CommonTools::FreePresentationRules(m_subConditions);
+    CommonTools::FreePresentationRules(m_specifications);
+    CommonTools::FreePresentationRules(m_customizationRules);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP ChildNodeRule::_GetXmlElementName () const
+CharCP ChildNodeRule::_GetXmlElementName() const
     {
     return CHILD_NODE_RULE_XML_NODE_NAME;
     }
@@ -194,32 +218,32 @@ CharCP ChildNodeRule::_GetXmlElementName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeRule::_ReadXml (BeXmlNodeP xmlNode)
+bool ChildNodeRule::_ReadXml(BeXmlNodeP xmlNode)
     {
     m_targetTree = TargetTree_MainTree;
     Utf8String ruleTargetTreeString = "";
-    if (BEXML_Success == xmlNode->GetAttributeStringValue (ruleTargetTreeString, CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE))
-        m_targetTree = CommonTools::ParseTargetTreeString (ruleTargetTreeString.c_str ());
+    if (BEXML_Success == xmlNode->GetAttributeStringValue(ruleTargetTreeString, CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE))
+        m_targetTree = CommonTools::ParseTargetTreeString(ruleTargetTreeString.c_str());
 
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_stopFurtherProcessing, COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING))
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_stopFurtherProcessing, COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING))
         m_stopFurtherProcessing = false;
 
-    CommonTools::LoadSpecificationsFromXmlNode<SubCondition, SubConditionList> (xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<SubCondition, SubConditionList>(xmlNode, m_subConditions, SUB_CONDITION_XML_NODE_NAME);
 
-    for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
+    for (BeXmlNodeP child = xmlNode->GetFirstChild(BEXMLNODE_Element); NULL != child; child = child->GetNextSibling(BEXMLNODE_Element))
         {
-        if (0 == BeStringUtilities::Stricmp (child->GetName (), ALL_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<AllInstanceNodesSpecification, ChildNodeSpecificationList> (child, m_specifications);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), ALL_RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<AllRelatedInstanceNodesSpecification, ChildNodeSpecificationList> (child, m_specifications);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), CUSTOM_NODE_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<CustomNodeSpecification, ChildNodeSpecificationList> (child, m_specifications);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<InstanceNodesOfSpecificClassesSpecification, ChildNodeSpecificationList> (child, m_specifications);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<RelatedInstanceNodesSpecification, ChildNodeSpecificationList> (child, m_specifications);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<SearchResultInstanceNodesSpecification, ChildNodeSpecificationList> (child, m_specifications);
+        if (0 == BeStringUtilities::Stricmp(child->GetName(), ALL_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<AllInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), ALL_RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<AllRelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), CUSTOM_NODE_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<CustomNodeSpecification, ChildNodeSpecificationList>(child, m_specifications);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<InstanceNodesOfSpecificClassesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), RELATED_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<RelatedInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<SearchResultInstanceNodesSpecification, ChildNodeSpecificationList>(child, m_specifications);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), GROUPING_RULE_XML_NODE_NAME))
             CommonTools::LoadRuleFromXmlNode<GroupingRule, ChildNodeCustomizationRuleList>(child, m_customizationRules);
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), CHECKBOX_RULE_XML_NODE_NAME))
@@ -236,38 +260,80 @@ bool ChildNodeRule::_ReadXml (BeXmlNodeP xmlNode)
             CommonTools::LoadRuleFromXmlNode<ImageIdOverride, ChildNodeCustomizationRuleList>(child, m_customizationRules);
         }
 
-    return ConditionalPresentationRule::_ReadXml (xmlNode);
+    return ConditionalPresentationRule::_ReadXml(xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Eligijus.Mauragas               10/2012
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChildNodeRule::_WriteXml (BeXmlNodeP xmlNode) const
+bool ChildNodeRule::_ReadJson(JsonValueCR json)
     {
-    xmlNode->AddAttributeStringValue (CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE, CommonTools::FormatTargetTreeString (m_targetTree));
-    xmlNode->AddAttributeBooleanValue (COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING, m_stopFurtherProcessing);
+    m_stopFurtherProcessing = json[COMMON_JSON_ATTRIBUTE_STOPFURTHERPROCESSING].asBool(false);
 
-    CommonTools::WriteRulesToXmlNode<SubCondition, SubConditionList> (xmlNode, m_subConditions);
-    CommonTools::WriteRulesToXmlNode<ChildNodeSpecification, ChildNodeSpecificationList> (xmlNode, m_specifications);
-    CommonTools::WriteRulesToXmlNode<CustomizationRule, ChildNodeCustomizationRuleList> (xmlNode, m_customizationRules);
-    ConditionalPresentationRule::_WriteXml (xmlNode);
+    CommonTools::LoadSpecificationsFromJson<SubCondition, SubConditionList>(json[CHILD_NODE_RULE_JSON_ATTRIBUTE_SUBCONDITIONS], m_subConditions);
+
+    JsonValueCR specificationsJson = json[CHILD_NODE_RULE_JSON_ATTRIBUTE_SPECIFICATIONS];
+
+    CommonTools::LoadRulesFromJson<AllInstanceNodesSpecification, ChildNodeSpecificationList>
+        (specificationsJson, m_specifications, ALL_INSTANCE_NODES_SPECIFICATION_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<AllRelatedInstanceNodesSpecification, ChildNodeSpecificationList>
+        (specificationsJson, m_specifications, ALL_RELATED_INSTANCE_NODES_SPECIFICATION_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<CustomNodeSpecification, ChildNodeSpecificationList>
+        (specificationsJson, m_specifications, CUSTOM_NODE_SPECIFICATION_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<InstanceNodesOfSpecificClassesSpecification, ChildNodeSpecificationList>
+        (specificationsJson, m_specifications, INSTANCE_NODES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<RelatedInstanceNodesSpecification, ChildNodeSpecificationList>
+        (specificationsJson, m_specifications, RELATED_INSTANCE_NODES_SPECIFICATION_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<SearchResultInstanceNodesSpecification, ChildNodeSpecificationList>
+        (specificationsJson, m_specifications, SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_JSON_TYPE);
+
+    JsonValueCR customizationRulesJson = json[CHILD_NODE_RULE_JSON_ATTRIBUTE_CUSTOMIZATIONRULES];
+
+    CommonTools::LoadSpecificationsFromJson<GroupingRule, ChildNodeCustomizationRuleList>
+        (customizationRulesJson, m_customizationRules, GROUPING_RULE_JSON_TYPE);
+    CommonTools::LoadSpecificationsFromJson<CheckBoxRule, ChildNodeCustomizationRuleList>
+        (customizationRulesJson, m_customizationRules, CHECKBOX_RULE_JSON_TYPE);
+    CommonTools::LoadSpecificationsFromJson<StyleOverride, ChildNodeCustomizationRuleList>
+        (customizationRulesJson, m_customizationRules, STYLE_OVERRIDE_JSON_TYPE);
+    CommonTools::LoadSpecificationsFromJson<LabelOverride, ChildNodeCustomizationRuleList>
+        (customizationRulesJson, m_customizationRules, LABEL_OVERRIDE_JSON_TYPE);
+    CommonTools::LoadSpecificationsFromJson<SortingRule, ChildNodeCustomizationRuleList>
+        (customizationRulesJson, m_customizationRules, SORTING_RULE_JSON_TYPE);
+    CommonTools::LoadSpecificationsFromJson<ImageIdOverride, ChildNodeCustomizationRuleList>
+        (customizationRulesJson, m_customizationRules, IMAGE_ID_OVERRIDE_JSON_TYPE);
+
+    return ConditionalPresentationRule::_ReadJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RuleTargetTree ChildNodeRule::GetTargetTree (void) const { return m_targetTree; }
+void ChildNodeRule::_WriteXml(BeXmlNodeP xmlNode) const
+    {
+    xmlNode->AddAttributeStringValue(CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE, CommonTools::FormatTargetTreeString(m_targetTree));
+    xmlNode->AddAttributeBooleanValue(COMMON_XML_ATTRIBUTE_STOPFURTHERPROCESSING, m_stopFurtherProcessing);
+
+    CommonTools::WriteRulesToXmlNode<SubCondition, SubConditionList>(xmlNode, m_subConditions);
+    CommonTools::WriteRulesToXmlNode<ChildNodeSpecification, ChildNodeSpecificationList>(xmlNode, m_specifications);
+    CommonTools::WriteRulesToXmlNode<CustomizationRule, ChildNodeCustomizationRuleList>(xmlNode, m_customizationRules);
+    ConditionalPresentationRule::_WriteXml(xmlNode);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubConditionList const& ChildNodeRule::GetSubConditions (void) const { return m_subConditions;  }
+RuleTargetTree ChildNodeRule::GetTargetTree(void) const { return m_targetTree; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Eligijus.Mauragas               10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+SubConditionList const& ChildNodeRule::GetSubConditions(void) const { return m_subConditions; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChildNodeRule::AddSubCondition(SubConditionR subCondition)
-    { 
+    {
     InvalidateHash();
     subCondition.SetParent(this);
     m_subConditions.push_back(&subCondition);
@@ -276,7 +342,7 @@ void ChildNodeRule::AddSubCondition(SubConditionR subCondition)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeSpecificationList const& ChildNodeRule::GetSpecifications (void) const { return m_specifications; }
+ChildNodeSpecificationList const& ChildNodeRule::GetSpecifications(void) const { return m_specifications; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
@@ -306,12 +372,12 @@ void ChildNodeRule::AddCustomizationRule(CustomizationRuleR customizationRule)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChildNodeRule::SetStopFurtherProcessing (bool stopFurtherProcessing) { m_stopFurtherProcessing = stopFurtherProcessing; }
+void ChildNodeRule::SetStopFurtherProcessing(bool stopFurtherProcessing) { m_stopFurtherProcessing = stopFurtherProcessing; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ChildNodeRule::GetStopFurtherProcessing (void) const { return m_stopFurtherProcessing; }
+bool ChildNodeRule::GetStopFurtherProcessing(void) const { return m_stopFurtherProcessing; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
@@ -345,23 +411,21 @@ MD5 ChildNodeRule::_ComputeHash(Utf8CP parentHash) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RootNodeRule::RootNodeRule() 
+RootNodeRule::RootNodeRule()
     : ChildNodeRule(), m_autoExpand(false)
-    {
-    }
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RootNodeRule::RootNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand)
-    : ChildNodeRule (condition, priority, onlyIfNotHandled, targetTree), m_autoExpand (autoExpand)
-    {
-    }
+RootNodeRule::RootNodeRule(Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand)
+    : ChildNodeRule(condition, priority, onlyIfNotHandled, targetTree), m_autoExpand(autoExpand)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-CharCP RootNodeRule::_GetXmlElementName () const
+CharCP RootNodeRule::_GetXmlElementName() const
     {
     return ROOT_NODE_RULE_XML_NODE_NAME;
     }
@@ -369,27 +433,36 @@ CharCP RootNodeRule::_GetXmlElementName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    dmitrijus.tiazlovas             04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RootNodeRule::_ReadXml (BeXmlNodeP xmlNode)
+bool RootNodeRule::_ReadXml(BeXmlNodeP xmlNode)
     {
-    if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_autoExpand, ROOT_NODE_RULE_XML_ATTRIBUTE_AUTOEXPAND))
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_autoExpand, ROOT_NODE_RULE_XML_ATTRIBUTE_AUTOEXPAND))
         m_autoExpand = false;
 
-    return ChildNodeRule::_ReadXml (xmlNode);
+    return ChildNodeRule::_ReadXml(xmlNode);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    dmitrijus.tiazlovas             04/2013
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RootNodeRule::_WriteXml (BeXmlNodeP xmlNode) const
+bool RootNodeRule::_ReadJson(JsonValueCR json)
     {
-    xmlNode->AddAttributeBooleanValue (ROOT_NODE_RULE_XML_ATTRIBUTE_AUTOEXPAND, m_autoExpand);
-    ChildNodeRule::_WriteXml (xmlNode);
+    m_autoExpand = json[ROOT_NODE_RULE_JSON_ATTRIBUTE_AUTOEXPAND].asBool(false);
+    return ChildNodeRule::_ReadJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    dmitrijus.tiazlovas             04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RootNodeRule::GetAutoExpand (void) const { return m_autoExpand; }
+void RootNodeRule::_WriteXml(BeXmlNodeP xmlNode) const
+    {
+    xmlNode->AddAttributeBooleanValue(ROOT_NODE_RULE_XML_ATTRIBUTE_AUTOEXPAND, m_autoExpand);
+    ChildNodeRule::_WriteXml(xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    dmitrijus.tiazlovas             04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RootNodeRule::GetAutoExpand(void) const { return m_autoExpand; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017

@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
@@ -63,6 +64,19 @@ bool CheckBoxRule::_ReadXml (BeXmlNodeP xmlNode)
         m_isEnabled = "";
 
     return ConditionalCustomizationRule::_ReadXml (xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CheckBoxRule::_ReadJson(JsonValueCR json)
+    {
+    m_propertyName = json[CHECKBOX_RULE_JSON_ATTRIBUTE_PROPERTYNAME].asCString("");
+    m_useInversedPropertyValue = json[CHECKBOX_RULE_JSON_ATTRIBUTE_USEINVERSEDPROPERTYVALUE].asBool(false);
+    m_isEnabled = json[CHECKBOX_RULE_JSON_ATTRIBUTE_ISENABLED].asCString("");
+    m_defaultValue = json[CHECKBOX_RULE_JSON_ATTRIBUTE_DEFAULTVALUE].asBool(false);
+
+    return ConditionalCustomizationRule::_ReadJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**

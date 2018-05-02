@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/RelatedInstanceNodesSpecificationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -16,6 +16,61 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct RelatedInstanceNodesSpecificationTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedInstanceNodesSpecificationTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "groupByClass": false,
+        "groupByLabel": false,
+        "skipRelatedLevel": 3,
+        "instanceFilter": "filter",
+        "supportedSchemas": "TestSchema",
+        "relationshipClassNames": "ClassAHasClassB",
+        "relatedClassNames": "ClassB",
+        "requiredDirection": "Backward"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    RelatedInstanceNodesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    // EXPECT_TRUE(spec.GetGroupByRelationship());
+    EXPECT_FALSE(spec.GetGroupByClass());
+    EXPECT_FALSE(spec.GetGroupByLabel());
+    // EXPECT_TRUE(spec.GetShowEmptyGroups());
+    EXPECT_EQ(3, spec.GetSkipRelatedLevel());
+    EXPECT_STREQ("filter", spec.GetInstanceFilter().c_str());
+    EXPECT_STREQ("TestSchema", spec.GetSupportedSchemas().c_str());
+    EXPECT_STREQ("ClassAHasClassB", spec.GetRelationshipClassNames().c_str());
+    EXPECT_STREQ("ClassB", spec.GetRelatedClassNames().c_str());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Backward, spec.GetRequiredRelationDirection());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultvalues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    RelatedInstanceNodesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    // EXPECT_FALSE(spec.GetGroupByRelationship());
+    EXPECT_TRUE(spec.GetGroupByClass());
+    EXPECT_TRUE(spec.GetGroupByLabel());
+    // EXPECT_FALSE(spec.GetShowEmptyGroups());
+    EXPECT_EQ(0, spec.GetSkipRelatedLevel());
+    EXPECT_STREQ("", spec.GetInstanceFilter().c_str());
+    EXPECT_STREQ("", spec.GetSupportedSchemas().c_str());
+    EXPECT_STREQ("", spec.GetRelationshipClassNames().c_str());
+    EXPECT_STREQ("", spec.GetRelatedClassNames().c_str());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Aidas.Vaiksnoras                12/2017

@@ -62,6 +62,9 @@ struct GroupingRule : public ConditionalCustomizationRule
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void        _WriteXml (BeXmlNodeP xmlNode) const override;
 
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT virtual bool        _ReadJson(JsonValueCR json) override;
+
         //!Accepts customization rule visitor
         ECPRESENTATION_EXPORT void _Accept(CustomizationRuleVisitor& visitor)const override;
 
@@ -136,6 +139,9 @@ protected:
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
     virtual bool _ReadXml (BeXmlNodeP xmlNode) = 0;
 
+    //! Reads rule information from Json, returns true if it can read it successfully.
+    virtual bool _ReadJson(JsonValueCR json) = 0;
+
     //! Writes rule information to given XmlNode.
     virtual void _WriteXml (BeXmlNodeP xmlNode) const = 0;
     
@@ -158,9 +164,12 @@ public:
 
     //! Allows the visitor to visit this group specification.
     ECPRESENTATION_EXPORT void Accept(GroupingRuleSpecificationVisitor& visitor) const;
-    
+
     //! Reads group specification from xml node.
     ECPRESENTATION_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
+
+    //! Reads group specification from json.
+    ECPRESENTATION_EXPORT bool                     ReadJson(JsonValueCR json);
 
     //! Writes group specification to xml node.
     ECPRESENTATION_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode) const;
@@ -185,6 +194,9 @@ struct EXPORT_VTABLE_ATTRIBUTE SameLabelInstanceGroup : public GroupSpecificatio
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
+
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT virtual bool             _ReadJson(JsonValueCR json) override;
 
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
@@ -224,6 +236,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassGroup : public GroupSpecification
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
+
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT virtual bool             _ReadJson(JsonValueCR json) override;
 
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
@@ -286,6 +301,9 @@ struct EXPORT_VTABLE_ATTRIBUTE PropertyGroup : public GroupSpecification
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT virtual bool             _ReadXml (BeXmlNodeP xmlNode) override;
+
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT virtual bool             _ReadJson(JsonValueCR json) override;
 
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void             _WriteXml (BeXmlNodeP xmlNode) const override;
@@ -370,6 +388,9 @@ struct PropertyRangeGroupSpecification : HashableBase
 
         //! Reads specification from xml.
         ECPRESENTATION_EXPORT bool                     ReadXml (BeXmlNodeP xmlNode);
+
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT virtual bool             ReadJson(JsonValueCR json);
 
         //! Writes specification to xml node.
         ECPRESENTATION_EXPORT void                     WriteXml (BeXmlNodeP parentXmlNode) const;

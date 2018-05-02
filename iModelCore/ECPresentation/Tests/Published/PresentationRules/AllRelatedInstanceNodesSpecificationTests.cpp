@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/AllRelatedInstanceNodesSpecificationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -17,6 +17,49 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct AllRelatedInstanceNodesSpecificationTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AllRelatedInstanceNodesSpecificationTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "groupByClass": false, 
+        "groupByLabel": false,
+        "skipRelatedLevel": 3, 
+        "supportedSchemas": "TestSchema", 
+        "requiredDirection": "Forward"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    AllRelatedInstanceNodesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_FALSE(spec.GetGroupByClass());
+    EXPECT_FALSE(spec.GetGroupByLabel());
+    EXPECT_EQ(3, spec.GetSkipRelatedLevel());
+    EXPECT_STREQ("TestSchema", spec.GetSupportedSchemas().c_str());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Forward, spec.GetRequiredRelationDirection());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AllRelatedInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    AllRelatedInstanceNodesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_TRUE(spec.GetGroupByClass());
+    EXPECT_FALSE(spec.GetGroupByRelationship());
+    EXPECT_TRUE(spec.GetGroupByLabel());
+    EXPECT_EQ(0, spec.GetSkipRelatedLevel());
+    EXPECT_STREQ("", spec.GetSupportedSchemas().c_str());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017

@@ -45,6 +45,14 @@ void RenameNodeRule::_WriteXml (BeXmlNodeP xmlNode) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RenameNodeRule::_ReadJson(JsonValueCR json)
+    {
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Aidas.Vaiksnoras                      04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RenameNodeRule::_Accept(CustomizationRuleVisitor& visitor) const {visitor._Visit(*this);}

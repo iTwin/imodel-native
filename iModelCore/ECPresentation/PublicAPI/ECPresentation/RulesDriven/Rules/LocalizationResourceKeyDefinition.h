@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/LocalizationResourceKeyDefinition.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -29,6 +29,9 @@ struct LocalizationResourceKeyDefinition : public PresentationKey
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT virtual bool    _ReadXml (BeXmlNodeP xmlNode) override;
+
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT virtual bool    _ReadJson(JsonValueCR json) override;
 
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void    _WriteXml (BeXmlNodeP xmlNode) const override;

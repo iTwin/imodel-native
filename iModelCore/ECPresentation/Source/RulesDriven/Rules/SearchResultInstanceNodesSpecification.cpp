@@ -2,11 +2,12 @@
 |
 |     $Source: Source/RulesDriven/Rules/SearchResultInstanceNodesSpecification.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
@@ -85,6 +86,24 @@ bool SearchResultInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
     return true;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SearchResultInstanceNodesSpecification::_ReadJson(JsonValueCR json)
+    {
+    m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
+    m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
+    
+    JsonValueCR queriesJson = json[SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_JSON_ATTRIBUTE_QUERIES];
+    CommonTools::LoadSpecificationsFromJson<StringQuerySpecification, QuerySpecificationList>
+        (queriesJson, m_querySpecifications, STRING_QUERY_SPECIFICATION_JSON_TYPE);
+    CommonTools::LoadSpecificationsFromJson<ECPropertyValueQuerySpecification, QuerySpecificationList>
+        (queriesJson, m_querySpecifications, ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_TYPE);
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -150,10 +169,39 @@ MD5 SearchResultInstanceNodesSpecification::_ComputeHash(Utf8CP parentHash) cons
 bool QuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_schemaName, SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, _GetXmlElementName(), SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME);
         return false;
+        }
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_className, SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, _GetXmlElementName(), SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME);
         return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool QuerySpecification::_ReadJson(JsonValueCR json)
+    {
+    //Required
+    m_schemaName = json[SEARCH_QUERY_SPECIFICATION_JSON_ATTRIBUTE_SCHEMA_NAME].asCString("");
+    if (m_schemaName.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, SEARCH_QUERY_SPECIFICATION_JSON_NAME, SEARCH_QUERY_SPECIFICATION_JSON_ATTRIBUTE_SCHEMA_NAME);
+        return false;
+        }
+
+    m_className = json[SEARCH_QUERY_SPECIFICATION_JSON_ATTRIBUTE_CLASS_NAME].asCString("");
+    if (m_className.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, SEARCH_QUERY_SPECIFICATION_JSON_NAME, SEARCH_QUERY_SPECIFICATION_JSON_ATTRIBUTE_CLASS_NAME);
+        return false;
+        }
 
     return true;
     }
@@ -196,8 +244,28 @@ bool StringQuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
         return false;
 
     if (BEXML_Success != xmlNode->GetContent(m_query) || m_query.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, STRING_QUERY_SPECIFICATION_XML_NODE_NAME, "Query");
+        return false;
+        }
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool StringQuerySpecification::_ReadJson(JsonValueCR json)
+    {
+    if (!QuerySpecification::_ReadJson(json))
         return false;
 
+    //Required
+    m_query = json[STRING_QUERY_SPECIFICATION_JSON_ATTRIBUTE_QUERY].asCString("");
+    if (m_query.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, STRING_QUERY_SPECIFICATION_JSON_NAME, STRING_QUERY_SPECIFICATION_JSON_ATTRIBUTE_QUERY);
+        return false;
+        }
     return true;
     }
 
@@ -235,8 +303,29 @@ bool ECPropertyValueQuerySpecification::_ReadXml(BeXmlNodeP xmlNode)
         return false;
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_parentPropertyName, ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME, ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME);
+        return false;
+        }
+    return true;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECPropertyValueQuerySpecification::_ReadJson(JsonValueCR json)
+    {
+    if (!QuerySpecification::_ReadJson(json))
         return false;
 
+    //Required
+    m_parentPropertyName = json[ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_ATTRIBUTE_PARENT_PROPERTY_NAME].asCString("");
+    if (m_parentPropertyName.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_NAME, ECPROPERTY_VALUE_QUERY_SPECIFICATION_JSON_ATTRIBUTE_PARENT_PROPERTY_NAME);
+        return false;
+        }
     return true;
     }
 

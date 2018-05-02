@@ -2,14 +2,16 @@
 |
 |     $Source: Source/RulesDriven/Rules/AllInstanceNodesSpecification.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
@@ -68,6 +70,18 @@ bool AllInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
 
     return true;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool AllInstanceNodesSpecification::_ReadJson(JsonValueCR json)
+    {
+    m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
+    m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
+    m_supportedSchemas = json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS].asCString("");
+
+    return true;
+    } 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

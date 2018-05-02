@@ -4,13 +4,11 @@
     <xs:element name="PresentationRuleSet">
         <xs:complexType>
             <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element ref="LocalizationResourceKeyDefinition"/>
                 <xs:element ref="UserSettings"/>
                 <xs:element ref="ImageIdOverride"/>
                 <xs:element ref="LabelOverride"/>
                 <xs:element ref="StyleOverride"/>
                 <xs:element ref="GroupingRule"/>
-                <xs:element ref="RenameNodeRule"/>
                 <xs:element ref="CheckBoxRule"/>
                 <xs:element ref="SortingRule"/>
                 <xs:element ref="RootNodeRule"/>
@@ -24,10 +22,6 @@
             <xs:attribute name="SupplementationPurpose" type="xs:string"/>
             <xs:attribute default="1" name="VersionMajor" type="xs:int"/>
             <xs:attribute default="0" name="VersionMinor" type="xs:int"/>
-            <xs:attribute name="PreferredImage" type="xs:string"/>
-            <xs:attribute default="true" name="IsSearchEnabled" type="xs:boolean"/>
-            <xs:attribute name="SearchClasses" type="xs:string"/>
-            <xs:attribute name="ExtendedData" type="xs:string"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ImageIdOverride">
@@ -49,14 +43,6 @@
             <xs:attribute name="ForeColor" type="xs:string"/>
             <xs:attribute name="BackColor" type="xs:string"/>
             <xs:attribute name="FontStyle" type="xs:string"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="LocalizationResourceKeyDefinition">
-        <xs:complexType mixed="true">
-            <xs:attribute name="Id" type="xs:string" use="required"/>
-            <xs:attribute name="Key" type="xs:string" use="required"/>
-            <xs:attribute name="DefaultValue" type="xs:string" use="required"/>
-            <xs:attributeGroup ref="PriorityAttribute"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="UserSettings">
@@ -123,7 +109,6 @@
                 <xs:element ref="SearchResultInstances"/>
                 <xs:element ref="RelatedInstances"/>
                 <xs:element ref="GroupingRule"/>
-                <xs:element ref="RenameNodeRule"/>
                 <xs:element ref="CheckBoxRule"/>
                 <xs:element ref="SortingRule"/>
                 <xs:element ref="StyleOverride"/>
@@ -131,15 +116,6 @@
                 <xs:element ref="ImageIdOverride"/>
             </xs:choice>
             <xs:attributeGroup ref="CommonRuleAttributes"/>
-            <xs:attribute default="MainTree" name="TargetTree">
-                <xs:simpleType>
-                    <xs:restriction base="xs:string">
-                        <xs:enumeration value="MainTree" />
-                        <xs:enumeration value="SelectionTree" />
-                        <xs:enumeration value="Both" />
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:attribute>
             <xs:attribute name="StopFurtherProcessing" type="xs:boolean" default="false"/>
         </xs:complexType>
     </xs:element>
@@ -165,19 +141,6 @@
                 <xs:element ref="ContentInstancesOfSpecificClasses"/>
                 <xs:element ref="ContentRelatedInstances"/>
             </xs:choice>
-            <xs:attributeGroup ref="CommonRuleAttributes"/>
-            <xs:attribute name ="CustomControl" type="xs:string"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="DisplayRelatedItems">
-        <xs:complexType mixed="true">
-            <xs:attribute name="LogicalChildren" type="xs:boolean" default="true"/>
-            <xs:attribute name="NestingDepth" type="xs:int" default="0"/>
-            <xs:attribute name="RelationshipClasses" type="xs:string" />
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="RenameNodeRule">
-        <xs:complexType mixed="true">
             <xs:attributeGroup ref="CommonRuleAttributes"/>
         </xs:complexType>
     </xs:element>

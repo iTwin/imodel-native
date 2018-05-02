@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/ContentRelatedInstancesSpecificationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -16,6 +16,51 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct ContentRelatedInstancesSpecificationTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentRelatedInstancesSpecificationTests, LoadFromJson)
+    {
+    static Utf8CP jsonString = R"({
+	    "relationshipClassNames": "MySchemaName:ClassA,ClassB",
+	    "relatedClassNames": "MySchemaName:ClassA,ClassB",
+	    "requiredDirection": "Both",
+	    "skipRelatedLevel": 321,
+	    "instanceFilter": "this.PropertyName = 10",
+	    "isRecursive": true
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    ContentRelatedInstancesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_EQ(321, spec.GetSkipRelatedLevel());
+    EXPECT_TRUE(spec.IsRecursive());
+    EXPECT_STREQ("MySchemaName:ClassA,ClassB", spec.GetRelationshipClassNames().c_str());
+    EXPECT_STREQ("MySchemaName:ClassA,ClassB", spec.GetRelatedClassNames().c_str());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
+    EXPECT_STREQ("this.PropertyName = 10", spec.GetInstanceFilter().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentRelatedInstancesSpecificationTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    ContentRelatedInstancesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_EQ(0, spec.GetSkipRelatedLevel());
+    EXPECT_FALSE(spec.IsRecursive());
+    EXPECT_TRUE(spec.GetRelationshipClassNames().empty());
+    EXPECT_TRUE(spec.GetRelatedClassNames().empty());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRequiredRelationDirection());
+    EXPECT_TRUE(spec.GetInstanceFilter().empty());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Aidas.Vaiksnoras                12/2017

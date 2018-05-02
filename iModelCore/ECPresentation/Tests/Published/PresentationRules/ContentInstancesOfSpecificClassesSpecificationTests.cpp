@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/ContentInstancesOfSpecificClassesSpecificationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -16,6 +16,58 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct ContentInstancesOfSpecificClassesSpecificationTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+	    "classNames": "TestSchema:TestClass",
+	    "arePolymorphic": true,
+	    "instanceFilter": "filter"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    ContentInstancesOfSpecificClassesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("TestSchema:TestClass", spec.GetClassNames().c_str());
+    EXPECT_TRUE(spec.GetArePolymorphic());
+    EXPECT_STREQ("filter", spec.GetInstanceFilter().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadFromJsonFailsWhenClassNamesAreNotSpecified)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ContentInstancesOfSpecificClassesSpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentInstancesOfSpecificClassesSpecificationTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = R"({
+	    "classNames": "TestSchema:TestClass"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    ContentInstancesOfSpecificClassesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+
+    EXPECT_STREQ("TestSchema:TestClass", spec.GetClassNames().c_str());
+    EXPECT_FALSE(spec.GetArePolymorphic());
+    EXPECT_STREQ("", spec.GetInstanceFilter().c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Aidas.Vaiksnoras                12/2017

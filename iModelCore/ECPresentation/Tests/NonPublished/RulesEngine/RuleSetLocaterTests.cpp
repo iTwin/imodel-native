@@ -797,3 +797,187 @@ TEST_F(EmbeddedRuleSetLocaterTests, DisposesAllCachedRulesetsWhenInvalidateReque
     EXPECT_EQ(1, rulesets[0]->GetRefCount());
     EXPECT_EQ(1, rulesets[1]->GetRefCount());
     }
+
+
+/*=================================================================================**//**
+* @bsiclass                                     Aidas.Kilinskas                05/2018
++===============+===============+===============+===============+===============+======*/
+struct SimpleRuleSetLocaterTests : ECPresentationTest
+    {
+    const PresentationRuleSetPtr ruleSet1 = PresentationRuleSet::CreateInstance("id1", 0, 0, "", "", "", "", false);
+    const PresentationRuleSetPtr ruleSet2 = PresentationRuleSet::CreateInstance("id2", 0, 0, "", "", "", "", false);
+    const PresentationRuleSetPtr ruleSet3 = PresentationRuleSet::CreateInstance("id3", 0, 0, "", "", "", "", false);
+    RefCountedPtr<SimpleRuleSetLocater> m_ruleSetLocater;
+    size_t m_disposedRulesetCount;
+    size_t m_createdRulesetCount;
+
+    private:
+        TestRulesetCallbacksHandler* m_handler;
+
+    public:
+        void SetUp() override
+            {
+            m_ruleSetLocater = SimpleRuleSetLocater::Create();
+            m_createdRulesetCount = 0;
+            m_disposedRulesetCount = 0;
+            m_handler = new TestRulesetCallbacksHandler();
+            m_handler->SetCreatedHandler([this] (PresentationRuleSetCR) { m_createdRulesetCount++; });
+            m_handler->SetDisposedHandler([this] (PresentationRuleSetCR) { m_disposedRulesetCount++; });
+            m_ruleSetLocater->SetRulesetCallbacksHandler(m_handler);
+            }
+
+        void TearDown() override
+            {
+            delete m_handler;
+            }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, AddsRuleset)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    EXPECT_EQ(1, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
+    EXPECT_EQ(1, m_ruleSetLocater->LocateRuleSets().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, AddRuleSetReplacesRulesetWithSameId)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets();
+    m_ruleSetLocater->AddRuleSet(*PresentationRuleSet::CreateInstance("id1", 0, 0, "", "", "", "", false));
+
+    EXPECT_EQ(2, m_createdRulesetCount);
+    EXPECT_EQ(1, m_disposedRulesetCount);
+    EXPECT_EQ(1, ruleSets.size());
+    EXPECT_EQ(1, m_ruleSetLocater->LocateRuleSets().size());
+    EXPECT_NE(ruleSets[0], m_ruleSetLocater->LocateRuleSets()[0]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, LocatesSpecificRuleset)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    m_ruleSetLocater->AddRuleSet(*ruleSet2);
+    m_ruleSetLocater->AddRuleSet(*ruleSet3);
+
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets("id2");
+    EXPECT_EQ(3, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
+    EXPECT_EQ(1, ruleSets.size());
+    EXPECT_STREQ("id2", ruleSets[0]->GetRuleSetId().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, LocatesAllRulesets)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    m_ruleSetLocater->AddRuleSet(*ruleSet2);
+    m_ruleSetLocater->AddRuleSet(*ruleSet3);
+
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets();
+    EXPECT_EQ(3, m_ruleSetLocater->LocateRuleSets().size());
+    EXPECT_EQ(3, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
+    EXPECT_STREQ("id1", ruleSets[0]->GetRuleSetId().c_str());
+    EXPECT_STREQ("id2", ruleSets[1]->GetRuleSetId().c_str());
+    EXPECT_STREQ("id3", ruleSets[2]->GetRuleSetId().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, LocatesNoRulesetsFromEmptyCache)
+    {
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets();
+    EXPECT_EQ(0, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
+    EXPECT_EQ(0, m_ruleSetLocater->LocateRuleSets().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, RemovesSpecificRuleSet)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    m_ruleSetLocater->AddRuleSet(*ruleSet2);
+    m_ruleSetLocater->AddRuleSet(*ruleSet3);
+
+    m_ruleSetLocater->RemoveRuleSet("id2");
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets();
+
+    EXPECT_EQ(2, m_ruleSetLocater->LocateRuleSets().size());
+    EXPECT_EQ(3, m_createdRulesetCount);
+    EXPECT_EQ(1, m_disposedRulesetCount);
+    EXPECT_STREQ("id1", ruleSets[0]->GetRuleSetId().c_str());
+    EXPECT_STREQ("id3", ruleSets[1]->GetRuleSetId().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, ClearsRulesets)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    m_ruleSetLocater->AddRuleSet(*ruleSet2);
+    m_ruleSetLocater->AddRuleSet(*ruleSet3);
+
+    m_ruleSetLocater->Clear();
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets();
+    EXPECT_EQ(3, m_createdRulesetCount);
+    EXPECT_EQ(3, m_disposedRulesetCount);
+    EXPECT_EQ(0, m_ruleSetLocater->LocateRuleSets().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, ClearsEmptyCache)
+    {
+    m_ruleSetLocater->Clear();
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets();
+    EXPECT_EQ(0, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
+    EXPECT_EQ(0, m_ruleSetLocater->LocateRuleSets().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, GetsRulesetsIds)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    m_ruleSetLocater->AddRuleSet(*ruleSet2);
+    m_ruleSetLocater->AddRuleSet(*ruleSet3);
+
+    bvector<Utf8String> ruleSetIds = m_ruleSetLocater->GetRuleSetIds();
+
+    EXPECT_EQ(3, ruleSetIds.size());
+    EXPECT_EQ(3, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
+    EXPECT_STREQ("id1", ruleSetIds[0].c_str());
+    EXPECT_STREQ("id2", ruleSetIds[1].c_str());
+    EXPECT_STREQ("id3", ruleSetIds[2].c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, GetsRulesetsIdsFromEmptyCache)
+    {
+    bvector<Utf8String> ruleSetIds = m_ruleSetLocater->GetRuleSetIds();
+
+    EXPECT_EQ(0, ruleSetIds.size());
+    EXPECT_EQ(0, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
+    }

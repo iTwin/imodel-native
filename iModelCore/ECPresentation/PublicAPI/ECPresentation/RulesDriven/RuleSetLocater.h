@@ -233,6 +233,30 @@ public:
 };
 
 //=======================================================================================
+//! Ruleset locater that stores in memory rulesets
+// @bsiclass                                   Aidas.Kilinskas                  05/2018
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE SimpleRuleSetLocater : RefCounted<RuleSetLocater>
+    {
+    private:
+        SimpleRuleSetLocater() {}
+        mutable bmap<Utf8String, PresentationRuleSetPtr> m_cached;
+
+    protected:
+        ECPRESENTATION_EXPORT bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
+        ECPRESENTATION_EXPORT bvector<Utf8String> _GetRuleSetIds() const override;
+        void _InvalidateCache(Utf8CP rulesetId) override {}
+        int _GetPriority() const override { return 100; }
+
+    public:
+        //! Create a new locater.
+        static RefCountedPtr<SimpleRuleSetLocater> Create() { return new SimpleRuleSetLocater(); }
+        ECPRESENTATION_EXPORT void AddRuleSet(PresentationRuleSetR presentationRuleSet);
+        ECPRESENTATION_EXPORT void RemoveRuleSet(Utf8StringCR id);
+        ECPRESENTATION_EXPORT void Clear();
+    };
+
+//=======================================================================================
 //! An interface for ruleset locaters' manager which keeps all locaters and sends
 //! ruleset requests based on ruleset locater priorities.
 //! @ingroup GROUP_RulesDrivenPresentation
