@@ -190,6 +190,7 @@ struct SchemaReader final
         ECN::ECPropertyId GetPropertyId(ECN::ECPropertyCR) const;
         ECN::ECPropertyId GetPropertyId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, Utf8StringCR propertyName, SchemaLookupMode mode) const { return SchemaPersistenceHelper::GetPropertyId(GetECDb(), GetTableSpace(), schemaNameOrAlias.c_str(), className.c_str(), propertyName.c_str(), mode); }
 
+        BentleyStatus ReadUnits() const;
         ECN::UnitSystemId GetUnitSystemId(ECN::UnitSystemCR) const;
         ECN::PhenomenonId GetPhenomenonId(ECN::PhenomenonCR) const;
         ECN::ECUnitCP GetUnit(Utf8StringCR schemaName, Utf8StringCR unitName, SchemaLookupMode) const;

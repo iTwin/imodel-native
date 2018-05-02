@@ -689,24 +689,17 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
 
     if (format.HasNumeric())
         {
-        Json::Value json;
-        format.GetNumericSpec()->ToJson(json, false);
-        if (BE_SQLITE_OK != stmt->BindText(numericSpecParamIx, json.ToString(), Statement::MakeCopy::Yes))
+        if (BE_SQLITE_OK != stmt->BindText(numericSpecParamIx, SchemaPersistenceHelper::SerializeNumericSpec(*format.GetNumericSpec()), Statement::MakeCopy::Yes))
             return ERROR;
         }
 
     if (format.HasComposite())
         {
-        Formatting::CompositeValueSpecCR spec = *format.GetCompositeSpec();
-
         //Composite Spec Units are persisted in its own table to leverage FKs to the Units table
-        Json::Value json;
-        spec.ToJson(json, false, true);
-        BeAssert(!json.isMember(Formatting::json_units()));
-
-        if (!json.isNull())
+        Utf8String specStr = SchemaPersistenceHelper::SerializeCompositeSpecWithoutUnits(*format.GetCompositeSpec());
+        if (!specStr.empty())
             {
-            if (BE_SQLITE_OK != stmt->BindText(compositeSpecParamIx, json.ToString(), Statement::MakeCopy::Yes))
+            if (BE_SQLITE_OK != stmt->BindText(compositeSpecParamIx, specStr, Statement::MakeCopy::Yes))
                 return ERROR;
             }
         }
@@ -3752,11 +3745,9 @@ BentleyStatus SchemaWriter::UpdateFormat(Context& ctx, FormatChange& change, ECN
         return ERROR;
         }
 
-    size_t actualChanges = 0;
     SqlUpdateBuilder sqlUpdateBuilder(TABLE_Format);
     if (change.GetDisplayLabel().IsValid())
         {
-        actualChanges++;
         if (change.GetDisplayLabel().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull("DisplayLabel");
         else
@@ -3765,22 +3756,95 @@ BentleyStatus SchemaWriter::UpdateFormat(Context& ctx, FormatChange& change, ECN
 
     if (change.GetDescription().IsValid())
         {
-        actualChanges++;
         if (change.GetDescription().GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull("Description");
         else
             sqlUpdateBuilder.AddSetExp("Description", change.GetDescription().GetNew().Value().c_str());
         }
 
-    if (change.ChangesCount() > actualChanges)
+    if (change.GetHasNumeric().IsValid())
         {
-        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing properties of Format '%s' is not supported except for DisplayLabel and Description.",
-                             oldVal.GetFullName().c_str());
-        return ERROR;
+        if (change.GetHasNumeric().GetNew().IsNull() || !change.GetHasNumeric().GetNew().Value())
+            sqlUpdateBuilder.AddSetToNull("NumericSpec");
+        else
+            sqlUpdateBuilder.AddSetExp("NumericSpec", SchemaPersistenceHelper::SerializeNumericSpec(*newVal.GetNumericSpec()).c_str());
+        }
+
+    if (change.GetHasComposite().IsValid())
+        {
+        if (change.GetCompositeMajorUnit().IsValid() || change.GetCompositeMiddleUnit().IsValid() || change.GetCompositeMinorUnit().IsValid() ||
+            change.GetCompositeSubUnit().IsValid())
+            {
+            ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the composite units of Format '%s' is not supported.",
+                                 oldVal.GetFullName().c_str());
+            return ERROR;
+            }
+
+        if (change.GetCompositeSpacer().IsValid() || change.GetCompositeIncludeZero().IsValid())
+            sqlUpdateBuilder.AddSetExp("CompositeSpec", SchemaPersistenceHelper::SerializeCompositeSpecWithoutUnits(*newVal.GetCompositeSpec()).c_str());
         }
 
     sqlUpdateBuilder.AddWhereExp("Id", oldVal.GetId().GetValue());
-    return sqlUpdateBuilder.ExecuteSql(ctx.GetECDb());
+    if (SUCCESS != sqlUpdateBuilder.ExecuteSql(ctx.GetECDb()))
+        return ERROR;
+
+    if (change.GetCompositeMajorLabel().IsValid())
+        {
+        SqlUpdateBuilder sqlUpdateBuilder(TABLE_FormatCompositeUnit);
+        if (change.GetCompositeMajorLabel().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Label");
+        else
+            sqlUpdateBuilder.AddSetExp("Label", change.GetCompositeMajorLabel().GetNew().Value().c_str());
+
+        sqlUpdateBuilder.AddWhereExp("FormatId", oldVal.GetId().GetValue());
+        sqlUpdateBuilder.AddWhereExp("Ordinal", 0);
+        if (SUCCESS != sqlUpdateBuilder.ExecuteSql(ctx.GetECDb()))
+            return ERROR;
+        }
+
+    if (change.GetCompositeMiddleLabel().IsValid())
+        {
+        SqlUpdateBuilder sqlUpdateBuilder(TABLE_FormatCompositeUnit);
+        if (change.GetCompositeMiddleLabel().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Label");
+        else
+            sqlUpdateBuilder.AddSetExp("Label", change.GetCompositeMiddleLabel().GetNew().Value().c_str());
+
+        sqlUpdateBuilder.AddWhereExp("FormatId", oldVal.GetId().GetValue());
+        sqlUpdateBuilder.AddWhereExp("Ordinal", 1);
+        if (SUCCESS != sqlUpdateBuilder.ExecuteSql(ctx.GetECDb()))
+            return ERROR;
+        }
+
+    if (change.GetCompositeMinorLabel().IsValid())
+        {
+        SqlUpdateBuilder sqlUpdateBuilder(TABLE_FormatCompositeUnit);
+        if (change.GetCompositeMinorLabel().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Label");
+        else
+            sqlUpdateBuilder.AddSetExp("Label", change.GetCompositeMinorLabel().GetNew().Value().c_str());
+
+        sqlUpdateBuilder.AddWhereExp("FormatId", oldVal.GetId().GetValue());
+        sqlUpdateBuilder.AddWhereExp("Ordinal", 2);
+        if (SUCCESS != sqlUpdateBuilder.ExecuteSql(ctx.GetECDb()))
+            return ERROR;
+        }
+
+    if (change.GetCompositeSubLabel().IsValid())
+        {
+        SqlUpdateBuilder sqlUpdateBuilder(TABLE_FormatCompositeUnit);
+        if (change.GetCompositeSubLabel().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Label");
+        else
+            sqlUpdateBuilder.AddSetExp("Label", change.GetCompositeSubLabel().GetNew().Value().c_str());
+
+        sqlUpdateBuilder.AddWhereExp("FormatId", oldVal.GetId().GetValue());
+        sqlUpdateBuilder.AddWhereExp("Ordinal", 3);
+        if (SUCCESS != sqlUpdateBuilder.ExecuteSql(ctx.GetECDb()))
+            return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

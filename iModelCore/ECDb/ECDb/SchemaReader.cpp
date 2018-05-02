@@ -802,6 +802,14 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationCP& ecEnum, Context& ct
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaReader::ReadUnits() const
+    {
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    02/2018
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadUnitSystem(ECN::UnitSystemCP& system, Context& ctx, ECN::UnitSystemId id) const
