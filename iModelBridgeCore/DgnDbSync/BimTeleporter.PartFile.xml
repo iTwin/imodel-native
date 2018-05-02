@@ -6,7 +6,7 @@
         <NuGetPackage targetFramework="native">DgnDb_1_6_ForUpgraderNuget</NuGetPackage>
         <Bindings>
             <Assemblies ProductDirectoryName="DgnDbAssemblies" Required="false">
-                Delivery/DgnDbLibs/*.dll
+                Delivery/*.dll,
             </Assemblies>
             <Directory SourceName="Delivery/DgnDbLibs" ProductDirectoryName="DgnDb06Libs" SubPartDirectory="DgnDbLibs" Required="false"/>
             <Directory SourceName="Delivery/DgnDbPlatformAssets" ProductDirectoryName="DgnDb06PlatformAssets" SubPartDirectory="DgnDbPlatformAssets" Required="false"/>
