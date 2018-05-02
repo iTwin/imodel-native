@@ -1305,7 +1305,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                     Utf8String error;
                     error.Sprintf("No BIS grouping relationship created for v8 NamedGroup Member element (%s) because the member element was not converted.",
                                   Converter::IssueReporter::FmtElement(memberEh).c_str());
-                    m_converter.ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                    m_converter.ReportIssue(IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                     return DgnV8Api::MemberTraverseStatus::Continue;
                     }
                 m_visitedMembers.insert(childElementId);
@@ -1391,7 +1391,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
             Utf8String error;
             error.Sprintf("No BIS grouping created for v8 NamedGroup element (%s) because the NamedGroup was not converted.",
                           Converter::IssueReporter::FmtElement(v8eh).c_str());
-            ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+            ReportIssue(IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
             continue;
             }
 
