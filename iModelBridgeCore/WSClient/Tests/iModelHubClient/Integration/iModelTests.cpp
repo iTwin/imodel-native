@@ -194,3 +194,18 @@ TEST_F(iModelTests, SuccessfulCreateiModelWithASpaceInName)
     ASSERT_SUCCESS(getResult);
     EXPECT_EQ(getResult.GetValue()->GetUserCreated(), getResult.GetValue()->GetOwnerInfo()->GetId());
     }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Algirdas.Mikoliunas             07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelTests, UnsuccessfulCreateiModelFromBriefcase)
+    {
+    TestsProgressCallback callback;
+    m_imodelName = GetTestiModelName();
+    Utf8String description = m_imodelName + " is created by iModelHubHost";
+    m_db->SetAsBriefcase(BeSQLite::BeBriefcaseId(2));
+
+    iModelResult createResult = s_client->CreateNewiModel(s_projectId, *m_db, m_imodelName, description, true, callback.Get())->GetResult();
+    ASSERT_FAILURE(createResult);
+    EXPECT_EQ(Error::Id::FileIsBriefcase, createResult.GetError().GetId());
+    }
