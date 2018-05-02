@@ -120,7 +120,52 @@ private:
 
     void AddPoint(DPoint2dCR pt);
     void AddEllipse(DEllipse3dCR el);
-    
+
+    bvector<DPoint3d> m_activeLineString;
+    CurveVectorPtr m_activeLoop;
+    bvector<CurveVectorPtr> m_completedLoops;
+    // ensure there is an m_activeLoop.
+    // move the active linestring into the active loop
+    void ClearActiveLineString ()
+        {
+        if (!m_activeLoop.IsValid ())
+            m_activeLoop = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+        if (m_activeLineString.size () > 1)
+            m_activeLoop->Add (ICurvePrimitive::CreateLineString (m_activeLineString));
+        m_activeLineString.clear ();
+        }
+    // Move the active loop to completed
+    void EndActiveLoop ()
+        {
+        if (m_activeLineString.size () > 1)
+            ClearActiveLineString ();
+        if (m_activeLoop.IsValid ())
+            {
+            m_completedLoops.push_back (m_activeLoop);
+            }
+        m_activeLoop = nullptr;
+        }
+    public:
+    CurveVectorPtr GrabCurveVector (bool dropGPA = true)
+        {
+        CurveVectorPtr result;
+        if (dropGPA)
+            m_gpa->Drop ();
+        if (m_completedLoops.size () == 1)
+            result = m_completedLoops[0];
+        else if (m_completedLoops.size () > 1)
+            {
+            result = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+            for (auto &c : m_completedLoops)
+                result->Add (c);
+            }
+        else
+            {
+            result = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+            }
+        m_completedLoops.clear ();
+        return result;
+        }
 public:
     ShapeConverter(GPArrayR, IDgnShxFontData&);
     DPoint2dCR GetCurrentPos() const { return m_currentPos; }
@@ -174,7 +219,10 @@ void ShapeConverter::AddPoint(DPoint2dCR pt)
     {
     m_hasData = true;
     if (!m_processVertical)
+        {
         m_gpa->Add(&pt, 1);
+        m_activeLineString.push_back (DPoint3d::From (pt));
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -184,7 +232,11 @@ void ShapeConverter::AddEllipse(DEllipse3dCR el)
     {
     m_hasData = true;
     if (!m_processVertical)
+        {
+        ClearActiveLineString ();
+        m_activeLoop->Add (ICurvePrimitive::CreateArc (el));
         m_gpa->Add(el);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -653,6 +705,7 @@ void ShapeConverter::DecodePenDown()
         m_rightBearing = m_currentPos.x;
 
     m_gpa->MarkMajorBreak();
+    EndActiveLoop ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -665,6 +718,7 @@ void ShapeConverter::DecodePenUp()
 
     m_isPenDown = false;
     m_gpa->MarkMajorBreak();
+    EndActiveLoop ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -683,6 +737,7 @@ void ShapeConverter::DecodePop()
 
     // Mark break in GPA added due to BOLD.shx R character
     m_gpa->MarkMajorBreak();
+    EndActiveLoop ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -987,6 +1042,7 @@ public:
     DRange2d _GetRange() const override { EnsureMetrics(); return m_range; }
     DRange2d _GetExactRange() const override { EnsureMetrics(); return m_exactRange; }
     BentleyStatus _FillGpa(GPArrayR) const override;
+    CurveVectorPtr _GetCurveVector(bool &isFilled) const override;
     bool _IsBlank() const override { EnsureMetrics(); return m_isBlank; }
     DoFixup _DoFixup () const override { return DoFixup::Never; }
 
@@ -1102,6 +1158,37 @@ BentleyStatus DgnShxGlyph::_FillGpa(GPArrayR gpa) const
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
+CurveVectorPtr DgnShxGlyph::_GetCurveVector(bool &isFilled) const
+    {
+    BeMutexHolder lock(DgnFonts::GetMutex());
+
+    if ((nullptr == m_data) || (0 == m_dataSize))
+        return nullptr;
+
+    ScopedArray<Byte> glyphData(m_dataSize);
+    if (SUCCESS != m_data->_Seek(m_dataOffset, BeFileSeekOrigin::Begin))
+        return nullptr;
+
+    if (0 == m_data->_Read(glyphData.GetData(), m_dataSize, 1))
+        return nullptr;
+    GPArrayP gpa = GPArray::Grab ();
+    ShapeConverter converter(*gpa, *m_data);
+    converter.DoConversion(m_dataSize, (CharCP)glyphData.GetDataCP(), false, false);
+    auto curves = converter.GrabCurveVector ();
+    if (!curves.IsValid ())
+        return nullptr;
+    
+    double scale = (1.0 / m_data->GetAscender());
+    Transform scaleTransform = Transform::FromScaleFactors (scale, scale, 1.0);
+    curves->TransformInPlace (scaleTransform);
+
+    return curves;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
