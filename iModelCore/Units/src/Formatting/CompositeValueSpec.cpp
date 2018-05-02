@@ -86,10 +86,6 @@ CompositeValueSpec::CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middle
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 CompositeValueSpec::CompositeValueSpec(bvector<BEU::UnitCP> const& units)
-    : m_includeZero(true)
-    , m_explicitlyDefinedSpacer(false)
-    , m_spacer(FormatConstant::DefaultSpacer())
-    , m_ratio {0}
     {
     m_proxys.reserve(4);
     m_proxys.resize(units.size());
