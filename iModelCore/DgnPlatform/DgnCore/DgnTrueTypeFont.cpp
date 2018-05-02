@@ -66,7 +66,7 @@ public:
     T_Id _GetId() const override { return (T_Id)m_glyphIndex; }
     DRange2d _GetRange() const override;
     DRange2d _GetExactRange() const override;
-    BentleyStatus _FillGpa(GPArrayR) const override;
+    CurveVectorPtr _GetCurveVector () const override;
     bool _IsBlank() const override;
     FreeTypeFace GetFace() const { return m_face; }
     DoFixup _DoFixup () const override { return DoFixup::Always; }
@@ -401,31 +401,33 @@ static size_t decomposeOutline(FT_Outline& outline, Byte* buffer, size_t bufferS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-static void toDPoint4d(DPoint4d* pt, POINTFX* pPoint, double npcScale)
+static void appendPoint (bvector<DPoint3d> &points, POINTFX* pPoint, double npcScale)
     {
-    pt->x = (((double)(pPoint->x.value + (double)pPoint->x.fract / 65536.0)) / npcScale);
-    pt->y = (((double)(pPoint->y.value + (double)pPoint->y.fract / 65536.0)) / npcScale);
-    pt->z = 0.0;
-    pt->w = 1.0;
+    DPoint3d pt;
+    pt.x = (((double)(pPoint->x.value + (double)pPoint->x.fract / 65536.0)) / npcScale);
+    pt.y = (((double)(pPoint->y.value + (double)pPoint->y.fract / 65536.0)) / npcScale);
+    pt.z = 0.0;
+    points.push_back (pt);
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-static void convertNativeGlyphToGraphicsPoints(GraphicsPointArrayR gpa, TTPOLYGONHEADER* lpHeader, size_t size, double npcScale)
+static CurveVectorPtr convertNativeGlyphToCurveVector (TTPOLYGONHEADER* lpHeader, size_t size, double npcScale)
     {
     TTPOLYGONHEADER* lpStart = lpHeader;
     TTPOLYCURVE* lpCurve;
     int i = 0;
+    bvector<DPoint3d> points;
+    bvector<CurveVectorPtr> loops;
     while ((uintptr_t)lpHeader < (uintptr_t)(((char*)lpStart) + size))
         {
         if (TT_POLYGON_TYPE == lpHeader->dwType)
             {
-            DPoint4d ptHead;
-            DPoint4d ptLast;
-
             // Get to first curve.
             lpCurve = (TTPOLYCURVE*)(lpHeader + 1);
+            auto loop = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
 
             while ((uintptr_t)lpCurve < (uintptr_t)(((char*)lpHeader) + lpHeader->cb))
                 {
@@ -433,85 +435,34 @@ static void convertNativeGlyphToGraphicsPoints(GraphicsPointArrayR gpa, TTPOLYGO
                 //  The bytes immediately preceding a POLYCURVE structure contain a valid POINTFX.
                 //  If this is first curve, this points to the pfxStart of the POLYGONHEADER. Otherwise, this points to the last point of the previous POLYCURVE.
                 //  In either case, this is representative of the previous curve's last point.
-                             if (TT_PRIM_LINE == lpCurve->wType)
+                if (TT_PRIM_LINE == lpCurve->wType)
                     {
-                    DPoint4d pt;
-                    toDPoint4d(&pt, (POINTFX*)((char*)lpCurve - sizeof(POINTFX)), npcScale);
-
-                    gpa.Add(GraphicsPoint(pt));
-
+                    points.clear ();
+                    appendPoint (points, (POINTFX*)((char*)lpCurve - sizeof (POINTFX)), npcScale);
                     for (i = 0; i < lpCurve->cpfx; ++i)
                         {
-                        toDPoint4d(&pt, &lpCurve->apfx[i], npcScale);
-                        gpa.Add(GraphicsPoint(pt));
+                        appendPoint (points, &lpCurve->apfx[i], npcScale);
                         }
+                    loop->Add (ICurvePrimitive::CreateLineString (points));
                     }
                 else if (lpCurve->wType == TT_PRIM_QSPLINE)
                     {
-                    DPoint4d pts[100];
-                    DPoint4d ptsp[50];
-                    DPoint4d* pt = pts;
-                    DPoint4d* pt1 = ptsp;
-                    DPoint4d* pMem = NULL;
-                    DPoint4d* pMem1 = NULL;
-                    DPoint4d* pStart = pts;
-                    POINTFX* pFixed;
-                    int iSegments = 1;
-                    int numPoles = (lpCurve->cpfx + 1);
-                    int order = 3;
-
-                    if ((lpCurve->cpfx + 1) > 100)
-                        {
-                        pMem = (DPoint4d*)malloc((lpCurve->cpfx + 1) * sizeof(DPoint4d));
-                        if (NULL == pMem)
-                            return;
-
-                        pStart = pMem;
-                        pt = pMem;
-                        }
-
-                    if ((numPoles > 3) && (numPoles + (numPoles - order) * (order - 1)) > 50)
-                        {
-                        pMem1 = (DPoint4d*)malloc((numPoles + (numPoles - order) * (order - 1)) * sizeof(DPoint4d));
-                        if (NULL == pMem1)
-                            return;
-
-                        pt1 = pMem1;
-                        }
-
-                    toDPoint4d(pt, (POINTFX*)((char*)lpCurve - sizeof(POINTFX)), npcScale);
-                    ++pt;
-
-                    for (i = 0, pFixed = lpCurve->apfx; i < lpCurve->cpfx; ++i, ++pt, ++pFixed)
-                        toDPoint4d(pt, pFixed, npcScale);
-
-                    if (numPoles > 3)
-                        {
-                        iSegments = bsiBezierDPoint4d_convertOpenUniformBsplineToBeziers(pt1, pStart, numPoles, order, false);
-                        pStart = pt1;
-                        }
-
-                    for (int i = 0; i < iSegments; ++i)
-                        gpa.AddBezier((pStart + (i * order)), order);
-
-                    if (pMem)
-                        free(pMem);
-
-                    if (pMem1)
-                        free(pMem1);
+                    int order = 3;  // always quadratic !!
+                    points.clear ();
+                    appendPoint (points, (POINTFX*)((char*)lpCurve - sizeof (POINTFX)), npcScale);
+                    for (i = 0; i < lpCurve->cpfx; ++i)
+                        appendPoint (points, &lpCurve->apfx[i], npcScale);
+                    if (points.size () >= order)
+                        loop->Add (ICurvePrimitive::CreateBsplineCurve  (
+                                MSBsplineCurve::CreateFromPolesAndOrder(
+                                    points, nullptr, nullptr, order, false)));
                     }
 
                 // Move on to next curve.
                 lpCurve = (TTPOLYCURVE*)&(lpCurve->apfx[i]);
                 }
-
-            // Add points to close curve. Depending on the specific font and glyph being used, these may not always be needed, but it never hurts. Our last point could have been a curve so we need to add that point again.
-            toDPoint4d(&ptLast, (POINTFX*)((char*)lpCurve - sizeof(POINTFX)), npcScale);
-            gpa.Add(GraphicsPoint(ptLast));
-
-            toDPoint4d(&ptHead, &lpHeader->pfxStart, npcScale);
-            gpa.Add(GraphicsPoint(ptHead));
-
+            loop->ConsolidateAdjacentPrimitives ();
+            loops.push_back (loop);
             // Move on to next polygon.
             lpHeader = (TTPOLYGONHEADER*)(((char*)lpHeader) + lpHeader->cb);
             }
@@ -519,37 +470,43 @@ static void convertNativeGlyphToGraphicsPoints(GraphicsPointArrayR gpa, TTPOLYGO
             {
             break;
             }
-
-        gpa.MarkMajorBreak();
         }
+    if (loops.size () == 0)
+        return CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    if (loops.size () == 1)
+        return loops[0];
+    auto parityRegion = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+    for (auto &loop : loops)
+        parityRegion->Add (loop);
 
-    // Add user break so we can transform individual glyphs.
-    gpa.MarkMajorBreak();
+    parityRegion->FixupXYOuterInner ();
+
+    return parityRegion;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2015
+// @bsimethod                                                   Earlin.Lutz     05/2018
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnTrueTypeGlyph::_FillGpa(GPArrayR gpa) const
+CurveVectorPtr DgnTrueTypeGlyph::_GetCurveVector () const
     {
-    return m_face.Execute([&](FT_Face ftFace)
+    static bool s_nocv = false;
+    if (s_nocv)
+        return nullptr;
+    return m_face.Execute ([&](FT_Face ftFace)
         {
-        if (FT_Err_Ok != FT_Load_Glyph(ftFace, m_glyphIndex, FT_LOAD_DEFAULT))
-            return ERROR;
-
-        size_t dataSize = decomposeOutline(ftFace->glyph->outline, nullptr, 0);
+        if (FT_Err_Ok != FT_Load_Glyph (ftFace, m_glyphIndex, FT_LOAD_DEFAULT))
+            return CurveVectorPtr ();
+        size_t dataSize = decomposeOutline (ftFace->glyph->outline, nullptr, 0);
         if (0 == dataSize)
-            return SUCCESS;
+            return CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);   // empty !
 
         bvector<Byte> data;
-        data.resize(dataSize);
-        decomposeOutline(ftFace->glyph->outline, &data[0], dataSize);
-        
-        convertNativeGlyphToGraphicsPoints(gpa, reinterpret_cast<TTPOLYGONHEADER*>(&data[0]), data.size(), ftFace->units_per_EM);
-        gpa.SetArrayMask(HPOINT_ARRAYMASK_FILL);
-        
-        return SUCCESS;
+        data.resize (dataSize);
+        decomposeOutline (ftFace->glyph->outline, &data[0], dataSize);
+
+        return convertNativeGlyphToCurveVector(reinterpret_cast<TTPOLYGONHEADER*>(&data[0]), data.size (), ftFace->units_per_EM);
         });
+
     }
 
 //---------------------------------------------------------------------------------------
