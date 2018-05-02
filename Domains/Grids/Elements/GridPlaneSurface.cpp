@@ -752,7 +752,7 @@ void ElevationGridSurface::SerializeProperties (Json::Value& elementData) const
     elementData[BCSSERIALIZABLE_ELEMENT_ClassName] = GetElementClass()->GetName();
     elementData[BCSSERIALIZABLE_ELEMENT_ElementId] = GetElementId().GetValueUnchecked();
     elementData[BCSSERIALIZABLE_ELEMENT_Name] = GetUserLabel();
-
+    elementData[BCSSERIALIZABLE_ELEMENT_CodeValue] = GetCode().GetValueUtf8();
 
     GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
     elementData[BCSSERIALIZABLE_ELEVSURFACE_OwnerId] = grid->GetCode().GetScopeElementId(GetDgnDb()).GetValueUnchecked();
