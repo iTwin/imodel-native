@@ -354,6 +354,10 @@ SchemaReadStatus ECFormat::ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSche
     if (BEXML_Success == compositeNode.GetAttributeStringValue(spacer, COMPOSITE_SPACER_ATTRIBUTE))
         comp.SetSpacer(spacer.c_str());
 
+    bool includeZero = true;
+    if (BEXML_Success == compositeNode.GetAttributeBooleanValue(includeZero, COMPOSITE_INCLUDEZERO_ATTRIBUTE))
+        comp.SetIncludeZero(includeZero);
+
     if (comp.IsProblem())
         {
         LOG.errorv("%s node on %s has problem %s", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str(), comp.GetProblemDescription().c_str());

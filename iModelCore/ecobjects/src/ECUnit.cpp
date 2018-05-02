@@ -29,9 +29,12 @@ ECUnit::ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-ECUnit::ECUnit(ECSchemaCR schema,Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator) :
-    Units::Unit(phenomenon, name, definition, numerator, denominator), m_isNumeratorExplicitlyDefined(true), m_isDenominatorExplicitlyDefined(true), m_schema(schema)
+ECUnit::ECUnit(ECSchemaCR schema,Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, Nullable<double> denominator) :
+    Units::Unit(phenomenon, name, definition, numerator, 1.0), m_isNumeratorExplicitlyDefined(true), m_schema(schema)
     {
+    if (denominator.IsValid())
+        SetDenominator(denominator.Value());
+
     m_unitsContext = &schema.GetUnitsContext();
     }
 

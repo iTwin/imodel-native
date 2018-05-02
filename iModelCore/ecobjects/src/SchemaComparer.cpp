@@ -1737,6 +1737,9 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
         auto oldComp = oldVal.GetCompositeSpec();
         auto newComp = newVal.GetCompositeSpec();
 
+        if (oldComp->IsIncludeZero() != newComp->IsIncludeZero())
+            change.GetCompositeIncludeZero().SetValue(oldComp->IsIncludeZero(), newComp->IsIncludeZero());
+
         if (oldComp->HasSpacer() && newComp->HasSpacer() && oldComp->GetSpacer() != newComp->GetSpacer())
             change.GetCompositeSpacer().SetValue(oldComp->GetSpacer(), newComp->GetSpacer());
         else if (!oldComp->HasSpacer() && newComp->HasSpacer())
@@ -2186,8 +2189,6 @@ BentleyStatus SchemaComparer::AppendFormat(FormatChanges& changes, ECFormatCR fo
     if (!format.HasComposite())
         return SUCCESS; // If there's no composite spec we're done.
 
-    if (format.HasCompositeSpacer())
-        change.GetCompositeSpacer().SetValue(appendType, format.GetCompositeSpec()->GetSpacer());
 
     if (format.HasCompositeMajorUnit())
         change.GetCompositeMajorUnit().SetValue(appendType, format.GetCompositeMajorUnit()->GetName());
@@ -2202,6 +2203,11 @@ BentleyStatus SchemaComparer::AppendFormat(FormatChanges& changes, ECFormatCR fo
         change.GetCompositeSubUnit().SetValue(appendType, format.GetCompositeSubUnit()->GetName());
 
     auto comp = format.GetCompositeSpec();
+
+    change.GetCompositeIncludeZero().SetValue(appendType, comp->IsIncludeZero());
+
+    if (format.HasCompositeSpacer())
+        change.GetCompositeSpacer().SetValue(appendType, comp->GetSpacer());
 
     if (comp->HasMajorLabel())
         change.GetCompositeMajorLabel().SetValue(appendType, comp->GetMajorLabel());
@@ -2494,6 +2500,7 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Enumerators: return "Enumerators";
             case SystemId::ExtendedTypeName: return "ExtendedTypeName";
             case SystemId::Format: return "Format";
+            case SystemId::FormatCompositeIncludeZero: return "FormatCompositeIncludeZero";
             case SystemId::FormatCompositeSpacer: return "FormatCompositeSpacer";
             case SystemId::FormatCompositeMajorUnit: return "FormatCompositeMajorUnit";
             case SystemId::FormatCompositeMajorLabel: return "FormatCompositeMajorLabel";

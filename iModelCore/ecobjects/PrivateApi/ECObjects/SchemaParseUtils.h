@@ -85,6 +85,7 @@
 #define FORMAT_MIN_WIDTH_ATTRIBUTE              "minWidth"
 
 #define COMPOSITE_SPACER_ATTRIBUTE          "spacer"
+#define COMPOSITE_INCLUDEZERO_ATTRIBUTE     "includeZero"
 #define COMPOSITE_UNIT_LABEL_ATTRIBUTE      "label"
 
 #define ECXML_DISPLAY_LABEL_ATTRIBUTE       "displayLabel"

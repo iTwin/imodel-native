@@ -80,6 +80,7 @@ enum class SystemId
     Enumerators,
     ExtendedTypeName,
     Format,
+    FormatCompositeIncludeZero,
     FormatCompositeSpacer,
     FormatCompositeMajorUnit,
     FormatCompositeMajorLabel,
@@ -1292,6 +1293,7 @@ struct FormatChange final : ECObjectChange
         UInt32Change& GetStationOffsetSize() {return Get<UInt32Change>(SystemId::StationOffsetSize);}
         BooleanChange& GetHasComposite() {return Get<BooleanChange>(SystemId::FormatHasComposite);}
         BooleanChange& GetHasNumeric() {return Get<BooleanChange>(SystemId::FormatHasNumeric);}
+        BooleanChange& GetCompositeIncludeZero() { return Get<BooleanChange>(SystemId::FormatCompositeIncludeZero); }
         StringChange& GetCompositeSpacer() {return Get<StringChange>(SystemId::FormatCompositeSpacer);}
         StringChange& GetCompositeMajorUnit() {return Get<StringChange>(SystemId::FormatCompositeMajorUnit);}
         StringChange& GetCompositeMajorLabel() {return Get<StringChange>(SystemId::FormatCompositeMajorLabel);}

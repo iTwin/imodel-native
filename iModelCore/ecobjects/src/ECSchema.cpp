@@ -1240,10 +1240,7 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
         return ECObjectsStatus::SchemaNotFound;
         }
 
-    constant = new ECUnit(*this, phenom, name, definition, numerator, 1.0);
-
-    if(denominator.IsValid())
-        constant->SetDenominator(denominator.Value());
+    constant = new ECUnit(*this, phenom, name, definition, numerator, denominator);
 
     if (nullptr != label)
         { 
