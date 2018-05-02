@@ -1085,7 +1085,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
             else
                 {
                 Json::Value jval;
-                expected.GetNumericSpec()->ToJson(jval, false);
+                ASSERT_TRUE(expected.GetNumericSpec()->ToJson(jval, false));
                 ASSERT_STREQ(jval.ToString().c_str(), val.GetText()) << "FormatDef.NumericSpec of " << expected.GetFullName();
                 }
 
@@ -1099,7 +1099,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
             else
                 {
                 Json::Value jval;
-                expected.GetCompositeSpec()->ToJson(jval, false, true);
+                ASSERT_TRUE(expected.GetCompositeSpec()->ToJson(jval, false, true));
                 ASSERT_STREQ(jval.ToString().c_str(), val.GetText()) << "FormatDef.CompositeSpec of " << expected.GetFullName();
                 }
 
