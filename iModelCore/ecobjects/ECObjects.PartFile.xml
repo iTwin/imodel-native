@@ -56,7 +56,7 @@
     <!-- ********************** -->
     <!-- The following parts build the stand-alone ECObjects unit tests (from the same unit test source). -->
     <!-- ProductDirectoryNames below are listed in the BeGTest part file, in directory list: CollectionProduct -->
-    <Part Name="ECObjectsUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
+    <Part Name="ECObjectsUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
         <SubPart PartName="TestDependencies"/>
         <SubPart PartName="PublishedApi"/>
     </Part>
