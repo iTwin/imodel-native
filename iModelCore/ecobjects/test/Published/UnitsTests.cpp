@@ -106,7 +106,7 @@ TEST_F(UnitsTests, LookupUnitTest)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" definition="u:M"/>
         </ECSchema>)xml";
 
@@ -415,7 +415,7 @@ TEST_F(UnitsDeserializationTests, RoundTripWithReferencedSchemaForPhenomenonAndU
         </ECSchema>)xml";
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
+            <ECSchemaReference name="refSchema" version="01.00.00" alias="rs"/>
             <Unit typeName="TestUnit" phenomenon="rs:TestPhenomenon" unitSystem="rs:TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
         </ECSchema>)xml";
 
@@ -477,7 +477,7 @@ TEST_F(UnitsDeserializationTests, ShouldFailWithoutAliases)
         </ECSchema>)xml";
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
+            <ECSchemaReference name="refSchema" version="01.00.00" alias="rs"/>
             <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
         </ECSchema>)xml";
 
@@ -865,7 +865,7 @@ TEST_F(InvertedUnitsDeserializationTests, RoundTripWithReferencedSchema)
         </ECSchema>)xml";
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
+            <ECSchemaReference name="refSchema" version="01.00.00" alias="rs"/>
             <InvertedUnit typeName="TestInvertedUnit" invertsUnit="rs:TestUnit" unitSystem="rs:TestUnitSystem" displayLabel="InvertedUnitLabel" description="InvertedUnitDescription"/>
         </ECSchema>)xml";
 
@@ -990,7 +990,7 @@ TEST_F(InvertedUnitsDeserializationTests, ShouldFailWithoutAliases)
         </ECSchema>)xml";
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
+            <ECSchemaReference name="refSchema" version="01.00.00" alias="rs"/>
             <InvertedUnit typeName="TestInvertedUnit" invertsUnit="TestUnit" unitSystem="TestUnitSystem" displayLabel="InvertedUnitLabel" description="InvertedUnitDescription"/>
         </ECSchema>)xml";
 
@@ -1053,7 +1053,7 @@ TEST_F(InvertedUnitsDeserializationTests, ShouldFailWithBadSchemaAliases)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
             <InvertedUnit typeName="TestInvertedUnit" invertsUnit="units:M" unitSystem="u:SI" displayLabel="InvertedUnitLabel" description="InvertedUnitDescription"/>
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with bad schema alias on invertsUnit");
     }
@@ -1202,7 +1202,7 @@ TEST_F(ConstantDeserializationTests, RoundTripWithReferencedSchemaForPhenomenonA
         </ECSchema>)xml";
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
+            <ECSchemaReference name="refSchema" version="01.00.00" alias="rs"/>
             <Constant typeName="TestConstant" phenomenon="rs:TestPhenomenon" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
         </ECSchema>)xml";
 
@@ -1258,7 +1258,7 @@ TEST_F(ConstantDeserializationTests, ShouldFailWithoutAliasesOrBadAliases)
         </ECSchema>)xml";
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
+            <ECSchemaReference name="refSchema" version="01.00.00" alias="rs"/>
             <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
         </ECSchema>)xml";
 

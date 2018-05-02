@@ -114,11 +114,19 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
-        if (ECObjectsStatus::Success != SchemaKey::ParseVersionString(key.m_versionRead, key.m_versionWrite, key.m_versionMinor, versionString.c_str()))
+        {
+        ECObjectsStatus versionStatus = ECObjectsStatus::Success;
+        if (schemaOut->OriginalECXmlVersionGreaterThan(ECVersion::V3_1))
+            versionStatus = SchemaKey::ParseVersionStringStrict(key.m_versionRead, key.m_versionWrite, key.m_versionMinor, versionString.c_str());
+        else
+            versionStatus = SchemaKey::ParseVersionString(key.m_versionRead, key.m_versionWrite, key.m_versionMinor, versionString.c_str());
+
+        if (ECObjectsStatus::Success != versionStatus)
             {
             LOG.errorv("Invalid ECSchemaXML: unable to parse version string for referenced schema %s.", key.m_schemaName.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
+        }
 
         // If the schema (uselessly) references itself, just skip it
         if (schemaOut->GetSchemaKey().m_schemaName.compare(key.m_schemaName) == 0)

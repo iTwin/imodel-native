@@ -43,7 +43,7 @@ TEST_F(PhenomenonTests, LookupPhenomTest)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
             <Phenomenon typeName="TestPhenom" definition="LENGTH"/>
         </ECSchema>)xml";
 

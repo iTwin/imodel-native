@@ -555,14 +555,14 @@ TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingName)
     // Missing name
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
                                             <KindOfQuantity description="Kind of a Description here"
                                                 displayLabel="best quantity of all times" persistenceUnit="u:CM" relativeError="10e-3"/>
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with a missing name");
     // Empty name
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
                                             <KindOfQuantity typeName="" description="Kind of a Description here"
                                                 displayLabel="best quantity of all times" persistenceUnit="u:CM" relativeError="10e-3"/>
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an empty name");
@@ -576,14 +576,14 @@ TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingRelativeError)
     // Missing relative error
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
                                             <KindOfQuantity typeName="TestKOQ" description="Kind of a Description here"
                                                 displayLabel="best quantity of all times" persistenceUnit="u:CM"/>
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with a missing relative error");
     // Empty relative error
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
                                             <KindOfQuantity typeName="TestKOQ" description="Kind of a Description here"
                                                 displayLabel="best quantity of all times" persistenceUnit="u:CM" relativeError=""/>
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an empty relative error");
@@ -615,7 +615,7 @@ TEST_F(KindOfQuantityDeserializationTest, TestConstantAsPersistanceUnit)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all times" persistenceUnit="u:PI" relativeError="10e-3"/>
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with a constant as a persistence unit");
@@ -656,13 +656,13 @@ TEST_F(KindOfQuantityDeserializationTest, TestUnitInReferencedSchemaAsPersistenc
         </ECSchema>)xml";
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
+            <ECSchemaReference name="refSchema" version="01.00.00" alias="rs"/>
             <Unit typeName="TestUnit" phenomenon="rs:TestPhenomenon" unitSystem="rs:TestUnitSystem" numerator="1.0" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <Unit typeName="Smoot" phenomenon="rs:TestPhenomenon" unitSystem="rs:TestUnitSystem" numerator="1.0" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
         </ECSchema>)xml";
     Utf8CP koqSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="koqSchema" alias="ks" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="testSchema" version="01.00" alias="ts"/>
+            <ECSchemaReference name="testSchema" version="01.00.00" alias="ts"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                 displayLabel="best quantity of all times" persistenceUnit="ts:TestUnit" relativeError="10e-3"/>
         </ECSchema>)xml";
@@ -940,8 +940,8 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_UnknownPresentationUnit)
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an known presentation Unit");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:banana]" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an known presentation Format");
@@ -960,8 +960,8 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_UnknownPresentationFormat)
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an unknown presentation format");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:banana" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an unknown presentation format");
@@ -974,15 +974,15 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_ConstantAsUnitOverride)
     {
     ExpectSchemaDeserializationSuccess(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:M]" relativeError="10e-3" />
                                         </ECSchema>)xml");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:PI]" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with a constant as an override");
@@ -995,15 +995,15 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_OverrideInconsistentWithPersisten
     {
     ExpectSchemaDeserializationSuccess(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:M]" relativeError="10e-3" />
                                         </ECSchema>)xml");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:ACRE]" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with override units that are inconsistent with pers unit");
@@ -1016,15 +1016,15 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_OverrideInconsistentWithOtherOver
     {
     ExpectSchemaDeserializationSuccess(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:MILE][u:YRD]" relativeError="10e-3" />
                                         </ECSchema>)xml");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:MILE][u:ACRE]" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with override units that are inconsistent with each other");
@@ -1037,15 +1037,15 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_DuplicateOverrides)
     {
     ExpectSchemaDeserializationSuccess(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:MILE][u:YRD]" relativeError="10e-3" />
                                         </ECSchema>)xml");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:MILE][u:MILE]" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with override units that are duplicates ");
@@ -1058,15 +1058,15 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_InvalidOrderingOfOverrides)
     {
     ExpectSchemaDeserializationSuccess(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:MILE][u:YRD]" relativeError="10e-3" />
                                         </ECSchema>)xml");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:YRD][u:MILE]" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with override units that in the wrong order. Major unit must be biggest ");
@@ -1079,15 +1079,15 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_CantOverrideUnitsIfTheyAlreadyAre
     {
     ExpectSchemaDeserializationSuccess(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:AmerFI" relativeError="10e-3" />
                                         </ECSchema>)xml");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:AmerFI[u:M][u:MILE]" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with override units that Don't match those already defined in the parent format");
@@ -1100,15 +1100,15 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_CantOverrideMoreUnitsThanAreDefin
     {
     ExpectSchemaDeserializationSuccess(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:AmerFI[u:FT][u:IN|banana]" relativeError="10e-3" />
                                         </ECSchema>)xml");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:AmerFI[u:FT][u:IN|banana][u:MILLIINCH|woops]" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with more override units than are defined in the parent format (except in the case of zero already defined)");
@@ -1121,15 +1121,15 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_CantOverrideMoreThanFourUnits)
     {
     ExpectSchemaDeserializationSuccess(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:KM][u:M|banana][u:DM][u:CM]" relativeError="10e-3" />
                                         </ECSchema>)xml");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:KM][u:M|banana][u:DM][u:CM][u:MM|woops]" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with more than 4 override units");
@@ -1142,22 +1142,22 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_InvalidDecimalPrecisionValues)
     {
     ExpectSchemaDeserializationSuccess(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU" relativeError="10e-3" />
                                         </ECSchema>)xml");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU(-1)" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with a bad precision value ");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU(13)" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with a bad precision value ");
@@ -1170,29 +1170,29 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_InvalidFractionalPrecisionValues)
     {
     ExpectSchemaDeserializationSuccess(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:AmerFI" relativeError="10e-3" />
                                         </ECSchema>)xml");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:AmerFI(-1)" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with a bad precision value ");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:AmerFI(3)" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with a bad precision value ");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:AmerFI(512)" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with a bad precision value ");
@@ -1205,8 +1205,8 @@ TEST_F(KindOfQuantityDeserializationTest, FormatStringNoOverrides)
     {
     SchemaItem schemaXml(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:AmerFI" relativeError="10e-3" />
                                         </ECSchema>)xml");
@@ -1230,8 +1230,8 @@ TEST_F(KindOfQuantityDeserializationTest, FormatStringOverrideFormatWithUnits)
     {
     SchemaItem schemaXml(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:AmerFI[u:FT|fish][u:IN|bone]" relativeError="10e-3" />
                                         </ECSchema>)xml");
@@ -1259,8 +1259,8 @@ TEST_F(KindOfQuantityDeserializationTest, FormatStringOverrideUnitsAndLabels)
     {
     SchemaItem schemaXml(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-                                            <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+                                            <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+                                            <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                                                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:MILE|m][u:YRD|y][u:IN|i][u:MILLIINCH|mi]" relativeError="10e-3" />
                                         </ECSchema>)xml");
@@ -1292,8 +1292,8 @@ TEST_F(KindOfQuantityDeserializationTest, FormatStringOverrideUnitsAndLabels)
 
 Utf8CP KindOfQuantitySerializationTest::s_testSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name="Units" version="01.00" alias="u"/>
-        <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+        <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
+        <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
         <KindOfQuantity typeName="TestKoQ" relativeError="10e-3" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[u:CM]" />
     </ECSchema>)xml";
 
@@ -1392,8 +1392,8 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec31_roundTrip)
     {
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
-            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
@@ -1419,8 +1419,8 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTripShouldDropUnknownPresentationF
     {
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
-            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
@@ -1447,8 +1447,8 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec30_roundTrip)
     {
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
-            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
@@ -1474,8 +1474,8 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTripShouldDropUnknownPresentationF
     {
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
-            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
@@ -1502,8 +1502,8 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTrip)
     {
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
-            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
                         presentationUnits="f:AmerFI;f:DefaultRealU[u:M]" />
@@ -1534,8 +1534,8 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTrip)
     {
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
-            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
                         presentationUnits="f:AmerFI;f:DefaultRealU[u:M]" />
@@ -1670,15 +1670,15 @@ TEST_F(KindOfQuantityCompatibilityTest, Fail_UnknownUnit)
     // Persistence FUS
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
             <KindOfQuantity typeName="KoQWithPers" description="Kind of a Description here"
                 displayLabel="best quantity of all time" persistenceUnit="SILLYMETER" relativeError="10e-3" />
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an unknown perisistence unit in a newer (3.3) version");
     // Presentation FUS
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
-            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultReal[ANOTHERSILLYMETER];" relativeError="10e-3" />
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an unknown presentation format in a newer (3.3) version");
@@ -1692,8 +1692,8 @@ TEST_F(KindOfQuantityCompatibilityTest, Fail_UnknownFormat)
     // Presentation Units
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
-            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
                 displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultReal;SILLYFORMAT" relativeError="10e-3" />
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid presentation format in EC 3.3");
@@ -1706,8 +1706,8 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInReferencedSche
     {
     SchemaItem refSchemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
-            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
                         presentationUnits="f:AmerFI;f:DefaultRealU" />
@@ -1759,8 +1759,8 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInSchema)
     {
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
-            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
                         presentationUnits="f:AmerFI;f:DefaultRealU" />
@@ -1802,8 +1802,8 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityWithUnitsInSchem
     {
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
-            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
+            <ECSchemaReference name="Units" version="1.0.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"

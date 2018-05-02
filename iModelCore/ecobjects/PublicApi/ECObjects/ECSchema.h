@@ -2611,6 +2611,15 @@ struct SchemaKey
     //! @return A status code indicating whether the string was successfully parsed
     ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString(uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString);
 
+    //! Given a version string RR.WW.MM, this will parse into read, write and minor versions
+    //! @param[out] versionRead    The read version number
+    //! @param[out] versionWrite   The write version number.
+    //! @param[out] versionMinor   The minor version number
+    //! @param[in]  versionString   A string containing the read, write and minor versions (RR.WW.MM)
+    //! @return A status code indicating whether the string was successfully parsed. Will return error if there are fewer
+    //! than 3 version numbers
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionStringStrict(uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString);
+
     //! Given a version string RR.WW.MM, this will parse read, write and minor versions
     //! @param[out] schemaName      The schema name without version number qualifiers
     //! @param[out] versionRead     The read version number

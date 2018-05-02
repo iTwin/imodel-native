@@ -3513,6 +3513,7 @@ Utf8String SchemaKey::FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t ver
     }
 
 #define ECSCHEMA_VERSION_FORMAT_EXPLANATION " Format must be either RR.mm or RR.ww.mm where RR is read version, ww is the write compatibility version and mm is minor version."
+#define ECSCHEMA_VERSION_FORMAT_EXPLANATION_EC32 " Format must RR.ww.mm where RR is read version, ww is the write compatibility version and mm is minor version."
 #define ECSCHEMA_FULLNAME_FORMAT_EXPLANATION " Format must be either Name.RR.mm or Name.RR.ww.mm where RR is read version, ww is the write compatibility version and mm is minor version."
 
 /*---------------------------------------------------------------------------------**//**
@@ -3613,6 +3614,30 @@ ECObjectsStatus SchemaKey::ParseVersionString (uint32_t& versionRead, uint32_t& 
         }
 
     return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Kyle.Abramowitz                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus SchemaKey::ParseVersionStringStrict(uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString)
+    {
+    int count = 0;
+    const int maxVersionSize = 10; //If we somehow got a non terminated string the max a version can be is xx.xx.xx\0
+    int iter = 0;
+    while (versionString[iter] != '\0' && iter < maxVersionSize)
+        {
+        if (versionString[iter] == '.')
+            ++count;
+        ++iter;
+        }
+
+    if (count < 2)
+        {
+        LOG.errorv("Invalid ECSchema Version String: '%s' at least version numbers are required!" ECSCHEMA_VERSION_FORMAT_EXPLANATION_EC32, versionString);
+        return ECObjectsStatus::InvalidECVersion;
+        }
+
+    return ParseVersionString(versionRead, versionWrite, versionMinor, versionString);
     }
 
 /*---------------------------------------------------------------------------------**//**
