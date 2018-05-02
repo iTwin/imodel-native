@@ -115,18 +115,60 @@ private:
     DPoint2d m_vertStartPt;
     DPoint2d m_vertEndPt;
     DPoint2d m_currentPos;
-    GPArrayP m_gpa;
+
     std::stack<DPoint2d> m_stack;
 
     void AddPoint(DPoint2dCR pt);
     void AddEllipse(DEllipse3dCR el);
-    
+
+    bvector<DPoint3d> m_activeLineString;
+    CurveVectorPtr m_activeLoop;
+    bvector<CurveVectorPtr> m_completedLoops;
+    // ensure there is an m_activeLoop.
+    // move the active linestring into the active loop
+    void ClearActiveLineString ()
+        {
+        if (!m_activeLoop.IsValid ())
+            m_activeLoop = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+        if (m_activeLineString.size () > 1)
+            m_activeLoop->Add (ICurvePrimitive::CreateLineString (m_activeLineString));
+        m_activeLineString.clear ();
+        }
+    // Move the active loop to completed
+    void EndActiveLoop ()
+        {
+        if (m_activeLineString.size () > 1)
+            ClearActiveLineString ();
+        if (m_activeLoop.IsValid ())
+            {
+            m_completedLoops.push_back (m_activeLoop);
+            }
+        m_activeLoop = nullptr;
+        }
+    public:
+    CurveVectorPtr GrabCurveVector ()
+        {
+        CurveVectorPtr result;
+        if (m_completedLoops.size () == 1)
+            result = m_completedLoops[0];
+        else if (m_completedLoops.size () > 1)
+            {
+            result = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+            for (auto &c : m_completedLoops)
+                result->Add (c);
+            }
+        else
+            {
+            result = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+            }
+        m_completedLoops.clear ();
+        return result;
+        }
 public:
-    ShapeConverter(GPArrayR, IDgnShxFontData&);
+    ShapeConverter(IDgnShxFontData&);
     DPoint2dCR GetCurrentPos() const { return m_currentPos; }
     double GetLeftBearing() const { return m_leftBearing; }
     double GetMultiplier() const { return m_multiplier; }
-    int GetNumPoints() const { return m_gpa->GetCount(); }
     double GetRightBearing() const { return m_rightBearing; }
     DPoint2dCR GetVEndPt() const { return m_vertEndPt; }
     DPoint2dCR GetVStartPt() const { return m_vertStartPt; }
@@ -151,30 +193,38 @@ public:
     void DecodeXYDisp(int& currentCode, CharCP pCodes);
     void DecodeXYMultiDisp(int& currentCode, CharCP pCodes);
     void DoConversion(size_t numBytes, CharCP buff, bool doVerticals, bool hasData);
-    bool IsPointInGPA(DPoint2dCR point) const;
-    bool NeedPointInGPA(DPoint2dCR point) const;
 };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
-ShapeConverter::ShapeConverter(GPArrayR gpa, IDgnShxFontData& data) :
+ShapeConverter::ShapeConverter(IDgnShxFontData& data) :
     m_data(&data), m_isPenDown(true), m_vStart(false), m_vEnd(false), m_hasData(false), m_processVertical(false), m_skipCodes(false),
-    m_multiplier(1.0), m_leftBearing(INT_MAX), m_rightBearing(-INT_MAX), m_gpa(&gpa)
+    m_multiplier(1.0), m_leftBearing(INT_MAX), m_rightBearing(-INT_MAX)
     {
     m_vertStartPt.Zero();
     m_vertEndPt.Zero();
     m_currentPos.Zero();
     }
-
+static bool IsDuplicationOfFinalPoint (bvector<DPoint3d> const &data, DPoint2dCR xy)
+    {
+    if (data.size () == 0)
+        return false;
+    static double s_tol = 1.0e-10;
+    double delta = fabs (data.back ().x - xy.x) + fabs (data.back ().y - xy.y);
+    return delta < s_tol;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2012
 //---------------------------------------------------------------------------------------
 void ShapeConverter::AddPoint(DPoint2dCR pt)
     {
     m_hasData = true;
-    if (!m_processVertical)
-        m_gpa->Add(&pt, 1);
+    if (!m_processVertical && m_isPenDown)
+        {
+        if (!IsDuplicationOfFinalPoint (m_activeLineString, pt))
+        m_activeLineString.push_back (DPoint3d::From (pt));
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -184,7 +234,10 @@ void ShapeConverter::AddEllipse(DEllipse3dCR el)
     {
     m_hasData = true;
     if (!m_processVertical)
-        m_gpa->Add(el);
+        {
+        ClearActiveLineString ();
+        m_activeLoop->Add (ICurvePrimitive::CreateArc (el));
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -216,14 +269,13 @@ void ShapeConverter::DecodeBulgeArc(int& currentCode, CharCP pCodes)
         DEllipse3d sEllipse;
         bulgeFactorToDEllipse3d(&sEllipse, &sStart, &sEnd, (double) b / 127.0);
 
-        if (NeedPointInGPA(m_currentPos))
-            AddPoint(m_currentPos);
+        AddPoint(m_currentPos);
 
         AddEllipse(sEllipse);
         }
     else
         {
-        if (IsPenDown() && !IsPointInGPA(m_currentPos))
+        if (IsPenDown())
             AddPoint(m_currentPos);
 
         if (IsPenDown())
@@ -438,8 +490,7 @@ void ShapeConverter::DecodeFractionArc(int& currentCode, CharCP pCodes)
     // *Note: We have empirically found that AutoCAD will always draw arcs, regardless of the pen up/down state.
     //  It does not, however, leave the pen down after arcs; therefore, simply ignore IsPenDown checks.
 
-    if (NeedPointInGPA(m_currentPos))
-        AddPoint(m_currentPos);
+    AddPoint(m_currentPos);
 
     AddEllipse(sEllipse);
 
@@ -627,8 +678,7 @@ void ShapeConverter::DecodeOctantArc(int& currentCode, CharCP pCodes)
     // *Note: We have empirically found that AutoCAD will always draw arcs, regardless of the pen up/down state.
     //  It does not, however, leave the pen down after arcs; therefore, simply ignore IsPenDown checks.
 
-    if (NeedPointInGPA(m_currentPos))
-        AddPoint(m_currentPos);
+    AddPoint(m_currentPos);
 
     AddEllipse(sEllipse);
 
@@ -652,7 +702,7 @@ void ShapeConverter::DecodePenDown()
     if (m_currentPos.x >  m_rightBearing)
         m_rightBearing = m_currentPos.x;
 
-    m_gpa->MarkMajorBreak();
+    EndActiveLoop ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -664,7 +714,7 @@ void ShapeConverter::DecodePenUp()
         return;
 
     m_isPenDown = false;
-    m_gpa->MarkMajorBreak();
+    EndActiveLoop ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -681,8 +731,7 @@ void ShapeConverter::DecodePop()
     m_currentPos = m_stack.top();
     m_stack.pop();
 
-    // Mark break in GPA added due to BOLD.shx R character
-    m_gpa->MarkMajorBreak();
+    EndActiveLoop ();
     }
 
 //---------------------------------------------------------------------------------------
@@ -825,8 +874,7 @@ void ShapeConverter::DecodeVector(Byte iCode, CharCP)
 
     if (IsPenDown())
         {
-        if (!IsPointInGPA(m_currentPos))
-            AddPoint(m_currentPos);
+        AddPoint(m_currentPos);
 
         AddPoint(pt);
         }
@@ -869,11 +917,9 @@ void ShapeConverter::DecodeXYDisp(int& currentCode, CharCP pCodes)
     pt.x += sDisp.x;
     pt.y += sDisp.y;
 
-    if (IsPenDown() && !IsPointInGPA(m_currentPos))
-        AddPoint(m_currentPos);
+    AddPoint(m_currentPos);
 
-    if (IsPenDown())
-        AddPoint(pt);
+    AddPoint(pt);
 
     m_currentPos = pt;
     }
@@ -918,50 +964,6 @@ void ShapeConverter::DoConversion(size_t numBytes, CharCP buff, bool doVerticals
         DecodeCodes(currentCode, buff);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     08/2012
-//---------------------------------------------------------------------------------------
-bool ShapeConverter::IsPointInGPA(DPoint2dCR point) const
-    {
-    int count = GetNumPoints();
-    if (0 == count)
-        return false;
-
-    GraphicsPoint gp;
-    m_gpa->GetGraphicsPoint(count - 1, gp);
-    
-    DPoint4d pt = gp.point;
-    int mask = gp.mask;
-
-    // If this point is a break then the point will need to be added again.
-    if (0 != mask)
-        return false;
-
-    return ((pt.x == point.x) && (pt.y == point.y));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     08/2012
-//---------------------------------------------------------------------------------------
-bool ShapeConverter::NeedPointInGPA(DPoint2dCR point) const
-    {
-    int count = GetNumPoints();
-    if (0 == count)
-        return false;
-
-    GraphicsPoint gp;
-    m_gpa->GetGraphicsPoint(count - 1, gp);
-    
-    DPoint4d pt = gp.point;
-    int mask = gp.mask;
-
-    // If this point is anything other than a bland linestrignpoint, say no...
-    if (0 != mask)
-        return false;
-
-    return ((pt.x != point.x) || (pt.y != point.y));
-    }
-
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2015
 //=======================================================================================
@@ -986,7 +988,8 @@ public:
     T_Id _GetId() const override { return m_glyphId; }
     DRange2d _GetRange() const override { EnsureMetrics(); return m_range; }
     DRange2d _GetExactRange() const override { EnsureMetrics(); return m_exactRange; }
-    BentleyStatus _FillGpa(GPArrayR) const override;
+    CurveVectorPtr _GetCurveVector() const override;
+    CurveVectorPtr GetCurveVectorWithBearings (double &rightBearing, double &leftBearing, DPoint2dR finalXY) const;
     bool _IsBlank() const override { EnsureMetrics(); return m_isBlank; }
     DoFixup _DoFixup () const override { return DoFixup::Never; }
 
@@ -1014,25 +1017,15 @@ void DgnShxGlyph::EnsureMetrics() const
 
     if (0 == m_data->_Read(glyphData.GetData(), m_dataSize, 1))
         return;
-    
-    GPArraySmartP gpa;
-    ShapeConverter converter(gpa, *m_data);
-    converter.DoConversion(m_dataSize, (CharCP)glyphData.GetDataCP(), false, false);
-
-    double scale = (1.0 / m_data->GetAscender());
+    DPoint2d finalXY;
+    double rightBearing, leftBearing;
+    auto curves = GetCurveVectorWithBearings (rightBearing, leftBearing, finalXY);
     DRange2d tRange = DRange2d::NullRange();
 
-    if (!gpa->IsEmpty())
+    if (curves.IsValid ())
         {
-        // Scale the gpa into a 0-1 range
-        Transform sMatrix;
-        sMatrix.InitIdentity();
-
-        bsiTransform_scaleMatrixRows(&sMatrix, &sMatrix, scale, scale, 1.0);
-        gpa->Multiply(sMatrix);
-        
         DRange3d range3d;
-        gpa->GetRange(range3d);
+        curves->GetRange (range3d);
         
         tRange.low.x = range3d.low.x;
         tRange.low.y = range3d.low.y;
@@ -1044,19 +1037,15 @@ void DgnShxGlyph::EnsureMetrics() const
         {
         m_exactRange = tRange;
 
-        // For SHX files created from RSC files, we sometimes have to do a penDown/penUp to set the left and right side bearings to match what we would have had in the RSC glphy (e.g. in RSC glyphs LSB is always 0). In that case, there's no geometry in the GPA to set those extremes.
-        double rsb = (converter.GetRightBearing() * scale);
-        double lsb = (converter.GetLeftBearing() * scale);
+        if (m_exactRange.high.x < rightBearing)
+            m_exactRange.high.x = rightBearing;
 
-        if (m_exactRange.high.x < rsb)
-            m_exactRange.high.x = rsb;
-
-        if (m_exactRange.low.x > lsb)
-            m_exactRange.low.x = lsb;
+        if (m_exactRange.low.x > leftBearing)
+            m_exactRange.low.x = leftBearing;
         }
 
     m_range.low.Zero();
-    m_range.high.x = (converter.GetCurrentPos().x * scale);
+    m_range.high.x = finalXY.x;
     m_range.high.y = m_exactRange.high.y;
 
     // If the pen position is to the left of zero, that means we have a right-to-left character. Reverse the start/end of the black box too.
@@ -1073,35 +1062,45 @@ void DgnShxGlyph::EnsureMetrics() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnShxGlyph::_FillGpa(GPArrayR gpa) const
+CurveVectorPtr DgnShxGlyph::GetCurveVectorWithBearings (double &rightBearing, double &leftBearing, DPoint2dR finalXY) const
     {
+    rightBearing = leftBearing = 0.0;
+    finalXY.Zero ();
     BeMutexHolder lock(DgnFonts::GetMutex());
 
     if ((nullptr == m_data) || (0 == m_dataSize))
-        return ERROR;
+        return nullptr;
 
     ScopedArray<Byte> glyphData(m_dataSize);
     if (SUCCESS != m_data->_Seek(m_dataOffset, BeFileSeekOrigin::Begin))
-        return ERROR;
+        return nullptr;
 
     if (0 == m_data->_Read(glyphData.GetData(), m_dataSize, 1))
-        return ERROR;
-
-    ShapeConverter converter(gpa, *m_data);
+        return nullptr;
+    ShapeConverter converter(*m_data);
     converter.DoConversion(m_dataSize, (CharCP)glyphData.GetDataCP(), false, false);
-
-    if (gpa.IsEmpty())
-        return SUCCESS;
+    auto curves = converter.GrabCurveVector ();
+    if (!curves.IsValid ())
+        return nullptr;
     
     double scale = (1.0 / m_data->GetAscender());
-    Transform sMatrix;
-    sMatrix.InitIdentity();
-    bsiTransform_scaleMatrixRows(&sMatrix, &sMatrix, scale, scale, 1.0);
-    
-    gpa.Multiply(sMatrix);
-
-    return SUCCESS;
+    Transform scaleTransform = Transform::FromScaleFactors (scale, scale, 1.0);
+    curves->TransformInPlace (scaleTransform);
+    // For SHX files created from RSC files, we sometimes have to do a penDown/penUp to set the left and right side bearings to match what we would have had in the RSC glphy (e.g. in RSC glyphs LSB is always 0). In that case, there's no geometry in the GPA to set those extremes.
+    rightBearing = (converter.GetRightBearing () * scale);
+    leftBearing  = (converter.GetLeftBearing () * scale);
+    finalXY = converter.GetCurrentPos ();
+    finalXY.x *= scale;
+    finalXY.y *= scale;
+    return curves;
     }
+CurveVectorPtr DgnShxGlyph::_GetCurveVector () const
+    {
+    double rightBearing, leftBearing;
+    DPoint2d finalXY;
+    return GetCurveVectorWithBearings (rightBearing, leftBearing, finalXY);
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
