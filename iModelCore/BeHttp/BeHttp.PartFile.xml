@@ -207,7 +207,7 @@
 
     <Part
         Name="BeHttpSqlang-en"
-        BentleyBuildMakeFile="../bsicommon/sqlang/mki/XliffsToDb.mke"
+        BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/BeHttp/sqlang/BeHttp_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
         <SubPart PartName="BeHttp-Xliffs" />
         <Bindings>
