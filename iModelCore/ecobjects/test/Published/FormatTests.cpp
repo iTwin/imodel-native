@@ -228,6 +228,34 @@ TEST_F(FormatTest, VerifyRoundTripMappings)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatTest, LookupFormatTest)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
+            <Format typeName="myformat" type="decimal" precision="4"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    auto shouldBeNull = schema->LookupFormat("");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = schema->LookupFormat("banana");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    auto shouldNotBeNull = schema->LookupFormat("myformat");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("myformat", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupFormat("f:AmerFI");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("AmerFI", shouldNotBeNull->GetName().c_str());
+    ASSERT_EQ(1, schema->GetFormatCount());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                               Kyle.Abramowitz                     03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatRequiredAttributesTest, MissingOrInvalidType)

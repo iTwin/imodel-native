@@ -139,6 +139,40 @@ TEST_F(PropertyCategoryTest, StandaloneSchemaItemPropertyCategory)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(PropertyCategoryTest, LookupPropertyCategoryTest)
+    {
+    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="ref" version="01.00.00" alias="r" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <PropertyCategory typeName="propCategory" displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="2"/>
+        </ECSchema>)xml";
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ref" version="1.0.0" alias="r"/>
+            <PropertyCategory typeName="propCategory" displayLabel="PropertyCategory" description="This is an awesome new Property Category" priority="2"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr refSchema;
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    auto shouldBeNull = schema->LookupPropertyCategory("");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = schema->LookupPropertyCategory("banana");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    auto shouldNotBeNull = schema->LookupPropertyCategory("propCategory");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupPropertyCategory("r:propCategory");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("propCategory", shouldNotBeNull->GetName().c_str());
+    ASSERT_EQ(1, schema->GetPropertyCategoryCount());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(PropertyCategoryDeserializationTest, BasicRoundTripTest)

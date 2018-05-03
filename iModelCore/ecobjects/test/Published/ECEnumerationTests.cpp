@@ -598,6 +598,44 @@ TEST_F(ECEnumerationTest, MissingOrEmptyDisplayLabel)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECEnumerationTest, LookupEnumerationTest)
+    {
+    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="ref" version="01.00.00" alias="r" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator name="Foo2" value="Spaghetti" displayLabel=""/>
+            </ECEnumeration>
+        </ECSchema>)xml";
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+           <ECSchemaReference name="ref" version="1.0.0" alias="r"/>
+           <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator name="Foo2" value="Spaghetti" displayLabel=""/>
+            </ECEnumeration>
+        </ECSchema>)xml";
+
+    ECSchemaPtr refSchema;
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refSchema, refSchemaXml, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    auto shouldBeNull = schema->LookupEnumeration("");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = schema->LookupEnumeration("banana");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    auto shouldNotBeNull = schema->LookupEnumeration("FoodType");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("FoodType", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupEnumeration("r:FoodType");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("FoodType", shouldNotBeNull->GetName().c_str());
+    ASSERT_EQ(1, schema->GetEnumerationCount());
+    }
+
 //=======================================================================================
 //! ECEnumerationCompatibilityTests
 //=======================================================================================
