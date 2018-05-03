@@ -711,31 +711,31 @@
                     <KeyName>Minna.NigeriaWest</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:26391</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>Minna.NigeriaMid</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:26392</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Minna.NigeriaEast</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:26393</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>Minna.UTM-31N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:26331</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Minna.UTM-32N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:26332</KeyName>
+                    <KeyName>Minna/gc.NigeriaWest</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Minna/gc.NigeriaMid</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Minna/gc.NigeriaEast</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Minna/gc.UTM-31N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Minna/gc.UTM-32N</KeyName>
                   </Member>
                   <Member>
                     <KeyName>WGS84.TM-6NE</KeyName>
@@ -30718,6 +30718,30 @@
                 </Members>
               </Group>
               <Group>
+                <Name>Nigeria</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:26391</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:26392</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:26393</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:26331</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:26332</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2311</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+
+              <Group>
                 <Name>Columbia</Name>
                 <Members>
                   <Member>
@@ -33047,7 +33071,7 @@
                     <KeyName>Minna.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4263</KeyName>
+                    <KeyName>Minna/gc.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -36451,6 +36475,12 @@
                </Member>			   
                <Member>
                  <KeyName>Voirol1875_1.LL</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>EPSG:4263</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>EPSG:4275</KeyName>
                </Member>
             </Members>
           </Group>
