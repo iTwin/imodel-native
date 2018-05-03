@@ -15,6 +15,7 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 struct FormatTest : ECTestFixture {};
 struct FormatRequiredAttributesTest : ECTestFixture {};
 struct FormatOptionalAttributesTest : ECTestFixture {};
+struct FormatJsonTests : ECTestFixture {};
 struct CompositeTests : ECTestFixture {};
 
 //---------------------------------------------------------------------------------------
@@ -668,6 +669,22 @@ TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyStationSeparator)
     auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
     EXPECT_FALSE(nfs->HasStationSeparator());
     }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                     03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatJsonTests, FromJsonTest)
+    {
+    Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"u:FT"}]},"formatTraits":"KeepSingleZero|KeepDecimalPoint|ShowUnitLabel","precision":4,"type":"Decimal","uomSeparator":""})json";
+
+    auto jsonValue = Json::Value::From(json);
+    ECSchemaPtr out;
+    ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
+    out->AddReferencedSchema(*GetUnitsSchema());
+    NamedFormat format;
+    NamedFormat::FromJson(format, jsonValue, &out->GetUnitsContext());
+
     }
 
 //---------------------------------------------------------------------------------------

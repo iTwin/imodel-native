@@ -2204,4 +2204,107 @@ TEST_F(SchemaVersionTest, ChangeOriginalECXmlVersion)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                     05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, ShouldFailToDeserialize32AndGreaterWithoutCorrectVersion)
+    {
+    ExpectSchemaDeserializationSuccess(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        </ECSchema>
+        )xml");
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        </ECSchema>
+        )xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize 3.2 schema with 2 part version");
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+        </ECSchema>
+        )xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize 3.3 schema with 2 part version");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                     05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, ReferenceSchemasShoudlUse3PartVersionsForGreaterThan32Schemas)
+    {
+    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="ref" alias="r" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        </ECSchema>
+        )xml";
+    ExpectSchemaDeserializationSuccess(refSchemaXml);
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ref" version="1.00.00" alias="r"/>
+    </ECSchema>
+    )xml";
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
+    DeserializeSchema(schema, *context, SchemaItem(schemaXml));
+    }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+        <ECSchemaReference name="ref" version="1.00.00" alias="r"/>
+    </ECSchema>
+    )xml";
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
+    DeserializeSchema(schema, *context, SchemaItem(schemaXml));
+    }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ref" version="1.00" alias="r"/>
+    </ECSchema>
+    )xml";
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
+    DeserializeSchema(schema, *context, SchemaItem(schemaXml), SchemaReadStatus::InvalidECSchemaXml);
+    }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+        <ECSchemaReference name="ref" version="1.00" alias="r"/>
+    </ECSchema>
+    )xml";
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
+    DeserializeSchema(schema, *context, SchemaItem(schemaXml), SchemaReadStatus::InvalidECSchemaXml);
+    }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ref" version="a.b.c" alias="r"/>
+    </ECSchema>
+    )xml";
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
+    DeserializeSchema(schema, *context, SchemaItem(schemaXml), SchemaReadStatus::InvalidECSchemaXml);
+    }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+        <ECSchemaReference name="ref" version="a.b.c" alias="r"/>
+    </ECSchema>
+    )xml";
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
+    DeserializeSchema(schema, *context, SchemaItem(schemaXml), SchemaReadStatus::InvalidECSchemaXml);
+    }
+
+    }
 END_BENTLEY_ECN_TEST_NAMESPACE
