@@ -50,20 +50,20 @@ TEST_F(UnitSystemTest, LookupSystemTest)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
 
     auto unitContext = &schema->GetUnitsContext();
-    auto shouldBeNull = unitContext->LookupUnitSystem("");
+    auto shouldBeNull = schema->LookupUnitSystem("");
     EXPECT_EQ(nullptr, shouldBeNull);
-    shouldBeNull = unitContext->LookupUnitSystem("banana:M");
+    shouldBeNull = schema->LookupUnitSystem("banana:M");
     EXPECT_EQ(nullptr, shouldBeNull);
-    auto shouldNotBeNull = unitContext->LookupUnitSystem("TestSystem");
+    auto shouldNotBeNull = schema->LookupUnitSystem("TestSystem");
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("TestSystem", shouldNotBeNull->GetName().c_str());
-    shouldNotBeNull = unitContext->LookupUnitSystem("u:SI");
+    shouldNotBeNull = schema->LookupUnitSystem("u:SI");
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("SI", shouldNotBeNull->GetName().c_str());
 
     bvector<Units::UnitSystemCP> systems;
     unitContext->AllSystems(systems);
-    ASSERT_EQ(unitContext->GetUnitSystemCount(), systems.size());
+    ASSERT_EQ(schema->GetUnitSystemCount(), systems.size());
     }
 
 //---------------------------------------------------------------------------------------

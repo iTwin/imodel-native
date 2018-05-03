@@ -52,19 +52,19 @@ TEST_F(PhenomenonTests, LookupPhenomTest)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
 
     auto unitContext = &schema->GetUnitsContext();
-    auto shouldBeNull = unitContext->LookupPhenomenon("");
+    auto shouldBeNull = schema->LookupPhenomenon("");
     EXPECT_EQ(nullptr, shouldBeNull);
-    shouldBeNull = unitContext->LookupPhenomenon("banana:M");
+    shouldBeNull = schema->LookupPhenomenon("banana:M");
     EXPECT_EQ(nullptr, shouldBeNull);
-    auto shouldNotBeNull = unitContext->LookupPhenomenon("TestPhenom");
+    auto shouldNotBeNull = schema->LookupPhenomenon("TestPhenom");
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("TestPhenom", shouldNotBeNull->GetName().c_str());
-    shouldNotBeNull = unitContext->LookupPhenomenon("u:LENGTH");
+    shouldNotBeNull = schema->LookupPhenomenon("u:LENGTH");
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("LENGTH", shouldNotBeNull->GetName().c_str());
     bvector<Units::PhenomenonCP> phenom;
     unitContext->AllPhenomena(phenom);
-    ASSERT_EQ(unitContext->GetPhenomenonCount(), phenom.size());
+    ASSERT_EQ(schema->GetPhenomenonCount(), phenom.size());
     }
 
 //---------------------------------------------------------------------------------------

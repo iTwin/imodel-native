@@ -113,21 +113,19 @@ TEST_F(UnitsTests, LookupUnitTest)
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-
-    auto unitContext = &schema->GetUnitsContext();
-    auto shouldBeNull = unitContext->LookupUnit("");
+    auto shouldBeNull = schema->LookupUnit("");
     EXPECT_EQ(nullptr, shouldBeNull);
-    shouldBeNull = unitContext->LookupUnit("banana:M");
+    shouldBeNull = schema->LookupUnit("banana:M");
     EXPECT_EQ(nullptr, shouldBeNull);
-    auto shouldNotBeNull = unitContext->LookupUnit("TestUnit");
+    auto shouldNotBeNull = schema->LookupUnit("TestUnit");
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("TestUnit", shouldNotBeNull->GetName().c_str());
-    shouldNotBeNull = unitContext->LookupUnit("u:M");
+    shouldNotBeNull = schema->LookupUnit("u:M");
     ASSERT_NE(nullptr, shouldNotBeNull);
     EXPECT_STRCASEEQ("M", shouldNotBeNull->GetName().c_str());
     bvector<Units::UnitCP> units;
-    unitContext->AllUnits(units);
-    ASSERT_EQ(unitContext->GetUnitCount(), units.size());
+    schema->GetUnitsContext().AllUnits(units);
+    ASSERT_EQ(schema->GetUnitCount(), units.size());
     }
 
 //---------------------------------------------------------------------------------------

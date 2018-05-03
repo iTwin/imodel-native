@@ -326,6 +326,7 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     comp.SetMiddleLabel("Bannana");
     comp.SetMinorLabel("Carrot");
     comp.SetSubLabel("Dragonfruit");
+    comp.SetSpacer("-");
 
     auto num = Formatting::NumericFormatSpec();
     num.SetApplyRounding(true);
@@ -336,6 +337,7 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     num.SetSignOption(Formatting::SignOption::NegativeParentheses);
     num.SetDecimalSeparator(',');
     num.SetThousandSeparator(',');
+    num.SetRoundingFactor(0.1);
 
     ECFormatP format;
     m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
@@ -349,6 +351,51 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     comparer.Compare(changes, first, second);
 
     ASSERT_EQ(0, changes.Count()); //Identical
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      05/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareFormatsDeleted)
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    comp.SetMajorLabel("Apple");
+    comp.SetMiddleLabel("Bannana");
+    comp.SetMinorLabel("Carrot");
+    comp.SetSubLabel("Dragonfruit");
+    comp.SetSpacer("-");
+
+    auto num = Formatting::NumericFormatSpec();
+    num.SetApplyRounding(true);
+    num.SetPresentationType(Formatting::PresentationType::Fractional);
+    num.SetPrecision(Formatting::FractionalPrecision::Over_128);
+    num.SetMinWidth(4);
+    num.SetUomSeparator("");
+    num.SetSignOption(Formatting::SignOption::NegativeParentheses);
+    num.SetDecimalSeparator(',');
+    num.SetThousandSeparator(',');
+    num.SetRoundingFactor(0.1);
+
+    ECFormatP format;
+    m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+
+    ASSERT_EQ(1, changes.Count());
+
+    auto formatChanges = changes.At(0).Formats();
+    ASSERT_EQ(1, formatChanges.Count());
+
+    auto formatChange = formatChanges.At(0);
+
+    ASSERT_EQ(21, formatChange.ChangesCount());
     }
 
 //----------------------------------------------------------------------------------------
@@ -777,6 +824,132 @@ TEST_F(SchemaCompareTest, CompareFormatsModifiedNumericSpec)
     EXPECT_STRCASEEQ(".", formatChange.GetDecimalSeparator().GetNew().Value().c_str());
     EXPECT_STRCASEEQ(",", formatChange.GetThousandsSeparator().GetOld().Value().c_str());
     EXPECT_STRCASEEQ(".", formatChange.GetThousandsSeparator().GetNew().Value().c_str());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      05/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareEnumerationsIdentical)
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+
+    ECEnumerationP enumeration;
+    m_firstSchema->CreateEnumeration(enumeration, "enum", PrimitiveType::PRIMITIVETYPE_String);
+    auto firstEnum = m_firstSchema->GetEnumerationP("enum");
+    ECEnumeratorP enumerator;
+    firstEnum->CreateEnumerator(enumerator, "blah", "banana");
+    m_secondSchema->CreateEnumeration(enumeration, "enum", PrimitiveType::PRIMITIVETYPE_String);
+    auto secondEnum = m_secondSchema->GetEnumerationP("enum");
+    secondEnum->CreateEnumerator(enumerator, "blah", "banana");
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+    ASSERT_EQ(0, changes.Count());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      05/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareEnumerationsDeleted)
+    {
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+
+    ECEnumerationP enumeration;
+    m_firstSchema->CreateEnumeration(enumeration, "enum", PrimitiveType::PRIMITIVETYPE_String);
+    auto firstEnum = m_firstSchema->GetEnumerationP("enum");
+    ECEnumeratorP enumerator;
+    firstEnum->CreateEnumerator(enumerator, "blah", "banana");
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+    ASSERT_EQ(1,  changes.Count());
+    auto& change = changes.At(0).Enumerations();
+
+    ASSERT_EQ(1, change.Count());
+    auto enumChange = change.At(0);
+
+    ASSERT_EQ(4, enumChange.ChangesCount());
+    }
+
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+
+    ECEnumerationP enumeration;
+    m_secondSchema->CreateEnumeration(enumeration, "enum", PrimitiveType::PRIMITIVETYPE_String);
+    auto firstEnum = m_secondSchema->GetEnumerationP("enum");
+    ECEnumeratorP enumerator;
+    firstEnum->CreateEnumerator(enumerator, "blah", "banana");
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+    ASSERT_EQ(1,  changes.Count());
+    auto& change = changes.At(0).Enumerations();
+
+    ASSERT_EQ(1, change.Count());
+    auto enumChange = change.At(0);
+
+    ASSERT_EQ(4, enumChange.ChangesCount());
+    }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      05/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareECClassIdentical)
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+
+    ECEntityClassP c;
+    m_firstSchema->CreateEntityClass(c, "awesome");
+    auto firstClass = m_firstSchema->GetClassP("awesome");
+    ECEnumerationP enumeration;
+    m_firstSchema->CreateEnumeration(enumeration, "enum", PrimitiveType::PRIMITIVETYPE_String);
+    PrimitiveECPropertyP prop;
+    firstClass->CreateEnumerationProperty(prop, "enum", *enumeration);
+    PrimitiveArrayECPropertyP arrayProp;
+    firstClass->CreatePrimitiveArrayProperty(arrayProp, "name");
+    firstClass->CreatePrimitiveProperty(prop, "prim");
+    StructECPropertyP structProp;
+    ECStructClassP structClass;
+    m_firstSchema->CreateStructClass(structClass, "structCLass");
+    firstClass->CreateStructProperty(structProp, "struct", *structClass);
+    StructArrayECPropertyP structArrayProp;
+    firstClass->CreateStructArrayProperty(structArrayProp, "structArrayProp", *structClass);
+    m_secondSchema->CreateEntityClass(c, "awesome");
+    firstClass = m_secondSchema->GetClassP("awesome");
+    m_secondSchema->CreateEnumeration(enumeration, "enum", PrimitiveType::PRIMITIVETYPE_String);
+    firstClass->CreateEnumerationProperty(prop, "enum", *enumeration);
+    firstClass->CreatePrimitiveArrayProperty(arrayProp, "name");
+    firstClass->CreatePrimitiveProperty(prop, "prim");
+    m_secondSchema->CreateStructClass(structClass, "structCLass");
+    firstClass->CreateStructProperty(structProp, "struct", *structClass);
+    firstClass->CreateStructArrayProperty(structArrayProp, "structArrayProp", *structClass);
+
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+    ASSERT_EQ(0, changes.Count());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

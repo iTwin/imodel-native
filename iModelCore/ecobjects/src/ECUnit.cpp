@@ -41,25 +41,6 @@ ECUnit::ECUnit(ECSchemaCR schema,Units::PhenomenonCR phenomenon, Utf8CP name, Ut
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-ECUnit::ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant) :
-    Units::Unit(unitSystem, phenomenon, name, definition, numerator, denominator, offset, isConstant), m_isNumeratorExplicitlyDefined(true), m_isDenominatorExplicitlyDefined(true),
-    m_isOffsetExplicitlyDefined(true), m_schema(schema)
-    {
-    m_unitsContext = &schema.GetUnitsContext();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
-ECUnit::ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition) :
-    Units::Unit(unitSystem, phenomenon, name, definition), m_schema(schema)
-    {
-    m_unitsContext = &schema.GetUnitsContext();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
 Utf8StringCR ECUnit::GetFullName() const
     {
     if (m_fullName.size() == 0)

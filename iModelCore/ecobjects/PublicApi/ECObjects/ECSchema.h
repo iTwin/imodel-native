@@ -3853,6 +3853,11 @@ public:
     //! @return   A pointer to an ECN::UnitSystem if the named unit system exists in within the current schema; otherwise, nullptr
     ECOBJECTS_EXPORT UnitSystemP GetUnitSystemP(Utf8CP name) const;
 
+    //! Get a UnitSystem by name within the context of this schema and all schemas referenced by this schema.
+    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
+    UnitSystemCP LookupUnitSystem(Utf8CP name) const {return (UnitSystemCP)GetUnitsContext().LookupUnitSystem(name);}
+
     //! Get a Phenomenon by name within the context of this schema.
     //! @param[in]  name     The name of the phenomenon to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::Phenomenon if the named phenomenon exists in within the current schema; otherwise, nullptr
@@ -3863,30 +3868,25 @@ public:
     //! @return   A pointer to an ECN::Phenomenon if the named phenomenon exists in within the current schema; otherwise, nullptr
     ECOBJECTS_EXPORT PhenomenonP GetPhenomenonP(Utf8CP name) const;
 
+    //! Get a Phenomenon by name within the context of this schema and all schemas referenced by this schema.
+    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
+    PhenomenonCP LookupPhenomenon(Utf8CP name) const {return (PhenomenonCP)GetUnitsContext().LookupPhenomenon(name);}
+
     //! Get an ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::ECUnit if the named unit exists in within the current schema; otherwise, nullptr
     ECUnitCP GetUnitCP(Utf8CP name) const {return GetUnitP(name);}
 
-    //! Get a Format by name within the context of this schema.
-    //! @param[in]  name     The name of the format to lookup.  This must be an unqualified (short) name.
-    //! @return   A const pointer to an ECN::Format if the named format exists in within the current schema; otherwise, nullptr
-    ECFormatCP GetFormatCP(Utf8CP name) const {return const_cast<ECSchemaP> (this)->GetFormatP(name);}
-
-    //! Get a Format by name within the context of this schema.
-    //! @param[in]  name     The name of the format to lookup.  This must be an unqualified (short) name.
-    //! @return   A pointer to an ECN::Format if the named format exists in within the current schema; otherwise, nullptr
-    ECFormatP GetFormatP(Utf8CP name) {return GetSchemaChild<ECFormat, FormatMap>(name, &m_formatMap);}
-
-    //! Get a Format by name within the context of this schema and all schemas referenced by this schema.
-    //! @param[in]  name     The name of the format to lookup.  This can be either an qualified or unqualified (short) name
-    //! @return   A pointer to an ECN::Format if the named format exists in within the current schema; otherwise, nullptr
-    ECOBJECTS_EXPORT ECFormatCP LookupFormat(Utf8CP name) const;
-
     //! Get an ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
     //! @return   A pointer to an ECN::ECUnit if the named unit exists in within the current schema; otherwise, nullptr
     ECOBJECTS_EXPORT ECUnitP GetUnitP(Utf8CP name) const;
+
+    //! Get an ECUnit by name within the context of this schema and all schemas referenced by this schema.
+    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
+    ECUnitCP LookupUnit(Utf8CP name) const {return (ECUnitCP)GetUnitsContext().LookupUnit(name);}
 
     //! Get an inverted ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
@@ -3907,6 +3907,21 @@ public:
     //! @param[in]  name     The name of the constant to lookup.  This must be an unqualified (short) name.
     //! @return   A pointer to a ECN::ECUnit if the named constant exists in within the current schema; otherwise, nullptr
     ECOBJECTS_EXPORT ECUnitP GetConstantP(Utf8CP name);
+
+    //! Get a Format by name within the context of this schema.
+    //! @param[in]  name     The name of the format to lookup.  This must be an unqualified (short) name.
+    //! @return   A const pointer to an ECN::Format if the named format exists in within the current schema; otherwise, nullptr
+    ECFormatCP GetFormatCP(Utf8CP name) const {return const_cast<ECSchemaP> (this)->GetFormatP(name);}
+
+    //! Get a Format by name within the context of this schema.
+    //! @param[in]  name     The name of the format to lookup.  This must be an unqualified (short) name.
+    //! @return   A pointer to an ECN::Format if the named format exists in within the current schema; otherwise, nullptr
+    ECFormatP GetFormatP(Utf8CP name) {return GetSchemaChild<ECFormat, FormatMap>(name, &m_formatMap);}
+
+    //! Get a Format by name within the context of this schema and all schemas referenced by this schema.
+    //! @param[in]  name     The name of the format to lookup.  This can be either an qualified or unqualified (short) name
+    //! @return   A pointer to an ECN::Format if the named format exists in within the current schema; otherwise, nullptr
+    ECOBJECTS_EXPORT ECFormatCP LookupFormat(Utf8CP name) const;
 
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,

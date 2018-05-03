@@ -15,6 +15,7 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 struct FormatTest : ECTestFixture {};
 struct FormatRequiredAttributesTest : ECTestFixture {};
 struct FormatOptionalAttributesTest : ECTestFixture {};
+struct FormatJsonTests : ECTestFixture {};
 struct CompositeTests : ECTestFixture {};
 
 //---------------------------------------------------------------------------------------
@@ -54,7 +55,7 @@ TEST_F(FormatTest, BasicRoundTripTest)
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
-            <Format typeName="AmerMYFI4" displayLabel="myfi4" description="" roundFactor="0.0" type="fractional" signOption="onlyNegative" formatTraits="trailZeroes|prependUnitLabel" precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+            <Format typeName="AmerMYFI4" displayLabel="myfi4" description="" roundFactor="0.0" type="fractional" signOption="onlyNegative" formatTraits="trailZeroes|prependUnitLabel" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
                 <Composite spacer="-" inputUnit="u:M">
                   <Unit label="mile(s)">u:MILE</Unit>
                   <Unit label="yrd(s)">u:YRD</Unit>
@@ -224,6 +225,34 @@ TEST_F(FormatTest, VerifyRoundTripMappings)
         auto format = schema->GetFormatCP(name.c_str());
         EXPECT_TRUE(f->IsIdentical(*format));
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatTest, LookupFormatTest)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Formats" version="1.0.0" alias="f"/>
+            <Format typeName="myformat" type="decimal" precision="4"/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    auto shouldBeNull = schema->LookupFormat("");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = schema->LookupFormat("banana");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    auto shouldNotBeNull = schema->LookupFormat("myformat");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("myformat", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = schema->LookupFormat("f:AmerFI");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("AmerFI", shouldNotBeNull->GetName().c_str());
+    ASSERT_EQ(1, schema->GetFormatCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -599,11 +628,11 @@ TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyDecimalSeparator)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="decimal" decSeparator="" precision="4"/>
+            <Format typeName="AmerMYFI4" type="decimal" decimalSeparator="" precision="4"/>
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty decSeparator");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="decimal" decSeparator="bananas" precision="4"/>
+            <Format typeName="AmerMYFI4" type="decimal" decimalSeparator="bananas" precision="4"/>
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid decSeparator");
     {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -651,11 +680,11 @@ TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyStationSeparator)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="decimal" statSeparator="" precision="4"/>
+            <Format typeName="AmerMYFI4" type="decimal" stationSeparator="" precision="4"/>
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty statSeparator");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="decimal" statSeparator="bananas" precision="4"/>
+            <Format typeName="AmerMYFI4" type="decimal" stationSeparator="bananas" precision="4"/>
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid statSeparator");
     {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -668,6 +697,22 @@ TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyStationSeparator)
     auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
     EXPECT_FALSE(nfs->HasStationSeparator());
     }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                     03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatJsonTests, FromJsonTest)
+    {
+    Utf8String json = R"json({"composite":{"includeZero":true,"spacer":" ","units":[{"label":"'","name":"u:FT"}]},"formatTraits":"KeepSingleZero|KeepDecimalPoint|ShowUnitLabel","precision":4,"type":"Decimal","uomSeparator":""})json";
+
+    auto jsonValue = Json::Value::From(json);
+    ECSchemaPtr out;
+    ECSchema::CreateSchema(out, "test", "t", 1, 0, 0);
+    out->AddReferencedSchema(*GetUnitsSchema());
+    NamedFormat format;
+    NamedFormat::FromJson(format, jsonValue, &out->GetUnitsContext());
+
     }
 
 //---------------------------------------------------------------------------------------

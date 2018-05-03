@@ -77,10 +77,10 @@
 #define FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE        "scientificType"
 #define FORMAT_TRAITS_ATTRIBUTE                 "formatTraits"
 #define FORMAT_PRECISION_ATTRIBUTE              "precision"
-#define FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE      "decSeparator"
+#define FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE      "decimalSeparator"
 #define FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE    "thousandSeparator"
 #define FORMAT_UOM_SEPARATOR_ATTRIBUTE          "uomSeparator"
-#define FORMAT_STAT_SEPARATOR_ATTRIBUTE         "statSeparator"
+#define FORMAT_STAT_SEPARATOR_ATTRIBUTE         "stationSeparator"
 #define FORMAT_STATION_SIZE_ATTRIBUTE           "stationOffsetSize"
 #define FORMAT_MIN_WIDTH_ATTRIBUTE              "minWidth"
 

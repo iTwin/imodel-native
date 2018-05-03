@@ -543,6 +543,55 @@ TEST_F(KindOfQuantityTest, SerializeStandaloneItemKindOfQuantity)
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityTest, LookupKindOfQuantityTest)
+    {
+    Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="refSchema" version="01.00.00" alias="rs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+        </ECSchema>)xml";
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="refSchema" version="01.00.00" alias="rs"/>
+            <Unit typeName="TestUnit" phenomenon="rs:TestPhenomenon" unitSystem="rs:TestUnitSystem" numerator="1.0" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
+            <Unit typeName="Smoot" phenomenon="rs:TestPhenomenon" unitSystem="rs:TestUnitSystem" numerator="1.0" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
+            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
+                displayLabel="best quantity of all times" persistenceUnit="Smoot" relativeError="10e-3"/>
+        </ECSchema>)xml";
+    Utf8CP koqSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="koqSchema" alias="ks" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="testSchema" version="01.00.00" alias="ts"/>
+            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
+                displayLabel="best quantity of all times" persistenceUnit="ts:TestUnit" relativeError="10e-3"/>
+        </ECSchema>)xml";
+
+    Utf8String serializedSchemaXml;
+    Utf8String serializedRefSchemaXml;
+    ECSchemaPtr schema;
+    ECSchemaPtr refSchema;
+    ECSchemaPtr koqSchema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refSchema, refXml, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(koqSchema, koqSchemaXml, *context));
+
+    auto shouldBeNull = koqSchema->LookupKindOfQuantity("");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = koqSchema->LookupKindOfQuantity("banana");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    auto shouldNotBeNull = koqSchema->LookupKindOfQuantity("MyKindOfQuantity");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("MyKindOfQuantity", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = koqSchema->LookupKindOfQuantity("ts:MyKindOfQuantity");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("MyKindOfQuantity", shouldNotBeNull->GetName().c_str());
+    ASSERT_EQ(1, koqSchema->GetKindOfQuantityCount());
+    }
+
 //=======================================================================================
 //! KindOfQuantityDeserializationTest
 //=======================================================================================

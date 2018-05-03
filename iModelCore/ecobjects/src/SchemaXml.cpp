@@ -747,7 +747,7 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t&
     uint32_t versionWrite = DEFAULT_VERSION_WRITE;
     uint32_t versionMinor = DEFAULT_VERSION_MINOR;
 
-    if (ecXmlMajorVersion >= 3 && ecXmlMinorVersion >= 2)
+    if ((ecXmlMajorVersion >= 3 && ecXmlMinorVersion >= 2) || ecXmlMajorVersion > 3)
         {
         Utf8String versionString;
         if ((BEXML_Success != schemaNode->GetAttributeStringValue(versionString, SCHEMA_VERSION_ATTRIBUTE)) ||

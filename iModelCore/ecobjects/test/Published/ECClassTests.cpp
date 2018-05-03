@@ -1275,6 +1275,55 @@ TEST_F(ClassTest, ExplicitSerializeInheritedProperties)
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(entityClassJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(entityClassJson, testDataJson);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ClassTest, LookupClassTest)
+    {
+    Utf8CP baseSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
+                <ECEntityClass typeName="BaseClass">
+                    <ECCustomAttributes>
+                        <NotSubClassableInReferencingSchemas xmlns="CoreCustomAttributes.01.00"/>
+                    </ECCustomAttributes>
+                </ECEntityClass>
+                <ECEntityClass typeName="LocalDerivedClass">
+                    <BaseClass>BaseClass</BaseClass>
+                </ECEntityClass>
+            </ECSchema>)xml";
+    
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, baseSchemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    ECSchemaPtr refingSchema;
+    ASSERT_TRUE(!refingSchema.IsValid());
+
+    Utf8CP goodRefSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="RefingSchema" alias="RS" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="TestSchema" version="1.00.00" alias="ts"/>
+                <ECEntityClass typeName="RemoteDerivedClass">
+                    <BaseClass>ts:LocalDerivedClass</BaseClass>
+                </ECEntityClass>
+            </ECSchema>)xml";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refingSchema, goodRefSchemaXml, *context));
+    ASSERT_TRUE(refingSchema.IsValid());
+
+    auto shouldBeNull = refingSchema->LookupClass("");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    shouldBeNull = refingSchema->LookupClass("banana");
+    EXPECT_EQ(nullptr, shouldBeNull);
+    auto shouldNotBeNull = refingSchema->LookupClass("RemoteDerivedClass");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("RemoteDerivedClass", shouldNotBeNull->GetName().c_str());
+    shouldNotBeNull = refingSchema->LookupClass("ts:BaseClass");
+    ASSERT_NE(nullptr, shouldNotBeNull);
+    EXPECT_STRCASEEQ("BaseClass", shouldNotBeNull->GetName().c_str());
+    ASSERT_EQ(1, refingSchema->GetClassCount());
+    }
+
 //=======================================================================================
 //! PropertyCopyTest
 //=======================================================================================

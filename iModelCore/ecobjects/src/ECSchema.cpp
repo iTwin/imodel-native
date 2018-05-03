@@ -1120,7 +1120,10 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
         return ECObjectsStatus::SchemaNotFound;
         }
 
-    unit = new ECUnit(*this, unitSystem, phenom, name, definition);
+    unit = new ECUnit(*this, name);
+    unit->SetSystem(unitSystem);
+    unit->SetPhenomenon(phenom);
+    unit->SetDefinition(definition);
 
     if (nullptr == unit)
         return ECObjectsStatus::Error;
@@ -3621,6 +3624,8 @@ ECObjectsStatus SchemaKey::ParseVersionString (uint32_t& versionRead, uint32_t& 
 //---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus SchemaKey::ParseVersionStringStrict(uint32_t& versionRead, uint32_t& versionWrite, uint32_t& versionMinor, Utf8CP versionString)
     {
+    if (Utf8String::IsNullOrEmpty(versionString))
+        return ECObjectsStatus::InvalidECVersion;
     int count = 0;
     const int maxVersionSize = 10; //If we somehow got a non terminated string the max a version can be is xx.xx.xx\0
     int iter = 0;
