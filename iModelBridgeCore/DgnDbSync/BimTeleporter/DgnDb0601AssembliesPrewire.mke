@@ -21,6 +21,9 @@ PolicyFile=$(SrcRoot)bsicommon/sharedmki/AssertCommonCompileLinkPolicy.mki
 .a.a :
     $(LinkFirstDepToFirstTarget)
 
+.pdb.pdb :
+    $(LinkFirstDepToFirstTarget)
+
 Delivery=$(BuildContext)Delivery/
 DeliveryDgnDbPlatformAssets=$(Delivery)DgnDbPlatformAssets/
 DeliveryDgnDbPlatformLibs=$(Delivery)DgnDbLibs/
@@ -109,6 +112,8 @@ $(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeLibXml2$(stlibext) : $(DgnDbDlls)$(s
 #$(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeHttp$(stlibext) : $(DgnDbDlls)$(stlibprefix)BeHttp$(stlibext)
 
 $(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeJsonCpp$(stlibext) : $(DgnDbDlls)$(stlibprefix)BeJsonCpp$(stlibext)
+
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeJsonCpp$(stlibdebugext) : $(DgnDbDlls)$(stlibprefix)BeJsonCpp$(stlibdebugext)
 
 #$(DeliveryDgnDbPlatformLibs)BeFolly$(stlibext) : $(DgnDbDlls)BeFolly$(stlibext)
 
