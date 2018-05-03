@@ -55,7 +55,7 @@ TEST_F(FormatTest, BasicRoundTripTest)
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00.00" alias="u"/>
-            <Format typeName="AmerMYFI4" displayLabel="myfi4" description="" roundFactor="0.0" type="fractional" signOption="onlyNegative" formatTraits="trailZeroes|prependUnitLabel" precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+            <Format typeName="AmerMYFI4" displayLabel="myfi4" description="" roundFactor="0.0" type="fractional" signOption="onlyNegative" formatTraits="trailZeroes|prependUnitLabel" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
                 <Composite spacer="-" inputUnit="u:M">
                   <Unit label="mile(s)">u:MILE</Unit>
                   <Unit label="yrd(s)">u:YRD</Unit>
@@ -628,11 +628,11 @@ TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyDecimalSeparator)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="decimal" decSeparator="" precision="4"/>
+            <Format typeName="AmerMYFI4" type="decimal" decimalSeparator="" precision="4"/>
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty decSeparator");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="decimal" decSeparator="bananas" precision="4"/>
+            <Format typeName="AmerMYFI4" type="decimal" decimalSeparator="bananas" precision="4"/>
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid decSeparator");
     {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -680,11 +680,11 @@ TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyStationSeparator)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="decimal" statSeparator="" precision="4"/>
+            <Format typeName="AmerMYFI4" type="decimal" stationSeparator="" precision="4"/>
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty statSeparator");
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="decimal" statSeparator="bananas" precision="4"/>
+            <Format typeName="AmerMYFI4" type="decimal" stationSeparator="bananas" precision="4"/>
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid statSeparator");
     {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
