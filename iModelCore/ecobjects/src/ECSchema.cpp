@@ -1120,7 +1120,10 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
         return ECObjectsStatus::SchemaNotFound;
         }
 
-    unit = new ECUnit(*this, unitSystem, phenom, name, definition);
+    unit = new ECUnit(*this, name);
+    unit->SetSystem(unitSystem);
+    unit->SetPhenomenon(phenom);
+    unit->SetDefinition(definition);
 
     if (nullptr == unit)
         return ECObjectsStatus::Error;
