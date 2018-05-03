@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="StartupCompany" alias="stco" version="1.0.0" description="Startup Company Sample ECSchema" displayLabel="Startup Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="StartupCompany" alias="stco" version="1.0.0" description="Startup Company Sample ECSchema" displayLabel="Startup Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
 
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
@@ -14,7 +14,7 @@
         <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" />
         <ECProperty propertyName="Birthday" typeName="dateTime" displayLabel="Birthday">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeComponent>Date</DateTimeComponent>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -28,7 +28,7 @@
         <ECStructProperty propertyName="Address" typeName="Location" />
         <ECProperty propertyName="LastModified" typeName="dateTime" displayLabel="Last Modified">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -53,7 +53,7 @@
       
     <ECEntityClass typeName="Asset" modifier="abstract">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
+            <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -108,7 +108,7 @@
         <ECProperty propertyName="Model" typeName="string" />
         <ECProperty propertyName="WarrantyExpiryDate" typeName="dateTime" displayLabel="Warranty Expiry Date" >
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00.00">
                     <DateTimeComponent>Date</DateTimeComponent>
                 </DateTimeInfo>
             </ECCustomAttributes>

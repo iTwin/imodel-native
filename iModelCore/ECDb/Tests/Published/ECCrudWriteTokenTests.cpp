@@ -34,7 +34,7 @@ TEST_F(ECCrudWriteTokenTestFixture, Test)
     BeFileName seedFilePath;
     ECInstanceKey blobIoInstanceKey;
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("eccrudwritetoken_seed.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("eccrudwritetoken_seed.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     seedFilePath.AssignUtf8(m_ecdb.GetDbFileName());
 
     //insert a row with zeroblob which is preprequisite for using blobio

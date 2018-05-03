@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/DateTimeTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -190,7 +190,7 @@ struct DateTimeTestFixture : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DateTimeTestFixture, DifferingDateTimeInfos)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbdatetime.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbdatetime.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsqltest.PSADateTime(nodatetimeinfo, emptydatetimeinfo, utc, unspecified, dateonly, structwithdatetimes.nodatetimeinfo, structwithdatetimes.utc, structwithdatetimes.dateonly) VALUES (?,?,?,?,?,?,?,?)"));
@@ -239,7 +239,7 @@ TEST_F(DateTimeTestFixture, DifferingDateTimeInfos)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DateTimeTestFixture, ECSqlStatementGetValueDateTime)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbdatetime.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbdatetime.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSADateTime");
 
@@ -330,7 +330,7 @@ TEST_F(DateTimeTestFixture, ECSqlStatementGetValueDateTime)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DateTimeTestFixture, DateTimeStorageAccuracyTest)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbdatetime.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbdatetime.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     //DateTime accuracy in ECDb(SQLite) is millisecs
     bvector<DateTime> testDateList;

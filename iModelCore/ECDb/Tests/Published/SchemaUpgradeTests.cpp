@@ -3305,8 +3305,8 @@ TEST_F(SchemaUpgradeTestFixture, ImportMultipleSchemaVersions_AddNewProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, UpdateMultipleSchemasInDb)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updateStartupCompanyschema.ecdb", SchemaItem::CreateForFile("DSCacheSchema.01.00.ecschema.xml")));
-    ASSERT_EQ(ERROR, ImportSchema(SchemaItem::CreateForFile("DSCacheSchema.01.03.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("updateStartupCompanyschema.ecdb", SchemaItem::CreateForFile("DSCacheSchema.01.00.00.ecschema.xml")));
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem::CreateForFile("DSCacheSchema.01.00.03.ecschema.xml")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -9635,83 +9635,119 @@ TEST_F(SchemaUpgradeTestFixture, Units)
 TEST_F(SchemaUpgradeTestFixture, Formats)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_formats.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECSchema schemaName="Schema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
-                                    <Format typeName="Format1" displayLabel="Format 1" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                                    <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
                                             precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
                                     </Format>
-                                    <Format typeName="Format2" displayLabel="Format 2" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
-                                            precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
-                                        <Composite spacer="-">
-                                            <Unit label="cm">u:CM</Unit>
+                                </ECSchema>)xml")));
+
+    auto assertFormat = [] (ECDbCR ecdb, Utf8CP name, Utf8CP displayLabel, Utf8CP description, JsonValue const& numericSpec, JsonValue const& compSpec)
+        {
+        ECFormatCP format = ecdb.Schemas().GetFormat("Schema", name);
+        ASSERT_TRUE(format != nullptr) << "Schema." << name;
+
+        Utf8String assertMessage(format->GetSchema().GetFullSchemaName());
+        assertMessage.append(".").append(format->GetName());
+
+        ASSERT_STREQ(name, format->GetName().c_str()) << assertMessage;
+        ASSERT_STREQ(displayLabel, format->GetDisplayLabel().c_str()) << assertMessage;
+        ASSERT_STREQ(description, format->GetDescription().c_str()) << assertMessage;
+        if (numericSpec.m_value.isNull())
+            ASSERT_FALSE(format->HasNumeric()) << assertMessage;
+        else
+            {
+            ASSERT_TRUE(format->HasNumeric()) << assertMessage;
+            Json::Value jval;
+            ASSERT_TRUE(format->GetNumericSpec()->ToJson(jval, false)) << assertMessage;
+            ASSERT_EQ(numericSpec, JsonValue(jval)) << assertMessage;
+            }
+
+        if (compSpec.m_value.isNull())
+            ASSERT_FALSE(format->HasComposite()) << assertMessage;
+        else
+            {
+            Json::Value jval;
+            ASSERT_TRUE(format->GetCompositeSpec()->ToJson(jval)) << assertMessage;
+            ASSERT_TRUE(format->HasComposite()) << assertMessage;
+            ASSERT_EQ(compSpec, JsonValue(jval)) << assertMessage;
+            }
+        };
+
+    assertFormat(m_ecdb, "MyFormat", "My Format", "",
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
+                 JsonValue());
+
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                <ECSchema schemaName="Schema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                    <Format typeName="MyFormat" displayLabel="My nice Format" description="Real nice format" roundFactor="1.3" type="Scientific" scientificType="ZeroNormalized" showSignOption="SignAlways" formatTraits="KeepSingleZero"
+                                            precision="5" decSeparator="," thousandSeparator="." uomSeparator="#">
+                                    </Format>
+                                </ECSchema>)xml"))) << "Modify DisplayLabel, Description, NumericSpec";
+
+    assertFormat(m_ecdb, "MyFormat", "My nice Format", "Real nice format",
+                 JsonValue(R"json({"roundFactor":1.3, "type": "Scientific", "scientificType":"ZeroNormalized", "showSignOption": "SignAlways", "formatTraits": "KeepSingleZero", "precision": 5, "decSeparator": ",", "thousandSeparator": ".", "uomSeparator": "#"})json"),
+                 JsonValue());
+
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                <ECSchema schemaName="Schema" alias="ts" version="1.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                    <Format typeName="MyFormat" roundFactor="1.3" type="Scientific" scientificType="ZeroNormalized" showSignOption="SignAlways"
+                                            precision="5">
+                                    </Format>
+                                </ECSchema>)xml"))) << "remove optional attributes from num spec";
+
+    assertFormat(m_ecdb, "MyFormat", "", "",
+                 JsonValue(R"json({"roundFactor":1.3, "type": "Scientific", "scientificType":"ZeroNormalized", "showSignOption": "SignAlways", "precision": 5})json"),
+                 JsonValue());
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                <ECSchema schemaName="Schema" alias="ts" version="1.3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                    <Format typeName="MyFormat" roundFactor="1.3" type="Scientific" scientificType="ZeroNormalized" showSignOption="SignAlways"
+                                            precision="5">
+                                        <Composite>
                                             <Unit label="mm">u:MM</Unit>
                                         </Composite>
                                     </Format>
-                                    <Format typeName="Format3" displayLabel="Format 3" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                                </ECSchema>)xml"))) << "Adding composite is not supported";
+
+    // now start with format that already has a composite
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_formats.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                <ECSchema schemaName="Schema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                    <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
                                             precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
-                                        <Composite spacer="+" includeZero="False">
+                                        <Composite>
+                                            <Unit label="m">MyMeter</Unit>
                                             <Unit label="mm">u:MM</Unit>
                                         </Composite>
                                     </Format>
                                 </ECSchema>)xml")));
 
-    auto assertFormat = [] (ECSchemaCR schema, Utf8CP name, Utf8CP displayLabel, Utf8CP description, JsonValue const& numericSpec, JsonValue const& compSpec)
-        {
-        ECFormatCP format = schema.GetFormatCP(name);
-        ASSERT_TRUE(format != nullptr) << schema.GetFullSchemaName() << ":" << name;
-        ASSERT_STREQ(name, format->GetName().c_str()) << schema.GetFullSchemaName() << ":" << name;
-        ASSERT_STREQ(displayLabel, format->GetDisplayLabel().c_str()) << schema.GetFullSchemaName() << ":" << name;
-        ASSERT_STREQ(description, format->GetDescription().c_str()) << schema.GetFullSchemaName() << ":" << name;
-        if (numericSpec.m_value.isNull())
-            ASSERT_FALSE(format->HasNumeric()) << schema.GetFullSchemaName() << ":" << name;
-        else
-            {
-            ASSERT_TRUE(format->HasNumeric()) << schema.GetFullSchemaName() << ":" << name;
-            Json::Value jval;
-            ASSERT_TRUE(format->GetNumericSpec()->ToJson(jval, false));
-            ASSERT_EQ(numericSpec, JsonValue(jval)) << schema.GetFullSchemaName() << ":" << name;
-            }
-
-        if (compSpec.m_value.isNull())
-            ASSERT_FALSE(format->HasComposite()) << schema.GetFullSchemaName() << ":" << name;
-        else
-            {
-            Json::Value jval;
-            ASSERT_TRUE(format->GetCompositeSpec()->ToJson(jval));
-            ASSERT_TRUE(format->HasComposite()) << schema.GetFullSchemaName() << ":" << name;
-            ASSERT_EQ(compSpec, JsonValue(jval)) << schema.GetFullSchemaName() << ":" << name;
-            }
-        };
-
-    {
-    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
-    ASSERT_TRUE(schema != nullptr);
-
-    assertFormat(*schema, "Format1", "Format 1", "",
+    assertFormat(m_ecdb, "MyFormat", "My Format", "",
                  JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
-                 JsonValue());
+                 JsonValue(R"json({"spacer":" ", "includeZero":true, "units": [{"name":"MyMeter", "label":"m"}, {"name":"MM", "label":"mm"}]})json"));
 
-    assertFormat(*schema, "Format2", "Format 2", "", 
-                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"), 
-                 JsonValue(R"json({"spacer": "-", "includeZero": true, "units": [
-                              {
-                                "name": "CM",
-                                "label": "cm"
-                              },
-                              {
-                                "name": "MM",
-                                "label": "mm"
-                              }]})json"));
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                <ECSchema schemaName="Schema" alias="ts" version="2.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                    <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                                            precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                                        <Composite spacer="=" includeZero="False">
+                                            <Unit label="meterle">MyMeter</Unit>
+                                            <Unit label="millimeterle">u:MM</Unit>
+                                        </Composite>
+                                    </Format>
+                                </ECSchema>)xml"))) << "Modify CompSpec except for units";
 
-    assertFormat(*schema, "Format3", "Format 3", "",
+    assertFormat(m_ecdb, "MyFormat", "My Format", "",
                  JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
-                 JsonValue(R"json({"spacer": "+", "includeZero": false, "units": [
-                              {
-                                "name": "MM",
-                                "label": "mm"
-                              }]})json"));
-
-    }
+                 JsonValue(R"json({"spacer":"=", "includeZero":false, "units": [{"name":"MyMeter", "label":"meterle"}, {"name":"MM", "label":"millimeterle"}]})json"));
 
     }
 

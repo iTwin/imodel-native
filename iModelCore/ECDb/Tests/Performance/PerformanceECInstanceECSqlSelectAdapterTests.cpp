@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceECInstanceECSqlSelectAdapterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceCRUDTestsHelper.h"
@@ -21,7 +21,7 @@ struct PerformanceECInstanceECSqlSelectAdapterTests : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, Constructor)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("performanceecinstanceecsqlselectadapter.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("performanceecinstanceecsqlselectadapter.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb(10));
 
     auto assertCtor = [] (ECDbCR ecdb, Utf8CP ecsql, int opCount)

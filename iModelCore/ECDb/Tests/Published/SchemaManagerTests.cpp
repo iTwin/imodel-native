@@ -841,7 +841,7 @@ TEST_F(SchemaManagerTests, ImportWithLocalizationSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, IncrementalLoading)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemamanagertests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemamanagertests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     BeFileName testFilePath(m_ecdb.GetDbFileName());
 
     const int expectedClassCount = m_ecdb.Schemas().GetSchema("ECSqlTest")->GetClassCount();
@@ -908,7 +908,7 @@ TEST_F(SchemaManagerTests, IncrementalLoading)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CasingTests)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemamanagercasingtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("schemamanagercasingtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("ECDBFILEinfo");
     ASSERT_TRUE(schema != nullptr && schema->GetName().EqualsI("ECDbFileInfo"));
@@ -947,7 +947,7 @@ TEST_F(SchemaManagerTests, CasingTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetDerivedClasses)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP baseClass = m_ecdb.Schemas().GetClass("ECSqlTest", "THBase");
     ASSERT_TRUE(baseClass != nullptr) << "Could not retrieve base class";
@@ -967,7 +967,7 @@ TEST_F(SchemaManagerTests, GetDerivedClasses)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetDerivedECClassesWithoutIncrementalLoading)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("ECSqlTest", true);
     ASSERT_TRUE(testSchema != nullptr);
@@ -2084,6 +2084,92 @@ TEST_F(SchemaManagerTests, GetPreEC32KindOfQuantity)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  05/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, Formats)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemamanager_formats.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                    <Unit typeName="MyMeter" displayLabel="My Metre" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+                                    <Format typeName="Format1" displayLabel="Format 1" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                                            precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                                    </Format>
+                                    <Format typeName="Format2" displayLabel="Format 2" description="Nice format 2" roundFactor="0.3" type="Scientific" scientificType="ZeroNormalized" showSignOption="NegativeParentheses" formatTraits="ShowUnitLabel|PrependUnitLabel|KeepSingleZero"
+                                            precision="4" decSeparator="," thousandSeparator="." uomSeparator="*">
+                                        <Composite>
+                                            <Unit label="m">MyMeter</Unit>
+                                            <Unit label="mm">u:MM</Unit>
+                                        </Composite>
+                                    </Format>
+                                    <Format typeName="Format3" displayLabel="Format 3" roundFactor="2.3" type="Station" stationOffsetSize="12" showSignOption="SignAlways" formatTraits="Use1000Separator|ShowUnitLabel|ApplyRounding"
+                                            precision="5" decSeparator="," thousandSeparator="." uomSeparator="(">
+                                        <Composite spacer="/" includeZero="False">
+                                            <Unit label="kilogram">u:KG</Unit>
+                                        </Composite>
+                                    </Format>
+                                    <Format typeName="Format4" displayLabel="Format 4" description="Nice format 4" roundFactor="12" type="Station" statSeparator="$" stationOffsetSize="12" showSignOption="SignAlways" formatTraits="ShowUnitLabel|ApplyRounding|ZeroEmpty"
+                                            precision="2" decSeparator="," thousandSeparator="." uomSeparator="#">
+                                        <Composite spacer="?" includeZero="True">
+                                            <Unit label="Newton">u:N</Unit>
+                                        </Composite>
+                                    </Format>
+                                </ECSchema>)xml")));
+
+    auto assertFormat = [] (ECSchemaCR schema, Utf8CP name, Utf8CP displayLabel, Utf8CP description, JsonValue const& numericSpec, JsonValue const& compSpec)
+        {
+        ECFormatCP format = schema.GetFormatCP(name);
+        ASSERT_TRUE(format != nullptr) << schema.GetFullSchemaName() << ":" << name;
+        ASSERT_STREQ(name, format->GetName().c_str()) << format->GetFullName();
+        ASSERT_STREQ(displayLabel, format->GetDisplayLabel().c_str()) << format->GetFullName();
+        ASSERT_STREQ(description, format->GetDescription().c_str()) << format->GetFullName();
+        if (numericSpec.m_value.isNull())
+            ASSERT_FALSE(format->HasNumeric()) << format->GetFullName();
+        else
+            {
+            ASSERT_TRUE(format->HasNumeric()) << format->GetFullName();
+            Json::Value jval;
+            ASSERT_TRUE(format->GetNumericSpec()->ToJson(jval, false)) << format->GetFullName();
+            ASSERT_EQ(numericSpec, JsonValue(jval)) << format->GetFullName();
+            }
+
+        if (compSpec.m_value.isNull())
+            ASSERT_FALSE(format->HasComposite()) << format->GetFullName();
+        else
+            {
+            Json::Value jval;
+            ASSERT_TRUE(format->GetCompositeSpec()->ToJson(jval)) << format->GetFullName();
+            ASSERT_TRUE(format->HasComposite()) << format->GetFullName();
+            ASSERT_EQ(compSpec, JsonValue(jval)) << format->GetFullName();
+            }
+        };
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
+    ASSERT_TRUE(schema != nullptr);
+
+    assertFormat(*schema, "Format1", "Format 1", "",
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
+                 JsonValue());
+
+    assertFormat(*schema, "Format2", "Format 2", "Nice format 2",
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Scientific", "scientificType": "ZeroNormalized", "showSignOption": "NegativeParentheses", "formatTraits": "KeepSingleZero|ShowUnitLabel|PrependUnitLabel", "precision": 4, "decSeparator": ",", "thousandSeparator": ".", "uomSeparator": "*"})json"),
+                 JsonValue(R"json({"spacer":" ", "includeZero": true, "units": [
+                              { "name": "MyMeter", "label": "m" },
+                              { "name": "MM", "label": "mm" }]})json"));
+
+    assertFormat(*schema, "Format3", "Format 3", "",
+                 JsonValue(R"json({"roundFactor":2.3, "type": "Station", "stationOffsetSize":12, "showSignOption": "SignAlways", "formatTraits":"ApplyRounding|ShowUnitLabel|Use1000Separator", "precision": 5, "decSeparator": ",", "thousandSeparator": ".", "uomSeparator": "("})json"),
+                 JsonValue(R"json({"spacer": "/", "includeZero": false, "units": [
+                              { "name": "KG", "label": "kilogram" }]})json"));
+
+    assertFormat(*schema, "Format4", "Format 4", "Nice format 4",
+                 JsonValue(R"json({"roundFactor":12.0, "type": "Station", "stationOffsetSize":12, "stationSeparator":"$", "showSignOption": "SignAlways", "formatTraits":"ZeroEmpty|ApplyRounding|ShowUnitLabel", "precision": 2, "decSeparator": ",", "thousandSeparator": ".", "uomSeparator": "#"})json"),
+                 JsonValue(R"json({"spacer": "?", "includeZero": true, "units": [
+                              { "name": "N", "label": "Newton"}]})json"));
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, GetPropertyCategory)
@@ -2293,9 +2379,9 @@ TEST_F(SchemaManagerTests, AddDuplicateECSchemaInReadContext)
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecschemamanagertest.ecdb"));
 
     ECSchemaReadContextPtr context1 = nullptr;
-    ASSERT_EQ(SUCCESS, ReadECSchema(context1, m_ecdb, SchemaItem::CreateForFile("BaseSchemaA.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, ReadECSchema(context1, m_ecdb, SchemaItem::CreateForFile("BaseSchemaA.01.00.00.ecschema.xml")));
     ECSchemaReadContextPtr context2 = nullptr;
-    ASSERT_EQ(SUCCESS, ReadECSchema(context2, m_ecdb, SchemaItem::CreateForFile("BaseSchemaA.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, ReadECSchema(context2, m_ecdb, SchemaItem::CreateForFile("BaseSchemaA.01.00.00.ecschema.xml")));
 
     bvector<ECSchemaCP> duplicateSchemas;
     duplicateSchemas.push_back(context1->GetCache().GetSchema(SchemaKey("BaseSchemaA", 1, 0, 0), SchemaMatchType::Latest));
@@ -2310,9 +2396,9 @@ TEST_F(SchemaManagerTests, AddDuplicateECSchemaInReadContext)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, ImportDuplicateSchema)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("BaseSchemaA.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("BaseSchemaA.01.00.00.ecschema.xml")));
 
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem::CreateForFile("BaseSchemaA.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem::CreateForFile("BaseSchemaA.01.00.00.ecschema.xml")));
     ECClassCP ecclass = m_ecdb.Schemas().GetClass("BaseSchemaA", "Address");
     ASSERT_TRUE(ecclass != nullptr) << "Class with the specified name doesn't exist :- ecclass is empty";
     }
@@ -2479,7 +2565,7 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, TestGetClassResolver)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ECClassCP ecClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     EXPECT_TRUE(ecClass != nullptr);
     ecClass = m_ecdb.Schemas().GetClass("ecsql", "PSA", SchemaLookupMode::ByAlias);
@@ -2799,7 +2885,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews)
     ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
 
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
     m_ecdb.SaveChanges();
     ASSERT_EQ(BE_SQLITE_OK, PrepareECClassViews(schemasWithECClassViews, m_ecdb));
@@ -2813,7 +2899,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewspartially.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewspartially.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('FileInfo', 'FileInfoOwnership', 'AAA','Cubicle', 'RelationWithLinkTableMapping')"));
@@ -2919,7 +3005,7 @@ TEST_F(SchemaManagerTests, CreateECClassViews_SharedColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CreateECClassViewsForInvalidClasses)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewsforinvalidclasses.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewsforinvalidclasses.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('AnglesStruct', 'ClassMap', 'AClassThatDoesNotGetMappedToDb')"));
@@ -2939,7 +3025,7 @@ TEST_F(SchemaManagerTests, CreateECClassViewsForInvalidClasses)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidClasses)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewsforvalidinvalidclasses.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("createecclassviewsforvalidinvalidclasses.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECClassDef WHERE Name IN ('AAA', 'AnglesStruct', 'AClassThatDoesNotGetMappedToDb')"));

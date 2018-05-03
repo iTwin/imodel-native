@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/JsonReaderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -18,7 +18,7 @@ struct JsonECSqlSelectAdapterTests : public ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("JsonMemberNamesInJsonECSqlSelectAdapter.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("JsonMemberNamesInJsonECSqlSelectAdapter.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassId relClassId = m_ecdb.Schemas().GetClassId("ECSqlTest", "PSAHasP_N1");
     ASSERT_TRUE(relClassId.IsValid());
@@ -939,7 +939,7 @@ struct JsonReaderTests : public ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonReaderTests, PartialPoints)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonreaderpartialpoints.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("jsonreaderpartialpoints.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.PSA(P2D.X,P3D.Y,PStructProp.p2d.y,PStructProp.p3d.z) VALUES(1.0, 2.0, 3.0, 4.0)"));
@@ -1078,7 +1078,7 @@ TEST_F(JsonReaderTests, PartialPoints)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonReaderTests, RoundTrip_ReadThenInsert)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonroundtrip_readtheninsert.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("jsonroundtrip_readtheninsert.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECInstanceKey pKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(pKey, "INSERT INTO ecsql.P(ECInstanceId) VALUES(NULL)"));

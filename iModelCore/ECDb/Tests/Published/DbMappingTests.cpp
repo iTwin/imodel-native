@@ -9620,7 +9620,7 @@ TEST_F(DbMappingTestFixture, OrderOfPropertyIsPreservedInTableColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, LoadECSchemas)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
 
     std::vector<Utf8CP> expectedSchemas;
     expectedSchemas.push_back("CoreCustomAttributes");
@@ -9649,8 +9649,8 @@ TEST_F(DbMappingTestFixture, LoadECSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ImportECSchemaWithSameVersionAndSameContentTwice)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml"))) << "second import";
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml"))) << "second import";
     }
 
 
@@ -9977,8 +9977,8 @@ TEST_F(DbMappingTestFixture, CheckCustomAttributesXmlFormatTest)
 TEST_F(DbMappingTestFixture, ImportSupplementalSchemas)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("supplementalschematest.ecdb"));
-    ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml"),
-                                     SchemaItem::CreateForFile("StartupCompany_Supplemental_ECDbTest.01.00.ecschema.xml")}));
+    ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml"),
+                                     SchemaItem::CreateForFile("StartupCompany_Supplemental_ECDbTest.01.00.00.ecschema.xml")}));
 
     ASSERT_EQ(SUCCESS, ReopenECDb());
     ECSchemaCP startupCompanySchema = m_ecdb.Schemas().GetSchema("StartupCompany");
@@ -9999,7 +9999,7 @@ TEST_F(DbMappingTestFixture, ImportSupplementalSchemas)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ArrayPropertyTest)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     ECSchemaCP startupCompanySchema = m_ecdb.Schemas().GetSchema("StartupCompany", true);
     ASSERT_TRUE(startupCompanySchema != nullptr);
@@ -10055,7 +10055,7 @@ TEST_F(DbMappingTestFixture, VerifyDatabaseSchemaAfterImport)
         return stmt.GetColumnCount();
         };
 
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     ECDbCR db = m_ecdb;
     //========================[sc_ClassWithPrimitiveProperties===================================
     Utf8CP tblClassWithPrimitiveProperties = "sc_ClassWithPrimitiveProperties";

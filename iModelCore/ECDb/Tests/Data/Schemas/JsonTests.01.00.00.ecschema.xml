@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="JsonTests" alias="jt" version="01.00" description="Schema mostly used by Json Tests" displayLabel="Json Tests Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+<ECSchema schemaName="JsonTests" alias="jt" version="01.00.00" description="Schema mostly used by Json Tests" displayLabel="Json Tests Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECStructClass typeName="AttributeStruct" modifier="None">
         <ECProperty propertyName="Type" typeName="string" readOnly="false"/>
         <ECProperty propertyName="Value" typeName="string" readOnly="false"/>

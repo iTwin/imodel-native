@@ -304,10 +304,13 @@
     ### Format
     - @ref BentleyApi::ECN::ECFormat::GetDisplayLabel "DisplayLabel": Modify
     - @ref BentleyApi::ECN::ECFormat::GetDescription "Description": Modify
-    - @b GetNumericSpec: Modify any of its attributes
-    - @b GetCompositeSpec: 
+    - @b NumericSpec: Modify any of its attributes
+    - @b CompositeSpec: 
         - Spacer: Modify
+        - IncludeZero: Modify
         - Unit labels: Modify
+
+    In other words: Anything can be modified except for the format name and the composite units (neither adding/modifying/removing).
 
     ### ECProperty
     - @ref BentleyApi::ECN::ECProperty::GetDescription "Description": Modify

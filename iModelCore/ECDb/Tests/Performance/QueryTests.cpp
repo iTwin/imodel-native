@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/QueryTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
@@ -261,7 +261,7 @@ struct PerformanceQueryTests : public PopulateKitchenSinkDb
     public:
         void ConnectToDb()
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("KitchenSinkDbWithInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.ecschema.xml")));
+            ASSERT_EQ(SUCCESS, SetupECDb("KitchenSinkDbWithInstances.ecdb", SchemaItem::CreateForFile("KitchenSink.01.00.00.ecschema.xml")));
             PopulateDb();
             }
 
