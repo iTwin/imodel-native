@@ -448,6 +448,11 @@ iModelTaskPtr Client::CreateNewiModel(Utf8StringCR projectId, Dgn::DgnDbCR db, U
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel name.");
         return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::InvalidiModelName));
         }
+    if (!db.IsStandaloneBriefcase() && !db.IsMasterCopy())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Seed file is a briefcase.");
+        return CreateCompletedAsyncTask<iModelResult>(iModelResult::Error(Error::Id::FileIsBriefcase));
+        }
 
     FileInfoPtr fileInfo = FileInfo::Create(db, description);
     BeFileName filePath = db.GetFileName();

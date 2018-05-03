@@ -65,6 +65,7 @@ public:
         FileIsOutdated,
         FileCodeTooLong,
         FileInitializationFailed,
+        FileIsBriefcase,
 
         //iModel Hub Client API Errors
         NoRepositoriesFound = 200,

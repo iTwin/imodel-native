@@ -2083,6 +2083,10 @@ void iModelConnection::WaitForInitializedBIMFile(BeGuid fileGuid, FileResultPtr 
                 LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Code too long");
                 finalResult->SetError({Error::Id::FileCodeTooLong});
                 break;
+            case InitializationState::SeedFileIsBriefcase:
+                LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Uploaded seed file is a briefcase");
+                finalResult->SetError({ Error::Id::FileIsBriefcase });
+                break;
             default:
                 LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File initialization failed");
                 finalResult->SetError({Error::Id::FileInitializationFailed});
