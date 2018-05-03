@@ -576,7 +576,7 @@ LocaleProperties::LocaleProperties(Json::Value jval)
             {
             paramName = iter.memberName();
             JsonValueCR val = *iter;
-            if (BeStringUtilities::StricmpAscii(paramName, json_decSeparator()) == 0)
+            if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
                 {
                 str = val.asString();
                 m_decimalSeparator = str.c_str()[0];
@@ -613,7 +613,7 @@ LocaleProperties::LocaleProperties(Utf8CP localeName)
 Json::Value LocaleProperties::ToJson()
     {
     Json::Value jval;
-    jval[json_decSeparator()] = &m_decimalSeparator;
+    jval[json_decimalSeparator()] = &m_decimalSeparator;
     jval[json_thousandSeparator()] = &m_thousandsSeparator;
     return jval;
     }

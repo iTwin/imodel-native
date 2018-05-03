@@ -111,7 +111,7 @@ void NumericFormatSpecJsonTest::ValidateJson_DefaultCommonAttributes(JsonValueCR
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), minWidth.asInt());
 
     // Decimal Separator
-    JsonValueCR decSeparator = jval[json_decSeparator()];
+    JsonValueCR decSeparator = jval[json_decimalSeparator()];
     EXPECT_EQ(Json::stringValue, decSeparator.type());
     Utf8String decSep = decSeparator.asString();
     EXPECT_EQ(1, decSep.length());
@@ -145,7 +145,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeStation)
         "showSignOption": "signAlways",
         "formatTraits": "TrailZeroes|KeepSingleZero",
         "precision": 4,
-        "decSeparator": "-",
+        "decimalSeparator": "-",
         "thousandSeparator": "+",
         "uomSeparator": "&",
         "stationSeparator": "-",
@@ -182,7 +182,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeDecimal)
         "showSignOption": "signAlways",
         "formatTraits": "TrailZeroes|KeepSingleZero",
         "precision": 4,
-        "decSeparator": "-",
+        "decimalSeparator": "-",
         "thousandSeparator": "+",
         "uomSeparator": "&",
         "minWidth": 50
@@ -215,7 +215,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeFractional)
         "showSignOption": "signAlways",
         "formatTraits": "TrailZeroes|KeepSingleZero",
         "precision": 4,
-        "decSeparator": "-",
+        "decimalSeparator": "-",
         "thousandSeparator": "+",
         "uomSeparator": "&",
         "minWidth": 50
@@ -249,7 +249,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeScientific)
         "showSignOption": "signAlways",
         "formatTraits": "TrailZeroes|KeepSingleZero",
         "precision": 4,
-        "decSeparator": "-",
+        "decimalSeparator": "-",
         "thousandSeparator": "+",
         "uomSeparator": "&",
         "minWidth": 50

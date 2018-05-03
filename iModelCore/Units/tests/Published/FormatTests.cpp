@@ -448,7 +448,7 @@ TEST_F(FormatJsonTest, FormatDecimal)
     spec.ToJson(json);
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
-                             "decSeparator" : ".",
+                             "decimalSeparator" : ".",
                              "formatTraits" : "",
                              "minWidth" : 0,
                              "precision" : 6,
@@ -512,7 +512,7 @@ TEST_F(FormatJsonTest, FormatFractional)
     spec.ToJson(json);
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
-                             "decSeparator" : ".",
+                             "decimalSeparator" : ".",
                              "formatTraits" : "",
                              "minWidth" : 0,
                              "precision" : 256,
@@ -576,7 +576,7 @@ TEST_F(FormatJsonTest, FormatScientific)
     spec.ToJson(json);
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
-                             "decSeparator" : ".",
+                             "decimalSeparator" : ".",
                              "formatTraits" : "",
                              "minWidth" : 0,
                              "precision" : 6,
@@ -642,7 +642,7 @@ TEST_F(FormatJsonTest, FormatStation)
     spec.ToJson(json);
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
-                             "decSeparator" : ".",
+                             "decimalSeparator" : ".",
                              "formatTraits" : "",
                              "minWidth" : 0,
                              "precision" : 6,

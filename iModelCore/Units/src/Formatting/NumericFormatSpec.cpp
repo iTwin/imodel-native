@@ -123,7 +123,7 @@ BentleyStatus NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jv
             Utils::ParseSignOption(option, val.asCString());
             spec.SetSignOption(option);
             }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_decSeparator()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
             {
             Utf8Char sep;
             sep = val.asString().c_str()[0];
@@ -209,7 +209,7 @@ bool NumericFormatSpec::ToJson(Json::Value& out, bool verbose) const
     if (verbose || HasFormatTraits())
         out[json_formatTraits()] = FormatTraitsToJson(verbose);
     if (verbose || HasDecimalSeparator())
-        out[json_decSeparator()] = Utf8String(1, GetDecimalSeparator());
+        out[json_decimalSeparator()] = Utf8String(1, GetDecimalSeparator());
     if (verbose || HasThousandsSeparator())
         out[json_thousandSeparator()] = Utf8String(1, GetThousandSeparator());
     if (verbose || HasUomSeparator())
