@@ -462,7 +462,7 @@ TEST_F(DgnElementTests, ForceElementIdForInsert)
         {
         GenericPhysicalObject::CreateParams createParams(*m_db, modelId, classId, categoryId);
         createParams.SetElementId(DgnElementId(elementId.GetValue() + 100));
-    
+
         GenericPhysicalObjectPtr element = new GenericPhysicalObject(createParams);
         ASSERT_TRUE(element.IsValid());
         ASSERT_FALSE(element->Insert().IsValid()) << "It is not valid to supply a DgnElementId for Insert via CreateParams";
@@ -807,7 +807,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledProperties)
         checkValue.Clear();
         EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "StringProperty"));
         EXPECT_STREQ("changed value", checkValue.ToString().c_str());
-        EXPECT_EQ(true, editEl->GetPropertyValueBoolean("b"));        
+        EXPECT_EQ(true, editEl->GetPropertyValueBoolean("b"));
         // Update the element
         DgnDbStatus stat;
         DgnElementCPtr updated_element = editEl->Update(&stat);
@@ -841,7 +841,7 @@ TEST_F(DgnElementTests, FederationGuid_Update)
         DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
         TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
         TestElement el(params);
-        DgnElementCPtr persistentEl = el.Insert(&stat);        
+        DgnElementCPtr persistentEl = el.Insert(&stat);
         ASSERT_EQ(DgnDbStatus::Success, stat);
         ASSERT_TRUE(persistentEl.IsValid());
         elementId = persistentEl->GetElementId();
@@ -1053,7 +1053,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledArrayProperties)
 
         ASSERT_TRUE(persistentEl.IsValid());
 
-        // Check that we see the stored value in memory 
+        // Check that we see the stored value in memory
         checkValue.Clear();
 
         EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfString", PropertyArrayIndex(0)));
@@ -1199,14 +1199,14 @@ TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
     ECN::ECClassCP locationStruct = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_LOCATION_STRUCT_CLASS_NAME);
     ASSERT_TRUE(nullptr != locationStruct);
     ECN::StandaloneECEnablerPtr locationEnabler = locationStruct->GetDefaultStandaloneEnabler();
-    
+
     ECN::IECInstancePtr extonLocInstance = locationEnabler->CreateInstance().get();
     extonLocInstance->SetValue("Street", ECN::ECValue("690 Pennsylvania Drive"));
     extonLocInstance->SetValue("City.Name", ECN::ECValue("Exton"));
     extonLocInstance->SetValue("City.State", ECN::ECValue("PA"));
     extonLocInstance->SetValue("City.Country", ECN::ECValue("US"));
     extonLocInstance->SetValue("City.Zip", ECN::ECValue(19341));
-    
+
     ECN::ECValue extonLocValue;
     extonLocValue.SetStruct(extonLocInstance.get());
     EXPECT_EQ(DgnDbStatus::Success, el.SetPropertyValue("ArrayOfStructs", extonLocValue, PropertyArrayIndex(1)));
@@ -1229,7 +1229,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
 
     ASSERT_TRUE(persistentEl.IsValid());
 
-    // Check that we see the stored value in memory 
+    // Check that we see the stored value in memory
     checkValue.Clear();
 
     EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(0)));
@@ -1251,7 +1251,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
     EXPECT_STREQ("US", checkValue.GetUtf8CP());
     checkInstance->GetValue(checkValue, "City.Zip");
     EXPECT_EQ(19341, checkValue.GetInteger());
-    
+
     checkValue.Clear();
     EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(2)));
     EXPECT_FALSE(checkValue.IsNull());
@@ -1309,13 +1309,13 @@ TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
     EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
     checkInstance->GetValue(checkValue, "City.Name");
     EXPECT_STREQ("Philadelphia", checkValue.GetUtf8CP());
-    
+
     checkValue.Clear();
     ASSERT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(3)));
     EXPECT_TRUE(checkValue.IsNull());
     EXPECT_TRUE(checkValue.IsStruct());
     }
-    
+
     {
     // Get ready to modify the element
     TestElementPtr editEl = m_db->Elements().GetForEdit<TestElement>(elementId);
@@ -1324,7 +1324,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
     checkValue.Clear();
     EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(0)));
     EXPECT_TRUE(checkValue.IsNull());
-    
+
     checkValue.Clear();
     EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(1)));
     EXPECT_TRUE(checkValue.IsStruct());
@@ -1340,7 +1340,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
     checkInstance = checkValue.GetStruct();
     checkInstance->GetValue(checkValue, "Street");
     EXPECT_STREQ("1601 Cherry Street", checkValue.GetUtf8CP());
-    
+
     checkValue.Clear();
     EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(3)));
     EXPECT_TRUE(checkValue.IsNull());
@@ -1364,7 +1364,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledStructArrayProperties)
     EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(2)));
     EXPECT_TRUE(checkValue.IsNull());
     EXPECT_NE(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "ArrayOfStructs", PropertyArrayIndex(3)));
-    
+
     // Update the element
     DgnDbStatus stat;
     DgnElementCPtr updated_element=editEl->Update(&stat);
@@ -1448,7 +1448,7 @@ TEST_F(DgnElementTests, OverrideAutohandledproperites)
        ASSERT_EQ(DgnDbStatus::Success, stat);
        ASSERT_TRUE(updated_Element.IsValid());
        }
-    // check that the stored value 
+    // check that the stored value
     m_db->SaveChanges();
     m_db->CloseDb();
     m_db = nullptr;
@@ -1480,7 +1480,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECN::ECValue(99)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_DoubleProperty1, ECN::ECValue(99.99)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_PointProperty1, ECN::ECValue(DPoint3d::From(99, 99, 99))));
-        
+
         // auto-handled properties
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("IntegerProperty1", ECN::ECValue(199)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Location.Street", ECN::ECValue("690 Pennsylvania Drive")));
@@ -1525,7 +1525,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         // Now, make sure that we can actually insert the element
         auto persistentEl = ele->Insert();
         ASSERT_TRUE(persistentEl.IsValid());
-        
+
         eid = persistentEl->GetElementId();
         }
 
@@ -1721,10 +1721,10 @@ TEST_F(DgnElementTests, GetSetPropertyValues)
 TEST_F(DgnElementTests, TestUserProperties)
     {
     SetupSeedProject();
-    
+
     // Note: Even if this test uses SetValueEC() and GetValueEC() for setting the user properties, the preference
     // would be to use the primitive setters and getters. The choice here was to just meant to get more coverage
-    // by testing the outermost wrappers. 
+    // by testing the outermost wrappers.
 
     DgnElementId persistentId;
     if (true)
@@ -1749,7 +1749,7 @@ TEST_F(DgnElementTests, TestUserProperties)
         persistentEl = el.Insert();
         persistentId = persistentEl->GetElementId();
         }
-    
+
     m_db->SaveChanges("");
     m_db->Elements().ClearCache();
 
@@ -1774,7 +1774,7 @@ TEST_F(DgnElementTests, TestUserProperties)
         testProps.SetValueEC("stringProperty", ECN::ECValue("changed value"));
 
         editEl->SetUserProperties("testProps", testProps);
-        
+
         //  Update the element
         persistentEl = editEl->Update();
         }
@@ -1802,7 +1802,7 @@ TEST_F(DgnElementTests, TestUserProperties)
 TEST_F(DgnElementTests, ParentChildSameModel)
     {
     SetupSeedProject();
-    
+
     DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "testCategory");
     PhysicalModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, "modelA");
     PhysicalModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, "modelB");
@@ -1846,7 +1846,7 @@ TEST_F(DgnElementTests, ParentChildSameModel)
         GenericPhysicalObjectPtr childB = GenericPhysicalObject::Create(*modelB, categoryId);
         EXPECT_TRUE(childA.IsValid());
         EXPECT_TRUE(childB.IsValid());
-        childA->SetParentId(parentB->GetElementId(), parentRelClassId); // Mismatch 
+        childA->SetParentId(parentB->GetElementId(), parentRelClassId); // Mismatch
         childB->SetParentId(parentA->GetElementId(), parentRelClassId); // Mismatch
         DgnDbStatus insertStatusA, insertStatusB;
         BeTest::SetFailOnAssert(false);
@@ -1904,7 +1904,7 @@ TEST_F(DgnElementTests, FederationGuid)
     EXPECT_NE(federationGuid, updatedFederationGuid);
     EXPECT_EQ(federationGuid, BeGuid(federationGuid.m_guid.u[0], federationGuid.m_guid.u[1]));
     EXPECT_EQ(federationGuid, BeGuid(federationGuid.m_guid.i[0], federationGuid.m_guid.i[1], federationGuid.m_guid.i[2], federationGuid.m_guid.i[3]));
-    
+
     // test that FederationGuid is initialized as invalid
         {
         GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
@@ -1983,7 +1983,7 @@ TEST_F(DgnElementTests, FederationGuid)
         EXPECT_FALSE(element->GetFederationGuid().IsValid());
         }
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2206,10 +2206,10 @@ TEST_F(DgnElementTests, EqualsTests)
 
     GenericPhysicalObjectPtr elementA = GenericPhysicalObject::Create(*modelA, categoryId);
     ASSERT_TRUE(elementA.IsValid());
-    
+
     ASSERT_TRUE(elementA->Equals(*elementA)) << " An element should be equivalent to itself";
     ASSERT_TRUE(elementA->Equals(*elementA->CopyForEdit())) << " An element should be equivalent to a copy of itself";
-    
+
     GenericPhysicalObjectPtr elementB = GenericPhysicalObject::Create(*modelB, categoryId);
     ASSERT_TRUE(elementB.IsValid());
     ASSERT_FALSE(elementA->Equals(*elementB)) << " ModelIds should differ";
@@ -2576,7 +2576,7 @@ TEST_F(DgnElementTests, RelatedElementToJson)
     EXPECT_TRUE(actualJson[ECN::ECJsonUtilities::json_navId()].isString());
     EXPECT_STREQ(expectedId.c_str(), actualJson[ECN::ECJsonUtilities::json_navId()].asCString());
 
-    Utf8CP expectedRelClassName = DPTEST_SCHEMA_NAME "." DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME;
+    Utf8CP expectedRelClassName = DPTEST_SCHEMA_NAME ":" DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME;
     EXPECT_TRUE(actualJson[ECN::ECJsonUtilities::json_navRelClassName()].isString());
     EXPECT_STREQ(expectedRelClassName, actualJson[ECN::ECJsonUtilities::json_navRelClassName()].asCString());
 

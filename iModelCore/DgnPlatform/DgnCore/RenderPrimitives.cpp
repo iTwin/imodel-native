@@ -336,8 +336,7 @@ private:
         Glyph() = default; // for bmap...
         Glyph(DgnGlyphCR glyph, DgnFontCR font) : m_raster(glyph, font)
             {
-            bool unusedArg;
-            if ((m_curves = glyph.GetCurveVector(unusedArg)).IsValid())
+            if ((m_curves = glyph.GetCurveVector()).IsValid())
                 {
                 m_isCurved = m_curves->ContainsNonLinearPrimitive();
                 m_isStrokes = !m_curves->IsAnyRegionType();

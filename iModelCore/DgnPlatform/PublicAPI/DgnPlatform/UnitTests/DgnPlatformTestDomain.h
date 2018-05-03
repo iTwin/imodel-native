@@ -2,7 +2,7 @@
 |
 |  $Source: PublicAPI/DgnPlatform/UnitTests/DgnPlatformTestDomain.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,6 +22,7 @@
 #define DPTEST_SCHEMA(className)                        DPTEST_SCHEMA_NAME "." className
 #define DPTEST_DUMMY_SCHEMA_NAMEW                       L"DgnPlatformTestDummy"
 #define DPTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
+#define DPTEST_TEST_DRIVER_BUNDLE_CLASS_NAME             "TestDriverBundle"
 #define DPTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
 #define DPTEST_TEST_GROUP_CLASS_NAME                     "TestGroup"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
@@ -171,6 +172,52 @@ struct TestElementHandler : Dgn::dgn_ElementHandler::Physical
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Physical, )
     void _RegisterPropertyAccessors(Dgn::ECSqlClassInfo&, ECN::ClassLayoutCR) override;
 };
+
+//=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      04/18
+//=======================================================================================
+struct TestDriverBundle : Dgn::DriverBundleElement, Dgn::IDependencyGraphNode
+    {
+    friend struct TestDriverBundleHandler;
+
+    struct Callback
+        {
+        virtual void _OnAllInputsHandled(Dgn::DgnElementId) = 0;
+        virtual void _OnBeforeOutputsHandled(Dgn::DgnElementId) = 0;
+        };
+
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_TEST_DRIVER_BUNDLE_CLASS_NAME, Dgn::DriverBundleElement)
+
+    private:
+        static Callback* s_callback;
+
+    protected:
+        virtual void _OnAllInputsHandled() override;
+        virtual void _OnBeforeOutputsHandled() override;
+
+    public:
+        TestDriverBundle(CreateParams const& params) : T_Super(params) {}
+
+        static Dgn::DgnClassId QueryClassId(Dgn::DgnDbR db) { return Dgn::DgnClassId(db.Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_DRIVER_BUNDLE_CLASS_NAME)); }
+        static RefCountedPtr<TestDriverBundle> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid);
+
+        static void SetCallback(Callback* callback) { s_callback = callback; }
+    };
+
+typedef RefCountedPtr<TestDriverBundle> TestDriverBundlePtr;
+typedef RefCountedCPtr<TestDriverBundle> TestDriverBundleCPtr;
+typedef TestDriverBundle& TestDriverBundleR;
+typedef TestDriverBundle const& TestDriverBundleCR;
+typedef TestDriverBundle* TestDriverBundleP;
+typedef TestDriverBundle const* TestDriverBundleCP;
+
+//=======================================================================================
+// @bsiclass                                               Mindaugas.Butkus      04/18
+//=======================================================================================
+struct TestDriverBundleHandler : Dgn::dgn_ElementHandler::DriverBundle
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_DRIVER_BUNDLE_CLASS_NAME, TestDriverBundle, TestDriverBundleHandler, Dgn::dgn_ElementHandler::DriverBundle, )
+    };
 
 //=======================================================================================
 //! A test Element

@@ -1085,6 +1085,14 @@ bvector<TileCPtr> Root::SelectTiles(DrawArgsR args)
 
     GetRootTile()->_SelectTiles(selectedTiles, args);
 
+#if defined DEBUG_TILE_COUNTS
+    THREADLOG.errorv("Selected %u tiles Missing %u", static_cast<uint32_t>(selectedTiles.size()), static_cast<uint32_t>(args.m_missing.size()));
+
+    Tile::Counts counts;
+    GetRootTile()->Count(counts);
+    THREADLOG.errorv("Total %u Displayable %u Max Depth %u", static_cast<uint32_t>(counts.m_total), static_cast<uint32_t>(counts.m_displayable), counts.m_maxDepth);
+#endif
+
     return selectedTiles;
     }
 
@@ -1164,6 +1172,24 @@ int Tile::CountTiles() const
         }
 
     return count;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::Count(Counts& counts) const
+    {
+    ++counts.m_total;
+    if (GetDepth() > counts.m_maxDepth)
+        counts.m_maxDepth = GetDepth();
+
+    if (IsDisplayable())
+        ++counts.m_displayable;
+
+    auto children = _GetChildren(false);
+    if (nullptr != children)
+        for (auto const& child : *children)
+            child->Count(counts);
     }
 
 /*---------------------------------------------------------------------------------**//**

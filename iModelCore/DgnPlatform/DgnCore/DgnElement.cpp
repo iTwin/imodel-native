@@ -1187,7 +1187,13 @@ Json::Value DgnElement::RelatedElement::ToJson(DgnDbR db) const
     val[ECJsonUtilities::json_navId()] = m_id.ToHexStr();
     auto relClass = db.Schemas().GetClass(m_relClassId);
     if (relClass != nullptr)
-        ECJsonUtilities::ClassNameToJson(val[ECJsonUtilities::json_navRelClassName()], *relClass);
+        {
+        // ECJsonUtilities::ClassNameToJson(val[ECJsonUtilities::json_navRelClassName()], *relClass);
+        Utf8String fullName(relClass->GetSchema().GetName());
+        fullName.append(":");
+        fullName.append(relClass->GetName().c_str());
+        val[ECJsonUtilities::json_navRelClassName()] = fullName;
+        }
     return val;
     }
 

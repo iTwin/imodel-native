@@ -118,6 +118,12 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
+    <ECEntityClass typeName="TestDriverBundle">
+        <BaseClass>bis:DriverBundleElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="TestElement2d">
         <BaseClass>bis:AnnotationElement2d</BaseClass>
         <ECCustomAttributes>
@@ -201,6 +207,15 @@
         </Source>
         <Target multiplicity="(0..*)" roleLabel="TestElementIsRelatedToElement2 (Reversed)" polymorphic="true">
             <Class class="bis:Element"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TestModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
+        <BaseClass>bis:ModelModelsElement</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="models" polymorphic="true">
+            <Class class="bis:Model"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is modeled by" polymorphic="true">
+            <Class class="bis:ISubModeledElement" />
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="TestGroup">

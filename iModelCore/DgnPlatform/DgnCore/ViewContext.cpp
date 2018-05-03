@@ -928,11 +928,17 @@ bool GeometryParams::IsEquivalent(GeometryParamsCR other) const
 
         if (m_styleInfo.IsValid())
             {
-            // NOTE: Don't use == operator on LineStyleInfo, don't want to compare LineStyleSymb since if will differ between resolved/un-resolved params...
+            // NOTE: Don't use == operator on LineStyleInfo, don't want to compare LineStyleSymb since it will differ between resolved/un-resolved params...
             if (m_styleInfo->GetStyleId() != other.m_styleInfo->GetStyleId())
                 return false;
 
-            if (!(m_styleInfo->GetLineStyleSymb() == other.m_styleInfo->GetLineStyleSymb()))
+            LineStyleParamsCP thisParams = m_styleInfo->GetStyleParams();
+            LineStyleParamsCP otherParams = other.m_styleInfo->GetStyleParams();
+
+            if ((nullptr == thisParams) != (nullptr == otherParams))
+                return false;
+
+            if ((nullptr != thisParams) && !(*thisParams == *otherParams))
                 return false;
             }
         }
