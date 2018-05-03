@@ -5,7 +5,6 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
 #include "CompatibilityTestFixture.h"
 
 struct CompatibilityECDb : CompatibilityTestFixture
@@ -19,8 +18,6 @@ ECDB_TESTFILE(EmptyFile)
     ECDb db;
     db.CreateNewDb(GetResolvedFilePath());
     }
-
-
 
 //===========================================================Test===========================================================
 //---------------------------------------------------------------------------------------
