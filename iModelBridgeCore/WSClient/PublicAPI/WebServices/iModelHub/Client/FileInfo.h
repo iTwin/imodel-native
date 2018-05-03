@@ -21,7 +21,8 @@ enum class InitializationState
     Scheduled,
     UnknownFailure,
     OutdatedFile,
-    CodeTooLong
+    CodeTooLong,
+    SeedFileIsBriefcase
     };
 
 //=======================================================================================
