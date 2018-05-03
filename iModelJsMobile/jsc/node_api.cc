@@ -284,6 +284,7 @@ napi_status napi_define_class(napi_env env,
     JSContextRef ctx = env->GetContext();
     
     JSObjectRef prototypeObj = JSObjectMake(ctx, NULL, NULL);
+    JSValueProtect(ctx, prototypeObj);
     // Separate static and instance properties;
     size_t static_property_count = 0;
     size_t instance_property_count = 0;
@@ -880,8 +881,8 @@ napi_status napi_create_error(napi_env env,
   CHECK_ARG(env, msg);
   CHECK_ARG(env, result);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+  JSContextRef ctx = env->GetContext();
+  *result = JSObjectMakeError(ctx, 0, NULL, NULL);
 
   return napi_clear_last_error(env);
 }
@@ -897,8 +898,8 @@ napi_status napi_create_type_error(napi_env env,
   CHECK_ARG(env, msg);
   CHECK_ARG(env, result);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+  JSContextRef ctx = env->GetContext();
+  *result = JSObjectMakeError(ctx, 0, NULL, NULL);
 
   return napi_clear_last_error(env);
 }
@@ -914,8 +915,8 @@ napi_status napi_create_range_error(napi_env env,
   CHECK_ARG(env, msg);
   CHECK_ARG(env, result);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+  JSContextRef ctx = env->GetContext();
+  *result = JSObjectMakeError(ctx, 0, NULL, NULL);
 
   return napi_clear_last_error(env);
 }
@@ -1461,8 +1462,10 @@ napi_status napi_create_external(napi_env env,
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, result);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+  JSContextRef ctx = env->GetContext();
+  JSClassDefinition classDef = kJSClassDefinitionEmpty;
+  JSClassRef classRef = JSClassCreate(&classDef);
+  *result = JSObjectMake(ctx,classRef,data);
 
   return napi_clear_last_error(env);
 }
@@ -1477,8 +1480,7 @@ napi_status napi_get_value_external(napi_env env,
   CHECK_ARG(env, value);
   CHECK_ARG(env, result);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+  *result = JSObjectGetPrivate((JSObjectRef)value);
 
   return napi_clear_last_error(env);
 }
@@ -1585,7 +1587,7 @@ napi_status napi_get_reference_value(napi_env env,
     CHECK_ARG(env, ref);
     CHECK_ARG(env, result);
 
-    JSContextRef ctx = env->GetContext();
+    //JSContextRef ctx = env->GetContext();
     if (result != NULL) {
         *result = ref->value;
     }
@@ -1709,8 +1711,8 @@ napi_status napi_instanceof(napi_env env,
   CHECK_ARG(env, object);
   CHECK_ARG(env, result);
 
-//  JSContextRef ctx = env->GetContext();
-  // TODO
+  JSContextRef ctx = env->GetContext();
+  *result = JSValueIsInstanceOfConstructor(ctx, object, (JSObjectRef)constructor, NULL);
 
   return GET_RETURN_STATUS(env);
 }
