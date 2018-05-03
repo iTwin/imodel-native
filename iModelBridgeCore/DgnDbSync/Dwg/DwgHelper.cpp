@@ -1531,3 +1531,21 @@ bool    DwgHelper::SniffDxfFile (BeFileNameCR dxfName, DwgFileVersion* versionOu
     
     return  false;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgHelper::CanOpenForWrite (BeFileNameCR path)
+    {
+#ifdef BENTLEY_WIN32
+    ::FILE* stream = nullptr;
+    bool check = ::_wfopen_s(&stream, path.c_str(), L"r+") == 0;
+    if (nullptr != stream)
+        ::fclose (stream);
+    return check;
+#else
+    BeAssert (false && "Unsupported platform!");
+    return  false;
+#endif
+    }
+

@@ -332,8 +332,12 @@ BentleyStatus   DwgImporter::OpenDwgFile (BeFileNameCR dwgdxfName)
     iterated through in a master file's block table.  Since the importer does not need to 
     change the file on disc, i.e. delete etc, we opt for the file open mode DenyWrite.  
     We can still make changes on objects and save changes back into database.
+
+    However, if someone else has already had the file open for write, we resort to DenyNo.
     -----------------------------------------------------------------------------------*/
-    m_dwgdb = DwgImportHost::GetHost().ReadFile (dwgdxfName, false, false, FileShareMode::DenyWrite, password);
+    auto openMode = DwgHelper::CanOpenForWrite(dwgdxfName) ? FileShareMode::DenyWrite : FileShareMode::DenyNo;
+
+    m_dwgdb = DwgImportHost::GetHost().ReadFile (dwgdxfName, false, false, openMode, password);
     if (!m_dwgdb.IsValid())
         return  BSIERROR;
 
