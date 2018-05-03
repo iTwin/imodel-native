@@ -8,6 +8,8 @@
 #pragma once
 #include <Bentley/RefCounted.h>
 #include <Bentley/Nullable.h>
+#include <ECObjects/ECObjects.h>
+
 //__BENTLEY_INTERNAL_ONLY__
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -18,7 +20,6 @@ struct ClassChange;
 struct ECEnumerationChange;
 struct StringChange;
 struct ECPropertyChange;
-struct ECRelationshipConstraintClassChange;
 struct ECEnumeratorChange;
 struct ECPropertyValueChange;
 struct ECObjectChange;
@@ -33,19 +34,11 @@ struct FormatChange;
 //=======================================================================================
 // @bsienum                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-enum class ChangeState
+enum class ChangeType
     {
     Deleted = 1, //This need to be none zero base
-    Modified =2 ,
-    New =3,
-    };
-
-//=======================================================================================
-// @bsienum                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-enum class ValueId
-    {
-    Deleted, New
+    Modified = 2,
+    New =3
     };
 
 //=======================================================================================
@@ -60,13 +53,23 @@ enum class SystemId
     BaseClasses,
     Class,
     Classes,
-    ClassFullName,
     ClassModifier,
     ClassType,
-    ConstantKey,
+    CompositeIncludeZero,
+    CompositeSpacer,
+    CompositeMajorUnit,
+    CompositeMajorLabel,
+    CompositeMiddleUnit,
+    CompositeMiddleLabel,
+    CompositeMinorUnit,
+    CompositeMinorLabel,
+    CompositeSubUnit,
+    CompositeSubLabel,
+    CompositeValueSpec,
     Constraint,
     ConstraintClass,
     ConstraintClasses,
+    CustomAttribute,
     CustomAttributes,
     DecimalPrecision,
     DecimalSeparator,
@@ -80,23 +83,9 @@ enum class SystemId
     Enumerators,
     ExtendedTypeName,
     Format,
-    FormatCompositeIncludeZero,
-    FormatCompositeSpacer,
-    FormatCompositeMajorUnit,
-    FormatCompositeMajorLabel,
-    FormatCompositeMiddleUnit,
-    FormatCompositeMiddleLabel,
-    FormatCompositeMinorUnit,
-    FormatCompositeMinorLabel,
-    FormatCompositeSubUnit,
-    FormatCompositeSubLabel,
-    FormatHasComposite,
-    FormatHasNumeric,
     Formats,
     FormatTraits,
     FractionalPrecision,
-    Instance,
-    Instances,
     Integer,
     IsPolymorphic,
     IsReadonly,
@@ -110,7 +99,7 @@ enum class SystemId
     KindOfQuantity,
     KoqRelativeError,
     KoqPersistenceUnit,
-    KoqPresentationUnitList,
+    KoqPresentationFormats,
     MaximumLength,
     MaximumValue,
     MaxOccurs,
@@ -121,6 +110,7 @@ enum class SystemId
     Multiplicity,
     Name,
     Navigation,
+    NumericFormatSpec,
     OriginalECXmlVersionMajor,
     OriginalECXmlVersionMinor,
     Phenomena,
@@ -141,7 +131,7 @@ enum class SystemId
     Relationship,
     RelationshipName,
     RoleLabel,
-    RoundFactor,
+    RoundingFactor,
     Schema,
     Schemas,
     ScientificType,
@@ -215,16 +205,18 @@ struct ECChange : RefCountedBase
     private:
         SystemId m_systemId;
         Utf8String m_customId;
-        ChangeState m_state;
-        Status m_status;
-        ECChange const* m_parent;
+        ChangeType m_changeType;
+        ECChange const* m_parent = nullptr;
+        Status m_status = Status::Pending;
 
         virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const = 0;
         virtual bool _IsEmpty() const = 0;
         virtual void _Optimize() {}
 
     protected:
-        ECOBJECTS_EXPORT ECChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr);
+        ECChange(ChangeType changeType, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : m_systemId(systemId), m_customId(customId), m_changeType(changeType), m_parent(parent)
+            {}
 
         ECOBJECTS_EXPORT static void AppendBegin(Utf8StringR str, ECChange const& change, int currentIndex);
         static void AppendEnd(Utf8StringR str) { str.append("\r\n"); }
@@ -236,7 +228,7 @@ struct ECChange : RefCountedBase
         SystemId GetSystemId() const { return m_systemId; }
         bool HasCustomId() const { return !m_customId.empty(); }
         ECOBJECTS_EXPORT Utf8CP GetId() const;
-        ChangeState GetState() const { return m_state; }
+        ChangeType GetChangeType() const { return m_changeType; }
         ECChange const* GetParent() const { return m_parent; }
         bool IsEmpty() const { return _IsEmpty(); }
         bool IsValid() const { return !IsEmpty(); }
@@ -244,7 +236,7 @@ struct ECChange : RefCountedBase
         Status GetStatus() { return m_status; }
         void SetStatus(Status status) { m_status = status; }
         void WriteToString(Utf8StringR str, int initIndex = 0, int indentSize = INDENT_SIZE) const { _WriteToString(str, initIndex, indentSize); }
-        Utf8String GetString() const { Utf8String str;  WriteToString(str); return str; }
+        Utf8String String() const { Utf8String str;  WriteToString(str); return str; }
     };
 
 typedef RefCountedPtr<ECChange> ECChangePtr;
@@ -279,7 +271,7 @@ struct ECObjectChange : ECChange
             if (itor != m_changes.end())
                 return *(static_cast<T*>(itor->second.get()));
 
-            ECChangePtr changePtr = new T(GetState(), systemId, this, nullptr);
+            ECChangePtr changePtr = new T(GetChangeType(), systemId, this, nullptr);
             ECChange* changeP = changePtr.get();
             m_changes[changePtr->GetId()] = changePtr;
             return *(static_cast<T*>(changeP));
@@ -287,7 +279,7 @@ struct ECObjectChange : ECChange
 
 
     public:
-        ECObjectChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        ECObjectChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             :ECChange(state, systemId, parent, customId)
             {}
 
@@ -358,7 +350,7 @@ struct ECChangeArray : ECChange
                 }
             }
     public:
-        ECChangeArray(ChangeState state, SystemId systemId, ECChange const* parent, Utf8CP customId, SystemId elementId)
+        ECChangeArray(ChangeType state, SystemId systemId, ECChange const* parent, Utf8CP customId, SystemId elementId)
             :ECChange(state, systemId, parent, customId), m_elementType(elementId)
             {
             static_assert(std::is_base_of<ECChange, T>::value, "T not derived from ECChange");
@@ -371,7 +363,7 @@ struct ECChangeArray : ECChange
         //+---------------+---------------+---------------+---------------+---------------+------
         SystemId GetElementType() const { return m_elementType; }
 
-        T& Add(ChangeState state, Utf8CP customId = nullptr)
+        T& Add(ChangeType state, Utf8CP customId = nullptr)
             {
             ECChangePtr changePtr = new T(state, m_elementType, this, customId);
             T* changeP = static_cast<T*>(changePtr.get());
@@ -379,7 +371,7 @@ struct ECChangeArray : ECChange
             return *changeP;
             }
 
-        T& At(size_t index) { return static_cast<T&>(*m_changes[index]); }
+        T& operator[](size_t index) { return static_cast<T&>(*m_changes[index]); }
         T* Find(Utf8CP customId)
             {
             for (auto& v : m_changes)
@@ -410,11 +402,9 @@ struct ECChangeArray : ECChange
 struct SchemaChanges final: ECChangeArray<SchemaChange>
     {
     public:
-        SchemaChanges()
-            : ECChangeArray<SchemaChange>(ChangeState::Modified, SystemId::Schemas, nullptr, nullptr, SystemId::Schema)
-            {}
-        SchemaChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<SchemaChange>(state, SystemId::Schemas, parent, customId, SystemId::Schema)
+        SchemaChanges() : ECChangeArray<SchemaChange>(ChangeType::Modified, SystemId::Schemas, nullptr, nullptr, SystemId::Schema) {}
+        SchemaChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<SchemaChange>(type, SystemId::Schemas, parent, customId, SystemId::Schema)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -427,8 +417,8 @@ struct SchemaChanges final: ECChangeArray<SchemaChange>
 struct ClassChanges final: ECChangeArray<ClassChange>
     {
     public:
-        ClassChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<ClassChange>(state, SystemId::Classes, parent, customId, SystemId::Class)
+        ClassChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<ClassChange>(type, SystemId::Classes, parent, customId, SystemId::Class)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -442,8 +432,8 @@ struct ClassChanges final: ECChangeArray<ClassChange>
 struct ECEnumerationChanges final: ECChangeArray<ECEnumerationChange>
     {
     public:
-        ECEnumerationChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<ECEnumerationChange>(state, SystemId::Enumerations, parent, customId, SystemId::Enumeration)
+        ECEnumerationChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<ECEnumerationChange>(type, SystemId::Enumerations, parent, customId, SystemId::Enumeration)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -456,8 +446,8 @@ struct ECEnumerationChanges final: ECChangeArray<ECEnumerationChange>
 struct KindOfQuantityChanges final: ECChangeArray<KindOfQuantityChange>
     {
     public:
-        KindOfQuantityChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<KindOfQuantityChange>(state, SystemId::KindOfQuantities, parent, customId, SystemId::KindOfQuantity)
+        KindOfQuantityChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<KindOfQuantityChange>(type, SystemId::KindOfQuantities, parent, customId, SystemId::KindOfQuantity)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -470,8 +460,8 @@ struct KindOfQuantityChanges final: ECChangeArray<KindOfQuantityChange>
 struct PropertyCategoryChanges final : ECChangeArray<PropertyCategoryChange>
     {
     public:
-        PropertyCategoryChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<PropertyCategoryChange>(state, SystemId::PropertyCategories, parent, customId, SystemId::PropertyCategory)
+        PropertyCategoryChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<PropertyCategoryChange>(type, SystemId::PropertyCategories, parent, customId, SystemId::PropertyCategory)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -484,8 +474,8 @@ struct PropertyCategoryChanges final : ECChangeArray<PropertyCategoryChange>
 struct PhenomenonChanges final : ECChangeArray<PhenomenonChange>
     {
     public:
-        PhenomenonChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<PhenomenonChange>(state, SystemId::Phenomena, parent, customId, SystemId::Phenomenon)
+        PhenomenonChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<PhenomenonChange>(type, SystemId::Phenomena, parent, customId, SystemId::Phenomenon)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -498,8 +488,8 @@ struct PhenomenonChanges final : ECChangeArray<PhenomenonChange>
 struct UnitSystemChanges final : ECChangeArray<UnitSystemChange>
     {
     public:
-        UnitSystemChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<UnitSystemChange>(state, SystemId::UnitSystems, parent, customId, SystemId::UnitSystem)
+        UnitSystemChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<UnitSystemChange>(type, SystemId::UnitSystems, parent, customId, SystemId::UnitSystem)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -512,8 +502,8 @@ struct UnitSystemChanges final : ECChangeArray<UnitSystemChange>
 struct UnitChanges final : ECChangeArray<UnitChange>
     {
     public:
-        UnitChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<UnitChange>(state, SystemId::Units, parent, customId, SystemId::Unit)
+        UnitChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<UnitChange>(type, SystemId::Units, parent, customId, SystemId::Unit)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -526,8 +516,8 @@ struct UnitChanges final : ECChangeArray<UnitChange>
 struct FormatChanges final : ECChangeArray<FormatChange>
     {
     public:
-        FormatChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<FormatChange>(state, SystemId::Formats, parent, customId, SystemId::Format)
+        FormatChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<FormatChange>(type, SystemId::Formats, parent, customId, SystemId::Format)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -537,15 +527,29 @@ struct FormatChanges final : ECChangeArray<FormatChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceChanges final : ECChangeArray<ECPropertyValueChange>
+struct CustomAttributeChange final : ECChangeArray<ECPropertyValueChange>
     {
     public:
-        ECInstanceChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<ECPropertyValueChange>(state, SystemId::CustomAttributes, parent, customId, SystemId::PropertyValue)
+        CustomAttributeChange(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<ECPropertyValueChange>(type, SystemId::CustomAttribute, parent, customId, SystemId::PropertyValue)
             {
             BeAssert(systemId == GetSystemId());
             }
-        ~ECInstanceChanges() {}
+        ~CustomAttributeChange() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
+struct CustomAttributeChanges final : ECChangeArray<CustomAttributeChange>
+    {
+    public:
+        CustomAttributeChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<CustomAttributeChange>(type, SystemId::CustomAttributes, parent, customId, SystemId::CustomAttribute)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~CustomAttributeChanges() {}
     };
 
 //=======================================================================================
@@ -554,8 +558,8 @@ struct ECInstanceChanges final : ECChangeArray<ECPropertyValueChange>
 struct ECPropertyChanges final: ECChangeArray<ECPropertyChange>
     {
     public:
-        ECPropertyChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<ECPropertyChange>(state, SystemId::Properties, parent, customId, SystemId::Property)
+        ECPropertyChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<ECPropertyChange>(type, SystemId::Properties, parent, customId, SystemId::Property)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -565,11 +569,11 @@ struct ECPropertyChanges final: ECChangeArray<ECPropertyChange>
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct ECRelationshipConstraintClassChanges final: ECChangeArray<ECRelationshipConstraintClassChange>
+struct ECRelationshipConstraintClassChanges final: ECChangeArray<StringChange>
     {
     public:
-        ECRelationshipConstraintClassChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<ECRelationshipConstraintClassChange>(state, SystemId::ConstraintClasses, parent, customId, SystemId::ConstraintClass)
+        ECRelationshipConstraintClassChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<StringChange>(type, SystemId::ConstraintClasses, parent, customId, SystemId::ConstraintClass)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -582,8 +586,8 @@ struct ECRelationshipConstraintClassChanges final: ECChangeArray<ECRelationshipC
 struct ECEnumeratorChanges final: ECChangeArray<ECEnumeratorChange>
     {
     public:
-        ECEnumeratorChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<ECEnumeratorChange>(state, SystemId::Enumerators, parent, customId, SystemId::Enumerator)
+        ECEnumeratorChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<ECEnumeratorChange>(type, SystemId::Enumerators, parent, customId, SystemId::Enumerator)
             {
             BeAssert(systemId == GetSystemId());
             }
@@ -596,8 +600,8 @@ struct ECEnumeratorChanges final: ECChangeArray<ECEnumeratorChange>
 struct StringChanges final: ECChangeArray<StringChange>
     {
     public:
-        StringChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<StringChange>(state, systemId, parent, customId, SystemId::String)
+        StringChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<StringChange>(type, systemId, parent, customId, SystemId::String)
             {}
         ~StringChanges() {}
     };
@@ -608,8 +612,8 @@ struct StringChanges final: ECChangeArray<StringChange>
 struct BaseClassChanges final : ECChangeArray<StringChange>
     {
     public:
-        BaseClassChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<StringChange>(state, systemId, parent, customId, SystemId::BaseClass)
+        BaseClassChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<StringChange>(type, systemId, parent, customId, SystemId::BaseClass)
             {}
         ~BaseClassChanges() {}
     };
@@ -620,10 +624,100 @@ struct BaseClassChanges final : ECChangeArray<StringChange>
 struct ReferenceChanges final: ECChangeArray<StringChange>
     {
     public:
-        ReferenceChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<StringChange>(state, systemId, parent, customId, SystemId::Reference)
+        ReferenceChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<StringChange>(type, systemId, parent, customId, SystemId::Reference)
             {}
         ~ReferenceChanges() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle            05/2018
+//+===============+===============+===============+===============+===============+======
+struct Stringifier final
+    {
+    private:
+        Stringifier() = delete;
+        ~Stringifier() = delete;
+
+    public:
+        static Utf8String ToString(Utf8StringCR val) { return val; }
+        static Utf8String ToString(bool val) { return val ? "true" : "false"; }
+        static Utf8String ToString(uint32_t val) { return Utf8PrintfString("%" PRIu32, val); }
+        static Utf8String ToString(int32_t val) { return Utf8PrintfString("%" PRIi32, val); }
+        static Utf8String ToString(int64_t val) { return Utf8PrintfString("%" PRIi64, val); }
+        static Utf8String ToString(double val) { return Utf8PrintfString("%.17g", val); }
+        static Utf8String ToString(DateTime const& val) { return val.ToString(); }
+        static Utf8String ToString(Binary const& val)
+            {
+            Utf8String str;
+            Base64Utilities::Encode(str, (Byte const*) val.GetPointer(), val.Size());
+            return str;
+            }
+        static Utf8String ToString(DPoint2d const& val) { return Utf8PrintfString("(%.17g, %.17g)", val.x, val.y); }
+        static Utf8String ToString(DPoint3d const& val) { return Utf8PrintfString("(%.17g, %.17g,  %.17g)", val.x, val.y, val.z); }
+        static Utf8String ToString(ECN::ECValue const& val) { return val.ToString(); }
+        static Utf8String ToString(ECN::StrengthType val)
+            {
+            switch (val)
+                {
+                    case ECN::StrengthType::Embedding:
+                        return "Embedding";
+                    case ECN::StrengthType::Holding:
+                        return "Holding";
+                    case ECN::StrengthType::Referencing:
+                        return "Referencing";
+                    default:
+                        BeAssert(false && "Unhandled enum value");
+                        return Utf8String();
+                }
+            }
+
+        static Utf8String ToString(ECN::ECRelatedInstanceDirection val)
+            {
+            switch (val)
+                {
+                    case ECN::ECRelatedInstanceDirection::Forward:
+                        return "Forward";
+                    case ECN::ECRelatedInstanceDirection::Backward:
+                        return "Backward";
+                    default:
+                        BeAssert(false && "Unhandled enum value");
+                        return Utf8String();
+                }
+            }
+
+        static Utf8String ToString(ECN::ECClassModifier val)
+            {
+            switch (val)
+                {
+                    case ECN::ECClassModifier::Abstract:
+                        return "Abstract";
+                    case ECN::ECClassModifier::None:
+                        return "None";
+                    case ECN::ECClassModifier::Sealed:
+                        return "Sealed";
+                    default:
+                        BeAssert(false && "Unhandled enum value");
+                        return Utf8String();
+                }
+            }
+        static Utf8String ToString(ECN::ECClassType val)
+            {
+            switch (val)
+                {
+                    case ECN::ECClassType::CustomAttribute:
+                        return "CustomAttribute";
+                    case ECN::ECClassType::Entity:
+                        return "Entity";
+                    case ECN::ECClassType::Relationship:
+                        return "Relationship";
+                    case ECN::ECClassType::Struct:
+                        return "Struct";
+                    default:
+                        BeAssert(false && "Unhandled enum value");
+                        return Utf8String();
+                }
+            }
     };
 
 //=======================================================================================
@@ -637,127 +731,71 @@ struct ECPrimitiveChange : ECChange
         Nullable<T> m_new;
 
         bool _IsEmpty() const override { return m_old == m_new; }
-        virtual Utf8String _ToString(ValueId id) const = 0;
 
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                    Affan.Khan  03/2016
-        //+---------------+---------------+---------------+---------------+---------------+------
         void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
             {
             AppendBegin(str, *this, currentIndex);
-            str.append(": ");
-            if (GetState() == ChangeState::Deleted)
-                str.append(ToString(ValueId::Deleted));
-            if (GetState() == ChangeState::New)
-                str.append(ToString(ValueId::New));
-            if (GetState() == ChangeState::Modified)
-                str.append(ToString(ValueId::Deleted)).append(" -> ").append(ToString(ValueId::New));
+            str.append(": ").append(ToString());
             AppendEnd(str);
             }
+
     public:
-        ECPrimitiveChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        ECPrimitiveChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECChange(state, systemId, parent, customId)
             {}
 
         virtual ~ECPrimitiveChange() {}
         Nullable<T> const& GetNew() const { return m_new; }
         Nullable<T> const& GetOld() const { return m_old; }
-        Utf8String ToString(ValueId id) const { return _ToString(id); }
 
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                    Affan.Khan  03/2016
-        //+---------------+---------------+---------------+---------------+---------------+------
-        Nullable<T> const& GetValue(ValueId id) const
+        BentleyStatus Set(Nullable<T> const& value)
             {
-            if (id == ValueId::Deleted)
+            if (GetChangeType() == ChangeType::Modified)
                 {
-                if (GetState() == ChangeState::New)
-                    {
-                    BeAssert("For change that marked as NEW user tried to access OLD value");
-                    }
-
-                return m_old;
+                BeAssert(false && "Cannot use this method for Changes marked as Modified");
+                return ERROR;
                 }
 
-            if (GetState() == ChangeState::Deleted)
-                {
-                BeAssert("For change that marked as DELETED user tried to access NEW value which would wrong check code");
-                }
-            return m_new;
-            }
-
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                    Affan.Khan  03/2016
-        //+---------------+---------------+---------------+---------------+---------------+------
-        BentleyStatus SetValue(ValueId id, Nullable<T> const&& value)
-            {
-            if (id == ValueId::Deleted)
-                {
-                if (GetState() == ChangeState::New)
-                    {
-                    BeAssert(false && "Cannot set OLD value for Change which is marked as NEW");
-                    return ERROR;
-                    }
-
-                m_old = std::move(value);
-                }
-            else
-                {
-                if (GetState() == ChangeState::Deleted)
-                    {
-                    BeAssert(false && "Cannot set NEW value for Change which is marked DELETED");
-                    return ERROR;
-                    }
-
-                m_new = std::move(value);
-                }
-            return SUCCESS;
-            }
-
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                    Affan.Khan  03/2016
-        //+---------------+---------------+---------------+---------------+---------------+------
-        BentleyStatus SetValue(ValueId id, T const& value)
-            {
-            if (id == ValueId::Deleted)
-                {
-                if (GetState() == ChangeState::New)
-                    {
-                    BeAssert(false && "Cannot set OLD value for Change which is marked as NEW");
-                    return ERROR;
-                    }
-
+            if (GetChangeType() == ChangeType::Deleted)
                 m_old = value;
-                }
             else
                 {
-                if (GetState() == ChangeState::Deleted)
-                    {
-                    BeAssert(false && "Cannot set NEW value for Change which is marked DELETED");
-                    return ERROR;
-                    }
-
+                BeAssert(GetChangeType() == ChangeType::New);
                 m_new = value;
                 }
 
             return SUCCESS;
             }
 
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                    Affan.Khan  03/2016
-        //+---------------+---------------+---------------+---------------+---------------+------
-        BentleyStatus SetValue(Nullable<T> const&& valueOld, Nullable<T> const&& valueNew)
+        BentleyStatus Set(Nullable<T> const& oldValue, Nullable<T> const& newValue)
             {
-            if (GetState() != ChangeState::Modified)
+            if (GetChangeType() != ChangeType::Modified)
                 {
-                BeAssert(false && "Cannot set both OLD and NEW for change that is not marked as MODIFIED");
+                BeAssert(false && "Cannot set old and new value for Change which is not marked as Modified");
                 return ERROR;
                 }
 
-            m_old = std::move(valueOld);
-            m_new = std::move(valueNew);
+            if (oldValue != nullptr)
+                m_old = oldValue;
+
+            if (newValue != nullptr)
+                m_new = newValue;
+
             return SUCCESS;
             }
+
+        Utf8String ToString() const
+            {
+            Utf8String str;
+            if (GetChangeType() == ChangeType::Deleted)
+                str.append(Stringifier::ToString(GetOld().Value()));
+            if (GetChangeType() == ChangeType::New)
+                str.append(Stringifier::ToString(GetNew().Value()));
+            if (GetChangeType() == ChangeType::Modified)
+                str.append(Stringifier::ToString(GetOld().Value())).append(" -> ").append(Stringifier::ToString(GetNew().Value()));
+            return str;
+            }
+
     };
 
 //=======================================================================================
@@ -765,12 +803,8 @@ struct ECPrimitiveChange : ECChange
 //+===============+===============+===============+===============+===============+======
 struct StringChange final: ECPrimitiveChange<Utf8String>
     {
-
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
-
     public:
-        StringChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        StringChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<Utf8String>(state, systemId, parent, customId)
             {}
         ~StringChange() {}
@@ -781,14 +815,12 @@ struct StringChange final: ECPrimitiveChange<Utf8String>
 //+===============+===============+===============+===============+===============+======
 struct BooleanChange final: ECPrimitiveChange<bool>
     {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
-
     public:
-        BooleanChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        BooleanChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<bool>(state, systemId, parent, customId)
             {}
         ~BooleanChange() {}
+
     };
 
 //=======================================================================================
@@ -796,11 +828,8 @@ struct BooleanChange final: ECPrimitiveChange<bool>
 //+===============+===============+===============+===============+===============+======
 struct UInt32Change final: ECPrimitiveChange<uint32_t>
     {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
-
     public:
-        UInt32Change(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        UInt32Change(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<uint32_t>(state, systemId, parent, customId)
             {}
         ~UInt32Change() {}
@@ -811,11 +840,8 @@ struct UInt32Change final: ECPrimitiveChange<uint32_t>
 //+===============+===============+===============+===============+===============+======
 struct Int32Change final: ECPrimitiveChange<int32_t>
     {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
-
     public:
-        Int32Change(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        Int32Change(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<int32_t>(state, systemId, parent, customId)
             {}
         ~Int32Change() {}
@@ -825,11 +851,8 @@ struct Int32Change final: ECPrimitiveChange<int32_t>
 //+===============+===============+===============+===============+===============+======
 struct DoubleChange final: ECPrimitiveChange<double>
     {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
-
     public:
-        DoubleChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        DoubleChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<double>(state, systemId, parent, customId)
             {}
         ~DoubleChange() {}
@@ -840,11 +863,8 @@ struct DoubleChange final: ECPrimitiveChange<double>
 //+===============+===============+===============+===============+===============+======
 struct DateTimeChange final: ECPrimitiveChange<DateTime>
     {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
-
     public:
-        DateTimeChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        DateTimeChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<DateTime>(state, systemId, parent, customId)
             {}
         ~DateTimeChange() {}
@@ -855,11 +875,8 @@ struct DateTimeChange final: ECPrimitiveChange<DateTime>
 //+===============+===============+===============+===============+===============+======
 struct BinaryChange final: ECPrimitiveChange<Binary>
     {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
-
     public:
-        BinaryChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        BinaryChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<Binary>(state, systemId, parent, customId)
             {}
         ~BinaryChange() {}
@@ -870,10 +887,8 @@ struct BinaryChange final: ECPrimitiveChange<Binary>
 //+===============+===============+===============+===============+===============+======
 struct Point2dChange final: ECPrimitiveChange<DPoint2d>
     {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
     public:
-        Point2dChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        Point2dChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<DPoint2d>(state, systemId, parent, customId)
             {}
         ~Point2dChange() {}
@@ -884,10 +899,8 @@ struct Point2dChange final: ECPrimitiveChange<DPoint2d>
 //+===============+===============+===============+===============+===============+======
 struct Point3dChange final: ECPrimitiveChange<DPoint3d>
     {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
     public:
-        Point3dChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        Point3dChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<DPoint3d>(state, systemId, parent, customId)
             {}
         ~Point3dChange() {}
@@ -898,11 +911,8 @@ struct Point3dChange final: ECPrimitiveChange<DPoint3d>
 //+===============+===============+===============+===============+===============+======
 struct Int64Change final: ECPrimitiveChange<int64_t>
     {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
-
     public:
-        Int64Change(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        Int64Change(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<int64_t>(state, systemId, parent, customId)
             {}
         ~Int64Change() {}
@@ -913,10 +923,8 @@ struct Int64Change final: ECPrimitiveChange<int64_t>
 //+===============+===============+===============+===============+===============+======
 struct StrengthTypeChange final : ECPrimitiveChange<ECN::StrengthType>
     {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
     public:
-        StrengthTypeChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        StrengthTypeChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<ECN::StrengthType>(state, systemId, parent, customId)
             {}
         ~StrengthTypeChange() {}
@@ -927,10 +935,8 @@ struct StrengthTypeChange final : ECPrimitiveChange<ECN::StrengthType>
 //+===============+===============+===============+===============+===============+======
 struct StrengthDirectionChange final: ECPrimitiveChange<ECN::ECRelatedInstanceDirection>
     {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
     public:
-        StrengthDirectionChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        StrengthDirectionChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<ECN::ECRelatedInstanceDirection>(state, systemId, parent, customId)
             {}
         ~StrengthDirectionChange() {}
@@ -941,10 +947,8 @@ struct StrengthDirectionChange final: ECPrimitiveChange<ECN::ECRelatedInstanceDi
 //+===============+===============+===============+===============+===============+======
 struct ClassModifierChange final :ECPrimitiveChange<ECN::ECClassModifier>
     {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
     public:
-        ClassModifierChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        ClassModifierChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<ECN::ECClassModifier>(state, systemId, parent, customId)
             {}
         ~ClassModifierChange() {}
@@ -955,27 +959,11 @@ struct ClassModifierChange final :ECPrimitiveChange<ECN::ECClassModifier>
 //+===============+===============+===============+===============+===============+======
 struct ClassTypeChange final :ECPrimitiveChange<ECN::ECClassType>
     {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
     public:
-        ClassTypeChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        ClassTypeChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECPrimitiveChange<ECN::ECClassType>(state, systemId, parent, customId)
             {}
         ~ClassTypeChange() {}
-    };
-
-//=======================================================================================
-// @bsiclass                                               Krischan.Eberle         06/2017
-//+===============+===============+===============+===============+===============+======
-struct MinMaxValueChange final :ECPrimitiveChange<ECN::ECValue>
-    {
-    private:
-        ECOBJECTS_EXPORT Utf8String _ToString(ValueId id) const override;
-    public:
-        MinMaxValueChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECPrimitiveChange<ECN::ECValue>(state, systemId, parent, customId)
-            {}
-        ~MinMaxValueChange() {}
     };
 
 //=======================================================================================
@@ -984,28 +972,28 @@ struct MinMaxValueChange final :ECPrimitiveChange<ECN::ECValue>
 struct SchemaChange final : ECObjectChange
     {
     public:
-        SchemaChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        SchemaChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECObjectChange(state, SystemId::Schema, parent, customId)
             {
             BeAssert(systemId == GetSystemId());
             }
         ~SchemaChange(){}
 
-        StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
-        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
-        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
-        UInt32Change& GetVersionRead() { return Get<UInt32Change>(SystemId::VersionRead); }
-        UInt32Change& GetVersionMinor() { return Get<UInt32Change>(SystemId::VersionMinor); }
-        UInt32Change& GetVersionWrite() { return Get<UInt32Change>(SystemId::VersionWrite); }
-        UInt32Change& GetECVersion() { return Get<UInt32Change>(SystemId::ECVersion); }
-        UInt32Change& GetOriginalECXmlVersionMajor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMajor); }
-        UInt32Change& GetOriginalECXmlVersionMinor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMinor); }
+        StringChange& Name() { return Get<StringChange>(SystemId::Name); }
+        StringChange& Alias() { return Get<StringChange>(SystemId::Alias); }
+        StringChange& DisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& Description() { return Get<StringChange>(SystemId::Description); }
+        UInt32Change& VersionRead() { return Get<UInt32Change>(SystemId::VersionRead); }
+        UInt32Change& VersionMinor() { return Get<UInt32Change>(SystemId::VersionMinor); }
+        UInt32Change& VersionWrite() { return Get<UInt32Change>(SystemId::VersionWrite); }
+        UInt32Change& ECVersion() { return Get<UInt32Change>(SystemId::ECVersion); }
+        UInt32Change& OriginalECXmlVersionMajor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMajor); }
+        UInt32Change& OriginalECXmlVersionMinor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMinor); }
 
-        StringChange& GetAlias() { return Get<StringChange>(SystemId::Alias); }
         ReferenceChanges& References() { return Get<ReferenceChanges>(SystemId::References); }
         ClassChanges& Classes() { return Get<ClassChanges>(SystemId::Classes); }
         ECEnumerationChanges& Enumerations() { return Get<ECEnumerationChanges>(SystemId::Enumerations); }
-        ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
+        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(SystemId::CustomAttributes); }
         KindOfQuantityChanges& KindOfQuantities() { return Get<KindOfQuantityChanges>(SystemId::KindOfQuantities); }
         PropertyCategoryChanges& PropertyCategories() { return Get<PropertyCategoryChanges>(SystemId::PropertyCategories); }
         PhenomenonChanges& Phenomena() { return Get<PhenomenonChanges>(SystemId::Phenomena); }
@@ -1020,17 +1008,13 @@ struct SchemaChange final : ECObjectChange
 struct ECEnumeratorChange final : ECObjectChange
     {
     public:
-        ECEnumeratorChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECObjectChange(state, SystemId::Enumerator, parent, customId)
-            {
-            BeAssert(systemId == GetSystemId());
-            }
+        ECEnumeratorChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECObjectChange(state, SystemId::Enumerator, parent, customId) { BeAssert(systemId == GetSystemId()); }
         ~ECEnumeratorChange() {}
-        StringChange& GetName() {return Get<StringChange>(SystemId::Name); }
-        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
-        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
-        StringChange& GetString() { return Get<StringChange>(SystemId::String); }
-        Int32Change& GetInteger() { return Get<Int32Change>(SystemId::Integer); }
+        StringChange& Name() {return Get<StringChange>(SystemId::Name); }
+        StringChange& DisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& Description() { return Get<StringChange>(SystemId::Description); }
+        StringChange& String() { return Get<StringChange>(SystemId::String); }
+        Int32Change& Integer() { return Get<Int32Change>(SystemId::Integer); }
     };
 
 //=======================================================================================
@@ -1039,16 +1023,12 @@ struct ECEnumeratorChange final : ECObjectChange
 struct ECEnumerationChange final :ECObjectChange
     {
     public:
-        ECEnumerationChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECObjectChange(state, SystemId::Enumeration, parent, customId)
-            {
-            BeAssert(systemId == GetSystemId());
-            }
+        ECEnumerationChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECObjectChange(state, SystemId::Enumeration, parent, customId) { BeAssert(systemId == GetSystemId()); }
         ~ECEnumerationChange() {}
-        StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
-        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
-        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
-        StringChange& GetTypeName() { return Get<StringChange>(SystemId::TypeName); }
+        StringChange& Name() { return Get<StringChange>(SystemId::Name); }
+        StringChange& DisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& Description() { return Get<StringChange>(SystemId::Description); }
+        StringChange& TypeName() { return Get<StringChange>(SystemId::TypeName); }
         BooleanChange& IsStrict() { return Get<BooleanChange>(SystemId::IsStrict); }
         ECEnumeratorChanges& Enumerators() { return Get<ECEnumeratorChanges>(SystemId::Enumerators); }
     };
@@ -1061,18 +1041,16 @@ struct ECPropertyValueChange final : ECChange
     private:
         std::unique_ptr<ECChange> m_value;
         ECN::PrimitiveType m_type;
-        Utf8String m_accessString;
-        mutable std::unique_ptr<ECChangeArray<ECPropertyValueChange>> m_derivedTables;
 
         void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
         bool _IsEmpty() const override;
         void _Optimize() override;
         BentleyStatus InitValue(ECN::PrimitiveType type);
 
-        template< typename T >
+        template<typename T>
         class Converter
             {
-            template< bool cond, typename U >
+            template<bool cond, typename U>
             using resolvedType = Nullable<typename std::enable_if< cond, U >::type>;
 
             public:
@@ -1136,16 +1114,12 @@ struct ECPropertyValueChange final : ECChange
                     return v.GetBoolean();
                     }
             };
-    protected:
-        void  GetFlatListOfChildren(std::vector<ECPropertyValueChange const*>& childrens) const;
 
     public:
-        ECPropertyValueChange(ChangeState state, SystemId systemId = SystemId::PropertyValue, ECChange const* parent = nullptr, Utf8CP customId = nullptr);
+        ECPropertyValueChange(ChangeType state, SystemId systemId = SystemId::PropertyValue, ECChange const* parent = nullptr, Utf8CP accessString = nullptr);
         ~ECPropertyValueChange() {}
+        Utf8CP GetAccessString() const { BeAssert(HasCustomId()); return GetId(); }
         bool HasValue() const { return m_value != nullptr; }
-        bool HasChildren() const { return m_derivedTables != nullptr; }
-        ECChangeArray<ECPropertyValueChange>& GetChildren() const;
-        Utf8StringCR GetAccessString() const { return m_accessString; }
         ECN::PrimitiveType GetValueType() const { return m_type; }
         StringChange* GetString() const { BeAssert(m_type == ECN::PRIMITIVETYPE_String); if (m_type != ECN::PRIMITIVETYPE_String) return nullptr; return static_cast<StringChange*>(m_value.get()); }
         BooleanChange* GetBoolean() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Boolean); if (m_type != ECN::PRIMITIVETYPE_Boolean) return nullptr; return static_cast<BooleanChange*>(m_value.get()); }
@@ -1156,13 +1130,9 @@ struct ECPropertyValueChange final : ECChange
         Point2dChange* GetPoint2d() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point2d); if (m_type != ECN::PRIMITIVETYPE_Point2d) return nullptr; return static_cast<Point2dChange*>(m_value.get()); }
         Point3dChange* GetPoint3d() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point3d); if (m_type != ECN::PRIMITIVETYPE_Point3d) return nullptr; return static_cast<Point3dChange*>(m_value.get()); }
         BinaryChange* GetBinary() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Binary); if (m_type != ECN::PRIMITIVETYPE_Binary) return nullptr; return static_cast<BinaryChange*>(m_value.get()); }
-        BentleyStatus SetValue(ValueId id, ECN::ECValueCR value);
-        BentleyStatus SetValue(ECN::ECValueCR oldValue, ECN::ECValueCR newValue);
-        ECPropertyValueChange& GetOrCreate(ChangeState stat, std::vector<Utf8String> const& path);
-        ECPropertyValueChange* GetValue(Utf8CP accessPath);
-        bool IsDefinition() const { return dynamic_cast<ECPropertyValueChange const*>(GetParent()) == nullptr; }
-        std::vector<ECPropertyValueChange const*> GetFlatListOfChildren() const;
-
+        
+        BentleyStatus Set(ECN::ECValueCR oldValue, ECN::ECValueCR newValue);
+        BentleyStatus Set(ECN::ECValueCR);
     };
 
 //=======================================================================================
@@ -1171,18 +1141,14 @@ struct ECPropertyValueChange final : ECChange
 struct KindOfQuantityChange final :ECObjectChange
     {
     public:
-        KindOfQuantityChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECObjectChange(state, SystemId::KindOfQuantity, parent, customId)
-            {
-            BeAssert(systemId == GetSystemId());
-            }
+        KindOfQuantityChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECObjectChange(state, SystemId::KindOfQuantity, parent, customId) { BeAssert(systemId == GetSystemId()); }
         ~KindOfQuantityChange() {}
-        StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
-        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
-        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
-        StringChange& GetPersistenceUnit() { return Get<StringChange>(SystemId::KoqPersistenceUnit); }
-        DoubleChange& GetRelativeError() { return Get<DoubleChange>(SystemId::KoqRelativeError); }
-        StringChanges& GetPresentationUnitList() { return Get<StringChanges>(SystemId::KoqPresentationUnitList); }
+        StringChange& Name() { return Get<StringChange>(SystemId::Name); }
+        StringChange& DisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& Description() { return Get<StringChange>(SystemId::Description); }
+        StringChange& PersistenceUnit() { return Get<StringChange>(SystemId::KoqPersistenceUnit); }
+        DoubleChange& RelativeError() { return Get<DoubleChange>(SystemId::KoqRelativeError); }
+        StringChanges& PresentationFormats() { return Get<StringChanges>(SystemId::KoqPresentationFormats); }
     };
 
 //=======================================================================================
@@ -1191,16 +1157,12 @@ struct KindOfQuantityChange final :ECObjectChange
 struct PropertyCategoryChange final : ECObjectChange
     {
     public:
-        PropertyCategoryChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECObjectChange(state, SystemId::PropertyCategory, parent, customId)
-            {
-            BeAssert(systemId == GetSystemId());
-            }
+        PropertyCategoryChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECObjectChange(state, SystemId::PropertyCategory, parent, customId) { BeAssert(systemId == GetSystemId()); }
         ~PropertyCategoryChange() {}
-        StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
-        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
-        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
-        UInt32Change& GetPriority() { return Get<UInt32Change>(SystemId::PropertyCategoryPriority); }
+        StringChange& Name() { return Get<StringChange>(SystemId::Name); }
+        StringChange& DisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& Description() { return Get<StringChange>(SystemId::Description); }
+        UInt32Change& Priority() { return Get<UInt32Change>(SystemId::PropertyCategoryPriority); }
     };
 
 //=======================================================================================
@@ -1209,16 +1171,12 @@ struct PropertyCategoryChange final : ECObjectChange
 struct PhenomenonChange final : ECObjectChange
     {
     public:
-        PhenomenonChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECObjectChange(state, SystemId::Phenomenon, parent, customId)
-            {
-            BeAssert(systemId == GetSystemId());
-            }
+        PhenomenonChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECObjectChange(state, SystemId::Phenomenon, parent, customId) { BeAssert(systemId == GetSystemId()); }
         ~PhenomenonChange() {}
-        StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
-        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
-        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
-        StringChange& GetDefinition() { return Get<StringChange>(SystemId::PhenomenonDefinition); }
+        StringChange& Name() { return Get<StringChange>(SystemId::Name); }
+        StringChange& DisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& Description() { return Get<StringChange>(SystemId::Description); }
+        StringChange& Definition() { return Get<StringChange>(SystemId::PhenomenonDefinition); }
     };
 
 //=======================================================================================
@@ -1227,15 +1185,11 @@ struct PhenomenonChange final : ECObjectChange
 struct UnitSystemChange final : ECObjectChange
     {
     public:
-        UnitSystemChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECObjectChange(state, SystemId::UnitSystem, parent, customId)
-            {
-            BeAssert(systemId == GetSystemId());
-            }
+        UnitSystemChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECObjectChange(state, SystemId::UnitSystem, parent, customId) { BeAssert(systemId == GetSystemId()); }
         ~UnitSystemChange() {}
-        StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
-        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
-        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
+        StringChange& Name() { return Get<StringChange>(SystemId::Name); }
+        StringChange& DisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& Description() { return Get<StringChange>(SystemId::Description); }
     };
 
 //=======================================================================================
@@ -1244,23 +1198,82 @@ struct UnitSystemChange final : ECObjectChange
 struct UnitChange final : ECObjectChange
     {
     public:
-        UnitChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        UnitChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECObjectChange(state, SystemId::Unit, parent, customId)
             {
             BeAssert(systemId == GetSystemId());
             }
         ~UnitChange() {}
-        StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
-        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
-        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
-        StringChange& GetDefinition() { return Get<StringChange>(SystemId::UnitDefinition); }
-        StringChange& GetPhenomenon() { return Get<StringChange>(SystemId::Phenomenon); }
-        StringChange& GetUnitSystem() { return Get<StringChange>(SystemId::UnitSystem); }
-        DoubleChange& GetNumerator() { return Get<DoubleChange>(SystemId::UnitNumerator); }
-        DoubleChange& GetDenominator() { return Get<DoubleChange>(SystemId::UnitDenominator); }
-        DoubleChange& GetOffset() { return Get<DoubleChange>(SystemId::UnitOffset); }
-        BooleanChange& GetIsConstant() { return Get<BooleanChange>(SystemId::UnitIsConstant); }
-        StringChange& GetInvertingUnit() { return Get<StringChange>(SystemId::UnitInvertingUnit); }
+        StringChange& Name() { return Get<StringChange>(SystemId::Name); }
+        StringChange& DisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& Description() { return Get<StringChange>(SystemId::Description); }
+        StringChange& Definition() { return Get<StringChange>(SystemId::UnitDefinition); }
+        StringChange& Phenomenon() { return Get<StringChange>(SystemId::Phenomenon); }
+        StringChange& UnitSystem() { return Get<StringChange>(SystemId::UnitSystem); }
+        DoubleChange& Numerator() { return Get<DoubleChange>(SystemId::UnitNumerator); }
+        DoubleChange& Denominator() { return Get<DoubleChange>(SystemId::UnitDenominator); }
+        DoubleChange& Offset() { return Get<DoubleChange>(SystemId::UnitOffset); }
+        BooleanChange& IsConstant() { return Get<BooleanChange>(SystemId::UnitIsConstant); }
+        StringChange& InvertingUnit() { return Get<StringChange>(SystemId::UnitInvertingUnit); }
+    };
+
+//=======================================================================================
+// @bsiclass                                                      05/2018
+//+===============+===============+===============+===============+===============+======
+struct NumericFormatSpecChange final : ECObjectChange
+    {
+    public:
+        NumericFormatSpecChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECObjectChange(state, SystemId::NumericFormatSpec, parent, customId)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~NumericFormatSpecChange() {}
+
+        DoubleChange& GetRoundingFactor() { return Get<DoubleChange>(SystemId::RoundingFactor); }
+        StringChange& GetPresentationType() { return Get<StringChange>(SystemId::PresentationType); }
+        Int32Change& GetDecimalPrecision() { return Get<Int32Change>(SystemId::DecimalPrecision); }
+        Int32Change& GetFractionalPrecision() { return Get<Int32Change>(SystemId::FractionalPrecision); }
+        UInt32Change& GetMinWidth() { return Get<UInt32Change>(SystemId::MinWidth); }
+        StringChange& GetScientificType() { return Get<StringChange>(SystemId::ScientificType); }
+        StringChange& GetShowSignOption() { return Get<StringChange>(SystemId::ShowSignOption); }
+        StringChange& GetFormatTraits() { return Get<StringChange>(SystemId::FormatTraits); }
+        StringChange& GetDecimalSeparator() { return Get<StringChange>(SystemId::DecimalSeparator); }
+        StringChange& GetThousandsSeparator() { return Get<StringChange>(SystemId::ThousandSeparator); }
+        StringChange& GetUomSeparator() { return Get<StringChange>(SystemId::UomSeparator); }
+        StringChange& GetStationSeparator() { return Get<StringChange>(SystemId::StationSeparator); }
+        UInt32Change& GetStationOffsetSize() { return Get<UInt32Change>(SystemId::StationOffsetSize); }
+
+        BentleyStatus SetFrom(Formatting::NumericFormatSpecCP oldSpec, Formatting::NumericFormatSpecCP newSpec);
+        BentleyStatus SetFrom(Formatting::NumericFormatSpecCR);
+    };
+
+//=======================================================================================
+// @bsiclass                                                      05/2018
+//+===============+===============+===============+===============+===============+======
+struct CompositeValueSpecChange final : ECObjectChange
+    {
+    public:
+        CompositeValueSpecChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECObjectChange(state, SystemId::CompositeValueSpec, parent, customId)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~CompositeValueSpecChange() {}
+
+        BooleanChange& GetIncludeZero() { return Get<BooleanChange>(SystemId::CompositeIncludeZero); }
+        StringChange& GetSpacer() { return Get<StringChange>(SystemId::CompositeSpacer); }
+        StringChange& GetMajorUnit() { return Get<StringChange>(SystemId::CompositeMajorUnit); }
+        StringChange& GetMajorLabel() { return Get<StringChange>(SystemId::CompositeMajorLabel); }
+        StringChange& GetMiddleUnit() { return Get<StringChange>(SystemId::CompositeMiddleUnit); }
+        StringChange& GetMiddleLabel() { return Get<StringChange>(SystemId::CompositeMiddleLabel); }
+        StringChange& GetMinorUnit() { return Get<StringChange>(SystemId::CompositeMinorUnit); }
+        StringChange& GetMinorLabel() { return Get<StringChange>(SystemId::CompositeMinorLabel); }
+        StringChange& GetSubUnit() { return Get<StringChange>(SystemId::CompositeSubUnit); }
+        StringChange& GetSubLabel() { return Get<StringChange>(SystemId::CompositeSubLabel); }
+
+        BentleyStatus SetFrom(Formatting::CompositeValueSpecCP oldSpec, Formatting::CompositeValueSpecCP newSpec);
+        BentleyStatus SetFrom(Formatting::CompositeValueSpecCR);
     };
 
 //=======================================================================================
@@ -1269,7 +1282,7 @@ struct UnitChange final : ECObjectChange
 struct FormatChange final : ECObjectChange
     {
     public:
-        FormatChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        FormatChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECObjectChange(state, SystemId::Format, parent, customId)
             {
             BeAssert(systemId == GetSystemId());
@@ -1278,46 +1291,8 @@ struct FormatChange final : ECObjectChange
         StringChange& GetName() {return Get<StringChange>(SystemId::Name);}
         StringChange& GetDisplayLabel() {return Get<StringChange>(SystemId::DisplayLabel);}
         StringChange& GetDescription() {return Get<StringChange>(SystemId::Description);}
-        DoubleChange& GetRoundFactor() {return Get<DoubleChange>(SystemId::RoundFactor);}
-        StringChange& GetPresentationType() {return Get<StringChange>(SystemId::PresentationType);}
-        UInt32Change& GetDecimalPrecision() {return Get<UInt32Change>(SystemId::DecimalPrecision);}
-        UInt32Change& GetFractionalPrecision() {return Get<UInt32Change>(SystemId::FractionalPrecision);}
-        UInt32Change& GetMinWidth() {return Get<UInt32Change>(SystemId::MinWidth);}
-        StringChange& GetScientificType() {return Get<StringChange>(SystemId::ScientificType);}
-        StringChange& GetShowSignOption() {return Get<StringChange>(SystemId::ShowSignOption);}
-        StringChange& GetFormatTraits() {return Get<StringChange>(SystemId::FormatTraits);}
-        StringChange& GetDecimalSeparator() {return Get<StringChange>(SystemId::DecimalSeparator);}
-        StringChange& GetThousandsSeparator() {return Get<StringChange>(SystemId::ThousandSeparator);}
-        StringChange& GetUomSeparator() {return Get<StringChange>(SystemId::UomSeparator);}
-        StringChange& GetStationSeparator() {return Get<StringChange>(SystemId::StationSeparator);}
-        UInt32Change& GetStationOffsetSize() {return Get<UInt32Change>(SystemId::StationOffsetSize);}
-        BooleanChange& GetHasComposite() {return Get<BooleanChange>(SystemId::FormatHasComposite);}
-        BooleanChange& GetHasNumeric() {return Get<BooleanChange>(SystemId::FormatHasNumeric);}
-        BooleanChange& GetCompositeIncludeZero() { return Get<BooleanChange>(SystemId::FormatCompositeIncludeZero); }
-        StringChange& GetCompositeSpacer() {return Get<StringChange>(SystemId::FormatCompositeSpacer);}
-        StringChange& GetCompositeMajorUnit() {return Get<StringChange>(SystemId::FormatCompositeMajorUnit);}
-        StringChange& GetCompositeMajorLabel() {return Get<StringChange>(SystemId::FormatCompositeMajorLabel);}
-        StringChange& GetCompositeMiddleUnit() {return Get<StringChange>(SystemId::FormatCompositeMiddleUnit);}
-        StringChange& GetCompositeMiddleLabel() {return Get<StringChange>(SystemId::FormatCompositeMiddleLabel);}
-        StringChange& GetCompositeMinorUnit() {return Get<StringChange>(SystemId::FormatCompositeMinorUnit);}
-        StringChange& GetCompositeMinorLabel() {return Get<StringChange>(SystemId::FormatCompositeMinorLabel);}
-        StringChange& GetCompositeSubUnit() {return Get<StringChange>(SystemId::FormatCompositeSubUnit);}
-        StringChange& GetCompositeSubLabel() {return Get<StringChange>(SystemId::FormatCompositeSubLabel);}
-    };
-
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct ECRelationshipConstraintClassChange final :ECObjectChange
-    {
-    public:
-        ECRelationshipConstraintClassChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECObjectChange(state, SystemId::ConstraintClass, parent, customId)
-            {
-            BeAssert(systemId == GetSystemId());
-            }
-        ~ECRelationshipConstraintClassChange() {}
-        StringChange& GetClassName() { return Get<StringChange>(SystemId::ClassFullName); }
+        NumericFormatSpecChange& GetNumericSpec() {return Get<NumericFormatSpecChange>(SystemId::NumericFormatSpec);}
+        CompositeValueSpecChange& GetCompositeSpec() { return Get<CompositeValueSpecChange>(SystemId::CompositeValueSpec); }
     };
 
 //=======================================================================================
@@ -1326,7 +1301,7 @@ struct ECRelationshipConstraintClassChange final :ECObjectChange
 struct ECRelationshipConstraintChange final :ECObjectChange
     {
     public:
-        ECRelationshipConstraintChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        ECRelationshipConstraintChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECObjectChange(state, systemId, parent, customId)
             {
             BeAssert(systemId == SystemId::Source || systemId == SystemId::Target);
@@ -1336,9 +1311,8 @@ struct ECRelationshipConstraintChange final :ECObjectChange
         StringChange& GetMultiplicity() { return Get<StringChange>(SystemId::Multiplicity); }
         BooleanChange& IsPolymorphic() { return Get<BooleanChange>(SystemId::IsPolymorphic); }
         ECRelationshipConstraintClassChanges& ConstraintClasses() { return Get<ECRelationshipConstraintClassChanges>(SystemId::ConstraintClasses); }
-        ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
+        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(SystemId::CustomAttributes); }
     };
-
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -1346,7 +1320,7 @@ struct ECRelationshipConstraintChange final :ECObjectChange
 struct ECRelationshipChange final :ECObjectChange
     {
     public:
-        ECRelationshipChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        ECRelationshipChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECObjectChange(state, SystemId::Relationship, parent, customId)
             {
             BeAssert(systemId == GetSystemId());
@@ -1364,7 +1338,7 @@ struct ECRelationshipChange final :ECObjectChange
 struct ClassChange final :ECObjectChange
     {
     public:
-        ClassChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        ClassChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECObjectChange(state, SystemId::Class, parent, customId)
             {
             BeAssert(systemId == GetSystemId());
@@ -1377,7 +1351,7 @@ struct ClassChange final :ECObjectChange
         ClassTypeChange& ClassType() {return Get<ClassTypeChange>(SystemId::ClassType);}
         BaseClassChanges& BaseClasses() { return Get<BaseClassChanges>(SystemId::BaseClasses); }
         ECPropertyChanges& Properties() { return Get<ECPropertyChanges>(SystemId::Properties); }
-        ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
+        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(SystemId::CustomAttributes); }
         ECRelationshipChange& GetRelationship() { return Get<ECRelationshipChange>(SystemId::Relationship); }
     };
 
@@ -1387,7 +1361,7 @@ struct ClassChange final :ECObjectChange
 struct NavigationChange final :ECObjectChange
     {
     public:
-        NavigationChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        NavigationChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECObjectChange(state, SystemId::Navigation, parent, customId)
             {
             BeAssert(systemId == GetSystemId());
@@ -1403,7 +1377,7 @@ struct NavigationChange final :ECObjectChange
 struct ArrayChange final :ECObjectChange
     {
     public:
-        ArrayChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        ArrayChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECObjectChange(state, SystemId::Array, parent, customId)
             {
             BeAssert(systemId == GetSystemId());
@@ -1419,7 +1393,7 @@ struct ArrayChange final :ECObjectChange
 struct ECPropertyChange final :ECObjectChange
     {
     public:
-        ECPropertyChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+        ECPropertyChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
             : ECObjectChange(state, SystemId::Property, parent, customId)
             {
             BeAssert(systemId == GetSystemId());
@@ -1429,8 +1403,8 @@ struct ECPropertyChange final :ECObjectChange
         StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
         StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
         StringChange& GetTypeName() { return Get<StringChange>(SystemId::TypeName); }
-        MinMaxValueChange& GetMinimumValue() { return Get<MinMaxValueChange>(SystemId::MinimumValue); }
-        MinMaxValueChange& GetMaximumValue() { return Get<MinMaxValueChange>(SystemId::MaximumValue); }
+        ECPrimitiveChange<ECN::ECValue>& GetMinimumValue() { return Get<ECPrimitiveChange<ECN::ECValue>>(SystemId::MinimumValue); }
+        ECPrimitiveChange<ECN::ECValue>& GetMaximumValue() { return Get<ECPrimitiveChange<ECN::ECValue>>(SystemId::MaximumValue); }
         UInt32Change& GetMinimumLength() { return Get<UInt32Change>(SystemId::MinimumLength); }
         UInt32Change& GetMaximumLength() { return Get<UInt32Change>(SystemId::MaximumLength); }
         BooleanChange& IsStruct() { return Get<BooleanChange>(SystemId::IsStrict); }
@@ -1443,7 +1417,7 @@ struct ECPropertyChange final :ECObjectChange
         StringChange& GetExtendedTypeName() { return Get<StringChange>(SystemId::ExtendedTypeName); }
         BooleanChange& IsReadonly() { return Get<BooleanChange>(SystemId::IsReadonly); }
         Int32Change& GetPriority() { return Get<Int32Change>(SystemId::PropertyPriority); }
-        ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
+        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(SystemId::CustomAttributes); }
         StringChange& GetKindOfQuantity() { return Get<StringChange>(SystemId::KindOfQuantity); }
         StringChange& GetEnumeration() { return Get<StringChange>(SystemId::Enumeration); }
         StringChange& GetCategory() { return Get<StringChange>(SystemId::PropertyCategory); }
@@ -1489,44 +1463,45 @@ private :
     BentleyStatus CompareECProperties(ECPropertyChanges&, ECN::ECPropertyIterableCR, ECN::ECPropertyIterableCR);
     BentleyStatus CompareECClasses(ClassChanges&, ECN::ECClassContainerCR, ECN::ECClassContainerCR);
     BentleyStatus CompareECEnumerations(ECEnumerationChanges&, ECN::ECEnumerationContainerCR, ECN::ECEnumerationContainerCR);
-    BentleyStatus CompareCustomAttributes(ECInstanceChanges&, ECN::IECCustomAttributeContainerCR, ECN::IECCustomAttributeContainerCR);
-    BentleyStatus CompareCustomAttribute(ECPropertyValueChange&, ECN::IECInstanceCR, ECN::IECInstanceCR);
+    BentleyStatus CompareCustomAttributes(CustomAttributeChanges&, ECN::IECCustomAttributeContainerCR, ECN::IECCustomAttributeContainerCR);
+    BentleyStatus CompareCustomAttribute(CustomAttributeChange&, ECN::IECInstanceCR, ECN::IECInstanceCR);
     BentleyStatus CompareECEnumeration(ECEnumerationChange&, ECN::ECEnumerationCR oldVal, ECN::ECEnumerationCR newVal);
     BentleyStatus CompareECEnumerators(ECEnumeratorChanges&, ECN::EnumeratorIterable const&, ECN::EnumeratorIterable const&);
     BentleyStatus CompareBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const&, ECN::ECBaseClassesList const&);
     BentleyStatus CompareReferences(ReferenceChanges&, ECN::ECSchemaReferenceListCR, ECN::ECSchemaReferenceListCR);
-    BentleyStatus AppendECSchema(SchemaChanges&, ECN::ECSchemaCR, ValueId appendType);
-    BentleyStatus AppendECClass(ClassChanges&, ECN::ECClassCR, ValueId appendType);
-    BentleyStatus AppendECRelationshipClass(ECRelationshipChange&, ECN::ECRelationshipClassCR, ValueId appendType);
-    BentleyStatus AppendECRelationshipConstraint(ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR v, ValueId appendType);
-    BentleyStatus AppendECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges&, ECN::ECRelationshipConstraintClassList const& v, ValueId appendType);
-    BentleyStatus AppendECRelationshipConstraintClass(ECRelationshipConstraintClassChange&, ECN::ECClassCR v, ValueId appendType);
-    BentleyStatus AppendECEnumeration(ECEnumerationChanges&, ECN::ECEnumerationCR, ValueId appendType);
-    BentleyStatus AppendECProperty(ECPropertyChanges&, ECN::ECPropertyCR, ValueId appendType);
-    BentleyStatus AppendCustomAttributes(ECInstanceChanges& changes, ECN::IECCustomAttributeContainerCR, ValueId appendType);
-    BentleyStatus AppendCustomAttribute(ECInstanceChanges& changes, ECN::IECInstanceCR, ValueId appendType);
-    BentleyStatus AppendBaseClasses(BaseClassChanges& changes, ECN::ECBaseClassesList const&, ValueId appendType);
-    BentleyStatus AppendReferences(ReferenceChanges& changes, ECN::ECSchemaReferenceListCR, ValueId appendType);
-    BentleyStatus ConvertECInstanceToValueMap(std::map<Utf8String, ECN::ECValue>&, ECN::IECInstanceCR);
-    BentleyStatus ConvertECValuesCollectionToValueMap(std::map<Utf8String, ECN::ECValue>&, ECN::ECValuesCollectionCR);
-    BentleyStatus AppendKindOfQuantity(KindOfQuantityChanges&, ECN::KindOfQuantityCR, ValueId appendType);
     BentleyStatus CompareKindOfQuantity(KindOfQuantityChange&, ECN::KindOfQuantityCR, ECN::KindOfQuantityCR);
     BentleyStatus CompareKindOfQuantities(KindOfQuantityChanges&, ECN::KindOfQuantityContainerCR, ECN::KindOfQuantityContainerCR);
-    BentleyStatus AppendPropertyCategory(PropertyCategoryChanges&, ECN::PropertyCategoryCR, ValueId appendType);
     BentleyStatus ComparePropertyCategory(PropertyCategoryChange&, ECN::PropertyCategoryCR, ECN::PropertyCategoryCR);
     BentleyStatus ComparePropertyCategories(PropertyCategoryChanges&, ECN::PropertyCategoryContainerCR, ECN::PropertyCategoryContainerCR);
     BentleyStatus ComparePhenomena(PhenomenonChanges&, ECN::PhenomenonContainerCR, ECN::PhenomenonContainerCR);
     BentleyStatus ComparePhenomenon(PhenomenonChange&, ECN::PhenomenonCR, ECN::PhenomenonCR);
-    BentleyStatus AppendPhenomenon(PhenomenonChanges&, ECN::PhenomenonCR, ValueId appendType);
     BentleyStatus CompareUnitSystems(UnitSystemChanges&, ECN::UnitSystemContainerCR, ECN::UnitSystemContainerCR);
     BentleyStatus CompareUnitSystem(UnitSystemChange&, ECN::UnitSystemCR, ECN::UnitSystemCR);
-    BentleyStatus AppendUnitSystem(UnitSystemChanges&, ECN::UnitSystemCR, ValueId appendType);
     BentleyStatus CompareUnits(UnitChanges&, ECN::UnitContainerCR, ECN::UnitContainerCR);
     BentleyStatus CompareUnit(UnitChange&, ECN::ECUnitCR, ECN::ECUnitCR);
-    BentleyStatus AppendUnit(UnitChanges&, ECN::ECUnitCR, ValueId appendType);
     BentleyStatus CompareFormats(FormatChanges&, ECN::FormatContainerCR, ECN::FormatContainerCR);
     BentleyStatus CompareFormat(FormatChange&, ECN::ECFormatCR, ECN::ECFormatCR);
-    BentleyStatus AppendFormat(FormatChanges&, ECN::ECFormatCR, ValueId appendType);
+
+    BentleyStatus AppendECSchema(SchemaChange&, ECN::ECSchemaCR);
+    BentleyStatus AppendECClass(ClassChange&, ECN::ECClassCR);
+    BentleyStatus AppendECRelationshipClass(ECRelationshipChange&, ECN::ECRelationshipClassCR);
+    BentleyStatus AppendECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges&, ECN::ECRelationshipConstraintClassList const&);
+    BentleyStatus AppendECRelationshipConstraint(ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR);
+    BentleyStatus AppendECEnumeration(ECEnumerationChange&, ECN::ECEnumerationCR);
+    BentleyStatus AppendECProperty(ECPropertyChange&, ECN::ECPropertyCR);
+    BentleyStatus AppendCustomAttributes(CustomAttributeChanges&, ECN::IECCustomAttributeContainerCR);
+    BentleyStatus AppendCustomAttribute(CustomAttributeChange&, ECN::IECInstanceCR);
+    BentleyStatus AppendBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const&);
+    BentleyStatus AppendReferences(ReferenceChanges&, ECN::ECSchemaReferenceListCR);
+    BentleyStatus AppendKindOfQuantity(KindOfQuantityChange&, ECN::KindOfQuantityCR);
+    BentleyStatus AppendPropertyCategory(PropertyCategoryChange&, ECN::PropertyCategoryCR);
+    BentleyStatus AppendPhenomenon(PhenomenonChange&, ECN::PhenomenonCR);
+    BentleyStatus AppendUnitSystem(UnitSystemChange&, ECN::UnitSystemCR);
+    BentleyStatus AppendUnit(UnitChange&, ECN::ECUnitCR);
+    BentleyStatus AppendFormat(FormatChange&, ECN::ECFormatCR);
+
+    BentleyStatus ConvertECInstanceToValueMap(std::map<Utf8String, ECN::ECValue>&, ECN::IECInstanceCR);
+    BentleyStatus ConvertECValuesCollectionToValueMap(std::map<Utf8String, ECN::ECValue>&, ECN::ECValuesCollectionCR);
 
 public:
     SchemaComparer(){}
@@ -1554,7 +1529,7 @@ struct CustomAttributeValidator final : NonCopyableClass
                 Policy m_policy;
                 std::vector<Utf8String> m_pattern;
             public:
-                Rule(Policy policy, Utf8CP pattern) :m_policy(policy), m_pattern(SchemaComparer::Split(pattern)) {}
+                Rule(Policy policy, Utf8StringCR pattern) :m_policy(policy), m_pattern(SchemaComparer::Split(pattern)) {}
                 ~Rule() {}
                 bool Match(std::vector<Utf8String> const& source) const;
                 Policy GetPolicy() const { return m_policy; }
@@ -1562,23 +1537,28 @@ struct CustomAttributeValidator final : NonCopyableClass
 
         Policy m_defaultPolicy = Policy::Accept;
         std::map<Utf8String, std::vector<std::unique_ptr<Rule>>> m_rules;
-        Utf8String m_wildcard;
+        Utf8String m_wildcard = Utf8String("*");
 
-        std::vector<std::unique_ptr<Rule>> const& GetRelevantRules(ECPropertyValueChange& change) const;
-        static Utf8String GetPrefix(Utf8StringCR path);
+        std::vector<std::unique_ptr<Rule>> const& GetRelevantRules(CustomAttributeChange&) const;
+
+        static Utf8String GetSchemaName(Utf8StringCR path);
 
     public:
-        CustomAttributeValidator() : m_wildcard("*") { Reset(); }
+        CustomAttributeValidator() 
+            { 
+            // add entry for wildcard rules
+            m_rules[m_wildcard].clear();
+            }
+
         ~CustomAttributeValidator() {}
 
-        ECOBJECTS_EXPORT Policy Validate(ECPropertyValueChange&) const;
-
+        ECOBJECTS_EXPORT void AddAcceptRule(Utf8StringCR accessString);
+        ECOBJECTS_EXPORT void AddRejectRule(Utf8StringCR accessString);
         Policy GetDefaultPolicy() const { return m_defaultPolicy; }
         void SetDefaultPolicy(Policy defaultPolicy) { m_defaultPolicy = defaultPolicy; }
-        ECOBJECTS_EXPORT void Reset();
-        ECOBJECTS_EXPORT void Accept(Utf8StringCR accessString);
-        ECOBJECTS_EXPORT bool HasAnyRuleForSchema(Utf8StringCR schemaName) const;
-        ECOBJECTS_EXPORT void Reject(Utf8StringCR accessString);
+        bool HasRuleForSchema(Utf8StringCR schemaName) const { return m_rules.find(schemaName) != m_rules.end(); }
+
+        ECOBJECTS_EXPORT Policy Validate(CustomAttributeChange&) const;
     };
 END_BENTLEY_ECOBJECT_NAMESPACE
 
