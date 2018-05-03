@@ -2568,14 +2568,11 @@ Utf8String TilePublisher::AddMeshVertexAttributes (PublishTileData& tileData, do
                 }
 
             bvector <unsigned short>    quantizedValues;
-            bvector<float> testVals;
 
             for (size_t i=0; i<nValues; i++)
                 {
                 size_t  componentIndex = i % nComponents;
                 quantizedValues.push_back ((unsigned short) (.5 + (values[i] - min[componentIndex]) * range / (max[componentIndex] - min[componentIndex])));
-
-                testVals.push_back( min[componentIndex] + (max[componentIndex] -  min[componentIndex]) * (double) quantizedValues.back() / range);
                 }
             tileData.AddBinaryData (quantizedValues.data(), dataSize = nValues * sizeof (unsigned short));
             break;
@@ -3662,6 +3659,8 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 
     if (rootTile.GetModel().IsSpatialModel())
         val[JSON_Root][JSON_Transform] = TransformToJson(m_spatialToEcef);
+    else if (rootTile.GetModel().IsGeometricModel())
+        val[JSON_Root][JSON_Transform] = TransformToJson(Transform::From(rootTile.GetModel().ToGeometricModel()->QueryModelRange().GetCenter()));
 
     Utf8String name;
     Json::Value modelCustomMetadata;
