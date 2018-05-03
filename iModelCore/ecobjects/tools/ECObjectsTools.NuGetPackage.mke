@@ -1,0 +1,14 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: tools/ECObjectsTools.NuGetPackage.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+NUGET_BUILD_DIR=$(OutBuildDir)NuGet/
+NUGET_BASE_PATH=$(OutputRootDir)\Product\ECObjectsTools
+
+NuGetBaseName=ECObjectsTools
+%include $(sharedMki)nuspecCreate.mki
