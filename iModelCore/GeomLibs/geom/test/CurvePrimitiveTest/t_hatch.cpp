@@ -1,0 +1,108 @@
+//
+//
+#include "testHarness.h"
+#include <Geom/CGWriter.h>
+#include <GeomSerialization/GeomSerializationApi.h>
+
+#include <Regions/regionsAPI.h>
+#include <Regions/rimsbsAPI.h>
+USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
+
+double s_batchSpace = 5.0;
+void ExerciseHatch (CurveVectorR region, double angleDegrees = 30.0, double spacing = 2.0, double x0 = 0.0, double y0 = 0.0)
+    {
+    DRange3d range;
+    region.GetRange (range);
+    SaveAndRestoreCheckTransform shifter (s_batchSpace + range.XLength (), 0, 0);
+    DPoint3d startPoint = DPoint3d::From (x0, y0, 0);
+    double angleRadians = Angle::DegreesToRadians (angleDegrees);
+    CurveVectorPtr hatch = CurveVector::CreateXYHatch (region, startPoint, angleRadians, spacing);
+    Check::SaveTransformed (region);
+    if (hatch.IsValid ())
+        {
+//        Check::Shift (0, s_batchSpace + range.YLength (), 0);
+        Check::SaveTransformed (*hatch);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(XYHatch,Linear)
+    {
+    // an outer loop
+    auto outerLoop = CurveVector::CreateLinear (bvector<DPoint3d> {
+            DPoint3d::From (0,0),
+            DPoint3d::From (20,0),
+            DPoint3d::From (18,10),
+            DPoint3d::From (1,10),
+            DPoint3d::From (0,0)},
+        CurveVector::BOUNDARY_TYPE_Outer
+        );
+    // a hole loop, input counterclockwise 
+    auto holeA = CurveVector::CreateLinear (bvector<DPoint3d> {
+            DPoint3d::From (2,2),
+            DPoint3d::From (6,2),
+            DPoint3d::From (6,5),
+            DPoint3d::From (2,5),
+            DPoint3d::From (2,2)},
+        CurveVector::BOUNDARY_TYPE_Inner
+        );
+    // a hole loop, defined clockwise 
+    auto holeB = CurveVector::CreateLinear (bvector<DPoint3d> {
+            DPoint3d::From (12,2),
+            DPoint3d::From (12,5),
+            DPoint3d::From (16,5),
+            DPoint3d::From (16,2),
+            DPoint3d::From (12,2)},
+        CurveVector::BOUNDARY_TYPE_Inner
+        );
+
+    // a hole loop, but it jumps outside ...
+    auto holeC = CurveVector::CreateLinear (bvector<DPoint3d> {
+            DPoint3d::From (8,8),
+            DPoint3d::From (12,9),
+            DPoint3d::From (12,12),
+            DPoint3d::From (8,12),
+            DPoint3d::From (8,8)},
+        CurveVector::BOUNDARY_TYPE_Inner
+        );
+
+    auto parityRegion = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+    parityRegion->Add (outerLoop);
+    parityRegion->Add (holeA);
+    parityRegion->Add (holeB);
+    parityRegion->Add (holeC);
+
+    ExerciseHatch (*outerLoop);
+    ExerciseHatch (*holeA);
+    ExerciseHatch (*parityRegion);
+    Check::ClearGeometry ("XYHatch.Linear");
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(XYHatch,WithArcs)
+    {
+    auto regionA = SampleGeometryCreator::CircleInRectangle ();
+    for (auto spacing : {1.0, 2.0, 5.0})
+        {
+        SaveAndRestoreCheckTransform shifter (0, 80, 0);
+        for (auto degrees : {0.0, 30.0, 120.0, 0.0, 90.0})
+            {
+            auto regionB = SampleGeometryCreator::CreateBoundaryWithAllCurveTypes (10.0);
+            ExerciseHatch (*regionB, degrees, spacing);
+
+            auto regionA = SampleGeometryCreator::CircleInRectangle (0,0, 10,
+                        -11,-15, 18, 8);
+            ExerciseHatch (*regionA, degrees, spacing);
+            Check::Shift (20,0,0);  // regionA messes up spacing
+
+            auto regionC = SampleGeometryCreator::CreateAnnulusWithManyArcSectors (5, 3);
+            ExerciseHatch (*regionC, degrees, spacing);
+            }
+        }
+    Check::ClearGeometry ("XYHatch.WithArcs");
+    }

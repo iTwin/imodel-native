@@ -837,26 +837,101 @@ static void AddMultiPrimitiveXYOpenPaths (bvector<CurveVectorPtr> &pathVectors, 
         }
     }
 
-static CurveVectorPtr CircleInRectangle ()
+// Create a parity region with a circle and a rectangle.
+// For compatibility with old tests, the default circle is NOT contained in the rectangle.
+static CurveVectorPtr CircleInRectangle (double cx = 0.0, double cy = 0.0, double r = 10.0, double xA = -20.0, double yA = -20.0, double xB = 20, double yB = 5.0)
     {
     CurveVectorPtr disk0 = CurveVector::CreateDisk (DEllipse3d::FromVectors
         (
-            DPoint3d::From (0, 0, 0),
-            DVec3d::From (10, 0, 0),
-            DVec3d::From (0, 10, 0),
+            DPoint3d::From (cx, cy, 0),
+            DVec3d::From (r, 0, 0),
+            DVec3d::From (0, r, 0),
             0.0, Angle::TwoPi ()
             ));
     CurveVectorPtr rectangle = CurveVector::CreateRectangle (
-        -20, -20,
-        20, 5,
+        xA, yA,
+        xB, yB,
         0.0,
         CurveVector::BOUNDARY_TYPE_Outer);
     CurveVectorPtr parent = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
     parent->Add (rectangle);
+    disk0->SetBoundaryType (CurveVector::BOUNDARY_TYPE_Inner);
     parent->Add (disk0);
     return parent;
     }
 
+// Create a loop with all types.
+// Many types will have endpoints with y at a multiplye of yStep
+static CurveVectorPtr CreateBoundaryWithAllCurveTypes (double yStep = 10.0)
+    {
+    DPoint3d xyzA, xyzB;
+    CurveVectorPtr loop = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    loop->Add (ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 10,0,0)));
+    loop->Add (ICurvePrimitive::CreateLineString (bvector<DPoint3d> {
+            DPoint3d::From (10,0,0),
+            DPoint3d::From (10,yStep,0),
+            DPoint3d::From (12,2*yStep, 0),
+            DPoint3d::From (10, 2 *yStep, 0),
+            DPoint3d::From (10, 3 * yStep, 0)
+            }));
+    loop->GetStartEnd (xyzA, xyzB);
+    loop->Add (ICurvePrimitive::CreateArc (
+        DEllipse3d::FromPointsOnArc (xyzB,
+                    xyzB + DVec3d::From (0.4 * yStep, 0.2 * yStep,0),
+                    xyzB + DVec3d::From (yStep, yStep, 0))));
+    loop->GetStartEnd (xyzA, xyzB);
+    loop->Add (ICurvePrimitive::CreateLineString (bvector<DPoint3d> {
+            xyzB,
+            DPoint3d::From (0, xyzB.y, 0),
+            xyzA
+            }));
+    return loop;
+    }
+static CurveVectorPtr CreatePathWithManySectors (DEllipse3d baseArc, uint32_t numSector,
+            CurveVector::BoundaryType boundaryType)
+    {
+    if (numSector == 0)
+        numSector = 1;
+    auto carrier = CurveVector::Create (boundaryType);
+    double delta = baseArc.sweep / numSector;
+
+    for (uint32_t i = 0; i < numSector; i++)
+        {
+        DEllipse3d arc = baseArc;
+        arc.start += i * delta;
+        arc.sweep = delta;
+        carrier->Add (ICurvePrimitive::CreateArc (arc));
+        }
+    return carrier;
+    }
+// 
+// Create one or two disks with each split into many arcs.
+// If two, bundle in parity region
+static CurveVectorPtr CreateAnnulusWithManyArcSectors (uint32_t numOuter, uint32_t numInner)
+    {
+    double rOuter = 3.0;
+    double rInner = 2.0;
+    DPoint3d center = DPoint3d::From (4,4,0);
+    // outer is CCW
+    DEllipse3d outer = DEllipse3d::FromVectors (center,
+                DVec3d::From (rOuter, 0, 0), DVec3d::From (0, rOuter, 0),
+                0.0, Angle::TwoPi ());
+    // inner is CW
+    DEllipse3d inner = DEllipse3d::FromVectors (center,
+                DVec3d::From (-rInner, 0, 0), DVec3d::From (0, rInner, 0),
+                0.0, Angle::TwoPi ());
+    if (numOuter == 0 && numInner == 0)
+        return nullptr;
+    if (numInner == 0)
+        return CreatePathWithManySectors (outer, numOuter, CurveVector::BOUNDARY_TYPE_Outer);
+    if (numOuter == 0)
+        return CreatePathWithManySectors (outer, numInner, CurveVector::BOUNDARY_TYPE_Outer);
+
+    CurveVectorPtr parityRegion = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+    parityRegion->Add (CreatePathWithManySectors (outer, numOuter, CurveVector::BOUNDARY_TYPE_Outer));
+    parityRegion->Add (CreatePathWithManySectors (inner, numOuter, CurveVector::BOUNDARY_TYPE_Inner));
+    return parityRegion;
+    }
 
 };
 
