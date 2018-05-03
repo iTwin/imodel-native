@@ -35,7 +35,7 @@ struct DgnRscGlyph : DgnGlyph
 private:
     T_Id m_glyphId;
     double m_ascenderScaleFactor;
-    bool m_isFilled;
+    // unused - bool m_isFilled;
     RscGlyphDataOffset m_glyphDataOffset;
     IDgnRscFontData* m_data;
     DRange2d m_range;
@@ -63,7 +63,7 @@ public:
 //---------------------------------------------------------------------------------------
 DgnRscGlyph* DgnRscGlyph::CreateUnitSpaceGlyph() { return new DgnRscGlyph(); }
 DgnRscGlyph::DgnRscGlyph() :
-    m_glyphId(0), m_ascenderScaleFactor(1.0 / 1.0), m_isFilled(false), m_glyphDataOffset({0, 0}), m_data(nullptr)
+    m_glyphId(0), m_ascenderScaleFactor(1.0 / 1.0), /* unused - m_isFilled(false), */m_glyphDataOffset({0, 0}), m_data(nullptr)
     {
     m_range.low.x = 0.0;
     m_range.low.y = 0.0;
@@ -83,7 +83,7 @@ DgnRscGlyph::DgnRscGlyph() :
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
 DgnRscGlyph::DgnRscGlyph(T_Id glyphId, double ascender, bool isFilled, RscGlyphHeader const& glyphHeader, RscGlyphDataOffset const& glyphDataOffset, IDgnRscFontData& data) :
-m_glyphId(glyphId), m_ascenderScaleFactor(1.0 / ascender), m_isFilled(isFilled), m_glyphDataOffset(glyphDataOffset), m_data(&data)
+m_glyphId(glyphId), m_ascenderScaleFactor(1.0 / ascender), /* unused - m_isFilled(isFilled), */m_glyphDataOffset(glyphDataOffset), m_data(&data)
     {
     m_range.low.x = 0.0;
     m_range.low.y = 0.0;
