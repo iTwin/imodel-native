@@ -2192,7 +2192,7 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaManagerTests, TestGetClassResolver)
+TEST_F(SchemaManagerTests, GetClass)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
     ECClassCP ecClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
@@ -2205,6 +2205,28 @@ TEST_F(SchemaManagerTests, TestGetClassResolver)
 
     ecClass = m_ecdb.Schemas().GetClass("ecsql", "PSA", SchemaLookupMode::AutoDetect);
     EXPECT_TRUE(ecClass != nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  05/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, ClassLocater)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    
+    ECClassCP ecClass = m_ecdb.GetClassLocater().LocateClass("ECSqlTest", "PSA");
+    EXPECT_TRUE(ecClass != nullptr) << "Look up by schema name";
+    EXPECT_STRCASEEQ("ECSqlTest", ecClass->GetSchema().GetName().c_str()) << "Look up by schema name";
+    EXPECT_STRCASEEQ("PSA", ecClass->GetName().c_str()) << "Look up by schema name";
+
+    ecClass = m_ecdb.GetClassLocater().LocateClass("ecsql", "PSA");
+    EXPECT_TRUE(ecClass != nullptr) << "Look up by schema alias";
+    EXPECT_STRCASEEQ("ECSqlTest", ecClass->GetSchema().GetName().c_str()) << "Look up by schema alias";
+    EXPECT_STRCASEEQ("PSA", ecClass->GetName().c_str()) << "Look up by schema alias";
+
+    ECClassId idBySchemaName = m_ecdb.GetClassLocater().LocateClassId("ECSqlTest", "PSA");
+    EXPECT_TRUE(idBySchemaName.IsValid()) << "Look up by schema name";
+    EXPECT_EQ(idBySchemaName, m_ecdb.GetClassLocater().LocateClassId("ecsql", "PSA"));
     }
 
 //---------------------------------------------------------------------------------------
