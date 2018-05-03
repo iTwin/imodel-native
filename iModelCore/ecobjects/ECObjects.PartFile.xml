@@ -316,13 +316,16 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECObjectsTools-NuGetPackage" BMakeFile="tools\ECObjectsTools.NuGetPackage.mke"  OnlyPlatforms="x64">
-        <RequiredRepository>bsitools-nuget</RequiredRepository>
-        <SubProduct ProductName="ECObjectsTools"/>
-        <Bindings>
-            <Files ProductDirectoryName="NuGetPackages">Install\ECObjectsTools\ECObjectsTools.*.nupkg</Files>
-        </Bindings>
-    </Part>
+    <NuGetProduct Name="ECObjectsToolsNuGet" OnlyPlatforms="x64" Description="ECObjects Tools for schema validation, comparison, etc">
+        <SubPart PartName="SchemaConverter" />
+        <SubPart PartName="SchemaResourceGenerator" />
+        <SubPart PartName="SchemaRoundtrip" />
+        <SubPart PartName="SchemaValidator"/>
+        <SubPart PartName="SchemaComparison" />
+        <SubPart PartName="SchemaJsonSerializer" />
+        <SubProduct ProductName="ECObjects"/>
+        <Directories DirectoryListName="ECObjectsToolsNuGet" />
+    </NuGetProduct>
 
     <!-- *************** -->
     <!-- **** Tools **** -->
@@ -392,6 +395,22 @@
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+    <ProductDirectoryList ListName="ECObjectsToolsNuGet">
+        <ProductDirectory Name="Assemblies"                                 Path="lib/native"/>
+        <ProductDirectory Name="Assemblies"                                 Path="lib/native" LibType="Static"/>
+        <ProductDirectory Name="Assets"        RelativeTo="Assemblies"      Path="Assets"/>
+        <ProductDirectory Name="Assets"        RelativeTo="Assemblies"      Path="Assets" LibType="static"/>
+        <ProductDirectory Name="Libs"                                       Path="lib/native"/>
+        <ProductDirectory Name="VendorNotices"                              Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"                              Path="Notices" LibType="Static"/>
+        <ProductDirectory Name="SchemaConverterExe"                         Path="lib/native"/>
+        <ProductDirectory Name="SchemaResourceGeneratorExe"                 Path="lib/native"/>
+        <ProductDirectory Name="SchemaRoundtripExe"                         Path="lib/native"/>
+        <ProductDirectory Name="SchemaValidatorExe"                         Path="lib/native"/>
+        <ProductDirectory Name="SchemaComparisonExe"                        Path="lib/native"/>
+        <ProductDirectory Name="SchemaJsonSerializerExe"                    Path="lib/native"/>
+    </ProductDirectoryList>
 
     <ProductDirectoryList ListName="ECObjects">
         <ProductDirectory Name="Assemblies"                                 Path=""/>
