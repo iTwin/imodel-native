@@ -120,6 +120,10 @@ bool            ViewportFactory::ComposeLayoutTransform (TransformR trans, DwgDb
     if (block.OpenStatus() == DwgDbStatus::Success && block->IsLayout() && !block->IsModelspace())
         {
         m_importer.ScaleModelTransformBy (trans, *block.get());
+
+        // WIP - when/if Sheet::Border supports location in the future, switching code to set border origin, instead of moving geometry:
+        LayoutFactory   factory (m_importer, block->GetLayoutId());
+        factory.AlignSheetToPaperOrigin (trans);
         return  true;
         }
     return  false;
@@ -130,7 +134,10 @@ bool            ViewportFactory::ComposeLayoutTransform (TransformR trans, DwgDb
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            ViewportFactory::TransformDataToBim ()
     {
-    m_transform.MultiplyMatrixOnly (m_center);
+    if (m_transform.IsIdentity())
+        return;
+
+    m_transform.Multiply (m_center);
     m_center.z = 0.0;
 
     m_transform.Multiply (m_target);
@@ -674,7 +681,7 @@ void            ViewportFactory::UpdateSpatialCategories (DgnCategoryIdSet& cate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            ViewportFactory::ValidateViewName (Utf8StringR viewNameInOut, DgnViewId& viewIdOut)
+bool            ViewportFactory::ValidateViewName (Utf8StringR viewNameInOut)
     {
     DgnDbR  dgndb = m_importer.GetDgnDb ();
     DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
@@ -684,16 +691,10 @@ bool            ViewportFactory::ValidateViewName (Utf8StringR viewNameInOut, Dg
         model = &dgndb.GetDictionaryModel ();
         }
 
-    viewIdOut = ViewDefinition::QueryViewId (*model, viewNameInOut);
+    auto viewIdOut = ViewDefinition::QueryViewId (*model, viewNameInOut);
 
     if (viewIdOut.IsValid())
         {
-        // if we are updating Bim, return true to use existing view.
-        if (m_importer.IsUpdating())
-            return true;
-
-        viewIdOut.Invalidate ();
-
         // deduplicate view name
         Utf8String  suffix;
         uint32_t    count = 1;
@@ -709,6 +710,47 @@ bool            ViewportFactory::ValidateViewName (Utf8StringR viewNameInOut, Dg
 
     // return false to create a new view with the validated name.
     return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    ViewportFactory::UpdateViewName (ViewDefinitionR view, Utf8StringCR proposedName)
+    {
+    if (view.GetName().Equals(proposedName))
+        return  false;
+
+    Utf8String  newName = proposedName;
+    this->ValidateViewName (newName);
+
+    // change view name - caller shall update element
+    auto code = view.GetCode ();
+    auto status = view.SetCode (DgnCode::From(code.GetCodeSpecId(), code.GetScopeString(), newName));
+    if (status != DgnDbStatus::Success)
+        {
+        m_importer.ReportIssueV (DwgImporter::IssueSeverity::Error, DwgImporter::IssueCategory::Briefcase(), DwgImporter::Issue::CannotUpdateName(), view.GetName().c_str(), newName.c_str());
+        return  false;
+        }
+
+    // change category selector name - caller shall update element
+    auto userLabel = DwgImporter::DataStrings::GetString (DwgImporter::DataStrings::CategorySelector());
+    auto& categorySelector = view.GetCategorySelector ();
+    m_importer.UpdateElementName (categorySelector, newName, userLabel.c_str(), false);
+    
+    // change display style name - caller shall update element
+    userLabel = DwgImporter::DataStrings::GetString (DwgImporter::DataStrings::DisplayStyle());
+    auto& displayStyle = view.GetDisplayStyle ();
+    m_importer.UpdateElementName (displayStyle, newName, userLabel.c_str(), false);
+
+    // change model selector name - do not expect caller to update element
+    auto spatialView = view.ToSpatialViewP ();
+    if (nullptr != spatialView)
+        {
+        userLabel = DwgImporter::DataStrings::GetString (DwgImporter::DataStrings::ModelSelector());
+        m_importer.UpdateElementName (spatialView->GetModelSelector(), newName, userLabel.c_str(), true);
+        }
+
+    return  status == DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -756,10 +798,7 @@ DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8Stri
     Utf8String  viewName (proposedName);
     DgnViewId   viewId;
 
-    if (this->ValidateViewName(viewName, viewId) && viewId.IsValid())
-        return  viewId;
-
-    viewId.Invalidate ();
+    this->ValidateViewName (viewName);
 
     DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
     if (nullptr == model)
@@ -814,7 +853,7 @@ DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8Stri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ViewportFactory::UpdateSpatialView (DgnViewId viewId)
+BentleyStatus   ViewportFactory::UpdateSpatialView (DgnViewId viewId, Utf8StringCR proposedName)
     {
     auto spatialView = m_importer.GetDgnDb().Elements().GetForEdit<SpatialViewDefinition> (viewId);
     if (!spatialView.IsValid())
@@ -824,6 +863,9 @@ BentleyStatus   ViewportFactory::UpdateSpatialView (DgnViewId viewId)
     auto cameraView = dynamic_cast<SpatialViewDefinitionP> (spatialView.get());
     if (nullptr == cameraView)
         return  BSIERROR;
+
+    // if the view name has been changed, reset it in affected elements which will be updated as follows
+    this->UpdateViewName (*spatialView, proposedName);
   
     // update categories
     auto& categorySelector = spatialView->GetCategorySelector ();
@@ -837,7 +879,9 @@ BentleyStatus   ViewportFactory::UpdateSpatialView (DgnViewId viewId)
 
     // re-compute the view
     this->ComputeSpatialView (*spatialView);
-    spatialView->Update ();
+
+    if (!spatialView->Update().IsValid())
+        m_importer.ReportError (DwgImporter::IssueCategory::Briefcase(), DwgImporter::Issue::UpdateFailure(), spatialView->GetName().c_str());
 
     m_importer.GetSyncInfo().UpdateView (viewId, m_inputViewport->GetObjectId(), m_viewportType, spatialView->GetName());
     m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
@@ -854,10 +898,7 @@ DgnViewId       ViewportFactory::CreateSheetView (DgnModelId modelId, Utf8String
     Utf8String  viewName (proposedName);
     DgnViewId   viewId;
 
-    if (this->ValidateViewName(viewName, viewId) && viewId.IsValid())
-        return  viewId;
-
-    viewId.Invalidate ();
+    this->ValidateViewName (viewName);
 
     DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
     if (nullptr == model)
@@ -909,13 +950,18 @@ DgnViewId       ViewportFactory::CreateSheetView (DgnModelId modelId, Utf8String
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ViewportFactory::UpdateSheetView (DgnViewId viewId)
+BentleyStatus   ViewportFactory::UpdateSheetView (DgnViewId viewId, Utf8StringCR proposedName)
     {
     auto sheetView = m_importer.GetDgnDb().Elements().GetForEdit<SheetViewDefinition> (viewId);
     if (!sheetView.IsValid())
         return  static_cast<BentleyStatus>(DgnDbStatus::ViewNotFound);
 
-    // categories will be updated in post process
+    // if the view name has been changed, reset it in affected elements which will be updated as follows
+    auto nameChanged = this->UpdateViewName (*sheetView, proposedName);
+
+    // categories will be updated in post process, if name is not changed
+    if (nameChanged)
+        sheetView->GetCategorySelector().Update ();
 
     // update display style:
     auto& displayStyle = sheetView->GetDisplayStyle ();
@@ -925,7 +971,9 @@ BentleyStatus   ViewportFactory::UpdateSheetView (DgnViewId viewId)
     // re-compute the sheet view
     this->ComputeSheetView (*sheetView.get());
     sheetView->SetIsPrivate (m_isPrivate);
-    sheetView->Update ();
+
+    if (!sheetView->Update().IsValid())
+        m_importer.ReportError (DwgImporter::IssueCategory::Briefcase(), DwgImporter::Issue::UpdateFailure(), sheetView->GetName().c_str());
 
     m_importer.GetSyncInfo().UpdateView (viewId, m_inputViewport->GetObjectId(), m_viewportType, sheetView->GetName());
     m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
@@ -1030,7 +1078,7 @@ BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context
 
     // this method gets called for either creating a new or updating existing element.
     if (importer.IsUpdating() && context.GetElementResults().GetExistingElement().IsValid())
-        return  this->UpdateBim(context, importer, *rootModel, sheetModel);
+        return  this->UpdateBim(context, importer, *rootModel, sheetModel, viewName);
 
     // create a spatial view from the modelspace/root model:
     ViewportFactory factory (importer, *viewport);
@@ -1062,7 +1110,7 @@ BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel)
+BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel, Utf8StringCR viewName)
     {
     /*-----------------------------------------------------------------------------------
     The default implementation of importing an entity can only update a single output 
@@ -1092,7 +1140,7 @@ BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, Dw
     ViewportFactory factory (importer, *viewport);
 
     // get or create a spatial view of the modelspace model:
-    BentleyStatus   status = factory.UpdateSpatialView (modelViewId);
+    BentleyStatus   status = factory.UpdateSpatialView (modelViewId, viewName);
     if (BSISUCCESS != status)
         {
         // delete the view and re-import it anew:
@@ -1174,6 +1222,9 @@ DgnViewId   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecordCR d
         return viewId;
         }
         
+    // set Model view name as the model name (also the same as the layout name):
+    Utf8String  viewName = rootModel->GetName ();
+
     // build a view factory for either importing or updating:
     ViewportFactory factory(*this, dwgVport);
 
@@ -1182,13 +1233,10 @@ DgnViewId   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecordCR d
         viewId = m_syncInfo.FindView (dwgVport.GetObjectId(), DwgSyncInfo::View::Type::ModelspaceViewport);
         if (viewId.IsValid())
             {
-            factory.UpdateSpatialView (viewId);
+            factory.UpdateSpatialView (viewId, viewName);
             return  viewId;
             }
         }
-
-    // set Model view name as the model name (also the same as the layout name):
-    Utf8String  viewName = rootModel->GetName ();
 
     viewId = factory.CreateSpatialView (rootModel->GetModelId(), viewName);
 
@@ -1267,6 +1315,9 @@ BentleyStatus   DwgImporter::_ImportPaperspaceViewport (DgnModelR model, Transfo
         return  BSIERROR;
         }
    
+    // set sheet view name as the model name:
+    Utf8String  viewName = model.GetName ();
+
     // build a view factory for either importing or updating:
     ViewportFactory factory (*this, *viewport.get(), &layout);
     DwgDbObjectId   viewportId = viewport->GetObjectId ();
@@ -1276,11 +1327,10 @@ BentleyStatus   DwgImporter::_ImportPaperspaceViewport (DgnModelR model, Transfo
         {
         sheetViewId = m_syncInfo.FindView (viewportId, DwgSyncInfo::View::Type::PaperspaceViewport);
         if (sheetViewId.IsValid())
-            return factory.UpdateSheetView (sheetViewId);
+            return factory.UpdateSheetView (sheetViewId, viewName);
         }
 
-    // set sheet view name as the model name (also the layout name):
-    Utf8String  viewName = model.GetName ();
+    // create a new sheet view
     sheetViewId = factory.CreateSheetView (model.GetModelId(), viewName);
     if (!sheetViewId.IsValid())
         return  BSIERROR;

@@ -178,6 +178,22 @@ void CheckXrefNested (BeFileNameCR masterFilename, DwgStringCR xrefBlockname)
     auto id = editor.GetCurrentObjectId ();
     EXPECT_TRUE (id.IsValid()) << "Nested xRef block is not found in the master file!";
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void CheckDefaultView (Utf8StringCR expectedName)
+    {
+    auto db = OpenExistingDgnDb (m_dgnDbFileName);
+    ASSERT_TRUE (db.IsValid());
+
+    auto viewId = ViewDefinition::QueryDefaultViewId (*db);
+    EXPECT_TRUE (viewId.IsValid()) << "Default view is not saved!";
+    auto view = ViewDefinition::Get (*db, viewId);
+    ASSERT_TRUE (view.IsValid()) << "Failed getting the default view!";
+    auto name = view->GetName ();
+    EXPECT_EQ (name, expectedName) << "Wrong default view name!";
+    }
 };  // BasicTests
 
 /*--------------------------------------------------------------------------------**//**
@@ -379,4 +395,30 @@ TEST_F(BasicTests, AttachXrefs)
     EXPECT_EQ (3, count) << "Should have total 3 physical models!";
     EXPECT_TRUE (hasNested) << "Missing nested xRef basictype";
     EXPECT_TRUE (hasXref1) << "Missing direct xRef xref1!";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BasicTests, ChangeAndActivateLayout)
+    {
+    LineUpFiles(L"testlayout.ibim", L"basictype.dwg", true); 
+    CheckDefaultView ("Model[basictype]");
+
+    // create a host for DwgFileEditor as well as updating db:
+    InitializeImporterOptions (m_dwgFileName, true);
+    DwgImporter*    updater = new DwgImporter(m_options);
+    ASSERT_NOT_NULL (updater);
+
+    // rename Layout2 as "test layout" and activate it in source DWG file:
+    DwgFileEditor   editor(m_dwgFileName);
+    editor.RenameAndActivateLayout (L"Layout2", L"test layout");
+    editor.SaveFile ();
+
+    DoUpdate (updater, m_dgnDbFileName, m_dwgFileName);
+
+    delete updater;
+
+    // output sheet model/view should be renamed:
+    CheckDefaultView ("test layout[basictype]");
     }

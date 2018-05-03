@@ -124,8 +124,10 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
 
     acrxRegisterService (NAME_DwgProtocalExtension);
     acrxLoadModule (L"AcDbPointCloudObj.dbx", 0);
+#if VendorVersion == 2017
     // demand loading image OE resulted in a RealDWG2017 crash - TFS 615432
     acrxLoadModule (L"acISMobj21.dbx", 0);
+#endif
     acrxLoadModule (L"AcSceneOE.dbx", 0);
     acrxLoadModule (L"AcModelDocObj.dbx", 0);
 

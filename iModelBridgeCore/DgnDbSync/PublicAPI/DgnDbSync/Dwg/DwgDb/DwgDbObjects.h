@@ -496,6 +496,16 @@ public:
         RotateBy270     = DWGDB_Type(PlotSettings::PlotRotation::k270degrees),
         };
 
+    enum PlotBy
+        {
+        Display         = DWGDB_Type(PlotSettings::PlotType::kDisplay),
+        Extents         = DWGDB_Type(PlotSettings::PlotType::kExtents),
+        Limits          = DWGDB_Type(PlotSettings::PlotType::kLimits),
+        View            = DWGDB_Type(PlotSettings::PlotType::kView),
+        Window          = DWGDB_Type(PlotSettings::PlotType::kWindow),
+        Layout          = DWGDB_Type(PlotSettings::PlotType::kLayout),
+        };
+
     DWGDB_EXPORT DwgString              GetName () const;
     DWGDB_EXPORT DRange3d               GetExtents () const;
     DWGDB_EXPORT DRange2d               GetLimits () const;
@@ -506,12 +516,17 @@ public:
     DWGDB_EXPORT DwgDbUnits             GetPlotPaperUnits () const;
     DWGDB_EXPORT DwgDbStatus            GetPlotPaperSize (DPoint2dR origin) const;
     DWGDB_EXPORT DwgDbStatus            GetPlotPaperMargins (double& left, double& bottom, double& right, double& top) const;
+    //! Get the plot origin in mm, an offset applied to the printable origin set by a user via the Page Setup Manager in ACAD.
     DWGDB_EXPORT DwgDbStatus            GetPlotOrigin (DPoint2dR) const;
     DWGDB_EXPORT bool                   IsStandardScale () const;
     DWGDB_EXPORT double                 GetStandardScale () const;
     DWGDB_EXPORT double                 GetCustomScale () const;
     DWGDB_EXPORT DwgDbStatus            GetCustomScale (double& numerator, double& denominator) const;
     DWGDB_EXPORT PaperOrientation       GetPaperOrientation () const;
+    DWGDB_EXPORT PlotBy                 GetPlotBy () const;
+    //! Get the printable origin of the paper set up for the layout, always in mm.
+    //! @note   DXF group codes 148 & 149 are stored with inverted sign. The origin returned by this method is negated, such that the coordinate readout is consistent in ACAD.
+    DWGDB_EXPORT DwgDbStatus            GetPaperImageOrigin (DPoint2dR origin) const;
     };  // DwgDbLayout
 DWGDB_DEFINE_OBJECTPTR (Layout)
 
