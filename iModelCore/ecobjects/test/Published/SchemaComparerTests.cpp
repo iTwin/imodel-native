@@ -326,6 +326,7 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     comp.SetMiddleLabel("Bannana");
     comp.SetMinorLabel("Carrot");
     comp.SetSubLabel("Dragonfruit");
+    comp.SetSpacer("-");
 
     auto num = Formatting::NumericFormatSpec();
     num.SetApplyRounding(true);
@@ -336,6 +337,7 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     num.SetSignOption(Formatting::SignOption::NegativeParentheses);
     num.SetDecimalSeparator(',');
     num.SetThousandSeparator(',');
+    num.SetRoundingFactor(0.1);
 
     ECFormatP format;
     m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
@@ -349,6 +351,47 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     comparer.Compare(changes, first, second);
 
     ASSERT_EQ(0, changes.Count()); //Identical
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      05/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareFormatsDeleted)
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    comp.SetMajorLabel("Apple");
+    comp.SetMiddleLabel("Bannana");
+    comp.SetMinorLabel("Carrot");
+    comp.SetSubLabel("Dragonfruit");
+    comp.SetSpacer("-");
+
+    auto num = Formatting::NumericFormatSpec();
+    num.SetApplyRounding(true);
+    num.SetPresentationType(Formatting::PresentationType::Fractional);
+    num.SetPrecision(Formatting::FractionalPrecision::Over_128);
+    num.SetMinWidth(4);
+    num.SetUomSeparator("");
+    num.SetSignOption(Formatting::SignOption::NegativeParentheses);
+    num.SetDecimalSeparator(',');
+    num.SetThousandSeparator(',');
+    num.SetRoundingFactor(0.1);
+
+    ECFormatP format;
+    m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+
+    ASSERT_EQ(1, changes.Count());
+
+    auto formatChanges = changes.At(0).Formats();
+    ASSERT_EQ(1, formatChanges.Count());
     }
 
 //----------------------------------------------------------------------------------------
