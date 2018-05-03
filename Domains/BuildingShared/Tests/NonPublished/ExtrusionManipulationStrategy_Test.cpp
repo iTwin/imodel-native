@@ -12,7 +12,7 @@
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
-struct ExtrusionManipulationStrategyStrategyTests : public BuildingSharedTestFixtureBase
+struct ExtrusionManipulationStrategyTestFixture : public BuildingSharedTestFixtureBase
     {};
 
 END_BUILDING_SHARED_NAMESPACE
@@ -21,7 +21,7 @@ USING_NAMESPACE_BUILDING_SHARED
 //--------------------------------------------------------------------------------------
 // @betest                                       Mindaugas Butkus                04/2018
 //---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ExtrusionManipulationStrategyStrategyTests, AppendDynamicKeyPoints)
+TEST_F(ExtrusionManipulationStrategyTestFixture, AppendDynamicKeyPoints)
     {
     CurveVectorManipulationStrategyPtr baseManip = CurveVectorManipulationStrategy::Create();
     ASSERT_TRUE(baseManip.IsValid());
@@ -62,4 +62,118 @@ TEST_F(ExtrusionManipulationStrategyStrategyTests, AppendDynamicKeyPoints)
 
     DVec3d expectedExtrusionVector = DVec3d::FromStartEnd(DPoint3d::From(0, 10, 0), DPoint3d::From(5, 10, 10));
     ASSERT_TRUE(extrusion.m_extrusionVector.AlmostEqual(expectedExtrusionVector));
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ExtrusionManipulationStrategyTestFixture, FixedHeightAndSweep)
+    {
+    CurveVectorManipulationStrategyPtr baseManip = CurveVectorManipulationStrategy::Create();
+    ASSERT_TRUE(baseManip.IsValid());
+    baseManip->ChangeDefaultNewGeometryType(DefaultNewGeometryType::LineString);
+    baseManip->ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType::Points);
+    ExtrusionManipulationStrategyPtr sut = ExtrusionManipulationStrategy::Create(*baseManip);
+    ASSERT_TRUE(sut.IsValid());
+
+    bool useFixedHeight = false;
+    bool useFixedSweepDirection = false;
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionManipulationStrategy::prop_UseFixedHeight(), useFixedHeight));
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionManipulationStrategy::prop_UseFixedSweepDirection(), useFixedSweepDirection));
+    ASSERT_FALSE(useFixedHeight);
+    ASSERT_FALSE(useFixedSweepDirection);
+
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_UseFixedHeight(), true);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionManipulationStrategy::prop_UseFixedHeight(), useFixedHeight));
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionManipulationStrategy::prop_UseFixedSweepDirection(), useFixedSweepDirection));
+    ASSERT_TRUE(useFixedHeight);
+    ASSERT_FALSE(useFixedSweepDirection);
+
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_UseFixedSweepDirection(), true);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionManipulationStrategy::prop_UseFixedHeight(), useFixedHeight));
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionManipulationStrategy::prop_UseFixedSweepDirection(), useFixedSweepDirection));
+    ASSERT_TRUE(useFixedHeight);
+    ASSERT_TRUE(useFixedSweepDirection);
+
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_FixedHeight(), 5);
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_FixedSweepDirection(), DVec3d::From(1, 1, 1));
+
+    double fixedHeight = 0;
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionManipulationStrategy::prop_FixedHeight(), fixedHeight));
+    ASSERT_DOUBLE_EQ(fixedHeight, 5);
+    double height = 0;
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionManipulationStrategy::prop_Height(), height));
+    ASSERT_DOUBLE_EQ(height, 5);
+
+    DVec3d fixedSweepDirection;
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionManipulationStrategy::prop_FixedSweepDirection(), fixedSweepDirection));
+    fixedSweepDirection.Normalize();
+    DVec3d expectedSweepDirection = DVec3d::From(1, 1, 1);
+    expectedSweepDirection.Normalize();
+    ASSERT_TRUE(fixedSweepDirection.AlmostEqual(expectedSweepDirection));
+    DVec3d sweepDirection;
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ExtrusionManipulationStrategy::prop_SweepDirection(), sweepDirection));
+    sweepDirection.Normalize();
+    ASSERT_TRUE(sweepDirection.AlmostEqual(expectedSweepDirection));
+
+    sut->AppendDynamicKeyPoint({2,2,0});
+    sut->AppendKeyPoint({0,0,0});
+    sut->AppendDynamicKeyPoint({2,2,0});
+    sut->AppendKeyPoint({1,0,0});
+    sut->AppendDynamicKeyPoint({2,2,0});
+    sut->AppendKeyPoint({3,1,0});
+    sut->PopKeyPoint();
+    sut->AppendDynamicKeyPoint({2,2,0});
+    sut->AppendKeyPoint({1,1,0});
+    sut->AppendDynamicKeyPoint({2,2,0});
+    sut->AppendDynamicKeyPoint({0,0,0});
+    ASSERT_TRUE(sut->IsComplete());
+
+    ISolidPrimitivePtr solid = sut->FinishExtrusion(true, true);
+    ASSERT_TRUE(solid.IsValid());
+    CurveVectorPtr expectedBase = CurveVector::CreateLinear({{0,0,0},{1,0,0},{1,1,0},{0,0,0}}, CurveVector::BOUNDARY_TYPE_Outer);
+    DVec3d expectedSweep = DVec3d::From(5, 5, 5);
+    DgnExtrusionDetail extrusion;
+    ASSERT_TRUE(solid->TryGetDgnExtrusionDetail(extrusion));
+    ASSERT_TRUE(extrusion.m_baseCurve.IsValid());
+    extrusion.m_baseCurve->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
+    ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*extrusion.m_baseCurve, *expectedBase));
+    ASSERT_TRUE(extrusion.m_extrusionVector.AlmostEqual(expectedSweep));
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ExtrusionManipulationStrategyTestFixture, FixedSweep)
+    {
+    CurveVectorManipulationStrategyPtr baseManip = CurveVectorManipulationStrategy::Create();
+    ASSERT_TRUE(baseManip.IsValid());
+    baseManip->ChangeDefaultNewGeometryType(DefaultNewGeometryType::LineString);
+    baseManip->ChangeDefaultPlacementStrategy(LineStringPlacementStrategyType::Points);
+    ExtrusionManipulationStrategyPtr sut = ExtrusionManipulationStrategy::Create(*baseManip);
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_UseFixedSweepDirection(), true);
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_FixedSweepDirection(), DVec3d::From(0, 0, 1));
+
+    sut->AppendKeyPoint({0,0,0});
+    sut->AppendKeyPoint({1,0,0});
+    sut->AppendKeyPoint({1,1,0});
+    sut->AppendKeyPoint({0,0,0});
+    ASSERT_FALSE(sut->IsComplete());
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_BaseComplete(), true);
+    ASSERT_FALSE(sut->IsComplete());
+    sut->AppendKeyPoint({0,0,5});
+    ASSERT_TRUE(sut->IsComplete());
+
+    ISolidPrimitivePtr solid = sut->FinishExtrusion(true, true);
+    ASSERT_TRUE(solid.IsValid());
+    CurveVectorPtr expectedBase = CurveVector::CreateLinear({{0,0,0}, {1,0,0}, {1,1,0}, {0,0,0}}, CurveVector::BOUNDARY_TYPE_Outer);
+    DVec3d expectedSweep = DVec3d::From(0, 0, 5);
+    DgnExtrusionDetail extrusion;
+    ASSERT_TRUE(solid->TryGetDgnExtrusionDetail(extrusion));
+    ASSERT_TRUE(extrusion.m_baseCurve.IsValid());
+    extrusion.m_baseCurve->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
+    ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*extrusion.m_baseCurve, *expectedBase));
+    ASSERT_TRUE(extrusion.m_extrusionVector.AlmostEqual(expectedSweep));
     }

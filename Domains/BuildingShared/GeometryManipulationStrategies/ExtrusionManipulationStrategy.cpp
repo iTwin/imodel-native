@@ -89,14 +89,19 @@ double ExtrusionManipulationStrategy::CalculateHeight
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
+// @bsimethod                                    Mindaugas.Butkus                05/2018
 //---------------+---------------+---------------+---------------+---------------+------
-DVec3d ExtrusionManipulationStrategy::CalculateSweepDirection
-(
-    DPoint3dCR keyPoint
-) const
+DPlane3d ExtrusionManipulationStrategy::GetBasePlane() const
     {
-    DPlane3d basePlane = m_baseShapeManipulationStrategy->GetWorkingPlane();
+    return m_baseShapeManipulationStrategy->GetWorkingPlane();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DPlane3d ExtrusionManipulationStrategy::GetTopPlane() const
+    {
+    DPlane3d basePlane = GetBasePlane();
 
     DVec3d planeTranslation = basePlane.normal;
     planeTranslation.ScaleToLength(GetHeight());
@@ -105,6 +110,42 @@ DVec3d ExtrusionManipulationStrategy::CalculateSweepDirection
     topPlaneOrigin.Add(planeTranslation);
 
     DPlane3d topPlane = DPlane3d::FromOriginAndNormal(topPlaneOrigin, basePlane.normal);
+    return topPlane;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DVec3d ExtrusionManipulationStrategy::GetScaledSweepDirection
+(
+    DPlane3d const& base, 
+    DPlane3d const& top,
+    DVec3d sweepDirection
+) const
+    {
+    DPoint3d baseOriginTopProjection;
+    top.ProjectPoint(baseOriginTopProjection, base.origin);
+
+    DVec3d originToOrigin = DVec3d::FromStartEnd(base.origin, baseOriginTopProjection);
+    if (originToOrigin.IsZero() || sweepDirection.IsZero())
+        return DVec3d::From(0, 0, 0);
+
+    double fraction;
+    sweepDirection.ProjectToVector(originToOrigin, fraction);
+    sweepDirection.Scale(1 / fraction);
+    return sweepDirection;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DVec3d ExtrusionManipulationStrategy::CalculateSweepDirection
+(
+    DPoint3dCR keyPoint
+) const
+    {
+    DPlane3d basePlane = GetBasePlane();
+    DPlane3d topPlane = GetTopPlane();
 
     DPoint3d sweepDirectionEndPoint;
     topPlane.ProjectPoint(sweepDirectionEndPoint, keyPoint);
@@ -261,7 +302,7 @@ void ExtrusionManipulationStrategy::_ResetDynamicKeyPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 bool ExtrusionManipulationStrategy::_IsComplete() const
     {
-    return m_baseShapeManipulationStrategy->IsComplete() && m_heightSet && m_sweepDirectionSet;
+    return m_baseShapeManipulationStrategy->IsComplete() && IsHeightSet() && IsSweepDirectionSet();
     }
 
 //--------------------------------------------------------------------------------------
@@ -277,10 +318,16 @@ bool ExtrusionManipulationStrategy::_CanAcceptMorePoints() const
 //---------------+---------------+---------------+---------------+---------------+------
 double ExtrusionManipulationStrategy::GetHeight() const
     {
-    if (!m_heightSet && !m_dynamicHeightSet)
-        return 0;
+    if (m_useFixedHeight)
+        return m_fixedHeight;
 
-    return m_dynamicHeightSet ? m_dynamicHeight : m_height;
+    if (m_dynamicHeightSet)
+        return m_dynamicHeight;
+
+    if (m_heightSet)
+        return m_height;
+
+    return 0;
     }
 
 //--------------------------------------------------------------------------------------
@@ -288,10 +335,16 @@ double ExtrusionManipulationStrategy::GetHeight() const
 //---------------+---------------+---------------+---------------+---------------+------
 DVec3d ExtrusionManipulationStrategy::GetSweepDirection() const
     {
-    if (!m_sweepDirectionSet && !m_dynamicSweepDirectionSet)
-        return DVec3d::From(0, 0, GetHeight());
+    if (m_useFixedSweepDirection)
+        return GetScaledSweepDirection(GetBasePlane(), GetTopPlane(), m_fixedSweepDirection);
 
-    return m_dynamicSweepDirectionSet ? m_dynamicSweepDirection : m_sweepDirection;
+    if (m_dynamicSweepDirectionSet)
+        return GetScaledSweepDirection(GetBasePlane(), GetTopPlane(), m_dynamicSweepDirection);
+
+    if (m_sweepDirectionSet)
+        return GetScaledSweepDirection(GetBasePlane(), GetTopPlane(), m_sweepDirection);
+
+    return DVec3d::From(0, 0, GetHeight());
     }
 
 //--------------------------------------------------------------------------------------
@@ -317,6 +370,16 @@ void ExtrusionManipulationStrategy::_SetProperty
             {
             m_baseShapeManipulationStrategy->FinishContiniousPrimitive();
             }
+        }
+
+    if (0 == strcmp(key, prop_UseFixedHeight()))
+        {
+        m_useFixedHeight = value;
+        }
+
+    if (0 == strcmp(key, prop_UseFixedSweepDirection()))
+        {
+        m_useFixedSweepDirection = value;
         }
 
     T_Super::_SetProperty(key, value);
@@ -351,6 +414,95 @@ void ExtrusionManipulationStrategy::_SetProperty
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ExtrusionManipulationStrategy::IsHeightSet() const
+    {
+    return m_useFixedHeight || m_heightSet;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ExtrusionManipulationStrategy::IsSweepDirectionSet() const
+    {
+    return m_useFixedSweepDirection || m_sweepDirectionSet;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ExtrusionManipulationStrategy::SetFixedHeight
+(
+    double const& newHeight
+)
+    {
+    m_fixedHeight = newHeight;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ExtrusionManipulationStrategy::SetFixedSweepDirection
+(
+    DVec3d const& newSweepDirection
+)
+    {
+    m_fixedSweepDirection = newSweepDirection;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ExtrusionManipulationStrategy::_SetProperty
+(
+    Utf8CP key, 
+    int const& value
+)
+    {
+    if (0 == strcmp(key, prop_FixedHeight()))
+        {
+        SetFixedHeight(value);
+        }
+
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ExtrusionManipulationStrategy::_SetProperty
+(
+    Utf8CP key, 
+    double const& value
+)
+    {
+    if (0 == strcmp(key, prop_FixedHeight()))
+        {
+        SetFixedHeight(value);
+        }
+
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ExtrusionManipulationStrategy::_SetProperty
+(
+    Utf8CP key, 
+    DVec3d const& value
+)
+    {
+    if (0 == strcmp(key, prop_FixedSweepDirection()))
+        {
+        SetFixedSweepDirection(value);
+        }
+
+    T_Super::_SetProperty(key, value);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
@@ -361,10 +513,19 @@ BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
     {
     if (0 == strcmp(key, prop_Height()))
         {
-        if (!m_heightSet && !m_dynamicHeightSet)
+        if (!m_heightSet && !m_dynamicHeightSet && !m_useFixedHeight)
             return BentleyStatus::ERROR;
 
         value = GetHeight();
+        return BentleyStatus::SUCCESS;
+        }
+
+    if (0 == strcmp(key, prop_FixedHeight()))
+        {
+        if (!m_useFixedHeight)
+            return BentleyStatus::ERROR;
+
+        value = m_fixedHeight;
         return BentleyStatus::SUCCESS;
         }
 
@@ -404,6 +565,18 @@ BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
         return BentleyStatus::SUCCESS;
         }
 
+    if (0 == strcmp(key, prop_UseFixedHeight()))
+        {
+        value = m_useFixedHeight;
+        return BentleyStatus::SUCCESS;
+        }
+
+    if (0 == strcmp(key, prop_UseFixedSweepDirection()))
+        {
+        value = m_useFixedSweepDirection;
+        return BentleyStatus::SUCCESS;
+        }
+
     return T_Super::_TryGetProperty(key, value);
     }
 
@@ -418,10 +591,19 @@ BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
     {
     if (0 == strcmp(key, prop_SweepDirection()))
         {
-        if (!m_sweepDirectionSet && !m_dynamicSweepDirectionSet)
+        if (!m_sweepDirectionSet && !m_dynamicSweepDirectionSet && !m_useFixedSweepDirection)
             return BentleyStatus::ERROR;
 
         value = GetSweepDirection();
+        return BentleyStatus::SUCCESS;
+        }
+
+    if (0 == strcmp(key, prop_FixedSweepDirection()))
+        {
+        if (!m_useFixedSweepDirection)
+            return BentleyStatus::ERROR;
+
+        value = m_fixedSweepDirection;
         return BentleyStatus::SUCCESS;
         }
 

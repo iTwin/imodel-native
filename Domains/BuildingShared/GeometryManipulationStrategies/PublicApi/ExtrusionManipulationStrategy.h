@@ -77,13 +77,17 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
 
         double m_height;
         double m_dynamicHeight;
+        double m_fixedHeight;
         bool m_heightSet;
         bool m_dynamicHeightSet;
+        bool m_useFixedHeight;
 
         DVec3d m_sweepDirection;
         DVec3d m_dynamicSweepDirection;
+        DVec3d m_fixedSweepDirection;
         bool m_sweepDirectionSet;
         bool m_dynamicSweepDirectionSet;
+        bool m_useFixedSweepDirection;
 
         ExtrusionManipulationStrategy() : ExtrusionManipulationStrategy(*CurveVectorManipulationStrategy::Create()) {}
         ExtrusionManipulationStrategy(CurveVectorManipulationStrategyR baseShapeManipulationStrategy)
@@ -91,12 +95,16 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
             , m_baseComplete(false)
             , m_heightSet(false)
             , m_dynamicHeightSet(false)
+            , m_useFixedHeight(false)
             , m_sweepDirectionSet(false)
             , m_dynamicSweepDirectionSet(false)
+            , m_useFixedSweepDirection(false)
             , m_height(0)
             , m_dynamicHeight(0)
+            , m_fixedHeight(0)
             , m_sweepDirection(DVec3d::From(0, 0, 0))
             , m_dynamicSweepDirection(DVec3d::From(0, 0, 0))
+            , m_fixedSweepDirection(DVec3d::From(0, 0, 0))
             , m_baseShapeManipulationStrategy(&baseShapeManipulationStrategy)
             {}
 
@@ -105,6 +113,16 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
 
         double GetHeight() const;
         DVec3d GetSweepDirection() const;
+
+        DPlane3d GetBasePlane() const;
+        DPlane3d GetTopPlane() const;
+        DVec3d GetScaledSweepDirection(DPlane3d const& base, DPlane3d const& top, DVec3d sweepDirection) const;
+
+        bool IsHeightSet() const;
+        bool IsSweepDirectionSet() const;
+
+        void SetFixedHeight(double const& newHeight);
+        void SetFixedSweepDirection(DVec3d const& newSweepDirection);
 
     protected:
         virtual GeometryManipulationStrategyCR _GetBaseShapeManipulationStrategy() const { return *m_baseShapeManipulationStrategy; }
@@ -131,6 +149,9 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, bool const& value) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, GeometryManipulationStrategyProperty const& value) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, int const& value) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, double const& value) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, DVec3d const& value) override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, double& value) const override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, bool& value) const override;
@@ -144,11 +165,15 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
         static constexpr Utf8CP prop_BaseShapeStrategy() { return "BaseShapeStrategy"; }
         static constexpr Utf8CP prop_ContinuousBaseShapePrimitiveComplete() { return "ContinuousBaseShapePrimitiveComplete"; }
         static constexpr Utf8CP prop_Height() { return "Height"; }
+        static constexpr Utf8CP prop_FixedHeight() { return "FixedHeight"; }
         static constexpr Utf8CP prop_IsHeightSet() { return "IsHeightSet"; }
         static constexpr Utf8CP prop_IsDynamicHeightSet() { return "IsDynamicHeightSet"; }
+        static constexpr Utf8CP prop_UseFixedHeight() { return "UseFixedHeight"; }
         static constexpr Utf8CP prop_IsSweepDirectionSet() { return "IsSweepDirectionSet"; }
         static constexpr Utf8CP prop_IsDynamicSweepDirectionSet() { return "IsDynamicSweepDirectionSet"; }
+        static constexpr Utf8CP prop_UseFixedSweepDirection() { return "UseFixedSweepDirection"; }
         static constexpr Utf8CP prop_SweepDirection() { return "SweepDirection"; }
+        static constexpr Utf8CP prop_FixedSweepDirection() { return "FixedSweepDirection"; }
 
         static ExtrusionManipulationStrategyPtr Create() { return new ExtrusionManipulationStrategy(); }
         static ExtrusionManipulationStrategyPtr Create(CurveVectorManipulationStrategyR baseShapeManipulationStrategy) { return new ExtrusionManipulationStrategy(baseShapeManipulationStrategy); }
