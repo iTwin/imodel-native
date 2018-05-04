@@ -52,6 +52,9 @@ enum class Command
     UserStat,
     AllUserStats,
     AllUserStatsJson,	
+    ServiceStat,
+    AllServiceStats,
+    AllServiceStatsJson,		
     Download,
     Upload,
     FileAccess,
@@ -96,12 +99,16 @@ private:
     void ChangeDir();
     void EnterpriseStat();
     void UserStat();
+    void ServiceStat();
     void AllEnterpriseStats();
     void AllEnterpriseStatsGen(bool displayAsJson);
     void AllEnterpriseStatsJson();
     void AllUserStats();
     void AllUserStatsGen(bool displayAsJson);
-    void AllUserStatsJson();	
+    void AllUserStatsJson();
+    void AllServiceStats();
+    void AllServiceStatsGen(bool displayAsJson);
+    void AllServiceStatsJson();	
     void Download();
     void Upload();
     void Details();
@@ -122,6 +129,7 @@ private:
     Utf8String MakeBuddiCall(int region = 0);
 
     void DisplayEnterpriseStats(const bvector<RealityDataEnterpriseStat>& stats, const DateTime& curInfoDate);
+    void DisplayServiceStats(const bvector<RealityDataServiceStat>& stats, const DateTime& curInfoDate);
     void DisplayUserStats(const bvector<RealityDataUserStat>& stats, const DateTime& curInfoDate);
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 

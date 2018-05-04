@@ -26,6 +26,7 @@ RDSRPS::RDSRPS(): RPS()
     requestLog.Insert(OperationType::LIST_REALITYDATA, bmap<int64_t, int>());
     requestLog.Insert(OperationType::LIST_RELATIONSHIP, bmap<int64_t, int>());
     requestLog.Insert(OperationType::ENTERPRISE_STAT, bmap<int64_t, int>());
+    requestLog.Insert(OperationType::SERVICE_STAT, bmap<int64_t, int>());
     requestLog.Insert(OperationType::DETAILS, bmap<int64_t, int>());
     requestLog.Insert(OperationType::AZURE_ADDRESS, bmap<int64_t, int>());
     requestLog.Insert(OperationType::CREATE_REALITYDATA, bmap<int64_t, int>());
@@ -45,6 +46,7 @@ RDSStats::RDSStats(RDSRPS* rps) : Stats(rps)
     opStats.Insert(OperationType::LIST_REALITYDATA, new Stat());
     opStats.Insert(OperationType::LIST_RELATIONSHIP, new Stat());
     opStats.Insert(OperationType::ENTERPRISE_STAT, new Stat());
+    opStats.Insert(OperationType::SERVICE_STAT, new Stat());
     opStats.Insert(OperationType::DETAILS, new Stat());
     opStats.Insert(OperationType::AZURE_ADDRESS, new Stat());
     opStats.Insert(OperationType::CREATE_REALITYDATA, new Stat());
@@ -57,6 +59,7 @@ RDSStats::RDSStats(RDSRPS* rps) : Stats(rps)
     errors.Insert(OperationType::LIST_REALITYDATA, bvector<Utf8String>());
     errors.Insert(OperationType::LIST_RELATIONSHIP, bvector<Utf8String>());
     errors.Insert(OperationType::ENTERPRISE_STAT, bvector<Utf8String>());
+    errors.Insert(OperationType::SERVICE_STAT, bvector<Utf8String>());
     errors.Insert(OperationType::DETAILS, bvector<Utf8String>());
     errors.Insert(OperationType::AZURE_ADDRESS, bvector<Utf8String>());
     errors.Insert(OperationType::CREATE_REALITYDATA, bvector<Utf8String>());
@@ -81,6 +84,7 @@ void RDSStats::PrintStatsBody(int64_t currentTime, int& totalSuccess, int& total
     std::cout << Utf8PrintfString("List Reality Data     %6d %10d %9d %10d %9d        %f", opStats[OperationType::LIST_REALITYDATA]->success, opStats[OperationType::LIST_REALITYDATA]->failure, (int)opStats[OperationType::LIST_REALITYDATA]->minTime, (int)opStats[OperationType::LIST_REALITYDATA]->maxTime, (int)opStats[OperationType::LIST_REALITYDATA]->avgTime, m_rps->GetRPS(OperationType::LIST_REALITYDATA, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("List Relationship     %6d %10d %9d %10d %9d        %f", opStats[OperationType::LIST_RELATIONSHIP]->success, opStats[OperationType::LIST_RELATIONSHIP]->failure, (int)opStats[OperationType::LIST_RELATIONSHIP]->minTime, (int)opStats[OperationType::LIST_RELATIONSHIP]->maxTime, (int)opStats[OperationType::LIST_RELATIONSHIP]->avgTime, m_rps->GetRPS(OperationType::LIST_RELATIONSHIP, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("Enterprise Stat       %6d %10d %9d %10d %9d        %f", opStats[OperationType::ENTERPRISE_STAT]->success, opStats[OperationType::ENTERPRISE_STAT]->failure, (int)opStats[OperationType::ENTERPRISE_STAT]->minTime, (int)opStats[OperationType::ENTERPRISE_STAT]->maxTime, (int)opStats[OperationType::ENTERPRISE_STAT]->avgTime, m_rps->GetRPS(OperationType::ENTERPRISE_STAT, currentTime)) << std::endl;
+    std::cout << Utf8PrintfString("Service Stat          %6d %10d %9d %10d %9d        %f", opStats[OperationType::SERVICE_STAT]->success, opStats[OperationType::SERVICE_STAT]->failure, (int)opStats[OperationType::SERVICE_STAT]->minTime, (int)opStats[OperationType::SERVICE_STAT]->maxTime, (int)opStats[OperationType::SERVICE_STAT]->avgTime, m_rps->GetRPS(OperationType::SERVICE_STAT, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("Change Reality Data   %6d %10d %9d %10d %9d        %f", opStats[OperationType::MODIFY_REALITYDATA]->success, opStats[OperationType::MODIFY_REALITYDATA]->failure, (int)opStats[OperationType::MODIFY_REALITYDATA]->minTime, (int)opStats[OperationType::MODIFY_REALITYDATA]->maxTime, (int)opStats[OperationType::MODIFY_REALITYDATA]->avgTime, m_rps->GetRPS(OperationType::MODIFY_REALITYDATA, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("Delete Relationship   %6d %10d %9d %10d %9d        %f", opStats[OperationType::DELETE_RELATIONSHIP]->success, opStats[OperationType::DELETE_RELATIONSHIP]->failure, (int)opStats[OperationType::DELETE_RELATIONSHIP]->minTime, (int)opStats[OperationType::DELETE_RELATIONSHIP]->maxTime, (int)opStats[OperationType::DELETE_RELATIONSHIP]->avgTime, m_rps->GetRPS(OperationType::DELETE_RELATIONSHIP, currentTime)) << std::endl;
     std::cout << Utf8PrintfString("Delete Reality Data   %6d %10d %9d %10d %9d        %f", opStats[OperationType::DELETE_REALITYDATA]->success, opStats[OperationType::DELETE_REALITYDATA]->failure, (int)opStats[OperationType::DELETE_REALITYDATA]->minTime, (int)opStats[OperationType::DELETE_REALITYDATA]->maxTime, (int)opStats[OperationType::DELETE_REALITYDATA]->avgTime, m_rps->GetRPS(OperationType::DELETE_REALITYDATA, currentTime)) << std::endl;
@@ -89,14 +93,14 @@ void RDSStats::PrintStatsBody(int64_t currentTime, int& totalSuccess, int& total
     totalSuccess = opStats[OperationType::CREATE_REALITYDATA]->success + opStats[OperationType::CREATE_RELATIONSHIP]->success +
                        opStats[OperationType::DETAILS]->success + opStats[OperationType::LIST_REALITYDATA]->success +
                        opStats[OperationType::LIST_RELATIONSHIP]->success +
-                       opStats[OperationType::ENTERPRISE_STAT]->success + opStats[OperationType::MODIFY_REALITYDATA]->success +
+                       opStats[OperationType::ENTERPRISE_STAT]->success + opStats[OperationType::SERVICE_STAT]->success + opStats[OperationType::MODIFY_REALITYDATA]->success +
                        opStats[OperationType::DELETE_RELATIONSHIP]->success + opStats[OperationType::DELETE_REALITYDATA]->success +
                        opStats[OperationType::AZURE_ADDRESS]->success;
 
     totalFailure = opStats[OperationType::CREATE_REALITYDATA]->failure + opStats[OperationType::CREATE_RELATIONSHIP]->failure +
                        opStats[OperationType::DETAILS]->failure + opStats[OperationType::LIST_REALITYDATA]->failure +
                        opStats[OperationType::LIST_RELATIONSHIP]->failure +
-                       opStats[OperationType::ENTERPRISE_STAT]->failure + opStats[OperationType::MODIFY_REALITYDATA]->failure +
+                       opStats[OperationType::ENTERPRISE_STAT]->failure + opStats[OperationType::SERVICE_STAT]->failure + opStats[OperationType::MODIFY_REALITYDATA]->failure +
                        opStats[OperationType::DELETE_RELATIONSHIP]->failure + opStats[OperationType::DELETE_REALITYDATA]->failure +
                        opStats[OperationType::AZURE_ADDRESS]->failure;      
 
@@ -119,6 +123,7 @@ void RDSStats::WriteToFileBody(int userCount, Utf8String path, std::ofstream& fi
     file << Utf8PrintfString("List Reality Data     %6d %10d %9d %10d %9d", opStats[OperationType::LIST_REALITYDATA]->success, opStats[OperationType::LIST_REALITYDATA]->failure, (int)opStats[OperationType::LIST_REALITYDATA]->minTime, (int)opStats[OperationType::LIST_REALITYDATA]->maxTime, (int)opStats[OperationType::LIST_REALITYDATA]->avgTime) << std::endl;
     file << Utf8PrintfString("List Relationship     %6d %10d %9d %10d %9d", opStats[OperationType::LIST_RELATIONSHIP]->success, opStats[OperationType::LIST_RELATIONSHIP]->failure, (int)opStats[OperationType::LIST_RELATIONSHIP]->minTime, (int)opStats[OperationType::LIST_RELATIONSHIP]->maxTime, (int)opStats[OperationType::LIST_RELATIONSHIP]->avgTime) << std::endl;
     file << Utf8PrintfString("Enterprise Stat       %6d %10d %9d %10d %9d", opStats[OperationType::ENTERPRISE_STAT]->success, opStats[OperationType::ENTERPRISE_STAT]->failure, (int)opStats[OperationType::ENTERPRISE_STAT]->minTime, (int)opStats[OperationType::ENTERPRISE_STAT]->maxTime, (int)opStats[OperationType::ENTERPRISE_STAT]->avgTime) << std::endl;
+    file << Utf8PrintfString("Service Stat          %6d %10d %9d %10d %9d", opStats[OperationType::SERVICE_STAT]->success, opStats[OperationType::SERVICE_STAT]->failure, (int)opStats[OperationType::SERVICE_STAT]->minTime, (int)opStats[OperationType::SERVICE_STAT]->maxTime, (int)opStats[OperationType::SERVICE_STAT]->avgTime) << std::endl;
     file << Utf8PrintfString("Change Reality Data   %6d %10d %9d %10d %9d", opStats[OperationType::MODIFY_REALITYDATA]->success, opStats[OperationType::MODIFY_REALITYDATA]->failure, (int)opStats[OperationType::MODIFY_REALITYDATA]->minTime, (int)opStats[OperationType::MODIFY_REALITYDATA]->maxTime, (int)opStats[OperationType::MODIFY_REALITYDATA]->avgTime) << std::endl;
     file << Utf8PrintfString("Delete Relationship   %6d %10d %9d %10d %9d", opStats[OperationType::DELETE_RELATIONSHIP]->success, opStats[OperationType::DELETE_RELATIONSHIP]->failure, (int)opStats[OperationType::DELETE_RELATIONSHIP]->minTime, (int)opStats[OperationType::DELETE_RELATIONSHIP]->maxTime, (int)opStats[OperationType::DELETE_RELATIONSHIP]->avgTime) << std::endl;
     file << Utf8PrintfString("Delete Reality Data   %6d %10d %9d %10d %9d", opStats[OperationType::DELETE_REALITYDATA]->success, opStats[OperationType::DELETE_REALITYDATA]->failure, (int)opStats[OperationType::DELETE_REALITYDATA]->minTime, (int)opStats[OperationType::DELETE_REALITYDATA]->maxTime, (int)opStats[OperationType::DELETE_REALITYDATA]->avgTime) << std::endl;
@@ -142,6 +147,10 @@ void RDSStats::WriteToFileBody(int userCount, Utf8String path, std::ofstream& fi
     file << "Enterprise Stat:" << std::endl;
     for (Utf8String error : errors[OperationType::ENTERPRISE_STAT])
         file << error << std::endl;
+
+    file << "Service Stat:" << std::endl;
+    for (Utf8String error : errors[OperationType::SERVICE_STAT])
+        file << error << std::endl;	
 
     file << "Details:" << std::endl;
     for (Utf8String error : errors[OperationType::DETAILS])
@@ -265,7 +274,10 @@ bool RDSUser::DoNextBody(UserManager* owner)
             {
             curl = EnterpriseStat();
             }
-
+    else if (m_currentOperation == OperationType::SERVICE_STAT)
+            {
+            curl = ServiceStat();
+            }
     if (m_currentOperation == OperationType::CREATE_REALITYDATA)
             {
             if(m_id.empty())
@@ -391,7 +403,29 @@ CURL* RDSUser::EnterpriseStat()
     return WSGRequest::GetInstance().PrepareRequest(enterpriseReq, m_correspondance.response, false, nullptr);
     }
 
+CURL* RDSUser::ServiceStat()
+    {
+    m_correspondance.response.clear();
+    RealityDataServiceStatRequest serviceReq("");
+    m_correspondance.req.url = serviceReq.GetHttpRequestString();
+    m_correspondance.req.headers = serviceReq.GetRequestHeaders();
+    m_correspondance.req.payload = serviceReq.GetRequestPayload();
+
+    m_correspondance.id = m_stats->LogRequest("stat");
+
+    return WSGRequest::GetInstance().PrepareRequest(serviceReq, m_correspondance.response, false, nullptr);
+    }
+
 void RDSUser::ValidateEnterpriseStat(int activeUsers)
+    {
+    Json::Value instances(Json::objectValue);
+
+    m_stats->InsertStats(this,
+        (m_correspondance.response.ValidateJSONResponse(instances, "instances") == RequestStatus::OK),
+        activeUsers);
+    }
+
+void RDSUser::ValidateServiceStat(int activeUsers)
     {
     Json::Value instances(Json::objectValue);
 
@@ -640,6 +674,8 @@ void RDSUser::ValidatePrevious(int activeUsers)
             return ValidateCreateRealityData(activeUsers);
         case OperationType::ENTERPRISE_STAT:
             return ValidateEnterpriseStat(activeUsers);
+		case OperationType::SERVICE_STAT:
+            return ValidateServiceStat(activeUsers);
         }
     }
 

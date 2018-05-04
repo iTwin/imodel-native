@@ -75,6 +75,13 @@ public:
     //! To retreive many EnterpriseStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToEnterpriseStats(Utf8CP data, bvector<RealityDataEnterpriseStat>& statObjects);
 
+    //! To retreive ServiceStat from a JSON fragment 
+    REALITYDATAPLATFORM_EXPORT static StatusInt JsonToServiceStat(Utf8CP data, RealityDataServiceStat& statObject);
+    REALITYDATAPLATFORM_EXPORT static StatusInt JsonToServiceStat(Json::Value properties, RealityDataServiceStat& statObject);
+
+    //! To retreive many EnterpriseStat from a JSON fragment 
+    REALITYDATAPLATFORM_EXPORT static StatusInt JsonToServiceStats(Utf8CP data, bvector<RealityDataServiceStat>& statObjects);
+
     //! To retreive EnterpriseStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToUserStat(Utf8CP data, RealityDataUserStat& statObject);
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToUserStat(Json::Value properties, RealityDataUserStat& statObject);

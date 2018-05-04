@@ -1,0 +1,17 @@
+{
+    "instances": [
+        {
+            "instanceId": "2018-05-04~2F027F53B2C81E819CBEA28F8AEB00E419",
+            "schemaName": "S3MX",
+            "className": "ServiceStat",
+            "properties": {
+                "TotalSize": 1024,
+                "NumberOfRealityData": 20,
+                "UltimateId": "53dd5a3b-929e-4169-b2e7-afce74a1d0af",
+                "Date": "2018-05-04",
+                "ServiceId": "2581"
+            },
+            "eTag": "\"1IDi8fTmuYWWq+mKusUeV9CMF6E=\""
+        }
+    ]
+}

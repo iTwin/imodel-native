@@ -1,0 +1,30 @@
+{
+    "instances": [
+        {
+            "instanceId": "2018-05-04~2F0B17CC7FE99425FBF54C085303B13599",
+            "schemaName": "S3MX",
+            "className": "ServiceStat",
+            "properties": {
+                "TotalSize": 1026,
+                "NumberOfRealityData": 21,
+                "UltimateId": "e05545f3-e82b-468a-9ce4-8f4dcae6fc3b",
+                "Date": "2018-05-04",
+                "ServiceId": "2581"
+            },
+            "eTag": "\"hjBhDeEa8sNsFHS8G9BYCQ4Oh9E=\""
+        },
+        {
+            "instanceId": "2018-05-04~2F0F10D73FCB6FFEBABE4FD39C8DBC9BC5",
+            "schemaName": "S3MX",
+            "className": "ServiceStat",
+            "properties": {
+                "TotalSize": 0,
+                "NumberOfRealityData": 1,
+                "UltimateId": "39496270-a613-47a5-a83f-3a69e4e8ab8b",
+                "Date": "2018-05-04",
+                "ServiceId": "2581"
+            },
+            "eTag": "\"lm0wIFqsVlvok9pyowpQht3I0N8=\""
+        }
+    ]
+}

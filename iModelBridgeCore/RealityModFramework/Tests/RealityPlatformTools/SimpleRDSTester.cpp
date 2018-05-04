@@ -128,6 +128,26 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatTest)
 //=====================================================================================
 //! @bsimethod                                  Alain.Robert                  04/2018
 //=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataServiceStatTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\ServiceStat.json");
+        }));
+
+    ConnectedRealityDataServiceStat stat = ConnectedRealityDataServiceStat();
+    ConnectedResponse response = stat.GetServiceStats();
+    
+    EXPECT_TRUE(response.simpleSuccess);
+    EXPECT_EQ(stat.GetUltimateId(), "53dd5a3b-929e-4169-b2e7-afce74a1d0af");
+    }
+
+//=====================================================================================
+//! @bsimethod                                  Alain.Robert                  04/2018
+//=====================================================================================
 TEST_F(SimpleRDSFixture, ConnectedRealityDataUserStatTest)
     {
     EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)

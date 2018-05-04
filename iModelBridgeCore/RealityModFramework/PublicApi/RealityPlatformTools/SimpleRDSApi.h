@@ -50,6 +50,23 @@ private:
     //REALITYDATAPLATFORM_EXPORT static ConnectedResponse GetAllStats(bvector<ConnectedRealityDataEnterpriseStat>& statVec);
     };
 
+//=====================================================================================
+//! @bsiclass                                   Spencer.Mason              10/2017
+//! ConnectedRealityDataServiceStat
+//! Extends RealityDataServiceStat, directly integrating requests to get stats 
+//! from the server
+//=====================================================================================
+struct ConnectedRealityDataServiceStat : public RealityDataServiceStat
+    {
+public:
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataServiceStat() : RealityDataServiceStat(){}
+
+    //! Gets stats for the user's enterprise
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse GetServiceStats();
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataServiceStat(const RealityDataServiceStat& stat);
+private:
+    REALITYDATAPLATFORM_EXPORT void Clone(const RealityDataServiceStat& stat);
+    };
 	
 //=====================================================================================
 //! @bsiclass                                   Alain.RObert             04/2018
@@ -67,7 +84,6 @@ public:
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataUserStat(const RealityDataUserStat& stat);
 private:
     REALITYDATAPLATFORM_EXPORT void Clone(const RealityDataUserStat& stat);
-    //REALITYDATAPLATFORM_EXPORT static ConnectedResponse GetAllStats(bvector<ConnectedRealityDataEnterpriseStat>& statVec);
     };
 	
 //=====================================================================================

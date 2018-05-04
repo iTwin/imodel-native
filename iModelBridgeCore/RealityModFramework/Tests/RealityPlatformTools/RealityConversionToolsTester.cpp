@@ -24,94 +24,96 @@ using ::testing::Key;
 class RealityConversionTestFixture : public testing::Test
     {
     public:
-		static Utf8CP s_TwoSpatialEntityJSONString;
+        static Utf8CP s_TwoSpatialEntityJSONString;
         static Utf8CP s_EnterpriseStatJSONString;
+        static Utf8CP s_ServiceStatJSONString;
         static Utf8CP s_UserStatJSONString;
         static Utf8CP s_ManyEnterpriseStatsJSONString;
+        static Utf8CP s_ManyServiceStatsJSONString;
         static Utf8CP s_ManyUserStatsJSONString;
         static Utf8CP s_RealityDataJSONString;
         static Utf8CP s_RealityDataExtendedJSONString;
-		static Utf8CP s_EntityDataSourceJSONString;
-		static Utf8CP s_SpatialEntityServerJSONString;
-		static Utf8CP s_SpatialEntityMetadataJSONString;
+        static Utf8CP s_EntityDataSourceJSONString;
+        static Utf8CP s_SpatialEntityServerJSONString;
+        static Utf8CP s_SpatialEntityMetadataJSONString;
 
-	WCharCP GetDirectory()
-	{
+    WCharCP GetDirectory()
+    {
         BeFileName outDir;
         BeTest::GetHost().GetDgnPlatformAssetsDirectory (outDir);
-		return outDir.c_str();
-	}
+        return outDir.c_str();
+    }
     };
 
 
 Utf8CP RealityConversionTestFixture::s_TwoSpatialEntityJSONString = R"(
-	{
-		"instances": [
-			{
-				"instanceId": "14812",
-				"schemaName": "RealityModeling",
-				"className": "SpatialEntityWithDetailsView",
-				"properties": {
-					"Id": "14812",
-					"Footprint": "{ \"points\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \"coordinate_system\" : \"4326\" }",
-					"Name": "N38W093",
-					"Description": "a spatial entity",
-					"ContactInformation": null,
-					"Keywords": null,
-					"Legal": "Data available from the U.S. Geological Survey",
-					"ProcessingDescription": null,
-					"DataSourceType": "hgt",
-					"Dataset": "someDataSet",
-					"AccuracyResolutionDensity": null,
-					"Date": "2005-07-05T00:00:00.000",
-					"Classification": "Terrain",
-					"FileSize": "7066",
-					"SpatialDataSourceId": "14812",
-					"ResolutionInMeters": "24.2x30.922",
-					"AccuracyInMeters": "5x5",
-					"DataProvider": "USGS",
-					"DataProviderName": "United States Geological Survey",
-					"ThumbnailURL": "http://www.example.com/thumbnail.jpg",
-					"MetadataURL": "http://www.example.com/metadata.txt",
-					"RawMetadataURL": null,
-					"RawMetadataFormat": null,
-					"SubAPI": null
-				},
-				"eTag": "gZIS2SFbXqohdwLlTRXkJOTCHz0="
-			},
-			{
-				"instanceId": "14813",
-				"schemaName": "RealityModeling",
-				"className": "SpatialEntityWithDetailsView",
-				"properties": {
-					"Id": "14813",
-					"Footprint": "{ \"points\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \"coordinate_system\" : \"4326\" }",
-					"Name": "N39W093",
-					"Description": null,
-					"ContactInformation": null,
-					"Keywords": null,
-					"Legal": "Data also available from the U.S. Geological Survey",
-					"ProcessingDescription": "This is a dummy description that is not Lorem Ipsum based",
-					"Type": "hgt;tif;dem",
-					"AccuracyResolutionDensity": null,
-					"Date": "2005-07-05T12:12:00",
-					"Classification": "Terrain",
-					"Dataset": "someDataSet",
-					"FileSize": "7066",
-					"SpatialDataSourceId": "14812",
-					"ResolutionInMeters": "24.2x30.922",
-					"DataProvider": "USGS",
-					"DataProviderName": "United States Geological Survey",
-					"ThumbnailURL": null,
-					"MetadataURL": null,
-					"RawMetadataURL": null,
-					"RawMetadataFormat": null,
-					"SubAPI": null
-				},
-				"eTag": "gZIS2SFbXqohdwLlTRXkJOTCHz0="
-			}
-		]
-	}
+    {
+        "instances": [
+            {
+                "instanceId": "14812",
+                "schemaName": "RealityModeling",
+                "className": "SpatialEntityWithDetailsView",
+                "properties": {
+                    "Id": "14812",
+                    "Footprint": "{ \"points\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \"coordinate_system\" : \"4326\" }",
+                    "Name": "N38W093",
+                    "Description": "a spatial entity",
+                    "ContactInformation": null,
+                    "Keywords": null,
+                    "Legal": "Data available from the U.S. Geological Survey",
+                    "ProcessingDescription": null,
+                    "DataSourceType": "hgt",
+                    "Dataset": "someDataSet",
+                    "AccuracyResolutionDensity": null,
+                    "Date": "2005-07-05T00:00:00.000",
+                    "Classification": "Terrain",
+                    "FileSize": "7066",
+                    "SpatialDataSourceId": "14812",
+                    "ResolutionInMeters": "24.2x30.922",
+                    "AccuracyInMeters": "5x5",
+                    "DataProvider": "USGS",
+                    "DataProviderName": "United States Geological Survey",
+                    "ThumbnailURL": "http://www.example.com/thumbnail.jpg",
+                    "MetadataURL": "http://www.example.com/metadata.txt",
+                    "RawMetadataURL": null,
+                    "RawMetadataFormat": null,
+                    "SubAPI": null
+                },
+                "eTag": "gZIS2SFbXqohdwLlTRXkJOTCHz0="
+            },
+            {
+                "instanceId": "14813",
+                "schemaName": "RealityModeling",
+                "className": "SpatialEntityWithDetailsView",
+                "properties": {
+                    "Id": "14813",
+                    "Footprint": "{ \"points\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \"coordinate_system\" : \"4326\" }",
+                    "Name": "N39W093",
+                    "Description": null,
+                    "ContactInformation": null,
+                    "Keywords": null,
+                    "Legal": "Data also available from the U.S. Geological Survey",
+                    "ProcessingDescription": "This is a dummy description that is not Lorem Ipsum based",
+                    "Type": "hgt;tif;dem",
+                    "AccuracyResolutionDensity": null,
+                    "Date": "2005-07-05T12:12:00",
+                    "Classification": "Terrain",
+                    "Dataset": "someDataSet",
+                    "FileSize": "7066",
+                    "SpatialDataSourceId": "14812",
+                    "ResolutionInMeters": "24.2x30.922",
+                    "DataProvider": "USGS",
+                    "DataProviderName": "United States Geological Survey",
+                    "ThumbnailURL": null,
+                    "MetadataURL": null,
+                    "RawMetadataURL": null,
+                    "RawMetadataFormat": null,
+                    "SubAPI": null
+                },
+                "eTag": "gZIS2SFbXqohdwLlTRXkJOTCHz0="
+            }
+        ]
+    }
         )";
 
 Utf8CP RealityConversionTestFixture::s_EnterpriseStatJSONString = R"(
@@ -135,7 +137,26 @@ Utf8CP RealityConversionTestFixture::s_EnterpriseStatJSONString = R"(
     }
     )";
 
-	
+Utf8CP RealityConversionTestFixture::s_ServiceStatJSONString = R"(
+    {
+        "instances": [
+            {
+                "instanceId": "2018-05-04~2F027F53B2C81E819CBEA28F8AEB00E419",
+                "schemaName": "S3MX",
+                "className": "ServiceStat",
+                "properties": {
+                    "TotalSize": 1024,
+                    "NumberOfRealityData": 20,
+                    "UltimateId": "53dd5a3b-929e-4169-b2e7-afce74a1d0af",
+                    "Date": "2018-05-04",
+                    "ServiceId": "2581"
+                },
+                "eTag": "ifZwDzBbgEqb8b0Z62MNmrQTysQ="
+            }
+        ]
+    }
+    )";
+    
 Utf8CP RealityConversionTestFixture::s_UserStatJSONString = R"(
     {
         "instances": [
@@ -157,7 +178,7 @@ Utf8CP RealityConversionTestFixture::s_UserStatJSONString = R"(
             }
         ]
     }
-    )";	
+    )"; 
 
 
 Utf8CP RealityConversionTestFixture::s_ManyEnterpriseStatsJSONString = R"(
@@ -188,6 +209,40 @@ Utf8CP RealityConversionTestFixture::s_ManyEnterpriseStatsJSONString = R"(
                     "UltimateSite": "af3c43a9-1797-4765-a7c3-fd154f7b9ef9"
                 },
                 "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
+            }
+        ]
+    }
+    )";
+
+
+Utf8CP RealityConversionTestFixture::s_ManyServiceStatsJSONString = R"(
+    {
+        "instances": [
+            {
+                "instanceId": "2018-05-04~2F0B17CC7FE99425FBF54C085303B13599",
+                "schemaName": "S3MX",
+                "className": "ServiceStat",
+                "properties": {
+                    "TotalSize": 1026,
+                    "NumberOfRealityData": 21,
+                    "UltimateId": "e05545f3-e82b-468a-9ce4-8f4dcae6fc3b",
+                    "Date": "2018-05-04",
+                    "ServiceId": "2581"
+                },
+                "eTag": "\"hjBhDeEa8sNsFHS8G9BYCQ4Oh9E=\""
+            },
+            {
+                "instanceId": "2018-05-04~2F0F10D73FCB6FFEBABE4FD39C8DBC9BC5",
+                "schemaName": "S3MX",
+                "className": "ServiceStat",
+                "properties": {
+                    "TotalSize": 0,
+                    "NumberOfRealityData": 1,
+                    "UltimateId": "39496270-a613-47a5-a83f-3a69e4e8ab8b",
+                    "Date": "2018-05-04",
+                    "ServiceId": "2581"
+                },
+                "eTag": "\"lm0wIFqsVlvok9pyowpQht3I0N8=\""
             }
         ]
     }
@@ -434,164 +489,164 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
     }
     )";
 
-	Utf8CP RealityConversionTestFixture::s_EntityDataSourceJSONString = 
-		R"(
-		
-		{
-		  "instances": [
-			{
-			  "instanceId": "1",
-			  "schemaName": "RealityModeling",
-			  "className": "SpatialDataSource",
-			  "properties": {
-				"Id": "1",
-				"MainURL": "http://www.openstreetmap.org/api/0.6/map?",
-				"ParameterizedURL": "http://www.example.com",
-				"CompoundType": "myCompoundType",
-				"LocationInCompound": "myLocationInCompound",
-				"DataSourceType": "OSM",
-				"SisterFiles": "mySisterfiles",
-				"NoDataValue": "myDataValue",
-				"FileSize": "9999",
-				"CoordinateSystem": "EPSG:9999",
-				"Streamed": true,
-				"Metadata": "someMetaDATA"
-			  },
-			  "eTag": "\"5gfZgh6RyYOK1ugIJsUVj6LDp7Y=\""
-			},
-			{
-			  "instanceId": "2",
-			  "schemaName": "RealityModeling",
-			  "className": "SpatialDataSource",
-			  "properties": {
-				"Id": "2",
-				"MainURL": "http://www.openstreetmap.org/api/0.6/map?",
-				"ParameterizedURL": "http://www.example.com",
-				"CompoundType": "myCompoundType",
-				"LocationInCompound": "myLocationInCompound",
-				"DataSourceType": "OSM",
-				"SisterFiles": "mySisterfiles",
-				"NoDataValue": "myDataValue",
-				"FileSize": "9999",
-				"CoordinateSystem": "EPSG:4326",
-				"Streamed": true,
-				"Metadata": "someMetaDATA"
-			  },
-			  "eTag": "\"5gfZgh6RyYOK1ugIJsUVj6LDp7Y=\""
-			}
-		  ]
-		}
+    Utf8CP RealityConversionTestFixture::s_EntityDataSourceJSONString = 
+        R"(
+        
+        {
+          "instances": [
+            {
+              "instanceId": "1",
+              "schemaName": "RealityModeling",
+              "className": "SpatialDataSource",
+              "properties": {
+                "Id": "1",
+                "MainURL": "http://www.openstreetmap.org/api/0.6/map?",
+                "ParameterizedURL": "http://www.example.com",
+                "CompoundType": "myCompoundType",
+                "LocationInCompound": "myLocationInCompound",
+                "DataSourceType": "OSM",
+                "SisterFiles": "mySisterfiles",
+                "NoDataValue": "myDataValue",
+                "FileSize": "9999",
+                "CoordinateSystem": "EPSG:9999",
+                "Streamed": true,
+                "Metadata": "someMetaDATA"
+              },
+              "eTag": "\"5gfZgh6RyYOK1ugIJsUVj6LDp7Y=\""
+            },
+            {
+              "instanceId": "2",
+              "schemaName": "RealityModeling",
+              "className": "SpatialDataSource",
+              "properties": {
+                "Id": "2",
+                "MainURL": "http://www.openstreetmap.org/api/0.6/map?",
+                "ParameterizedURL": "http://www.example.com",
+                "CompoundType": "myCompoundType",
+                "LocationInCompound": "myLocationInCompound",
+                "DataSourceType": "OSM",
+                "SisterFiles": "mySisterfiles",
+                "NoDataValue": "myDataValue",
+                "FileSize": "9999",
+                "CoordinateSystem": "EPSG:4326",
+                "Streamed": true,
+                "Metadata": "someMetaDATA"
+              },
+              "eTag": "\"5gfZgh6RyYOK1ugIJsUVj6LDp7Y=\""
+            }
+          ]
+        }
 
-		)";
+        )";
 
-	Utf8CP RealityConversionTestFixture::s_SpatialEntityServerJSONString =
-		R"(
-		
-		{
-			"instances": [
-			{
-				"instanceId": "1",
-				"schemaName": "RealityModeling",
-				"className": "Server",
-				"properties": {
-				"Id": "1",
-					"CommunicationProtocol": "ftp",
-					"Streamed": true,
-					"LoginKey": "myLoginKey",
-					"LoginMethod": "myLoginMethod",
-					"RegistrationPage": "http://www.example.com/register",
-					"OrganisationPage": "http://www.example.com/organisation",
-					"Name": "GeoGratis",
-					"URL": "ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/elevation/cdem_mnec/",
-					"ServerContactInformation": "mycontact@example.com",
-					"Fees": "Over 9000",
-					"Legal": "Better Call Saul",
-					"AccessConstraints": "No one",
-					"Online": true,
-					"LastCheck": "2017-02-02T00:28:22",
-					"LastTimeOnline": "2017-02-03T00:28:22",
-					"Latency": 9000,
-					"MeanReachabilityStats": 5,
-					"State": "myState",
-					"Type": "sftp"
-				},
-				"eTag": "\"tkErs5pTIlkWlQgzDzW9u0kuBgk=\""
-			},
-			{
-				"instanceId": "2",
-				"schemaName": "RealityModeling",
-				"className": "Server",
-				"properties": {
-				"Id": "2",
-					"CommunicationProtocol": "ftp",
-					"Streamed": null,
-					"LoginKey": null,
-					"LoginMethod": null,
-					"RegistrationPage": null,
-					"OrganisationPage": null,
-					"Name": "GeoGratis2",
-					"URL": "ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/elevation/cdem_mnec/",
-					"ServerContactInformation": null,
-					"Fees": null,
-					"Legal": null,
-					"AccessConstraints": null,
-					"Online": true,
-					"LastCheck": "2017-02-02T00:28:22",
-					"LastTimeOnline": "2017-02-02T00:28:22",
-					"Latency": null,
-					"MeanReachabilityStats": null,
-					"State": null,
-					"Type": "ftp"
-				},
-				"eTag": "\"tkErs5pTIlkWlQgzDzW9u0kuBgk=\""
-			}
-		]
-		}
+    Utf8CP RealityConversionTestFixture::s_SpatialEntityServerJSONString =
+        R"(
+        
+        {
+            "instances": [
+            {
+                "instanceId": "1",
+                "schemaName": "RealityModeling",
+                "className": "Server",
+                "properties": {
+                "Id": "1",
+                    "CommunicationProtocol": "ftp",
+                    "Streamed": true,
+                    "LoginKey": "myLoginKey",
+                    "LoginMethod": "myLoginMethod",
+                    "RegistrationPage": "http://www.example.com/register",
+                    "OrganisationPage": "http://www.example.com/organisation",
+                    "Name": "GeoGratis",
+                    "URL": "ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/elevation/cdem_mnec/",
+                    "ServerContactInformation": "mycontact@example.com",
+                    "Fees": "Over 9000",
+                    "Legal": "Better Call Saul",
+                    "AccessConstraints": "No one",
+                    "Online": true,
+                    "LastCheck": "2017-02-02T00:28:22",
+                    "LastTimeOnline": "2017-02-03T00:28:22",
+                    "Latency": 9000,
+                    "MeanReachabilityStats": 5,
+                    "State": "myState",
+                    "Type": "sftp"
+                },
+                "eTag": "\"tkErs5pTIlkWlQgzDzW9u0kuBgk=\""
+            },
+            {
+                "instanceId": "2",
+                "schemaName": "RealityModeling",
+                "className": "Server",
+                "properties": {
+                "Id": "2",
+                    "CommunicationProtocol": "ftp",
+                    "Streamed": null,
+                    "LoginKey": null,
+                    "LoginMethod": null,
+                    "RegistrationPage": null,
+                    "OrganisationPage": null,
+                    "Name": "GeoGratis2",
+                    "URL": "ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/elevation/cdem_mnec/",
+                    "ServerContactInformation": null,
+                    "Fees": null,
+                    "Legal": null,
+                    "AccessConstraints": null,
+                    "Online": true,
+                    "LastCheck": "2017-02-02T00:28:22",
+                    "LastTimeOnline": "2017-02-02T00:28:22",
+                    "Latency": null,
+                    "MeanReachabilityStats": null,
+                    "State": null,
+                    "Type": "ftp"
+                },
+                "eTag": "\"tkErs5pTIlkWlQgzDzW9u0kuBgk=\""
+            }
+        ]
+        }
 
-		)";
+        )";
 
-	Utf8CP RealityConversionTestFixture::s_SpatialEntityMetadataJSONString = R"(
+    Utf8CP RealityConversionTestFixture::s_SpatialEntityMetadataJSONString = R"(
 
-	{
-	  "instances": [
-		{
-		  "instanceId": "1",
-		  "schemaName": "RealityModeling",
-		  "className": "Metadata",
-		  "properties": {
-			"Id": "1",
-			"MetadataURL": "http://www.example.com/metadata",
-			"DisplayStyle": "myDisplayStyle",
-			"Description": "some big description",
-			"ContactInformation": "my contact",
-			"Keywords": "keyword1;keyword2",
-			"Legal": "� OpenStreetMap contributors",
-			"TermsOfUse": "Everyone",
-			"Lineage": "ok",
-			"Provenance": "somewhere"
-		  },
-		  "eTag": "\"+g+HZYXF8u7jrPDPTI5JJ5Sl2aE=\""
-		},
-		{
-		  "instanceId": "2",
-		  "schemaName": "RealityModeling",
-		  "className": "Metadata",
-		  "properties": {
-			"Id": "2",
-			"MetadataURL": null,
-			"DisplayStyle": null,
-			"Description": null,
-			"ContactInformation": null,
-			"Keywords": null,
-			"Legal": "� OpenStreetMap contributors",
-			"TermsOfUse": null,
-			"Lineage": null,
-			"Provenance": null
-		  },
-		  "eTag": "\"+g+HZYXF8u7jrPDPTI5JJ5Sl2aE=\""
-		}
-	  ]
-	}
+    {
+      "instances": [
+        {
+          "instanceId": "1",
+          "schemaName": "RealityModeling",
+          "className": "Metadata",
+          "properties": {
+            "Id": "1",
+            "MetadataURL": "http://www.example.com/metadata",
+            "DisplayStyle": "myDisplayStyle",
+            "Description": "some big description",
+            "ContactInformation": "my contact",
+            "Keywords": "keyword1;keyword2",
+            "Legal": "� OpenStreetMap contributors",
+            "TermsOfUse": "Everyone",
+            "Lineage": "ok",
+            "Provenance": "somewhere"
+          },
+          "eTag": "\"+g+HZYXF8u7jrPDPTI5JJ5Sl2aE=\""
+        },
+        {
+          "instanceId": "2",
+          "schemaName": "RealityModeling",
+          "className": "Metadata",
+          "properties": {
+            "Id": "2",
+            "MetadataURL": null,
+            "DisplayStyle": null,
+            "Description": null,
+            "ContactInformation": null,
+            "Keywords": null,
+            "Legal": "� OpenStreetMap contributors",
+            "TermsOfUse": null,
+            "Lineage": null,
+            "Provenance": null
+          },
+          "eTag": "\"+g+HZYXF8u7jrPDPTI5JJ5Sl2aE=\""
+        }
+      ]
+    }
 
     )";
 
@@ -612,11 +667,11 @@ TEST_F(RealityConversionTestFixture, JsonToSpatialEntitybvector)
     ASSERT_EQ(spatialData->GetDescription(), "a spatial entity");
     ASSERT_EQ(spatialData->GetDataType(), "hgt");
     ASSERT_EQ(spatialData->GetProvider(), "USGS");
-	ASSERT_EQ(spatialData->GetProviderName(), "United States Geological Survey");
-	ASSERT_STREQ(spatialData->GetThumbnailURL().c_str(), "http://www.example.com/thumbnail.jpg");
-	ASSERT_STREQ(spatialData->GetAccuracy().c_str(), "5x5");
-	ASSERT_NEAR(spatialData->GetAccuracyValue(), sqrt(5*5), 0.000001);
-	ASSERT_STREQ(spatialData->GetDataset().c_str(), "someDataSet");
+    ASSERT_EQ(spatialData->GetProviderName(), "United States Geological Survey");
+    ASSERT_STREQ(spatialData->GetThumbnailURL().c_str(), "http://www.example.com/thumbnail.jpg");
+    ASSERT_STREQ(spatialData->GetAccuracy().c_str(), "5x5");
+    ASSERT_NEAR(spatialData->GetAccuracyValue(), sqrt(5*5), 0.000001);
+    ASSERT_STREQ(spatialData->GetDataset().c_str(), "someDataSet");
 
     DateTime date;
     DateTime::FromString(date, "2005-07-05T00:00:00");
@@ -684,6 +739,48 @@ TEST_F(RealityConversionTestFixture, JsonToManyEnterpriseStats)
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            04/2018
 //-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToServiceStat)
+    {
+    RealityDataServiceStat stat;
+    StatusInt status = RealityConversionTools::JsonToServiceStat(s_ServiceStatJSONString, stat);
+    ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(stat.GetNbRealityData(), 20);
+    ASSERT_EQ(stat.GetTotalSizeKB(), 1024);
+    ASSERT_EQ(stat.GetUltimateId(), "53dd5a3b-929e-4169-b2e7-afce74a1d0af");
+    ASSERT_EQ(stat.GetServiceId(), "2581");
+    ASSERT_STREQ(stat.GetDate().ToString().c_str(), "2018-05-04");
+    }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            04/2018
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToManyServiceStats)
+    {
+    bvector<RealityDataServiceStat> stats;
+    StatusInt status = RealityConversionTools::JsonToServiceStats(s_ManyServiceStatsJSONString, stats);
+
+    ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(2, stats.size());
+
+    
+    ASSERT_EQ(stats[0].GetNbRealityData(), 21);
+    ASSERT_EQ(stats[0].GetTotalSizeKB(), 1026);
+    ASSERT_EQ(stats[0].GetUltimateId(), "e05545f3-e82b-468a-9ce4-8f4dcae6fc3b");
+    ASSERT_EQ(stats[0].GetServiceId(), "2581");
+    ASSERT_STREQ(stats[0].GetDate().ToString().c_str(), "2018-05-04");
+
+
+    ASSERT_EQ(stats[1].GetNbRealityData(), 1);
+    ASSERT_EQ(stats[1].GetTotalSizeKB(), 0);
+    ASSERT_EQ(stats[1].GetUltimateId(), "39496270-a613-47a5-a83f-3a69e4e8ab8b");
+    ASSERT_EQ(stats[1].GetServiceId(), "2581");
+    ASSERT_STREQ(stats[1].GetDate().ToString().c_str(), "2018-05-04");
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            04/2018
+//-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, JsonToUserStat)
     {
     RealityDataUserStat stat;
@@ -734,83 +831,121 @@ TEST_F(RealityConversionTestFixture, JsonToManyUserStats)
 // @bsimethod                        Remi.Charbonneau                           05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, BadJsonToEnterpriseStat)
-	{
-	RealityDataEnterpriseStat stat;
-	StatusInt status = RealityConversionTools::JsonToEnterpriseStat("BadlyformatedJSONString", stat);
-	ASSERT_EQ(ERROR, status);
-	}
+    {
+    RealityDataEnterpriseStat stat;
+    StatusInt status = RealityConversionTools::JsonToEnterpriseStat("BadlyformatedJSONString", stat);
+    ASSERT_EQ(ERROR, status);
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                        Remi.Charbonneau                           05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, BadJsonToEnterpriseStat2)
-	{
-	RealityDataEnterpriseStat stat;
-	StatusInt status = RealityConversionTools::JsonToEnterpriseStat(R"({ "notInstances": { "child": "value" }})", stat);
-	ASSERT_EQ(ERROR, status);
-	}
+    {
+    RealityDataEnterpriseStat stat;
+    StatusInt status = RealityConversionTools::JsonToEnterpriseStat(R"({ "notInstances": { "child": "value" }})", stat);
+    ASSERT_EQ(ERROR, status);
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                        Remi.Charbonneau                           05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, BadJsonToEnterpriseStat3)
-	{
-	RealityDataEnterpriseStat stat;
-	StatusInt status = RealityConversionTools::JsonToEnterpriseStat(R"(
-		{
-			"instances": [
-				{
-					"Notproperties": {
-						"Id": "myid"
-					}
-				}
-			]
-		}
-		)", stat);
-	ASSERT_EQ(ERROR, status);
-	}
+    {
+    RealityDataEnterpriseStat stat;
+    StatusInt status = RealityConversionTools::JsonToEnterpriseStat(R"(
+        {
+            "instances": [
+                {
+                    "Notproperties": {
+                        "Id": "myid"
+                    }
+                }
+            ]
+        }
+        )", stat);
+    ASSERT_EQ(ERROR, status);
+    }
 
-	
 //-------------------------------------------------------------------------------------
-// @bsimethod                        Remi.Charbonneau                           05/2017
+// @bsimethod                        Alain.Robert                           05/2018
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, BadJsonToServiceStat)
+    {
+    RealityDataServiceStat stat;
+    StatusInt status = RealityConversionTools::JsonToServiceStat("BadlyformatedJSONString", stat);
+    ASSERT_EQ(ERROR, status);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                        Alain.Robert                           05/2018
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, BadJsonToServiceStat2)
+    {
+    RealityDataServiceStat stat;
+    StatusInt status = RealityConversionTools::JsonToServiceStat(R"({ "notInstances": { "child": "value" }})", stat);
+    ASSERT_EQ(ERROR, status);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                        Alain.Robert                           05/2018
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, BadJsonToServiceStat3)
+    {
+    RealityDataServiceStat stat;
+    StatusInt status = RealityConversionTools::JsonToServiceStat(R"(
+        {
+            "instances": [
+                {
+                    "Notproperties": {
+                        "Id": "myid"
+                    }
+                }
+            ]
+        }
+        )", stat);
+    ASSERT_EQ(ERROR, status);
+    }
+//-------------------------------------------------------------------------------------
+// @bsimethod                        Alain.Robert                           05/2018
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, BadJsonToUserStat)
-	{
-	RealityDataUserStat stat;
-	StatusInt status = RealityConversionTools::JsonToUserStat("BadlyformatedJSONString", stat);
-	ASSERT_EQ(ERROR, status);
-	}
+    {
+    RealityDataUserStat stat;
+    StatusInt status = RealityConversionTools::JsonToUserStat("BadlyformatedJSONString", stat);
+    ASSERT_EQ(ERROR, status);
+    }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                        Remi.Charbonneau                           05/2017
+// @bsimethod                        Alain.Robert                           05/2018
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, BadJsonToUserStat2)
-	{
-	RealityDataUserStat stat;
-	StatusInt status = RealityConversionTools::JsonToUserStat(R"({ "notInstances": { "child": "value" }})", stat);
-	ASSERT_EQ(ERROR, status);
-	}
+    {
+    RealityDataUserStat stat;
+    StatusInt status = RealityConversionTools::JsonToUserStat(R"({ "notInstances": { "child": "value" }})", stat);
+    ASSERT_EQ(ERROR, status);
+    }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                        Remi.Charbonneau                           05/2017
+// @bsimethod                        Alain.Robert                           05/2018
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, BadJsonToUserStat3)
-	{
-	RealityDataUserStat stat;
-	StatusInt status = RealityConversionTools::JsonToUserStat(R"(
-		{
-			"instances": [
-				{
-					"Notproperties": {
-						"Id": "myid"
-					}
-				}
-			]
-		}
-		)", stat);
-	ASSERT_EQ(ERROR, status);
-	}
-	
+    {
+    RealityDataUserStat stat;
+    StatusInt status = RealityConversionTools::JsonToUserStat(R"(
+        {
+            "instances": [
+                {
+                    "Notproperties": {
+                        "Id": "myid"
+                    }
+                }
+            ]
+        }
+        )", stat);
+    ASSERT_EQ(ERROR, status);
+    }
+    
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            04/2017
 //-------------------------------------------------------------------------------------
@@ -927,29 +1062,29 @@ TEST_F(RealityConversionTestFixture, JsonToRealityDataExtended)
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, RealityDataToJson)
-	{
-	bvector<RealityDataPtr> realityVector = bvector<RealityDataPtr>();
-	StatusInt status = RealityConversionTools::JsonToRealityData(s_RealityDataJSONString, &realityVector);
-	BeAssert(SUCCESS == status);
+    {
+    bvector<RealityDataPtr> realityVector = bvector<RealityDataPtr>();
+    StatusInt status = RealityConversionTools::JsonToRealityData(s_RealityDataJSONString, &realityVector);
+    BeAssert(SUCCESS == status);
 
-	Utf8String entityJson("{");
-	entityJson.append(RealityConversionTools::RealityDataToJson(*realityVector[0], true, true));
-	entityJson.append("}");
-	
-	Json::Value root(Json::objectValue);
-	if(Json::Reader::Parse(s_RealityDataJSONString, root))
-		{
-		const Json::Value expectedValue = root["instances"][0]["properties"];
-		Json::Value valueUnderTest(Json::objectValue);
+    Utf8String entityJson("{");
+    entityJson.append(RealityConversionTools::RealityDataToJson(*realityVector[0], true, true));
+    entityJson.append("}");
+    
+    Json::Value root(Json::objectValue);
+    if(Json::Reader::Parse(s_RealityDataJSONString, root))
+        {
+        const Json::Value expectedValue = root["instances"][0]["properties"];
+        Json::Value valueUnderTest(Json::objectValue);
 
-		bool parseStatus = Json::Reader::Parse(entityJson, valueUnderTest);
-		EXPECT_TRUE(parseStatus);
+        bool parseStatus = Json::Reader::Parse(entityJson, valueUnderTest);
+        EXPECT_TRUE(parseStatus);
 
-		for (const auto& memberName : expectedValue.getMemberNames())
-			{
-			//std::cerr << "[          ] memberName = " << memberName << " val: " << expectedValue[memberName].ToString() << " <=> " << valueUnderTest[memberName].ToString() << std::endl;
+        for (const auto& memberName : expectedValue.getMemberNames())
+            {
+            //std::cerr << "[          ] memberName = " << memberName << " val: " << expectedValue[memberName].ToString() << " <=> " << valueUnderTest[memberName].ToString() << std::endl;
             
-			EXPECT_TRUE(valueUnderTest.isMember(memberName));
+            EXPECT_TRUE(valueUnderTest.isMember(memberName));
             if (memberName == "Footprint")
                 {
                 // Footprint is a string but parsed then recreated the result may be non-string equal and still be numerically equal.
@@ -968,161 +1103,161 @@ TEST_F(RealityConversionTestFixture, RealityDataToJson)
                     }
                 }
             else
-			    EXPECT_TRUE(expectedValue[memberName] == valueUnderTest[memberName]);
-			}
+                EXPECT_TRUE(expectedValue[memberName] == valueUnderTest[memberName]);
+            }
 
-		}
+        }
 
-	}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, JsonToRealityDatabmap)
-	{
-	bmap<Utf8String, RealityDataPtr> realityMap = bmap<Utf8String, RealityDataPtr>();
-	StatusInt status = RealityConversionTools::JsonToRealityData(s_RealityDataJSONString, &realityMap);
-	ASSERT_EQ(SUCCESS, status);
+    {
+    bmap<Utf8String, RealityDataPtr> realityMap = bmap<Utf8String, RealityDataPtr>();
+    StatusInt status = RealityConversionTools::JsonToRealityData(s_RealityDataJSONString, &realityMap);
+    ASSERT_EQ(SUCCESS, status);
 
-	ASSERT_THAT(realityMap, Contains(Key("Helsinki")));
-	ASSERT_THAT(realityMap, Contains(Key("Helsinki2")));
-	}
+    ASSERT_THAT(realityMap, Contains(Key("Helsinki")));
+    ASSERT_THAT(realityMap, Contains(Key("Helsinki2")));
+    }
 
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, JsonToSpatialEntitybmap)
-	{
-	bmap<Utf8String, SpatialEntityPtr> spatialMap;
+    {
+    bmap<Utf8String, SpatialEntityPtr> spatialMap;
 
-	StatusInt status = RealityConversionTools::JsonToSpatialEntity(s_TwoSpatialEntityJSONString, &spatialMap);
+    StatusInt status = RealityConversionTools::JsonToSpatialEntity(s_TwoSpatialEntityJSONString, &spatialMap);
 
-	ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(SUCCESS, status);
 
-	ASSERT_THAT(spatialMap, Contains(Key("N38W093")));
-	ASSERT_THAT(spatialMap, Contains(Key("N39W093")));
+    ASSERT_THAT(spatialMap, Contains(Key("N38W093")));
+    ASSERT_THAT(spatialMap, Contains(Key("N39W093")));
 
-	}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, BadJsonToSpatialEntitybmap)
-	{
-	bmap<Utf8String, SpatialEntityPtr> spatialMap;
+    {
+    bmap<Utf8String, SpatialEntityPtr> spatialMap;
 
-	StatusInt status = RealityConversionTools::JsonToSpatialEntity("BADJSON", &spatialMap);
+    StatusInt status = RealityConversionTools::JsonToSpatialEntity("BADJSON", &spatialMap);
 
-	ASSERT_EQ(ERROR, status);
+    ASSERT_EQ(ERROR, status);
 
-	}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, BadJsonToSpatialEntityDataSource)
-	{
-	bvector<SpatialEntityDataSourcePtr> dataSourceVector;
+    {
+    bvector<SpatialEntityDataSourcePtr> dataSourceVector;
 
-	StatusInt status = RealityConversionTools::JsonToSpatialEntityDataSource("BADJSON", &dataSourceVector);
+    StatusInt status = RealityConversionTools::JsonToSpatialEntityDataSource("BADJSON", &dataSourceVector);
 
-	ASSERT_EQ(ERROR, status);
-	}
+    ASSERT_EQ(ERROR, status);
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, JsonToSpatialEntityServer)
-	{
-	bvector<SpatialEntityServerPtr> entityServersVector;
+    {
+    bvector<SpatialEntityServerPtr> entityServersVector;
 
-	StatusInt status = RealityConversionTools::JsonToSpatialEntityServer(s_SpatialEntityServerJSONString, &entityServersVector);
+    StatusInt status = RealityConversionTools::JsonToSpatialEntityServer(s_SpatialEntityServerJSONString, &entityServersVector);
 
-	ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(SUCCESS, status);
 
-	// Verify both SpatialEntityServer were parsed
-	ASSERT_EQ(entityServersVector.size(), 2);
-	ASSERT_STREQ(entityServersVector[0]->GetId().c_str(), "1");
-	ASSERT_STREQ(entityServersVector[1]->GetId().c_str(), "2");
+    // Verify both SpatialEntityServer were parsed
+    ASSERT_EQ(entityServersVector.size(), 2);
+    ASSERT_STREQ(entityServersVector[0]->GetId().c_str(), "1");
+    ASSERT_STREQ(entityServersVector[1]->GetId().c_str(), "2");
 
-	// Only verify the first one was correctly parsed
-	auto entityServerUnderTest = entityServersVector[0];
-	ASSERT_STREQ(entityServerUnderTest->GetProtocol().c_str(), "ftp");
-	ASSERT_TRUE(entityServerUnderTest->IsStreamed());
-	ASSERT_STREQ(entityServerUnderTest->GetLoginKey().c_str(), "myLoginKey");
-	ASSERT_STREQ(entityServerUnderTest->GetLoginMethod().c_str(), "myLoginMethod");
-	ASSERT_STREQ(entityServerUnderTest->GetRegistrationPage().c_str(), "http://www.example.com/register");
-	ASSERT_STREQ(entityServerUnderTest->GetOrganisationPage().c_str(), "http://www.example.com/organisation");
-	ASSERT_STREQ(entityServerUnderTest->GetName().c_str(), "GeoGratis");
-	ASSERT_STREQ(entityServerUnderTest->GetUrl().c_str(), "ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/elevation/cdem_mnec/");
-	ASSERT_STREQ(entityServerUnderTest->GetContactInfo().c_str(), "mycontact@example.com");
-	ASSERT_STREQ(entityServerUnderTest->GetFees().c_str(), "Over 9000");
-	ASSERT_STREQ(entityServerUnderTest->GetLegal().c_str(), "Better Call Saul");
-	ASSERT_STREQ(entityServerUnderTest->GetAccessConstraints().c_str(), "No one");
-	ASSERT_TRUE(entityServerUnderTest->IsOnline());
-	ASSERT_STREQ(entityServerUnderTest->GetLastCheck().ToString().c_str(), "2017-02-02T00:28:22.000");
-	ASSERT_STREQ(entityServerUnderTest->GetLastTimeOnline().ToString().c_str(), "2017-02-03T00:28:22.000");
-	ASSERT_EQ(entityServerUnderTest->GetLatency(), 9000);
-	ASSERT_EQ(entityServerUnderTest->GetMeanReachabilityStats(), 5);
-	ASSERT_STREQ(entityServerUnderTest->GetState().c_str(), "myState");
-	ASSERT_STREQ(entityServerUnderTest->GetType().c_str(), "sftp");
+    // Only verify the first one was correctly parsed
+    auto entityServerUnderTest = entityServersVector[0];
+    ASSERT_STREQ(entityServerUnderTest->GetProtocol().c_str(), "ftp");
+    ASSERT_TRUE(entityServerUnderTest->IsStreamed());
+    ASSERT_STREQ(entityServerUnderTest->GetLoginKey().c_str(), "myLoginKey");
+    ASSERT_STREQ(entityServerUnderTest->GetLoginMethod().c_str(), "myLoginMethod");
+    ASSERT_STREQ(entityServerUnderTest->GetRegistrationPage().c_str(), "http://www.example.com/register");
+    ASSERT_STREQ(entityServerUnderTest->GetOrganisationPage().c_str(), "http://www.example.com/organisation");
+    ASSERT_STREQ(entityServerUnderTest->GetName().c_str(), "GeoGratis");
+    ASSERT_STREQ(entityServerUnderTest->GetUrl().c_str(), "ftp://ftp.geogratis.gc.ca/pub/nrcan_rncan/elevation/cdem_mnec/");
+    ASSERT_STREQ(entityServerUnderTest->GetContactInfo().c_str(), "mycontact@example.com");
+    ASSERT_STREQ(entityServerUnderTest->GetFees().c_str(), "Over 9000");
+    ASSERT_STREQ(entityServerUnderTest->GetLegal().c_str(), "Better Call Saul");
+    ASSERT_STREQ(entityServerUnderTest->GetAccessConstraints().c_str(), "No one");
+    ASSERT_TRUE(entityServerUnderTest->IsOnline());
+    ASSERT_STREQ(entityServerUnderTest->GetLastCheck().ToString().c_str(), "2017-02-02T00:28:22.000");
+    ASSERT_STREQ(entityServerUnderTest->GetLastTimeOnline().ToString().c_str(), "2017-02-03T00:28:22.000");
+    ASSERT_EQ(entityServerUnderTest->GetLatency(), 9000);
+    ASSERT_EQ(entityServerUnderTest->GetMeanReachabilityStats(), 5);
+    ASSERT_STREQ(entityServerUnderTest->GetState().c_str(), "myState");
+    ASSERT_STREQ(entityServerUnderTest->GetType().c_str(), "sftp");
 
-	}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, BadJsonToSpatialEntityServer)
-	{
-	bvector<SpatialEntityServerPtr> entityServersVector;
+    {
+    bvector<SpatialEntityServerPtr> entityServersVector;
 
-	StatusInt status = RealityConversionTools::JsonToSpatialEntityServer("BADJSON", &entityServersVector);
+    StatusInt status = RealityConversionTools::JsonToSpatialEntityServer("BADJSON", &entityServersVector);
 
-	ASSERT_EQ(ERROR, status);
-	}
+    ASSERT_EQ(ERROR, status);
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, JsonToSpatialEntityMetadata)
-	{
-	bvector<SpatialEntityMetadataPtr> entityMetadataVector;
+    {
+    bvector<SpatialEntityMetadataPtr> entityMetadataVector;
 
-	StatusInt status = RealityConversionTools::JsonToSpatialEntityMetadata(s_SpatialEntityMetadataJSONString, &entityMetadataVector);
+    StatusInt status = RealityConversionTools::JsonToSpatialEntityMetadata(s_SpatialEntityMetadataJSONString, &entityMetadataVector);
 
-	ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(SUCCESS, status);
 
-	// Verify both SpatialEntityMetadata were parsed
-	ASSERT_EQ(entityMetadataVector.size(), 2);
-	ASSERT_STREQ(entityMetadataVector[0]->GetId().c_str(), "1");
-	ASSERT_STREQ(entityMetadataVector[1]->GetId().c_str(), "2");
+    // Verify both SpatialEntityMetadata were parsed
+    ASSERT_EQ(entityMetadataVector.size(), 2);
+    ASSERT_STREQ(entityMetadataVector[0]->GetId().c_str(), "1");
+    ASSERT_STREQ(entityMetadataVector[1]->GetId().c_str(), "2");
 
-	auto metadataUnderTest = entityMetadataVector[0];
+    auto metadataUnderTest = entityMetadataVector[0];
 
-	ASSERT_STREQ(metadataUnderTest->GetMetadataUrl().c_str(), "http://www.example.com/metadata");
-	ASSERT_STREQ(metadataUnderTest->GetDisplayStyle().c_str(), "myDisplayStyle");
-	ASSERT_STREQ(metadataUnderTest->GetDescription().c_str(), "some big description");
-	ASSERT_STREQ(metadataUnderTest->GetContactInfo().c_str(), "my contact");
-	ASSERT_STREQ(metadataUnderTest->GetKeywords().c_str(), "keyword1;keyword2");
-	ASSERT_STREQ(metadataUnderTest->GetLegal().c_str(), "� OpenStreetMap contributors");
-	ASSERT_STREQ(metadataUnderTest->GetTermsOfUse().c_str(), "Everyone");
-	ASSERT_STREQ(metadataUnderTest->GetLineage().c_str(), "ok");
-	ASSERT_STREQ(metadataUnderTest->GetProvenance().c_str(), "somewhere");
+    ASSERT_STREQ(metadataUnderTest->GetMetadataUrl().c_str(), "http://www.example.com/metadata");
+    ASSERT_STREQ(metadataUnderTest->GetDisplayStyle().c_str(), "myDisplayStyle");
+    ASSERT_STREQ(metadataUnderTest->GetDescription().c_str(), "some big description");
+    ASSERT_STREQ(metadataUnderTest->GetContactInfo().c_str(), "my contact");
+    ASSERT_STREQ(metadataUnderTest->GetKeywords().c_str(), "keyword1;keyword2");
+    ASSERT_STREQ(metadataUnderTest->GetLegal().c_str(), "� OpenStreetMap contributors");
+    ASSERT_STREQ(metadataUnderTest->GetTermsOfUse().c_str(), "Everyone");
+    ASSERT_STREQ(metadataUnderTest->GetLineage().c_str(), "ok");
+    ASSERT_STREQ(metadataUnderTest->GetProvenance().c_str(), "somewhere");
 
-	}
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, BadJsonToSpatialEntityMetadata)
-	{
-	bvector<SpatialEntityMetadataPtr> entityMetadataVector;
+    {
+    bvector<SpatialEntityMetadataPtr> entityMetadataVector;
 
-	StatusInt status = RealityConversionTools::JsonToSpatialEntityMetadata("BADJSON", &entityMetadataVector);
+    StatusInt status = RealityConversionTools::JsonToSpatialEntityMetadata("BADJSON", &entityMetadataVector);
 
-	ASSERT_EQ(ERROR, status);
-	}
+    ASSERT_EQ(ERROR, status);
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            01/2018
@@ -1158,108 +1293,108 @@ TEST_F(RealityConversionTestFixture, BadJsonToSpatialEntityMetadata)
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, PackageFileToDownloadOrder)
-	{
-	WString parseError;
-	
-	Utf8String samplePath(GetDirectory());
-	samplePath.append("..\\TestData\\RealityPlatform\\RealityDataPackageSample.xml");
-	BeFileName fileName(samplePath);
-	auto linkFile = RealityConversionTools::PackageFileToDownloadOrder(fileName, &parseError);
+    {
+    WString parseError;
+    
+    Utf8String samplePath(GetDirectory());
+    samplePath.append("..\\TestData\\RealityPlatform\\RealityDataPackageSample.xml");
+    BeFileName fileName(samplePath);
+    auto linkFile = RealityConversionTools::PackageFileToDownloadOrder(fileName, &parseError);
 
-	//for (RealityDataDownload::mirrorWSistersVector link : linkFile)
-	//	{
-	//	std::wcerr << "[          ] " << "First Level" << "\n";
-	//	for (RealityDataDownload::sisterFileVector sister : link)
-	//		{
-	//		std::wcerr << "[          ] " << "Second Level" << "\n";
-	//		for (RealityDataDownload::url_file_pair filePair : sister)
-	//			{
-	//			WString urlLink = L"";
-	//			BeStringUtilities::CurrentLocaleCharToWChar(urlLink, filePair.first.c_str());
-	//			std::wcerr << "[          ] " << urlLink << "     " << filePair.second << "\n";
-	//			}
-	//		}
-	//	}
+    //for (RealityDataDownload::mirrorWSistersVector link : linkFile)
+    //  {
+    //  std::wcerr << "[          ] " << "First Level" << "\n";
+    //  for (RealityDataDownload::sisterFileVector sister : link)
+    //      {
+    //      std::wcerr << "[          ] " << "Second Level" << "\n";
+    //      for (RealityDataDownload::url_file_pair filePair : sister)
+    //          {
+    //          WString urlLink = L"";
+    //          BeStringUtilities::CurrentLocaleCharToWChar(urlLink, filePair.first.c_str());
+    //          std::wcerr << "[          ] " << urlLink << "     " << filePair.second << "\n";
+    //          }
+    //      }
+    //  }
 
 
-	// Imagery Group
-	// Imagery Data 1
-	EXPECT_EQ(linkFile[0][0][0].m_url, "http://uri1.com/");
-	EXPECT_EQ(linkFile[0][0][1].m_url, "http://uri1.com/url1.html");
-	EXPECT_EQ(linkFile[0][0][2].m_url, "http://uri1.com/url2.html");
-	EXPECT_EQ(linkFile[0][0][3].m_url, "http://uri1.com/url3.html");
+    // Imagery Group
+    // Imagery Data 1
+    EXPECT_EQ(linkFile[0][0][0].m_url, "http://uri1.com/");
+    EXPECT_EQ(linkFile[0][0][1].m_url, "http://uri1.com/url1.html");
+    EXPECT_EQ(linkFile[0][0][2].m_url, "http://uri1.com/url2.html");
+    EXPECT_EQ(linkFile[0][0][3].m_url, "http://uri1.com/url3.html");
 
-	EXPECT_EQ(linkFile[0][0][0].m_filePath, L"uri1.com");
-	EXPECT_EQ(linkFile[0][0][1].m_filePath, L"url1.html");
-	EXPECT_EQ(linkFile[0][0][2].m_filePath, L"url2.html");
-	EXPECT_EQ(linkFile[0][0][3].m_filePath, L"url3.html");
+    EXPECT_EQ(linkFile[0][0][0].m_filePath, L"uri1.com");
+    EXPECT_EQ(linkFile[0][0][1].m_filePath, L"url1.html");
+    EXPECT_EQ(linkFile[0][0][2].m_filePath, L"url2.html");
+    EXPECT_EQ(linkFile[0][0][3].m_filePath, L"url3.html");
 
-	// Imagery data 2 Multiband test
-	EXPECT_EQ(linkFile[1][0][0].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B4.TIF");
-	EXPECT_EQ(linkFile[1][0][1].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B2.TIF");
-	EXPECT_EQ(linkFile[1][0][2].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B3.TIF");
-	EXPECT_EQ(linkFile[1][0][3].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B8.TIF");
+    // Imagery data 2 Multiband test
+    EXPECT_EQ(linkFile[1][0][0].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B4.TIF");
+    EXPECT_EQ(linkFile[1][0][1].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B2.TIF");
+    EXPECT_EQ(linkFile[1][0][2].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B3.TIF");
+    EXPECT_EQ(linkFile[1][0][3].m_url, "https://s3-us-west-2.amazonaws.com/landsat-pds/L8/013/028/LC80130282015007LGN00/LC80130282015007LGN00_B8.TIF");
 
-	EXPECT_EQ(linkFile[1][0][0].m_filePath, L"LC80130282015007LGN00_B4.TIF");
-	EXPECT_EQ(linkFile[1][0][1].m_filePath, L"LC80130282015007LGN00_B2.TIF");
-	EXPECT_EQ(linkFile[1][0][2].m_filePath, L"LC80130282015007LGN00_B3.TIF");
-	EXPECT_EQ(linkFile[1][0][3].m_filePath, L"LC80130282015007LGN00_B8.TIF");
+    EXPECT_EQ(linkFile[1][0][0].m_filePath, L"LC80130282015007LGN00_B4.TIF");
+    EXPECT_EQ(linkFile[1][0][1].m_filePath, L"LC80130282015007LGN00_B2.TIF");
+    EXPECT_EQ(linkFile[1][0][2].m_filePath, L"LC80130282015007LGN00_B3.TIF");
+    EXPECT_EQ(linkFile[1][0][3].m_filePath, L"LC80130282015007LGN00_B8.TIF");
 
-	// Terrain Group
-	// Terrain data 1
-	EXPECT_EQ(linkFile[2][0][0].m_url, "http://uri28");
-	EXPECT_EQ(linkFile[2][0][1].m_url, "http://uri82");
+    // Terrain Group
+    // Terrain data 1
+    EXPECT_EQ(linkFile[2][0][0].m_url, "http://uri28");
+    EXPECT_EQ(linkFile[2][0][1].m_url, "http://uri82");
 
-	EXPECT_EQ(linkFile[2][0][0].m_filePath, L"uri28");
-	EXPECT_EQ(linkFile[2][0][1].m_filePath, L"uri82");
+    EXPECT_EQ(linkFile[2][0][0].m_filePath, L"uri28");
+    EXPECT_EQ(linkFile[2][0][1].m_filePath, L"uri82");
 
-	// Model group
-	// Model data 1
-	EXPECT_EQ(linkFile[3][0][0].m_url, "http://uri10");
-	EXPECT_EQ(linkFile[3][0][1].m_url, "http://uri28");
+    // Model group
+    // Model data 1
+    EXPECT_EQ(linkFile[3][0][0].m_url, "http://uri10");
+    EXPECT_EQ(linkFile[3][0][1].m_url, "http://uri28");
 
-	EXPECT_EQ(linkFile[3][0][0].m_filePath, L"uri10");
-	EXPECT_EQ(linkFile[3][0][1].m_filePath, L"uri28");
+    EXPECT_EQ(linkFile[3][0][0].m_filePath, L"uri10");
+    EXPECT_EQ(linkFile[3][0][1].m_filePath, L"uri28");
 
-	// Pinned group
-	// Pinned data 1
-	EXPECT_EQ(linkFile[4][0][0].m_url, "http://uri19");
-	EXPECT_EQ(linkFile[4][0][1].m_url, "http://uri55");
-	EXPECT_EQ(linkFile[4][0][2].m_url, "http://uri56");
-	EXPECT_EQ(linkFile[4][0][3].m_url, "http://uri57");
+    // Pinned group
+    // Pinned data 1
+    EXPECT_EQ(linkFile[4][0][0].m_url, "http://uri19");
+    EXPECT_EQ(linkFile[4][0][1].m_url, "http://uri55");
+    EXPECT_EQ(linkFile[4][0][2].m_url, "http://uri56");
+    EXPECT_EQ(linkFile[4][0][3].m_url, "http://uri57");
 
-	EXPECT_EQ(linkFile[4][0][0].m_filePath, L"uri19");
-	EXPECT_EQ(linkFile[4][0][1].m_filePath, L"uri55");
-	EXPECT_EQ(linkFile[4][0][2].m_filePath, L"uri56");
-	EXPECT_EQ(linkFile[4][0][3].m_filePath, L"uri57");
+    EXPECT_EQ(linkFile[4][0][0].m_filePath, L"uri19");
+    EXPECT_EQ(linkFile[4][0][1].m_filePath, L"uri55");
+    EXPECT_EQ(linkFile[4][0][2].m_filePath, L"uri56");
+    EXPECT_EQ(linkFile[4][0][3].m_filePath, L"uri57");
 
-	// Pinned data 2 source 1
-	EXPECT_EQ(linkFile[5][0][0].m_url, "http://uri22");
-	EXPECT_EQ(linkFile[5][0][0].m_filePath, L"uri22");
+    // Pinned data 2 source 1
+    EXPECT_EQ(linkFile[5][0][0].m_url, "http://uri22");
+    EXPECT_EQ(linkFile[5][0][0].m_filePath, L"uri22");
 
-	// Pinned data 2 source 2
-	EXPECT_EQ(linkFile[5][1][0].m_url, "http://uri23");
-	EXPECT_EQ(linkFile[5][1][1].m_url, "http://uri67");
+    // Pinned data 2 source 2
+    EXPECT_EQ(linkFile[5][1][0].m_url, "http://uri23");
+    EXPECT_EQ(linkFile[5][1][1].m_url, "http://uri67");
 
-	EXPECT_EQ(linkFile[5][1][0].m_filePath, L"uri23");
-	EXPECT_EQ(linkFile[5][1][1].m_filePath, L"uri67");
-	
-	// Pinned data 2 source 3
-	EXPECT_EQ(linkFile[5][2][0].m_url, "http://uri24");
-	EXPECT_EQ(linkFile[5][2][1].m_url, "http://uri70");
-	EXPECT_EQ(linkFile[5][2][2].m_url, "http://uri71");
-	EXPECT_EQ(linkFile[5][2][3].m_url, "http://uri72");
+    EXPECT_EQ(linkFile[5][1][0].m_filePath, L"uri23");
+    EXPECT_EQ(linkFile[5][1][1].m_filePath, L"uri67");
+    
+    // Pinned data 2 source 3
+    EXPECT_EQ(linkFile[5][2][0].m_url, "http://uri24");
+    EXPECT_EQ(linkFile[5][2][1].m_url, "http://uri70");
+    EXPECT_EQ(linkFile[5][2][2].m_url, "http://uri71");
+    EXPECT_EQ(linkFile[5][2][3].m_url, "http://uri72");
 
-	EXPECT_EQ(linkFile[5][2][0].m_filePath, L"uri24");
-	EXPECT_EQ(linkFile[5][2][1].m_filePath, L"uri70");
-	EXPECT_EQ(linkFile[5][2][2].m_filePath, L"uri71");
-	EXPECT_EQ(linkFile[5][2][3].m_filePath, L"uri72");
+    EXPECT_EQ(linkFile[5][2][0].m_filePath, L"uri24");
+    EXPECT_EQ(linkFile[5][2][1].m_filePath, L"uri70");
+    EXPECT_EQ(linkFile[5][2][2].m_filePath, L"uri71");
+    EXPECT_EQ(linkFile[5][2][3].m_filePath, L"uri72");
 
-	// Undefined Group
-	// Undefined data 1
-	EXPECT_EQ(linkFile[6][0][0].m_url, "http://uri37");
-	EXPECT_EQ(linkFile[6][0][0].m_filePath, L"uri37");
-	}
+    // Undefined Group
+    // Undefined data 1
+    EXPECT_EQ(linkFile[6][0][0].m_url, "http://uri37");
+    EXPECT_EQ(linkFile[6][0][0].m_filePath, L"uri37");
+    }
 
 
 #if 0
@@ -1268,12 +1403,12 @@ TEST_F(RealityConversionTestFixture, PackageFileToDownloadOrder)
 // @bsimethod                          Remi.Charbonneau                         05/2017
 //-------------------------------------------------------------------------------------
 TEST_F(RealityConversionTestFixture, PackageToDownloadOrder)
-	{
-	auto dataPackage = RealityPackage::RealityDataPackage::Create("MyDataOrder");
-	auto linkFile = RealityConversionTools::PackageToDownloadOrder(dataPackage);
+    {
+    auto dataPackage = RealityPackage::RealityDataPackage::Create("MyDataOrder");
+    auto linkFile = RealityConversionTools::PackageToDownloadOrder(dataPackage);
 
 
-	}
+    }
 
 
 //-------------------------------------------------------------------------------------

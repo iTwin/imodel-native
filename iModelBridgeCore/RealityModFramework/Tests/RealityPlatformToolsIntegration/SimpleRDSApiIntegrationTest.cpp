@@ -39,7 +39,7 @@ TEST_F(SimpleRDSIntegrationTestFixture, SimpleRDSIntegrationTest)
 
     ConnectedRealityDataEnterpriseStat stats = ConnectedRealityDataEnterpriseStat();
 
-    response = stats.GetStats();
+    response = stats.GetEnterpriseStats();
 
     ASSERT_TRUE(response.simpleSuccess);
 

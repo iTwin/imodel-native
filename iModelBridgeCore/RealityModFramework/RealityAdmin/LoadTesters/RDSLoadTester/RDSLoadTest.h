@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/LoadTesters/RDSLoadTester/RDSLoadTest.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,7 +27,9 @@ enum OperationType
     MODIFY_REALITYDATA = 7,
     DELETE_RELATIONSHIP = 8,
     DELETE_REALITYDATA = 9,
-    last =10
+    SERVICE_STAT = 10,
+
+    last =11
     };
 
 struct RDSRPS : RPS
@@ -62,6 +64,8 @@ public:
     void ValidateListRelationship(int activeUsers);
     CURL* EnterpriseStat();
     void ValidateEnterpriseStat(int activeUsers);
+    CURL* ServiceStat();
+    void ValidateServiceStat(int activeUsers);	
     CURL* Details();
     void ValidateDetails(int activeUsers);
     CURL* AzureAddress();

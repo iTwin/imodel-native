@@ -606,6 +606,45 @@ protected:
     Utf8String m_ultimateSite;
     DateTime   m_date;
     };
+	
+struct RealityDataServiceStat
+    {
+public:
+    //! Create invalid data.
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceStat();
+
+    //! Copy constructor and assignement operator.
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceStat(const RealityDataServiceStat& object);
+    REALITYDATAPLATFORM_EXPORT RealityDataServiceStat& operator=(const RealityDataServiceStat& object);
+
+    //! number of entries belonging to the organisation
+    REALITYDATAPLATFORM_EXPORT uint64_t GetNbRealityData() const;
+    REALITYDATAPLATFORM_EXPORT void SetNbRealityData(uint64_t nbRealityData);
+
+    //! total size of the organisations data (at time of last calculation)
+    REALITYDATAPLATFORM_EXPORT uint64_t GetTotalSizeKB() const;
+    REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(uint64_t totalSizeKB);
+
+    //! UltimateId 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUltimateId() const;
+    REALITYDATAPLATFORM_EXPORT void SetUltimateId(Utf8CP ultimateId);
+
+
+    REALITYDATAPLATFORM_EXPORT DateTimeCR GetDate() const;
+    REALITYDATAPLATFORM_EXPORT void SetDate(DateTimeCR date);
+	
+    //! Service ID
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServiceId() const;
+    REALITYDATAPLATFORM_EXPORT void SetServiceId(Utf8CP originService);	
+		
+
+protected:
+    uint64_t   m_nbRealityData;
+    uint64_t   m_totalSizeKB;
+    Utf8String m_ultimateId;
+    Utf8String m_serviceId;
+    DateTime   m_date;
+    };	
    
 struct RealityDataUserStat
     {

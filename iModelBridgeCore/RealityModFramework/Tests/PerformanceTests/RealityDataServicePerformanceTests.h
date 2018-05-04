@@ -39,6 +39,7 @@ public:
         int64_t m_deleteRelationship;
         int64_t m_deleteRealityData;
         int64_t m_enterpriseStats;
+        int64_t m_serviceStats;
         int64_t m_userStats;
         };
 
@@ -71,6 +72,7 @@ public:
     StatusInt GetRealityDataWithPolygon(timeStats& theTimeStats);
     StatusInt GetRealityData(timeStats& theTimeStats);
     StatusInt EnterpriseStatTest(timeStats& theTimeStats);
+    StatusInt ServiceStatTest(timeStats& theTimeStats);
     StatusInt UserStatTest(timeStats& theTimeStats);
     StatusInt GetFolderTest(timeStats& theTimeStats);
 

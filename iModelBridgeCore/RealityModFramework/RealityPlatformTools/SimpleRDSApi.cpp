@@ -97,6 +97,32 @@ ConnectedRealityDataEnterpriseStat::ConnectedRealityDataEnterpriseStat(const Rea
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert                04/2018
 //-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityDataServiceStat::GetServiceStats()
+    {
+    ConnectedResponse response = ConnectedResponse();
+    RealityDataServiceStatRequest ptt("");
+
+    RawServerResponse rawResponse = RawServerResponse();
+    RealityDataServiceStat stat;
+    RealityDataService::Request(ptt, stat, rawResponse);
+    Clone(stat);
+
+    response.Clone(rawResponse);
+
+    return response;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2018
+//-------------------------------------------------------------------------------------
+ConnectedRealityDataServiceStat::ConnectedRealityDataServiceStat(const RealityDataServiceStat& stat)
+    {
+    Clone(stat);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2018
+//-------------------------------------------------------------------------------------
 ConnectedResponse ConnectedRealityDataUserStat::GetUserStats()
     {
     ConnectedResponse response = ConnectedResponse();
@@ -153,7 +179,19 @@ void ConnectedRealityDataEnterpriseStat::Clone(const RealityDataEnterpriseStat& 
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Spencer.Mason                10/2017
+// @bsimethod                                   Alain.Robert                04/2018
+//-------------------------------------------------------------------------------------
+void ConnectedRealityDataServiceStat::Clone(const RealityDataServiceStat& stat)
+    {
+    m_nbRealityData = stat.GetNbRealityData();
+    m_totalSizeKB = stat.GetTotalSizeKB();
+    m_ultimateId = stat.GetUltimateId();
+    m_serviceId = stat.GetServiceId();
+    m_date = stat.GetDate();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2018
 //-------------------------------------------------------------------------------------
 void ConnectedRealityDataUserStat::Clone(const RealityDataUserStat& stat)
     {

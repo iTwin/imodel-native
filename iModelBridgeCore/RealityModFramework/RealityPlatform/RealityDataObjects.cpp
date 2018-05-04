@@ -866,9 +866,51 @@ void RealityDataEnterpriseStat::SetUltimateSite(Utf8CP ultimateSite) { m_ultimat
 
 DateTimeCR RealityDataEnterpriseStat::GetDate() const { return m_date; }
 void RealityDataEnterpriseStat::SetDate(DateTimeCR date) { m_date = date; }
+//-------------------------------------------------------------------------------------
+// @bsimethod                                Alain.Robert         	         04/2018
+//-------------------------------------------------------------------------------------
+RealityDataServiceStat::RealityDataServiceStat(): m_totalSizeKB(0), m_nbRealityData(0){}
+
+RealityDataServiceStat::RealityDataServiceStat(const RealityDataServiceStat& object)
+    {
+    if (this != &object)
+        {
+        m_totalSizeKB = object.m_totalSizeKB;
+        m_nbRealityData = object.m_nbRealityData;
+        m_ultimateId = object.m_ultimateId;
+        m_serviceId = object.m_serviceId;
+        m_date = object.m_date;
+        }
+    }
+
+RealityDataServiceStat& RealityDataServiceStat::operator=(const RealityDataServiceStat& object)
+    {
+    m_totalSizeKB = object.m_totalSizeKB;
+    m_nbRealityData = object.m_nbRealityData;
+    m_ultimateId = object.m_ultimateId;
+    m_serviceId = object.m_serviceId;
+    m_date = object.m_date;
+
+    return *this;
+    }
+
+uint64_t RealityDataServiceStat::GetTotalSizeKB() const { return m_totalSizeKB; }
+void RealityDataServiceStat::SetTotalSizeKB(uint64_t totalSizeKB) { m_totalSizeKB = totalSizeKB; }
+
+uint64_t RealityDataServiceStat::GetNbRealityData() const { return m_nbRealityData; }
+void RealityDataServiceStat::SetNbRealityData(uint64_t nbRealityData) { m_nbRealityData = nbRealityData; }
+
+Utf8StringCR RealityDataServiceStat::GetUltimateId() const { return m_ultimateId; }
+void RealityDataServiceStat::SetUltimateId(Utf8CP ultimateId) { m_ultimateId = ultimateId; }
+
+Utf8StringCR RealityDataServiceStat::GetServiceId() const { return m_serviceId; }
+void RealityDataServiceStat::SetServiceId(Utf8CP serviceId) { m_serviceId = serviceId; }
+
+DateTimeCR RealityDataServiceStat::GetDate() const { return m_date; }
+void RealityDataServiceStat::SetDate(DateTimeCR date) { m_date = date; }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                Spencer.Mason         	         12/2017
+// @bsimethod                                Alain.Robert         	         04/2018
 //-------------------------------------------------------------------------------------
 RealityDataUserStat::RealityDataUserStat(): m_totalSizeKB(0), m_nbRealityData(0){}
 

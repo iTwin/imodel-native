@@ -103,10 +103,80 @@ StatusInt RealityConversionTools::JsonToEnterpriseStat(Utf8CP data, RealityDataE
     return RealityConversionTools::JsonToEnterpriseStat(properties, statObject);
     }
 
-
-	
 /*----------------------------------------------------------------------------------**//**
-* @bsimethod                             Spencer.Mason                            9/2016
+* @bsimethod                             Alain.Robert                            04/2018
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToServiceStats(Utf8CP data, bvector<RealityDataServiceStat>& outData)
+    {
+    Json::Value root(Json::objectValue);
+    if (JsonToObjectBase(data, root) == ERROR)
+        return ERROR;
+
+    // Loop through all data and get required informations.
+    for (const auto& instance : root["instances"])
+        {
+        if (!instance.isMember("properties"))
+            break;
+
+        const Json::Value properties = instance["properties"];
+
+        RealityDataServiceStat stat;
+        if (SUCCESS != JsonToServiceStat(properties, stat))
+            return ERROR;
+
+        outData.push_back(stat);
+        }
+    return SUCCESS;
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Alain.Robert                            04/2018
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToServiceStat(Json::Value properties, RealityDataServiceStat& statObject)
+    {
+    if (properties.isMember("NumberOfRealityData") && !properties["NumberOfRealityData"].isNull())
+        statObject.SetNbRealityData(properties["NumberOfRealityData"].asInt64());
+
+    if (properties.isMember("TotalSize") && !properties["TotalSize"].isNull())
+        statObject.SetTotalSizeKB(properties["TotalSize"].asInt64());
+
+    if (properties.isMember("UltimateId") && !properties["UltimateId"].isNull())
+        statObject.SetUltimateId(properties["UltimateId"].asString().c_str());
+
+    if (properties.isMember("ServiceId") && !properties["ServiceId"].isNull())
+        statObject.SetServiceId(properties["ServiceId"].asString().c_str());
+	
+    if (properties.isMember("Date") && !properties["Date"].isNull())
+        {
+        DateTime dt = DateTime();
+        DateTime::FromString(dt, properties["Date"].asString().c_str());
+        statObject.SetDate(dt);
+        }
+
+    return SUCCESS;    
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Alain.Robert                            04/2018
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToServiceStat(Utf8CP data, RealityDataServiceStat& statObject)
+    {
+    Json::Value root(Json::objectValue);
+    if(JsonToObjectBase(data, root) == ERROR)
+        return ERROR;
+
+    // Loop through all data and get required informations.
+    const Json::Value instance = root["instances"][0];
+    if (!instance.isMember("properties"))
+        return ERROR;
+
+    const Json::Value properties = instance["properties"];
+
+    return RealityConversionTools::JsonToServiceStat(properties, statObject);
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Alain.Robert                            04/2018
 +-----------------+------------------+-------------------+-----------------+------------*/
 StatusInt RealityConversionTools::JsonToUserStats(Utf8CP data, bvector<RealityDataUserStat>& outData)
     {
@@ -132,7 +202,7 @@ StatusInt RealityConversionTools::JsonToUserStats(Utf8CP data, bvector<RealityDa
     }
 
 /*----------------------------------------------------------------------------------**//**
-* @bsimethod                             Spencer.Mason                            11/2016
+* @bsimethod                             Alain.Robert                            04/2018
 +-----------------+------------------+-------------------+-----------------+------------*/
 StatusInt RealityConversionTools::JsonToUserStat(Json::Value properties, RealityDataUserStat& statObject)
     {
@@ -168,7 +238,7 @@ StatusInt RealityConversionTools::JsonToUserStat(Json::Value properties, Reality
     }
 
 /*----------------------------------------------------------------------------------**//**
-* @bsimethod                             Donald.Morissette                       3/2017
+* @bsimethod                             Alain.Robert                            04/2018
 +-----------------+------------------+-------------------+-----------------+------------*/
 StatusInt RealityConversionTools::JsonToUserStat(Utf8CP data, RealityDataUserStat& statObject)
     {
