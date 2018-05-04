@@ -4,14 +4,59 @@
     xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
     >
 
+    <!-- ======================================================================================================================================== -->
+    <!-- == PUBLIC ============================================================================================================================== -->
+    <!-- ======================================================================================================================================== -->
+
+    <Part Name="iModelNativeCorePRG" PrgOutputDir="iModelNativeCore">
+        <SubPart PartName="RunAllTests"/>
+        <SubPart PartName="__ParasiteSubParts"/>
+    </Part>
+    
     <!--
-        The true purpose of iModelNativeCore is to be the dependencies of iModelJsNodeAddon. As
-        such, this should closely mirror iModelJsNodeAddon:iModelJsNodeAddonLibCommon.
+        iModelNativeCore needs to include at least the platform SubParts required for the
+        iModelJsNodeAddon. See iModelJsNodeAddon:iModelJsNodeAddonLibCommon.
      -->
-    <Part Name="iModelNativeCore" PrgOutputDir="iModelNativeCore">
+    <Part Name="iModelNativeCore">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="ECObjectsNative" PartFile="ECObjects" Repository="ecobjects"/>
+        <SubPart PartName="ECObjectsNative" PartFile="ECObjects" Repository="ECObjects"/>
+    </Part>
+
+    <Part Name="RunAllTests" DeferType="RunUnitTests"
+            BentleyBuildMakeFile="${SrcRoot}iModelNative/iModelNativeCore/BeGTest/gtest/CheckLogfilesForFailures.mke"
+            BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs +dAllowIgnore=1"
+            >
+        <SubPart PartName="iModelNativeCore"/>
+
+        <SubPart PartName="RunGtest" PartFile="BeHttp" Repository="BeHttp"/>
+        <SubPart PartName="RunGtest" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="RunGtest" PartFile="BeSQLite" Repository="BeSQLite"/>
+        <SubPart PartName="RunGtest" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="RunGtest" PartFile="ECDb" Repository="ECDb"/>
+        <SubPart PartName="RunGtest" PartFile="ECObjects" Repository="ecobjects"/>
+        <SubPart PartName="RunGtest" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="RunGtest" PartFile="geomlibs" Repository="GeomLibs"/>
+        <SubPart PartName="RunGtest" PartFile="Units" Repository="Units"/>
+    </Part>
+
+    <!-- ======================================================================================================================================== -->
+    <!-- == PRIVATE ============================================================================================================================= -->
+    <!-- ======================================================================================================================================== -->
+
+    <!--
+        These are "parasites" because they aren't strictly required for the iModelJsNodeAddon
+        library itself. However, they may be required for its non-library parts of the build (e.g.
+        testing, which we'd normally exclude from our build), or for other downstream builds.
+    -->
+    <Part Name="__ParasiteSubParts">
+        <!-- Testing -->
+        <SubPart PartName="Gtest-Tools" PartFile="BeGTest" Repository="BeGTest"/>
+        <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock"/>
+        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest"/>
+
+        <!-- For DgnClientSdk -->
+        <SubProduct ProductName="IModelExtractor" PartFile="IModelExtractor" Repository="BeSQLite"/>
     </Part>
 
 </BuildContext>
