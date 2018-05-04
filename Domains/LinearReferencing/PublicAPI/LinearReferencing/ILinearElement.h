@@ -123,6 +123,25 @@ protected:
     LINEARREFERENCING_EXPORT void _AddLinearlyReferencedLocation(LinearlyReferencedLocationR);
     
 public:
+    struct CreateAtParams
+    {
+        DistanceExpression m_atPosition;
+        Dgn::DgnElementCPtr m_linearElementCPtr;
+
+        CreateAtParams(ILinearElementCR linearElement, DistanceExpressionCR atPosition): m_linearElementCPtr(&linearElement.ToElement()), m_atPosition(atPosition) {}
+    }; // CreateAtParams
+
+    struct CreateFromToParams
+    {
+        DistanceExpression m_fromPosition, m_toPosition;
+        Dgn::DgnElementCPtr m_linearElementCPtr;
+
+        CreateFromToParams(ILinearElementCR linearElement, DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition):
+            m_linearElementCPtr(&linearElement.ToElement()), m_fromPosition(fromPosition), m_toPosition(toPosition)
+            { }
+    }; // CreateFromToParams
+
+public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(ILinearlyLocated)
 
     //! Get a const reference to the DgnElement of this ILinearlyLocated
@@ -151,6 +170,9 @@ public:
     LINEARREFERENCING_EXPORT LinearlyReferencedFromToLocationP GetLinearlyReferencedFromToLocationP(LinearlyReferencedLocationId);
     LINEARREFERENCING_EXPORT LinearlyReferencedAtLocationP GetLinearlyReferencedAtLocationP(LinearlyReferencedLocationId);
     LINEARREFERENCING_EXPORT LinearlyReferencedLocationP GetLinearlyReferencedLocationP(LinearlyReferencedLocationId);
+
+    static bool ValidateParams(CreateAtParams const& params) { return params.m_linearElementCPtr.IsValid() && params.m_linearElementCPtr->GetElementId().IsValid(); }
+    static bool ValidateParams(CreateFromToParams const& params) { return params.m_linearElementCPtr.IsValid() && params.m_linearElementCPtr->GetElementId().IsValid(); }
     //__PUBLISH_SECTION_START__
     
 }; // ILinearlyLocated
@@ -160,7 +182,7 @@ public:
 //! of an ILinearElementSource which may apply to only part of it.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ILinearlyLocatedAttribution : ILinearlyLocated
+struct EXPORT_VTABLE_ATTRIBUTE ILinearlyLocatedAttribution : virtual ILinearlyLocated
 {
     DEFINE_T_SUPER(ILinearlyLocated)
 
@@ -173,7 +195,7 @@ protected:
 //! by an ILinearElementSource.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ILinearlyLocatedElement : ILinearlyLocated
+struct EXPORT_VTABLE_ATTRIBUTE ILinearlyLocatedElement : virtual ILinearlyLocated
 {
     DEFINE_T_SUPER(ILinearlyLocated)
 
@@ -189,7 +211,7 @@ protected:
 //! _AddLinearlyReferencedLocation(*_GetUnpersistedAtLocation());
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct ILinearlyLocatedSingleAt
+struct ILinearlyLocatedSingleAt : virtual ILinearlyLocated
 {
 private:
     mutable LinearReferencing::LinearlyReferencedLocationId m_atLocationAspectId;
@@ -205,7 +227,7 @@ protected:
     LINEARREFERENCING_EXPORT ILinearlyLocatedSingleAt() {}
 
     //! @private
-    LINEARREFERENCING_EXPORT ILinearlyLocatedSingleAt(double atDistanceAlong);
+    LINEARREFERENCING_EXPORT ILinearlyLocatedSingleAt(CreateAtParams const& params);
 
     //! @private
     LinearReferencing::LinearlyReferencedAtLocationPtr _GetUnpersistedAtLocation() const { return m_unpersistedAtLocationPtr; }
@@ -227,7 +249,7 @@ public:
 //! _AddLinearlyReferencedLocation(*_GetUnpersistedFromToLocation());
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct ILinearlyLocatedSingleFromTo
+struct ILinearlyLocatedSingleFromTo : virtual ILinearlyLocated
 {
 private:
     mutable LinearReferencing::LinearlyReferencedLocationId m_fromToLocationAspectId;
@@ -243,7 +265,7 @@ protected:
     LINEARREFERENCING_EXPORT ILinearlyLocatedSingleFromTo() {}
 
     //! @private
-    LINEARREFERENCING_EXPORT ILinearlyLocatedSingleFromTo(double fromDistanceAlong, double toDistanceAlong);
+    LINEARREFERENCING_EXPORT ILinearlyLocatedSingleFromTo(CreateFromToParams const& params);
 
     //! @private
     LinearReferencing::LinearlyReferencedFromToLocationPtr _GetUnpersistedFromToLocation() const { return m_unpersistedFromToLocationPtr; }

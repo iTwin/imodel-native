@@ -175,9 +175,9 @@ ILinearlyLocatedElement::ILinearlyLocatedElement()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILinearlyLocatedSingleAt::ILinearlyLocatedSingleAt(double atDistanceAlong)
+ILinearlyLocatedSingleAt::ILinearlyLocatedSingleAt(CreateAtParams const& params)
     {
-    m_unpersistedAtLocationPtr = LinearlyReferencedAtLocation::Create(DistanceExpression(atDistanceAlong));
+    m_unpersistedAtLocationPtr = LinearlyReferencedAtLocation::Create(DistanceExpression(params.m_atPosition));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -230,9 +230,9 @@ void ILinearlyLocatedSingleAt::SetAtDistanceAlongFromStart(double newAt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILinearlyLocatedSingleFromTo::ILinearlyLocatedSingleFromTo(double fromDistanceAlong, double toDistanceAlong)
+ILinearlyLocatedSingleFromTo::ILinearlyLocatedSingleFromTo(CreateFromToParams const& params)
     {
-    m_unpersistedFromToLocationPtr = LinearlyReferencedFromToLocation::Create(DistanceExpression(fromDistanceAlong), DistanceExpression(toDistanceAlong));
+    m_unpersistedFromToLocationPtr = LinearlyReferencedFromToLocation::Create(DistanceExpression(params.m_fromPosition), DistanceExpression(params.m_toPosition));
     }
 
 /*---------------------------------------------------------------------------------**//**
