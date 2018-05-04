@@ -799,6 +799,7 @@ public:
         L10N_STRING(ConfigFileError)             // =="[%s] error at [%d,%d], %s"==
         L10N_STRING(ConfigUsingDefault)          // =="Using default configuration."==
         L10N_STRING(ImportFailure)               // =="Failed to import [%s]"==
+        L10N_STRING(UpdateFailure)               // =="Failed to update [%s]"==
         L10N_STRING(ElementFilteredOut)          // =="Element [%s] was not converted."==
         L10N_STRING(EmptyGeometry)               // ==" No geometry created for entity %s."== <<Leading space is necessary>>
         L10N_STRING(Error)                       // =="Error: %s"==
@@ -845,6 +846,7 @@ public:
         L10N_STRING(UpdateDoesNotChangeClass)    // =="Update cannot change the class of an element. Element: %s. Proposed class: %s."==
         L10N_STRING(MissingJobDefinitionModel)   // =="Missing JobDefinitionModel for %s"==
         L10N_STRING(CircularXrefIgnored)         // =="Circular xRef %s is ignored"==
+        L10N_STRING(CannotUpdateName)            // =="Unable to change name from %s to %s"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Progress messages for the conversion process
@@ -879,6 +881,9 @@ public:
         L10N_STRING(BlockAttrdefDescription)           // =="Attribute definition created from DWG block %ls"==
         L10N_STRING(ModelView)                         // =="Model View"==
         L10N_STRING(LayoutView)                        // =="Layout View"==
+        L10N_STRING(CategorySelector)                  // =="Categories"==
+        L10N_STRING(ModelSelector)                     // =="Models"==
+        L10N_STRING(DisplayStyle)                      // =="Display Style"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
     
     struct IssueReporter
@@ -1005,6 +1010,7 @@ private:
     Utf8String              GetImportJobNamePrefix () const { return ""; }
     ResolvedModelMapping    FindRootModelFromImportJob ();
     bool                    IsXrefInsertedInPaperspace (DwgDbObjectIdCR xrefInsertId) const;
+    DgnDbStatus             UpdateElementName (DgnElementR editElement, Utf8StringCR newValue, Utf8CP label = nullptr, bool save = true);
 
     static void             RegisterProtocalExtensions ();
 

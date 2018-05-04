@@ -27,10 +27,17 @@ USING_NAMESPACE_BENTLEY_PLANNING
 
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
+static void justLogAssertionFailures(WCharCP message, WCharCP file, uint32_t line, BeAssertFunctions::AssertType atype)
+    {
+    WPrintfString str(L"ASSERT: (%ls) @ %ls:%u\n", message, file, line);
+    NativeLogging::LoggingManager::GetLogger("BimTeleporter")->errorv(str.c_str());
+    //::OutputDebugStringW (str.c_str());
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-BisJson1ImporterImpl::BisJson1ImporterImpl(DgnDb* dgndb) : m_dgndb(dgndb), DgnImportContext(*dgndb, *dgndb), m_isDone(false)
+BisJson1ImporterImpl::BisJson1ImporterImpl(DgnDb* dgndb, bool setQuietAssertions) : m_dgndb(dgndb), DgnImportContext(*dgndb, *dgndb), m_isDone(false)
     {
     m_syncInfo = nullptr;
     DgnDomains::RegisterDomain(Planning::PlanningDomain::GetDomain());
@@ -43,6 +50,9 @@ BisJson1ImporterImpl::BisJson1ImporterImpl(DgnDb* dgndb) : m_dgndb(dgndb), DgnIm
     //    GetLogger().errorv("Failed to create JSON file %s", jsonPath.GetName());
     //    }
 
+    if (setQuietAssertions)
+        BeAssertFunctions::SetBeAssertHandler(justLogAssertionFailures);
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -50,6 +60,7 @@ BisJson1ImporterImpl::BisJson1ImporterImpl(DgnDb* dgndb) : m_dgndb(dgndb), DgnIm
 //---------------+---------------+---------------+---------------+---------------+-------
 BisJson1ImporterImpl::~BisJson1ImporterImpl()
     {
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -144,6 +155,13 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
     BentleyStatus stat = SUCCESS;
     if (entry.isNull())
         return ERROR;
+
+    if (entry.isMember("entryCount"))
+        {
+        m_entityCount = entry["entryCount"].asInt64();
+        return SUCCESS;
+        }
+
     Utf8String objectType = entry[JSON_TYPE_KEY].asString();
     if (Utf8String::IsNullOrEmpty(objectType.c_str()))
         return ERROR;
@@ -168,9 +186,9 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
     else if (objectType.Equals(JSON_TYPE_Element))
         reader = new ElementReader(this);
     else if (objectType.Equals(JSON_TYPE_GeometricElement2d))
-        reader = new GeometricElementReader(this, false);
+        reader = new GeometricElementReader(this);
     else if (objectType.Equals(JSON_TYPE_GeometricElement3d))
-        reader = new GeometricElementReader(this, true);
+        reader = new GeometricElementReader(this);
     else if (objectType.Equals(JSON_TYPE_GeometryPart))
         reader = new GeometryPartReader(this);
     else if (objectType.Equals(JSON_TYPE_Subject))

@@ -63,4 +63,5 @@ public:
 
     static DwgFileVersion   GetDwgVersionFrom (DwgDbVersion dwgVersion);
     static DwgDbVersion     GetDwgVersionFrom (DwgFileVersion dwgVersion);
+    static ::HMODULE        GetOrLoadToolkitDll (DwgStringCR dllPrefix);
     };  // Util

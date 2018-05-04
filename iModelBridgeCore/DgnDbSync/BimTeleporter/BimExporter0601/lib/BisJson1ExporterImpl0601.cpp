@@ -49,7 +49,6 @@ static Utf8CP const JSON_TYPE_LinkTable = "LinkTable";
 static Utf8CP const JSON_TYPE_ElementGroupsMembers = "ElementGroupsMembers";
 static Utf8CP const JSON_TYPE_ElementHasLinks = "ElementHasLinks";
 static Utf8CP const JSON_TYPE_AnnotationTextStyle = "AnnotationTextStyle";
-static Utf8CP const JSON_TYPE_Plan = "Plan";
 static Utf8CP const JSON_TYPE_Texture = "Texture";
 static Utf8CP const JSON_TYPE_WorkBreakdown = "WorkBreakdown";
 static Utf8CP const JSON_TYPE_Activity = "Activity";
@@ -132,13 +131,13 @@ struct PrintfProgressMeter : BentleyApi::Dgn::DgnProgressMeter
             }
 
         void ForceNextUpdateToDisplay() { m_timeOfLastUpdate = m_timeOfLastSpinnerUpdate = 0; }
-        virtual void _Hide() override
+        void _Hide() override
             {
             Utf8PrintfString msg("    %-123.123s %-16.16s", "", "");
             printf("%s\r", msg.c_str());
             }
 
-        virtual Abort _ShowProgress() override
+        Abort _ShowProgress() override
             {
             if (m_aborted)
                 return ABORT_Yes;
@@ -170,7 +169,7 @@ struct PrintfProgressMeter : BentleyApi::Dgn::DgnProgressMeter
             return ABORT_No;
             }
 
-        virtual void _SetCurrentStepName(Utf8CP stepName) override
+        void _SetCurrentStepName(Utf8CP stepName) override
             {
             T_Super::_SetCurrentStepName(stepName); // decrements step count
 
@@ -189,7 +188,7 @@ struct PrintfProgressMeter : BentleyApi::Dgn::DgnProgressMeter
             UpdateDisplay();
             }
 
-        virtual void _SetCurrentTaskName(Utf8CP taskName) override
+        void _SetCurrentTaskName(Utf8CP taskName) override
             {
             T_Super::_SetCurrentTaskName(taskName); // decrements task count
 
@@ -234,15 +233,8 @@ Utf8String IdToString(Utf8CP idString)
 //---------------+---------------+---------------+---------------+---------------+-------
 BisJson1ExporterImpl::BisJson1ExporterImpl(wchar_t const* dbPath, wchar_t const* tempPath, wchar_t const* assetsPath) : m_dbPath(dbPath), m_tempPath(tempPath), m_assetsPath(assetsPath)
     {
-    m_meter = new PrintfProgressMeter();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            04/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-BisJson1ExporterImpl::~BisJson1ExporterImpl()
-    {
-    delete m_meter;
+    static PrintfProgressMeter printfProgress;
+    SetProgressMeter(&printfProgress);
     }
 
 //---------------------------------------------------------------------------------------
@@ -396,61 +388,60 @@ bool BisJson1ExporterImpl::ExportDgnDb()
     if (!OpenDgnDb())
         return false;
 
-    Json::Value tableData(Json::ValueType::arrayValue);
     m_meter->AddSteps(8);
 
     SetStepName(BisJson1ExporterImpl::ProgressMessage::STEP_EXPORT_SCHEMAS());
     StopWatch timer(true);
     StopWatch totalTimer(true);
     BentleyStatus stat = SUCCESS;
-    if (SUCCESS != (stat = ExportSchemas(tableData)))
+    if (SUCCESS != (stat = ExportSchemas()))
         return false;
 
     LogPerformanceMessage(timer, "Export Schemas");
 
     timer.Start();
-    if (SUCCESS != (stat = ExportFonts(tableData)))
+    if (SUCCESS != (stat = ExportFonts()))
         return false;
     LogPerformanceMessage(timer, "Export Fonts");
 
     timer.Start();
-    if (SUCCESS != (stat = ExportAuthorities(tableData)))
+    if (SUCCESS != (stat = ExportAuthorities()))
         return false;
     LogPerformanceMessage(timer, "Export Authorities");
 
     timer.Start();
-    if (SUCCESS != (stat = ExportModels(tableData)))
+    if (SUCCESS != (stat = ExportModels()))
         return false;
     LogPerformanceMessage(timer, "Export Models");
 
     timer.Start();
-    if (SUCCESS != (stat = ExportCategories(tableData)))
+    if (SUCCESS != (stat = ExportCategories()))
         return false;
     LogPerformanceMessage(timer, "Export Categories");
 
     timer.Start();
-    if (SUCCESS != (stat = ExportViews(tableData)))
+    if (SUCCESS != (stat = ExportViews()))
         return false;
     LogPerformanceMessage(timer, "Export Views");
 
     timer.Start();
-    if (SUCCESS != (stat = ExportGeometryParts(tableData)))
+    if (SUCCESS != (stat = ExportGeometryParts()))
         return false;
     LogPerformanceMessage(timer, "Export GeomParts");
 
     timer.Start();
-    if (SUCCESS != (stat = ExportLineStyles(tableData)))
+    if (SUCCESS != (stat = ExportLineStyles()))
         return false;
     LogPerformanceMessage(timer, "Export LineStyles");
 
     timer.Start();
-    if (SUCCESS != (stat = ExportTextures(tableData)))
+    if (SUCCESS != (stat = ExportTextures()))
         return false;
     LogPerformanceMessage(timer, "Export Textures");
 
     if (m_dgndb->Schemas().ContainsECSchema("Planning"))
         {
-        if (SUCCESS != (stat = ExportTimelines(tableData)))
+        if (SUCCESS != (stat = ExportTimelines()))
             return false;
         }
     //if (SUCCESS != (stat = ExportLinkTables(tableData, "Planning", "PlanContainsTimelines", "PlanOwnsBaselines")))
@@ -463,27 +454,27 @@ bool BisJson1ExporterImpl::ExportDgnDb()
     //    return false;
 
     timer.Start();
-    if (SUCCESS != (stat = ExportElements(tableData)))
+    if (SUCCESS != (stat = ExportElements()))
         return false;
     ReportProgress();
     LogPerformanceMessage(timer, "Export Elements");
 
     timer.Start();
-    if (SUCCESS != (stat = ExportNamedGroups(tableData)))
+    if (SUCCESS != (stat = ExportNamedGroups()))
         return false;
     LogPerformanceMessage(timer, "Export Named Groups");
 
     timer.Start();
-    if (SUCCESS != (stat = ExportElementHasLinks(tableData)))
+    if (SUCCESS != (stat = ExportElementHasLinks()))
         return false;
     LogPerformanceMessage(timer, "Export ElementHasLinks");
 
     timer.Start();
-    if (SUCCESS != (stat = ExportLinkTables(tableData, "generic", "ElementRefersToElement")))
+    if (SUCCESS != (stat = ExportLinkTables("generic", "ElementRefersToElement")))
         return false;
     LogPerformanceMessage(timer, "Export EC Relationships");
 
-    ExportPropertyData(tableData);
+    ExportPropertyData();
 
     LogPerformanceMessage(totalTimer, "Total export time");
 
@@ -495,7 +486,7 @@ bool BisJson1ExporterImpl::ExportDgnDb()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportFonts(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportFonts()
     {
     Statement stmt;
     Utf8PrintfString sql("SELECT Id,SubId,StrData,RawSize FROM be_Prop WHERE Namespace='%s' AND Name='%s'", EMBEDDED_FACE_DATA_PROP_NS, EMBEDDED_FACE_DATA_PROP_NAME);
@@ -506,7 +497,7 @@ BentleyStatus BisJson1ExporterImpl::ExportFonts(Json::Value& out)
         }
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        auto& entry = out.append(Json::ValueType::objectValue);
+        auto entry = Json::Value(Json::ValueType::objectValue);
         entry[JSON_TYPE_KEY] = JSON_TYPE_FontFaceData;
         entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
         entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -539,7 +530,7 @@ BentleyStatus BisJson1ExporterImpl::ExportFonts(Json::Value& out)
 
     while (BE_SQLITE_ROW == stmt2.Step())
         {
-        auto& entry = out.append(Json::ValueType::objectValue);
+        auto entry = Json::Value(Json::ValueType::objectValue);
         entry[JSON_TYPE_KEY] = JSON_TYPE_Font;
         entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
         entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -562,8 +553,9 @@ BentleyStatus BisJson1ExporterImpl::ExportFonts(Json::Value& out)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportGeometryParts(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportGeometryParts()
     {
+    auto out = Json::Value(Json::ValueType::objectValue);
     // These need to come first as the LineStyle components contain mapped ids.  And LineStyleElements using LineStyle components.
     return ExportElements(out, DGN_ECSCHEMA_NAME, "GeometryPart", m_dgndb->GetDictionaryModel().GetModelId());
     }
@@ -571,8 +563,9 @@ BentleyStatus BisJson1ExporterImpl::ExportGeometryParts(Json::Value& out)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportTextures(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportTextures()
     {
+    auto out = Json::Value(Json::ValueType::objectValue);
     // These need to come first as the GeomParts contain mapped ids
     return ExportElements(out, DGN_ECSCHEMA_NAME, "Texture", m_dgndb->GetDictionaryModel().GetModelId());
     }
@@ -580,7 +573,7 @@ BentleyStatus BisJson1ExporterImpl::ExportTextures(Json::Value& out)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportLineStyles(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportLineStyles()
     {
     Statement stmt;
     Utf8String sql("SELECT Id, Name, StrData FROM be_Prop WHERE Namespace='dgn_LStyle'");
@@ -591,7 +584,7 @@ BentleyStatus BisJson1ExporterImpl::ExportLineStyles(Json::Value& out)
         }
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        auto& entry = out.append(Json::ValueType::objectValue);
+        auto entry = Json::Value(Json::ValueType::objectValue);
         entry[JSON_TYPE_KEY] = JSON_TYPE_LineStyleProperty;
         entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
         entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -610,7 +603,7 @@ BentleyStatus BisJson1ExporterImpl::ExportLineStyles(Json::Value& out)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportAuthorities(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportAuthorities()
     {
     Statement stmt;
     Utf8PrintfString sql("SELECT Id, Properties FROM dgn_Authority");
@@ -632,7 +625,7 @@ BentleyStatus BisJson1ExporterImpl::ExportAuthorities(Json::Value& out)
             authority->GetName().Equals("DgnColors"))
             continue;
 
-        auto& entry = out.append(Json::ValueType::objectValue);
+        auto entry = Json::Value(Json::ValueType::objectValue);
 
         ECClassCP authorityClass = m_dgndb->Schemas().GetECClass(authority->GetClassId());
 
@@ -659,30 +652,30 @@ BentleyStatus BisJson1ExporterImpl::ExportAuthorities(Json::Value& out)
         }
 
     // Need to make some "fake" authorities that were added in BisCore
-    CreateCodeSpec(out, 2, "bis:AnnotationFrameStyle");
-    CreateCodeSpec(out, 2, "bis:AnnotationLeaderStyle");
-    CreateCodeSpec(out, 2, "bis:AnnotationTextStyle");
-    CreateCodeSpec(out, 2, "bis:CategorySelector");
-    CreateCodeSpec(out, 2, "bis:ColorBook");
-    CreateCodeSpec(out, 2, "bis:DisplayStyle");
-    CreateCodeSpec(out, 2, "bis:Drawing");
-    CreateCodeSpec(out, 2, "bis:DrawingCategory");
-    CreateCodeSpec(out, 2, "bis:GraphicalType2d");
-    CreateCodeSpec(out, 2, "bis:LineStyle");
-    CreateCodeSpec(out, 2, "bis:LinkElement");
-    CreateCodeSpec(out, 2, "bis:ModelSelector");
-    CreateCodeSpec(out, 2, "bis:PhysicalType");
-    CreateCodeSpec(out, 2, "bis:Sheet");
-    CreateCodeSpec(out, 2, "bis:SpatialCategory");
-    CreateCodeSpec(out, 2, "bis:SpatialLocationType");
-    CreateCodeSpec(out, 2, "bis:TextAnnotationSeed");
-    CreateCodeSpec(out, 2, "bis:Texture");
-    CreateCodeSpec(out, 2, "bis:ViewDefinition");
+    CreateCodeSpec(2, "bis:AnnotationFrameStyle");
+    CreateCodeSpec(2, "bis:AnnotationLeaderStyle");
+    CreateCodeSpec(2, "bis:AnnotationTextStyle");
+    CreateCodeSpec(2, "bis:CategorySelector");
+    CreateCodeSpec(2, "bis:ColorBook");
+    CreateCodeSpec(2, "bis:DisplayStyle");
+    CreateCodeSpec(2, "bis:Drawing");
+    CreateCodeSpec(2, "bis:DrawingCategory");
+    CreateCodeSpec(2, "bis:GraphicalType2d");
+    CreateCodeSpec(2, "bis:LineStyle");
+    CreateCodeSpec(2, "bis:LinkElement");
+    CreateCodeSpec(2, "bis:ModelSelector");
+    CreateCodeSpec(2, "bis:PhysicalType");
+    CreateCodeSpec(2, "bis:Sheet");
+    CreateCodeSpec(2, "bis:SpatialCategory");
+    CreateCodeSpec(2, "bis:SpatialLocationType");
+    CreateCodeSpec(2, "bis:TextAnnotationSeed");
+    CreateCodeSpec(2, "bis:Texture");
+    CreateCodeSpec(2, "bis:ViewDefinition");
 
 
-    CreateCodeSpec(out, 3, "bis:InformationPartitionElement");
-    CreateCodeSpec(out, 3, "bis:Subject");
-    CreateCodeSpec(out, 3, "bis:SubCategory");
+    CreateCodeSpec(3, "bis:InformationPartitionElement");
+    CreateCodeSpec(3, "bis:Subject");
+    CreateCodeSpec(3, "bis:SubCategory");
 
     return SUCCESS;
     }
@@ -690,9 +683,9 @@ BentleyStatus BisJson1ExporterImpl::ExportAuthorities(Json::Value& out)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementId BisJson1ExporterImpl::CreateCodeSpec(Json::Value& out, uint8_t codeSpecType, Utf8CP name)
+DgnElementId BisJson1ExporterImpl::CreateCodeSpec(uint8_t codeSpecType, Utf8CP name)
     {
-    auto& entry = out.append(Json::ValueType::objectValue);
+    auto entry = Json::Value(Json::ValueType::objectValue);
     entry[JSON_TYPE_KEY] = JSON_TYPE_CodeSpec;
     entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
     entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -711,7 +704,7 @@ DgnElementId BisJson1ExporterImpl::CreateCodeSpec(Json::Value& out, uint8_t code
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            12/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8String BisJson1ExporterImpl::RemapResourceAuthority(Json::Value& obj, ECN::ECClassCP elementClass)
+Utf8String BisJson1ExporterImpl::RemapResourceAuthority(ECN::ECClassCP elementClass)
     {
     Utf8String authority;
     if (elementClass->GetName().Equals("AnnotationTextStyle"))
@@ -735,7 +728,7 @@ Utf8String BisJson1ExporterImpl::RemapResourceAuthority(Json::Value& obj, ECN::E
 
     for (ECN::ECClassCP base : elementClass->GetBaseClasses())
         {
-        authority = RemapResourceAuthority(obj, base);
+        authority = RemapResourceAuthority(base);
         if (!Utf8String::IsNullOrEmpty(authority.c_str()))
             return authority;
         }
@@ -745,11 +738,11 @@ Utf8String BisJson1ExporterImpl::RemapResourceAuthority(Json::Value& obj, ECN::E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementId BisJson1ExporterImpl::CreateDisplayStyle(Json::Value& out, ViewControllerCR vc, Utf8CP name, bool is3d)
+DgnElementId BisJson1ExporterImpl::CreateDisplayStyle(ViewControllerCR vc, Utf8CP name, bool is3d)
     {
     Render::ViewFlags viewFlags = vc.GetViewFlags();
 
-    auto& displayStyle = out.append(Json::ValueType::objectValue);
+    auto displayStyle = Json::Value(Json::ValueType::objectValue);
     displayStyle[JSON_TYPE_KEY] = JSON_TYPE_DisplayStyle;
     displayStyle[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
     displayStyle[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -787,7 +780,7 @@ DgnElementId BisJson1ExporterImpl::CreateDisplayStyle(Json::Value& out, ViewCont
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementId BisJson1ExporterImpl::CreateCategorySelector(Json::Value& out, ViewControllerCR vc, Utf8CP name)
+DgnElementId BisJson1ExporterImpl::CreateCategorySelector(ViewControllerCR vc, Utf8CP name)
     {
     // Need to export the categories before we can create the category selector
     for (DgnCategoryId id : vc.GetViewedCategories())
@@ -799,8 +792,9 @@ DgnElementId BisJson1ExporterImpl::CreateCategorySelector(Json::Value& out, View
         if (!cat.IsValid())
             continue;
         Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, cat->GetElementId().GetValue());
+        auto out = Json::Value(Json::ValueType::objectValue);
         ExportElements(out, cat->GetElementClass()->GetSchema().GetName().c_str(), cat->GetElementClass()->GetName().c_str(), cat->GetModelId(), whereClause.c_str(), false);
-        auto& entry = out[out.size() - 1][JSON_OBJECT_KEY];
+        auto& entry = out[JSON_OBJECT_KEY];
         auto& codeSpec = entry[BIS_ELEMENT_PROP_CodeSpec] = Json::Value(Json::ValueType::objectValue);
         if (vc.IsDrawingView() || vc.IsSheetView())
             {
@@ -812,10 +806,10 @@ DgnElementId BisJson1ExporterImpl::CreateCategorySelector(Json::Value& out, View
             entry[JSON_CLASSNAME] = "BisCore.SpatialCategory";
             codeSpec["id"] = m_authorityIds["bis:SpatialCategory"].c_str();
             }
-        (QueueJson) (out[out.size()-1].toStyledString().c_str());
+        (QueueJson) (out.toStyledString().c_str());
         }
 
-    auto& categorySelector = out.append(Json::ValueType::objectValue);
+    auto categorySelector = Json::Value(Json::ValueType::objectValue);
     categorySelector[JSON_TYPE_KEY] = JSON_TYPE_CategorySelector;
     categorySelector[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
     categorySelector[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -845,9 +839,9 @@ DgnElementId BisJson1ExporterImpl::CreateCategorySelector(Json::Value& out, View
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementId BisJson1ExporterImpl::CreateModelSelector(Json::Value& out, ViewControllerCR vc, Utf8CP name)
+DgnElementId BisJson1ExporterImpl::CreateModelSelector(ViewControllerCR vc, Utf8CP name)
     {
-    auto& modelSelector = out.append(Json::ValueType::objectValue);
+    auto modelSelector = Json::Value(Json::ValueType::objectValue);
     modelSelector[JSON_TYPE_KEY] = JSON_TYPE_ModelSelector;
     modelSelector[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
     modelSelector[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -871,9 +865,9 @@ DgnElementId BisJson1ExporterImpl::CreateModelSelector(Json::Value& out, ViewCon
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementId BisJson1ExporterImpl::CreateDrawingElement(Json::Value& out, Utf8CP name)
+DgnElementId BisJson1ExporterImpl::CreateDrawingElement(Utf8CP name)
     {
-    auto& drawingElement = out.append(Json::ValueType::objectValue);
+    auto drawingElement = Json::Value(Json::ValueType::objectValue);
     drawingElement[JSON_TYPE_KEY] = JSON_TYPE_Element;
     drawingElement[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
     drawingElement[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -898,9 +892,9 @@ DgnElementId BisJson1ExporterImpl::CreateDrawingElement(Json::Value& out, Utf8CP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementId BisJson1ExporterImpl::CreateSheetElement(Json::Value& out, DgnModelCR model)
+DgnElementId BisJson1ExporterImpl::CreateSheetElement(DgnModelCR model)
     {
-    auto& sheetElement = out.append(Json::ValueType::objectValue);
+    auto sheetElement = Json::Value(Json::ValueType::objectValue);
     sheetElement[JSON_TYPE_KEY] = JSON_TYPE_Element;
     sheetElement[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
     sheetElement[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -928,7 +922,7 @@ DgnElementId BisJson1ExporterImpl::CreateSheetElement(Json::Value& out, DgnModel
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportViews(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportViews()
     {
     auto iter = ViewDefinition::MakeIterator(*m_dgndb);
     for (auto const& entry : iter)
@@ -941,16 +935,16 @@ BentleyStatus BisJson1ExporterImpl::ExportViews(Json::Value& out)
         if (!vc.IsValid())
             continue;
 
-        DgnElementId categorySelectorId = CreateCategorySelector(out, *vc, view->GetName().c_str());
-        DgnElementId displayStyle = CreateDisplayStyle(out, *vc, view->GetName().c_str(), view->GetElementClass()->Is(m_viewDefinition3dClass));
+        DgnElementId categorySelectorId = CreateCategorySelector(*vc, view->GetName().c_str());
+        DgnElementId displayStyle = CreateDisplayStyle(*vc, view->GetName().c_str(), view->GetElementClass()->Is(m_viewDefinition3dClass));
         DgnElementId modelSelectorId;
         if (view->GetElementClass()->Is(m_viewDefinition3dClass))
-            modelSelectorId = CreateModelSelector(out, *vc, view->GetName().c_str());
+            modelSelectorId = CreateModelSelector(*vc, view->GetName().c_str());
 
         Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, view->GetElementId().GetValue());
-        ExportElements(out, view->GetElementClass()->GetSchema().GetName().c_str(), view->GetElementClass()->GetName().c_str(), view->GetModelId(), whereClause.c_str(), false);
+        auto row = Json::Value(Json::ValueType::objectValue);
 
-        auto& row = out[out.size() - 1];
+        ExportElements(row, view->GetElementClass()->GetSchema().GetName().c_str(), view->GetElementClass()->GetName().c_str(), view->GetModelId(), whereClause.c_str(), false);
         auto& obj = row[JSON_OBJECT_KEY];
         MakeNavigationProperty(obj, "CategorySelector", categorySelectorId.GetValue());
         MakeNavigationProperty(obj, "DisplayStyle", displayStyle.GetValue());
@@ -1041,7 +1035,7 @@ BentleyStatus BisJson1ExporterImpl::ExportViews(Json::Value& out)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportCategories(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportCategories()
     {
     bvector<DgnCategoryId> duplicateIds;
     // First, need to create a definition model for each Namespace used in the Categories for those categories that are in the default DictionaryModel
@@ -1058,11 +1052,11 @@ BentleyStatus BisJson1ExporterImpl::ExportCategories(Json::Value& out)
         Utf8String ns = statement->GetValueText(0);
         if (Utf8String::IsNullOrEmpty(ns.c_str()))
             continue;
-        DgnElementId modelId = CreateDefinitionModel(out, ns.c_str());
+        DgnElementId modelId = CreateDefinitionModel(ns.c_str());
         m_namespaceDefinitionModels[ns] = modelId;
         }
 
-    ExportCategories(out, "dgn_GeometricElement3d", "BisCore.SpatialCategory", m_authorityIds["bis:SpatialCategory"].c_str(), duplicateIds);
+    ExportCategories("dgn_GeometricElement3d", "BisCore.SpatialCategory", m_authorityIds["bis:SpatialCategory"].c_str(), duplicateIds);
 
     Utf8PrintfString sql("select DISTINCT g.CategoryId FROM dgn_GeometricElement3d g INTERSECT select DISTINCT g2.CategoryId FROM dgn_GeometricElement2d g2");
     Statement stmt;
@@ -1080,14 +1074,14 @@ BentleyStatus BisJson1ExporterImpl::ExportCategories(Json::Value& out)
         DgnCategoryId categoryId = stmt.GetValueId<DgnCategoryId>(0);
         duplicateIds.push_back(categoryId);
         }
-    ExportCategories(out, "dgn_GeometricElement2d", "BisCore.DrawingCategory", m_authorityIds["bis:DrawingCategory"].c_str(), duplicateIds);
+    ExportCategories("dgn_GeometricElement2d", "BisCore.DrawingCategory", m_authorityIds["bis:DrawingCategory"].c_str(), duplicateIds);
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportCategories(Json::Value& out, Utf8CP tableName, Utf8CP bisClassName, Utf8CP bisAuthorityStr, bvector<DgnCategoryId>& duplicateIds)
+BentleyStatus BisJson1ExporterImpl::ExportCategories(Utf8CP tableName, Utf8CP bisClassName, Utf8CP bisAuthorityStr, bvector<DgnCategoryId>& duplicateIds)
     {
     Utf8PrintfString sql("select DISTINCT g.CategoryId, e.ModelId,  s.NAME, c.NAME FROM ec_Schema s, ec_Class c, %s g, dgn_Element e WHERE g.CategoryId = e.Id AND e.ECClassId = c.[Id] and c.[SchemaId] = s.[Id]", tableName);
     Statement stmt;
@@ -1112,8 +1106,8 @@ BentleyStatus BisJson1ExporterImpl::ExportCategories(Json::Value& out, Utf8CP ta
             continue;
 
         Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, categoryId.GetValue());
-        ExportElements(out, stmt.GetValueText(2), stmt.GetValueText(3), stmt.GetValueId<DgnModelId>(1), whereClause.c_str(), false, true);
-        auto& entry = out[out.size() - 1];
+        auto entry = Json::Value(Json::ValueType::objectValue);
+        ExportElements(entry, stmt.GetValueText(2), stmt.GetValueText(3), stmt.GetValueId<DgnModelId>(1), whereClause.c_str(), false, true);
         auto& obj = entry[JSON_OBJECT_KEY];
         obj[JSON_CLASSNAME] = bisClassName;
         if (std::find(duplicateIds.begin(), duplicateIds.end(), categoryId) != duplicateIds.end())
@@ -1131,7 +1125,7 @@ BentleyStatus BisJson1ExporterImpl::ExportCategories(Json::Value& out, Utf8CP ta
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportSchemas(Json::Value& out) const
+BentleyStatus BisJson1ExporterImpl::ExportSchemas() const
     {
     bvector<Utf8String> knownSchemas = {"Bentley_Standard_Classes", "Bentley_Standard_CustomAttributes", "CoreCustomAttributes", "ECDbMap", "ECDbFileInfo", "ECDbSystem","ECDb_FileInfo", "ECDb_System", "EditorCustomAttributes", "Generic", "MetaSchema", "dgn", "PointCloud", "Raster", "ThreeMx", "ECv3ConversionAttributes"};
     bvector<ECSchemaCP> ecSchemas = m_dgndb->Schemas().GetECSchemas();
@@ -1242,7 +1236,7 @@ BentleyStatus BisJson1ExporterImpl::ExportSchemas(Json::Value& out) const
             // There is no Authority class in bis.  Nor is there a way to remove a class from the schema.  Therefore, we just make it a DefinitionElement
             schemaXml.ReplaceAll("<BaseClass>bis:Authority</BaseClass>", "<BaseClass>bis:DefinitionElement</BaseClass>");
 
-            auto& entry = out.append(Json::ValueType::objectValue);
+            auto entry = Json::Value(Json::ValueType::objectValue);
             entry[JSON_TYPE_KEY] = JSON_TYPE_Schema;
             entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
             entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -1259,10 +1253,10 @@ BentleyStatus BisJson1ExporterImpl::ExportSchemas(Json::Value& out) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementId BisJson1ExporterImpl::InitListModel(Json::Value& out, Utf8CP name)
+DgnElementId BisJson1ExporterImpl::InitListModel(Utf8CP name)
     {
-    DgnElementId partitionId = CreatePartitionElement(name, "DocumentPartition", m_jobSubjectId, out);
-    auto& entry = out.append(Json::ValueType::objectValue);
+    DgnElementId partitionId = CreatePartitionElement(name, "DocumentPartition", m_jobSubjectId);
+    auto entry = Json::Value(Json::ValueType::objectValue);
     entry[JSON_TYPE_KEY] = JSON_TYPE_Model;
     entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
     entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -1282,28 +1276,28 @@ DgnElementId BisJson1ExporterImpl::InitListModel(Json::Value& out, Utf8CP name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::InitDrawingListModel(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::InitDrawingListModel()
     {
-    m_documentListModelId = InitListModel(out, "Converted Drawings");
+    m_documentListModelId = InitListModel("Converted Drawings");
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::InitSheetListModel(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::InitSheetListModel()
     {
-    m_sheetListModelId = InitListModel(out, "Converted Sheets");
+    m_sheetListModelId = InitListModel("Converted Sheets");
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            04/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementId BisJson1ExporterImpl::CreateDefinitionModel(Json::Value& out, Utf8CP modelName)
+DgnElementId BisJson1ExporterImpl::CreateDefinitionModel(Utf8CP modelName)
     {
-    DgnElementId definitionModelId = CreatePartitionElement(modelName, "DocumentPartition", m_jobSubjectId, out);
-    auto& entry = out.append(Json::ValueType::objectValue);
+    DgnElementId definitionModelId = CreatePartitionElement(modelName, "DocumentPartition", m_jobSubjectId);
+    auto entry = Json::Value(Json::ValueType::objectValue);
     entry[JSON_TYPE_KEY] = JSON_TYPE_Model;
     entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
     entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -1323,9 +1317,9 @@ DgnElementId BisJson1ExporterImpl::CreateDefinitionModel(Json::Value& out, Utf8C
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::InitJobDefinitionModel(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::InitJobDefinitionModel()
     {
-    m_jobDefinitionModelId = CreateDefinitionModel(out, "Job Definition Model");
+    m_jobDefinitionModelId = CreateDefinitionModel("Job Definition Model");
     if (m_jobDefinitionModelId.IsValid())
         return SUCCESS;
     return ERROR;
@@ -1334,13 +1328,13 @@ BentleyStatus BisJson1ExporterImpl::InitJobDefinitionModel(Json::Value& out)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportModels(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportModels()
     {
     Utf8PrintfString subjectName("DgnDb0601: %s", Utf8String(m_dgndb->GetFileName().GetFileNameWithoutExtension().c_str()).c_str());
-    m_jobSubjectId = CreateSubjectElement(subjectName.c_str(), out);
-    InitDrawingListModel(out);
-    InitSheetListModel(out);
-    InitJobDefinitionModel(out);
+    m_jobSubjectId = CreateSubjectElement(subjectName.c_str());
+    InitDrawingListModel();
+    InitSheetListModel();
+    InitJobDefinitionModel();
 
     Statement stmt;
     Utf8PrintfString sql("SELECT s.NAME, c.NAME from ec_Schema s, ec_Class c WHERE s.ID = c.[SchemaId] and c.Id in (SELECT DISTINCT ECClassId FROM %s_%s)", DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model);
@@ -1353,7 +1347,7 @@ BentleyStatus BisJson1ExporterImpl::ExportModels(Json::Value& out)
     BentleyStatus stat = SUCCESS;
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        if (SUCCESS != (stat = ExportModel(out, stmt.GetValueText(0), stmt.GetValueText(1))))
+        if (SUCCESS != (stat = ExportModel(stmt.GetValueText(0), stmt.GetValueText(1))))
             break;
         }
     return stat;
@@ -1362,7 +1356,7 @@ BentleyStatus BisJson1ExporterImpl::ExportModels(Json::Value& out)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportModel(Json::Value& out, Utf8CP schemaName, Utf8CP className, Utf8CP whereClause)
+BentleyStatus BisJson1ExporterImpl::ExportModel(Utf8CP schemaName, Utf8CP className, Utf8CP whereClause)
     {
     Utf8PrintfString ecSql("SELECT ECInstanceId, * FROM ONLY %s.%s", schemaName, className);
     if (nullptr != whereClause)
@@ -1386,13 +1380,13 @@ BentleyStatus BisJson1ExporterImpl::ExportModel(Json::Value& out, Utf8CP schemaN
         DgnModelPtr model = m_dgndb->Models().GetModel(DgnModelId(actualElementId.GetValue()));
         DgnElementId modeledElementId;
         if (model->IsSheetModel())
-            modeledElementId = CreateSheetElement(out, *model);
+            modeledElementId = CreateSheetElement(*model);
         else if (model->Is2dModel())
-            modeledElementId = CreateDrawingElement(out, model->GetName().c_str());
+            modeledElementId = CreateDrawingElement(model->GetName().c_str());
         else if (!model->IsDictionaryModel())
-            modeledElementId = CreatePartitionElement(*model, DgnElementId(), out);
+            modeledElementId = CreatePartitionElement(*model, DgnElementId());
         
-        auto& entry = out.append(Json::ValueType::objectValue);
+        auto entry = Json::Value(Json::ValueType::objectValue);
         if (model->IsDictionaryModel())
             entry[JSON_TYPE_KEY] = JSON_TYPE_DictionaryModel;
         else
@@ -1480,14 +1474,14 @@ BentleyStatus BisJson1ExporterImpl::ExportModel(Json::Value& out, Utf8CP schemaN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportElements()
     {
     BentleyStatus stat = SUCCESS;
     DgnModels::Iterator modelsIterator = m_dgndb->Models().MakeIterator();
     for (DgnModels::Iterator::Entry modelEntry : modelsIterator)
         {
         DgnModelPtr model = m_dgndb->Models().GetModel(modelEntry.GetModelId());
-        if (SUCCESS != (stat = ExportElements(out, model->GetModelId())))
+        if (SUCCESS != (stat = ExportElements(model->GetModelId())))
             break;
         }
     return stat;
@@ -1496,7 +1490,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, DgnModelId parentModel)
+BentleyStatus BisJson1ExporterImpl::ExportElements(DgnModelId parentModel)
     {
     Statement stmt;
     Utf8CP sql = "SELECT s.NAME, c.NAME from ec_Schema s, ec_Class c WHERE s.ID = c.[SchemaId] and c.Id in (SELECT DISTINCT ECClassId FROM dgn_Element WHERE ModelId=?)";
@@ -1510,7 +1504,8 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, DgnModelId 
     BentleyStatus stat = SUCCESS;
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        if (SUCCESS != (stat = ExportElements(out, stmt.GetValueText(0), stmt.GetValueText(1), parentModel)))
+        auto element = Json::Value(Json::ValueType::objectValue);
+        if (SUCCESS != (stat = ExportElements(element, stmt.GetValueText(0), stmt.GetValueText(1), parentModel)))
             break;
         }
     return stat;
@@ -1520,7 +1515,7 @@ void RenameConflictMembers(Json::Value& obj, Utf8CP prefix, Utf8CP member)
     {
     for (auto const& id : obj.getMemberNames())
         {
-        if (0 == stricmp(id.c_str(), member))
+        if (0 == BeStringUtilities::Stricmp(id.c_str(), member))
             {
             Utf8PrintfString tmp("%s_%s_", prefix, member);
             obj[tmp.c_str()] = obj[id];
@@ -1532,7 +1527,7 @@ void RenameConflictMembers(Json::Value& obj, Utf8CP prefix, Utf8CP member)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause, bool sendToQueue, bool allowDuplicates)
+BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& entry, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause, bool sendToQueue, bool allowDuplicates)
     {
     Utf8PrintfString ecSql("SELECT ECInstanceId, * FROM ONLY %s.%s WHERE ModelId=?", schemaName, className);
     if (nullptr != whereClause)
@@ -1571,7 +1566,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
             {
             ECClassCP modelClass = m_dgndb->Schemas().GetECClass(element->GetModel()->GetClassId());
             Utf8PrintfString whereClause(" WHERE ECInstanceId=%" PRIu64, element->GetModelId().GetValue());
-            if (SUCCESS != ExportModel(out, modelClass->GetSchema().GetName().c_str(), modelClass->GetName().c_str(), whereClause.c_str()))
+            if (SUCCESS != ExportModel(modelClass->GetSchema().GetName().c_str(), modelClass->GetName().c_str(), whereClause.c_str()))
                 return ERROR;
             }
 
@@ -1579,11 +1574,11 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
             {
             DgnElementCPtr parent = m_dgndb->Elements().GetElement(element->GetParentId());
             Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, parent->GetElementId().GetValue());
-            if (SUCCESS != ExportElements(out, parent->GetElementClass()->GetSchema().GetName().c_str(), parent->GetElementClass()->GetName().c_str(), parent->GetModelId(), whereClause.c_str()))
+            auto parentObj = Json::Value(Json::ValueType::objectValue);
+            if (SUCCESS != ExportElements(parentObj, parent->GetElementClass()->GetSchema().GetName().c_str(), parent->GetElementClass()->GetName().c_str(), parent->GetModelId(), whereClause.c_str()))
                 return ERROR;
             }
 
-        auto& entry = out.append(Json::ValueType::objectValue);
         entry[JSON_TYPE_KEY] = JSON_TYPE_Element;
         entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
         entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -1760,13 +1755,13 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
 
         if (element->GetCodeAuthority()->GetName().Equals("DgnResources"))
             {
-            Utf8String authority = RemapResourceAuthority(obj, element->GetElementClass());
+            Utf8String authority = RemapResourceAuthority(element->GetElementClass());
             if (!Utf8String::IsNullOrEmpty(authority.c_str()))
                 obj[BIS_ELEMENT_PROP_CodeSpec]["id"] = authority.c_str();
             }
         else if (element->GetCodeAuthority()->GetName().Equals("DgnV8"))
             {
-            Utf8PrintfString value("%s-%s", obj["Code"]["Namespace"].asString(), obj["Code"]["Value"].asString());
+            Utf8PrintfString value("%s-%s", obj["Code"]["Namespace"].asCString(), obj["Code"]["Value"].asCString());
             obj[BIS_ELEMENT_PROP_CodeValue] = value.c_str();
             }
         else if (element->GetCodeAuthority()->GetName().Equals("ConstructionPlanning_WorkAreaHierarchy"))
@@ -1800,7 +1795,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
                 // This is a bit of a hack.  But we sometimes end up with duplicate MaterialElements that differ by CodeNamespace.
                 if (!Utf8String::IsNullOrEmpty(element->GetCode().GetNamespace().c_str()))
                     {
-                    Utf8PrintfString value("%s-%s", obj["Code"]["Namespace"].asString(), obj["Code"]["Value"].asString());
+                    Utf8PrintfString value("%s-%s", obj["Code"]["Namespace"].asCString(), obj["Code"]["Value"].asCString());
                     obj[BIS_ELEMENT_PROP_CodeValue] = value.c_str();
                     }
                 }
@@ -1838,7 +1833,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportTimelines(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportTimelines()
     {
     CachedECSqlStatementPtr statement = m_dgndb->GetPreparedECSqlStatement("select Label, PlanId from only [bp].[Timeline];");
     if (!statement.IsValid())
@@ -1857,11 +1852,12 @@ BentleyStatus BisJson1ExporterImpl::ExportTimelines(Json::Value& out)
             {
             DgnElementCPtr planEl = m_dgndb->Elements().GetElement(planId);
             Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, planId.GetValue());
-            if (SUCCESS != ExportElements(out, planEl->GetElementClass()->GetSchema().GetName().c_str(), planEl->GetElementClass()->GetName().c_str(), planEl->GetModelId(), whereClause.c_str()))
+            auto elem = Json::Value(Json::ValueType::objectValue);
+            if (SUCCESS != ExportElements(elem, planEl->GetElementClass()->GetSchema().GetName().c_str(), planEl->GetElementClass()->GetName().c_str(), planEl->GetModelId(), whereClause.c_str()))
                 return ERROR;
             }
 
-        auto& baseline = out.append(Json::ValueType::objectValue);
+        auto baseline = Json::Value(Json::ValueType::objectValue);
         baseline[JSON_TYPE_KEY] = JSON_TYPE_Baseline;
         baseline[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
         baseline[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -1877,7 +1873,7 @@ BentleyStatus BisJson1ExporterImpl::ExportTimelines(Json::Value& out)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportElementAspects(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportElementAspects()
     {
     CachedECSqlStatementPtr statement = m_dgndb->GetPreparedECSqlStatement("select distinct ECClassId from [dgn].[ElementAspect]");
     if (!statement.IsValid())
@@ -1889,7 +1885,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElementAspects(Json::Value& out)
     while (BE_SQLITE_ROW == statement->Step())
         {
         ECClassId classId = statement->GetValueId<ECClassId>(0);
-        ExportElementAspects(out, classId, ECInstanceId());
+        ExportElementAspects(classId, ECInstanceId());
         }
     return SUCCESS;
     }
@@ -1897,7 +1893,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElementAspects(Json::Value& out)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportElementAspects(Json::Value& out, ECClassId classId, ECInstanceId aspectId)
+BentleyStatus BisJson1ExporterImpl::ExportElementAspects(ECClassId classId, ECInstanceId aspectId)
     {
     ECClassCP ecClass = m_dgndb->Schemas().GetECClass(classId);
     Utf8PrintfString ecSql("SELECT * FROM ONLY %s.%s", ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
@@ -1916,9 +1912,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElementAspects(Json::Value& out, ECCla
 
     while (BE_SQLITE_ROW == statement->Step())
         {
-        ECInstanceId actualElementId = statement->GetValueId<ECInstanceId>(0);
-
-        auto& entry = out.append(Json::ValueType::objectValue);
+        auto entry = Json::Value(Json::ValueType::objectValue);
         entry[JSON_TYPE_KEY] = JSON_TYPE_ElementAspect;
         entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
         entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -1978,9 +1972,9 @@ void BisJson1ExporterImpl::HandleAnnotationTextStyle(Json::Value& obj, DgnElemen
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementId BisJson1ExporterImpl::CreateSubjectElement(Utf8CP subjectName, Json::Value& out)
+DgnElementId BisJson1ExporterImpl::CreateSubjectElement(Utf8CP subjectName)
     {
-    auto& entry = out.append(Json::ValueType::objectValue);
+    auto entry = Json::Value(Json::ValueType::objectValue);
     entry[JSON_TYPE_KEY] = JSON_TYPE_Subject;
     entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
     entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -1999,7 +1993,7 @@ DgnElementId BisJson1ExporterImpl::CreateSubjectElement(Utf8CP subjectName, Json
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementId BisJson1ExporterImpl::CreatePartitionElement(DgnModelCR model, DgnElementId subject, Json::Value& out)
+DgnElementId BisJson1ExporterImpl::CreatePartitionElement(DgnModelCR model, DgnElementId subject)
     {
     Utf8String partitionType = nullptr;
     if (model.IsGroupInformationModel())
@@ -2019,15 +2013,15 @@ DgnElementId BisJson1ExporterImpl::CreatePartitionElement(DgnModelCR model, DgnE
         LogMessage(TeleporterLoggingSeverity::LOG_WARNING, "Unknown model type %s", typeid(model).name());
         }
 
-    return CreatePartitionElement(model.GetName().c_str(), partitionType.c_str(), subject, out);
+    return CreatePartitionElement(model.GetName().c_str(), partitionType.c_str(), subject);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementId BisJson1ExporterImpl::CreatePartitionElement(Utf8CP partitionName, Utf8CP partitionType, DgnElementId subject, Json::Value& out)
+DgnElementId BisJson1ExporterImpl::CreatePartitionElement(Utf8CP partitionName, Utf8CP partitionType, DgnElementId subject)
     {
-    auto& entry = out.append(Json::ValueType::objectValue);
+    auto entry = Json::Value(Json::ValueType::objectValue);
     entry[JSON_TYPE_KEY] = JSON_TYPE_Partition;
     entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
     entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -2048,7 +2042,7 @@ DgnElementId BisJson1ExporterImpl::CreatePartitionElement(Utf8CP partitionName, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportNamedGroups(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportNamedGroups()
     {
     Statement stmt;
     Utf8CP sql = "SELECT GroupId, MemberId, MemberPriority from dgn_ElementGroupsMembers";
@@ -2058,7 +2052,7 @@ BentleyStatus BisJson1ExporterImpl::ExportNamedGroups(Json::Value& out)
         return ERROR;
         }
 
-    auto& elemGroupsMembers = out.append(Json::ValueType::objectValue);
+    auto elemGroupsMembers = Json::Value(Json::ValueType::objectValue);
     elemGroupsMembers[JSON_TYPE_KEY] = JSON_TYPE_ElementGroupsMembers;
     elemGroupsMembers[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::arrayValue);
     elemGroupsMembers[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -2078,7 +2072,7 @@ BentleyStatus BisJson1ExporterImpl::ExportNamedGroups(Json::Value& out)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportElementHasLinks(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportElementHasLinks()
     {
 
     Statement stmt;
@@ -2089,7 +2083,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElementHasLinks(Json::Value& out)
         return ERROR;
         }
 
-    auto& elemHasLinks = out.append(Json::ValueType::objectValue);
+    auto elemHasLinks = Json::Value(Json::ValueType::objectValue);
     elemHasLinks[JSON_TYPE_KEY] = JSON_TYPE_ElementHasLinks;
     elemHasLinks[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::arrayValue);
     elemHasLinks[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -2108,7 +2102,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElementHasLinks(Json::Value& out)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportConstraint(Json::Value& out, ECClassId constraintClassId, ECInstanceId constraintId)
+BentleyStatus BisJson1ExporterImpl::ExportConstraint(ECClassId constraintClassId, ECInstanceId constraintId)
     {
     ECClassCP constraintClass = m_dgndb->Schemas().GetECClass(constraintClassId);
     DgnElementId dgnId(constraintId.GetValue());
@@ -2119,6 +2113,7 @@ BentleyStatus BisJson1ExporterImpl::ExportConstraint(Json::Value& out, ECClassId
             {
             DgnElementCPtr constraintEl = m_dgndb->Elements().GetElement(dgnId);
             Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, constraintId.GetValue());
+            auto out = Json::Value(Json::ValueType::objectValue);
             if (SUCCESS != ExportElements(out, constraintClass->GetSchema().GetName().c_str(), constraintClass->GetName().c_str(), constraintEl->GetModelId(), whereClause.c_str()))
                 return ERROR;
             }
@@ -2127,7 +2122,7 @@ BentleyStatus BisJson1ExporterImpl::ExportConstraint(Json::Value& out, ECClassId
         {
         if (m_insertedAspects.end() == m_insertedAspects.find(constraintId))
             {
-            ExportElementAspects(out, constraintClassId, constraintId);
+            ExportElementAspects(constraintClassId, constraintId);
             }
         }
     return SUCCESS;
@@ -2136,7 +2131,7 @@ BentleyStatus BisJson1ExporterImpl::ExportConstraint(Json::Value& out, ECClassId
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportLinkTables(Json::Value& out, Utf8CP schemaName, Utf8CP className, Utf8CP newClassName)
+BentleyStatus BisJson1ExporterImpl::ExportLinkTables(Utf8CP schemaName, Utf8CP className, Utf8CP newClassName)
     {
     if (!m_dgndb->Schemas().ContainsECSchema(schemaName))
         return SUCCESS;
@@ -2153,7 +2148,7 @@ BentleyStatus BisJson1ExporterImpl::ExportLinkTables(Json::Value& out, Utf8CP sc
         return ERROR;
         }
 
-    auto& elemRefersToElem = out.append(Json::ValueType::objectValue);
+    auto elemRefersToElem = Json::Value(Json::ValueType::objectValue);
     elemRefersToElem[JSON_TYPE_KEY] = JSON_TYPE_LinkTable;
     elemRefersToElem[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::arrayValue);
     elemRefersToElem[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
@@ -2162,8 +2157,8 @@ BentleyStatus BisJson1ExporterImpl::ExportLinkTables(Json::Value& out, Utf8CP sc
         {
         ECInstanceId sourceId = stmt->GetValueId<ECInstanceId>(1);
         ECInstanceId targetId = stmt->GetValueId<ECInstanceId>(3);
-        ExportConstraint(out, stmt->GetValueId<ECClassId>(2), sourceId);
-        ExportConstraint(out, stmt->GetValueId<ECClassId>(4), targetId);
+        ExportConstraint(stmt->GetValueId<ECClassId>(2), sourceId);
+        ExportConstraint(stmt->GetValueId<ECClassId>(4), targetId);
 
         Json::Value relationship(Json::ValueType::objectValue);
         ECClassCP relClass = m_dgndb->Schemas().GetECClass(stmt->GetValueId<ECClassId>(0));
@@ -2183,14 +2178,14 @@ BentleyStatus BisJson1ExporterImpl::ExportLinkTables(Json::Value& out, Utf8CP sc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportPropertyData(Json::Value& out)
+BentleyStatus BisJson1ExporterImpl::ExportPropertyData()
     {
     PropertySpec    prop = DgnViewProperty::DefaultView();
     DgnElementId    existingId;
     if (m_dgndb->QueryProperty(&existingId, sizeof(existingId), prop) != DbResult::BE_SQLITE_ROW || !existingId.IsValid())
         return SUCCESS;
 
-    auto& entry = out.append(Json::ValueType::objectValue);
+    auto entry = Json::Value(Json::ValueType::objectValue);
     entry[JSON_TYPE_KEY] = JSON_TYPE_PropertyData;
     entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
     entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;

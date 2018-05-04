@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <windows.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/GenericDomain.h>
@@ -65,7 +64,10 @@ BisJson1Importer::BisJson1Importer(const wchar_t* bimPath) : m_outputPath(bimPat
 //---------------+---------------+---------------+---------------+---------------+-------
 BisJson1Importer::~BisJson1Importer()
     {
-    //delete m_importer;
+    // This is a hack - When a schema that references the ECv3CustomAttributes schema is imported, the copy being held by this helper receives an ECSchemaId.  Since that is a static
+    // helper, if the converter attempts to import that schema into a different ecdb, it will fail.
+    ECN::ConversionCustomAttributeHelper::Reset();
+
     delete m_queue;
     }
 

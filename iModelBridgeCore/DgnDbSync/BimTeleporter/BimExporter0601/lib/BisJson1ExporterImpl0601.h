@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
-#include <windows.h>
 #include <BimTeleporter/BimTeleporter.h>
 
 #include <DgnDb06Api/Bentley/Bentley.h>
@@ -107,46 +106,46 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, uint64_t id);
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, Utf8CP id);
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, Json::Value& id);
-        BentleyStatus ExportFonts(Json::Value& out);
-        BentleyStatus ExportGeometryParts(Json::Value& out);
-        BentleyStatus ExportLineStyles(Json::Value& out);
-        BentleyStatus ExportTextures(Json::Value& out);
-        BentleyStatus ExportAuthorities(Json::Value& out);
-        BentleyStatus ExportViews(Json::Value& out);
-        BentleyStatus ExportCategories(Json::Value& out);
-        BentleyStatus ExportCategories(Json::Value& out, Utf8CP tableName, Utf8CP bisClassName, Utf8CP bisAuthorityStr, bvector<DgnCategoryId>& duplicateIds);
-        DgnElementId CreateModelSelector(Json::Value& out, ViewControllerCR vc, Utf8CP name);
-        DgnElementId CreateCategorySelector(Json::Value& out, ViewControllerCR vc, Utf8CP name);
-        DgnElementId CreateDisplayStyle(Json::Value& out, ViewControllerCR vc, Utf8CP name, bool is3d);
-        BentleyStatus ExportModels(Json::Value& out);
-        BentleyStatus ExportModel(Json::Value& out, Utf8CP schemaName, Utf8CP className, Utf8CP whereClause = nullptr);
-        BentleyStatus ExportElements(Json::Value& out);
-        BentleyStatus ExportElements(Json::Value& out, DgnModelId parentModel);
+        BentleyStatus ExportFonts();
+        BentleyStatus ExportGeometryParts();
+        BentleyStatus ExportLineStyles();
+        BentleyStatus ExportTextures();
+        BentleyStatus ExportAuthorities();
+        BentleyStatus ExportViews();
+        BentleyStatus ExportCategories();
+        BentleyStatus ExportCategories(Utf8CP tableName, Utf8CP bisClassName, Utf8CP bisAuthorityStr, bvector<DgnCategoryId>& duplicateIds);
+        DgnElementId CreateModelSelector(ViewControllerCR vc, Utf8CP name);
+        DgnElementId CreateCategorySelector(ViewControllerCR vc, Utf8CP name);
+        DgnElementId CreateDisplayStyle(ViewControllerCR vc, Utf8CP name, bool is3d);
+        BentleyStatus ExportModels();
+        BentleyStatus ExportModel(Utf8CP schemaName, Utf8CP className, Utf8CP whereClause = nullptr);
+        BentleyStatus ExportElements();
+        BentleyStatus ExportElements(DgnModelId parentModel);
         BentleyStatus ExportElements(Json::Value& out, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause = nullptr, bool sendToQueue = true, bool allowDuplicates = false);
-        BentleyStatus ExportElementAspects(Json::Value& out);
-        BentleyStatus ExportElementAspects(Json::Value& out, ECN::ECClassId classId, BentleyApi::BeSQLite::EC::ECInstanceId aspectId);
-        BentleyStatus ExportNamedGroups(Json::Value& out);
-        BentleyStatus ExportElementHasLinks(Json::Value& out);
-        BentleyStatus ExportConstraint(Json::Value& out, ECN::ECClassId constraintClassId, BentleyApi::BeSQLite::EC::ECInstanceId constraintId);
-        BentleyStatus ExportLinkTables(Json::Value& out, Utf8CP schemaName, Utf8CP className, Utf8CP newClassName = nullptr);
-        BentleyStatus ExportPropertyData(Json::Value& out);
-        DgnElementId CreateCodeSpec(Json::Value& out, uint8_t codeSpecType, Utf8CP name);
-        DgnElementId CreateSubjectElement(Utf8CP subjectName, Json::Value& out);
-        DgnElementId CreatePartitionElement(DgnModelCR model, DgnElementId subject, Json::Value& out);
-        DgnElementId CreatePartitionElement(Utf8CP partitionName, Utf8CP partitionType, DgnElementId subject, Json::Value& out);
-        DgnElementId CreateDrawingElement(Json::Value& out, Utf8CP name);
-        DgnElementId CreateSheetElement(Json::Value& out, DgnModelCR model);
-        DgnElementId CreateDefinitionModel(Json::Value& out, Utf8CP modelName);
-        BentleyStatus ExportSchemas(Json::Value& out) const;
-        DgnElementId InitListModel(Json::Value& out, Utf8CP name);
-        BentleyStatus InitDrawingListModel(Json::Value& out);
-        BentleyStatus InitSheetListModel(Json::Value& out);
-        BentleyStatus InitJobDefinitionModel(Json::Value& out);
-        Utf8String RemapResourceAuthority(Json::Value& obj, ECN::ECClassCP elementClass);
+        BentleyStatus ExportElementAspects();
+        BentleyStatus ExportElementAspects(ECN::ECClassId classId, BentleyApi::BeSQLite::EC::ECInstanceId aspectId);
+        BentleyStatus ExportNamedGroups();
+        BentleyStatus ExportElementHasLinks();
+        BentleyStatus ExportConstraint(ECN::ECClassId constraintClassId, BentleyApi::BeSQLite::EC::ECInstanceId constraintId);
+        BentleyStatus ExportLinkTables(Utf8CP schemaName, Utf8CP className, Utf8CP newClassName = nullptr);
+        BentleyStatus ExportPropertyData();
+        DgnElementId CreateCodeSpec(uint8_t codeSpecType, Utf8CP name);
+        DgnElementId CreateSubjectElement(Utf8CP subjectName);
+        DgnElementId CreatePartitionElement(DgnModelCR model, DgnElementId subject);
+        DgnElementId CreatePartitionElement(Utf8CP partitionName, Utf8CP partitionType, DgnElementId subject);
+        DgnElementId CreateDrawingElement(Utf8CP name);
+        DgnElementId CreateSheetElement(DgnModelCR model);
+        DgnElementId CreateDefinitionModel(Utf8CP modelName);
+        BentleyStatus ExportSchemas() const;
+        DgnElementId InitListModel(Utf8CP name);
+        BentleyStatus InitDrawingListModel();
+        BentleyStatus InitSheetListModel();
+        BentleyStatus InitJobDefinitionModel();
+        Utf8String RemapResourceAuthority(ECN::ECClassCP elementClass);
         void HandleAnnotationTextStyle(Json::Value& obj, DgnElementId id);
         
         // Planning schema specific exports
-        BentleyStatus ExportTimelines(Json::Value& out);
+        BentleyStatus ExportTimelines();
 
         //! Report progress and detect if user has indicated that he wants to cancel.
         void ReportProgress() const;
@@ -171,7 +170,6 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
 
     public:
         BisJson1ExporterImpl(wchar_t const* dbPath, wchar_t const* tempPath, wchar_t const* assetsPath);
-        ~BisJson1ExporterImpl();
         bool OpenDgnDb();
         void SetProgressMeter(DgnProgressMeter* meter) { m_meter = meter; }
         bool ExportDgnDb();

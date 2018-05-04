@@ -56,7 +56,6 @@ void BisJson1Exporter0601::SetQueueWrite(T_QueueJson queue)
 //---------------+---------------+---------------+---------------+---------------+-------
 BisJson1Exporter0601::~BisJson1Exporter0601()
     {
-    delete m_exporter;
     }
 
 

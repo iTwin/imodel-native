@@ -42,6 +42,7 @@ public:
     void    FindXrefInsert (DwgStringCR blockName);
     void    FindXrefBlock (DwgStringCR blockName);
     size_t  CountAndCheckModelspaceEntity (bool& found, DwgDbHandleCR entityHandle) const;
+    void    RenameAndActivateLayout (DwgStringCR oldName, DwgStringCR newName);
 
     DwgDbObjectIdCR GetCurrentObjectId () const;
 

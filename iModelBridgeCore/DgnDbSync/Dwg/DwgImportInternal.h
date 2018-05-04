@@ -280,6 +280,7 @@ private:
     bool ComputeClipperTransformation (TransformR toClipper, RotMatrixCR viewRotation);
     void ComputeEnvironment (DisplayStyle3dR displayStyle);
     bool FindEnvironmentImageFile (BeFileNameR filename) const;
+    bool UpdateViewName (ViewDefinitionR view, Utf8StringCR proposedName);
 
 public:
     // constructor for a modelspace viewport
@@ -294,12 +295,12 @@ public:
     // create a view attachment element in a sheet model for a viewport entity in a paperspace
     DgnElementPtr   CreateViewAttachment (DgnModelCR sheetModel, DgnViewId viewId);
     // Corresponding Update methods
-    BentleyStatus   UpdateSpatialView (DgnViewId viewId);
-    BentleyStatus   UpdateSheetView (DgnViewId viewId);
+    BentleyStatus   UpdateSpatialView (DgnViewId viewId, Utf8StringCR proposedName);
+    BentleyStatus   UpdateSheetView (DgnViewId viewId, Utf8StringCR proposedName);
     DgnElementPtr   UpdateViewAttachment (DgnElementId attachId, DgnViewId viewId);
     void            UpdateSpatialCategories (DgnCategoryIdSet& categoryIds) const;
 
-    bool    ValidateViewName (Utf8StringR viewNameInOut, DgnViewId& viewIdOut);
+    bool    ValidateViewName (Utf8StringR viewNameInOut);
     void    SetBackgroundColor (ColorDefCR color) { m_backgroundColor = color; }
     void    SetViewSourcePrivate (bool viewSourcePrivate) { m_isPrivate = viewSourcePrivate; }
     };  // ViewportFactory
@@ -309,14 +310,17 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct LayoutFactory
     {
+private:
     bool                m_isValid;
     DwgImporter&        m_importer;
     DwgDbLayoutPtr      m_layout;
+
 public:
     LayoutFactory (DwgImporter& importer, DwgDbObjectId layoutId);
     bool            IsValid () const { return m_isValid; }
     double          GetUserScale () const;
     BentleyStatus   CalculateSheetSize (DPoint2dR sheetSize) const;
+    BentleyStatus   AlignSheetToPaperOrigin (TransformR transform) const;
     static DwgDbObjectId FindOverallViewport (DwgDbBlockTableRecordCR block);
     };  // LayoutFactory
 
