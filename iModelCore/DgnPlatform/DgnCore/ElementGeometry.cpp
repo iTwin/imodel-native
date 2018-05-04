@@ -2604,7 +2604,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
 
-                if (!ppfb->has_symbology() || !ppfb->has_symbologyIndex())
+                if (!ppfb->has_symbology())
                     {
                     writer.Append(egOp);
                     break;
@@ -2637,7 +2637,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
                 FlatBufferBuilder remappedfbb;
                 auto remappedEntityData = remappedfbb.CreateVector(ppfb->entityData()->Data(), ppfb->entityData()->Length());
                 auto remappedFaceSymb = remappedfbb.CreateVectorOfStructs(&remappedFaceSymbVec.front(), remappedFaceSymbVec.size());
-                auto remappedFaceSymbIndex = remappedfbb.CreateVectorOfStructs((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->Data(), ppfb->symbologyIndex()->Length());
+                auto remappedFaceSymbIndex = ppfb->has_symbologyIndex() ? remappedfbb.CreateVectorOfStructs((FB::FaceSymbologyIndex const*) ppfb->symbologyIndex()->Data(), ppfb->symbologyIndex()->Length()) : 0;
                 auto mloc = FB::CreateBRepData(remappedfbb, ppfb->entityTransform(), ppfb->brepType(), remappedEntityData, remappedFaceSymb, remappedFaceSymbIndex);
                 remappedfbb.Finish(mloc);
                 writer.Append(Operation(OpCode::ParasolidBRep, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
@@ -4388,10 +4388,17 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
     GeometryStreamIO::Collection collection(m_data, m_dataSize);
     GeometryStreamIO::Reader reader(m_state.m_dgnDb);
     DgnSubCategoryId lastSubCategory = m_state.m_geomParams.GetSubCategoryId();
+    bool wantBRepData = opts["wantBRepData"].asBool();
+    size_t ignoreUtilOffset = 0;
     Json::Value output;
     
     for (auto const& egOp : collection)
         {
+        size_t  thisDataOffset = (egOp.m_data - m_data);
+
+        if (thisDataOffset < ignoreUtilOffset)
+            continue;
+
         switch (egOp.m_opCode)
             {
             case GeometryStreamIO::OpCode::Header:
@@ -4713,6 +4720,116 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 break;
                 }
 
+            case GeometryStreamIO::OpCode::ParasolidBRep:
+                {
+                if (!wantBRepData)
+                    break;
+
+                auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
+                Json::Value value;
+
+                Utf8String dataStr = Base64Utilities::Encode((Utf8CP) ppfb->entityData()->Data(), ppfb->entityData()->Length());
+                Transform  entityTransform = *((TransformCP) ppfb->entityTransform());
+
+                value["data"] = dataStr;
+
+                if (0 != ppfb->brepType())
+                    value["type"] = ppfb->brepType();
+
+                if (!entityTransform.IsIdentity())
+                    JsonUtils::TransformToJson(value["transform"], entityTransform);
+
+                if (ppfb->has_symbology())
+                    {
+                    // YUCK: Want to ignore appearance entries for backup geometry to follow; not harmful, just confusing, and the less info to stringify the better....
+                    uint8_t const*  nextData = egOp.m_data + egOp.m_dataSize;
+                    size_t          nextDataOffset = (egOp.m_data - m_data) + egOp.m_dataSize;
+
+                    while (nextDataOffset < m_dataSize)
+                        {
+                        uint32_t    opCode = *((uint32_t *) (nextData));
+                        uint32_t    dataSize = *((uint32_t *) (nextData + sizeof (opCode)));
+                        size_t      egOpSize = sizeof (opCode) + sizeof (dataSize) + dataSize;
+
+                        GeometryStreamIO::Operation nextEgOp = GeometryStreamIO::Operation((GeometryStreamIO::OpCode) (opCode)); 
+
+                        nextData += egOpSize;
+                        nextDataOffset += egOpSize;
+
+                        switch (nextEgOp.m_opCode)
+                            {
+                            case GeometryStreamIO::OpCode::BRepPolyface:
+                            case GeometryStreamIO::OpCode::BRepCurveVector:
+                                ignoreUtilOffset = nextDataOffset; // Skip until we get to opcode following last backup geometry opcode... 
+                                break;
+
+                            default:
+                                if (nextEgOp.IsGeometryOp())
+                                    nextDataOffset = m_dataSize; // We can stop looking for more backup geometry opcodes when we encounter a normal geometry opcode...
+                                break;
+                            }
+                        }
+
+                    // NOTE: Ignoring older breps w/o face attachment index attrib, not worth the hassle...don't want to add it here...
+                    if (!ppfb->has_symbologyIndex())
+                        {
+                        for (size_t iSymb=0; iSymb < ppfb->symbology()->Length(); iSymb++)
+                            {
+                            FB::FaceSymbology const* fbSymb = ((FB::FaceSymbology const*) ppfb->symbology()->Data())+iSymb;
+                            Json::Value faceValue;
+
+                            if (fbSymb->useColor())
+                                {
+                                faceValue["color"] = fbSymb->color();
+                                if (0.0 != fbSymb->transparency())
+                                    faceValue["transparency"] = fbSymb->transparency();
+                                }
+
+                            if (fbSymb->useMaterial())
+                                {
+                                RenderMaterialId material((uint64_t)fbSymb->materialId());
+                                faceValue["materialId"] = material.ToHexStr();
+                                }
+
+                            value["faceSymbology"].append(faceValue);
+                            }
+                        }
+                    }
+
+                Json::Value brepValue;
+                brepValue["brep"] = value;
+                output.append(brepValue);
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::BRepPolyface:
+                {
+                if (wantBRepData)
+                    break;
+
+                PolyfaceHeaderPtr   meshPtr = BentleyGeometryFlatBuffer::BytesToPolyfaceHeader(egOp.m_data);
+                IGeometryPtr        geomPtr = (meshPtr.IsValid() ? IGeometry::Create(meshPtr) : nullptr);
+                Json::Value         value;
+
+                if (geomPtr.IsValid() && IModelJson::TryGeometryToIModelJsonValue(value, *geomPtr))
+                    output.append(value);
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::BRepCurveVector:
+                {
+                if (wantBRepData)
+                    break;
+
+                CurveVectorPtr      curvePtr = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data);
+                IGeometryPtr        geomPtr = (curvePtr.IsValid() ? IGeometry::Create(curvePtr) : nullptr);
+                Json::Value         value;
+
+                if (geomPtr.IsValid() && IModelJson::TryGeometryToIModelJsonValue(value, *geomPtr))
+                    output.append(value);
+                break;
+                }
+
             case GeometryStreamIO::OpCode::PointPrimitive:
             case GeometryStreamIO::OpCode::PointPrimitive2d:
             case GeometryStreamIO::OpCode::ArcPrimitive:
@@ -4721,8 +4838,6 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
             case GeometryStreamIO::OpCode::CurvePrimitive:
             case GeometryStreamIO::OpCode::SolidPrimitive:
             case GeometryStreamIO::OpCode::BsplineSurface:
-            case GeometryStreamIO::OpCode::BRepPolyface: // Parasolid not currently supported return backup geometry...
-            case GeometryStreamIO::OpCode::BRepCurveVector:
                 {
                 GeometricPrimitivePtr geom;
 
@@ -4776,11 +4891,10 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 break;
                 }
 
-#if defined (NOT_NOW_RAW_OPCODE)
-            case GeometryStreamIO::OpCode::ParasolidBRep:
             default:
                 {
-                // FOR_TESTING_ONLY: Bad to append this especially if it's geometry (brep) as we need to compute bounding box...
+#if defined (NOT_NOW_RAW_OPCODE)
+                // FOR_TESTING_ONLY: Would be bad to append this especially if it's an unrecognized geometry type (from newer version?) as we need to compute bounding box, etc...
                 Utf8String dataStr = Base64Utilities::Encode((Utf8CP) egOp.m_data, egOp.m_dataSize);
                 Json::Value value;
 
@@ -4790,9 +4904,9 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 Json::Value opCodeValue;
                 opCodeValue["unparsedOp"] = value;
                 output.append(opCodeValue);
+#endif
                 break;
                 }
-#endif
             }
         }
 
@@ -6347,6 +6461,77 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
 
             if (!Append(*text))
                 return false;
+            }
+        else if (entry.isMember("brep"))
+            {
+#if defined (BENTLEYCONFIG_PARASOLID)
+            Json::Value brep = entry["brep"];
+
+            if (brep["data"].isNull())
+                continue;
+
+            ByteStream byteStream;
+
+            Base64Utilities::Decode(byteStream, brep["data"].asString());
+
+            if (!byteStream.HasData())
+                continue;
+
+            Transform entityTransform = Transform::FromIdentity();
+
+            if (!brep["transform"].isNull())
+                JsonUtils::TransformFromJson(entityTransform, brep["transform"]);
+
+            IBRepEntityPtr entity;
+
+            if (SUCCESS != PSolidUtil::RestoreEntityFromMemory(entity, byteStream.GetData(), byteStream.GetSize(), entityTransform))
+                return false;
+
+            if (!brep["faceSymbology"].isNull() && brep["faceSymbology"].isArray())
+                {
+                uint32_t nSymb = (uint32_t) brep["faceSymbology"].size();
+
+                for (uint32_t iSymb=0; iSymb < nSymb; iSymb++)
+                    {
+                    GeometryParams faceParams;
+
+                    if (!brep["faceSymbology"][iSymb]["color"].isNull())
+                        faceParams.SetLineColor(ColorDef(brep["faceSymbology"][iSymb]["color"].asUInt()));
+
+                    if (!brep["faceSymbology"][iSymb]["transparency"].isNull())
+                        faceParams.SetTransparency(brep["faceSymbology"][iSymb]["transparency"].asDouble());
+
+                    if (!brep["faceSymbology"][iSymb]["material"].isNull())
+                        {
+                        RenderMaterialId materialId;
+                        materialId.FromJson(brep["faceSymbology"][iSymb]["material"]);
+                        faceParams.SetMaterialId(materialId);
+                        }
+
+                    if (nullptr == entity->GetFaceMaterialAttachments())
+                        {
+                        IFaceMaterialAttachmentsPtr attachments = PSolidUtil::CreateNewFaceAttachments(PSolidUtil::GetEntityTag(*entity), faceParams);
+
+                        if (!attachments.IsValid())
+                            break;
+
+                        PSolidUtil::SetFaceAttachments(*entity, attachments.get());
+                        }
+                    else
+                        {
+                        entity->GetFaceMaterialAttachmentsP()->_GetFaceAttachmentsVecR().push_back(faceParams);
+                        }
+                    }
+                }
+
+            if (!Append(params))
+                return false;
+
+            if (!Append(*entity))
+                return false;
+#else
+            return false;
+#endif
             }
 #if defined (NOT_NOW_RAW_OPCODE)
         else if (entry.isMember("unparsedOp"))
