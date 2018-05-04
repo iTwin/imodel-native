@@ -746,7 +746,7 @@ TEST_F(SchemaManagerTests, ImportWithLocalizationSchemas)
         "        <ECProperty propertyName='Pet' typeName='Animal' displayLabel='Pet Type' />"
         "        <ECProperty propertyName='LastMod' typeName='DateTime' displayLabel='Last Modified Date'>"
         "          <ECCustomAttributes>"
-        "            <DateTimeInfo xmlns='CoreCustomAttributes.01.00'>"
+        "            <DateTimeInfo xmlns='CoreCustomAttributes.01.00.00'>"
         "                <DateTimeKind>Unspecified</DateTimeKind>"
         "            </DateTimeInfo>"
         "          </ECCustomAttributes>"
@@ -758,7 +758,7 @@ TEST_F(SchemaManagerTests, ImportWithLocalizationSchemas)
         "    <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA' />"
         "    <ECSchemaReference name='SchemaLocalizationCustomAttributes' version='01.00.00' alias='LocCA' />"
         "<ECCustomAttributes>"
-        "<SupplementalSchema xmlns='CoreCustomAttributes.01.00'>"
+        "<SupplementalSchema xmlns='CoreCustomAttributes.01.00.00'>"
         "   <PrimarySchemaReference>"
         "       <SchemaName>House</SchemaName>"
         "       <MajorVersion>1</MajorVersion>"
@@ -768,7 +768,7 @@ TEST_F(SchemaManagerTests, ImportWithLocalizationSchemas)
         "   <Precedence>9900</Precedence>"
         "   <Purpose>Localization</Purpose>"
         "</SupplementalSchema>"
-        "<LocalizationSpecification xmlns='SchemaLocalizationCustomAttributes.01.00'>"
+        "<LocalizationSpecification xmlns='SchemaLocalizationCustomAttributes.01.00.00'>"
         "   <Locale>de-DE</Locale>"
         "   <Resource>"
         "      <LocalizationData>"
@@ -2583,7 +2583,7 @@ TEST_F(SchemaManagerTests, GetClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaManagerTests, ClassLocater)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
+    ASSERT_EQ(SUCCESS, SetupECDb("ecschemamanagertest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     
     ECClassCP ecClass = m_ecdb.GetClassLocater().LocateClass("ECSqlTest", "PSA");
     EXPECT_TRUE(ecClass != nullptr) << "Look up by schema name";

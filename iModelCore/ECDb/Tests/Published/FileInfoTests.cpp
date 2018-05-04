@@ -366,7 +366,7 @@ TEST_F(FileInfoTestFixture, IterateThroughEmbeddedFiles)
             EXPECT_EQ(2, file.GetId().GetValue());
             EXPECT_STREQ("XML", file.GetTypeUtf8());
             EXPECT_STREQ("ECSchema", file.GetDescriptionUtf8());
-            EXPECT_EQ(28697, file.GetFileSize());
+            EXPECT_EQ(28730, file.GetFileSize());
             EXPECT_EQ(524288, file.GetChunkSize());
             }
         else if (strcmp(file.GetNameUtf8(), "ECSqlTest.01.00.00.ecschema.xml") == 0)
@@ -374,7 +374,7 @@ TEST_F(FileInfoTestFixture, IterateThroughEmbeddedFiles)
             EXPECT_EQ(1, file.GetId().GetValue());
             EXPECT_STREQ("XML", file.GetTypeUtf8());
             EXPECT_TRUE(Utf8String::IsNullOrEmpty(file.GetDescriptionUtf8()));
-            EXPECT_EQ(29813, file.GetFileSize());
+            EXPECT_EQ(29900, file.GetFileSize());
             EXPECT_EQ(524288, file.GetChunkSize());
             }
         }
