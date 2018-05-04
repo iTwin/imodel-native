@@ -5,17 +5,15 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+//__BENTLEY_INTERNAL_ONLY__
 #pragma once
 #include <functional>
-
-//__PUBLISH_SECTION_START__
 
 /** @namespace BimTeleporter Contains types defined by %Bentley Systems that are used to synchronize between DgnDb and foreign data formats. */
 #define BIM_TELEPORTER_NAMESPACE_NAME BimTeleporter
 #define BEGIN_BIM_TELEPORTER_NAMESPACE namespace BentleyB0200 { namespace Dgn { namespace BIM_TELEPORTER_NAMESPACE_NAME {
 #define END_BIM_TELEPORTER_NAMESPACE   } } }
 
-//__PUBLISH_SECTION_END__
 #if defined (__GNUC__) || defined (__clang__)
     #define EXPORT_ATTRIBUTE        __attribute__((visibility ("default")))
 #elif defined (_WIN32) // Windows && WinRT
@@ -33,8 +31,6 @@
 #define BIM_TELEPORTER_EXPORT EXPORT_ATTRIBUTE
 #endif
 #endif
-
-//__PUBLISH_SECTION_START__
 
 #if !defined (BIM_TELEPORTER_EXPORT)
 #define BIM_TELEPORTER_EXPORT  IMPORT_ATTRIBUTE

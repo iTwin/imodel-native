@@ -3014,6 +3014,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
 
     bool        isValidBasis = false;
     bool        isValidBasisAndScale = false;
+    bool        haveSCOverrides = false;
     double      v8SymbolScale = 0.0;
     Transform   basisTransform;
 
@@ -3051,6 +3052,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
                 // Make sure part cache has geometry params that aren't affected by SCOverride...
                 scOvr->level = scOvr->color = scOvr->style = scOvr->weight = false;
                 DgnV8Api::ElementGraphicsOutput::Process(v8ehNoOvr, *this);
+                haveSCOverrides = true;
                 }
             else
                 {
@@ -3138,6 +3140,10 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
 
             if (!geometry.IsValid())
                 continue;
+
+            // Apply SCOverride now for a shared cell that was rejected for a GeometryPart...
+            if (haveSCOverrides)
+                ApplySharedCellInstanceOverrides(v8eh, pathEntry.m_geomParams);
 
             // If category changes or GeometryStream is getting un-wieldy, need to create a new element/assembly...
             if (builder.IsValid() && (builder->GetGeometryParams().GetCategoryId() != pathEntry.m_geomParams.GetCategoryId() || builder->GetCurrentSize() > 20000000))
