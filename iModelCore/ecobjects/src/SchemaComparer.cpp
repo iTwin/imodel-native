@@ -2650,8 +2650,8 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
     if (oldDecPrec != newDecPrec)
         DecimalPrecision().Set(oldDecPrec, newDecPrec);
 
-    if (oldFractPrec != oldFractPrec)
-        FractionalPrecision().Set(oldFractPrec, oldFractPrec);
+    if (oldFractPrec != newFractPrec)
+        FractionalPrecision().Set(oldFractPrec, newFractPrec);
     }
 
     {

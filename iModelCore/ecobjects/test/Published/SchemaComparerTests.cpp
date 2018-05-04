@@ -54,15 +54,15 @@ TEST_F(SchemaCompareTest, CompareSchemaWithUnitsSame)
     koq->SetPersistenceUnit(*unit);
     koq->AddPresentationFormat(*format);
 
-    SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaComparer comparer; 
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(0, changes.Count()); //Identical
+    ASSERT_EQ(0, changes.Changes().Count()); //Identical
     }
 
 //----------------------------------------------------------------------------------------
@@ -85,18 +85,18 @@ TEST_F(SchemaCompareTest, CompareSchemaWithDifferingUnitUnitSystemAndPhenomenon)
     EC_ASSERT_SUCCESS(m_secondSchema->CreateUnit(unit, "SMOOT", "APPLE", *phenom, *system, "BANANA", "PEAR"));
 
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(1, changes.Count());
+    ASSERT_EQ(1, changes.Changes().Count());
 
-    auto& firstChanges = changes.At(0);
+    auto& firstChanges = changes.Changes()[0];
 
-    ASSERT_EQ(3, firstChanges.ChangesCount());
+    ASSERT_EQ(3, firstChanges.MemberChangesCount());
 
     auto& unitChanges = firstChanges.Units();
     auto& phenomChanges = firstChanges.Phenomena();
@@ -106,24 +106,24 @@ TEST_F(SchemaCompareTest, CompareSchemaWithDifferingUnitUnitSystemAndPhenomenon)
     ASSERT_EQ(1, phenomChanges.Count());
     ASSERT_EQ(1, systemChanges.Count());
 
-    EXPECT_STREQ("SMOOT", unitChanges.At(0).GetDefinition().GetOld().Value().c_str());
-    EXPECT_STREQ("APPLE", unitChanges.At(0).GetDefinition().GetNew().Value().c_str());
-    EXPECT_STREQ("SMOOT", unitChanges.At(0).GetDisplayLabel().GetOld().Value().c_str());
-    EXPECT_STREQ("BANANA", unitChanges.At(0).GetDisplayLabel().GetNew().Value().c_str());
-    EXPECT_STREQ("SMOOT", unitChanges.At(0).GetDescription().GetOld().Value().c_str());
-    EXPECT_STREQ("PEAR", unitChanges.At(0).GetDescription().GetNew().Value().c_str());
+    EXPECT_STREQ("SMOOT", unitChanges[0].Definition().GetOld().Value().c_str());
+    EXPECT_STREQ("APPLE", unitChanges[0].Definition().GetNew().Value().c_str());
+    EXPECT_STREQ("SMOOT", unitChanges[0].DisplayLabel().GetOld().Value().c_str());
+    EXPECT_STREQ("BANANA", unitChanges[0].DisplayLabel().GetNew().Value().c_str());
+    EXPECT_STREQ("SMOOT", unitChanges[0].Description().GetOld().Value().c_str());
+    EXPECT_STREQ("PEAR", unitChanges[0].Description().GetNew().Value().c_str());
 
-    EXPECT_STREQ("SMOOT", phenomChanges.At(0).GetDefinition().GetOld().Value().c_str());
-    EXPECT_STREQ("APPLE", phenomChanges.At(0).GetDefinition().GetNew().Value().c_str());
-    EXPECT_STREQ("SMOOT_PHENOM_LABEL", phenomChanges.At(0).GetDisplayLabel().GetOld().Value().c_str());
-    EXPECT_STREQ("BANANA", phenomChanges.At(0).GetDisplayLabel().GetNew().Value().c_str());
-    EXPECT_STREQ("SMOOT_PHENOM_DESCRIPTION", phenomChanges.At(0).GetDescription().GetOld().Value().c_str());
-    EXPECT_STREQ("PEAR", phenomChanges.At(0).GetDescription().GetNew().Value().c_str());
+    EXPECT_STREQ("SMOOT", phenomChanges[0].Definition().GetOld().Value().c_str());
+    EXPECT_STREQ("APPLE", phenomChanges[0].Definition().GetNew().Value().c_str());
+    EXPECT_STREQ("SMOOT_PHENOM_LABEL", phenomChanges[0].DisplayLabel().GetOld().Value().c_str());
+    EXPECT_STREQ("BANANA", phenomChanges[0].DisplayLabel().GetNew().Value().c_str());
+    EXPECT_STREQ("SMOOT_PHENOM_DESCRIPTION", phenomChanges[0].Description().GetOld().Value().c_str());
+    EXPECT_STREQ("PEAR", phenomChanges[0].Description().GetNew().Value().c_str());
 
-    EXPECT_STREQ("SMOOT_SYSTEM_LABEL", systemChanges.At(0).GetDisplayLabel().GetOld().Value().c_str());
-    EXPECT_STREQ("APPLE", systemChanges.At(0).GetDisplayLabel().GetNew().Value().c_str());
-    EXPECT_STREQ("SMOOT_SYSTEM_DESCRIPTION", systemChanges.At(0).GetDescription().GetOld().Value().c_str());
-    EXPECT_STREQ("BANANA", systemChanges.At(0).GetDescription().GetNew().Value().c_str());
+    EXPECT_STREQ("SMOOT_SYSTEM_LABEL", systemChanges[0].DisplayLabel().GetOld().Value().c_str());
+    EXPECT_STREQ("APPLE", systemChanges[0].DisplayLabel().GetNew().Value().c_str());
+    EXPECT_STREQ("SMOOT_SYSTEM_DESCRIPTION", systemChanges[0].Description().GetOld().Value().c_str());
+    EXPECT_STREQ("BANANA", systemChanges[0].Description().GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -148,27 +148,27 @@ TEST_F(SchemaCompareTest, CompareShouldHandleUnitsWithDependenciesInOtherSchemas
     EC_ASSERT_SUCCESS(m_secondSchema->CreateUnit(unit, "SMOOT", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
 
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(1, changes.Count());
+    ASSERT_EQ(1, changes.Changes().Count());
 
-    auto& firstChanges = changes.At(0);
+    auto& firstChanges = changes.Changes()[0];
 
-    ASSERT_EQ(4, firstChanges.ChangesCount());
+    ASSERT_EQ(4, firstChanges.MemberChangesCount());
 
     auto& unitChanges = firstChanges.Units();
 
     ASSERT_EQ(1, unitChanges.Count());
     
-    EXPECT_STRCASEEQ("TestSchema:SMOOT_PHENOM", unitChanges.At(0).GetPhenomenon().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("Ref:SMOOT_PHENOM", unitChanges.At(0).GetPhenomenon().GetNew().Value().c_str());
-    EXPECT_STRCASEEQ("TestSchema:SMOOT_SYSTEM", unitChanges.At(0).GetUnitSystem().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("Ref:SMOOT_SYSTEM", unitChanges.At(0).GetUnitSystem().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("TestSchema:SMOOT_PHENOM", unitChanges[0].Phenomenon().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Ref:SMOOT_PHENOM", unitChanges[0].Phenomenon().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("TestSchema:SMOOT_SYSTEM", unitChanges[0].UnitSystem().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Ref:SMOOT_SYSTEM", unitChanges[0].UnitSystem().GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -193,14 +193,14 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchema)
     koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
 
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(0, changes.Count()); //Identical
+    ASSERT_EQ(0, changes.Changes().Count()); //Identical
     }
 
 //----------------------------------------------------------------------------------------
@@ -236,32 +236,32 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferen
     koq->AddPresentationFormat(*format);
 
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(1, changes.Count());
+    ASSERT_EQ(1, changes.Changes().Count());
 
-    auto& koqChanges = changes.At(0).KindOfQuantities();
+    auto& koqChanges = changes.Changes()[0].KindOfQuantities();
 
-    ASSERT_EQ(1, changes.Count());
+    ASSERT_EQ(1, changes.Changes().Count());
 
-    auto& pers = koqChanges.At(0).GetPersistenceUnit();
-    auto& pres = koqChanges.At(0).GetPresentationUnitList();
+    auto& pers = koqChanges[0].PersistenceUnit();
+    auto& pres = koqChanges[0].PresentationFormats();
 
     EXPECT_STRCASEEQ("Units:M", pers.GetOld().Value().c_str());
     EXPECT_STRCASEEQ("Ref:M", pers.GetNew().Value().c_str());
 
     ASSERT_EQ(1, pres.Count());
 
-    EXPECT_FALSE(pres.At(0).GetOld().IsNull());
-    EXPECT_STRCASEEQ("f:AmerFI", pres.At(0).GetOld().Value().c_str());
+    EXPECT_FALSE(pres[0].GetOld().IsNull());
+    EXPECT_STRCASEEQ("f:AmerFI", pres[0].GetOld().Value().c_str());
 
-    EXPECT_FALSE(pres.At(0).GetNew().IsNull());
-    EXPECT_STRCASEEQ("r:AmerFI", pres.At(0).GetNew().Value().c_str());
+    EXPECT_FALSE(pres[0].GetNew().IsNull());
+    EXPECT_STRCASEEQ("r:AmerFI", pres[0].GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -288,30 +288,30 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
     ASSERT_EQ(1, koq->GetPresentationFormats().size());
 
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(1, changes.Count());
-    ASSERT_EQ(1, changes.At(0).ChangesCount());
-    auto& koqChanges = changes.At(0).KindOfQuantities();
+    ASSERT_EQ(1, changes.Changes().Count());
+    ASSERT_EQ(1, changes.Changes()[0].MemberChangesCount());
+    auto& koqChanges = changes.Changes()[0].KindOfQuantities();
 
     ASSERT_EQ(1, koqChanges.Count());
 
-    EXPECT_STRCASEEQ("Units:CM", koqChanges.At(0).GetPersistenceUnit().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("Units:M", koqChanges.At(0).GetPersistenceUnit().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Units:CM", koqChanges[0].PersistenceUnit().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Units:M", koqChanges[0].PersistenceUnit().GetNew().Value().c_str());
 
-    auto& pres = koqChanges.At(0).GetPresentationUnitList();
+    auto& pres = koqChanges[0].PresentationFormats();
     ASSERT_EQ(1, pres.Count());
 
-    ASSERT_FALSE(pres.At(0).GetOld().IsNull());
-    EXPECT_STRCASEEQ("f:DefaultRealU", pres.At(0).GetOld().Value().c_str());
+    ASSERT_FALSE(pres[0].GetOld().IsNull());
+    EXPECT_STRCASEEQ("f:DefaultRealU", pres[0].GetOld().Value().c_str());
 
-    ASSERT_FALSE(pres.At(0).GetNew().IsNull());
-    EXPECT_STRCASEEQ("f:DefaultReal", pres.At(0).GetNew().Value().c_str());
+    ASSERT_FALSE(pres[0].GetNew().IsNull());
+    EXPECT_STRCASEEQ("f:DefaultReal", pres[0].GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -343,14 +343,14 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
     m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(0, changes.Count()); //Identical
+    ASSERT_EQ(0, changes.Changes().Count()); //Identical
     }
 
 //----------------------------------------------------------------------------------------
@@ -381,21 +381,21 @@ TEST_F(SchemaCompareTest, CompareFormatsDeleted)
     ECFormatP format;
     m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(1, changes.Count());
+    ASSERT_EQ(1, changes.Changes().Count());
 
-    auto formatChanges = changes.At(0).Formats();
+    auto formatChanges = changes.Changes()[0].Formats();
     ASSERT_EQ(1, formatChanges.Count());
 
-    auto formatChange = formatChanges.At(0);
+    auto formatChange = formatChanges[0];
 
-    ASSERT_EQ(21, formatChange.ChangesCount());
+    ASSERT_EQ(4, formatChange.MemberChangesCount());
     }
 
 //----------------------------------------------------------------------------------------
@@ -417,23 +417,20 @@ TEST_F(SchemaCompareTest, CompareFormatsDeletedCompositeSpec)
     m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
     m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num);
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(1, changes.Count());
-    auto& formatChanges = changes.At(0).Formats();
+    ASSERT_EQ(1, changes.Changes().Count());
+    auto& formatChanges = changes.Changes()[0].Formats();
 
     ASSERT_EQ(1, formatChanges.Count());
-    auto& formatChange = formatChanges.At(0);
+    auto& formatChange = formatChanges[0];
 
-    ASSERT_EQ(1, formatChange.ChangesCount());
-
-    EXPECT_TRUE(formatChange.GetHasComposite().GetOld().Value());
-    EXPECT_FALSE(formatChange.GetHasComposite().GetNew().Value());
+    ASSERT_EQ(1, formatChange.MemberChangesCount());
     }
 
 //----------------------------------------------------------------------------------------
@@ -456,39 +453,39 @@ TEST_F(SchemaCompareTest, CompareFormatsCompareToEmptyCompositeSpec)
     m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
     m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp2);
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(1, changes.Count());
-    auto& formatChanges = changes.At(0).Formats();
+    ASSERT_EQ(1, changes.Changes().Count());
+    auto& formatChanges = changes.Changes()[0].Formats();
 
     ASSERT_EQ(1, formatChanges.Count());
-    auto& formatChange = formatChanges.At(0);
+    auto& formatChange = formatChanges[0];
 
-    ASSERT_EQ(8, formatChange.ChangesCount());
+    ASSERT_EQ(1, formatChange.MemberChangesCount());
 
-    EXPECT_STRCASEEQ("UNITS:DM", formatChange.GetCompositeMiddleUnit().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeMiddleUnit().GetNew().IsNull());
-    EXPECT_STRCASEEQ("UNITS:CM", formatChange.GetCompositeMinorUnit().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeMinorUnit().GetNew().IsNull());
-    EXPECT_STRCASEEQ("UNITS:MM", formatChange.GetCompositeSubUnit().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeSubUnit().GetNew().IsNull());
+    EXPECT_STRCASEEQ("UNITS:DM", formatChange.CompositeSpec().MiddleUnit().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().MiddleUnit().GetNew().IsNull());
+    EXPECT_STRCASEEQ("UNITS:CM", formatChange.CompositeSpec().MinorUnit().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().MinorUnit().GetNew().IsNull());
+    EXPECT_STRCASEEQ("UNITS:MM", formatChange.CompositeSpec().SubUnit().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().SubUnit().GetNew().IsNull());
 
-    EXPECT_STRCASEEQ("Spacer1", formatChange.GetCompositeSpacer().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeSpacer().GetNew().IsNull());
+    EXPECT_STRCASEEQ("Spacer1", formatChange.CompositeSpec().Spacer().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().Spacer().GetNew().IsNull());
 
-    EXPECT_STRCASEEQ("Apple", formatChange.GetCompositeMajorLabel().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeMajorLabel().GetNew().IsNull());
-    EXPECT_STRCASEEQ("Banana", formatChange.GetCompositeMiddleLabel().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeMiddleLabel().GetNew().IsNull());
-    EXPECT_STRCASEEQ("Carrot", formatChange.GetCompositeMinorLabel().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeMinorLabel().GetNew().IsNull());
-    EXPECT_STRCASEEQ("Dragonfruit", formatChange.GetCompositeSubLabel().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeSubLabel().GetNew().IsNull());
+    EXPECT_STRCASEEQ("Apple", formatChange.CompositeSpec().MajorLabel().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().MajorLabel().GetNew().IsNull());
+    EXPECT_STRCASEEQ("Banana", formatChange.CompositeSpec().MiddleLabel().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().MiddleLabel().GetNew().IsNull());
+    EXPECT_STRCASEEQ("Carrot", formatChange.CompositeSpec().MinorLabel().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().MinorLabel().GetNew().IsNull());
+    EXPECT_STRCASEEQ("Dragonfruit", formatChange.CompositeSpec().SubLabel().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().SubLabel().GetNew().IsNull());
     }
 
 //----------------------------------------------------------------------------------------
@@ -511,39 +508,39 @@ TEST_F(SchemaCompareTest, CompareFormatsNewCompositeSpec)
     m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp2);
     m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(1, changes.Count());
-    auto& formatChanges = changes.At(0).Formats();
+    ASSERT_EQ(1, changes.Changes().Count());
+    auto& formatChanges = changes.Changes()[0].Formats();
 
     ASSERT_EQ(1, formatChanges.Count());
-    auto& formatChange = formatChanges.At(0);
+    auto& formatChange = formatChanges[0];
 
-    ASSERT_EQ(8, formatChange.ChangesCount());
+    ASSERT_EQ(1, formatChange.MemberChangesCount());
 
-    EXPECT_STRCASEEQ("UNITS:DM", formatChange.GetCompositeMiddleUnit().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeMiddleUnit().GetOld().IsNull());
-    EXPECT_STRCASEEQ("UNITS:CM", formatChange.GetCompositeMinorUnit().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeMinorUnit().GetOld().IsNull());
-    EXPECT_STRCASEEQ("UNITS:MM", formatChange.GetCompositeSubUnit().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeSubUnit().GetOld().IsNull());
+    EXPECT_STRCASEEQ("UNITS:DM", formatChange.CompositeSpec().MiddleUnit().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().MiddleUnit().GetOld().IsNull());
+    EXPECT_STRCASEEQ("UNITS:CM", formatChange.CompositeSpec().MinorUnit().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().MinorUnit().GetOld().IsNull());
+    EXPECT_STRCASEEQ("UNITS:MM", formatChange.CompositeSpec().SubUnit().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().SubUnit().GetOld().IsNull());
 
-    EXPECT_STRCASEEQ("Spacer1", formatChange.GetCompositeSpacer().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeSpacer().GetOld().IsNull());
+    EXPECT_STRCASEEQ("Spacer1", formatChange.CompositeSpec().Spacer().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().Spacer().GetOld().IsNull());
 
-    EXPECT_STRCASEEQ("Apple", formatChange.GetCompositeMajorLabel().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeMajorLabel().GetOld().IsNull());
-    EXPECT_STRCASEEQ("Banana", formatChange.GetCompositeMiddleLabel().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeMiddleLabel().GetOld().IsNull());
-    EXPECT_STRCASEEQ("Carrot", formatChange.GetCompositeMinorLabel().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeMinorLabel().GetOld().IsNull());
-    EXPECT_STRCASEEQ("Dragonfruit", formatChange.GetCompositeSubLabel().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetCompositeSubLabel().GetOld().IsNull());
+    EXPECT_STRCASEEQ("Apple", formatChange.CompositeSpec().MajorLabel().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().MajorLabel().GetOld().IsNull());
+    EXPECT_STRCASEEQ("Banana", formatChange.CompositeSpec().MiddleLabel().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().MiddleLabel().GetOld().IsNull());
+    EXPECT_STRCASEEQ("Carrot", formatChange.CompositeSpec().MinorLabel().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().MinorLabel().GetOld().IsNull());
+    EXPECT_STRCASEEQ("Dragonfruit", formatChange.CompositeSpec().SubLabel().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.CompositeSpec().SubLabel().GetOld().IsNull());
     }
 
 //----------------------------------------------------------------------------------------
@@ -573,41 +570,41 @@ TEST_F(SchemaCompareTest, CompareFormatsModifiedCompositeSpecs)
     m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
     m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp2);
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(1, changes.Count());
-    auto& formatChanges = changes.At(0).Formats();
+    ASSERT_EQ(1, changes.Changes().Count());
+    auto& formatChanges = changes.Changes()[0].Formats();
 
     ASSERT_EQ(1, formatChanges.Count());
-    auto& formatChange = formatChanges.At(0);
+    auto& formatChange = formatChanges[0];
 
-    ASSERT_EQ(9, formatChange.ChangesCount());
+    ASSERT_EQ(1, formatChange.MemberChangesCount());
 
-    EXPECT_STRCASEEQ("UNITS:M", formatChange.GetCompositeMajorUnit().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("UNITS:MILE", formatChange.GetCompositeMajorUnit().GetNew().Value().c_str());
-    EXPECT_STRCASEEQ("UNITS:DM", formatChange.GetCompositeMiddleUnit().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("UNITS:YRD", formatChange.GetCompositeMiddleUnit().GetNew().Value().c_str());
-    EXPECT_STRCASEEQ("UNITS:CM", formatChange.GetCompositeMinorUnit().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("UNITS:FT", formatChange.GetCompositeMinorUnit().GetNew().Value().c_str());
-    EXPECT_STRCASEEQ("UNITS:MM", formatChange.GetCompositeSubUnit().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("UNITS:IN", formatChange.GetCompositeSubUnit().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:M", formatChange.CompositeSpec().MajorUnit().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:MILE", formatChange.CompositeSpec().MajorUnit().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:DM", formatChange.CompositeSpec().MiddleUnit().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:YRD", formatChange.CompositeSpec().MiddleUnit().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:CM", formatChange.CompositeSpec().MinorUnit().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:FT", formatChange.CompositeSpec().MinorUnit().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:MM", formatChange.CompositeSpec().SubUnit().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:IN", formatChange.CompositeSpec().SubUnit().GetNew().Value().c_str());
 
-    EXPECT_STRCASEEQ("Spacer1", formatChange.GetCompositeSpacer().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("Spacer2", formatChange.GetCompositeSpacer().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Spacer1", formatChange.CompositeSpec().Spacer().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Spacer2", formatChange.CompositeSpec().Spacer().GetNew().Value().c_str());
 
-    EXPECT_STRCASEEQ("Apple", formatChange.GetCompositeMajorLabel().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("Dragonfruit", formatChange.GetCompositeMajorLabel().GetNew().Value().c_str());
-    EXPECT_STRCASEEQ("Banana", formatChange.GetCompositeMiddleLabel().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("Eggplant", formatChange.GetCompositeMiddleLabel().GetNew().Value().c_str());
-    EXPECT_STRCASEEQ("Carrot", formatChange.GetCompositeMinorLabel().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("Fig", formatChange.GetCompositeMinorLabel().GetNew().Value().c_str());
-    EXPECT_STRCASEEQ("Dragonfruit", formatChange.GetCompositeSubLabel().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("Grapefruit", formatChange.GetCompositeSubLabel().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Apple", formatChange.CompositeSpec().MajorLabel().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Dragonfruit", formatChange.CompositeSpec().MajorLabel().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Banana", formatChange.CompositeSpec().MiddleLabel().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Eggplant", formatChange.CompositeSpec().MiddleLabel().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Carrot", formatChange.CompositeSpec().MinorLabel().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Fig", formatChange.CompositeSpec().MinorLabel().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Dragonfruit", formatChange.CompositeSpec().SubLabel().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Grapefruit", formatChange.CompositeSpec().SubLabel().GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -632,21 +629,18 @@ TEST_F(SchemaCompareTest, CompareFormatsDeletedNumericSpec)
     m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num);
     m_secondSchema->CreateFormat(format, "foo", "apple", "banana");
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(1, changes.Count());
-    auto& change = changes.At(0).Formats();
+    ASSERT_EQ(1, changes.Changes().Count());
+    auto& change = changes.Changes()[0].Formats();
 
     ASSERT_EQ(1, change.Count());
-    auto formatChange = change.At(0);
-
-    EXPECT_TRUE(formatChange.GetHasNumeric().GetOld().Value());
-    EXPECT_FALSE(formatChange.GetHasNumeric().GetNew().Value());
+    auto formatChange = change[0];
     }
 
 //----------------------------------------------------------------------------------------
@@ -673,35 +667,35 @@ TEST_F(SchemaCompareTest, CompareFormatsCompareToEmptyNumericSpec)
     m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num);
     m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num2);
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(1, changes.Count());
-    auto& change = changes.At(0).Formats();
+    ASSERT_EQ(1, changes.Changes().Count());
+    auto& change = changes.Changes()[0].Formats();
 
     ASSERT_EQ(1, change.Count());
-    auto formatChange = change.At(0);
+    auto formatChange = change[0];
 
-    ASSERT_EQ(8, formatChange.ChangesCount());
+    ASSERT_EQ(1, formatChange.MemberChangesCount());
 
-    EXPECT_STRCASEEQ("applyRounding", formatChange.GetFormatTraits().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetFormatTraits().GetNew().IsNull());
-    EXPECT_STRCASEEQ("Fractional", formatChange.GetPresentationType().GetOld().Value().c_str());
-    EXPECT_EQ(128, formatChange.GetFractionalPrecision().GetOld().Value());
-    EXPECT_EQ(4, formatChange.GetMinWidth().GetOld().Value());
-    EXPECT_TRUE(formatChange.GetMinWidth().GetNew().IsNull());
-    EXPECT_STRCASEEQ("", formatChange.GetUomSeparator().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetUomSeparator().GetNew().IsNull());
-    EXPECT_STRCASEEQ("NegativeParentheses", formatChange.GetShowSignOption().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetShowSignOption().GetNew().IsNull());
-    EXPECT_STRCASEEQ(",", formatChange.GetDecimalSeparator().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetDecimalSeparator().GetNew().IsNull());
-    EXPECT_STRCASEEQ(",", formatChange.GetThousandsSeparator().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetThousandsSeparator().GetNew().IsNull());
+    EXPECT_STRCASEEQ("applyRounding", formatChange.NumericSpec().FormatTraits().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.NumericSpec().FormatTraits().GetNew().IsNull());
+    EXPECT_STRCASEEQ("Fractional", formatChange.NumericSpec().PresentationType().GetOld().Value().c_str());
+    EXPECT_EQ(128, formatChange.NumericSpec().FractionalPrecision().GetOld().Value());
+    EXPECT_EQ(4, formatChange.NumericSpec().MinWidth().GetOld().Value());
+    EXPECT_TRUE(formatChange.NumericSpec().MinWidth().GetNew().IsNull());
+    EXPECT_STRCASEEQ("", formatChange.NumericSpec().UomSeparator().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.NumericSpec().UomSeparator().GetNew().IsNull());
+    EXPECT_STRCASEEQ("NegativeParentheses", formatChange.NumericSpec().ShowSignOption().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.NumericSpec().ShowSignOption().GetNew().IsNull());
+    EXPECT_STRCASEEQ(",", formatChange.NumericSpec().DecimalSeparator().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.NumericSpec().DecimalSeparator().GetNew().IsNull());
+    EXPECT_STRCASEEQ(",", formatChange.NumericSpec().ThousandsSeparator().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.NumericSpec().ThousandsSeparator().GetNew().IsNull());
     }
 
 //----------------------------------------------------------------------------------------
@@ -728,35 +722,35 @@ TEST_F(SchemaCompareTest, CompareFormatsNewNumericSpec)
     m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num2);
     m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num);
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(1, changes.Count());
-    auto& change = changes.At(0).Formats();
+    ASSERT_EQ(1, changes.Changes().Count());
+    auto& change = changes.Changes()[0].Formats();
 
     ASSERT_EQ(1, change.Count());
-    auto formatChange = change.At(0);
+    auto formatChange = change[0];
 
-    ASSERT_EQ(8, formatChange.ChangesCount());
+    ASSERT_EQ(1, formatChange.MemberChangesCount());
 
-    EXPECT_STRCASEEQ("applyRounding", formatChange.GetFormatTraits().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetFormatTraits().GetOld().IsNull());
-    EXPECT_STRCASEEQ("Fractional", formatChange.GetPresentationType().GetNew().Value().c_str());
-    EXPECT_EQ(128, formatChange.GetFractionalPrecision().GetNew().Value());
-    EXPECT_EQ(4, formatChange.GetMinWidth().GetNew().Value());
-    EXPECT_TRUE(formatChange.GetMinWidth().GetOld().IsNull());
-    EXPECT_STRCASEEQ("", formatChange.GetUomSeparator().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetUomSeparator().GetOld().IsNull());
-    EXPECT_STRCASEEQ("NegativeParentheses", formatChange.GetShowSignOption().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetShowSignOption().GetOld().IsNull());
-    EXPECT_STRCASEEQ(",", formatChange.GetDecimalSeparator().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetDecimalSeparator().GetOld().IsNull());
-    EXPECT_STRCASEEQ(",", formatChange.GetThousandsSeparator().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetThousandsSeparator().GetOld().IsNull());
+    EXPECT_STRCASEEQ("applyRounding", formatChange.NumericSpec().FormatTraits().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.NumericSpec().FormatTraits().GetOld().IsNull());
+    EXPECT_STRCASEEQ("Fractional", formatChange.NumericSpec().PresentationType().GetNew().Value().c_str());
+    EXPECT_EQ(128, formatChange.NumericSpec().FractionalPrecision().GetNew().Value());
+    EXPECT_EQ(4, formatChange.NumericSpec().MinWidth().GetNew().Value());
+    EXPECT_TRUE(formatChange.NumericSpec().MinWidth().GetOld().IsNull());
+    EXPECT_STRCASEEQ("", formatChange.NumericSpec().UomSeparator().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.NumericSpec().UomSeparator().GetOld().IsNull());
+    EXPECT_STRCASEEQ("NegativeParentheses", formatChange.NumericSpec().ShowSignOption().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.NumericSpec().ShowSignOption().GetOld().IsNull());
+    EXPECT_STRCASEEQ(",", formatChange.NumericSpec().DecimalSeparator().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.NumericSpec().DecimalSeparator().GetOld().IsNull());
+    EXPECT_STRCASEEQ(",", formatChange.NumericSpec().ThousandsSeparator().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.NumericSpec().ThousandsSeparator().GetOld().IsNull());
     }
 
 //----------------------------------------------------------------------------------------
@@ -791,39 +785,39 @@ TEST_F(SchemaCompareTest, CompareFormatsModifiedNumericSpec)
     m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num);
     m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num2);
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
 
-    ASSERT_EQ(1, changes.Count());
-    auto& change = changes.At(0).Formats();
+    ASSERT_EQ(1, changes.Changes().Count());
+    auto& change = changes.Changes()[0].Formats();
 
     ASSERT_EQ(1, change.Count());
-    auto formatChange = change.At(0);
+    auto formatChange = change[0];
 
-    ASSERT_EQ(9, formatChange.ChangesCount());
+    ASSERT_EQ(1, formatChange.MemberChangesCount());
 
-    EXPECT_STRCASEEQ("applyRounding", formatChange.GetFormatTraits().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("exponentOnlyNegative", formatChange.GetFormatTraits().GetNew().Value().c_str());
-    EXPECT_STRCASEEQ("Fractional", formatChange.GetPresentationType().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("Decimal", formatChange.GetPresentationType().GetNew().Value().c_str());
-    EXPECT_EQ(128, formatChange.GetFractionalPrecision().GetOld().Value());
-    EXPECT_EQ(64, formatChange.GetFractionalPrecision().GetNew().Value());
-    EXPECT_EQ(6, formatChange.GetDecimalPrecision().GetOld().Value());
-    EXPECT_EQ(10, formatChange.GetDecimalPrecision().GetNew().Value());
-    EXPECT_EQ(4, formatChange.GetMinWidth().GetOld().Value());
-    EXPECT_EQ(8, formatChange.GetMinWidth().GetNew().Value());
-    EXPECT_STRCASEEQ("", formatChange.GetUomSeparator().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("smoot", formatChange.GetUomSeparator().GetNew().Value().c_str());
-    EXPECT_STRCASEEQ("NegativeParentheses", formatChange.GetShowSignOption().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("OnlyNegative", formatChange.GetShowSignOption().GetNew().Value().c_str());
-    EXPECT_STRCASEEQ(",", formatChange.GetDecimalSeparator().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ(".", formatChange.GetDecimalSeparator().GetNew().Value().c_str());
-    EXPECT_STRCASEEQ(",", formatChange.GetThousandsSeparator().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ(".", formatChange.GetThousandsSeparator().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("applyRounding", formatChange.NumericSpec().FormatTraits().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("exponentOnlyNegative", formatChange.NumericSpec().FormatTraits().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Fractional", formatChange.NumericSpec().PresentationType().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Decimal", formatChange.NumericSpec().PresentationType().GetNew().Value().c_str());
+    EXPECT_EQ(128, formatChange.NumericSpec().FractionalPrecision().GetOld().Value());
+    EXPECT_EQ(64, formatChange.NumericSpec().FractionalPrecision().GetNew().Value());
+    EXPECT_EQ(6, formatChange.NumericSpec().DecimalPrecision().GetOld().Value());
+    EXPECT_EQ(10, formatChange.NumericSpec().DecimalPrecision().GetNew().Value());
+    EXPECT_EQ(4, formatChange.NumericSpec().MinWidth().GetOld().Value());
+    EXPECT_EQ(8, formatChange.NumericSpec().MinWidth().GetNew().Value());
+    EXPECT_STRCASEEQ("", formatChange.NumericSpec().UomSeparator().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("smoot", formatChange.NumericSpec().UomSeparator().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("NegativeParentheses", formatChange.NumericSpec().ShowSignOption().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("OnlyNegative", formatChange.NumericSpec().ShowSignOption().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ(",", formatChange.NumericSpec().DecimalSeparator().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ(".", formatChange.NumericSpec().DecimalSeparator().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ(",", formatChange.NumericSpec().ThousandsSeparator().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ(".", formatChange.NumericSpec().ThousandsSeparator().GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -843,13 +837,13 @@ TEST_F(SchemaCompareTest, CompareEnumerationsIdentical)
     auto secondEnum = m_secondSchema->GetEnumerationP("enum");
     secondEnum->CreateEnumerator(enumerator, "blah", "banana");
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
-    ASSERT_EQ(0, changes.Count());
+    ASSERT_EQ(0, changes.Changes().Count());
     }
 
 //----------------------------------------------------------------------------------------
@@ -867,19 +861,19 @@ TEST_F(SchemaCompareTest, CompareEnumerationsDeleted)
     ECEnumeratorP enumerator;
     firstEnum->CreateEnumerator(enumerator, "blah", "banana");
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
-    ASSERT_EQ(1,  changes.Count());
-    auto& change = changes.At(0).Enumerations();
+    ASSERT_EQ(1, changes.Changes().Count());
+    auto& change = changes.Changes()[0].Enumerations();
 
     ASSERT_EQ(1, change.Count());
-    auto enumChange = change.At(0);
+    auto enumChange = change[0];
 
-    ASSERT_EQ(4, enumChange.ChangesCount());
+    ASSERT_EQ(4, enumChange.MemberChangesCount());
     }
 
     {
@@ -892,19 +886,19 @@ TEST_F(SchemaCompareTest, CompareEnumerationsDeleted)
     ECEnumeratorP enumerator;
     firstEnum->CreateEnumerator(enumerator, "blah", "banana");
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
-    ASSERT_EQ(1,  changes.Count());
-    auto& change = changes.At(0).Enumerations();
+    ASSERT_EQ(1,  changes.Changes().Count());
+    auto& change = changes.Changes()[0].Enumerations();
 
     ASSERT_EQ(1, change.Count());
-    auto enumChange = change.At(0);
+    auto enumChange = change[0];
 
-    ASSERT_EQ(4, enumChange.ChangesCount());
+    ASSERT_EQ(4, enumChange.MemberChangesCount());
     }
     }
 
@@ -943,13 +937,13 @@ TEST_F(SchemaCompareTest, CompareECClassIdentical)
     firstClass->CreateStructArrayProperty(structArrayProp, "structArrayProp", *structClass);
 
     SchemaComparer comparer;
-    SchemaChanges changes;
+    SchemaDiff changes;
     bvector<ECSchemaCP> first;
     bvector<ECSchemaCP> second;
     first.push_back(m_firstSchema.get());
     second.push_back(m_secondSchema.get());
     comparer.Compare(changes, first, second);
-    ASSERT_EQ(0, changes.Count());
+    ASSERT_EQ(0, changes.Changes().Count());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

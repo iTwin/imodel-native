@@ -9,7 +9,7 @@
   "showSignOption": "OnlyNegative",
   "formatTraits": "TrailZeroes|KeepSingleZero",
   "precision": 4,
-  "decSeparator": ".",
+  "decimalSeparator": ".",
   "thousandSeparator": ",",
   "uomSeparator": " ",
   "composite": {

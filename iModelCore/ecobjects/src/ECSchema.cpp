@@ -3516,7 +3516,7 @@ Utf8String SchemaKey::FormatLegacyFullSchemaName(Utf8CP schemaName, uint32_t ver
     }
 
 #define ECSCHEMA_VERSION_FORMAT_EXPLANATION " Format must be either RR.mm or RR.ww.mm where RR is read version, ww is the write compatibility version and mm is minor version."
-#define ECSCHEMA_VERSION_FORMAT_EXPLANATION_EC32 " Format must RR.ww.mm where RR is read version, ww is the write compatibility version and mm is minor version."
+#define ECSCHEMA_VERSION_FORMAT_EXPLANATION_EC32 " Format must be RR.ww.mm where RR is read version, ww is the write compatibility version and mm is minor version."
 #define ECSCHEMA_FULLNAME_FORMAT_EXPLANATION " Format must be either Name.RR.mm or Name.RR.ww.mm where RR is read version, ww is the write compatibility version and mm is minor version."
 
 /*---------------------------------------------------------------------------------**//**
@@ -3569,7 +3569,7 @@ ECObjectsStatus SchemaKey::ParseVersionString (uint32_t& versionRead, uint32_t& 
 
     if (digits < 2)
         {
-        LOG.errorv("Invalid ECSchema Version String: '%s' at least version numbers are required!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
+        LOG.errorv("Invalid ECSchema Version String: '%s' at least 2 version numbers are required!" ECSCHEMA_VERSION_FORMAT_EXPLANATION, versionString);
         return ECObjectsStatus::ParseError;
         }
 
@@ -3638,7 +3638,7 @@ ECObjectsStatus SchemaKey::ParseVersionStringStrict(uint32_t& versionRead, uint3
 
     if (count < 2)
         {
-        LOG.errorv("Invalid ECSchema Version String: '%s' at least version numbers are required!" ECSCHEMA_VERSION_FORMAT_EXPLANATION_EC32, versionString);
+        LOG.errorv("Invalid ECSchema Version String: '%s' at least 3 version numbers are required!" ECSCHEMA_VERSION_FORMAT_EXPLANATION_EC32, versionString);
         return ECObjectsStatus::InvalidECVersion;
         }
 
