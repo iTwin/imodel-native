@@ -13,6 +13,45 @@
 
 BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE
 
+typedef BeSQLite::EC::ECInstanceId LinearlyReferencedLocationId;
+
+//=======================================================================================
+//! Reference to a LinearlyReferencedLocation used to return the result of
+//! querying for locations along an ILinearElement.
+//! @ingroup GROUP_LinearReferencing
+//=======================================================================================
+struct LinearLocation
+{
+friend struct ILinearElement;
+
+private:
+    double m_startDistanceAlong, m_stopDistanceAlong;
+    Dgn::DgnElementId m_linearlyLocatedId;
+    Dgn::DgnClassId m_linearlyLocatedClassId;
+    LinearlyReferencedLocationId m_locationId;
+
+    LinearLocation() :  m_startDistanceAlong(0), m_stopDistanceAlong(0),
+        m_linearlyLocatedId(Dgn::DgnElementId()), m_linearlyLocatedClassId(Dgn::DgnClassId()), m_locationId(LinearlyReferencedLocationId()) {}
+
+public:
+    LinearLocation(Dgn::DgnElementId linearlyLocatedId, Dgn::DgnClassId linearlyLocatedClassId, double startDistanceAlong, double stopDistanceAlong,
+        LinearlyReferencedLocationId locationId) :
+        m_linearlyLocatedId(linearlyLocatedId), m_linearlyLocatedClassId(linearlyLocatedClassId),
+        m_startDistanceAlong(startDistanceAlong), m_stopDistanceAlong(stopDistanceAlong), m_locationId(locationId)
+        {}
+
+    LinearLocation(ILinearlyLocatedCR linearlyLocated, double startDistanceAlong, double stopDistanceAlong);
+
+    double GetStartDistanceAlong() const { return m_startDistanceAlong; }
+    double GetStopDistanceAlong() const { return m_stopDistanceAlong; }
+    Dgn::DgnElementId GetILinearlyLocatedId() const { return m_linearlyLocatedId; }
+    Dgn::DgnClassId GetILinearlyLocatedClassId() const { return m_linearlyLocatedClassId; }
+    LinearlyReferencedLocationId GetLinearlyReferencedLocationId() const { return m_locationId; }
+
+    LINEARREFERENCING_EXPORT bool operator==(LinearLocationCR rhs) const;
+    LINEARREFERENCING_EXPORT bool operator!=(LinearLocationCR rhs) const { return !(*this == rhs); }
+}; // LinearLocation
+
 //=======================================================================================
 //! Interface implemented by elements that can be used as a scale 
 //! along which linear referencing is performed.
@@ -20,12 +59,56 @@ BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ILinearElement
 {
+public:
+    enum class ComparisonOption { Inclusive, Exclusive };
+
+    struct QueryParams
+    {
+    public:
+        QueryParams(NullableDouble fromDistanceAlong, NullableDouble toDistanceAlong) :
+            m_fromDistanceAlong(fromDistanceAlong), m_toDistanceAlong(toDistanceAlong),
+            m_fromComparisonOption(ComparisonOption::Inclusive),
+            m_toComparisonOption(ComparisonOption::Inclusive) {}
+
+        QueryParams(NullableDouble fromDistanceAlong, ComparisonOption fromComparison,
+            NullableDouble toDistanceAlong, ComparisonOption toComparison) :
+            m_fromDistanceAlong(fromDistanceAlong), m_toDistanceAlong(toDistanceAlong),
+            m_fromComparisonOption(fromComparison),
+            m_toComparisonOption(toComparison) {}
+
+        QueryParams(bset<Dgn::DgnClassId> const& iLinearlyLocatedClassIds) :
+            m_iLinearlyLocatedClassIds(iLinearlyLocatedClassIds),
+            m_fromComparisonOption(ComparisonOption::Inclusive),
+            m_toComparisonOption(ComparisonOption::Inclusive) {}
+
+        QueryParams(bset<Dgn::DgnClassId> const& iLinearlyLocatedClassIds,
+            NullableDouble fromDistanceAlong, NullableDouble toDistanceAlong) :
+            m_iLinearlyLocatedClassIds(iLinearlyLocatedClassIds),
+            m_fromDistanceAlong(fromDistanceAlong), m_toDistanceAlong(toDistanceAlong),
+            m_fromComparisonOption(ComparisonOption::Inclusive),
+            m_toComparisonOption(ComparisonOption::Inclusive) {}
+
+        QueryParams(bset<Dgn::DgnClassId> const& iLinearlyLocatedClassIds,
+            NullableDouble fromDistanceAlong, ComparisonOption fromComparison,
+            NullableDouble toDistanceAlong, ComparisonOption toComparison) :
+            m_iLinearlyLocatedClassIds(iLinearlyLocatedClassIds),
+            m_fromDistanceAlong(fromDistanceAlong), m_toDistanceAlong(toDistanceAlong),
+            m_fromComparisonOption(fromComparison),
+            m_toComparisonOption(toComparison) {}
+
+        bset<Dgn::DgnClassId> m_iLinearlyLocatedClassIds;
+        NullableDouble m_fromDistanceAlong;
+        ComparisonOption m_fromComparisonOption;
+        NullableDouble m_toDistanceAlong;
+        ComparisonOption m_toComparisonOption;
+    }; // QueryParams
 
 protected:
     //! @private
     virtual double _GetLength() const = 0;
     //! @private
     virtual Dgn::DgnElementCR _ILinearElementToDgnElement() const = 0;
+    LINEARREFERENCING_EXPORT virtual bvector<LinearLocation> _QueryLinearLocations(QueryParams const& params) const;
 
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(ILinearElement)
@@ -50,8 +133,11 @@ public:
     //! Get the start value of the ILinearElement
     double GetStartValue() const { return ToElement().GetPropertyValueDouble("StartValue"); }
 
+    //! Query Linearly-Located elements/attribution along this LinearElement
+    LINEARREFERENCING_EXPORT bvector<LinearLocation> QueryLinearLocations(QueryParams const& params) const { return _QueryLinearLocations(params); }
+
     //__PUBLISH_SECTION_END__
-    void SetStartValue(double newStartVal) { ToElementR().SetPropertyValue("StartValue", newStartVal); }
+    void SetStartValue(double newStartVal) { ToElementR().SetPropertyValue("StartValue", newStartVal); }    
     //__PUBLISH_SECTION_START__
 }; // ILinearElement
 
@@ -101,8 +187,6 @@ public:
     LINEARREFERENCING_EXPORT bset<Dgn::DgnElementId> QueryLinearElements() const;
 }; // ILinearElementSource
 
-typedef BeSQLite::EC::ECInstanceId LinearlyReferencedLocationId;
-
 //=======================================================================================
 //! Base interface for linearly-located elements and attributions.
 //! @ingroup GROUP_LinearReferencing
@@ -122,25 +206,6 @@ protected:
     //! @private
     LINEARREFERENCING_EXPORT void _AddLinearlyReferencedLocation(LinearlyReferencedLocationR);
     
-public:
-    struct CreateAtParams
-    {
-        DistanceExpression m_atPosition;
-        Dgn::DgnElementCPtr m_linearElementCPtr;
-
-        CreateAtParams(ILinearElementCR linearElement, DistanceExpressionCR atPosition): m_linearElementCPtr(&linearElement.ToElement()), m_atPosition(atPosition) {}
-    }; // CreateAtParams
-
-    struct CreateFromToParams
-    {
-        DistanceExpression m_fromPosition, m_toPosition;
-        Dgn::DgnElementCPtr m_linearElementCPtr;
-
-        CreateFromToParams(ILinearElementCR linearElement, DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition):
-            m_linearElementCPtr(&linearElement.ToElement()), m_fromPosition(fromPosition), m_toPosition(toPosition)
-            { }
-    }; // CreateFromToParams
-
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(ILinearlyLocated)
 
@@ -170,9 +235,6 @@ public:
     LINEARREFERENCING_EXPORT LinearlyReferencedFromToLocationP GetLinearlyReferencedFromToLocationP(LinearlyReferencedLocationId);
     LINEARREFERENCING_EXPORT LinearlyReferencedAtLocationP GetLinearlyReferencedAtLocationP(LinearlyReferencedLocationId);
     LINEARREFERENCING_EXPORT LinearlyReferencedLocationP GetLinearlyReferencedLocationP(LinearlyReferencedLocationId);
-
-    static bool ValidateParams(CreateAtParams const& params) { return params.m_linearElementCPtr.IsValid() && params.m_linearElementCPtr->GetElementId().IsValid(); }
-    static bool ValidateParams(CreateFromToParams const& params) { return params.m_linearElementCPtr.IsValid() && params.m_linearElementCPtr->GetElementId().IsValid(); }
     //__PUBLISH_SECTION_START__
     
 }; // ILinearlyLocated
@@ -222,6 +284,15 @@ private:
     virtual LinearReferencing::ILinearlyLocatedCR ToLinearlyLocated() const { return *dynamic_cast<LinearReferencing::ILinearlyLocatedCP>(this); }
     virtual LinearReferencing::ILinearlyLocatedR ToLinearlyLocatedR() { return *dynamic_cast<LinearReferencing::ILinearlyLocatedP>(this); }
 
+public:
+    struct CreateAtParams
+    {
+        DistanceExpression m_atPosition;
+        Dgn::DgnElementCPtr m_linearElementCPtr;
+
+        CreateAtParams(ILinearElementCR linearElement, DistanceExpressionCR atPosition): m_linearElementCPtr(&linearElement.ToElement()), m_atPosition(atPosition) {}
+    }; // CreateAtParams
+
 protected:
     //! @private
     LINEARREFERENCING_EXPORT ILinearlyLocatedSingleAt() {}
@@ -231,6 +302,8 @@ protected:
 
     //! @private
     LinearReferencing::LinearlyReferencedAtLocationPtr _GetUnpersistedAtLocation() const { return m_unpersistedAtLocationPtr; }
+
+    static bool ValidateParams(CreateAtParams const& params) { return params.m_linearElementCPtr.IsValid() && params.m_linearElementCPtr->GetElementId().IsValid(); }
 
 public:
     //! Get the distance along of this LinearLocated from the start of the ILinearElement
@@ -260,6 +333,17 @@ private:
     virtual LinearReferencing::ILinearlyLocatedCR ToLinearlyLocated() const { return *dynamic_cast<LinearReferencing::ILinearlyLocatedCP>(this); }
     virtual LinearReferencing::ILinearlyLocatedR ToLinearlyLocatedR() { return *dynamic_cast<LinearReferencing::ILinearlyLocatedP>(this); }
 
+public:
+    struct CreateFromToParams
+    {
+        DistanceExpression m_fromPosition, m_toPosition;
+        Dgn::DgnElementCPtr m_linearElementCPtr;
+
+        CreateFromToParams(ILinearElementCR linearElement, DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition):
+            m_linearElementCPtr(&linearElement.ToElement()), m_fromPosition(fromPosition), m_toPosition(toPosition)
+            { }
+    }; // CreateFromToParams
+
 protected:
     //! @private
     LINEARREFERENCING_EXPORT ILinearlyLocatedSingleFromTo() {}
@@ -269,6 +353,8 @@ protected:
 
     //! @private
     LinearReferencing::LinearlyReferencedFromToLocationPtr _GetUnpersistedFromToLocation() const { return m_unpersistedFromToLocationPtr; }
+
+    static bool ValidateParams(CreateFromToParams const& params) { return params.m_linearElementCPtr.IsValid() && params.m_linearElementCPtr->GetElementId().IsValid(); }
 
 public:
     //! Get the "From" distance from the start.

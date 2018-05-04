@@ -8,6 +8,58 @@
 #include "LinearReferencingInternal.h"
 #include <LinearReferencing/ILinearElement.h>
 
+enum class LinearlyReferencedLocationType : int
+    {
+    AtLocation = 1 << 0,
+    FromToLocation = 1 << 1
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+inline LinearlyReferencedLocationType operator|(LinearlyReferencedLocationType a, LinearlyReferencedLocationType b)
+    {
+    return static_cast<LinearlyReferencedLocationType>(static_cast<int>(a) | static_cast<int>(b));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+inline LinearlyReferencedLocationType operator&(LinearlyReferencedLocationType a, LinearlyReferencedLocationType b)
+    {
+    return static_cast<LinearlyReferencedLocationType>(static_cast<int>(a) & static_cast<int>(b));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+inline void operator|=(LinearlyReferencedLocationType& a, LinearlyReferencedLocationType b)
+    {
+    a = static_cast<LinearlyReferencedLocationType>(static_cast<int>(a) | static_cast<int>(b));
+    }
+
+LinearLocation::LinearLocation(ILinearlyLocatedCR linearlyLocated, double startDistanceAlong, double stopDistanceAlong) :
+    m_linearlyLocatedId(linearlyLocated.ToElement().GetElementId()), m_linearlyLocatedClassId(linearlyLocated.ToElement().GetElementClassId()),
+    m_startDistanceAlong(startDistanceAlong), m_stopDistanceAlong(stopDistanceAlong), m_locationId(LinearlyReferencedLocationId())
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sandy.Bugai                     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LinearLocation::operator==(LinearLocationCR rhs) const
+    {
+    if (m_linearlyLocatedClassId == rhs.m_linearlyLocatedClassId &&
+        m_linearlyLocatedId == rhs.m_linearlyLocatedId &&
+        m_locationId == rhs.m_locationId &&
+        m_startDistanceAlong == rhs.m_startDistanceAlong &&
+        m_stopDistanceAlong == rhs.m_stopDistanceAlong)
+        {
+        return true;
+        }
+
+    return false;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -20,6 +72,304 @@ void ILinearElement::SetILinearElementSource(ILinearElementSourceCP linearElemen
         }
     else
         ToElementR().SetPropertyValue("ILinearElementSource", DgnElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+LinearlyReferencedLocationType GetLinearlyReferencedLocationTypesToUse(DgnDbR dgnDb, bset<DgnClassId> const& iLinearlyLocatedClassIds)
+    {
+    LinearlyReferencedLocationType locationType = static_cast<LinearlyReferencedLocationType>(0);
+    for (auto const& classId : iLinearlyLocatedClassIds)
+        {
+        auto ecClassCP = dgnDb.Schemas().GetClass(classId);
+        if (!ecClassCP)
+            {
+            locationType = LinearlyReferencedLocationType::AtLocation | LinearlyReferencedLocationType::FromToLocation;
+            break;
+            }
+
+        auto customAttrPtr = ecClassCP->GetCustomAttribute(BLR_SCHEMA_NAME, BLR_CA_ILinearlyLocatedSegmentationHints);
+        if (customAttrPtr.IsNull())
+            {
+            locationType = LinearlyReferencedLocationType::AtLocation | LinearlyReferencedLocationType::FromToLocation;
+            break;
+            }
+
+        ECValue val;
+        if (ECObjectsStatus::Success != customAttrPtr->GetValue(val, BLR_CAPROP_SupportedLinearlyReferencedLocationTypes))
+            {
+            locationType = LinearlyReferencedLocationType::AtLocation | LinearlyReferencedLocationType::FromToLocation;
+            break;
+            }
+
+        locationType |= static_cast<LinearlyReferencedLocationType>(val.GetInteger());
+        }
+
+    if (static_cast<int>(locationType) == 0)
+        locationType = LinearlyReferencedLocationType::AtLocation | LinearlyReferencedLocationType::FromToLocation;
+
+    return locationType;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void AppendILinearlyLocatedClassIdsECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds, Utf8StringR ecSql)
+    {
+    if (iLinearlyLocatedClassIds.empty())
+        return;
+
+    ecSql.append("AND meta.ClassHasAllBaseClasses.TargetECInstanceId ");
+
+    if (1 == iLinearlyLocatedClassIds.size())
+        ecSql.append(Utf8PrintfString("= %d ", iLinearlyLocatedClassIds.begin()->GetValue()).c_str());
+    else
+        {
+        ecSql.append("IN (");
+        for (auto classId : iLinearlyLocatedClassIds)
+            ecSql.append(Utf8PrintfString("%d,", classId.GetValue()).c_str());
+
+        ecSql.erase(ecSql.begin() + ecSql.size() - 1); // Removing last comma
+        ecSql.append(") ");
+        }
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void GetAtLocationOnlyECSQL(ILinearElement::QueryParams const& params, Utf8StringR ecSql, bvector<double>& bindVals)
+    {
+    ecSql.append(
+        "SELECT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
+        "   AtLocation.AtPosition.DistanceAlongFromStart, AtLocation.AtPosition.DistanceAlongFromStart, AtLocation.ECInstanceId "
+        "FROM (SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, meta.ClassHasAllBaseClasses " 
+        "WHERE ILinearElement.Id = ? AND meta.ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
+
+    AppendILinearlyLocatedClassIdsECSQL(params.m_iLinearlyLocatedClassIds, ecSql);
+
+    ecSql.append(") LinearlyLocated, "
+        BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " AtLocation "
+        "WHERE (LinearlyLocated.ECInstanceId = AtLocation.Element.Id ");
+
+    Utf8String fromCompOp = params.m_fromComparisonOption == ILinearElement::ComparisonOption::Inclusive ? ">=" : ">";
+    Utf8String toCompOp = params.m_toComparisonOption == ILinearElement::ComparisonOption::Inclusive ? "<=" : "<";
+
+    if (params.m_fromDistanceAlong.IsValid() && params.m_toDistanceAlong.IsValid())
+        {
+        ecSql.append("AND AtLocation.AtPosition.DistanceAlongFromStart ");
+        ecSql.append(fromCompOp);
+        ecSql.append(" ? AND AtLocation.AtPosition.DistanceAlongFromStart ");
+        ecSql.append(toCompOp);
+        ecSql.append(" ? ) ");
+        bindVals.push_back(params.m_fromDistanceAlong.Value()); bindVals.push_back(params.m_toDistanceAlong.Value());
+        }
+    else if (params.m_fromDistanceAlong.IsValid())
+        {
+        ecSql.append("AND AtLocation.AtPosition.DistanceAlongFromStart ");
+        ecSql.append(fromCompOp);
+        ecSql.append(" ?) ");
+        bindVals.push_back(params.m_fromDistanceAlong.Value());
+        }
+    else if (params.m_toDistanceAlong.IsValid())
+        {
+        ecSql.append("AND AtLocation.AtPosition.DistanceAlongFromStart ");
+        ecSql.append(toCompOp);
+        ecSql.append(" ? ) ");
+        bindVals.push_back(params.m_toDistanceAlong.Value());
+        }
+    else
+        ecSql.append(") ");
+
+    ecSql.append("ORDER BY AtLocation.AtPosition.DistanceAlongFromStart;");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void GetFromToLocationOnlyECSQL(ILinearElement::QueryParams const& params, Utf8StringR ecSql, bvector<double>& bindVals)
+    {
+    ecSql.append(
+        "SELECT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
+        "   FromToLocation.FromPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart, FromToLocation.ECInstanceId "
+        "FROM (SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, meta.ClassHasAllBaseClasses " 
+        "WHERE ILinearElement.Id = ? AND meta.ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
+
+    AppendILinearlyLocatedClassIdsECSQL(params.m_iLinearlyLocatedClassIds, ecSql);
+
+    ecSql.append(") LinearlyLocated, "
+        BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " FromToLocation "
+        "WHERE LinearlyLocated.ECInstanceId = FromToLocation.Element.Id ");
+
+    Utf8String fromCompOp = params.m_fromComparisonOption == ILinearElement::ComparisonOption::Inclusive ? ">=" : ">";
+    Utf8String toCompOp = params.m_toComparisonOption == ILinearElement::ComparisonOption::Inclusive ? "<=" : "<";
+
+    if (params.m_fromDistanceAlong.IsValid() && params.m_toDistanceAlong.IsValid())
+        {
+        ecSql.append("AND ((FromToLocation.FromPosition.DistanceAlongFromStart ");
+        ecSql.append(fromCompOp);
+        ecSql.append(" ? AND FromToLocation.FromPosition.DistanceAlongFromStart ");
+        ecSql.append(toCompOp);
+        ecSql.append(" ?) "
+            "OR (FromToLocation.ToPosition.DistanceAlongFromStart ");
+        ecSql.append(fromCompOp);
+        ecSql.append(" ? AND FromToLocation.ToPosition.DistanceAlongFromStart ");
+        ecSql.append(toCompOp);
+        ecSql.append(" ?) "
+            "OR (FromToLocation.FromPosition.DistanceAlongFromStart <= ? AND FromToLocation.ToPosition.DistanceAlongFromStart >= ?)) ");
+        bindVals.push_back(params.m_fromDistanceAlong.Value()); bindVals.push_back(params.m_toDistanceAlong.Value());
+        bindVals.push_back(params.m_fromDistanceAlong.Value()); bindVals.push_back(params.m_toDistanceAlong.Value());
+        bindVals.push_back(params.m_fromDistanceAlong.Value()); bindVals.push_back(params.m_toDistanceAlong.Value());
+        }
+    else if (params.m_fromDistanceAlong.IsValid())
+        {
+        ecSql.append("AND (FromToLocation.FromPosition.DistanceAlongFromStart ");
+        ecSql.append(fromCompOp);
+        ecSql.append(" ? OR FromToLocation.ToPosition.DistanceAlongFromStart ");
+        ecSql.append(fromCompOp); 
+        ecSql.append(" ?)");
+        bindVals.push_back(params.m_fromDistanceAlong.Value()); bindVals.push_back(params.m_fromDistanceAlong.Value());
+        }
+    else if (params.m_toDistanceAlong.IsValid())
+        {
+        ecSql.append("AND (FromToLocation.FromPosition.DistanceAlongFromStart ");
+        ecSql.append(toCompOp);
+        ecSql.append(" ? OR FromToLocation.ToPosition.DistanceAlongFromStart ");
+        ecSql.append(toCompOp);
+        ecSql.append(" ?) ");
+        bindVals.push_back(params.m_toDistanceAlong.Value()); bindVals.push_back(params.m_toDistanceAlong.Value());
+        }
+
+    ecSql.append("ORDER BY FromToLocation.FromPosition.DistanceAlongFromStart");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void GetAnyLocationECSQL(ILinearElement::QueryParams const& params, Utf8StringR ecSql, bvector<double>& bindVals)
+    {
+    ecSql.append(
+        "SELECT DISTINCT LinearlyLocated.ECInstanceId, LinearlyLocated.ClassId, "
+        "   coalesce(AtLocation.AtPosition.DistanceAlongFromStart, FromToLocation.FromPosition.DistanceAlongFromStart), "        
+        "   coalesce(AtLocation.AtPosition.DistanceAlongFromStart, FromToLocation.ToPosition.DistanceAlongFromStart), "
+        "   coalesce(AtLocation.ECInstanceId, FromToLocation.ECInstanceId) "
+        "FROM (SELECT il.ECInstanceId, il.ECClassId ClassId FROM " BLR_SCHEMA(BLR_CLASS_ILinearlyLocated) " il, meta.ClassHasAllBaseClasses " 
+        "WHERE ILinearElement.Id = ? AND meta.ClassHasAllBaseClasses.SourceECInstanceId = il.ECClassId ");
+
+    AppendILinearlyLocatedClassIdsECSQL(params.m_iLinearlyLocatedClassIds, ecSql);
+
+    ecSql.append(") LinearlyLocated "
+        "LEFT JOIN " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " AtLocation ON LinearlyLocated.ECInstanceId = AtLocation.Element.Id "
+        "LEFT JOIN " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " FromToLocation ON LinearlyLocated.ECInstanceId = FromToLocation.Element.Id ");
+
+    Utf8String fromCompOp = params.m_fromComparisonOption == ILinearElement::ComparisonOption::Inclusive ? ">=" : ">";
+    Utf8String toCompOp = params.m_toComparisonOption == ILinearElement::ComparisonOption::Inclusive ? "<=" : "<";
+
+    if (params.m_fromDistanceAlong.IsValid() && params.m_toDistanceAlong.IsValid())
+        {
+        ecSql.append("WHERE (AtLocation.AtPosition.DistanceAlongFromStart ");
+        ecSql.append(fromCompOp);
+        ecSql.append(" ? AND AtLocation.AtPosition.DistanceAlongFromStart ");
+        ecSql.append(toCompOp);
+        ecSql.append(" ? ) ");
+        ecSql.append("OR (FromToLocation.FromPosition.DistanceAlongFromStart ");
+        ecSql.append(fromCompOp);
+        ecSql.append(" ? AND FromToLocation.FromPosition.DistanceAlongFromStart ");
+        ecSql.append(toCompOp);
+        ecSql.append(" ?) "
+            "OR (FromToLocation.ToPosition.DistanceAlongFromStart ");
+        ecSql.append(fromCompOp);
+        ecSql.append(" ? AND FromToLocation.ToPosition.DistanceAlongFromStart ");
+        ecSql.append(toCompOp);
+        ecSql.append(" ?) "
+            "OR (FromToLocation.FromPosition.DistanceAlongFromStart <= ? AND FromToLocation.ToPosition.DistanceAlongFromStart >= ? ) ");
+        bindVals.push_back(params.m_fromDistanceAlong.Value()); bindVals.push_back(params.m_toDistanceAlong.Value());
+        bindVals.push_back(params.m_fromDistanceAlong.Value()); bindVals.push_back(params.m_toDistanceAlong.Value());
+        bindVals.push_back(params.m_fromDistanceAlong.Value()); bindVals.push_back(params.m_toDistanceAlong.Value());
+        bindVals.push_back(params.m_fromDistanceAlong.Value()); bindVals.push_back(params.m_toDistanceAlong.Value());
+        }
+    else if (params.m_fromDistanceAlong.IsValid())
+        {
+        ecSql.append("WHERE AtLocation.AtPosition.DistanceAlongFromStart ");
+        ecSql.append(fromCompOp);
+        ecSql.append(" ? ");
+        ecSql.append("OR FromToLocation.FromPosition.DistanceAlongFromStart ");
+        ecSql.append(fromCompOp);
+        ecSql.append(" ? OR FromToLocation.ToPosition.DistanceAlongFromStart ");
+        ecSql.append(fromCompOp);
+        ecSql.append(" ? ");
+        bindVals.push_back(params.m_fromDistanceAlong.Value());
+        bindVals.push_back(params.m_fromDistanceAlong.Value());
+        bindVals.push_back(params.m_fromDistanceAlong.Value());
+        }
+    else if (params.m_toDistanceAlong.IsValid())
+        {
+        ecSql.append("WHERE AtLocation.AtPosition.DistanceAlongFromStart ");
+        ecSql.append(toCompOp);
+        ecSql.append(" ? ");
+        ecSql.append("OR FromToLocation.FromPosition.DistanceAlongFromStart ");
+        ecSql.append(toCompOp);
+        ecSql.append(" ? OR FromToLocation.ToPosition.DistanceAlongFromStart ");
+        ecSql.append(toCompOp);
+        ecSql.append(" ? ");
+        bindVals.push_back(params.m_toDistanceAlong.Value());
+        bindVals.push_back(params.m_toDistanceAlong.Value());
+        bindVals.push_back(params.m_toDistanceAlong.Value());
+        }
+
+    ecSql.append("ORDER BY coalesce(AtLocation.AtPosition.DistanceAlongFromStart, FromToLocation.FromPosition.DistanceAlongFromStart);");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<LinearLocation> ILinearElement::_QueryLinearLocations(QueryParams const& params) const
+    {
+    auto& dgnDb = ToElement().GetDgnDb();
+    auto locationType = GetLinearlyReferencedLocationTypesToUse(dgnDb, params.m_iLinearlyLocatedClassIds);
+    
+    Utf8String ecSql;
+    bvector<double> bindVals;
+
+    if (LinearlyReferencedLocationType::AtLocation == (locationType & LinearlyReferencedLocationType::AtLocation) &&
+        LinearlyReferencedLocationType::FromToLocation != (locationType & LinearlyReferencedLocationType::FromToLocation))
+        {
+        GetAtLocationOnlyECSQL(params, ecSql, bindVals);
+        }
+    else if (LinearlyReferencedLocationType::AtLocation != (locationType & LinearlyReferencedLocationType::AtLocation) &&
+        LinearlyReferencedLocationType::FromToLocation == (locationType & LinearlyReferencedLocationType::FromToLocation))
+        {
+        GetFromToLocationOnlyECSQL(params, ecSql, bindVals);
+        }
+    else
+        {
+        GetAnyLocationECSQL(params, ecSql, bindVals);
+        }
+
+    auto& dgnDbR = ToElement().GetDgnDb();
+    auto stmtPtr = dgnDbR.GetPreparedECSqlStatement(ecSql.c_str());
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, ToElement().GetElementId());
+
+    int idx = 2;
+    for (auto val : bindVals)
+        {
+        stmtPtr->BindDouble(idx++, val);
+        }
+
+    bvector<LinearLocation> retVal;
+    while (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        {
+        retVal.push_back(LinearLocation(
+            stmtPtr->GetValueId<DgnElementId>(0), 
+            stmtPtr->GetValueId<DgnClassId>(1), 
+            stmtPtr->GetValueDouble(2), stmtPtr->GetValueDouble(3),
+            stmtPtr->GetValueId<LinearlyReferencedLocationId>(4)));
+        }
+
+    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -40,6 +390,8 @@ bset<DgnElementId> ILinearElementSource::QueryLinearElements() const
 
     return retVal;
     }
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016

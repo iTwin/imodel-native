@@ -131,6 +131,7 @@
     <ClInclude Include="PublicAPI\LinearReferencing\DistanceExpression.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\ILinearElement.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\LinearlyReferencedLocation.h" />
+    <ClInclude Include="PublicAPI\LinearReferencing\LinearReferencing.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\LinearReferencingApi.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\LinearReferencingDomain.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\Segmentation.h" />

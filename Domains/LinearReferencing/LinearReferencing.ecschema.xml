@@ -28,7 +28,15 @@
             <Class class="ILinearElement"/>
         </Target>
     </ECRelationshipClass>
-    
+    <!-- Restrictions that may be applied to an implementation of ILinearlyLocated during Segmentation operations. -->
+    <ECEnumeration typeName="LinearlyReferencedLocationType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="1" displayLabel="AtLocation"/>
+        <ECEnumerator value="2" displayLabel="FromToLocation"/>
+        <ECEnumerator value="3" displayLabel="All = AtLocation | FromToLocation"/>
+    </ECEnumeration>
+    <ECCustomAttributeClass typeName="ILinearlyLocatedSegmentationHints" description="Applied to an element mixing-in the ILinearlyLocated interface, providing hints during segmentation operations." appliesTo="AnyClass">
+        <ECProperty propertyName="SupportedLinearlyReferencedLocationTypes" typeName="LinearlyReferencedLocationType"/>
+    </ECCustomAttributeClass>
     <ECEntityClass typeName="ILinearlyLocated" modifier="Abstract" description="Base mix-in for Elements to be linearly-referenced along Linear-Elements.">
         <ECCustomAttributes>
             <IsMixin xmlns='CoreCustomAttributes.01.00'>

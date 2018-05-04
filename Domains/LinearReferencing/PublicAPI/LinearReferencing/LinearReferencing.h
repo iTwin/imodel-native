@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/LinearReferencing/LinearReferencing.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -117,6 +117,7 @@ LINEARREFERENCING_TYPEDEFS(ISegmentableLinearElement)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedLocation)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedAtLocation)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedFromToLocation)
+LINEARREFERENCING_TYPEDEFS(LinearLocation)
 
 LINEARREFERENCING_REFCOUNTED_PTR(GeometricElementAsReferent)
 LINEARREFERENCING_REFCOUNTED_PTR(LinearlyReferencedAtLocation)
