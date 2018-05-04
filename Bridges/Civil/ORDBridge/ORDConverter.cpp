@@ -380,7 +380,8 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
             if (stationEqPtr.IsNull())
                 continue;
 
-            auto bimStationPtr = AlignmentBim::AlignmentStation::Create(*bimAlignmentPtr, stationEqPtr->GetDistanceAlong(), stationEqPtr->GetEquivalentStation());
+            auto bimStationPtr = AlignmentBim::AlignmentStation::Create(
+                AlignmentBim::AlignmentStation::CreateAtParams(*bimAlignmentPtr, stationEqPtr->GetDistanceAlong(), stationEqPtr->GetEquivalentStation()));
             if (!Bentley::WString::IsNullOrEmpty(stationEqPtr->GetName().c_str()))
                 bimStationPtr->SetUserLabel(Utf8String(stationEqPtr->GetName().c_str()).c_str());
 
@@ -617,13 +618,14 @@ private:
     Transform m_unitsScaleTransform;
     Dgn::DgnDbSync::DgnV8::Converter& m_converter;
     Dgn::PhysicalModelPtr m_bimPhysicalModelPtr;
+    RoadRailBim::DesignSpeedDefinitionCPtr m_defaultDesignSpeedDef;
 
 private:
     ORDCorridorsConverter(DgnDbSync::DgnV8::Converter& converterLib, TransformCR unitsScaleTransform);
 
     BentleyStatus Marshal(PolyfaceHeaderPtr& bimMesh, Bentley::PolyfaceHeaderCR v8Mesh);
     BentleyStatus CreateNewCorridor(CorridorCR cifCorridor,
-        iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ROWID fileScopeId, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change,
+        ORDConverter::Params& params, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change,
         RoadRailBim::CorridorCPtr& bimCorridorCPtr, DgnCategoryId targetCategoryId);
     BentleyStatus UpdateCorridor(CorridorCR cifCorridor,
         iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, DgnCategoryId targetCategoryId);
@@ -712,8 +714,7 @@ BentleyStatus ORDCorridorsConverter::AssignCorridorGeomStream(CorridorCR cifCorr
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     CorridorCR cifCorridor, 
-    iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, 
-    iModelBridgeSyncInfoFile::ROWID fileScopeId,
+    ORDConverter::Params& params,
     iModelBridgeSyncInfoFile::ChangeDetector::Results const& change, RoadRailBim::CorridorCPtr& bimCorridorCPtr, DgnCategoryId targetCategoryId)
     {
     auto corridorPtr = RoadRailBim::Corridor::Create(*m_bimPhysicalModelPtr);
@@ -730,8 +731,8 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     if (cifAlignmentPtr.IsValid () && cifAlignmentPtr->IsFinalElement())
         {
         ORDAlignmentsConverter::CifAlignmentSourceItem alignmentItem(*cifAlignmentPtr);
-        iModelBridgeSyncInfoFile::SourceIdentity sourceIdentity(fileScopeId, alignmentItem.Kind(), alignmentItem._GetId());
-        auto iterator = changeDetector.GetSyncInfo().MakeIteratorBySourceId(sourceIdentity);
+        iModelBridgeSyncInfoFile::SourceIdentity sourceIdentity(params.fileScopeId, alignmentItem.Kind(), alignmentItem._GetId());
+        auto iterator = params.changeDetectorP->GetSyncInfo().MakeIteratorBySourceId(sourceIdentity);
         auto iterEntry = iterator.begin();
         if (iterEntry != iterator.end())
             {
@@ -751,7 +752,7 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
 
     iModelBridgeSyncInfoFile::ConversionResults results;
     results.m_element = corridorPtr;
-    if (BentleyStatus::SUCCESS != changeDetector._UpdateBimAndSyncInfo(results, change))
+    if (BentleyStatus::SUCCESS != params.changeDetectorP->_UpdateBimAndSyncInfo(results, change))
         return BentleyStatus::ERROR;
 
     if (bimMainAlignmentPtr.IsValid())
@@ -765,6 +766,26 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
     auto roadwayPtr = RoadRailBim::Roadway::Create(*bimCorridorCPtr);
     roadwayPtr->SetMainLinearElement(bimMainAlignmentPtr.get());
     if (roadwayPtr->Insert(RoadRailBim::PathwayElement::Order::LeftMost).IsNull())
+        return BentleyStatus::ERROR;
+
+    if (m_defaultDesignSpeedDef.IsNull())
+        {
+        auto roadwayStandardsModelPtr = RoadRailBim::RoadwayStandardsModel::Query(*params.subjectCPtr);
+
+        auto mphUnitCP = BENTLEY_NAMESPACE_NAME::Units::UnitRegistry::Instance().LookupUnit("MPH");
+        auto msecUnitCP = BENTLEY_NAMESPACE_NAME::Units::UnitRegistry::Instance().LookupUnit("M/SEC");
+        BENTLEY_NAMESPACE_NAME::Units::Quantity speedQty(70.0, *mphUnitCP); // 70 MPH
+
+        auto designSpeedDefPtr = RoadRailBim::DesignSpeedDefinition::Create(*roadwayStandardsModelPtr, 
+            speedQty.ConvertTo(msecUnitCP).GetMagnitude()); // Hard-coded for now - while the CIF SDK exposes an API for it
+        designSpeedDefPtr->SetUserLabel("70 mph");
+        m_defaultDesignSpeedDef = designSpeedDefPtr->Insert();
+        if (m_defaultDesignSpeedDef.IsNull())
+            return BentleyStatus::ERROR;
+        }
+
+    auto designSpeedPtr = RoadRailBim::DesignSpeed::Create(RoadRailBim::DesignSpeed::CreateFromToParams(*roadwayPtr, *m_defaultDesignSpeedDef, 0, bimMainAlignmentPtr->GetLength()));
+    if (designSpeedPtr->Insert().IsNull())
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
@@ -809,7 +830,7 @@ DgnElementId ORDCorridorsConverter::ConvertCorridor(CorridorCR cifCorridor, ORDC
         }
     else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::New == change.GetChangeType())
         {
-        if (BentleyStatus::SUCCESS != CreateNewCorridor(cifCorridor, *params.changeDetectorP, params.fileScopeId, change, bimCorridorCPtr, targetCategoryId))
+        if (BentleyStatus::SUCCESS != CreateNewCorridor(cifCorridor, params, change, bimCorridorCPtr, targetCategoryId))
             return DgnElementId();
         }
     else if (iModelBridgeSyncInfoFile::ChangeDetector::ChangeType::Changed == change.GetChangeType())
