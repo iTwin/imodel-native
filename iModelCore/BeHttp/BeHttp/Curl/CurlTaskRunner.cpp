@@ -30,6 +30,14 @@ volatile bool CurlTaskRunner::s_isOnActiveRequestCountChangedInitialized = false
 volatile bool CurlTaskRunner::s_doSuspendNewRequests = false;
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                            Vincas.Razma            05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+CurlTaskRunner::CurlTaskRunner() : AsyncTaskRunner()
+    {
+    m_curlRunning.store(false);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Vincas.Razma            07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CurlTaskRunner::Suspend()
@@ -140,6 +148,7 @@ bool CurlTaskRunner::PrepareRequestIfNotSuspended(CurlHttpRequest& curlRequest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CurlTaskRunner::_RunAsyncTasksLoop()
     {
+    m_curlRunning.store(true);
     m_multi = curl_multi_init();
 
     if(0 != HttpClient::GetOptions().GetMaxConnectionsPerHost())

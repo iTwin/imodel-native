@@ -54,7 +54,7 @@ public:
 
     protected:
         virtual void _RunAsyncTasksLoop() override;
-        CurlTaskRunner () : AsyncTaskRunner(){}
+        CurlTaskRunner();
 
     public:
         static std::shared_ptr<CurlTaskRunner> Create()
