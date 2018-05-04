@@ -933,6 +933,24 @@ static CurveVectorPtr CreateAnnulusWithManyArcSectors (uint32_t numOuter, uint32
     return parityRegion;
     }
 
+// 
+// Create one or two disks with each split into many arcs.
+// If two, bundle in parity region
+static ICurvePrimitivePtr CreateSwoosh (double x0, double y0, double x1, double y1)
+    {
+    DPoint3d xy0 = DPoint3d::From (x0, y0);
+    DPoint3d xy1 = DPoint3d::From (x1, y1);
+    MSBsplineCurvePtr bcurve = MSBsplineCurve::CreateFromPolesAndOrder (
+        bvector<DPoint3d> {
+            xy0,
+            DPoint3d::FromInterpolateAndPerpendicularXY (xy0, 0.25, xy1, 0.1),
+            DPoint3d::FromInterpolateAndPerpendicularXY (xy0, 0.75, xy1, -0.1),
+            xy1
+            },
+        nullptr, nullptr,
+        4, false);
+    return ICurvePrimitive::CreateBsplineCurve (bcurve);
+    }
 };
 
 

@@ -716,7 +716,7 @@ double                          height
     *pFraction = height - index;
     }
 
-#ifdef CompileCrossingExtrema
+
 /*---------------------------------------------------------------------------------**//**
 * Find the extremal, integerized values of k such that f + k * g = 0, where f and g are
 *   bezier polynomials.
@@ -771,7 +771,6 @@ int         numPole
         *pk1 = k1;
     return k1 >= k0;
     }
-#endif
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -1316,7 +1315,7 @@ DEllipse3dCR ellipse
             }
         }
     }
-#ifdef doBezier
+
 /*---------------------------------------------------------------------------------**//**
 * Generate intersections of a plane with a bezier, where the plane intersections are
 * defined by a univariate bezier which is a linear combination of two others.
@@ -1422,28 +1421,20 @@ static void        jmdlGPA_TCH_cutCombinationBezier
                 gPoint.a     = jmdlGPA_TCH_pointToSortCoordinate (pContext, &gPoint.point);
                 gPoint.userData = index;
                 gPoint.mask     = 0;
-#ifdef HATCH_DEBUG
-                if (s_noisy)
-                    printf ("Bezier cut (%d,%lf)\n", gPoint.userData, gPoint.a);
-#endif
-                cvHatch_addGraphicsPoint (pContext->m_collector, &gPoint);
+                pContext->m_collector.Add (gPoint);
                 }
             }
         }
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 *
 * @bsimethod                                                    EarlinLutz      01/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void    jmdlGPA_TCH_collectBezierCrossings_go
+static void    collectBezierCrossings
 (
 GPA_TransformedHatchContext     *pContext,
-int                     i0,
-int                     i1,
-DPoint4dP               poleArray,
-int                     numPole
+BCurveSegment segment
 )
     {
     DPoint4d H0, H1;
@@ -1451,10 +1442,12 @@ int                     numPole
     double   poleArray1[MAX_BEZIER_CURVE_ORDER];
     int plane, plane0, plane1;
     jmdlGPA_TCH_getHomogeneousPlaneTerms (pContext, &H0, &H1);
+    DPoint4dP poles = segment.GetPoleP ();
+    auto numPole = (int)segment.GetOrder ();
     for (int i = 0; i <  numPole; i++)
         {
-        poleArray0[i] = bsiDPoint4d_dotProduct (&H0, &poleArray[i]);
-        poleArray1[i] = bsiDPoint4d_dotProduct (&H1, &poleArray[i]);
+        poleArray0[i] = bsiDPoint4d_dotProduct (&H0, &poles[i]);
+        poleArray1[i] = bsiDPoint4d_dotProduct (&H1, &poles[i]);
         }
     if (jmdlGPA_crossingExtrema (&plane0, &plane1, poleArray0, poleArray1, numPole))
         {
@@ -1462,26 +1455,9 @@ int                     numPole
         for (plane = plane0; plane <= plane1; plane++)
             {
             jmdlGPA_TCH_cutCombinationBezier
-                    (pContext, poleArray, poleArray0, poleArray1, (double)plane, numPole, plane);
+                    (pContext, poles, poleArray0, poleArray1, (double)plane, numPole, plane);
             }
         }
-    }
-/*---------------------------------------------------------------------------------**//**
-*
-* @bsimethod                                                    EarlinLutz      01/99
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void    jmdlGPA_TCH_collectBezierCrossings
-(
-GPA_TransformedHatchContext     *pContext,
-int                     i0,
-int                     i1
-)
-    {
-    DPoint4d poleArray[MAX_BEZIER_CURVE_ORDER];
-    int numPole;
-
-    if (cvHatch_getBezier (pContext->pBoundary, &i0, poleArray, &numPole, MAX_BEZIER_CURVE_ORDER))
-        jmdlGPA_TCH_collectBezierCrossings_go (pContext, i0, i1, poleArray, numPole);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1491,21 +1467,15 @@ int                     i1
 static void    jmdlGPA_TCH_collectBsplineCrossings
 (
 GPA_TransformedHatchContext     *pContext,
-int                     i0,
-int                     i1
+MSBsplineCurveCR curve
 )
     {
-    DPoint4d poleArray[MAX_BEZIER_CURVE_ORDER];
-    int numPole;
-    double knot0, knot1;
-    bool isNullInterval;
-    for (size_t i = 0; pContext->pBoundary->GetBezierSpanFromBsplineCurve (i0, i,
-                                poleArray, numPole, MAX_BEZIER_CURVE_ORDER, isNullInterval, knot0, knot1); ++i)
+    BCurveSegment segment;
+    for (size_t i = 0; curve.AdvanceToBezier (segment, i, true);)
         {
-        jmdlGPA_TCH_collectBezierCrossings_go (pContext, i0, i1, poleArray, numPole);        
+        collectBezierCrossings (pContext, segment);
         }
     }
-#endif
 
 
 
@@ -1522,6 +1492,7 @@ CurveVectorCR curves
     DEllipse3d arc;
     bvector<DPoint3d> const *points;
     bvector<DPoint3d> segmentPoints;
+    MSBsplineCurveCP bcurve;
     for (auto &curve : curves)
         {
         points = curve->GetLineStringCP ();
@@ -1539,6 +1510,10 @@ CurveVectorCR curves
         else if (curve->TryGetArc (arc))
             {
             jmdlGPA_TCH_collectDEllipse3dCrossings (pContext, arc);
+            }
+        else if (nullptr != (bcurve = curve->GetProxyBsplineCurveCP ()))
+            {
+            jmdlGPA_TCH_collectBsplineCrossings (pContext, *bcurve);
             }
         else
             {
@@ -2239,12 +2214,6 @@ double               spacing,       //!< [in] spacing perpendicular to hatch dir
 int                  selectRule     //!< 0 for parity rules, 1 for longest possible strokes (first to last crossings), 2 for leftmsot and rightmost of parity set.
 )
     {
-    bool useGPA = false;
-    if (selectRule > 100)
-        {
-        useGPA = true;
-        selectRule = selectRule - 100;
-        }
     Transform localToWorld;
     double c = cos (angleRadians);
     double s = sin (angleRadians);
@@ -2256,30 +2225,12 @@ int                  selectRule     //!< 0 for parity rules, 1 for longest possi
         );
     CurveVectorPtr sticks = CurveVector::Create (BOUNDARY_TYPE_None);
 
-    if (useGPA)
+    HatchArray segments;
+    cvHatch_addTransformedCrossHatchClipped (segments, boundary, &localToWorld, nullptr, nullptr, selectRule);
+    DSegment3d segment;
+    for (size_t i = 0; segments.GetSegment (i, segment); i += 2)
         {
-        GraphicsPointArray boundaryGPA, collectorGPA;
-        boundaryGPA.AddCurves (boundary, true);
-        jmdlGraphicsPointArray_addTransformedCrossHatchExt (&collectorGPA, &boundaryGPA, &localToWorld, selectRule);
-        // Sticks are alternating 
-        for (size_t i = 1; i < collectorGPA.GetGraphicsPointCount (); i+=2)
-            {
-            DSegment3d segment;
-            if (   collectorGPA.GetNormalizedPoint (i-1, segment.point[0])
-                && collectorGPA.GetNormalizedPoint (i, segment.point[1])
-                )
-                sticks->push_back (ICurvePrimitive::CreateLine (segment));
-            }
-        }
-    else
-        {
-        HatchArray segments;
-        cvHatch_addTransformedCrossHatchClipped (segments, boundary, &localToWorld, nullptr, nullptr, selectRule);
-        DSegment3d segment;
-        for (size_t i = 0; segments.GetSegment (i, segment); i += 2)
-            {
-            sticks->push_back (ICurvePrimitive::CreateLine (segment));
-            }
+        sticks->push_back (ICurvePrimitive::CreateLine (segment));
         }
     return sticks;
     }
