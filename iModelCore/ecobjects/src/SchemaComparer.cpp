@@ -1220,24 +1220,24 @@ BentleyStatus SchemaComparer::CompareECEnumerators(EnumeratorChanges& changes, E
         else if (existsInOld && !existsInNew)
             {
             EnumeratorChange& change = changes.Add(ChangeType::Deleted, SystemId::Enumerator, enumeratorName);
-            change.Name().Set(oldIt->second->GetName(), nullptr);
-            change.DisplayLabel().Set(oldIt->second->GetInvariantDisplayLabel(), nullptr);
-            change.Description().Set(oldIt->second->GetInvariantDescription(), nullptr);
+            change.Name().Set(oldIt->second->GetName());
+            change.DisplayLabel().Set(oldIt->second->GetInvariantDisplayLabel());
+            change.Description().Set(oldIt->second->GetInvariantDescription());
             if (oldEnumerator->IsInteger())
-                change.Integer().Set(oldIt->second->GetInteger(), nullptr);
+                change.Integer().Set(oldIt->second->GetInteger());
             else
-                change.String().Set(oldIt->second->GetString(), nullptr);
+                change.String().Set(oldIt->second->GetString());
             }
         else if (!existsInOld && existsInNew)
             {
             EnumeratorChange& change = changes.Add(ChangeType::New, SystemId::Enumerator, enumeratorName);
-            change.Name().Set(nullptr, newEnumerator->GetName());
-            change.DisplayLabel().Set(nullptr, newEnumerator->GetInvariantDisplayLabel());
-            change.Description().Set(nullptr, newEnumerator->GetInvariantDescription());
+            change.Name().Set(newEnumerator->GetName());
+            change.DisplayLabel().Set(newEnumerator->GetInvariantDisplayLabel());
+            change.Description().Set(newEnumerator->GetInvariantDescription());
             if (newEnumerator->IsInteger())
-                change.Integer().Set(nullptr, newEnumerator->GetInteger());
+                change.Integer().Set(newEnumerator->GetInteger());
             else
-                change.String().Set(nullptr, newEnumerator->GetString());
+                change.String().Set(newEnumerator->GetString());
             }
         }
 
@@ -1616,8 +1616,8 @@ BentleyStatus SchemaComparer::AppendECSchema(SchemaChange& change, ECSchemaCR sc
     change.OriginalECXmlVersionMajor().Set(schema.GetOriginalECXmlVersionMajor());
     change.OriginalECXmlVersionMinor().Set(schema.GetOriginalECXmlVersionMinor());
 
-    if ((change.GetChangeType() == ChangeType::Deleted && m_options.GetSchemaDeleteDetailLevel() == AppendDetailLevel::Partial) ||
-        (change.GetChangeType() == ChangeType::New && m_options.GetSchemaNewDetailLevel() == AppendDetailLevel::Partial))
+    if ((change.GetChangeType() == ChangeType::Deleted && m_options.GetDetailLevelForDeletedSchema() == DetailLevel::NoSchemaElements) ||
+        (change.GetChangeType() == ChangeType::New && m_options.GetDetailLevelForNewSchema() == DetailLevel::NoSchemaElements))
         return SUCCESS;
 
     for (ECClassCP classCP : schema.GetClasses())
@@ -2844,8 +2844,8 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
     }
 
     {
-    Nullable<bool> oldVal = oldSpec != nullptr ? oldSpec->IsIncludeZero() : nullptr;
-    Nullable<bool> newVal = newSpec != nullptr ? newSpec->IsIncludeZero() : nullptr;
+    Nullable<bool> oldVal = oldSpec != nullptr ? oldSpec->IsIncludeZero() : Nullable<bool>();
+    Nullable<bool> newVal = newSpec != nullptr ? newSpec->IsIncludeZero() : Nullable<bool>();
     if (oldVal != newVal)
         IncludeZero().Set(oldVal, newVal);
     }

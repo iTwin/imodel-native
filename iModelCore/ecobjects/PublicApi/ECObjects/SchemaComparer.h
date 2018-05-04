@@ -899,24 +899,22 @@ public:
 struct SchemaComparer
     {
 public:
-    enum class AppendDetailLevel
+    enum class DetailLevel
         {
         Full,
-        Partial
+        NoSchemaElements
         };
 
-    struct Options
+    struct Options final
         {
         private:
-            AppendDetailLevel m_schemaDeleteDetailLevel;
-            AppendDetailLevel m_schemaNewDetailLevel;
+            DetailLevel m_levelForNewSchema = DetailLevel::Full;
+            DetailLevel m_levelForDeletedSchema = DetailLevel::Full;
         public:
-            Options(AppendDetailLevel schemDeleteDetailLevel = AppendDetailLevel::Full, AppendDetailLevel schemaNewDetailLevel = AppendDetailLevel::Full)
-                :m_schemaDeleteDetailLevel(schemDeleteDetailLevel), m_schemaNewDetailLevel(schemaNewDetailLevel)
-                {}
-
-            AppendDetailLevel GetSchemaDeleteDetailLevel() const { return m_schemaDeleteDetailLevel; }
-            AppendDetailLevel GetSchemaNewDetailLevel() const { return m_schemaNewDetailLevel; }
+            Options() {}
+            Options(DetailLevel schemaNewDetailLevel, DetailLevel levelForDeletedSchema) :m_levelForNewSchema(schemaNewDetailLevel), m_levelForDeletedSchema(levelForDeletedSchema) {}
+            DetailLevel GetDetailLevelForNewSchema() const { return m_levelForNewSchema; }
+            DetailLevel GetDetailLevelForDeletedSchema() const { return m_levelForDeletedSchema; }
         };
 
 private :
