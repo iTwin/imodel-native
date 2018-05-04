@@ -148,8 +148,9 @@ DTMStatusInt ScalableMeshVolume::_ComputeCutFillVolume(double* cut, double* fill
 
     bvector<bvector<DPoint3d>> coverages;
     IScalableMeshPtr targetedMesh = m_scmPtr;
-    m_scmPtr->GetAllCoverages(coverages);
-    if (!coverages.empty()) targetedMesh = m_scmPtr->GetTerrainSM();
+
+   // m_scmPtr->GetAllCoverages(coverages);
+    //if (!coverages.empty()) targetedMesh = m_scmPtr->GetTerrainSM();
 
     IScalableMeshMeshQueryPtr meshQueryInterface = (targetedMesh)->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
     bvector<IScalableMeshNodePtr> returnedNodes;
