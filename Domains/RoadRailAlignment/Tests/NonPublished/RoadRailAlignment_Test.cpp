@@ -176,3 +176,54 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
     ASSERT_DOUBLE_EQ(150.0, alignmentPairPtr->LengthXY());
     ASSERT_TRUE(alignmentPairPtr->IsValidVertical());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RoadRailAlignmentTests, AlignmentSegmentationTest)
+    {
+    DgnDbPtr projectPtr = CreateProject(L"AlignmentSegmentationTest.bim");
+    ASSERT_TRUE(projectPtr.IsValid());
+
+    auto alignModelPtr = AlignmentModel::Query(*projectPtr->Elements().GetRootSubject(),
+        RoadRailAlignmentDomain::GetDesignPartitionName());
+
+    // Create Alignment
+    auto alignmentPtr = Alignment::Create(*alignModelPtr);
+    alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
+    ASSERT_TRUE(alignmentPtr->Insert().IsValid());
+
+    // Create Stations
+    auto station1Ptr = AlignmentStation::Create(AlignmentStation::CreateAtParams(*alignmentPtr, 50.0, 100.0));
+    ASSERT_TRUE(station1Ptr->Insert().IsValid());
+    ASSERT_DOUBLE_EQ(50.0, station1Ptr->GetAtDistanceAlongFromStart());
+    ASSERT_DOUBLE_EQ(100.0, station1Ptr->GetStation());
+    
+    auto station2Ptr = AlignmentStation::Create(AlignmentStation::CreateAtParams(*alignmentPtr, 100.0, 200.0));
+    ASSERT_TRUE(station2Ptr->Insert().IsValid());
+
+    // Segmentation
+    bset<DgnClassId> classIds;
+    classIds.insert(AlignmentStation::QueryClassId(*projectPtr));
+
+    auto locations = alignmentPtr->QueryLinearLocations(ILinearElement::QueryParams(classIds));
+    ASSERT_EQ(2, locations.size());
+
+    locations = alignmentPtr->QueryLinearLocations(ILinearElement::QueryParams(classIds, 75.0, 125.0));
+    ASSERT_EQ(1, locations.size());
+
+    locations = alignmentPtr->QueryLinearLocations(ILinearElement::QueryParams(classIds, NullableDouble(), 75.0));
+    ASSERT_EQ(1, locations.size());
+
+    locations = alignmentPtr->QueryLinearLocations(ILinearElement::QueryParams(classIds, 125.0, NullableDouble()));
+    ASSERT_EQ(0, locations.size());
+
+    locations = alignmentPtr->QueryLinearLocations(ILinearElement::QueryParams(50.0, 100.0));
+    ASSERT_EQ(2, locations.size());
+
+    locations = alignmentPtr->QueryLinearLocations(ILinearElement::QueryParams(50.0, ILinearElement::ComparisonOption::Exclusive, 100.0, ILinearElement::ComparisonOption::Inclusive));
+    ASSERT_EQ(1, locations.size());
+
+    locations = alignmentPtr->QueryLinearLocations(ILinearElement::QueryParams(50.0, ILinearElement::ComparisonOption::Exclusive, 100.0, ILinearElement::ComparisonOption::Exclusive));
+    ASSERT_EQ(0, locations.size());
+    }
