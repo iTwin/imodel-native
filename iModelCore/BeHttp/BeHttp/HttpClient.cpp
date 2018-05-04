@@ -123,9 +123,9 @@ bool HttpClient::IsFullLoggingEnabled()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HttpClient::Reinitialize()
     {
-    LOG.info("Reinitializing...");
+    LOG.debug("Reinitializing...");
     DefaultHttpHandler::GetInstance()->SetEnabled(true);
-    LOG.info("Reinitialized");
+    LOG.debug("Reinitialized");
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -133,9 +133,9 @@ void HttpClient::Reinitialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HttpClient::Uninitialize()
     {
-    LOG.info("Uninitializing...");
+    LOG.debug("Uninitializing...");
     DefaultHttpHandler::GetInstance()->SetEnabled(false);
-    LOG.info("Uninitialized");
+    LOG.debug("Uninitialized");
     };
     
 /*--------------------------------------------------------------------------------------+
