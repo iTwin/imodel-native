@@ -319,7 +319,7 @@ BentleyStatus SchemaComparer::CompareECClass(ClassChange& change, ECClassCR a, E
         change.GetDescription().Set(a.GetInvariantDescription(), b.GetInvariantDescription());
 
     if (a.GetClassModifier() != b.GetClassModifier())
-        change.GetClassModifier().Set(a.GetClassModifier(), b.GetClassModifier());
+        change.ClassModifier().Set(a.GetClassModifier(), b.GetClassModifier());
 
     if (a.GetClassType() != b.GetClassType())
         change.ClassType().Set(a.GetClassType(), b.GetClassType());
@@ -378,18 +378,18 @@ BentleyStatus SchemaComparer::CompareECBaseClasses(BaseClassChanges& changes, EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECRelationshipClass(ECRelationshipChange& change, ECRelationshipClassCR a, ECRelationshipClassCR b)
+BentleyStatus SchemaComparer::CompareECRelationshipClass(RelationshipChange& change, ECRelationshipClassCR a, ECRelationshipClassCR b)
     {
     if (a.GetStrength() != b.GetStrength())
-        change.GetStrength().Set(a.GetStrength(), b.GetStrength());
+        change.Strength().Set(a.GetStrength(), b.GetStrength());
 
     if (a.GetStrengthDirection() != b.GetStrengthDirection())
-        change.GetStrengthDirection().Set(a.GetStrengthDirection(), b.GetStrengthDirection());
+        change.StrengthDirection().Set(a.GetStrengthDirection(), b.GetStrengthDirection());
 
-    if (CompareECRelationshipConstraint(change.GetSource(), a.GetSource(), b.GetSource()) != SUCCESS)
+    if (CompareECRelationshipConstraint(change.Source(), a.GetSource(), b.GetSource()) != SUCCESS)
         return ERROR;
 
-    return CompareECRelationshipConstraint(change.GetTarget(), a.GetTarget(), b.GetTarget());
+    return CompareECRelationshipConstraint(change.Target(), a.GetTarget(), b.GetTarget());
     }
 
 //---------------------------------------------------------------------------------------
@@ -398,13 +398,13 @@ BentleyStatus SchemaComparer::CompareECRelationshipClass(ECRelationshipChange& c
 BentleyStatus SchemaComparer::CompareECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR a, ECRelationshipConstraintCR b)
     {
     if (a.GetRoleLabel() != b.GetRoleLabel())
-        change.GetRoleLabel().Set(a.GetRoleLabel(), b.GetRoleLabel());
+        change.RoleLabel().Set(a.GetRoleLabel(), b.GetRoleLabel());
 
     if (a.GetIsPolymorphic() != b.GetIsPolymorphic())
         change.IsPolymorphic().Set(a.GetIsPolymorphic(), b.GetIsPolymorphic());
 
     if (a.GetMultiplicity().ToString() != b.GetMultiplicity().ToString())
-        change.GetMultiplicity().Set(a.GetMultiplicity().ToString(), b.GetMultiplicity().ToString());
+        change.Multiplicity().Set(a.GetMultiplicity().ToString(), b.GetMultiplicity().ToString());
 
     return CompareECRelationshipConstraintClasses(change.ConstraintClasses(), a.GetConstraintClasses(), b.GetConstraintClasses());
     }
@@ -443,7 +443,7 @@ BentleyStatus SchemaComparer::CompareECRelationshipConstraintClasses(ECRelations
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECPropertyCR a, ECPropertyCR b)
+BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECPropertyCR a, ECPropertyCR b)
     {
     if (a.GetTypeName() != b.GetTypeName())
         change.GetTypeName().Set(a.GetTypeName(), b.GetTypeName());
@@ -694,7 +694,7 @@ BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECProp
         change.GetNavigation().Direction().Set(oldDirection, newDirection);
 
     if (oldRel != newRel)
-        change.GetNavigation().GetRelationshipClassName().Set(oldRel, newRel);
+        change.GetNavigation().Relationship().Set(oldRel, newRel);
     }
     
     {
@@ -728,7 +728,7 @@ BentleyStatus SchemaComparer::CompareECProperty(ECPropertyChange& change, ECProp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECProperties(ECPropertyChanges& changes, ECPropertyIterableCR a, ECPropertyIterableCR b)
+BentleyStatus SchemaComparer::CompareECProperties(PropertyChanges& changes, ECPropertyIterableCR a, ECPropertyIterableCR b)
     {
     std::map<Utf8CP, ECPropertyCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECPropertyCP propertyCP : a)
@@ -1672,14 +1672,14 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
     {
     Formatting::NumericFormatSpecCP oldSpec = oldVal.HasNumeric() ? oldVal.GetNumericSpec() : nullptr;
     Formatting::NumericFormatSpecCP newSpec = newVal.HasNumeric() ? newVal.GetNumericSpec() : nullptr;
-    if (SUCCESS != change.GetNumericSpec().SetFrom(oldSpec, newSpec))
+    if (SUCCESS != change.NumericSpec().SetFrom(oldSpec, newSpec))
         return ERROR;
     }
 
     {
     Formatting::CompositeValueSpecCP oldSpec = oldVal.HasComposite() ? oldVal.GetCompositeSpec() : nullptr;
     Formatting::CompositeValueSpecCP newSpec = newVal.HasComposite() ? newVal.GetCompositeSpec() : nullptr;
-    if (SUCCESS != change.GetCompositeSpec().SetFrom(oldSpec, newSpec))
+    if (SUCCESS != change.CompositeSpec().SetFrom(oldSpec, newSpec))
         return ERROR;
     }
 
@@ -1849,12 +1849,12 @@ BentleyStatus SchemaComparer::AppendECClass(ClassChange& change, ECClassCR v)
         change.GetDisplayLabel().Set(v.GetInvariantDisplayLabel());
 
     change.GetDescription().Set(v.GetInvariantDescription());
-    change.GetClassModifier().Set(v.GetClassModifier());
+    change.ClassModifier().Set(v.GetClassModifier());
     change.ClassType().Set(v.GetClassType());
 
     for (ECPropertyCP prop : v.GetProperties(false))
         {
-        ECPropertyChange& propertyChange = change.Properties().Add(change.GetChangeType(), prop->GetName().c_str());
+        PropertyChange& propertyChange = change.Properties().Add(change.GetChangeType(), prop->GetName().c_str());
 
         if (AppendECProperty(propertyChange, *prop) == ERROR)
             return ERROR;
@@ -1875,14 +1875,14 @@ BentleyStatus SchemaComparer::AppendECClass(ClassChange& change, ECClassCR v)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECRelationshipClass(ECRelationshipChange& change, ECRelationshipClassCR v)
+BentleyStatus SchemaComparer::AppendECRelationshipClass(RelationshipChange& change, ECRelationshipClassCR v)
     {
-    change.GetStrengthDirection().Set(v.GetStrengthDirection());
-    change.GetStrength().Set(v.GetStrength());
-    if (AppendECRelationshipConstraint(change.GetSource(), v.GetSource()) == ERROR)
+    change.StrengthDirection().Set(v.GetStrengthDirection());
+    change.Strength().Set(v.GetStrength());
+    if (AppendECRelationshipConstraint(change.Source(), v.GetSource()) == ERROR)
         return ERROR;
 
-    if (AppendECRelationshipConstraint(change.GetTarget(), v.GetTarget()) == ERROR)
+    if (AppendECRelationshipConstraint(change.Target(), v.GetTarget()) == ERROR)
         return ERROR;
 
     return SUCCESS;
@@ -1893,8 +1893,8 @@ BentleyStatus SchemaComparer::AppendECRelationshipClass(ECRelationshipChange& ch
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaComparer::AppendECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR v)
     {
-    change.GetRoleLabel().Set(v.GetRoleLabel());
-    change.GetMultiplicity().Set(v.GetMultiplicity().ToString());
+    change.RoleLabel().Set(v.GetRoleLabel());
+    change.Multiplicity().Set(v.GetMultiplicity().ToString());
     change.IsPolymorphic().Set(v.GetIsPolymorphic());
     if (AppendECRelationshipConstraintClasses(change.ConstraintClasses(), v.GetConstraintClasses()) != SUCCESS)
         return ERROR;
@@ -2048,14 +2048,14 @@ BentleyStatus SchemaComparer::AppendFormat(FormatChange& change, ECFormatCR form
     if (format.HasNumeric())
         {
         Formatting::NumericFormatSpecCP num = format.GetNumericSpec();
-        if (SUCCESS != change.GetNumericSpec().SetFrom(*num))
+        if (SUCCESS != change.NumericSpec().SetFrom(*num))
             return ERROR;
         }
 
     if (format.HasComposite())
         {
         Formatting::CompositeValueSpecCP spec = format.GetCompositeSpec();
-        if (SUCCESS != change.GetCompositeSpec().SetFrom(*spec))
+        if (SUCCESS != change.CompositeSpec().SetFrom(*spec))
             return ERROR;
         }
 
@@ -2065,7 +2065,7 @@ BentleyStatus SchemaComparer::AppendFormat(FormatChange& change, ECFormatCR form
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECProperty(ECPropertyChange& propertyChange, ECPropertyCR v)
+BentleyStatus SchemaComparer::AppendECProperty(PropertyChange& propertyChange, ECPropertyCR v)
     {
     propertyChange.GetName().Set(v.GetName());
     if (v.GetIsDisplayLabelDefined())
@@ -2087,10 +2087,10 @@ BentleyStatus SchemaComparer::AppendECProperty(ECPropertyChange& propertyChange,
     if (NavigationECPropertyCP prop = v.GetAsNavigationProperty())
         {
         propertyChange.IsNavigation().Set(true);
-        NavigationChange& navigationChange = propertyChange.GetNavigation();
+        NavigationPropertyChange& navigationChange = propertyChange.GetNavigation();
         navigationChange.Direction().Set(prop->GetDirection());
         if (prop->GetRelationshipClass())
-            navigationChange.GetRelationshipClassName().Set(Utf8String(prop->GetRelationshipClass()->GetFullName()));
+            navigationChange.Relationship().Set(Utf8String(prop->GetRelationshipClass()->GetFullName()));
         }
     else if (v.GetIsPrimitive())
         {
@@ -2317,7 +2317,7 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
         {
             case SystemId::None: return "";
             case SystemId::Alias: return "Alias";
-            case SystemId::Array: return "Array";
+            case SystemId::ArrayProperty: return "ArrayProperty";
             case SystemId::BaseClass: return "BaseClass";
             case SystemId::BaseClasses: return "BaseClasses";
             case SystemId::Classes: return "Classes";
@@ -2378,7 +2378,7 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::MinWidth: return "MinWidth";
             case SystemId::Multiplicity: return "Multiplicity";
             case SystemId::Name: return "Name";
-            case SystemId::Navigation: return "Navigation";
+            case SystemId::NavigationProperty: return "NavigationProperty";
             case SystemId::NumericFormatSpec: return "NumericFormatSpec";
             case SystemId::OriginalECXmlVersionMajor: return "OriginalECXmlVersionMajor";
             case SystemId::OriginalECXmlVersionMinor: return "OriginalECXmlVersionMinor";
@@ -2397,7 +2397,6 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::PropertyValues: return "PropertyValues";
             case SystemId::Reference: return "Reference";
             case SystemId::References: return "References";
-            case SystemId::Relationship: return "Relationship";
             case SystemId::RelationshipName: return "RelationshipName";
             case SystemId::RoleLabel: return "RoleLabel";
             case SystemId::RoundingFactor: return "RoundingFactor";
@@ -2440,7 +2439,7 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECObjectChange::_WriteToString(Utf8StringR str, int currentIndex, int indentSize) const
+void CompositeECChange::_WriteToString(Utf8StringR str, int currentIndex, int indentSize) const
     {
     AppendBegin(str, *this, currentIndex);
     AppendEnd(str);
@@ -2453,7 +2452,7 @@ void ECObjectChange::_WriteToString(Utf8StringR str, int currentIndex, int inden
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECObjectChange::_IsEmpty() const
+bool CompositeECChange::_IsEmpty() const
     {
     for (auto& change : m_changes)
         {
@@ -2467,7 +2466,7 @@ bool ECObjectChange::_IsEmpty() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECObjectChange::_Optimize()
+void CompositeECChange::_Optimize()
     {
     auto itor = m_changes.begin();
     while (itor != m_changes.end())
@@ -2699,40 +2698,40 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCR s
         return ERROR;
         }
 
-    GetPresentationType().Set(Formatting::Utils::GetPresentationTypeString(spec.GetPresentationType()));
-    GetScientificType().Set(Formatting::Utils::GetScientificTypeString(spec.GetScientificType()));
+    PresentationType().Set(Formatting::Utils::GetPresentationTypeString(spec.GetPresentationType()));
+    ScientificType().Set(Formatting::Utils::GetScientificTypeString(spec.GetScientificType()));
 
     if (spec.HasRoundingFactor())
-        GetRoundingFactor().Set(spec.GetRoundingFactor());
+        RoundingFactor().Set(spec.GetRoundingFactor());
 
     if (spec.HasPrecision())
         {
-        GetDecimalPrecision().Set(Formatting::Utils::DecimalPrecisionToInt(spec.GetDecimalPrecision()));
-        GetFractionalPrecision().Set(Formatting::Utils::FractionalPrecisionDenominator(spec.GetFractionalPrecision()));
+        DecimalPrecision().Set(Formatting::Utils::DecimalPrecisionToInt(spec.GetDecimalPrecision()));
+        FractionalPrecision().Set(Formatting::Utils::FractionalPrecisionDenominator(spec.GetFractionalPrecision()));
         }
 
     if (spec.HasMinWidth())
-        GetMinWidth().Set(spec.GetMinWidth());
+        MinWidth().Set(spec.GetMinWidth());
 
     if (spec.HasSignOption())
-        GetShowSignOption().Set(Formatting::Utils::GetSignOptionString(spec.GetSignOption()));
+        ShowSignOption().Set(Formatting::Utils::GetSignOptionString(spec.GetSignOption()));
 
     if (spec.HasFormatTraits())
-        GetFormatTraits().Set(spec.GetFormatTraitsString());
+        FormatTraits().Set(spec.GetFormatTraitsString());
 
     if (spec.HasDecimalSeparator())
-        GetDecimalSeparator().Set(Utf8String(1, spec.GetDecimalSeparator()));
+        DecimalSeparator().Set(Utf8String(1, spec.GetDecimalSeparator()));
 
     if (spec.HasThousandsSeparator())
-        GetThousandsSeparator().Set(Utf8String(1, spec.GetThousandSeparator()));
+        ThousandsSeparator().Set(Utf8String(1, spec.GetThousandSeparator()));
 
     if (spec.HasUomSeparator())
-        GetUomSeparator().Set(Utf8String(spec.GetUomSeparator()));
+        UomSeparator().Set(Utf8String(spec.GetUomSeparator()));
 
     if (spec.HasStationSeparator())
-        GetStationSeparator().Set(Utf8String(1, spec.GetStationSeparator()));
+        StationSeparator().Set(Utf8String(1, spec.GetStationSeparator()));
 
-    GetStationOffsetSize().Set(spec.GetStationOffsetSize());
+    StationOffsetSize().Set(spec.GetStationOffsetSize());
 
     return SUCCESS;
     }
@@ -2752,21 +2751,21 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
     Nullable<Utf8String> oldVal = oldSpec != nullptr ? Formatting::Utils::GetPresentationTypeString(oldSpec->GetPresentationType()) : nullptr;
     Nullable<Utf8String> newVal = newSpec != nullptr ? Formatting::Utils::GetPresentationTypeString(newSpec->GetPresentationType()) : nullptr;
     if (oldVal != newVal)
-        GetPresentationType().Set(oldVal, newVal);
+        PresentationType().Set(oldVal, newVal);
     }
 
     {
     Nullable<Utf8String> oldVal = oldSpec != nullptr ? Formatting::Utils::GetScientificTypeString(oldSpec->GetScientificType()) : nullptr;
     Nullable<Utf8String> newVal = newSpec != nullptr ? Formatting::Utils::GetScientificTypeString(newSpec->GetScientificType()) : nullptr;
     if (oldVal != newVal)
-        GetScientificType().Set(oldVal, newVal);
+        ScientificType().Set(oldVal, newVal);
     }
 
     {
     Nullable<double> oldVal = oldSpec != nullptr && oldSpec->HasRoundingFactor() ? oldSpec->GetRoundingFactor() : Nullable<double>();
     Nullable<double> newVal = newSpec != nullptr && newSpec->HasRoundingFactor() ? newSpec->GetRoundingFactor() : Nullable<double>();
     if (oldVal != newVal)
-        GetRoundingFactor().Set(oldVal, newVal);
+        RoundingFactor().Set(oldVal, newVal);
     }
 
     {
@@ -2787,10 +2786,10 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
         }
 
     if (oldDecPrec != newDecPrec)
-        GetDecimalPrecision().Set(oldDecPrec, newDecPrec);
+        DecimalPrecision().Set(oldDecPrec, newDecPrec);
 
     if (oldFractPrec != oldFractPrec)
-        GetFractionalPrecision().Set(oldFractPrec, oldFractPrec);
+        FractionalPrecision().Set(oldFractPrec, oldFractPrec);
     }
 
     {
@@ -2803,7 +2802,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
         newVal = (uint32_t) newSpec->GetMinWidth();
 
     if (oldVal != newVal)
-        GetMinWidth().Set(oldVal, newVal);
+        MinWidth().Set(oldVal, newVal);
     }
 
     {
@@ -2816,7 +2815,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
         newVal = Formatting::Utils::GetSignOptionString(newSpec->GetSignOption());
 
     if (oldVal != newVal)
-        GetShowSignOption().Set(oldVal, newVal);
+        ShowSignOption().Set(oldVal, newVal);
     }
 
     {
@@ -2829,7 +2828,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
         newVal = newSpec->GetFormatTraitsString();
 
     if (oldVal != newVal)
-        GetFormatTraits().Set(oldVal, newVal);
+        FormatTraits().Set(oldVal, newVal);
     }
 
     {
@@ -2842,7 +2841,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
         newVal = Utf8String(1, newSpec->GetDecimalSeparator());
 
     if (oldVal != newVal)
-        GetDecimalSeparator().Set(oldVal, newVal);
+        DecimalSeparator().Set(oldVal, newVal);
     }
 
     {
@@ -2855,7 +2854,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
         newVal = Utf8String(1, newSpec->GetThousandSeparator());
 
     if (oldVal != newVal)
-        GetThousandsSeparator().Set(oldVal, newVal);
+        ThousandsSeparator().Set(oldVal, newVal);
     }
 
     {
@@ -2868,7 +2867,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
         newVal = Utf8String(newSpec->GetUomSeparator());
 
     if (oldVal != newVal)
-        GetUomSeparator().Set(oldVal, newVal);
+        UomSeparator().Set(oldVal, newVal);
     }
 
     {
@@ -2881,7 +2880,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
         newVal = Utf8String(1, newSpec->GetStationSeparator());
 
     if (oldVal != newVal)
-        GetStationSeparator().Set(oldVal, newVal);
+        StationSeparator().Set(oldVal, newVal);
     }
 
     {
@@ -2894,7 +2893,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
         newVal = newSpec->GetStationOffsetSize();
 
     if (oldVal != newVal)
-        GetStationOffsetSize().Set(oldVal, newVal);
+        StationOffsetSize().Set(oldVal, newVal);
     }
 
     return SUCCESS;
@@ -2915,14 +2914,14 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCR
         }
 
     if (spec.HasSpacer())
-        GetSpacer().Set(spec.GetSpacer());
+        Spacer().Set(spec.GetSpacer());
 
-    GetIncludeZero().Set(spec.IsIncludeZero());
+    IncludeZero().Set(spec.IsIncludeZero());
 
     if (spec.HasMajorUnit())
         {
         BeAssert(dynamic_cast<ECUnitCP> (spec.GetMajorUnit()) != nullptr);
-        GetMajorUnit().Set(((ECUnitCP) spec.GetMajorUnit())->GetFullName());
+        MajorUnit().Set(((ECUnitCP) spec.GetMajorUnit())->GetFullName());
         }
 
     if (spec.HasMajorLabel())
@@ -2979,14 +2978,14 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
         newVal = newSpec->GetSpacer();
 
     if (oldVal != newVal)
-        GetSpacer().Set(oldVal, newVal);
+        Spacer().Set(oldVal, newVal);
     }
 
     {
     Nullable<bool> oldVal = oldSpec != nullptr ? oldSpec->IsIncludeZero() : nullptr;
     Nullable<bool> newVal = newSpec != nullptr ? newSpec->IsIncludeZero() : nullptr;
     if (oldVal != newVal)
-        GetIncludeZero().Set(oldVal, newVal);
+        IncludeZero().Set(oldVal, newVal);
     }
 
     {
@@ -3005,7 +3004,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
         }
 
     if (oldVal != newVal)
-        GetMajorUnit().Set(oldVal, newVal);
+        MajorUnit().Set(oldVal, newVal);
     }
 
     {
