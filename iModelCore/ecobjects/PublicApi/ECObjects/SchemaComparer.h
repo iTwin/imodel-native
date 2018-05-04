@@ -13,8 +13,6 @@
 //__BENTLEY_INTERNAL_ONLY__
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-#define INDENT_SIZE 3
-
 struct SchemaChange;
 struct ClassChange;
 struct ECEnumerationChange;
@@ -234,7 +232,7 @@ struct ECChange : RefCountedBase
         void Optimize() { _Optimize(); }
         Status GetStatus() { return m_status; }
         void SetStatus(Status status) { m_status = status; }
-        void WriteToString(Utf8StringR str, int initIndex = 0, int indentSize = INDENT_SIZE) const { _WriteToString(str, initIndex, indentSize); }
+        void WriteToString(Utf8StringR str, int initIndex = 0, int indentSize = 4) const { _WriteToString(str, initIndex, indentSize); }
         Utf8String String() const { Utf8String str;  WriteToString(str); return str; }
     };
 
