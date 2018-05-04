@@ -82,6 +82,30 @@ struct HttpRequestTests : ::testing::Test
 IHttpHandlerPtr HttpRequestTests::s_proxy;
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, PerformAsync_RandomlyGeneratedDataApi_PrintsUrlsAndDataToFixFailingTests)
+    {
+    for (int i = 0; i < 1; i++)
+        {
+        Utf8PrintfString url("http://httpbin.org/bytes/2?seed=%d", i);
+        Request request(url.c_str());
+        Response response = request.PerformAsync()->GetResult();;
+        TESTLOG.infov("URL: %s out:'%s'", url.c_str(), response.GetBody().AsString().c_str());
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, PerformAsync_EmptyUrl_ErrorCouldNotConnect)
+    {
+    Request request("");
+    Response response = request.PerformAsync()->GetResult();
+    EXPECT_EQ(ConnectionStatus::CouldNotConnect, response.GetConnectionStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, PerformAsync_BentleyTasksApiAndOneRequest_ExecutesSuccessfully)
@@ -494,13 +518,13 @@ TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfullyWithChained
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_DefaultHttpRequestAndReceivedBody_SucceedsWithBody)
     {
-    Request request("http://httpbin.org/bytes/2?seed=7");
+    Request request("http://httpbin.org/bytes/2?seed=3");
 
     Response response = request.Perform().get();
     ASSERT_EQ(HttpStatus::OK, response.GetHttpStatus());
 
     EXPECT_TRUE(response.GetContent()->GetBody().IsValid());
-    EXPECT_EQ("R&", response.GetContent()->GetBody()->AsString());
+    EXPECT_EQ("yB", response.GetContent()->GetBody()->AsString());
     EXPECT_EQ(2, response.GetContent()->GetBody()->GetLength());
     }
 
@@ -528,21 +552,21 @@ TEST_F(HttpRequestTests, Perform_ReusingSameResponseBodyWithData_ResetsResponseB
     auto responseBody = HttpStringBody::Create("SomeData");
     responseBody->SetPosition(3);
 
-    Request request("http://httpbin.org/bytes/2?seed=7");
+    Request request("http://httpbin.org/bytes/2?seed=3");
     request.SetResponseBody(responseBody);
 
     Response response = request.Perform().get();
     EXPECT_EQ(responseBody.get(), &response.GetBody());
     EXPECT_EQ(2, responseBody->GetLength());
-    EXPECT_EQ("R&", responseBody->AsString());
+    EXPECT_EQ("yB", responseBody->AsString());
 
-    request = Request("http://httpbin.org/bytes/1?seed=13");
+    request = Request("http://httpbin.org/bytes/1?seed=1");
     request.SetResponseBody(responseBody);
 
     response = request.Perform().get();
     EXPECT_EQ(responseBody.get(), &response.GetBody());
     EXPECT_EQ(1, responseBody->GetLength());
-    EXPECT_EQ("B", responseBody->AsString());
+    EXPECT_EQ("D", responseBody->AsString());
     }
 
 /*--------------------------------------------------------------------------------------+
