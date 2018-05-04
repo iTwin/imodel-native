@@ -56,7 +56,7 @@
     <!-- ********************** -->
     <!-- The following parts build the stand-alone ECObjects unit tests (from the same unit test source). -->
     <!-- ProductDirectoryNames below are listed in the BeGTest part file, in directory list: CollectionProduct -->
-    <Part Name="ECObjectsUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
+    <Part Name="ECObjectsUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)ECObjects/test/ -dBEGTEST_NAME=ECObjects -dBEGTEST_DEPENDENCIES=$(SrcRoot)ECObjects/test/SeedData.prewire.mke">
         <SubPart PartName="TestDependencies"/>
         <SubPart PartName="PublishedApi"/>
     </Part>
@@ -317,6 +317,17 @@
         </Bindings>
     </Part>
 
+    <NuGetProduct Name="ECObjectsToolsNuGet" OnlyPlatforms="x64" Description="ECObjects Tools for schema validation, comparison, etc">
+        <SubPart PartName="SchemaConverter" />
+        <SubPart PartName="SchemaResourceGenerator" />
+        <SubPart PartName="SchemaRoundtrip" />
+        <SubPart PartName="SchemaValidator"/>
+        <SubPart PartName="SchemaComparison" />
+        <SubPart PartName="SchemaJsonSerializer" />
+        <SubProduct ProductName="ECObjects"/>
+        <Directories DirectoryListName="ECObjectsToolsNuGet" />
+    </NuGetProduct>
+
     <!-- *************** -->
     <!-- **** Tools **** -->
     <!-- *************** -->
@@ -385,6 +396,22 @@
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+    <ProductDirectoryList ListName="ECObjectsToolsNuGet">
+        <ProductDirectory Name="Assemblies"                                 Path="lib/native"/>
+        <ProductDirectory Name="Assemblies"                                 Path="lib/native" LibType="Static"/>
+        <ProductDirectory Name="Assets"        RelativeTo="Assemblies"      Path="Assets"/>
+        <ProductDirectory Name="Assets"        RelativeTo="Assemblies"      Path="Assets" LibType="static"/>
+        <ProductDirectory Name="Libs"                                       Path="lib/native"/>
+        <ProductDirectory Name="VendorNotices"                              Path="Notices"/>
+        <ProductDirectory Name="VendorNotices"                              Path="Notices" LibType="Static"/>
+        <ProductDirectory Name="SchemaConverterExe"                         Path="lib/native"/>
+        <ProductDirectory Name="SchemaResourceGeneratorExe"                 Path="lib/native"/>
+        <ProductDirectory Name="SchemaRoundtripExe"                         Path="lib/native"/>
+        <ProductDirectory Name="SchemaValidatorExe"                         Path="lib/native"/>
+        <ProductDirectory Name="SchemaComparisonExe"                        Path="lib/native"/>
+        <ProductDirectory Name="SchemaJsonSerializerExe"                    Path="lib/native"/>
+    </ProductDirectoryList>
 
     <ProductDirectoryList ListName="ECObjects">
         <ProductDirectory Name="Assemblies"                                 Path=""/>
