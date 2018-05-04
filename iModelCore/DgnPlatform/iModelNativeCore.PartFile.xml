@@ -4,14 +4,59 @@
     xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
     >
 
+    <!-- ======================================================================================================================================== -->
+    <!-- == PUBLIC ============================================================================================================================== -->
+    <!-- ======================================================================================================================================== -->
+
+    <Part Name="iModelNativeCorePRG" PrgOutputDir="iModelNativeCore">
+        <SubPart PartName="RunAllTests"/>
+        <SubPart PartName="__ParasiteSubParts"/>
+    </Part>
+    
     <!--
-        The true purpose of iModelNativeCore is to be the dependencies of iModelJsNodeAddon. As
-        such, this should closely mirror iModelJsNodeAddon:iModelJsNodeAddonLibCommon.
+        iModelNativeCore needs to include at least the platform SubParts required for the
+        iModelJsNodeAddon. See iModelJsNodeAddon:iModelJsNodeAddonLibCommon.
      -->
-    <Part Name="iModelNativeCore" PrgOutputDir="iModelNativeCore">
-        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="ECObjectsNative" PartFile="ECObjects" Repository="ecobjects"/>
+    <Part Name="iModelNativeCore">
+        <SubPart PartName="DgnPlatformDLL" PartFile="iModelNativeCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="ECPresentation" PartFile="iModelNativeCore/ECPresentation/ECPresentation"/>
+        <SubPart PartName="ECObjectsNative" PartFile="iModelNativeCore/ECObjects/ECObjects"/>
+    </Part>
+
+    <Part Name="RunAllTests" DeferType="RunUnitTests"
+            BentleyBuildMakeFile="${SrcRoot}iModelNative/iModelNativeCore/BeGTest/gtest/CheckLogfilesForFailures.mke"
+            BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs +dAllowIgnore=1"
+            >
+        <SubPart PartName="iModelNativeCore"/>
+
+        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/BeHttp/BeHttp"/>
+        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/Bentley/Bentley"/>
+        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/BeSQLite/BeSQLite"/>
+        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/DgnPlatform/DgnPlatform"/>
+        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/ECDb/ECDb"/>
+        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/ecobjects/ECObjects"/>
+        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/ECPresentation/ECPresentation"/>
+        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/GeomLibs/geomlibs"/>
+        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/Units/Units"/>
+    </Part>
+
+    <!-- ======================================================================================================================================== -->
+    <!-- == PRIVATE ============================================================================================================================= -->
+    <!-- ======================================================================================================================================== -->
+
+    <!--
+        These are "parasites" because they aren't strictly required for the iModelJsNodeAddon
+        library itself. However, they may be required for its non-library parts of the build (e.g.
+        testing, which we'd normally exclude from our build), or for other downstream builds.
+    -->
+    <Part Name="__ParasiteSubParts">
+        <!-- Testing -->
+        <SubPart PartName="Gtest-Tools" PartFile="iModelNativeCore/BeGTest/BeGTest"/>
+        <SubPart PartName="google_gmock_lib" PartFile="iModelNativeCore/util/gmock/gmock"/>
+        <SubPart PartName="google_gtest_lib" PartFile="iModelNativeCore/util/gtest/gtest"/>
+
+        <!-- For DgnClientSdk -->
+        <SubProduct ProductName="IModelExtractor" PartFile="iModelNativeCore/BeSQLite/IModelExtractor"/>
     </Part>
 
 </BuildContext>
