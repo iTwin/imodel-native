@@ -1327,8 +1327,7 @@ void  InitGlyphCurves() const
         {
         if (nullptr != glyphs[iGlyph])
             {
-            bool            isFilled = false;
-            CurveVectorPtr  glyphCurveVector = glyphs[iGlyph]->GetCurveVector(isFilled);
+            CurveVectorPtr  glyphCurveVector = glyphs[iGlyph]->GetCurveVector();
 
             if (glyphCurveVector.IsValid())
                 {
@@ -2014,7 +2013,18 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transform   TileGenerator::GetTransformFromDgn(DgnModelCR model) const
     {
-    return model.IsSpatialModel() ?  GetSpatialTransformFromDgn() : Transform::FromIdentity(); 
+    if (model.IsSpatialModel())
+        return GetSpatialTransformFromDgn();
+        
+    auto    geometricModel = model.ToGeometricModel();
+
+    if (nullptr != geometricModel)
+        {
+        DPoint3d origin = geometricModel->QueryModelRange().GetCenter();
+        return Transform::From(-origin.x, -origin.y, -origin.z);
+        }
+        
+    return Transform::FromIdentity(); 
     }
 
 /*---------------------------------------------------------------------------------**//**

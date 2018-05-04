@@ -14,8 +14,19 @@
 DgnModel::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
     {
     m_classId = ECJsonUtilities::GetClassIdFromClassNameJson(val[DgnModel::json_classFullName()], db.GetClassLocater());
-    m_modeledElementId.FromJson(val[DgnModel::json_modeledElement()]);
-    m_isPrivate = false;
+
+    DgnElement::RelatedElement modeledElement;
+    modeledElement.FromJson(db, val[json_modeledElement()]);
+    if (!modeledElement.IsValid())
+        {
+        BeAssert(false);
+        LOG.errorv("DgnModel::CreateParams: modeledElement is not a valid RelatedElement. It is \"%s\"", val[DgnModel::json_classFullName()].asString().c_str());
+        return;
+        }
+
+    m_modeledElementId = modeledElement.m_id;
+    m_modeledElementRelClassId = modeledElement.m_relClassId;
+    
     if (val.isMember(DgnModel::json_isPrivate()))
         m_isPrivate = val[DgnModel::json_isPrivate()].asBool();
     if (val.isMember(DgnModel::json_isTemplate()))
@@ -761,7 +772,10 @@ void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
         val[json_parentModel()] = m_parentModelId.ToHexStr();
 
     if (m_modeledElementId.IsValid())
-        val[json_modeledElement()] = m_modeledElementId.ToHexStr();
+        {
+        DgnElement::RelatedElement modeledElement(m_modeledElementId, m_modeledElementRelClassId);
+        val[json_modeledElement()] = modeledElement.ToJson(GetDgnDb());
+        }
 
     if (!m_jsonProperties.empty())
         val[json_jsonProperties()] = m_jsonProperties;
@@ -1299,8 +1313,8 @@ ModelHandlerR DgnModel::GetModelHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     {
-    enum Column {ClassId=0, ModeledElementId=1, IsPrivate=2, IsTemplate=3};
-    Statement stmt(m_dgndb, "SELECT ECClassId,ModeledElementId,IsPrivate,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
+    enum Column {ClassId=0, ModeledElementId=1, ModeledElementRelECClassId=2, IsPrivate=3, IsTemplate=4};
+    Statement stmt(m_dgndb, "SELECT ECClassId,ModeledElementId,ModeledElementRelECClassId,IsPrivate,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
     stmt.BindId(1, modelId);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -1308,6 +1322,7 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
 
     DgnClassId modelClassId = stmt.GetValueId<DgnClassId>(Column::ClassId);
     DgnElementId modeledElementId = stmt.GetValueId<DgnElementId>(Column::ModeledElementId);
+    DgnClassId modeledElementRelECClassId = stmt.GetValueId<DgnClassId>(Column::ModeledElementRelECClassId);
     bool isPrivate = stmt.GetValueBoolean(Column::IsPrivate);
     bool isTemplate = stmt.GetValueBoolean(Column::IsTemplate);
 
@@ -1317,6 +1332,7 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
         return nullptr;
 
     DgnModel::CreateParams params(m_dgndb, modelClassId, modeledElementId, isPrivate, isTemplate);
+    params.SetModeledElementRelClassId(modeledElementRelECClassId);
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnModel_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -729,4 +729,68 @@ TEST_F(DgnModelTests, ModelSelectorAndDelete)
         ASSERT_EQ(0, DgnDbTestUtils::SelectCountFromECClass(*m_db, BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels)));
         ASSERT_EQ(0, DgnDbTestUtils::SelectCountFromTable(*m_db, BIS_TABLE(BIS_REL_ModelSelectorRefersToModels)));
         }
+    }
+
+TEST_F(DgnModelTests, ModelModelsElementSubClass)
+    {
+    // Create two models, one using a custom relationship to the modeled element and the other the default
+    DgnModelId mid1, mid2;
+    BeFileName dbFileName;
+    DgnClassId testrelclassid1, testrelclassid2;
+    if (true)
+        {
+        SetupSeedProject();
+        ASSERT_EQ(DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db), SchemaStatus::Success);
+        
+        if (true)
+            {
+            SubjectCPtr rootSubject = m_db->Elements().GetRootSubject();
+
+            if (true)
+                {
+                // Model1 - use the custom TestModelModelsElement ECRelationship
+                auto partition1 = PhysicalPartition::CreateAndInsert(*rootSubject, "DgnModelTests_ModelModelsElementSubClass_P1");
+                ASSERT_TRUE(partition1.IsValid());
+
+                auto& handler = dgn_ModelHandler::Physical::GetHandler();
+                auto classId = m_db->Domains().GetClassId(handler);
+                ASSERT_TRUE(classId.IsValid());
+                DgnModel::CreateParams params(*m_db, classId, partition1->GetElementId());
+                testrelclassid1 = m_db->Schemas().GetClassId("DgnPlatformTest", "TestModelModelsElement");
+                ASSERT_TRUE(testrelclassid1.IsValid());
+                params.SetModeledElementRelClassId(testrelclassid1);
+                auto model = handler.Create(params);
+                ASSERT_TRUE(model.IsValid());
+                ASSERT_EQ(model->GetModeledElementRelClassId(), testrelclassid1);
+                ASSERT_EQ(model->Insert(), DgnDbStatus::Success);
+                mid1 = model->GetModelId();
+                }
+
+            if (true)
+                {
+                // Model 2 - use the default ModelModelsElement ECRelationship
+                auto partition2 = PhysicalPartition::CreateAndInsert(*rootSubject, "DgnModelTests_ModelModelsElementSubClass_P2");
+                ASSERT_TRUE(partition2.IsValid());
+                auto model2 = PhysicalModel::CreateAndInsert(*partition2);
+                mid2 = model2->GetModelId();
+                testrelclassid2 = model2->GetModeledElementRelClassId();
+                ASSERT_EQ(testrelclassid2, m_db->Schemas().GetClassId("BisCore", "ModelModelsElement"));
+                }
+            }
+
+        dbFileName = m_db->GetFileName();
+        m_db->CloseDb();
+        }
+
+    // Verify that the Model.ModeledElement property captures the correct ECRelationship in both cases
+    m_db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_TRUE(m_db.IsValid());
+
+    DgnModelCPtr model1 = m_db->Models().GetModel(mid1);
+    ASSERT_TRUE(model1.IsValid());
+    DgnModelCPtr model2 = m_db->Models().GetModel(mid2);
+    ASSERT_TRUE(model2.IsValid());
+    ASSERT_EQ(model1->GetModeledElementRelClassId(), testrelclassid1);
+    ASSERT_EQ(model2->GetModeledElementRelClassId(), testrelclassid2);
+    ASSERT_NE(testrelclassid1, testrelclassid2);
     }

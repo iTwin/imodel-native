@@ -1329,12 +1329,11 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
             {
             if (nullptr != glyphs[iGlyph])
                 {
-                bool            isFilled = false;
-                CurveVectorPtr  curves = glyphs[iGlyph]->GetCurveVector (isFilled);
+                CurveVectorPtr  curves = glyphs[iGlyph]->GetCurveVector ();
                 if (curves.IsNull())
                     continue;
                 curves->TransformInPlace (Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform));
-                ClipAndProcessCurveVector(*curves, isFilled);
+                ClipAndProcessCurveVector(*curves, curves->IsAnyRegionType ());
                 }
             }
 

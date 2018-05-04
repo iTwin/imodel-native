@@ -88,10 +88,8 @@ struct DgnGlyph
     DRange2d GetRange() const { return _GetRange(); }
     virtual DRange2d _GetExactRange() const = 0;
     DRange2d GetExactRange() const { return _GetExactRange(); }
-    virtual BentleyStatus _FillGpa(GPArrayR) const = 0;
-    BentleyStatus FillGpa(GPArrayR gpa) const { return _FillGpa(gpa); }
-    virtual CurveVectorPtr _GetCurveVector (bool& isFilled) const { return nullptr; } 
-    CurveVectorPtr GetCurveVector (bool& isFilled) const;
+    virtual CurveVectorPtr _GetCurveVector () const { return nullptr; } 
+    CurveVectorPtr GetCurveVector () const;
     virtual bool _IsBlank() const = 0;
     bool IsBlank() const { return _IsBlank(); }
     RasterStatus GetRaster(Render::ImageR raster) const { return _GetRaster(raster); }

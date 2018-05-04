@@ -159,7 +159,7 @@ bool  ProfileManager::Profile::GetCopyOfTestFile(BeFileName& copyTestFile, Utf8C
         }
 
     TestFile* testFile = itor->second;
-    if (GenerateSeedFile(testFile, ver))
+    if (!GenerateSeedFile(testFile, ver))
         return false;
 
     // Create copy of the file
@@ -225,7 +225,7 @@ std::vector<BeVersion> const&  ProfileManager::Profile::ReadProfileVersionFromDi
             }
         }
     BeDirectoryIterator it(fl);
-    while (it.ToNext() == 0)
+    do
         {
         BeFileName entry;
         bool isDir;
@@ -235,7 +235,8 @@ std::vector<BeVersion> const&  ProfileManager::Profile::ReadProfileVersionFromDi
             ver.FromString(entry.GetNameUtf8().c_str());
             m_verList.push_back(ver);
             }
-        }
+        } while (it.ToNext() == 0);
+        
 
     std::sort(m_verList.begin(), m_verList.end());
     return m_verList;
@@ -462,8 +463,19 @@ int ProfileManager::CompareFileVersion(BeFileName const& in)
     Utf8String ext(in.GetExtension());
     Utf8String ver(in.GetDirectoryName().GetNameUtf8());
     BeVersion currentVersion = ProfileManager::GetInstance().GetProfile(ext.c_str())->GetExpectedVersion();
+
+    // This is needed because the sscanf does not search the entire file path for the format %d.%d.%d.%d. It only looks for the string
+    // to explicitly match. So drop the version directory and append the VersionParseFormat to the end.
+    BeFileName pathForVersionParseFormat = in.GetDirectoryName();
+    pathForVersionParseFormat.PopDir().AppendSeparator();
+
+    Utf8String parseFormat(pathForVersionParseFormat.GetNameUtf8());
+    parseFormat.append(VERSION_PARSE_FORMAT);
+
     BeVersion fileVer;
-    fileVer.FromString(ver.c_str());
+    fileVer.FromString(ver.c_str(), parseFormat.c_str());
+
+    BeAssert(!fileVer.IsEmpty());
     if (currentVersion < fileVer)
         return 1;
 

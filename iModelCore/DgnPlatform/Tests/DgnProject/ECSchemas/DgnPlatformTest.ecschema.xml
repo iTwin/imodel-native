@@ -209,6 +209,15 @@
             <Class class="bis:Element"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="TestModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
+        <BaseClass>bis:ModelModelsElement</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="models" polymorphic="true">
+            <Class class="bis:Model"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is modeled by" polymorphic="true">
+            <Class class="bis:ISubModeledElement" />
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="TestGroup">
         <BaseClass>bis:PhysicalElement</BaseClass>
         <!-- Used to test the IElementGroup interface -->
