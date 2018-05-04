@@ -47,7 +47,7 @@ TEST_F(ClassificationSystemsTestFixture, StandardInsertion)
         system->Insert(&stat);
         ASSERT_EQ(DgnDbStatus::Success, stat) << "System failed to be inserted to Db";
 
-        ClassificationSystemCPtr getSystem = ClassificationSystem::TryGetSystem(db, expectedSystemName);
+        ClassificationSystemCPtr getSystem = ClassificationSystem::TryGet(db, expectedSystemName);
         ASSERT_TRUE(getSystem.IsValid()) << "System was not found in Db";
 
         ClassificationGroupPtr group = ClassificationGroup::Create(*system, expectedGroupName);
