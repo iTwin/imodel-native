@@ -9,6 +9,7 @@
 #include <Bentley/RefCounted.h>
 #include <Bentley/Nullable.h>
 #include <Bentley/DateTime.h>
+#include <Bentley/ByteStream.h>
 #include <ECObjects/ECSchema.h>
 #include <ECObjects/ECObjects.h>
 
@@ -22,7 +23,7 @@ enum class ChangeType
     {
     Deleted = 1, //This need to be none zero base
     Modified = 2,
-    New =3
+    New = 3
     };
 
 //=======================================================================================
@@ -83,6 +84,7 @@ enum class SystemId
     KindOfQuantity,
     KoqRelativeError,
     KoqPersistenceUnit,
+    KoqPresentationFormat,
     KoqPresentationFormats,
     MaximumLength,
     MaximumValue,
@@ -110,11 +112,11 @@ enum class SystemId
     PropertyType,
     PropertyValue,
     PropertyValues,
-    Reference,
-    RelationshipName,
+    Relationship,
     RoleLabel,
     RoundingFactor,
     Schema,
+    SchemaReference,
     SchemaReferences,
     Schemas,
     ScientificType,
@@ -147,36 +149,6 @@ enum class SystemId
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct Binary final
-    {
-private:
-    void* m_buff;
-    size_t m_len;
-
-    BentleyStatus Resize(size_t len);
-    BentleyStatus Free();
-    BentleyStatus Assign(void* buff = nullptr, size_t len = 0);
-
-public:
-    Binary();
-    ~Binary();
-    Binary(Binary const& rhs);
-    Binary(Binary&& rhs);
-    Binary& operator=(Binary const& rhs);
-    Binary& operator=(Binary&& rhs);
-    bool operator==(Binary const& rhs) const { return Compare(rhs) == 0; }
-    int Compare(Binary const& rhs) const;
-    void* GetPointerP() { return m_buff; }
-    void const* GetPointer() const { return m_buff; }
-    size_t Size() const { return m_len; }
-    bool Empty() const { return m_len == 0; }
-    void CopyTo(ECN::ECValueR value) const;
-    BentleyStatus CopyFrom(ECN::ECValueCR value);
-    };
-
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
 struct ECChange : RefCountedBase
     {
     enum class Status
@@ -192,18 +164,16 @@ struct ECChange : RefCountedBase
         ECChange const* m_parent = nullptr;
         Status m_status = Status::Pending;
 
+        virtual bool _IsChanged() const = 0;
         virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const = 0;
-        virtual bool _IsEmpty() const = 0;
         virtual void _Optimize() {}
 
     protected:
-        ECChange(ChangeType changeType, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : m_systemId(systemId), m_customId(customId), m_changeType(changeType), m_parent(parent)
-            {}
+        ECChange(ChangeType changeType, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : m_systemId(systemId), m_customId(customId), m_changeType(changeType), m_parent(parent) {}
 
         ECOBJECTS_EXPORT static void AppendBegin(Utf8StringR str, ECChange const& change, int currentIndex);
         static void AppendEnd(Utf8StringR str) { str.append("\r\n"); }
-
+        
         ECOBJECTS_EXPORT static Utf8CP SystemIdToString(SystemId);
 
     public:
@@ -213,13 +183,12 @@ struct ECChange : RefCountedBase
         ECOBJECTS_EXPORT Utf8CP GetId() const;
         ChangeType GetChangeType() const { return m_changeType; }
         ECChange const* GetParent() const { return m_parent; }
-        bool IsEmpty() const { return _IsEmpty(); }
-        bool IsValid() const { return !IsEmpty(); }
+        bool IsChanged() const { return _IsChanged(); }
         void Optimize() { _Optimize(); }
         Status GetStatus() { return m_status; }
         void SetStatus(Status status) { m_status = status; }
         void WriteToString(Utf8StringR str, int initIndex = 0, int indentSize = 4) const { _WriteToString(str, initIndex, indentSize); }
-        Utf8String String() const { Utf8String str;  WriteToString(str); return str; }
+        Utf8String ToString() const { Utf8String str;  WriteToString(str); return str; }
     };
 
 typedef RefCountedPtr<ECChange> ECChangePtr;
@@ -240,23 +209,23 @@ struct CompositeECChange : public ECChange
     private:
         bmap<Utf8CP, ECChangePtr, CompareUtf8> m_changes;
 
+        ECOBJECTS_EXPORT bool _IsChanged() const override;
         ECOBJECTS_EXPORT void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
-        ECOBJECTS_EXPORT bool _IsEmpty() const override;
         ECOBJECTS_EXPORT void _Optimize() override;
 
     protected:
         CompositeECChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChange(state, systemId, parent, customId) {}
 
         template<typename T>
-        T& Get(SystemId systemId)
+        T& Get(SystemId memberSystemId)
             {
             static_assert(std::is_base_of<ECChange, T>::value, "T not derived from ECChange");
-            Utf8CP id = SystemIdToString(systemId);
-            auto itor = m_changes.find(id);
+            Utf8CP memberId = SystemIdToString(memberSystemId);
+            auto itor = m_changes.find(memberId);
             if (itor != m_changes.end())
                 return *(static_cast<T*>(itor->second.get()));
 
-            ECChangePtr changePtr = new T(GetChangeType(), systemId, this, nullptr);
+            ECChangePtr changePtr = new T(GetChangeType(), memberSystemId, this, nullptr);
             ECChange* changeP = changePtr.get();
             m_changes[changePtr->GetId()] = changePtr;
             return *(static_cast<T*>(changeP));
@@ -266,12 +235,12 @@ struct CompositeECChange : public ECChange
     public:
         virtual ~CompositeECChange() {}
 
-        size_t ChangesCount() const 
+        size_t MemberChangesCount() const 
             { 
             size_t count = 0;
             for (auto const& kvPair : m_changes)
                 {
-                if (kvPair.second->IsValid())
+                if (kvPair.second->HasChanges())
                     count++;
                 }
 
@@ -282,12 +251,22 @@ struct CompositeECChange : public ECChange
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-template<typename T>
-struct ECChangeArray : public ECChange
+template<typename TArrayElement>
+struct ECChangeArray final : public ECChange
     {
     private:
-        SystemId m_elementType;
         bvector<ECChangePtr> m_changes;
+
+        bool _IsChanged() const override
+            {
+            for (ECChangePtr const& change : m_changes)
+                {
+                if (change->IsChanged())
+                    return true;
+                }
+
+            return false;
+            }
 
         void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
             {
@@ -299,59 +278,34 @@ struct ECChangeArray : public ECChange
                 }
             }
 
-        bool _IsEmpty() const override
-            {
-            for (ECChangePtr const& change : m_changes)
-                {
-                if (!change->IsEmpty())
-                    return false;
-                }
-
-            return true;
-            }
-
         void _Optimize() override
             {
-            auto itor = m_changes.begin();
-            while (itor != m_changes.end())
+            auto it = m_changes.begin();
+            while (it != m_changes.end())
                 {
-                (*itor)->Optimize();
-                if ((*itor)->IsEmpty())
-                    itor = m_changes.erase(itor);
+                (*it)->Optimize();
+                if (!(*it)->HasChanges())
+                    it = m_changes.erase(it);
                 else
-                    ++itor;
+                    ++it;
                 }
-            }
-
-    protected:
-        ECChangeArray(ChangeType state, SystemId systemId, ECChange const* parent, Utf8CP customId, SystemId elementId) : ECChange(state, systemId, parent, customId), m_elementType(elementId)
-            {
-            static_assert(std::is_base_of<ECChange, T>::value, "T not derived from ECChange");
             }
 
     public:
-        virtual ~ECChangeArray() {}
-
-        SystemId GetElementType() const { return m_elementType; }
-
-        size_t Count() const { return m_changes.size(); }
-        bool Empty() const { return m_changes.empty(); }
-        T& operator[](size_t index) { return static_cast<T&>(*m_changes[index]); }
-        T* Find(Utf8CP customId)
+        ECChangeArray(ChangeType state, SystemId systemId, ECChange const* parent, Utf8CP customId = nullptr) : ECChange(state, systemId, parent, customId)
             {
-            for (auto& v : m_changes)
-                if (strcmp(v->GetId(), customId) == 0)
-                    return static_cast<T*>(v.get());
-
-            return nullptr;
+            static_assert(std::is_base_of<ECChange, TArrayElement>::value, "TArrayElement not derived from ECChange");
             }
 
-        void Erase(size_t index) { m_changes.erase(m_changes.begin() + index); }
+        virtual ~ECChangeArray() {}
 
-        T& Add(ChangeType state, Utf8CP customId = nullptr)
+        size_t Count() const { return m_changes.size(); }
+        bool IsEmpty() const { return m_changes.empty(); }
+        TArrayElement& operator[](size_t index) { return static_cast<TArrayElement&>(*m_changes[index]); }
+        TArrayElement& Add(ChangeType state, SystemId elementSystemId, Utf8CP customId = nullptr)
             {
-            ECChangePtr changePtr = new T(state, m_elementType, this, customId);
-            T* changeP = static_cast<T*>(changePtr.get());
+            ECChangePtr changePtr = new TArrayElement(state, elementSystemId, this, customId);
+            TArrayElement* changeP = static_cast<TArrayElement*>(changePtr.get());
             m_changes.push_back(changePtr);
             return *changeP;
             }
@@ -367,7 +321,7 @@ struct PrimitiveChange final : public ECChange
         Nullable<T> m_old;
         Nullable<T> m_new;
 
-        bool _IsEmpty() const override { return m_old == m_new; }
+        bool _IsChanged() const override { return (m_old != nullptr || m_new != nullptr) && m_old != m_new; }
 
         void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
             {
@@ -383,10 +337,10 @@ struct PrimitiveChange final : public ECChange
         static Utf8String Stringify(int64_t val) { return Utf8PrintfString("%" PRIi64, val); }
         static Utf8String Stringify(double val) { return Utf8PrintfString("%.17g", val); }
         static Utf8String Stringify(DateTime const& val) { return val.ToString(); }
-        static Utf8String Stringify(Binary const& val)
+        static Utf8String Stringify(bvector<Byte> const& val)
             {
             Utf8String str;
-            Base64Utilities::Encode(str, (Byte const*) val.GetPointer(), val.Size());
+            Base64Utilities::Encode(str, val.data(), val.size());
             return str;
             }
         static Utf8String Stringify(DPoint2d const& val) { return Utf8PrintfString("(%.17g, %.17g)", val.x, val.y); }
@@ -512,14 +466,14 @@ struct PrimitiveChange final : public ECChange
     };
 
 typedef PrimitiveChange<bool> BooleanChange;
-typedef PrimitiveChange<Binary> BinaryChange;
+typedef PrimitiveChange<bvector<Byte>> BinaryChange;
 typedef PrimitiveChange<DateTime> DateTimeChange;
 typedef PrimitiveChange<double> DoubleChange;
 typedef PrimitiveChange<int32_t> Int32Change;
 typedef PrimitiveChange<uint32_t> UInt32Change;
 typedef PrimitiveChange<int64_t> Int64Change;
-typedef PrimitiveChange<Point2d> Point2dChange;
-typedef PrimitiveChange<Point3d> Point3dChange;
+typedef PrimitiveChange<DPoint2d> Point2dChange;
+typedef PrimitiveChange<DPoint3d> Point3dChange;
 typedef PrimitiveChange<Utf8String> StringChange;
 
 //=======================================================================================
@@ -538,90 +492,141 @@ public:
     StringChange& Description() { return Get<StringChange>(SystemId::Description); }
     };
 
-struct CustomAttributeChanges;
-struct SchemaReferenceChanges;
-struct ClassChanges;
-struct EnumerationChanges;
-struct KindOfQuantityChanges;
-struct PropertyCategoryChanges;
-struct PhenomenonChanges;
-struct UnitSystemChanges;
-struct UnitChanges;
-struct FormatChanges;
+typedef ECChangeArray<StringChange> SchemaReferenceChanges;
+typedef ECChangeArray<StringChange> BaseClassChanges;
+typedef ECChangeArray<StringChange> RelationshipConstraintClassChanges;
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct SchemaChange final : public SchemaElementChange
+struct PropertyValueChange final : public ECChange
     {
-    public:
-        SchemaChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::Schema, parent, customId) { BeAssert(systemId == GetSystemId()); }
-        ~SchemaChange() {}
+    private:
+        std::unique_ptr<ECChange> m_value;
+        ECN::PrimitiveType m_type;
 
-        StringChange& Alias() { return Get<StringChange>(SystemId::Alias); }
-        UInt32Change& VersionRead() { return Get<UInt32Change>(SystemId::VersionRead); }
-        UInt32Change& VersionMinor() { return Get<UInt32Change>(SystemId::VersionMinor); }
-        UInt32Change& VersionWrite() { return Get<UInt32Change>(SystemId::VersionWrite); }
-        UInt32Change& ECVersion() { return Get<UInt32Change>(SystemId::ECVersion); }
-        UInt32Change& OriginalECXmlVersionMajor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMajor); }
-        UInt32Change& OriginalECXmlVersionMinor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMinor); }
-
-        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(SystemId::CustomAttributes); }
-        SchemaReferenceChanges& References() { return Get<SchemaReferenceChanges>(SystemId::SchemaReferences); }
-        ClassChanges& Classes() { return Get<ClassChanges>(SystemId::Classes); }
-        EnumerationChanges& Enumerations() { return Get<EnumerationChanges>(SystemId::Enumerations); }
-        KindOfQuantityChanges& KindOfQuantities() { return Get<KindOfQuantityChanges>(SystemId::KindOfQuantities); }
-        PropertyCategoryChanges& PropertyCategories() { return Get<PropertyCategoryChanges>(SystemId::PropertyCategories); }
-        PhenomenonChanges& Phenomena() { return Get<PhenomenonChanges>(SystemId::Phenomena); }
-        UnitSystemChanges& UnitSystems() { return Get<UnitSystemChanges>(SystemId::UnitSystems); }
-        UnitChanges& Units() { return Get<UnitChanges>(SystemId::Units); }
-        FormatChanges& Formats() { return Get<FormatChanges>(SystemId::Formats); }
-    };
-
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct SchemaChanges final : public ECChangeArray<SchemaChange>
-    {
-    public:
-        SchemaChanges() : ECChangeArray<SchemaChange>(ChangeType::Modified, SystemId::Schemas, nullptr, nullptr, SystemId::Schema) {}
-        SchemaChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChangeArray<SchemaChange>(type, SystemId::Schemas, parent, customId, SystemId::Schema) { BeAssert(systemId == GetSystemId()); }
-        ~SchemaChanges() {}
-    };
-
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct SchemaReferenceChanges final : public ECChangeArray<StringChange>
-    {
-    public:
-        SchemaReferenceChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChangeArray<StringChange>(type, systemId, parent, customId, SystemId::Reference) {}
-        ~SchemaReferenceChanges() {}
-    };
-
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct BaseClassChanges final : public ECChangeArray<StringChange>
-    {
-    public:
-        BaseClassChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChangeArray<StringChange>(type, systemId, parent, customId, SystemId::BaseClass) {}
-        ~BaseClassChanges() {}
-    };
-
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct RelationshipConstraintClassChanges final : public ECChangeArray<StringChange>
-    {
-    public:
-        RelationshipConstraintClassChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<StringChange>(type, SystemId::ConstraintClasses, parent, customId, SystemId::ConstraintClass)
+        bool _IsChanged() const override { return m_value != nullptr && m_value->IsChanged(); }
+        void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
+        void _Optimize() override
             {
+            if (m_value != nullptr && !m_value->IsChanged())
+                m_value = nullptr;
+            }
+
+        BentleyStatus Inititalize(ECN::PrimitiveType);
+
+        template<typename T>
+        class Converter
+            {
+            template<bool cond, typename U>
+            using resolvedType = Nullable<typename std::enable_if< cond, U >::type>;
+
+            public:
+                template< typename U = T >
+                static resolvedType<std::is_same<U, int32_t>::value, U > Copy(ECN::ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetInteger();
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, int64_t>::value, U > Copy(ECN::ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetLong();
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, DateTime>::value, U > Copy(ECN::ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetDateTime();
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, Utf8String>::value, U > Copy(ECN::ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return Nullable<T>(v.GetUtf8CP());
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, DPoint2d>::value, U > Copy(ECN::ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetPoint2d();
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, DPoint3d>::value, U > Copy(ECN::ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetPoint3d();
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, double>::value, U > Copy(ECN::ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetDouble();
+                    }
+                template< typename U = T >
+                static resolvedType< std::is_same<U, bool>::value, U > Copy(ECN::ECValueCR v)
+                    {
+                    if (v.IsNull()) return Nullable<T>();
+                    return v.GetBoolean();
+                    }
+            };
+
+    public:
+        PropertyValueChange(ChangeType state, SystemId systemId = SystemId::PropertyValue, ECChange const* parent = nullptr, Utf8CP accessString = nullptr)
+            : ECChange(state, SystemId::PropertyValue, parent, accessString)
+            {
+            BeAssert(!Utf8String::IsNullOrEmpty(accessString) && "access string must not be empty for PropertyValueChange");
             BeAssert(systemId == GetSystemId());
             }
-        ~RelationshipConstraintClassChanges() {}
+
+        ~PropertyValueChange() {}
+        Utf8CP GetAccessString() const { BeAssert(HasCustomId()); return GetId(); }
+        bool HasValue() const { return m_value != nullptr; }
+        ECN::PrimitiveType GetValueType() const { return m_type; }
+        StringChange* GetString() const { BeAssert(m_type == ECN::PRIMITIVETYPE_String); if (m_type != ECN::PRIMITIVETYPE_String) return nullptr; return static_cast<StringChange*>(m_value.get()); }
+        BooleanChange* GetBoolean() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Boolean); if (m_type != ECN::PRIMITIVETYPE_Boolean) return nullptr; return static_cast<BooleanChange*>(m_value.get()); }
+        DateTimeChange* GetDateTime() const { BeAssert(m_type == ECN::PRIMITIVETYPE_DateTime); if (m_type != ECN::PRIMITIVETYPE_DateTime) return nullptr; return static_cast<DateTimeChange*>(m_value.get()); }
+        DoubleChange* GetDouble() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Double); if (m_type != ECN::PRIMITIVETYPE_Double) return nullptr; return static_cast<DoubleChange*>(m_value.get()); }
+        Int32Change* GetInteger() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Integer); if (m_type != ECN::PRIMITIVETYPE_Integer) return nullptr; return static_cast<Int32Change*>(m_value.get()); }
+        Int64Change* GetLong() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Long); if (m_type != ECN::PRIMITIVETYPE_Long) return nullptr; return static_cast<Int64Change*>(m_value.get()); }
+        Point2dChange* GetPoint2d() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point2d); if (m_type != ECN::PRIMITIVETYPE_Point2d) return nullptr; return static_cast<Point2dChange*>(m_value.get()); }
+        Point3dChange* GetPoint3d() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point3d); if (m_type != ECN::PRIMITIVETYPE_Point3d) return nullptr; return static_cast<Point3dChange*>(m_value.get()); }
+        BinaryChange* GetBinary() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Binary); if (m_type != ECN::PRIMITIVETYPE_Binary) return nullptr; return static_cast<BinaryChange*>(m_value.get()); }
+
+        BentleyStatus Set(ECN::ECValueCR oldValue, ECN::ECValueCR newValue);
+        BentleyStatus Set(ECN::ECValueCR);
     };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
+struct CustomAttributeChange final : public ECChange
+    {
+    private:
+        std::unique_ptr<ECChangeArray<PropertyValueChange>> m_propValueChanges;
+
+        bool _IsChanged() const override { return m_propValueChanges->IsChanged(); }
+        void _Optimize() override { m_propValueChanges->Optimize(); }
+        void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
+            {
+            AppendBegin(str, *this, currentIndex);
+            AppendEnd(str);
+            m_propValueChanges->WriteToString(str, currentIndex + indentSize, indentSize);
+            }
+
+    public:
+        CustomAttributeChange(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChange(type, SystemId::CustomAttribute, parent, customId) 
+            { 
+            BeAssert(systemId == GetSystemId()); 
+            m_propValueChanges = std::make_unique<ECChangeArray<PropertyValueChange>>(type, GetSystemId(), this, GetId());
+            }
+        ~CustomAttributeChange() {}
+
+        ECChangeArray<PropertyValueChange>& PropValues() { return *m_propValueChanges; }
+    };
+
+typedef ECChangeArray<CustomAttributeChange> CustomAttributeChanges;
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -638,7 +643,63 @@ struct RelationshipConstraintChange final : public CompositeECChange
         CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(SystemId::CustomAttributes); }
     };
 
-struct PropertyChanges;
+
+
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
+struct NavigationPropertyChange final : public CompositeECChange
+    {
+    public:
+        NavigationPropertyChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : CompositeECChange(state, SystemId::NavigationProperty, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        ~NavigationPropertyChange() {}
+        PrimitiveChange<ECN::ECRelatedInstanceDirection>& Direction() { return Get<PrimitiveChange<ECN::ECRelatedInstanceDirection>>(SystemId::Direction); }
+        StringChange& Relationship() { return Get<StringChange>(SystemId::Relationship); }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
+struct ArrayPropertyChange final : public CompositeECChange
+    {
+    public:
+        ArrayPropertyChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : CompositeECChange(state, SystemId::ArrayProperty, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        ~ArrayPropertyChange() {}
+        UInt32Change& MinOccurs() { return Get<UInt32Change>(SystemId::MinOccurs); }
+        UInt32Change& MaxOccurs() { return Get<UInt32Change>(SystemId::MaxOccurs); }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Affan.Khan            03/2016
+//+===============+===============+===============+===============+===============+======
+struct PropertyChange final : public SchemaElementChange
+    {
+    public:
+        PropertyChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::Property, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        ~PropertyChange() {}
+        StringChange& TypeName() { return Get<StringChange>(SystemId::TypeName); }
+        PrimitiveChange<ECN::ECValue>& MinimumValue() { return Get<PrimitiveChange<ECN::ECValue>>(SystemId::MinimumValue); }
+        PrimitiveChange<ECN::ECValue>& MaximumValue() { return Get<PrimitiveChange<ECN::ECValue>>(SystemId::MaximumValue); }
+        UInt32Change& MinimumLength() { return Get<UInt32Change>(SystemId::MinimumLength); }
+        UInt32Change& MaximumLength() { return Get<UInt32Change>(SystemId::MaximumLength); }
+        BooleanChange& IsStruct() { return Get<BooleanChange>(SystemId::IsStrict); }
+        BooleanChange& IsStructArray() { return Get<BooleanChange>(SystemId::IsStructArray); }
+        BooleanChange& IsPrimitive() { return Get<BooleanChange>(SystemId::IsPrimitive); }
+        BooleanChange& IsPrimitiveArray() { return Get<BooleanChange>(SystemId::IsPrimitiveArray); }
+        BooleanChange& IsNavigation() { return Get<BooleanChange>(SystemId::IsNavigation); }
+        ArrayPropertyChange& Array() { return Get<ArrayPropertyChange>(SystemId::ArrayProperty); }
+        NavigationPropertyChange& Navigation() { return Get<NavigationPropertyChange>(SystemId::NavigationProperty); }
+        StringChange& ExtendedTypeName() { return Get<StringChange>(SystemId::ExtendedTypeName); }
+        BooleanChange& IsReadonly() { return Get<BooleanChange>(SystemId::IsReadonly); }
+        Int32Change& Priority() { return Get<Int32Change>(SystemId::PropertyPriority); }
+        StringChange& KindOfQuantity() { return Get<StringChange>(SystemId::KindOfQuantity); }
+        StringChange& Enumeration() { return Get<StringChange>(SystemId::Enumeration); }
+        StringChange& Category() { return Get<StringChange>(SystemId::PropertyCategory); }
+        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(SystemId::CustomAttributes); }
+    };
+
+typedef ECChangeArray<PropertyChange> PropertyChanges;
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -661,15 +722,7 @@ struct ClassChange final : public SchemaElementChange
         RelationshipConstraintChange& Target() { return Get<RelationshipConstraintChange>(SystemId::Target); }
     };
 
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct ClassChanges final : public ECChangeArray<ClassChange>
-    {
-    public:
-        ClassChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChangeArray<ClassChange>(type, SystemId::Classes, parent, customId, SystemId::Class) { BeAssert(systemId == GetSystemId()); }
-        ~ClassChanges() {}
-    };
+typedef ECChangeArray<ClassChange> ClassChanges;
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -683,15 +736,7 @@ struct EnumeratorChange final : public SchemaElementChange
         Int32Change& Integer() { return Get<Int32Change>(SystemId::Integer); }
     };
 
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct EnumeratorChanges final : ECChangeArray<EnumeratorChange>
-    {
-    public:
-        EnumeratorChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChangeArray<EnumeratorChange>(type, SystemId::Enumerators, parent, customId, SystemId::Enumerator) { BeAssert(systemId == GetSystemId()); }
-        ~EnumeratorChanges() {}
-    };
+typedef ECChangeArray<EnumeratorChange> EnumeratorChanges;
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -706,15 +751,7 @@ struct EnumerationChange final : public SchemaElementChange
         EnumeratorChanges& Enumerators() { return Get<EnumeratorChanges>(SystemId::Enumerators); }
     };
 
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct EnumerationChanges final : public ECChangeArray<EnumerationChange>
-    {
-    public:
-        EnumerationChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChangeArray<EnumerationChange>(type, SystemId::Enumerations, parent, customId, SystemId::Enumeration) { BeAssert(systemId == GetSystemId()); }
-        ~EnumerationChanges() {}
-    };
+typedef ECChangeArray<EnumerationChange> EnumerationChanges;
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -729,15 +766,7 @@ struct KindOfQuantityChange final : public SchemaElementChange
         ECChangeArray<StringChange>& PresentationFormats() { return Get<ECChangeArray<StringChange>>(SystemId::KoqPresentationFormats); }
     };
 
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct KindOfQuantityChanges final : public ECChangeArray<KindOfQuantityChange>
-    {
-    public:
-        KindOfQuantityChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChangeArray<KindOfQuantityChange>(type, SystemId::KindOfQuantities, parent, customId, SystemId::KindOfQuantity) { BeAssert(systemId == GetSystemId());}
-        ~KindOfQuantityChanges() {}
-    };
+typedef ECChangeArray<KindOfQuantityChange> KindOfQuantityChanges;
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle       06/2017
@@ -750,15 +779,8 @@ struct PropertyCategoryChange final : public SchemaElementChange
         UInt32Change& Priority() { return Get<UInt32Change>(SystemId::PropertyCategoryPriority); }
     };
 
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle       06/2017
-//+===============+===============+===============+===============+===============+======
-struct PropertyCategoryChanges final : public ECChangeArray<PropertyCategoryChange>
-    {
-    public:
-        PropertyCategoryChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChangeArray<PropertyCategoryChange>(type, SystemId::PropertyCategories, parent, customId, SystemId::PropertyCategory)  { BeAssert(systemId == GetSystemId()); }
-        ~PropertyCategoryChanges() {}
-    };
+
+typedef ECChangeArray<PropertyCategoryChange> PropertyCategoryChanges;
 
 
 //=======================================================================================
@@ -772,15 +794,7 @@ struct PhenomenonChange final : public SchemaElementChange
         StringChange& Definition() { return Get<StringChange>(SystemId::PhenomenonDefinition); }
     };
 
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle       02/2018
-//+===============+===============+===============+===============+===============+======
-struct PhenomenonChanges final : public ECChangeArray<PhenomenonChange>
-    {
-    public:
-        PhenomenonChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChangeArray<PhenomenonChange>(type, SystemId::Phenomena, parent, customId, SystemId::Phenomenon) { BeAssert(systemId == GetSystemId()); }
-        ~PhenomenonChanges() {}
-    };
+typedef ECChangeArray<PhenomenonChange> PhenomenonChanges;
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle       02/2018
@@ -792,15 +806,7 @@ struct UnitSystemChange final : public SchemaElementChange
         ~UnitSystemChange() {}
     };
 
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle       02/2018
-//+===============+===============+===============+===============+===============+======
-struct UnitSystemChanges final : public ECChangeArray<UnitSystemChange>
-    {
-    public:
-        UnitSystemChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChangeArray<UnitSystemChange>(type, SystemId::UnitSystems, parent, customId, SystemId::UnitSystem) { BeAssert(systemId == GetSystemId()); }
-        ~UnitSystemChanges() {}
-    };
+typedef ECChangeArray<UnitSystemChange> UnitSystemChanges;
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle       02/2018
@@ -820,15 +826,7 @@ struct UnitChange final : public SchemaElementChange
         StringChange& InvertingUnit() { return Get<StringChange>(SystemId::UnitInvertingUnit); }
     };
 
-//=======================================================================================
-// @bsiclass                                                Krischan.Eberle       02/2018
-//+===============+===============+===============+===============+===============+======
-struct UnitChanges final : public ECChangeArray<UnitChange>
-    {
-    public:
-        UnitChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChangeArray<UnitChange>(type, SystemId::Units, parent, customId, SystemId::Unit) { BeAssert(systemId == GetSystemId()); }
-        ~UnitChanges() {}
-    };
+typedef ECChangeArray<UnitChange> UnitChanges;
 
 //=======================================================================================
 // @bsiclass                                                      05/2018
@@ -893,208 +891,64 @@ struct FormatChange final : public SchemaElementChange
         CompositeValueSpecChange& CompositeSpec() { return Get<CompositeValueSpecChange>(SystemId::CompositeValueSpec); }
     };
 
-//=======================================================================================
-// @bsiclass                                              Kyle.Abramowtiz         04/2018
-//+===============+===============+===============+===============+===============+======
-struct FormatChanges final : public ECChangeArray<FormatChange>
-    {
-    public:
-        FormatChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChangeArray<FormatChange>(type, SystemId::Formats, parent, customId, SystemId::Format) { BeAssert(systemId == GetSystemId()); }
-        ~FormatChanges() {}
-    };
+typedef ECChangeArray<FormatChange> FormatChanges;
+
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
-struct PropertyValueChange final : public ECChange
-    {
-    private:
-        std::unique_ptr<ECChange> m_value;
-        ECN::PrimitiveType m_type;
-
-        void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
-        bool _IsEmpty() const override;
-        void _Optimize() override;
-        BentleyStatus InitValue(ECN::PrimitiveType type);
-
-        template<typename T>
-        class Converter
-            {
-            template<bool cond, typename U>
-            using resolvedType = Nullable<typename std::enable_if< cond, U >::type>;
-
-            public:
-                template< typename U = T >
-                static resolvedType< std::is_same<U, Binary>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    Nullable<T> t;
-                    Binary bin;
-                    bin.CopyFrom(v);
-                    t = bin;
-                    return t;
-                    }
-
-                template< typename U = T >
-                static resolvedType<std::is_same<U, int32_t>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetInteger();
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, int64_t>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetLong();
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, DateTime>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetDateTime();
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, Utf8String>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return Nullable<T>(v.GetUtf8CP());
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, DPoint2d>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetPoint2d();
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, DPoint3d>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetPoint3d();
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, double>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetDouble();
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, bool>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetBoolean();
-                    }
-            };
-
-    public:
-        PropertyValueChange(ChangeType state, SystemId systemId = SystemId::PropertyValue, ECChange const* parent = nullptr, Utf8CP accessString = nullptr);
-        ~PropertyValueChange() {}
-        Utf8CP GetAccessString() const { BeAssert(HasCustomId()); return GetId(); }
-        bool HasValue() const { return m_value != nullptr; }
-        ECN::PrimitiveType GetValueType() const { return m_type; }
-        StringChange* GetString() const { BeAssert(m_type == ECN::PRIMITIVETYPE_String); if (m_type != ECN::PRIMITIVETYPE_String) return nullptr; return static_cast<StringChange*>(m_value.get()); }
-        BooleanChange* GetBoolean() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Boolean); if (m_type != ECN::PRIMITIVETYPE_Boolean) return nullptr; return static_cast<BooleanChange*>(m_value.get()); }
-        DateTimeChange* GetDateTime() const { BeAssert(m_type == ECN::PRIMITIVETYPE_DateTime); if (m_type != ECN::PRIMITIVETYPE_DateTime) return nullptr; return static_cast<DateTimeChange*>(m_value.get()); }
-        DoubleChange* GetDouble() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Double); if (m_type != ECN::PRIMITIVETYPE_Double) return nullptr; return static_cast<DoubleChange*>(m_value.get()); }
-        Int32Change* GetInteger() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Integer); if (m_type != ECN::PRIMITIVETYPE_Integer) return nullptr; return static_cast<Int32Change*>(m_value.get()); }
-        Int64Change* GetLong() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Long); if (m_type != ECN::PRIMITIVETYPE_Long) return nullptr; return static_cast<Int64Change*>(m_value.get()); }
-        Point2dChange* GetPoint2d() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point2d); if (m_type != ECN::PRIMITIVETYPE_Point2d) return nullptr; return static_cast<Point2dChange*>(m_value.get()); }
-        Point3dChange* GetPoint3d() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point3d); if (m_type != ECN::PRIMITIVETYPE_Point3d) return nullptr; return static_cast<Point3dChange*>(m_value.get()); }
-        BinaryChange* GetBinary() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Binary); if (m_type != ECN::PRIMITIVETYPE_Binary) return nullptr; return static_cast<BinaryChange*>(m_value.get()); }
-
-        BentleyStatus Set(ECN::ECValueCR oldValue, ECN::ECValueCR newValue);
-        BentleyStatus Set(ECN::ECValueCR);
-    };
-
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct NavigationPropertyChange final : public CompositeECChange
+struct SchemaChange final : public SchemaElementChange
     {
     public:
-        NavigationPropertyChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : CompositeECChange(state, SystemId::NavigationProperty, parent, customId) { BeAssert(systemId == GetSystemId()); }
-        ~NavigationPropertyChange() {}
-        PrimitiveChange<ECN::ECRelatedInstanceDirection>& Direction() { return Get<PrimitiveChange<ECN::ECRelatedInstanceDirection>>(SystemId::Direction); }
-        StringChange& Relationship() { return Get<StringChange>(SystemId::RelationshipName); }
-    };
+        SchemaChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::Schema, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        ~SchemaChange() {}
 
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct ArrayPropertyChange final : public CompositeECChange
-    {
-    public:
-        ArrayPropertyChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : CompositeECChange(state, SystemId::ArrayProperty, parent, customId) {  BeAssert(systemId == GetSystemId()); }
-        ~ArrayPropertyChange() {}
-        UInt32Change& MinOccurs() { return Get<UInt32Change>(SystemId::MinOccurs); }
-        UInt32Change& MaxOccurs() { return Get<UInt32Change>(SystemId::MaxOccurs); }
-    };
+        StringChange& Alias() { return Get<StringChange>(SystemId::Alias); }
+        UInt32Change& VersionRead() { return Get<UInt32Change>(SystemId::VersionRead); }
+        UInt32Change& VersionMinor() { return Get<UInt32Change>(SystemId::VersionMinor); }
+        UInt32Change& VersionWrite() { return Get<UInt32Change>(SystemId::VersionWrite); }
+        UInt32Change& ECVersion() { return Get<UInt32Change>(SystemId::ECVersion); }
+        UInt32Change& OriginalECXmlVersionMajor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMajor); }
+        UInt32Change& OriginalECXmlVersionMinor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMinor); }
 
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct PropertyChange final : public SchemaElementChange
-    {
-    public:
-        PropertyChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::Property, parent, customId) { BeAssert(systemId == GetSystemId()); }
-        ~PropertyChange() {}
-        StringChange& TypeName() { return Get<StringChange>(SystemId::TypeName); }
-        PrimitiveChange<ECN::ECValue>& MinimumValue() { return Get<PrimitiveChange<ECN::ECValue>>(SystemId::MinimumValue); }
-        PrimitiveChange<ECN::ECValue>& MaximumValue() { return Get<PrimitiveChange<ECN::ECValue>>(SystemId::MaximumValue); }
-        UInt32Change& MinimumLength() { return Get<UInt32Change>(SystemId::MinimumLength); }
-        UInt32Change& MaximumLength() { return Get<UInt32Change>(SystemId::MaximumLength); }
-        BooleanChange& IsStruct() { return Get<BooleanChange>(SystemId::IsStrict); }
-        BooleanChange& IsStructArray() { return Get<BooleanChange>(SystemId::IsStructArray); }
-        BooleanChange& IsPrimitive() { return Get<BooleanChange>(SystemId::IsPrimitive); }
-        BooleanChange& IsPrimitiveArray() { return Get<BooleanChange>(SystemId::IsPrimitiveArray); }
-        BooleanChange& IsNavigation() { return Get<BooleanChange>(SystemId::IsNavigation); }
-        ArrayPropertyChange& Array() { return Get<ArrayPropertyChange>(SystemId::ArrayProperty); }
-        NavigationPropertyChange& Navigation() { return Get<NavigationPropertyChange>(SystemId::NavigationProperty); }
-        StringChange& ExtendedTypeName() { return Get<StringChange>(SystemId::ExtendedTypeName); }
-        BooleanChange& IsReadonly() { return Get<BooleanChange>(SystemId::IsReadonly); }
-        Int32Change& Priority() { return Get<Int32Change>(SystemId::PropertyPriority); }
-        StringChange& KindOfQuantity() { return Get<StringChange>(SystemId::KindOfQuantity); }
-        StringChange& Enumeration() { return Get<StringChange>(SystemId::Enumeration); }
-        StringChange& Category() { return Get<StringChange>(SystemId::PropertyCategory); }
         CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(SystemId::CustomAttributes); }
+        SchemaReferenceChanges& References() { return Get<SchemaReferenceChanges>(SystemId::SchemaReferences); }
+        ClassChanges& Classes() { return Get<ClassChanges>(SystemId::Classes); }
+        EnumerationChanges& Enumerations() { return Get<EnumerationChanges>(SystemId::Enumerations); }
+        KindOfQuantityChanges& KindOfQuantities() { return Get<KindOfQuantityChanges>(SystemId::KindOfQuantities); }
+        PropertyCategoryChanges& PropertyCategories() { return Get<PropertyCategoryChanges>(SystemId::PropertyCategories); }
+        PhenomenonChanges& Phenomena() { return Get<PhenomenonChanges>(SystemId::Phenomena); }
+        UnitSystemChanges& UnitSystems() { return Get<UnitSystemChanges>(SystemId::UnitSystems); }
+        UnitChanges& Units() { return Get<UnitChanges>(SystemId::Units); }
+        FormatChanges& Formats() { return Get<FormatChanges>(SystemId::Formats); }
     };
 
 //=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
+// @bsiclass                                                Krischan.Eberle       05/2018
 //+===============+===============+===============+===============+===============+======
-struct PropertyChanges final : ECChangeArray<PropertyChange>
+struct SchemaDiff final
     {
-    public:
-        PropertyChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChangeArray<PropertyChange>(type, SystemId::Properties, parent, customId, SystemId::Property) { BeAssert(systemId == GetSystemId()); }
-        ~PropertyChanges() {}
-    };
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct CustomAttributeChange final : public ECChangeArray<PropertyValueChange>
-    {
-    public:
-        CustomAttributeChange(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<PropertyValueChange>(type, SystemId::CustomAttribute, parent, customId, SystemId::PropertyValue)
+private:
+    ECChangeArray<SchemaChange> m_changes;
+
+public:
+    SchemaDiff() : m_changes(ChangeType::Modified, SystemId::Schemas, nullptr) {}
+
+    ECChangeArray<SchemaChange>& Changes() { return m_changes; }
+
+    SchemaChange* GetSchemaChange(Utf8StringCR schemaName)
+        {
+        for (size_t i = 0; i < Changes().Count(); i++)
             {
-            BeAssert(systemId == GetSystemId());
+            SchemaChange& change = m_changes[i];
+            if (schemaName.Equals(change.GetId()))
+                return &change;
             }
-        ~CustomAttributeChange() {}
-    };
 
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct CustomAttributeChanges final : public ECChangeArray<CustomAttributeChange>
-    {
-    public:
-        CustomAttributeChanges(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECChangeArray<CustomAttributeChange>(type, SystemId::CustomAttributes, parent, customId, SystemId::CustomAttribute)
-            {
-            BeAssert(systemId == GetSystemId());
-            }
-        ~CustomAttributeChanges() {}
-    };
+        return nullptr;
+        }
 
+    };
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -1178,7 +1032,7 @@ private :
 public:
     SchemaComparer(){}
 
-    ECOBJECTS_EXPORT BentleyStatus Compare(SchemaChanges&, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
+    ECOBJECTS_EXPORT BentleyStatus Compare(SchemaDiff&, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
     static std::vector<Utf8String> Split(Utf8StringCR path, bool stripArrayIndex = false);
     static Utf8String Join(std::vector<Utf8String> const& paths, Utf8CP delimiter);
     };

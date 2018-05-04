@@ -14,160 +14,6 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-//======================================================================================>
-//Binary
-//======================================================================================>
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus Binary::Resize(size_t len)
-    {
-    if (len == 0)
-        return Free();
-
-    if (len == m_len)
-        return SUCCESS;
-    if ((m_buff = realloc(m_buff, len)))
-        {
-        m_len = len;
-        return SUCCESS;
-        }
-
-    m_buff=nullptr;
-    BeAssert(false && "_resize() failed");
-    return ERROR;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus Binary::Free()
-    {
-    if (m_buff)
-        free(m_buff);
-
-    m_buff = nullptr;
-    m_len = 0;
-    return SUCCESS;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus Binary::Assign(void* buff , size_t len)
-    {
-    if (buff != nullptr && len == 0)
-        {
-        BeAssert(false && "_assign() buff != nullptr && len == 0");
-        return ERROR;
-        }
-    else if (buff == nullptr && len != 0)
-        {
-        BeAssert(false && "_assign() buff == nullptr && len != 0");
-        return ERROR;
-        }
-    else if (buff == nullptr && len == 0)
-        return Free();
-    else if (Resize(len) != SUCCESS)
-        {
-        BeAssert(false && "_assign() _resize(len) != SUCCESS");
-        return ERROR;
-        }
-
-    memcpy(m_buff, buff, len);
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-Binary::Binary() : m_buff(nullptr), m_len(0) {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-Binary::~Binary() { Free(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-Binary::Binary(Binary const& rhs) { *this = rhs; }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-Binary::Binary(Binary&& rhs) { *this = std::move(rhs); }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-Binary& Binary::operator = (Binary const& rhs)
-    {
-    if (this != &rhs)
-        Assign(rhs.m_buff, rhs.m_len);
-
-    return *this;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-Binary& Binary::operator = (Binary&& rhs)
-    {
-    if (this != &rhs)
-        {
-        m_buff = std::move(rhs.m_buff);
-        m_len = std::move(rhs.m_len);
-        rhs.m_buff = nullptr;
-        rhs.m_len = 0;
-        }
-
-    return *this;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-int Binary::Compare(Binary const& rhs) const
-    {
-    if (Size() == 0 && rhs.Size() == 0)
-        return 0;
-
-    if (Size() == 0 && rhs.Size() != 0)
-        return 1;
-
-    if (Size() != 0 && rhs.Size() == 0)
-        return -1;
-
-    if (Size() > rhs.Size())
-        return -1;
-
-    if (Size() < rhs.Size())
-        return 1;
-
-    return memcmp(m_buff, rhs.m_buff, m_len);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-void Binary::CopyTo(ECValueR value) const
-    {
-    value.SetBinary(static_cast<Byte*>(m_buff), m_len, true);
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus Binary::CopyFrom(ECValueCR value)
-    {
-    if (value.IsNull())
-        return Free();
-
-    if (!value.IsBinary())
-        return ERROR;
-
-    size_t len = 0;
-    void* buff = (void*) value.GetBinary(len);
-    return Assign(buff, len);
-    }
-
-//======================================================================================>
-//ECSchemaComparer
-//======================================================================================>
 //=======================================================================================
 // For case-insensitive UTF-8 string comparisons in STL collections that only use ASCII
 // strings
@@ -180,10 +26,14 @@ struct CompareIUtf8Ascii
     bool operator()(Utf8StringCP s1, Utf8StringCP s2) const { BeAssert(s1 != nullptr && s2 != nullptr); return BeStringUtilities::StricmpAscii(s1->c_str(), s2->c_str()) < 0; }
     };
 
+//======================================================================================>
+//ECSchemaComparer
+//======================================================================================>
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::Compare(SchemaChanges& changes, bvector<ECN::ECSchemaCP> const& lhs, bvector<ECN::ECSchemaCP> const& rhs, Options options)
+BentleyStatus SchemaComparer::Compare(SchemaDiff& diff, bvector<ECN::ECSchemaCP> const& lhs, bvector<ECN::ECSchemaCP> const& rhs, Options options)
     {
     m_options = options;
     std::map<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> lhsMap, rhsMap, allSchemasMap;
@@ -206,25 +56,25 @@ BentleyStatus SchemaComparer::Compare(SchemaChanges& changes, bvector<ECN::ECSch
         const bool existInRhs = rhsIt != rhsMap.end();
         if (existInLhs && existInRhs)
             {
-            SchemaChange& schemaChange = changes.Add(ChangeType::Modified, schemaName);
+            SchemaChange& schemaChange = diff.Changes().Add(ChangeType::Modified, SystemId::Schema, schemaName);
             if (SUCCESS != CompareECSchema(schemaChange, *lhsIt->second, *rhsIt->second))
                 return ERROR;
             }
         else if (existInLhs && !existInRhs)
             {
-            SchemaChange& schemaChange = changes.Add(ChangeType::Deleted, schemaName);
+            SchemaChange& schemaChange = diff.Changes().Add(ChangeType::Deleted, SystemId::Schema, schemaName);
             if (AppendECSchema(schemaChange, *lhsIt->second) == ERROR)
                 return ERROR;
             }
         else if (!existInLhs && existInRhs)
             {
-            SchemaChange& schemaChange = changes.Add(ChangeType::New, schemaName);
+            SchemaChange& schemaChange = diff.Changes().Add(ChangeType::New, SystemId::Schema, schemaName);
             if (AppendECSchema(schemaChange, *rhsIt->second) == ERROR)
                 return ERROR;
             }
         }
 
-    changes.Optimize();
+    diff.Changes().Optimize();
     return SUCCESS;
     }
 
@@ -363,14 +213,14 @@ BentleyStatus SchemaComparer::CompareECBaseClasses(BaseClassChanges& changes, EC
         {
         if (strcmp(a[i]->GetFullName(), b[i]->GetFullName()) != 0)
             {
-            changes.Add(ChangeType::Modified).Set(Utf8String(a[i]->GetFullName()), Utf8String(b[i]->GetFullName()));
+            changes.Add(ChangeType::Modified, SystemId::BaseClass).Set(Utf8String(a[i]->GetFullName()), Utf8String(b[i]->GetFullName()));
             }
         }
     for (size_t i = m; i < a.size(); i++)
-        changes.Add(ChangeType::Deleted).Set(Utf8String(a[i]->GetFullName()));
+        changes.Add(ChangeType::Deleted, SystemId::BaseClass).Set(Utf8String(a[i]->GetFullName()));
 
     for (size_t i = m; i < b.size(); i++)
-        changes.Add(ChangeType::New).Set(Utf8String(b[i]->GetFullName()));
+        changes.Add(ChangeType::New, SystemId::BaseClass).Set(Utf8String(b[i]->GetFullName()));
 
     return SUCCESS;
     }
@@ -432,9 +282,9 @@ BentleyStatus SchemaComparer::CompareECRelationshipConstraintClasses(Relationshi
         bool existInOld = oldValIt != aMap.end();
         bool existInNew = newValIt != bMap.end();
         if (existInOld && !existInNew)
-            change.Add(ChangeType::Deleted).Set(Utf8String(oldValIt->second->GetFullName()));
+            change.Add(ChangeType::Deleted, SystemId::ConstraintClass).Set(Utf8String(oldValIt->second->GetFullName()));
         else if (!existInOld && existInNew)
-            change.Add(ChangeType::New).Set(Utf8String(newValIt->second->GetFullName()));
+            change.Add(ChangeType::New, SystemId::ConstraintClass).Set(Utf8String(newValIt->second->GetFullName()));
         }
 
     return SUCCESS;
@@ -749,19 +599,19 @@ BentleyStatus SchemaComparer::CompareECProperties(PropertyChanges& changes, ECPr
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
             {
-            auto& propertyChange = changes.Add(ChangeType::Modified, u.first);
+            PropertyChange& propertyChange = changes.Add(ChangeType::Modified, SystemId::Property, u.first);
             if (CompareECProperty(propertyChange, *itorA->second, *itorB->second) == ERROR)
                 return ERROR;
             }
         else if (existInA && !existInB)
             {
-            auto& propertyChange = changes.Add(ChangeType::Deleted, u.first);
+            PropertyChange& propertyChange = changes.Add(ChangeType::Deleted, SystemId::Property, u.first);
             if (AppendECProperty(propertyChange, *itorA->second) == ERROR)
                 return ERROR;
             }
         else if (!existInA && existInB)
             {
-            auto& propertyChange = changes.Add(ChangeType::New, u.first);
+            PropertyChange& propertyChange = changes.Add(ChangeType::New, SystemId::Property, u.first);
             if (AppendECProperty(propertyChange, *itorB->second) == ERROR)
                 return ERROR;
             }
@@ -794,19 +644,19 @@ BentleyStatus SchemaComparer::CompareECClasses(ClassChanges& changes, ECClassCon
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
             {
-            auto& classChange = changes.Add(ChangeType::Modified, u.first);
+            ClassChange& classChange = changes.Add(ChangeType::Modified, SystemId::Class, u.first);
             if (CompareECClass(classChange, *itorA->second, *itorB->second) == ERROR)
                 return ERROR;
             }
         else if (existInA && !existInB)
             {
-            auto& classChange = changes.Add(ChangeType::Deleted, u.first);
+            ClassChange& classChange = changes.Add(ChangeType::Deleted, SystemId::Class, u.first);
             if (AppendECClass(classChange, *itorA->second) == ERROR)
                 return ERROR;
             }
         else if (!existInA && existInB)
             {
-            auto& classChange = changes.Add(ChangeType::New, u.first);
+            ClassChange& classChange = changes.Add(ChangeType::New, SystemId::Class, u.first);
             if (AppendECClass(classChange, *itorB->second) == ERROR)
                 return ERROR;
             }
@@ -839,19 +689,19 @@ BentleyStatus SchemaComparer::CompareECEnumerations(EnumerationChanges& changes,
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
             {
-            auto& enumChange = changes.Add(ChangeType::Modified, u.first);
+            EnumerationChange& enumChange = changes.Add(ChangeType::Modified, SystemId::Enumeration, u.first);
             if (CompareECEnumeration(enumChange, *itorA->second, *itorB->second) == ERROR)
                 return ERROR;
             }
         else if (existInA && !existInB)
             {
-            auto& enumChange = changes.Add(ChangeType::Deleted, u.first);
+            EnumerationChange& enumChange = changes.Add(ChangeType::Deleted, SystemId::Enumeration, u.first);
             if (AppendECEnumeration(enumChange, *itorA->second) == ERROR)
                 return ERROR;
             }
         else if (!existInA && existInB)
             {
-            auto& enumChange = changes.Add(ChangeType::New, u.first);
+            EnumerationChange& enumChange = changes.Add(ChangeType::New, SystemId::Enumeration, u.first);
             if (AppendECEnumeration(enumChange, *itorB->second) == ERROR)
                 return ERROR;
             }
@@ -884,19 +734,19 @@ BentleyStatus SchemaComparer::CompareKindOfQuantities(KindOfQuantityChanges& cha
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
             {
-            auto& kindOfQuantityChange = changes.Add(ChangeType::Modified, u.first);
+            KindOfQuantityChange& kindOfQuantityChange = changes.Add(ChangeType::Modified, SystemId::KindOfQuantity, u.first);
             if (CompareKindOfQuantity(kindOfQuantityChange, *itorA->second, *itorB->second) == ERROR)
                 return ERROR;
             }
         else if (existInA && !existInB)
             {
-            auto& kindOfQuantityChange = changes.Add(ChangeType::Deleted, u.first);
+            KindOfQuantityChange& kindOfQuantityChange = changes.Add(ChangeType::Deleted, SystemId::KindOfQuantity, u.first);
             if (AppendKindOfQuantity(kindOfQuantityChange, *itorA->second) == ERROR)
                 return ERROR;
             }
         else if (!existInA && existInB)
             {
-            auto& kindOfQuantityChange = changes.Add(ChangeType::New, u.first);
+            KindOfQuantityChange& kindOfQuantityChange = changes.Add(ChangeType::New, SystemId::KindOfQuantity, u.first);
             if (AppendKindOfQuantity(kindOfQuantityChange, *itorB->second) == ERROR)
                 return ERROR;
             }
@@ -930,7 +780,7 @@ BentleyStatus SchemaComparer::ComparePropertyCategories(PropertyCategoryChanges&
         const bool existInNew = newIt != newMap.end();
         if (existInOld && existInNew)
             {
-            PropertyCategoryChange& catChange = changes.Add(ChangeType::Modified, name);
+            PropertyCategoryChange& catChange = changes.Add(ChangeType::Modified, SystemId::PropertyCategory, name);
             if (ComparePropertyCategory(catChange, *oldIt->second, *newIt->second) == ERROR)
                 return ERROR;
 
@@ -939,7 +789,7 @@ BentleyStatus SchemaComparer::ComparePropertyCategories(PropertyCategoryChanges&
         
         if (existInOld && !existInNew)
             {
-            PropertyCategoryChange& catChange = changes.Add(ChangeType::Deleted, name);
+            PropertyCategoryChange& catChange = changes.Add(ChangeType::Deleted, SystemId::PropertyCategory, name);
             if (AppendPropertyCategory(catChange, *oldIt->second) == ERROR)
                 return ERROR;
 
@@ -948,7 +798,7 @@ BentleyStatus SchemaComparer::ComparePropertyCategories(PropertyCategoryChanges&
 
         if (!existInOld && existInNew)
             {
-            PropertyCategoryChange& catChange = changes.Add(ChangeType::New, name);
+            PropertyCategoryChange& catChange = changes.Add(ChangeType::New, SystemId::PropertyCategory, name);
             if (AppendPropertyCategory(catChange, *newIt->second) == ERROR)
                 return ERROR;
             }
@@ -982,7 +832,7 @@ BentleyStatus SchemaComparer::ComparePhenomena(PhenomenonChanges& changes, Pheno
         const bool existInNew = newIt != newMap.end();
         if (existInOld && existInNew)
             {
-            PhenomenonChange& change = changes.Add(ChangeType::Modified, name);
+            PhenomenonChange& change = changes.Add(ChangeType::Modified, SystemId::Phenomenon, name);
             if (SUCCESS != ComparePhenomenon(change, *oldIt->second, *newIt->second))
                 return ERROR;
 
@@ -991,7 +841,7 @@ BentleyStatus SchemaComparer::ComparePhenomena(PhenomenonChanges& changes, Pheno
 
         if (existInOld && !existInNew)
             {
-            PhenomenonChange& change = changes.Add(ChangeType::Deleted, name);
+            PhenomenonChange& change = changes.Add(ChangeType::Deleted, SystemId::Phenomenon, name);
             if (SUCCESS != AppendPhenomenon(change, *oldIt->second))
                 return ERROR;
 
@@ -1000,7 +850,7 @@ BentleyStatus SchemaComparer::ComparePhenomena(PhenomenonChanges& changes, Pheno
 
         if (!existInOld && existInNew)
             {
-            PhenomenonChange& change = changes.Add(ChangeType::New, name);
+            PhenomenonChange& change = changes.Add(ChangeType::New, SystemId::Phenomenon, name);
             if (SUCCESS != AppendPhenomenon(change, *newIt->second))
                 return ERROR;
             }
@@ -1034,7 +884,7 @@ BentleyStatus SchemaComparer::CompareUnitSystems(UnitSystemChanges& changes, Uni
         const bool existInNew = newIt != newMap.end();
         if (existInOld && existInNew)
             {
-            UnitSystemChange& change = changes.Add(ChangeType::Modified, name);
+            UnitSystemChange& change = changes.Add(ChangeType::Modified, SystemId::UnitSystem, name);
             if (SUCCESS != CompareUnitSystem(change, *oldIt->second, *newIt->second))
                 return ERROR;
 
@@ -1043,7 +893,7 @@ BentleyStatus SchemaComparer::CompareUnitSystems(UnitSystemChanges& changes, Uni
 
         if (existInOld && !existInNew)
             {
-            UnitSystemChange& change = changes.Add(ChangeType::Deleted, name);
+            UnitSystemChange& change = changes.Add(ChangeType::Deleted, SystemId::UnitSystem, name);
             if (SUCCESS != AppendUnitSystem(change, *oldIt->second))
                 return ERROR;
 
@@ -1052,7 +902,7 @@ BentleyStatus SchemaComparer::CompareUnitSystems(UnitSystemChanges& changes, Uni
 
         if (!existInOld && existInNew)
             {
-            UnitSystemChange& change = changes.Add(ChangeType::New, name);
+            UnitSystemChange& change = changes.Add(ChangeType::New, SystemId::UnitSystem, name);
             if (SUCCESS != AppendUnitSystem(change, *newIt->second))
                 return ERROR;
             }
@@ -1086,7 +936,7 @@ BentleyStatus SchemaComparer::CompareUnits(UnitChanges& changes, UnitContainerCR
         const bool existInNew = newIt != newMap.end();
         if (existInOld && existInNew)
             {
-            UnitChange& change = changes.Add(ChangeType::Modified, name);
+            UnitChange& change = changes.Add(ChangeType::Modified, SystemId::Unit, name);
             if (SUCCESS != CompareUnit(change, *oldIt->second, *newIt->second))
                 return ERROR;
 
@@ -1095,7 +945,7 @@ BentleyStatus SchemaComparer::CompareUnits(UnitChanges& changes, UnitContainerCR
 
         if (existInOld && !existInNew)
             {
-            UnitChange& change = changes.Add(ChangeType::Deleted, name);
+            UnitChange& change = changes.Add(ChangeType::Deleted, SystemId::Unit, name);
             if (SUCCESS != AppendUnit(change, *oldIt->second))
                 return ERROR;
 
@@ -1104,7 +954,7 @@ BentleyStatus SchemaComparer::CompareUnits(UnitChanges& changes, UnitContainerCR
 
         if (!existInOld && existInNew)
             {
-            UnitChange& change = changes.Add(ChangeType::New, name);
+            UnitChange& change = changes.Add(ChangeType::New, SystemId::Unit, name);
             if (SUCCESS != AppendUnit(change, *newIt->second))
                 return ERROR;
             }
@@ -1138,7 +988,7 @@ BentleyStatus SchemaComparer::CompareFormats(FormatChanges& changes, ECN::Format
         const bool existInNew = newIt != newMap.end();
         if (existInOld && existInNew)
             {
-            FormatChange& change = changes.Add(ChangeType::Modified, name);
+            FormatChange& change = changes.Add(ChangeType::Modified, SystemId::Format, name);
             if (SUCCESS != CompareFormat(change, *oldIt->second, *newIt->second))
                 return ERROR;
 
@@ -1147,7 +997,7 @@ BentleyStatus SchemaComparer::CompareFormats(FormatChanges& changes, ECN::Format
 
         if (existInOld && !existInNew)
             {
-            FormatChange& change = changes.Add(ChangeType::Deleted, name);
+            FormatChange& change = changes.Add(ChangeType::Deleted, SystemId::Format, name);
             if (SUCCESS != AppendFormat(change, *oldIt->second))
                 return ERROR;
 
@@ -1156,7 +1006,7 @@ BentleyStatus SchemaComparer::CompareFormats(FormatChanges& changes, ECN::Format
 
         if (!existInOld && existInNew)
             {
-            FormatChange& change = changes.Add(ChangeType::New, name);
+            FormatChange& change = changes.Add(ChangeType::New, SystemId::Format, name);
             if (SUCCESS != AppendFormat(change, *newIt->second))
                 return ERROR;
             }
@@ -1194,16 +1044,12 @@ BentleyStatus SchemaComparer::CompareCustomAttribute(CustomAttributeChange& chan
         if (existInOld && existInNew)
             {
             if (!oldPropValuesIt->second.Equals(newPropValuesIt->second))
-                change.Add(ChangeType::Modified, accessString).Set(oldPropValuesIt->second, newPropValuesIt->second);
+                change.PropValues().Add(ChangeType::Modified, SystemId::PropertyValue, accessString).Set(oldPropValuesIt->second, newPropValuesIt->second);
             }
         else if (existInOld && !existInNew)
-            {
-            change.Add(ChangeType::Deleted, accessString).Set(oldPropValuesIt->second);
-            }
+            change.PropValues().Add(ChangeType::Deleted, SystemId::PropertyValue, accessString).Set(oldPropValuesIt->second);
         else if (!existInOld && existInNew)
-            {
-            change.Add(ChangeType::New, accessString).Set(newPropValuesIt->second);
-            }
+            change.PropValues().Add(ChangeType::New, SystemId::PropertyValue, accessString).Set(newPropValuesIt->second);
         }
 
     return SUCCESS;
@@ -1219,7 +1065,7 @@ BentleyStatus SchemaComparer::AppendCustomAttribute(CustomAttributeChange& chang
         return ERROR;
 
     for (std::pair<Utf8String, ECValue> const& kvPair : propValueMap)
-        change.Add(change.GetChangeType(), kvPair.first.c_str()).Set(kvPair.second);
+        change.PropValues().Add(change.GetChangeType(), SystemId::PropertyValue, kvPair.first.c_str()).Set(kvPair.second);
 
     return SUCCESS;
     }
@@ -1232,7 +1078,7 @@ BentleyStatus SchemaComparer::AppendCustomAttributes(CustomAttributeChanges& cha
     for (IECInstancePtr ca : caContainer.GetCustomAttributes(false))
         {
         //key CA instances by the CA class name (as no more than one CA per class can be on a container
-        if (SUCCESS != AppendCustomAttribute(changes.Add(changes.GetChangeType(), ca->GetClass().GetFullName()), *ca))
+        if (SUCCESS != AppendCustomAttribute(changes.Add(changes.GetChangeType(), SystemId::CustomAttribute, ca->GetClass().GetFullName()), *ca))
             return ERROR;
         }
     return SUCCESS;
@@ -1262,19 +1108,19 @@ BentleyStatus SchemaComparer::CompareCustomAttributes(CustomAttributeChanges& ch
         bool existInNew = newCAIt != newCAs.end();
         if (existInOld && existInNew)
             {
-            auto& caChange = changes.Add(ChangeType::Modified, u.first);
+            CustomAttributeChange& caChange = changes.Add(ChangeType::Modified, SystemId::CustomAttribute, u.first);
             if (CompareCustomAttribute(caChange, *oldCAIt->second, *newCAIt->second) == ERROR)
                 return ERROR;
             }
         else if (existInOld && !existInNew)
             {
-            auto& caChange = changes.Add(ChangeType::Deleted, u.first);
+            CustomAttributeChange& caChange = changes.Add(ChangeType::Deleted, SystemId::CustomAttribute, u.first);
             if (AppendCustomAttribute(caChange, *oldCAIt->second) == ERROR)
                 return ERROR;
             }
         else if (!existInOld && existInNew)
             {
-            auto& caChange = changes.Add(ChangeType::New, u.first);
+            CustomAttributeChange& caChange = changes.Add(ChangeType::New, SystemId::CustomAttribute, u.first);
             if (AppendCustomAttribute(caChange, *newCAIt->second) == ERROR)
                 return ERROR;
             }
@@ -1342,7 +1188,7 @@ BentleyStatus SchemaComparer::CompareECEnumerators(EnumeratorChanges& changes, E
 
         if (existsInOld && existsInNew)
             {
-            EnumeratorChange& enumeratorChange = changes.Add(ChangeType::Modified, enumeratorName);
+            EnumeratorChange& enumeratorChange = changes.Add(ChangeType::Modified, SystemId::Enumerator, enumeratorName);
             if (oldEnumerator->IsInteger())
                 {
                 if (oldEnumerator->GetInteger() != newEnumerator->GetInteger())
@@ -1373,7 +1219,7 @@ BentleyStatus SchemaComparer::CompareECEnumerators(EnumeratorChanges& changes, E
             }
         else if (existsInOld && !existsInNew)
             {
-            auto& change = changes.Add(ChangeType::Deleted, enumeratorName);
+            EnumeratorChange& change = changes.Add(ChangeType::Deleted, SystemId::Enumerator, enumeratorName);
             change.Name().Set(oldIt->second->GetName(), nullptr);
             change.DisplayLabel().Set(oldIt->second->GetInvariantDisplayLabel(), nullptr);
             change.Description().Set(oldIt->second->GetInvariantDescription(), nullptr);
@@ -1384,7 +1230,7 @@ BentleyStatus SchemaComparer::CompareECEnumerators(EnumeratorChanges& changes, E
             }
         else if (!existsInOld && existsInNew)
             {
-            auto& change = changes.Add(ChangeType::New, enumeratorName);
+            EnumeratorChange& change = changes.Add(ChangeType::New, SystemId::Enumerator, enumeratorName);
             change.Name().Set(nullptr, newEnumerator->GetName());
             change.DisplayLabel().Set(nullptr, newEnumerator->GetInvariantDisplayLabel());
             change.Description().Set(nullptr, newEnumerator->GetInvariantDescription());
@@ -1451,19 +1297,19 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
         if (i < oldPresFormatCount && i < newPresFormatCount)
             {
             if (!oldPresFormats[i].EqualsIAscii(newPresFormats[i]))
-                presFormatChanges.Add(ChangeType::Modified).Set(oldPresFormats[i], newPresFormats[i]);
+                presFormatChanges.Add(ChangeType::Modified, SystemId::KoqPresentationFormat).Set(oldPresFormats[i], newPresFormats[i]);
 
             continue;
             }
 
         if (i >= oldPresFormatCount)
             {
-            presFormatChanges.Add(ChangeType::New).Set(newPresFormats[i]);
+            presFormatChanges.Add(ChangeType::New, SystemId::KoqPresentationFormat).Set(newPresFormats[i]);
             continue;
             }
 
         if (i >= newPresFormatCount)
-            presFormatChanges.Add(ChangeType::Deleted).Set(oldPresFormats[i]);
+            presFormatChanges.Add(ChangeType::Deleted, SystemId::KoqPresentationFormat).Set(oldPresFormats[i]);
         }
 
     return SUCCESS;
@@ -1708,13 +1554,10 @@ BentleyStatus SchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBa
 
         bool existInA = itorA != aMap.end();
         bool existInB = itorB != bMap.end();
-        if (existInA && existInB)
-            {
-            }
-        else if (existInA && !existInB)
-            changes.Add(ChangeType::Deleted).Set(Utf8String(u));
+        if (existInA && !existInB)
+            changes.Add(ChangeType::Deleted, SystemId::BaseClass).Set(Utf8String(u));
         else if (!existInA && existInB)
-            changes.Add(ChangeType::New).Set(Utf8String(u));
+            changes.Add(ChangeType::New, SystemId::BaseClass).Set(Utf8String(u));
         }
 
     return SUCCESS;
@@ -1743,11 +1586,11 @@ BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes,
         bool existInA = itorA != aMap.end();
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
-            changes.Add(ChangeType::Modified).Set(itorA->second->GetFullSchemaName(), itorB->second->GetFullSchemaName());
+            changes.Add(ChangeType::Modified, SystemId::SchemaReference).Set(itorA->second->GetFullSchemaName(), itorB->second->GetFullSchemaName());
         else if (existInA && !existInB)
-            changes.Add(ChangeType::Deleted).Set(itorA->second->GetFullSchemaName());
+            changes.Add(ChangeType::Deleted, SystemId::SchemaReference).Set(itorA->second->GetFullSchemaName());
         else if (!existInA && existInB)
-            changes.Add(ChangeType::New).Set(itorB->second->GetFullSchemaName());
+            changes.Add(ChangeType::New, SystemId::SchemaReference).Set(itorB->second->GetFullSchemaName());
         }
     return SUCCESS;
     }
@@ -1779,56 +1622,56 @@ BentleyStatus SchemaComparer::AppendECSchema(SchemaChange& change, ECSchemaCR sc
 
     for (ECClassCP classCP : schema.GetClasses())
         {
-        ClassChange& classChange = change.Classes().Add(change.GetChangeType(), classCP->GetName().c_str());
+        ClassChange& classChange = change.Classes().Add(change.GetChangeType(), SystemId::Class, classCP->GetName().c_str());
         if (AppendECClass(classChange, *classCP) == ERROR)
             return ERROR;
         }
 
     for (ECEnumerationCP enumerationCP : schema.GetEnumerations())
         {
-        EnumerationChange& enumChange = change.Enumerations().Add(change.GetChangeType(), enumerationCP->GetName().c_str());
+        EnumerationChange& enumChange = change.Enumerations().Add(change.GetChangeType(), SystemId::Enumeration, enumerationCP->GetName().c_str());
         if (AppendECEnumeration(enumChange, *enumerationCP) == ERROR)
             return ERROR;
         }
 
     for (KindOfQuantityCP kindOfQuantityCP : schema.GetKindOfQuantities())
         {
-        KindOfQuantityChange& koqChange = change.KindOfQuantities().Add(change.GetChangeType(), kindOfQuantityCP->GetName().c_str());
+        KindOfQuantityChange& koqChange = change.KindOfQuantities().Add(change.GetChangeType(), SystemId::KindOfQuantity, kindOfQuantityCP->GetName().c_str());
         if (AppendKindOfQuantity(koqChange, *kindOfQuantityCP) == ERROR)
             return ERROR;
         }
 
     for (PropertyCategoryCP cat : schema.GetPropertyCategories())
         {
-        PropertyCategoryChange& catChange = change.PropertyCategories().Add(change.GetChangeType(), cat->GetName().c_str());
+        PropertyCategoryChange& catChange = change.PropertyCategories().Add(change.GetChangeType(), SystemId::PropertyCategory, cat->GetName().c_str());
         if (SUCCESS != AppendPropertyCategory(catChange, *cat))
             return ERROR;
         }
 
     for (UnitSystemCP us : schema.GetUnitSystems())
         {
-        UnitSystemChange& usChange = change.UnitSystems().Add(change.GetChangeType(), us->GetName().c_str());
+        UnitSystemChange& usChange = change.UnitSystems().Add(change.GetChangeType(), SystemId::UnitSystem, us->GetName().c_str());
         if (SUCCESS != AppendUnitSystem(usChange, *us))
             return ERROR;
         }
 
     for (PhenomenonCP ph : schema.GetPhenomena())
         {
-        PhenomenonChange& phChange = change.Phenomena().Add(change.GetChangeType(), ph->GetName().c_str());
+        PhenomenonChange& phChange = change.Phenomena().Add(change.GetChangeType(), SystemId::Phenomenon, ph->GetName().c_str());
         if (SUCCESS != AppendPhenomenon(phChange, *ph))
             return ERROR;
         }
 
     for (ECUnitCP unit : schema.GetUnits())
         {
-        UnitChange& unitChange = change.Units().Add(change.GetChangeType(), unit->GetName().c_str());
+        UnitChange& unitChange = change.Units().Add(change.GetChangeType(), SystemId::Unit, unit->GetName().c_str());
         if (SUCCESS != AppendUnit(unitChange, *unit))
             return ERROR;
         }
 
     for (ECFormatCP format : schema.GetFormats())
         {
-        FormatChange& formatChange = change.Formats().Add(change.GetChangeType(), format->GetName().c_str());
+        FormatChange& formatChange = change.Formats().Add(change.GetChangeType(), SystemId::Format, format->GetName().c_str());
         if (SUCCESS != AppendFormat(formatChange, *format))
             return ERROR;
         }
@@ -1854,7 +1697,7 @@ BentleyStatus SchemaComparer::AppendECClass(ClassChange& change, ECClassCR v)
 
     for (ECPropertyCP prop : v.GetProperties(false))
         {
-        PropertyChange& propertyChange = change.Properties().Add(change.GetChangeType(), prop->GetName().c_str());
+        PropertyChange& propertyChange = change.Properties().Add(change.GetChangeType(), SystemId::Property, prop->GetName().c_str());
 
         if (AppendECProperty(propertyChange, *prop) == ERROR)
             return ERROR;
@@ -1905,11 +1748,11 @@ BentleyStatus SchemaComparer::AppendECRelationshipConstraint(RelationshipConstra
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECRelationshipConstraintClasses(RelationshipConstraintClassChanges& changes, ECRelationshipConstraintClassList const& v)
+BentleyStatus SchemaComparer::AppendECRelationshipConstraintClasses(RelationshipConstraintClassChanges& changes, ECRelationshipConstraintClassList const& constraintClasses)
     {
-    for (ECClassCP constraintClass : v)
+    for (ECClassCP constraintClass : constraintClasses)
         {
-        changes.Add(changes.GetChangeType()).Set(Utf8String(constraintClass->GetFullName()));
+        changes.Add(changes.GetChangeType(), SystemId::ConstraintClass).Set(Utf8String(constraintClass->GetFullName()));
         }
 
     return SUCCESS;
@@ -1928,7 +1771,7 @@ BentleyStatus SchemaComparer::AppendECEnumeration(EnumerationChange& enumeration
     enumerationChange.TypeName().Set(v.GetTypeName());
     for (ECEnumeratorCP enumeratorCP : v.GetEnumerators())
         {
-        EnumeratorChange& enumeratorChange = enumerationChange.Enumerators().Add(enumerationChange.GetChangeType(), enumeratorCP->GetName().c_str());
+        EnumeratorChange& enumeratorChange = enumerationChange.Enumerators().Add(enumerationChange.GetChangeType(), SystemId::Enumerator, enumeratorCP->GetName().c_str());
         enumeratorChange.Name().Set(enumeratorCP->GetName());
 
         if (enumeratorCP->IsInteger())
@@ -1957,7 +1800,7 @@ BentleyStatus SchemaComparer::AppendKindOfQuantity(KindOfQuantityChange& change,
     change.PersistenceUnit().Set(koq.GetPersistenceUnit()->GetFullName());
     change.RelativeError().Set(koq.GetRelativeError());
     for (NamedFormat const& format : koq.GetPresentationFormats())
-        change.PresentationFormats().Add(change.GetChangeType()).Set(format.GetName());
+        change.PresentationFormats().Add(change.GetChangeType(), SystemId::KoqPresentationFormat).Set(format.GetName());
 
     return SUCCESS;
     }
@@ -2159,7 +2002,7 @@ BentleyStatus SchemaComparer::AppendBaseClasses(BaseClassChanges& changes, ECBas
     {
     const ChangeType state = changes.GetChangeType();
     for (ECClassCP baseClassCP : baseClasses)
-        changes.Add(state).Set(Utf8String(baseClassCP->GetFullName()));
+        changes.Add(state, SystemId::BaseClass).Set(Utf8String(baseClassCP->GetFullName()));
 
     return SUCCESS;
     }
@@ -2171,7 +2014,7 @@ BentleyStatus SchemaComparer::AppendReferences(SchemaReferenceChanges& changes, 
     {
     const ChangeType state = changes.GetChangeType();
     for (auto& referenceCP : references)
-        changes.Add(state).Set(referenceCP.first.GetFullSchemaName());
+        changes.Add(state, SystemId::SchemaReference).Set(referenceCP.first.GetFullSchemaName());
 
     return SUCCESS;
     }
@@ -2367,6 +2210,7 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::KindOfQuantities: return "KindOfQuantities";
             case SystemId::KindOfQuantity: return "KindOfQuantity";
             case SystemId::KoqPersistenceUnit: return "KoqPersistenceUnit";
+            case SystemId::KoqPresentationFormat: return "KoqPresentationFormat";
             case SystemId::KoqPresentationFormats: return "KoqPresentationFormats";
             case SystemId::KoqRelativeError: return "KoqRelativeError";
             case SystemId::MaximumLength: return "MaximumLength";
@@ -2395,11 +2239,11 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::PropertyType: return "PropertyType";
             case SystemId::PropertyValue: return "PropertyValue";
             case SystemId::PropertyValues: return "PropertyValues";
-            case SystemId::Reference: return "Reference";
-            case SystemId::RelationshipName: return "RelationshipName";
+            case SystemId::Relationship: return "Relationship";
             case SystemId::RoleLabel: return "RoleLabel";
             case SystemId::RoundingFactor: return "RoundingFactor";
             case SystemId::Schema: return "Schema";
+            case SystemId::SchemaReference: return "SchemaReference";
             case SystemId::SchemaReferences: return "SchemaReferences";
             case SystemId::Schemas: return "Schemas";
             case SystemId::ScientificType: return "ScientificType";
@@ -2452,15 +2296,15 @@ void CompositeECChange::_WriteToString(Utf8StringR str, int currentIndex, int in
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-bool CompositeECChange::_IsEmpty() const
+bool CompositeECChange::_IsChanged() const
     {
     for (auto& change : m_changes)
         {
-        if (!change.second->IsEmpty())
-            return false;
+        if (change.second->IsChanged())
+            return true;
         }
 
-    return true;
+    return false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2472,7 +2316,7 @@ void CompositeECChange::_Optimize()
     while (itor != m_changes.end())
         {
         itor->second->Optimize();
-        if (itor->second->IsEmpty())
+        if (!itor->second->IsChanged())
             itor = m_changes.erase(itor);
         else
             ++itor;
@@ -2490,7 +2334,7 @@ BentleyStatus PropertyValueChange::Set(ECValueCR value)
     if (!value.IsPrimitive())
         return ERROR;
 
-    if (InitValue(value.GetPrimitiveType()) != SUCCESS)
+    if (Inititalize(value.GetPrimitiveType()) != SUCCESS)
         return ERROR;
 
     if (value.IsNull())
@@ -2504,11 +2348,15 @@ BentleyStatus PropertyValueChange::Set(ECValueCR value)
                 return ERROR;
                 }
             case PRIMITIVETYPE_Binary:
-                {
-                Binary v;
-                v.CopyFrom(value);
-                return GetBinary()->Set(std::move(v));
-                }
+            {
+            Nullable<bvector<Byte>> blob = bvector<Byte>();
+            size_t binarySize = 0;
+            Byte const* binary = value.GetBinary(binarySize);
+            blob.ValueR().reserve(binarySize);
+            memcpy(blob.ValueR().data(), binary, binarySize);
+
+            return GetBinary()->Set(blob);
+            }
             case PRIMITIVETYPE_Boolean:
                 return GetBoolean()->Set(value.GetBoolean());
             case PRIMITIVETYPE_DateTime:
@@ -2535,25 +2383,14 @@ BentleyStatus PropertyValueChange::Set(ECValueCR value)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
     {
-    const PrimitiveType NullType = static_cast<PrimitiveType>(0);
-    PrimitiveType oldType = NullType;
-    PrimitiveType newType = NullType;
-    if (oldValue.IsPrimitive())
-        oldType = oldValue.GetPrimitiveType();
-
-    if (newValue.IsPrimitive())
-        oldType = oldValue.GetPrimitiveType();
-
-    if (oldType == NullType && newType == NullType)
+    if (!oldValue.IsPrimitive() || !newValue.IsPrimitive())
         return ERROR;
 
-    if (oldType == NullType)
-        oldType = newType;
+    PrimitiveType oldType = oldValue.GetPrimitiveType();
+    if (oldType != newValue.GetPrimitiveType())
+        return ERROR;
 
-    if (newType == NullType)
-        newType = oldType;
-
-    if (InitValue(oldType) != SUCCESS)
+    if (Inititalize(oldType) != SUCCESS)
         return ERROR;
 
     switch (m_type)
@@ -2564,7 +2401,29 @@ BentleyStatus PropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
                 return ERROR;
                 }
             case PRIMITIVETYPE_Binary:
-                return GetBinary()->Set(Converter<Binary>::Copy(oldValue), Converter<Binary>::Copy(newValue));
+            {
+            Nullable<bvector<Byte>> oldBlob;
+            if (!oldValue.IsNull())
+                {
+                size_t binarySize = 0;
+                Byte const* binary = oldValue.GetBinary(binarySize);
+                oldBlob = bvector<Byte>();
+                oldBlob.ValueR().reserve(binarySize);
+                memcpy(oldBlob.ValueR().data(), binary, binarySize);
+                }
+
+            Nullable<bvector<Byte>> newBlob;
+            if (!newValue.IsNull())
+                {
+                size_t binarySize = 0;
+                Byte const* binary = newValue.GetBinary(binarySize);
+                newBlob = bvector<Byte>();
+                newBlob.ValueR().reserve(binarySize);
+                memcpy(newBlob.ValueR().data(), binary, binarySize);
+                }
+
+            return GetBinary()->Set(oldBlob, newBlob);
+            }
             case PRIMITIVETYPE_Boolean:
                 return GetBoolean()->Set(Converter<bool>::Copy(oldValue), Converter<bool>::Copy(newValue));
             case PRIMITIVETYPE_DateTime:
@@ -2581,9 +2440,11 @@ BentleyStatus PropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
                 return GetPoint3d()->Set(Converter<DPoint3d>::Copy(oldValue), Converter<DPoint3d>::Copy(newValue));
             case PRIMITIVETYPE_String:
                 return GetString()->Set(Converter<Utf8String>::Copy(oldValue), Converter<Utf8String>::Copy(newValue));
-        }
 
-    return ERROR;
+            default:
+                BeAssert(false && "Unhandled PrimitiveType");
+                return ERROR;
+        }
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
@@ -2603,86 +2464,55 @@ void PropertyValueChange::_WriteToString(Utf8StringR str, int currentIndex, int 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-bool PropertyValueChange::_IsEmpty() const
-    {
-    if (auto parent = GetParent())
-        {
-        if (parent->GetSystemId() == SystemId::CustomAttributes && GetChangeType() != ChangeType::Modified)
-            return false;
-        }
-
-    if (m_value != nullptr)
-        return m_value->IsEmpty();
-
-    return true;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-void PropertyValueChange::_Optimize()
+BentleyStatus PropertyValueChange::Inititalize(PrimitiveType type)
     {
     if (m_value != nullptr)
-        if (m_value->IsEmpty())
-            m_value = nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PropertyValueChange::InitValue(ECN::PrimitiveType type)
-    {
-    if (m_type == type)
-        return SUCCESS;
-
-    if (type == static_cast<ECN::PrimitiveType>(0))
         {
-        m_value = nullptr;
-        return SUCCESS;
+        BeAssert(false && "PropertyValueChange has already been used");
+        return ERROR;
         }
 
+    m_type = type;
     switch (type)
         {
             case ECN::PRIMITIVETYPE_Binary:
-                m_value = std::unique_ptr<ECChange>(new BinaryChange(GetChangeType(), SystemId::PropertyValue, this, GetId())); break;
+                m_value = std::make_unique<BinaryChange>(GetChangeType(), SystemId::PropertyValue, this, GetId());
+                return SUCCESS;
             case ECN::PRIMITIVETYPE_Boolean:
-                m_value = std::unique_ptr<ECChange>(new BooleanChange(GetChangeType(), SystemId::PropertyValue, this, GetId())); break;
+                m_value = std::unique_ptr<ECChange>(new BooleanChange(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                return SUCCESS;
             case ECN::PRIMITIVETYPE_DateTime:
-                m_value = std::unique_ptr<ECChange>(new DateTimeChange(GetChangeType(), SystemId::PropertyValue, this, GetId())); break;
+                m_value = std::unique_ptr<ECChange>(new DateTimeChange(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                return SUCCESS;
             case ECN::PRIMITIVETYPE_Double:
-                m_value = std::unique_ptr<ECChange>(new DoubleChange(GetChangeType(), SystemId::PropertyValue, this, GetId())); break;
+                m_value = std::unique_ptr<ECChange>(new DoubleChange(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                return SUCCESS;
             case ECN::PRIMITIVETYPE_IGeometry:
             {
             LOG.errorv("ECSchemaComparer: Changes in ECProperties of type IGeometry are not supported.");
             return ERROR;
             }
             case ECN::PRIMITIVETYPE_Integer:
-                m_value = std::unique_ptr<ECChange>(new Int32Change(GetChangeType(), SystemId::PropertyValue, this, GetId())); break;
+                m_value = std::unique_ptr<ECChange>(new Int32Change(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                return SUCCESS;
             case ECN::PRIMITIVETYPE_Long:
-                m_value = std::unique_ptr<ECChange>(new Int64Change(GetChangeType(), SystemId::PropertyValue, this, GetId())); break;
+                m_value = std::unique_ptr<ECChange>(new Int64Change(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                return SUCCESS;
             case ECN::PRIMITIVETYPE_Point2d:
-                m_value = std::unique_ptr<ECChange>(new Point2dChange(GetChangeType(), SystemId::PropertyValue, this, GetId())); break;
+                m_value = std::unique_ptr<ECChange>(new Point2dChange(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                return SUCCESS;
             case ECN::PRIMITIVETYPE_Point3d:
-                m_value = std::unique_ptr<ECChange>(new Point3dChange(GetChangeType(), SystemId::PropertyValue, this, GetId())); break;
+                m_value = std::unique_ptr<ECChange>(new Point3dChange(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                return SUCCESS;
             case ECN::PRIMITIVETYPE_String:
-                m_value = std::unique_ptr<ECChange>(new StringChange(GetChangeType(), SystemId::PropertyValue, this, GetId())); break;
+                m_value = std::unique_ptr<ECChange>(new StringChange(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                return SUCCESS;
             default:
                 BeAssert(false && "Unexpected value for PrimitiveType");
                 return ERROR;
         }
-
-    m_type = type;
-    return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-PropertyValueChange::PropertyValueChange(ChangeType state, SystemId systemId, ECChange const* parent, Utf8CP accessString)
-    : ECChange(state, SystemId::PropertyValue, parent, accessString), m_type(static_cast<PrimitiveType>(0))
-    {
-    BeAssert(!Utf8String::IsNullOrEmpty(accessString) && "access string must not be empty for ECPropertyValueChange");
-    BeAssert(systemId == GetSystemId());
-    }
 
 //***********************************************************************
 // NumericFormatSpecChange
@@ -3252,10 +3082,10 @@ CustomAttributeValidator::Policy CustomAttributeValidator::Validate(CustomAttrib
     if (rules.empty())
         return GetDefaultPolicy();
 
-    const size_t propValueCount = change.Count();
+    const size_t propValueCount = change.PropValues().Count();
     for (size_t i = 0; i < propValueCount; i++)
         {
-        PropertyValueChange const& propValueChange = change[i];
+        PropertyValueChange const& propValueChange = change.PropValues()[i];
 
         std::vector<Utf8String> path = SchemaComparer::Split(propValueChange.GetAccessString(), true);
 
