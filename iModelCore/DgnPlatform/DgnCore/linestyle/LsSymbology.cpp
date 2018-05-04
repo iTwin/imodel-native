@@ -472,7 +472,7 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DgnD
         }
 
     // If the line style is continuous and has no width, leave now.
-    if (nameRec->IsContinuous() && (0 == (styleParams.modifiers & (STYLEMOD_SWIDTH | STYLEMOD_EWIDTH | STYLEMOD_TRUE_WIDTH))) && !topComponent->_HasWidth())
+    if (nameRec->IsContinuous() && (0 == (styleParams.modifiers & (STYLEMOD_SWIDTH | STYLEMOD_EWIDTH | STYLEMOD_TRUE_WIDTH))) && 0.0 == topComponent->_GetMaxWidth())
         return;
 
     if (nameRec->IsHardware())
