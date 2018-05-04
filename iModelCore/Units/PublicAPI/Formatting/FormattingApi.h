@@ -21,7 +21,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValue)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValueSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Format)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxy)
+
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UIListEntry)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LocaleProperties)
 
@@ -229,7 +229,7 @@ public:
 
     //! Update this with the values from the provided JSON.
     //! @return Success if this NumericFormatSpec is successfully updated. Otherwise, false.
-    UNITS_EXPORT static BentleyStatus FromJson(NumericFormatSpecR out, JsonValueCR jval);
+    UNITS_EXPORT static bool FromJson(NumericFormatSpecR out, JsonValueCR jval);
     //! Serializes this to JSON. The JSON will only contain values which differ from their initial state, or have been explicitly set
     //! to the current state.
     //!
@@ -392,54 +392,6 @@ public:
 };
 
 //=======================================================================================
-// @bsiclass                                                    David.Fox-Rabinovitz  06/2017
-//=======================================================================================
-struct UnitProxy
-{
-private:
-    BEU::UnitCP m_unit;
-    Utf8String m_unitLabel;
-    bool m_explicitlyDefinedLabel;
-public:
-    UnitProxy() : m_explicitlyDefinedLabel(false), m_unit(nullptr) {}
-    UnitProxy(BEU::UnitCP unit, Utf8CP label = nullptr) 
-        : m_unit(unit), m_explicitlyDefinedLabel(nullptr != label), m_unitLabel(label) {}
-    UnitProxy(UnitProxyCR other)
-        {
-        if (nullptr != other.m_unit)
-            m_unit = other.m_unit;
-        m_explicitlyDefinedLabel = other.m_explicitlyDefinedLabel;
-        m_unitLabel = other.m_unitLabel.c_str();
-        }
-    void Copy(UnitProxyCP other)
-        {
-        if (nullptr == other)
-            {
-            m_unit = nullptr;
-            return;
-            }
-
-        if (nullptr != other->m_unit)
-            m_unit = other->m_unit;
-        m_explicitlyDefinedLabel = other->m_explicitlyDefinedLabel;
-        m_unitLabel = other->m_unitLabel.c_str();
-        }
-
-    UNITS_EXPORT void LoadJson(Json::Value jval, BEU::IUnitsContextCP context);
-    bool SetUnit(BEU::UnitCP unit) {m_unit = unit; return true;}
-    Utf8StringCR GetLabel() const { return m_unitLabel; }
-    bool HasLabel() const {return m_explicitlyDefinedLabel;}
-    void SetLabel(Utf8CP lab) {if (nullptr == lab) return; m_explicitlyDefinedLabel = true; m_unitLabel = lab;}
-
-    //! Returns the name of Unit in this if one is available
-    Utf8CP GetName() const {if (nullptr == m_unit) return nullptr; return m_unit->GetName().c_str();}
-    BEU::UnitCP GetUnit() const {return m_unit;}
-    UNITS_EXPORT Json::Value ToJson(bool verbose = false) const;
-    bool IsEmpty() const {return nullptr == m_unit;}
-    bool IsIdentical(UnitProxyCR other) const {return BEU::Unit::AreEqual(m_unit, other.m_unit) && m_unitLabel.Equals(other.m_unitLabel);}
-};
-
-//=======================================================================================
 //! We recognize combined numbers (combo-numbers) that represent some quantity as a sum of
 //! subquantities expressed in lesser UOM's. For example, a given length could be represented as a
 //! sum of M + Y + F + I where M is some number of miles, Y is some number of yards, F is some
@@ -462,6 +414,39 @@ struct CompositeValueSpec
 {
 friend struct CompositeValue;
 private:
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxy)
+    struct UnitProxy
+    {
+    private:
+        BEU::UnitCP m_unit;
+        Utf8String m_unitLabel;
+        bool m_explicitlyDefinedLabel;
+    public:
+        UnitProxy() : m_explicitlyDefinedLabel(false), m_unit(nullptr) {}
+        UnitProxy(BEU::UnitCP unit, Utf8CP label = nullptr) 
+            : m_unit(unit), m_explicitlyDefinedLabel(nullptr != label), m_unitLabel(label) {}
+        UnitProxy(UnitProxyCR other)
+            {
+            if (nullptr != other.m_unit)
+                m_unit = other.m_unit;
+            m_explicitlyDefinedLabel = other.m_explicitlyDefinedLabel;
+            m_unitLabel = other.m_unitLabel.c_str();
+            }
+
+        bool FromJson(Json::Value const& jval, BEU::IUnitsContextCP context);
+        bool SetUnit(BEU::UnitCP unit) {m_unit = unit; return true;}
+        Utf8StringCR GetLabel() const { return m_unitLabel; }
+        bool HasLabel() const {return m_explicitlyDefinedLabel;}
+        void SetLabel(Utf8CP lab) {if (nullptr == lab) return; m_explicitlyDefinedLabel = true; m_unitLabel = lab;}
+
+        //! Returns the name of Unit in this if one is available
+        Utf8CP GetName() const {if (nullptr == m_unit) return nullptr; return m_unit->GetName().c_str();}
+        BEU::UnitCP GetUnit() const {return m_unit;}
+        bool ToJson(Json::Value& jval, bool verbose = false) const;
+        bool IsIdentical(UnitProxyCR other) const {return BEU::Unit::AreEqual(m_unit, other.m_unit) && m_unitLabel.Equals(other.m_unitLabel);}
+        bool IsEmpty() const {return nullptr == m_unit;}
+    };
+
     static size_t const indxMajor  = 0;
     static size_t const indxMiddle = 1;
     static size_t const indxMinor  = 2;
@@ -511,8 +496,8 @@ public:
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
     UNITS_EXPORT bool ToJson(Json::Value& out, bool verbose = false, bool excludeUnits = false) const;
-    UNITS_EXPORT static BentleyStatus FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context);
-    UNITS_EXPORT static BentleyStatus FromJson(CompositeValueSpecR out, JsonValueCR jsonWithoutUnits, bvector<BEU::UnitCP> const& units, bvector<Utf8String> const& unitLabels);
+    UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context);
+    UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, JsonValueCR jsonWithoutUnits, bvector<BEU::UnitCP> const& units, bvector<Utf8String> const& unitLabels);
 
     UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
 

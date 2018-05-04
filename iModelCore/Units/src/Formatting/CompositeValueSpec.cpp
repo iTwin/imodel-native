@@ -380,7 +380,9 @@ bool CompositeValueSpec::ToJson(Json::Value& out, bool verbose, bool excludeUnit
                 {
                 if (0 == i) // Major unit
                     valid = true;
-                out[json_units()].append(proxP->ToJson(verbose));
+                Json::Value jval;
+                if (!proxP->ToJson(out[json_units()], verbose))
+                    return false;
                 }
             }
         }
@@ -398,10 +400,10 @@ bool CompositeValueSpec::ToJson(Json::Value& out, bool verbose, bool excludeUnit
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-BentleyStatus CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context)
+bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context)
     {
     if (jval.empty())
-        return ERROR;
+        return false;
 
     bvector<Units::UnitCP> units;
     bvector<Utf8String> labels;
@@ -411,7 +413,7 @@ BentleyStatus CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR 
         for (Json::ValueIterator iter = unitsJson.begin(); iter != unitsJson.end(); iter++)
             {
             UnitProxy upp;
-            upp.LoadJson(*iter, context);
+            upp.FromJson(*iter, context);
             units.push_back(upp.GetUnit());
             labels.push_back(upp.GetLabel());
             }
@@ -423,10 +425,10 @@ BentleyStatus CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-BentleyStatus CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, bvector<Units::UnitCP> const& units, bvector<Utf8String> const& unitLabels)
+bool CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR jval, bvector<Units::UnitCP> const& units, bvector<Utf8String> const& unitLabels)
     {
     if (jval.empty())
-        return ERROR;
+        return false;
 
     out = CompositeValueSpec(units);
 
@@ -452,7 +454,7 @@ BentleyStatus CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR 
                 out.SetMajorLabel(unitLabels[0]);
         }
 
-    return SUCCESS;
+    return true;
     }
 
 //===================================================
@@ -462,28 +464,28 @@ BentleyStatus CompositeValueSpec::FromJson(CompositeValueSpecR out, JsonValueCR 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-Json::Value UnitProxy::ToJson(bool verbose) const
+bool CompositeValueSpec::UnitProxy::ToJson(Json::Value& jUP, bool verbose) const
     {
-    Json::Value jUP;
-
-    if(nullptr != m_unit)
-        jUP[json_name()] = m_unit->GetName().c_str();
+    if (nullptr == m_unit)
+        return false;
+    auto& val = jUP.append(Json::Value());
+    val[json_name()] = m_unit->GetName().c_str();
     if (!m_unitLabel.empty())
-        jUP[json_label()] = m_unitLabel.c_str();
+        val[json_label()] = m_unitLabel.c_str();
     else if (verbose)
-        jUP[json_label()] = m_unit->GetLabel().c_str();
-    return jUP;
+        val[json_label()] = m_unit->GetLabel().c_str();
+    return true;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-void UnitProxy::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
+bool CompositeValueSpec::UnitProxy::FromJson(Json::Value const& jval, BEU::IUnitsContextCP context)
     {
     m_unitLabel.clear();
     m_unit = nullptr;
     if (jval.empty())
-        return;
+        return false;
 
     Utf8CP paramName;
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
@@ -495,10 +497,13 @@ void UnitProxy::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
             Utf8CP str = val.asCString();
             if (nullptr != str)
                 m_unit = context->LookupUnit(str);
+            if (nullptr == m_unit)
+                return false;
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_label()) == 0)
             m_unitLabel = val.asString().c_str();
         }
+    return true;
     }
 
 //===================================================

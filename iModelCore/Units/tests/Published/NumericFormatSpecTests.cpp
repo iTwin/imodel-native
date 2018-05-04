@@ -158,7 +158,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeStation)
 
     NumericFormatSpec testFormat;
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, NumericFormatSpec::FromJson(testFormat, jval));
+    ASSERT_TRUE(NumericFormatSpec::FromJson(testFormat, jval));
 
     EXPECT_EQ(PresentationType::Station, testFormat.GetPresentationType());
     EXPECT_EQ(SignOption::SignAlways, testFormat.GetSignOption());
@@ -193,7 +193,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeDecimal)
 
     NumericFormatSpec testFormat;
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, NumericFormatSpec::FromJson(testFormat, jval));
+    ASSERT_TRUE(NumericFormatSpec::FromJson(testFormat, jval));
 
     EXPECT_EQ(PresentationType::Decimal, testFormat.GetPresentationType());
     EXPECT_EQ(SignOption::SignAlways, testFormat.GetSignOption());
@@ -226,7 +226,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeFractional)
 
     NumericFormatSpec testFormat;
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, NumericFormatSpec::FromJson(testFormat, jval));
+    ASSERT_TRUE(NumericFormatSpec::FromJson(testFormat, jval));
 
     EXPECT_EQ(PresentationType::Fractional, testFormat.GetPresentationType());
     EXPECT_EQ(SignOption::SignAlways, testFormat.GetSignOption());
@@ -260,7 +260,7 @@ TEST_F(NumericFormatSpecJsonTest, DeserializeScientific)
 
     NumericFormatSpec testFormat;
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, NumericFormatSpec::FromJson(testFormat, jval));
+    ASSERT_TRUE(NumericFormatSpec::FromJson(testFormat, jval));
 
     EXPECT_EQ(PresentationType::Scientific, testFormat.GetPresentationType());
     EXPECT_EQ(ScientificType::Normalized, testFormat.GetScientificType());

@@ -69,13 +69,13 @@ NumericFormatSpec::NumericFormatSpec()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz
 //----------------------------------------------------------------------------------------
-BentleyStatus NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
+bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
     {
     if (jval.empty())
-        return SUCCESS;
+        return false;
 
     if (Json::objectValue != jval.type())
-        return ERROR;
+        return false;
 
     NumericFormatSpec spec;
     // Presentation Type needs to be read first since reading the precision depends on it.
@@ -163,7 +163,7 @@ BentleyStatus NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jv
             spec.SetFormatTraits(val); // handled both an Object and String
         }
     out = spec;
-    return SUCCESS;
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
