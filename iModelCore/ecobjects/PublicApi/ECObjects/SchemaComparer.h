@@ -240,7 +240,7 @@ struct CompositeECChange : public ECChange
             size_t count = 0;
             for (auto const& kvPair : m_changes)
                 {
-                if (kvPair.second->HasChanges())
+                if (kvPair.second->IsChanged())
                     count++;
                 }
 
@@ -284,7 +284,7 @@ struct ECChangeArray final : public ECChange
             while (it != m_changes.end())
                 {
                 (*it)->Optimize();
-                if (!(*it)->HasChanges())
+                if (!(*it)->IsChanged())
                     it = m_changes.erase(it);
                 else
                     ++it;
@@ -514,63 +514,6 @@ struct PropertyValueChange final : public ECChange
             }
 
         BentleyStatus Inititalize(ECN::PrimitiveType);
-
-        template<typename T>
-        class Converter
-            {
-            template<bool cond, typename U>
-            using resolvedType = Nullable<typename std::enable_if< cond, U >::type>;
-
-            public:
-                template< typename U = T >
-                static resolvedType<std::is_same<U, int32_t>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetInteger();
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, int64_t>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetLong();
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, DateTime>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetDateTime();
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, Utf8String>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return Nullable<T>(v.GetUtf8CP());
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, DPoint2d>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetPoint2d();
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, DPoint3d>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetPoint3d();
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, double>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetDouble();
-                    }
-                template< typename U = T >
-                static resolvedType< std::is_same<U, bool>::value, U > Copy(ECN::ECValueCR v)
-                    {
-                    if (v.IsNull()) return Nullable<T>();
-                    return v.GetBoolean();
-                    }
-            };
 
     public:
         PropertyValueChange(ChangeType state, SystemId systemId = SystemId::PropertyValue, ECChange const* parent = nullptr, Utf8CP accessString = nullptr)

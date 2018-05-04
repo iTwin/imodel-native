@@ -2425,21 +2425,53 @@ BentleyStatus PropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
             return GetBinary()->Set(oldBlob, newBlob);
             }
             case PRIMITIVETYPE_Boolean:
-                return GetBoolean()->Set(Converter<bool>::Copy(oldValue), Converter<bool>::Copy(newValue));
+            {
+            Nullable<bool> oldVal = oldValue.IsNull() ? Nullable<bool>() : oldValue.GetBoolean();
+            Nullable<bool> newVal = newValue.IsNull() ? Nullable<bool>() : newValue.GetBoolean();
+            return GetBoolean()->Set(oldVal, newVal);
+            }
             case PRIMITIVETYPE_DateTime:
-                return GetDateTime()->Set(Converter<DateTime>::Copy(oldValue), Converter<DateTime>::Copy(newValue));
+            {
+            Nullable<DateTime> oldVal = oldValue.IsNull() ? Nullable<DateTime>() : oldValue.GetDateTime();
+            Nullable<DateTime> newVal = newValue.IsNull() ? Nullable<DateTime>() : newValue.GetDateTime();
+            return GetDateTime()->Set(oldVal, newVal);
+            }
             case PRIMITIVETYPE_Double:
-                return GetDouble()->Set(Converter<double>::Copy(oldValue), Converter<double>::Copy(newValue));
+            {
+            Nullable<double> oldVal = oldValue.IsNull() ? Nullable<double>() : oldValue.GetDouble();
+            Nullable<double> newVal = newValue.IsNull() ? Nullable<double>() : newValue.GetDouble();
+            return GetDouble()->Set(oldVal, newVal);
+            }
             case PRIMITIVETYPE_Integer:
-                return GetInteger()->Set(Converter<int>::Copy(oldValue), Converter<int>::Copy(newValue));
+            {
+            Nullable<int> oldVal = oldValue.IsNull() ? Nullable<int>() : oldValue.GetInteger();
+            Nullable<int> newVal = newValue.IsNull() ? Nullable<int>() : newValue.GetInteger();
+            return GetInteger()->Set(oldVal, newVal);
+            }
             case PRIMITIVETYPE_Long:
-                return GetLong()->Set(Converter<int64_t>::Copy(oldValue), Converter<int64_t>::Copy(newValue));
+            {
+            Nullable<int64_t> oldVal = oldValue.IsNull() ? Nullable<int64_t>() : oldValue.GetLong();
+            Nullable<int64_t> newVal = newValue.IsNull() ? Nullable<int64_t>() : newValue.GetLong();
+            return GetLong()->Set(oldVal, newVal);
+            }
             case PRIMITIVETYPE_Point2d:
-                return GetPoint2d()->Set(Converter<DPoint2d>::Copy(oldValue), Converter<DPoint2d>::Copy(newValue));
+            {
+            Nullable<DPoint2d> oldVal = oldValue.IsNull() ? Nullable<DPoint2d>() : oldValue.GetPoint2d();
+            Nullable<DPoint2d> newVal = newValue.IsNull() ? Nullable<DPoint2d>() : newValue.GetPoint2d();
+            return GetPoint2d()->Set(oldVal, newVal);
+            }
             case PRIMITIVETYPE_Point3d:
-                return GetPoint3d()->Set(Converter<DPoint3d>::Copy(oldValue), Converter<DPoint3d>::Copy(newValue));
+            {
+            Nullable<DPoint3d> oldVal = oldValue.IsNull() ? Nullable<DPoint3d>() : oldValue.GetPoint3d();
+            Nullable<DPoint3d> newVal = newValue.IsNull() ? Nullable<DPoint3d>() : newValue.GetPoint3d();
+            return GetPoint3d()->Set(oldVal, newVal);
+            }
             case PRIMITIVETYPE_String:
-                return GetString()->Set(Converter<Utf8String>::Copy(oldValue), Converter<Utf8String>::Copy(newValue));
+            {
+            Nullable<Utf8String> oldVal = oldValue.IsNull() ? nullptr : Utf8String(oldValue.GetUtf8CP());
+            Nullable<Utf8String> newVal = newValue.IsNull() ? nullptr : Utf8String(newValue.GetUtf8CP());
+            return GetString()->Set(oldVal, newVal);
+            }
 
             default:
                 BeAssert(false && "Unhandled PrimitiveType");
