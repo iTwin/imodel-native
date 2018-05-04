@@ -135,9 +135,9 @@
         <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
-            <!--ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
+            <ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
                 <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
-            </ILinearlyLocatedSegmentationHints-->
+            </ILinearlyLocatedSegmentationHints>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="DesignSpeedDefinition" modifier="Sealed"  displayLabel="Design Speed Definition" description="Standardized design-speed definition in the context of a Subject." >
