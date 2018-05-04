@@ -36,6 +36,11 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(RailwayStandardsModelHandler::GetHandler());
     RegisterHandler(RoadwayStandardsModelHandler::GetHandler());
 
+    RegisterHandler(DesignSpeedDefinitionHandler::GetHandler());
+    RegisterHandler(DesignSpeedElementHandler::GetHandler());
+    RegisterHandler(DesignSpeedHandler::GetHandler());
+    RegisterHandler(DesignSpeedTransitionHandler::GetHandler());
+
     RegisterHandler(CorridorPortionElementHandler::GetHandler());
     RegisterHandler(PathwayElementHandler::GetHandler());
     RegisterHandler(RailwayHandler::GetHandler());
@@ -149,6 +154,14 @@ void createCodeSpecs(DgnDbR dgndb)
         }
 
     codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_SignificantPointDefinition, CodeScopeSpec::CreateModelScope());
+    BeAssert(codeSpecPtr.IsValid());
+    if (codeSpecPtr.IsValid())
+        {
+        codeSpecPtr->Insert();
+        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
+        }
+
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_DesignSpeedDefinition, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {

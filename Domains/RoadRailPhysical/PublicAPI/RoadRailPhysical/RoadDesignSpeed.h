@@ -91,6 +91,125 @@ public:
     ROADRAILPHYSICAL_EXPORT static RailwayStandardsModelPtr Query(Dgn::SubjectCR parentSubject);
 }; // RailwayStandardsModel
 
+//=======================================================================================
+//! Standardized design-speed definition in the context of a Subject.
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DesignSpeedDefinition : Dgn::DefinitionElement
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_DesignSpeedDefinition, Dgn::DefinitionElement);
+friend struct DesignSpeedDefinitionHandler;
+
+protected:
+    //! @private
+    ROADRAILPHYSICAL_EXPORT explicit DesignSpeedDefinition(CreateParams const& params);
+    //! @private
+    ROADRAILPHYSICAL_EXPORT explicit DesignSpeedDefinition(CreateParams const& params, double designSpeed);
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(DesignSpeedDefinition)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(DesignSpeedDefinition)
+
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DefinitionModelCR scope, double speed);
+
+    double GetDesignSpeed() const { return GetPropertyValueDouble("DesignSpeed"); }
+
+    ROADRAILPHYSICAL_EXPORT static DesignSpeedDefinitionPtr Create(Dgn::DefinitionModelCR model, double designSpeed);
+}; // DesignSpeedDefinition
+
+//=======================================================================================
+//! Linearly-located attribution on a Pathway whose value is its design-speed.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DesignSpeedElement : Dgn::InformationRecordElement, LinearReferencing::ILinearlyLocatedAttribution, IPathwayPortionSingleFromTo
+{
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_DesignSpeedElement, Dgn::InformationRecordElement);
+    friend struct DesignSpeedElementHandler;
+
+protected:
+    //! @private
+    explicit DesignSpeedElement(CreateParams const& params);
+
+    //! @private
+    explicit DesignSpeedElement(CreateParams const& params, CreateFromToParams const& fromToParams);    
+
+    virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const override { return *this; }    
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(DesignSpeedElement)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(DesignSpeedElement)
+}; // DesignSpeedElement
+
+//=======================================================================================
+//! Linearly-located attribution on a Pathway whose value is its design-speed.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DesignSpeed : DesignSpeedElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_DesignSpeed, DesignSpeedElement);
+    friend struct DesignSpeedHandler;
+
+public:
+    struct CreateFromToParams : IPathwayPortionSingleFromTo::CreateFromToParams
+    {
+    DEFINE_T_SUPER(IPathwayPortionSingleFromTo::CreateFromToParams)
+
+    DesignSpeedDefinitionCPtr m_designSpeedDefCPtr;
+
+    CreateFromToParams(PathwayElementCR pathway, DesignSpeedDefinitionCR designSpeedDef,
+        double fromDistanceFromStart, double toDistanceFromStart) :
+        m_designSpeedDefCPtr(&designSpeedDef), T_Super(pathway, fromDistanceFromStart, toDistanceFromStart)
+        {
+        }
+    }; // CreateFromToParams
+
+protected:
+    //! @private
+    explicit DesignSpeed(CreateParams const& params);
+
+    //! @private
+    explicit DesignSpeed(CreateParams const& params, CreateFromToParams const& fromToParams);    
+
+    static bool ValidateParams(CreateFromToParams const& params)
+        {
+        if (!T_Super::ValidateParams(params)) return false; return params.m_designSpeedDefCPtr.IsValid() && params.m_designSpeedDefCPtr->GetElementId().IsValid();
+        }
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(DesignSpeed)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(DesignSpeed)
+
+    Dgn::DgnElementId GetDesignSpeedDefinitionId() const { return GetPropertyValueId<Dgn::DgnElementId>("Definition"); }
+    //! @private
+    ROADRAILPHYSICAL_EXPORT void SetDesignSpeedDefinition(DesignSpeedDefinitionCR designSpeedDef);
+
+    //! @private
+    ROADRAILPHYSICAL_EXPORT static DesignSpeedPtr Create(CreateFromToParams const& params);
+}; // DesignSpeed
+
+//=======================================================================================
+//! Linearly-located attribution on a Pathway whose value is its design-speed.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DesignSpeedTransition : DesignSpeedElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_DesignSpeedTransition, DesignSpeedElement);
+    friend struct DesignSpeedTransitionHandler;
+
+protected:
+    //! @private
+    explicit DesignSpeedTransition(CreateParams const& params);
+
+    //! @private
+    explicit DesignSpeedTransition(CreateParams const& params, CreateFromToParams const& fromToParams);
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(DesignSpeedTransition)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(DesignSpeedTransition)
+
+    //! @private
+    ROADRAILPHYSICAL_EXPORT static DesignSpeedTransitionPtr Create(CreateFromToParams const& params);
+}; // DesignSpeedTransition
+
 
 //__PUBLISH_SECTION_END__
 //=======================================================================================
@@ -108,6 +227,38 @@ struct EXPORT_VTABLE_ATTRIBUTE RailwayStandardsModelHandler : Dgn::dgn_ModelHand
 {
 MODELHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RailwayStandardsModel, RailwayStandardsModel, RailwayStandardsModelHandler, Dgn::dgn_ModelHandler::Definition, ROADRAILPHYSICAL_EXPORT)
 }; // RailwayStandardsModelHandler
+
+//=======================================================================================
+//! Handler for DesignSpeedDefinition Elements
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DesignSpeedDefinitionHandler : Dgn::dgn_ElementHandler::Definition
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_DesignSpeedDefinition, DesignSpeedDefinition, DesignSpeedDefinitionHandler, Dgn::dgn_ElementHandler::Definition, ROADRAILPHYSICAL_EXPORT)
+}; // DesignSpeedDefinitionHandler
+
+//=======================================================================================
+//! Handler for base DesignSpeed Elements
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DesignSpeedElementHandler : Dgn::dgn_ElementHandler::InformationRecord
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_DesignSpeedElement, DesignSpeedElement, DesignSpeedElementHandler, Dgn::dgn_ElementHandler::InformationRecord, ROADRAILPHYSICAL_EXPORT)
+}; // DesignSpeedElementHandler
+
+//=======================================================================================
+//! Handler for DesignSpeed Elements
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DesignSpeedHandler : DesignSpeedElementHandler
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_DesignSpeed, DesignSpeed, DesignSpeedHandler, DesignSpeedElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // DesignSpeedElementHandler
+
+//=======================================================================================
+//! Handler for DesignSpeedTransition Elements
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DesignSpeedTransitionHandler : DesignSpeedElementHandler
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_DesignSpeedTransition, DesignSpeedTransition, DesignSpeedTransitionHandler, DesignSpeedElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // DesignSpeedTransitionHandler
 
 //__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

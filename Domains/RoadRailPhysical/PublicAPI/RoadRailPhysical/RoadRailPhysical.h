@@ -56,6 +56,10 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // Elements
 #define BRRP_CLASS_Corridor                                         "Corridor"
 #define BRRP_CLASS_CorridorPortionElement                           "CorridorPortionElement"
+#define BRRP_CLASS_DesignSpeed                                      "DesignSpeed"
+#define BRRP_CLASS_DesignSpeedDefinition                            "DesignSpeedDefinition"
+#define BRRP_CLASS_DesignSpeedElement                               "DesignSpeedElement"
+#define BRRP_CLASS_DesignSpeedTransition                            "DesignSpeedTransition"
 #define BRRP_CLASS_PathwayElement                                   "PathwayElement"
 #define BRRP_CLASS_Railway                                          "Railway"
 #define BRRP_CLASS_Roadway                                          "Roadway"
@@ -72,12 +76,13 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // Relationships
 #define BRRP_REL_CorridorAssemblesPortions                          "CorridorAssemblesPortions"
 #define BRRP_REL_CorridorRefersToOrderedPathways                    "CorridorRefersToOrderedPathways"
+#define BRRP_REL_DesignSpeedRefersToDefinition                      "DesignSpeedRefersToDefinition"
 #define BRRP_REL_DrawingGraphicRepresentsCorridor                   "DrawingGraphicRepresentsCorridor"
 #define BRRP_REL_GeometricElementBoundsContentForSheet              "GeometricElementBoundsContentForSheet"
 #define BRRP_REL_GraphicalElement3dRepresentsCorridor               "GraphicalElement3dRepresentsCorridor"
 #define BRRP_REL_ILinearElementRelatesToCorridorPortion             "ILinearElementRelatesToCorridorPortion"
 #define BRRP_REL_PathwayAssemblesElements                           "PathwayAssemblesElements"
-#define BRRP_REL_PathwayRefersToMainAlignment                       "PathwayRefersToMainAlignment"
+#define BRRP_REL_PathwayOwnsLinearlyLocatedAttribution              "PathwayOwnsLinearlyLocatedAttribution"
 
 
 // Properties
@@ -97,6 +102,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // CodeSpec names
 //-----------------------------------------------------------------------------------------
 #define BRRP_CODESPEC_Corridor                                      "Corridor"
+#define BRRP_CODESPEC_DesignSpeedDefinition                         "DesignSpeedDefinition"
 #define BRRP_CODESPEC_Pathway                                       "Pathway"
 #define BRRP_CODESPEC_SignificantPointDefinition                    "SignificantPointDefinition"
 
@@ -156,6 +162,10 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(AssociatedFacetAspect)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(Corridor)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(CorridorPortionElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeed)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedDefinition)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedTransition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailPhysicalModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(SignificantPointDefinition)

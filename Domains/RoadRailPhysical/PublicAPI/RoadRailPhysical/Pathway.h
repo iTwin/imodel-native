@@ -227,6 +227,40 @@ public:
         CorridorPortionElementCR corridorPortion, SignificantPointDefinitionCR significantPointDef);
 }; // ILinearElementUtilities
 
+//=======================================================================================
+//! Interface providing access to pathway segments.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct IPathwayPortionSingleFromTo : LinearReferencing::ILinearlyLocatedSingleFromTo
+{
+    DEFINE_T_SUPER(LinearReferencing::ILinearlyLocatedSingleFromTo)
+
+public:
+    struct CreateFromToParams : LinearReferencing::ILinearlyLocatedSingleFromTo::CreateFromToParams
+    {
+        DEFINE_T_SUPER(LinearReferencing::ILinearlyLocatedSingleFromTo::CreateFromToParams)
+
+        PathwayElementCPtr m_pathwayCPtr;
+
+        CreateFromToParams(PathwayElementCR pathway, 
+            double fromDistanceFromStart, double toDistanceFromStart):
+            m_pathwayCPtr(&pathway), 
+            T_Super(*dynamic_cast<LinearReferencing::ILinearElementCP>(
+                pathway.GetMainLinearElementAs<Dgn::DgnElement>().get()), 
+                fromDistanceFromStart, toDistanceFromStart) {}
+    }; // CreateFromToParams
+
+    Dgn::DgnElementId GetPathwayId() const { return dynamic_cast<Dgn::DgnElementCP>(this)->GetParentId(); }
+
+protected:
+    IPathwayPortionSingleFromTo() {}
+    IPathwayPortionSingleFromTo(CreateFromToParams const& params) : T_Super(params) {}
+
+    static bool ValidateParams(CreateFromToParams const& params) 
+        { if (!T_Super::ValidateParams(params)) return false; return params.m_pathwayCPtr.IsValid() && params.m_pathwayCPtr->GetElementId().IsValid(); }
+    virtual void _OnCreate(CreateFromToParams const& params) { _SetLinearElement(params.m_linearElementCPtr->GetElementId()); }
+}; // IPathwayPortionSingleFromTo
+
 
 //__PUBLISH_SECTION_END__
 //=================================================================================

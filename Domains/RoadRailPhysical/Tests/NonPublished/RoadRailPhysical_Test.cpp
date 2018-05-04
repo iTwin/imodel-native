@@ -68,6 +68,13 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
 
     ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedCorridorPortion(*alignmentPtr, *leftRoadwayPtr, *clPointDefPtr));
 
+    auto designSpeedDefPtr = DesignSpeedDefinition::Create(*standardsModel, 50.0);
+    ASSERT_TRUE(designSpeedDefPtr->Insert().IsValid());
+
+    auto designSpeedPtr = DesignSpeed::Create(DesignSpeed::CreateFromToParams(*leftRoadwayPtr, *designSpeedDefPtr, 0, 150));
+    auto designSpeedCPtr = designSpeedPtr->Insert();
+    ASSERT_TRUE(designSpeedCPtr.IsValid());
+
     auto rightRoadwayPtr = Roadway::Create(*corridorPtr);
     rightRoadwayPtr->SetMainLinearElement(alignmentPtr.get());
     ASSERT_TRUE(rightRoadwayPtr->Insert((int32_t)PathwayElement::Order::RightMost).IsValid());
