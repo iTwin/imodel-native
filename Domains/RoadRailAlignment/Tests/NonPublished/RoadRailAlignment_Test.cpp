@@ -71,16 +71,16 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     // DistanceAlong    0       30      70      120     150
     // Station          1000    10      10000   100     130
 
-    auto stationPtr = AlignmentStation::Create(*alignmentPtr, 30, 10);
+    auto stationPtr = AlignmentStation::Create(AlignmentStation::CreateAtParams(*alignmentPtr, 30, 10));
     auto stationCPtr = stationPtr->Insert();
     ASSERT_TRUE(stationCPtr.IsValid());
     ASSERT_DOUBLE_EQ(30.0, stationCPtr->GetAtDistanceAlongFromStart());
     ASSERT_DOUBLE_EQ(10.0, stationCPtr->GetStation());
 
-    stationPtr = AlignmentStation::Create(*alignmentPtr, 70, 10000);
+    stationPtr = AlignmentStation::Create(AlignmentStation::CreateAtParams(*alignmentPtr, 70, 10000));
     ASSERT_TRUE(stationPtr->Insert().IsValid());
 
-    stationPtr = AlignmentStation::Create(*alignmentPtr, 120, 100);
+    stationPtr = AlignmentStation::Create(AlignmentStation::CreateAtParams(*alignmentPtr, 120, 100));
     ASSERT_TRUE(stationPtr->Insert().IsValid());
 
     auto stationTranslatorPtr = AlignmentStationingTranslator::Create(*alignmentPtr);
