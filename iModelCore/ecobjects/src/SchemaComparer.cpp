@@ -303,20 +303,20 @@ BentleyStatus SchemaComparer::CompareECSchema(SchemaChange& change, ECSchemaCR a
 BentleyStatus SchemaComparer::CompareECClass(ClassChange& change, ECClassCR a, ECClassCR b)
     {
     if (a.GetName() != b.GetName())
-        change.GetName().Set(a.GetName(), b.GetName());
+        change.Name().Set(a.GetName(), b.GetName());
 
     if (a.GetIsDisplayLabelDefined() && !b.GetIsDisplayLabelDefined())
-        change.GetDisplayLabel().Set(a.GetInvariantDisplayLabel(), nullptr);
+        change.DisplayLabel().Set(a.GetInvariantDisplayLabel(), nullptr);
     else if (!a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
-        change.GetDisplayLabel().Set(nullptr, b.GetInvariantDisplayLabel());
+        change.DisplayLabel().Set(nullptr, b.GetInvariantDisplayLabel());
     else if (a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
         {
         if (!a.GetInvariantDisplayLabel().EqualsIAscii(b.GetInvariantDisplayLabel()))
-            change.GetDisplayLabel().Set(a.GetInvariantDisplayLabel(), b.GetInvariantDisplayLabel());
+            change.DisplayLabel().Set(a.GetInvariantDisplayLabel(), b.GetInvariantDisplayLabel());
         }
 
     if (!a.GetInvariantDescription().EqualsIAscii(b.GetInvariantDescription()))
-        change.GetDescription().Set(a.GetInvariantDescription(), b.GetInvariantDescription());
+        change.Description().Set(a.GetInvariantDescription(), b.GetInvariantDescription());
 
     if (a.GetClassModifier() != b.GetClassModifier())
         change.ClassModifier().Set(a.GetClassModifier(), b.GetClassModifier());
@@ -328,19 +328,19 @@ BentleyStatus SchemaComparer::CompareECClass(ClassChange& change, ECClassCR a, E
         {
         if (a.IsRelationshipClass())
             {
-            if (AppendECRelationshipClass(change.GetRelationship(), *a.GetRelationshipClassCP()) != SUCCESS)
+            if (AppendECRelationshipClass(change, *a.GetRelationshipClassCP()) != SUCCESS)
                 return ERROR;
             }
         else if (b.IsRelationshipClass())
             {
-            if (AppendECRelationshipClass(change.GetRelationship(), *b.GetRelationshipClassCP()) != SUCCESS)
+            if (AppendECRelationshipClass(change, *b.GetRelationshipClassCP()) != SUCCESS)
                 return ERROR;
             }
         }
     else
         {
         if (a.IsRelationshipClass() && b.IsRelationshipClass())
-            if (CompareECRelationshipClass(change.GetRelationship(), *a.GetRelationshipClassCP(), *b.GetRelationshipClassCP()) != SUCCESS)
+            if (CompareECRelationshipClass(change, *a.GetRelationshipClassCP(), *b.GetRelationshipClassCP()) != SUCCESS)
                 return ERROR;
         }
 
@@ -378,7 +378,7 @@ BentleyStatus SchemaComparer::CompareECBaseClasses(BaseClassChanges& changes, EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECRelationshipClass(RelationshipChange& change, ECRelationshipClassCR a, ECRelationshipClassCR b)
+BentleyStatus SchemaComparer::CompareECRelationshipClass(ClassChange& change, ECRelationshipClassCR a, ECRelationshipClassCR b)
     {
     if (a.GetStrength() != b.GetStrength())
         change.Strength().Set(a.GetStrength(), b.GetStrength());
@@ -395,7 +395,7 @@ BentleyStatus SchemaComparer::CompareECRelationshipClass(RelationshipChange& cha
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR a, ECRelationshipConstraintCR b)
+BentleyStatus SchemaComparer::CompareECRelationshipConstraint(RelationshipConstraintChange& change, ECRelationshipConstraintCR a, ECRelationshipConstraintCR b)
     {
     if (a.GetRoleLabel() != b.GetRoleLabel())
         change.RoleLabel().Set(a.GetRoleLabel(), b.GetRoleLabel());
@@ -412,7 +412,7 @@ BentleyStatus SchemaComparer::CompareECRelationshipConstraint(ECRelationshipCons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& change, ECRelationshipConstraintClassList const& a, ECRelationshipConstraintClassList const& b)
+BentleyStatus SchemaComparer::CompareECRelationshipConstraintClasses(RelationshipConstraintClassChanges& change, ECRelationshipConstraintClassList const& a, ECRelationshipConstraintClassList const& b)
     {
     std::map<Utf8CP, ECClassCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECClassCP constraintClassCP : a)
@@ -446,23 +446,23 @@ BentleyStatus SchemaComparer::CompareECRelationshipConstraintClasses(ECRelations
 BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECPropertyCR a, ECPropertyCR b)
     {
     if (a.GetTypeName() != b.GetTypeName())
-        change.GetTypeName().Set(a.GetTypeName(), b.GetTypeName());
+        change.TypeName().Set(a.GetTypeName(), b.GetTypeName());
 
     if (a.GetName() != b.GetName())
-        change.GetName().Set(a.GetName(), b.GetName());
+        change.Name().Set(a.GetName(), b.GetName());
 
     if (a.GetIsDisplayLabelDefined() && !b.GetIsDisplayLabelDefined())
-        change.GetDisplayLabel().Set(a.GetInvariantDisplayLabel(), nullptr);
+        change.DisplayLabel().Set(a.GetInvariantDisplayLabel(), nullptr);
     else if (!a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
-        change.GetDisplayLabel().Set(nullptr, b.GetInvariantDisplayLabel());
+        change.DisplayLabel().Set(nullptr, b.GetInvariantDisplayLabel());
     else if (a.GetIsDisplayLabelDefined() && b.GetIsDisplayLabelDefined())
         {
         if (!a.GetInvariantDisplayLabel().EqualsIAscii(b.GetInvariantDisplayLabel()))
-            change.GetDisplayLabel().Set(a.GetInvariantDisplayLabel(), b.GetInvariantDisplayLabel());
+            change.DisplayLabel().Set(a.GetInvariantDisplayLabel(), b.GetInvariantDisplayLabel());
         }
 
     if (!a.GetInvariantDescription().EqualsIAscii(b.GetInvariantDescription()))
-        change.GetDescription().Set(a.GetInvariantDescription(), b.GetInvariantDescription());
+        change.Description().Set(a.GetInvariantDescription(), b.GetInvariantDescription());
 
     PrimitiveECPropertyCP aPrimProp = a.GetAsPrimitiveProperty();
     PrimitiveECPropertyCP bPrimProp = b.GetAsPrimitiveProperty();
@@ -492,7 +492,7 @@ BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECProper
         change.IsReadonly().Set(a.GetIsReadOnly(), b.GetIsReadOnly());
 
     if (a.GetPriority() != b.GetPriority())
-        change.GetPriority().Set(a.GetPriority(), b.GetPriority());
+        change.Priority().Set(a.GetPriority(), b.GetPriority());
 
     // MinimumLength
     {
@@ -505,7 +505,7 @@ BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECProper
         newVal = b.GetMinimumLength();
 
     if (oldVal != newVal)
-        change.GetMinimumLength().Set(oldVal, newVal);
+        change.MinimumLength().Set(oldVal, newVal);
     }
 
     // MaximumLength
@@ -519,7 +519,7 @@ BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECProper
         newVal = b.GetMaximumLength();
 
     if (oldVal != newVal)
-        change.GetMaximumLength().Set(oldVal, newVal);
+        change.MaximumLength().Set(oldVal, newVal);
     }
 
     // MinimumValue
@@ -546,7 +546,7 @@ BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECProper
         }
 
     if (oldVal != newVal)
-        change.GetMinimumValue().Set(oldVal, newVal);
+        change.MinimumValue().Set(oldVal, newVal);
     }
 
     // MaximumValue
@@ -573,7 +573,7 @@ BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECProper
         }
 
     if (oldVal != newVal)
-        change.GetMaximumValue().Set(oldVal, newVal);
+        change.MaximumValue().Set(oldVal, newVal);
     }
 
     // KOQ
@@ -590,7 +590,7 @@ BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECProper
         newVal = bKoq->GetFullName();
 
     if (oldVal != newVal)
-        change.GetKindOfQuantity().Set(oldVal, newVal);
+        change.KindOfQuantity().Set(oldVal, newVal);
     }
 
     // PropertyCategory
@@ -607,7 +607,7 @@ BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECProper
         newVal = newCat->GetFullName();
 
     if (oldVal != newVal)
-        change.GetCategory().Set(oldVal, newVal);
+        change.Category().Set(oldVal, newVal);
     }
 
     //ECEnumeration
@@ -632,7 +632,7 @@ BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECProper
         newVal = newEnum->GetFullName();
 
     if (oldVal != newVal)
-        change.GetEnumeration().Set(oldVal, newVal);
+        change.Enumeration().Set(oldVal, newVal);
     }
 
 
@@ -667,7 +667,7 @@ BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECProper
         }
 
     if (oldVal != newVal)
-            change.GetExtendedTypeName().Set(oldVal, newVal);
+            change.ExtendedTypeName().Set(oldVal, newVal);
     }
 
     {
@@ -691,10 +691,10 @@ BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECProper
         }
 
     if (oldDirection != newDirection)
-        change.GetNavigation().Direction().Set(oldDirection, newDirection);
+        change.Navigation().Direction().Set(oldDirection, newDirection);
 
     if (oldRel != newRel)
-        change.GetNavigation().Relationship().Set(oldRel, newRel);
+        change.Navigation().Relationship().Set(oldRel, newRel);
     }
     
     {
@@ -716,10 +716,10 @@ BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECProper
         }
 
     if (oldMinOccurs != newMinOccurs)
-        change.GetArray().MinOccurs().Set(oldMinOccurs, newMinOccurs);
+        change.Array().MinOccurs().Set(oldMinOccurs, newMinOccurs);
 
     if (oldMaxOccurs != newMaxOccurs)
-        change.GetArray().MaxOccurs().Set(oldMaxOccurs, newMaxOccurs);
+        change.Array().MaxOccurs().Set(oldMaxOccurs, newMaxOccurs);
     }
 
     return CompareCustomAttributes(change.CustomAttributes(), a, b);
@@ -818,7 +818,7 @@ BentleyStatus SchemaComparer::CompareECClasses(ClassChanges& changes, ECClassCon
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECEnumerations(ECEnumerationChanges& changes, ECEnumerationContainerCR a, ECEnumerationContainerCR b)
+BentleyStatus SchemaComparer::CompareECEnumerations(EnumerationChanges& changes, ECEnumerationContainerCR a, ECEnumerationContainerCR b)
     {
     std::map<Utf8CP, ECEnumerationCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (ECEnumerationCP enumCP : a)
@@ -1285,7 +1285,7 @@ BentleyStatus SchemaComparer::CompareCustomAttributes(CustomAttributeChanges& ch
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECEnumeration(ECEnumerationChange& change, ECEnumerationCR oldVal, ECEnumerationCR newVal)
+BentleyStatus SchemaComparer::CompareECEnumeration(EnumerationChange& change, ECEnumerationCR oldVal, ECEnumerationCR newVal)
     {
     if (!oldVal.GetName().EqualsIAscii(newVal.GetName()))
         change.Name().Set(oldVal.GetName(), newVal.GetName());
@@ -1316,7 +1316,7 @@ BentleyStatus SchemaComparer::CompareECEnumeration(ECEnumerationChange& change, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECEnumerators(ECEnumeratorChanges& changes, EnumeratorIterable const& oldValues, EnumeratorIterable const& newValues)
+BentleyStatus SchemaComparer::CompareECEnumerators(EnumeratorChanges& changes, EnumeratorIterable const& oldValues, EnumeratorIterable const& newValues)
     {
     std::map<Utf8CP, ECEnumeratorCP, CompareIUtf8Ascii> oldEnumValues, newEnumValues, allEnumValues;
     for (ECEnumeratorCP ecenum : oldValues)
@@ -1342,7 +1342,7 @@ BentleyStatus SchemaComparer::CompareECEnumerators(ECEnumeratorChanges& changes,
 
         if (existsInOld && existsInNew)
             {
-            ECEnumeratorChange& enumeratorChange = changes.Add(ChangeType::Modified, enumeratorName);
+            EnumeratorChange& enumeratorChange = changes.Add(ChangeType::Modified, enumeratorName);
             if (oldEnumerator->IsInteger())
                 {
                 if (oldEnumerator->GetInteger() != newEnumerator->GetInteger())
@@ -1430,40 +1430,40 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
     if (!oldPersUnitStr.EqualsIAscii(newPersUnitStr))
         change.PersistenceUnit().Set(oldPersUnitStr, newPersUnitStr);
 
-    std::vector<Utf8String> oldPresUnits, newPresUnits;
+    std::vector<Utf8String> oldPresFormats, newPresFormats;
     for (NamedFormat const& format : oldVal.GetPresentationFormats())
         {
-        oldPresUnits.push_back(format.GetQualifiedName(oldVal.GetSchema()));
+        oldPresFormats.push_back(format.GetQualifiedName(oldVal.GetSchema()));
         }
 
     for (NamedFormat const& format : newVal.GetPresentationFormats())
         {
-        newPresUnits.push_back(format.GetQualifiedName(newVal.GetSchema()));
+        newPresFormats.push_back(format.GetQualifiedName(newVal.GetSchema()));
         }
 
-    const size_t oldPresUnitCount = oldPresUnits.size();
-    const size_t newPresUnitCount = newPresUnits.size();
-    const size_t maxPresUnitCount = std::max(oldPresUnitCount, newPresUnitCount);
-    StringChanges& presUnitListChange = change.PresentationFormats();
+    const size_t oldPresFormatCount = oldPresFormats.size();
+    const size_t newPresFormatCount = newPresFormats.size();
+    const size_t maxPresFormatCount = std::max(oldPresFormatCount, newPresFormatCount);
+    ECChangeArray<StringChange>& presFormatChanges = change.PresentationFormats();
 
-    for (size_t i = 0; i < maxPresUnitCount; i++)
+    for (size_t i = 0; i < maxPresFormatCount; i++)
         {
-        if (i < oldPresUnitCount && i < newPresUnitCount)
+        if (i < oldPresFormatCount && i < newPresFormatCount)
             {
-            if (!oldPresUnits[i].EqualsIAscii(newPresUnits[i]))
-                presUnitListChange.Add(ChangeType::Modified).Set(oldPresUnits[i], newPresUnits[i]);
+            if (!oldPresFormats[i].EqualsIAscii(newPresFormats[i]))
+                presFormatChanges.Add(ChangeType::Modified).Set(oldPresFormats[i], newPresFormats[i]);
 
             continue;
             }
 
-        if (i >= oldPresUnitCount)
+        if (i >= oldPresFormatCount)
             {
-            presUnitListChange.Add(ChangeType::New).Set(newPresUnits[i]);
+            presFormatChanges.Add(ChangeType::New).Set(newPresFormats[i]);
             continue;
             }
 
-        if (i >= newPresUnitCount)
-            presUnitListChange.Add(ChangeType::Deleted).Set(oldPresUnits[i]);
+        if (i >= newPresFormatCount)
+            presFormatChanges.Add(ChangeType::Deleted).Set(oldPresFormats[i]);
         }
 
     return SUCCESS;
@@ -1651,7 +1651,7 @@ BentleyStatus SchemaComparer::CompareUnit(UnitChange& change, ECUnitCR oldVal, E
 BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatCR oldVal, ECN::ECFormatCR newVal)
     {
     if (!oldVal.GetName().EqualsIAscii(newVal.GetName()))
-        change.GetName().Set(oldVal.GetName(), newVal.GetName());
+        change.Name().Set(oldVal.GetName(), newVal.GetName());
 
     {
     Nullable<Utf8String> oldLabel;
@@ -1663,11 +1663,11 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
         newLabel = newVal.GetInvariantDisplayLabel();
 
     if (oldLabel != newLabel)
-        change.GetDisplayLabel().Set(oldLabel, newLabel);
+        change.DisplayLabel().Set(oldLabel, newLabel);
     }
 
     if (!oldVal.GetInvariantDescription().EqualsIAscii(newVal.GetInvariantDescription()))
-        change.GetDescription().Set(oldVal.GetInvariantDescription(), newVal.GetInvariantDescription());
+        change.Description().Set(oldVal.GetInvariantDescription(), newVal.GetInvariantDescription());
 
     {
     Formatting::NumericFormatSpecCP oldSpec = oldVal.HasNumeric() ? oldVal.GetNumericSpec() : nullptr;
@@ -1723,7 +1723,7 @@ BentleyStatus SchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareReferences(ReferenceChanges& changes, ECSchemaReferenceListCR a, ECSchemaReferenceListCR b)
+BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes, ECSchemaReferenceListCR a, ECSchemaReferenceListCR b)
     {
     bmap<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> aMap, bMap, cMap;
     for (bpair<SchemaKey, ECSchemaPtr> const& ref : a)
@@ -1786,7 +1786,7 @@ BentleyStatus SchemaComparer::AppendECSchema(SchemaChange& change, ECSchemaCR sc
 
     for (ECEnumerationCP enumerationCP : schema.GetEnumerations())
         {
-        ECEnumerationChange& enumChange = change.Enumerations().Add(change.GetChangeType(), enumerationCP->GetName().c_str());
+        EnumerationChange& enumChange = change.Enumerations().Add(change.GetChangeType(), enumerationCP->GetName().c_str());
         if (AppendECEnumeration(enumChange, *enumerationCP) == ERROR)
             return ERROR;
         }
@@ -1844,11 +1844,11 @@ BentleyStatus SchemaComparer::AppendECSchema(SchemaChange& change, ECSchemaCR sc
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaComparer::AppendECClass(ClassChange& change, ECClassCR v)
     {
-    change.GetName().Set(v.GetName());
+    change.Name().Set(v.GetName());
     if (v.GetIsDisplayLabelDefined())
-        change.GetDisplayLabel().Set(v.GetInvariantDisplayLabel());
+        change.DisplayLabel().Set(v.GetInvariantDisplayLabel());
 
-    change.GetDescription().Set(v.GetInvariantDescription());
+    change.Description().Set(v.GetInvariantDescription());
     change.ClassModifier().Set(v.GetClassModifier());
     change.ClassType().Set(v.GetClassType());
 
@@ -1862,7 +1862,7 @@ BentleyStatus SchemaComparer::AppendECClass(ClassChange& change, ECClassCR v)
 
     if (v.GetRelationshipClassCP() != nullptr)
         {
-        if (AppendECRelationshipClass(change.GetRelationship(), *v.GetRelationshipClassCP()) == ERROR)
+        if (AppendECRelationshipClass(change, *v.GetRelationshipClassCP()) == ERROR)
             return ERROR;
         }
 
@@ -1875,7 +1875,7 @@ BentleyStatus SchemaComparer::AppendECClass(ClassChange& change, ECClassCR v)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECRelationshipClass(RelationshipChange& change, ECRelationshipClassCR v)
+BentleyStatus SchemaComparer::AppendECRelationshipClass(ClassChange& change, ECRelationshipClassCR v)
     {
     change.StrengthDirection().Set(v.GetStrengthDirection());
     change.Strength().Set(v.GetStrength());
@@ -1891,7 +1891,7 @@ BentleyStatus SchemaComparer::AppendECRelationshipClass(RelationshipChange& chan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR v)
+BentleyStatus SchemaComparer::AppendECRelationshipConstraint(RelationshipConstraintChange& change, ECRelationshipConstraintCR v)
     {
     change.RoleLabel().Set(v.GetRoleLabel());
     change.Multiplicity().Set(v.GetMultiplicity().ToString());
@@ -1905,7 +1905,7 @@ BentleyStatus SchemaComparer::AppendECRelationshipConstraint(ECRelationshipConst
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& changes, ECRelationshipConstraintClassList const& v)
+BentleyStatus SchemaComparer::AppendECRelationshipConstraintClasses(RelationshipConstraintClassChanges& changes, ECRelationshipConstraintClassList const& v)
     {
     for (ECClassCP constraintClass : v)
         {
@@ -1918,7 +1918,7 @@ BentleyStatus SchemaComparer::AppendECRelationshipConstraintClasses(ECRelationsh
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECEnumeration(ECEnumerationChange& enumerationChange, ECEnumerationCR v)
+BentleyStatus SchemaComparer::AppendECEnumeration(EnumerationChange& enumerationChange, ECEnumerationCR v)
     {
     if (v.GetIsDisplayLabelDefined())
         enumerationChange.DisplayLabel().Set(v.GetInvariantDisplayLabel());
@@ -1928,7 +1928,7 @@ BentleyStatus SchemaComparer::AppendECEnumeration(ECEnumerationChange& enumerati
     enumerationChange.TypeName().Set(v.GetTypeName());
     for (ECEnumeratorCP enumeratorCP : v.GetEnumerators())
         {
-        ECEnumeratorChange& enumeratorChange = enumerationChange.Enumerators().Add(enumerationChange.GetChangeType(), enumeratorCP->GetName().c_str());
+        EnumeratorChange& enumeratorChange = enumerationChange.Enumerators().Add(enumerationChange.GetChangeType(), enumeratorCP->GetName().c_str());
         enumeratorChange.Name().Set(enumeratorCP->GetName());
 
         if (enumeratorCP->IsInteger())
@@ -2042,9 +2042,9 @@ BentleyStatus SchemaComparer::AppendUnit(UnitChange& change, ECUnitCR unit)
 BentleyStatus SchemaComparer::AppendFormat(FormatChange& change, ECFormatCR format)
     {
     if (format.GetIsDisplayLabelDefined())
-        change.GetDisplayLabel().Set(format.GetInvariantDisplayLabel());
+        change.DisplayLabel().Set(format.GetInvariantDisplayLabel());
 
-    change.GetDescription().Set(format.GetInvariantDescription());
+    change.Description().Set(format.GetInvariantDescription());
     if (format.HasNumeric())
         {
         Formatting::NumericFormatSpecCP num = format.GetNumericSpec();
@@ -2067,27 +2067,27 @@ BentleyStatus SchemaComparer::AppendFormat(FormatChange& change, ECFormatCR form
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaComparer::AppendECProperty(PropertyChange& propertyChange, ECPropertyCR v)
     {
-    propertyChange.GetName().Set(v.GetName());
+    propertyChange.Name().Set(v.GetName());
     if (v.GetIsDisplayLabelDefined())
-        propertyChange.GetDisplayLabel().Set(v.GetInvariantDisplayLabel());
+        propertyChange.DisplayLabel().Set(v.GetInvariantDisplayLabel());
 
-    propertyChange.GetDescription().Set(v.GetInvariantDescription());
-    propertyChange.GetTypeName().Set(v.GetTypeName());
+    propertyChange.Description().Set(v.GetInvariantDescription());
+    propertyChange.TypeName().Set(v.GetTypeName());
 
     propertyChange.IsReadonly().Set(v.GetIsReadOnly());
     if (v.IsPriorityLocallyDefined())
-        propertyChange.GetPriority().Set(v.GetPriority());
+        propertyChange.Priority().Set(v.GetPriority());
 
     if (v.GetKindOfQuantity() != nullptr)
-        propertyChange.GetKindOfQuantity().Set(v.GetKindOfQuantity()->GetFullName());
+        propertyChange.KindOfQuantity().Set(v.GetKindOfQuantity()->GetFullName());
 
     if (v.GetCategory() != nullptr)
-        propertyChange.GetCategory().Set(v.GetCategory()->GetFullName());
+        propertyChange.Category().Set(v.GetCategory()->GetFullName());
 
     if (NavigationECPropertyCP prop = v.GetAsNavigationProperty())
         {
         propertyChange.IsNavigation().Set(true);
-        NavigationPropertyChange& navigationChange = propertyChange.GetNavigation();
+        NavigationPropertyChange& navigationChange = propertyChange.Navigation();
         navigationChange.Direction().Set(prop->GetDirection());
         if (prop->GetRelationshipClass())
             navigationChange.Relationship().Set(Utf8String(prop->GetRelationshipClass()->GetFullName()));
@@ -2097,12 +2097,12 @@ BentleyStatus SchemaComparer::AppendECProperty(PropertyChange& propertyChange, E
         propertyChange.IsPrimitive().Set(true);
         auto primitiveProp = v.GetAsPrimitiveProperty();
 
-        propertyChange.GetExtendedTypeName().Set(primitiveProp->GetExtendedTypeName());
+        propertyChange.ExtendedTypeName().Set(primitiveProp->GetExtendedTypeName());
         if (primitiveProp->GetEnumeration())
-            propertyChange.GetEnumeration().Set(primitiveProp->GetEnumeration()->GetFullName());
+            propertyChange.Enumeration().Set(primitiveProp->GetEnumeration()->GetFullName());
 
         if (primitiveProp->GetKindOfQuantity())
-            propertyChange.GetKindOfQuantity().Set(primitiveProp->GetKindOfQuantity()->GetFullName());
+            propertyChange.KindOfQuantity().Set(primitiveProp->GetKindOfQuantity()->GetFullName());
         }
     else if (v.GetIsStruct())
         {
@@ -2116,9 +2116,9 @@ BentleyStatus SchemaComparer::AppendECProperty(PropertyChange& propertyChange, E
         {
         propertyChange.IsPrimitiveArray().Set(true);
         auto primitivePropArray = v.GetAsPrimitiveArrayProperty();
-        propertyChange.GetExtendedTypeName().Set(primitivePropArray->GetExtendedTypeName());
+        propertyChange.ExtendedTypeName().Set(primitivePropArray->GetExtendedTypeName());
         if (primitivePropArray->GetKindOfQuantity())
-            propertyChange.GetKindOfQuantity().Set(primitivePropArray->GetKindOfQuantity()->GetFullName());
+            propertyChange.KindOfQuantity().Set(primitivePropArray->GetKindOfQuantity()->GetFullName());
         }
     else
         return ERROR;
@@ -2130,7 +2130,7 @@ BentleyStatus SchemaComparer::AppendECProperty(PropertyChange& propertyChange, E
         if (ECObjectsStatus::Success != v.GetMaximumValue(maxV))
             return ERROR;
 
-        propertyChange.GetMaximumValue().Set(maxV);
+        propertyChange.MaximumValue().Set(maxV);
         }
 
     if (v.IsMinimumValueDefined())
@@ -2139,14 +2139,14 @@ BentleyStatus SchemaComparer::AppendECProperty(PropertyChange& propertyChange, E
         if (ECObjectsStatus::Success != v.GetMinimumValue(minV))
             return ERROR;
 
-        propertyChange.GetMinimumValue().Set(minV);
+        propertyChange.MinimumValue().Set(minV);
         }
 
     if (v.GetIsArray())
         {
         auto arrayProp = v.GetAsArrayProperty();
-        propertyChange.GetArray().MaxOccurs().Set(arrayProp->GetStoredMaxOccurs());
-        propertyChange.GetArray().MinOccurs().Set(arrayProp->GetMinOccurs());
+        propertyChange.Array().MaxOccurs().Set(arrayProp->GetStoredMaxOccurs());
+        propertyChange.Array().MinOccurs().Set(arrayProp->GetMinOccurs());
         }
 
     return SUCCESS;
@@ -2167,7 +2167,7 @@ BentleyStatus SchemaComparer::AppendBaseClasses(BaseClassChanges& changes, ECBas
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendReferences(ReferenceChanges& changes, ECSchemaReferenceListCR references)
+BentleyStatus SchemaComparer::AppendReferences(SchemaReferenceChanges& changes, ECSchemaReferenceListCR references)
     {
     const ChangeType state = changes.GetChangeType();
     for (auto& referenceCP : references)
@@ -2396,11 +2396,11 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::PropertyValue: return "PropertyValue";
             case SystemId::PropertyValues: return "PropertyValues";
             case SystemId::Reference: return "Reference";
-            case SystemId::References: return "References";
             case SystemId::RelationshipName: return "RelationshipName";
             case SystemId::RoleLabel: return "RoleLabel";
             case SystemId::RoundingFactor: return "RoundingFactor";
             case SystemId::Schema: return "Schema";
+            case SystemId::SchemaReferences: return "SchemaReferences";
             case SystemId::Schemas: return "Schemas";
             case SystemId::ScientificType: return "ScientificType";
             case SystemId::ShowSignOption: return "ShowSignOption";
@@ -2485,7 +2485,7 @@ void CompositeECChange::_Optimize()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECPropertyValueChange::Set(ECValueCR value)
+BentleyStatus PropertyValueChange::Set(ECValueCR value)
     {
     if (!value.IsPrimitive())
         return ERROR;
@@ -2533,7 +2533,7 @@ BentleyStatus ECPropertyValueChange::Set(ECValueCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECPropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
+BentleyStatus PropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
     {
     const PrimitiveType NullType = static_cast<PrimitiveType>(0);
     PrimitiveType oldType = NullType;
@@ -2560,7 +2560,7 @@ BentleyStatus ECPropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
         {
             case PRIMITIVETYPE_IGeometry:
                 {
-                BeAssert(false && "Gemoetry not supported type");
+                BeAssert(false && "Geometry not supported type");
                 return ERROR;
                 }
             case PRIMITIVETYPE_Binary:
@@ -2588,7 +2588,7 @@ BentleyStatus ECPropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECPropertyValueChange::_WriteToString(Utf8StringR str, int currentIndex, int indentSize) const
+void PropertyValueChange::_WriteToString(Utf8StringR str, int currentIndex, int indentSize) const
     {
     if (m_value != nullptr)
         {
@@ -2603,7 +2603,7 @@ void ECPropertyValueChange::_WriteToString(Utf8StringR str, int currentIndex, in
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECPropertyValueChange::_IsEmpty() const
+bool PropertyValueChange::_IsEmpty() const
     {
     if (auto parent = GetParent())
         {
@@ -2619,7 +2619,7 @@ bool ECPropertyValueChange::_IsEmpty() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECPropertyValueChange::_Optimize()
+void PropertyValueChange::_Optimize()
     {
     if (m_value != nullptr)
         if (m_value->IsEmpty())
@@ -2629,7 +2629,7 @@ void ECPropertyValueChange::_Optimize()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECPropertyValueChange::InitValue(ECN::PrimitiveType type)
+BentleyStatus PropertyValueChange::InitValue(ECN::PrimitiveType type)
     {
     if (m_type == type)
         return SUCCESS;
@@ -2677,7 +2677,7 @@ BentleyStatus ECPropertyValueChange::InitValue(ECN::PrimitiveType type)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-ECPropertyValueChange::ECPropertyValueChange(ChangeType state, SystemId systemId, ECChange const* parent, Utf8CP accessString)
+PropertyValueChange::PropertyValueChange(ChangeType state, SystemId systemId, ECChange const* parent, Utf8CP accessString)
     : ECChange(state, SystemId::PropertyValue, parent, accessString), m_type(static_cast<PrimitiveType>(0))
     {
     BeAssert(!Utf8String::IsNullOrEmpty(accessString) && "access string must not be empty for ECPropertyValueChange");
@@ -2925,34 +2925,34 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCR
         }
 
     if (spec.HasMajorLabel())
-        GetMajorLabel().Set(spec.GetMajorLabel());
+        MajorLabel().Set(spec.GetMajorLabel());
 
     if (spec.HasMiddleUnit())
         {
         BeAssert(dynamic_cast<ECUnitCP> (spec.GetMiddleUnit()) != nullptr);
-        GetMiddleUnit().Set(((ECUnitCP) spec.GetMiddleUnit())->GetFullName());
+        MiddleUnit().Set(((ECUnitCP) spec.GetMiddleUnit())->GetFullName());
         }
 
     if (spec.HasMiddleLabel())
-        GetMiddleLabel().Set(spec.GetMiddleLabel());
+        MiddleLabel().Set(spec.GetMiddleLabel());
 
     if (spec.HasMinorUnit())
         {
         BeAssert(dynamic_cast<ECUnitCP> (spec.GetMinorUnit()) != nullptr);
-        GetMinorUnit().Set(((ECUnitCP) spec.GetMinorUnit())->GetFullName());
+        MinorUnit().Set(((ECUnitCP) spec.GetMinorUnit())->GetFullName());
         }
 
     if (spec.HasMinorLabel())
-        GetMinorLabel().Set(spec.GetMinorLabel());
+        MinorLabel().Set(spec.GetMinorLabel());
 
     if (spec.HasSubUnit())
         {
         BeAssert(dynamic_cast<ECUnitCP> (spec.GetSubUnit()) != nullptr);
-        GetSubUnit().Set(((ECUnitCP) spec.GetSubUnit())->GetFullName());
+        SubUnit().Set(((ECUnitCP) spec.GetSubUnit())->GetFullName());
         }
 
     if (spec.HasSubLabel())
-        GetSubLabel().Set(spec.GetSubLabel());
+        SubLabel().Set(spec.GetSubLabel());
 
     return SUCCESS;
     }
@@ -3017,7 +3017,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
         newVal = newSpec->GetMajorLabel();
 
     if (oldVal != newVal)
-        GetMajorLabel().Set(oldVal, newVal);
+        MajorLabel().Set(oldVal, newVal);
     }
 
     {
@@ -3036,7 +3036,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
         }
 
     if (oldVal != newVal)
-        GetMiddleUnit().Set(oldVal, newVal);
+        MiddleUnit().Set(oldVal, newVal);
     }
 
     {
@@ -3049,7 +3049,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
         newVal = newSpec->GetMiddleLabel();
 
     if (oldVal != newVal)
-        GetMiddleLabel().Set(oldVal, newVal);
+        MiddleLabel().Set(oldVal, newVal);
     }
 
     {
@@ -3068,7 +3068,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
         }
 
     if (oldVal != newVal)
-        GetMinorUnit().Set(oldVal, newVal);
+        MinorUnit().Set(oldVal, newVal);
     }
 
     {
@@ -3081,7 +3081,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
         newVal = newSpec->GetMinorLabel();
 
     if (oldVal != newVal)
-        GetMinorLabel().Set(oldVal, newVal);
+        MinorLabel().Set(oldVal, newVal);
     }
 
     {
@@ -3100,7 +3100,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
         }
 
     if (oldVal != newVal)
-        GetSubUnit().Set(oldVal, newVal);
+        SubUnit().Set(oldVal, newVal);
     }
 
     {
@@ -3113,7 +3113,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
         newVal = newSpec->GetSubLabel();
 
     if (oldVal != newVal)
-        GetSubLabel().Set(oldVal, newVal);
+        SubLabel().Set(oldVal, newVal);
     }
 
     return SUCCESS;
@@ -3255,7 +3255,7 @@ CustomAttributeValidator::Policy CustomAttributeValidator::Validate(CustomAttrib
     const size_t propValueCount = change.Count();
     for (size_t i = 0; i < propValueCount; i++)
         {
-        ECPropertyValueChange const& propValueChange = change[i];
+        PropertyValueChange const& propValueChange = change[i];
 
         std::vector<Utf8String> path = SchemaComparer::Split(propValueChange.GetAccessString(), true);
 
