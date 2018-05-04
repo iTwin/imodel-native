@@ -1014,7 +1014,7 @@ TEST_F(UnitsCustomAttributesConversionTests, EC32SchemasWithKoQsProperlyRemoveRe
             <ECEntityClass typeName='A' modifier='abstract'>
                 <ECProperty propertyName='PropA' typeName='double' kindOfQuantity='MyKindOfQuantity'>
                     <ECCustomAttributes>
-                        <OldPersistenceUnit xmlns="ECv3ConversionAttributes.01.00">
+                        <OldPersistenceUnit xmlns="ECv3ConversionAttributes.01.00.00">
                             <Name>FOOT</Name>
                         </OldPersistenceUnit>
                     </ECCustomAttributes>

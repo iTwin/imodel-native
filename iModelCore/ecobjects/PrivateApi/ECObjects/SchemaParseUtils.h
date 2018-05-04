@@ -275,7 +275,7 @@ public:
     ECOBJECTS_EXPORT static ECObjectsStatus ParseMultiplicityString(uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString);
     ECOBJECTS_EXPORT static ECObjectsStatus ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName);
     ECOBJECTS_EXPORT static ECObjectsStatus ParseStrengthType(StrengthType& strength, Utf8StringCR strengthString);
-
+    ECOBJECTS_EXPORT static bool IsFullSchemaNameFormatValidForVersion(Utf8CP schemaFullName, uint32_t xmlMajorVersion, uint32_t xmlMinorVersion);
     ECOBJECTS_EXPORT static Utf8CP DirectionToString(ECRelatedInstanceDirection direction);
     ECOBJECTS_EXPORT static Utf8CP ModifierToXmlString(ECClassModifier modifier);
     ECOBJECTS_EXPORT static Utf8CP ModifierToJsonString(ECClassModifier modifier);

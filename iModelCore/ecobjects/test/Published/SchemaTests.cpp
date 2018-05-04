@@ -2305,6 +2305,97 @@ TEST_F(SchemaVersionTest, ReferenceSchemasShoudlUse3PartVersionsForGreaterThan32
     DeserializeSchema(schema, *context, SchemaItem(refSchemaXml));
     DeserializeSchema(schema, *context, SchemaItem(schemaXml), SchemaReadStatus::InvalidECSchemaXml);
     }
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                     05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, CustomAttributeNameSpacesMustUseCorrectVersions)
+    {
+
+    {
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    "<ECSchema schemaName='CaseInsensitive' version='01.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
+    "    <ECStructClass typeName='MyStruct'>"
+    "        <ECProperty propertyName='Prop1' typeName='string' />"
+    "    </ECStructClass>"
+    "    <ECEntityClass typeName='Entity'>"
+    "        <ECCustomAttributes>"
+    "            <Customattrib xmlns='CaseInsensitive.01.00' />"
+    "        </ECCustomAttributes>"
+    "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
+    "    </ECEntityClass>"
+    "</ECSchema>";
+    ExpectSchemaDeserializationSuccess(schemaXML, "Should successfully deserialize a 3.1 schema with 2 part versions");
+    }
+
+    {
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    "<ECSchema schemaName='CaseInsensitive' version='01.00.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+    "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
+    "    <ECStructClass typeName='MyStruct'>"
+    "        <ECProperty propertyName='Prop1' typeName='string' />"
+    "    </ECStructClass>"
+    "    <ECEntityClass typeName='Entity'>"
+    "        <ECCustomAttributes>"
+    "            <Customattrib xmlns='CaseInsensitive.01.00' />"
+    "        </ECCustomAttributes>"
+    "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
+    "    </ECEntityClass>"
+    "</ECSchema>";
+    ExpectSchemaDeserializationFailure(schemaXML, SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize 3.2 schema with 2 part version in xmlns");
+    }
+
+    {
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    "<ECSchema schemaName='CaseInsensitive' version='01.00.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.3'>"
+    "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
+    "    <ECStructClass typeName='MyStruct'>"
+    "        <ECProperty propertyName='Prop1' typeName='string' />"
+    "    </ECStructClass>"
+    "    <ECEntityClass typeName='Entity'>"
+    "        <ECCustomAttributes>"
+    "            <Customattrib xmlns='CaseInsensitive.01.00' />"
+    "        </ECCustomAttributes>"
+    "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
+    "    </ECEntityClass>"
+    "</ECSchema>";
+    ExpectSchemaDeserializationFailure(schemaXML, SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize 3.3 schema with 2 part version in xmlns");
+    }
+
+    {
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    "<ECSchema schemaName='CaseInsensitive' version='01.00.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+    "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
+    "    <ECStructClass typeName='MyStruct'>"
+    "        <ECProperty propertyName='Prop1' typeName='string' />"
+    "    </ECStructClass>"
+    "    <ECEntityClass typeName='Entity'>"
+    "        <ECCustomAttributes>"
+    "            <Customattrib xmlns='CaseInsensitive.01.00.00' />"
+    "        </ECCustomAttributes>"
+    "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
+    "    </ECEntityClass>"
+    "</ECSchema>";
+    ExpectSchemaDeserializationSuccess(schemaXML, "Should successfully deserialize a 3.2 schema with 3 part versions");
+    }
+
+    {
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+    "<ECSchema schemaName='CaseInsensitive' version='01.00.00' displayLabel='Case Insensitive' description='Testing case sensitivity with struct names and custom attributes' alias='cs' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.3'>"
+    "    <ECCustomAttributeClass typeName='CustomAttrib' description='CustomAttribute' displayLabel='CA' />"
+    "    <ECStructClass typeName='MyStruct'>"
+    "        <ECProperty propertyName='Prop1' typeName='string' />"
+    "    </ECStructClass>"
+    "    <ECEntityClass typeName='Entity'>"
+    "        <ECCustomAttributes>"
+    "            <Customattrib xmlns='CaseInsensitive.01.00.00' />"
+    "        </ECCustomAttributes>"
+    "        <ECStructProperty propertyName='StructProp' typeName='Mystruct' />"
+    "    </ECEntityClass>"
+    "</ECSchema>";
+    ExpectSchemaDeserializationSuccess(schemaXML, "Should successfully deserialize a 3.3 schema with 3 part versions");
+    }
     }
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -240,7 +240,7 @@ TEST_F(SchemaValidatorTests, TestSchemasWithNameContainingDynamicApplyDynamicSch
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='DynamicFunkMachine' alias='fnk' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECCustomAttributes>"
-        "        <DynamicSchema xmlns='CoreCustomAttributes.01.00'/>"
+        "        <DynamicSchema xmlns='CoreCustomAttributes.01.00.00'/>"
         "    </ECCustomAttributes>"
         "</ECSchema>";
     InitContextWithSchemaXml(goodSchemaXml.c_str());
@@ -843,7 +843,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
 
             <ECEntityClass typeName="IParentElement" modifier="Abstract" description="IParentElement Description">
                 <ECCustomAttributes>
-                    <IsMixin xmlns="CoreCustomAttributes.1.0">
+                    <IsMixin xmlns="CoreCustomAttributes.1.0.0">
                         <AppliesToEntityClass>Element</AppliesToEntityClass>
                     </IsMixin>
                 </ECCustomAttributes>
@@ -851,7 +851,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
 
             <ECEntityClass typeName="ISubModeledElement" modifier="Abstract" description="IParentElement Description">
                 <ECCustomAttributes>
-                    <IsMixin xmlns="CoreCustomAttributes.1.0">
+                    <IsMixin xmlns="CoreCustomAttributes.1.0.0">
                         <AppliesToEntityClass>Element</AppliesToEntityClass>
                     </IsMixin>
                 </ECCustomAttributes>

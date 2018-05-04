@@ -349,6 +349,47 @@ ECObjectsStatus SchemaParseUtils::ParseStrengthType(StrengthType& strength, Utf8
     return ECObjectsStatus::Success;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                    05/2018
+//---------------+---------------+---------------+---------------+---------------+-----
+bool SchemaParseUtils::IsFullSchemaNameFormatValidForVersion(Utf8CP schemaFullName, uint32_t xmlMajorVersion, uint32_t xmlMinorVersion)
+    {
+    if (Utf8String::IsNullOrEmpty(schemaFullName))
+        return false;
+
+    Utf8CP firstDot = strchr (schemaFullName, '.');
+    if (Utf8String::IsNullOrEmpty(firstDot))
+        return false;
+
+    static const auto countDots = [](Utf8CP versionString) -> int
+        {
+        int count = 0;
+        const int maxVersionSize = 10; //If we somehow got a non terminated string the max a version can be is xx.xx.xx\0
+        int iter = 0;
+        while (versionString[iter] != '\0' && iter < maxVersionSize)
+            {
+            if (versionString[iter] == '.')
+                ++count;
+            ++iter;
+            }
+        return count;
+        };
+
+    SchemaKey key;
+    auto dots = countDots(firstDot+1);
+    if ((xmlMajorVersion >= 3 && xmlMinorVersion >= 2) || xmlMajorVersion > 3)
+        {
+        if (dots < 2)
+            return false;
+        }
+    else
+        {
+        if (dots < 1)
+            return false;
+        }
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

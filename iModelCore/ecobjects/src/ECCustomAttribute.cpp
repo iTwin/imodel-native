@@ -669,6 +669,12 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
             customAttributeClassNode->GetXmlString (customAttributeXmlString);
             InstanceReadStatus thisStatus = InstanceReadStatus::Success;
             ICustomAttributeDeserializerP CustomAttributeDeserializerP = CustomAttributeDeserializerManager::GetManager ().GetCustomDeserializer (customAttributeClassNode->GetName());
+            auto ns = customAttributeClassNode->GetNamespace();
+            if (!SchemaParseUtils::IsFullSchemaNameFormatValidForVersion(ns, _GetContainerSchema()->GetOriginalECXmlVersionMajor(), _GetContainerSchema()->GetOriginalECXmlVersionMinor()))
+                {
+                LOG.errorv("Custom attribute namespaces must contain a valid 3.2 full schema name in the form <schemaName>.RR.ww.mm");
+                return CustomAttributeReadStatus::InvalidCustomAttributes;
+                }
             if (CustomAttributeDeserializerP)
                 thisStatus = CustomAttributeDeserializerP->LoadCustomAttributeFromString (customAttributeInstance, *customAttributeClassNode, *context, schemaContext, *this);
             else
@@ -728,7 +734,7 @@ BeXmlWriterR xmlWriter
         else if (0 == BeStringUtilities::StricmpAscii(className, "DisplayUnitSpecificationAttr"))
             className = "DisplayUnitSpecification";
 
-        (*iter)->WriteToBeXmlNode(xmlWriter, className);
+        (*iter)->WriteToBeXmlNodeLatestVersion(xmlWriter, className);
         }
     xmlWriter.WriteElementEnd();
 

@@ -705,6 +705,13 @@ public:
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode(BeXmlWriterR xmlWriter, Utf8CP className);
 
+    //! Serializes the instance to an existing BeXmlWriter. This uses Full schemanames with 3 part versions instead of
+    //! the legacy 2 part versions
+    //! @param[in] xmlWriter The writer to write to.  It should be at the current point where to insert the instance
+    //! @param[in] className The overriding class name while serializing a schema
+    //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNodeLatestVersion(BeXmlWriterR xmlWriter, Utf8CP className);
+
     //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML.  If the instance
     //! returns true then the instance insures the ECValue returned for a property will properly set the "IsLoaded" flag in the ECValue.
     ECOBJECTS_EXPORT bool                       SaveOnlyLoadedPropertiesToXml() const;

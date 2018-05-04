@@ -3744,6 +3744,54 @@ struct  InstanceXmlWriter
             }
 
         /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                Kyle.Abramowitz                   05/2018
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        InstanceWriteStatus     WriteInstanceLatestVersion(IECInstanceCR ecInstance, bool writeInstanceId, Utf8CP className)
+            {
+            ECClassCR   ecClass = ecInstance.GetClass();
+            ECSchemaCR  ecSchema = ecClass.GetSchema();
+            Utf8String  fullSchemaName = ecSchema.GetFullSchemaName();
+
+            m_xmlWriter->WriteElementStart(className, fullSchemaName.c_str());
+
+            auto relationshipInstance = dynamic_cast<IECRelationshipInstanceCP> (&ecInstance);
+            // if relationship, need the attributes used in relationships.
+            if (nullptr != relationshipInstance)
+                {
+                if (!relationshipInstance->GetSource().IsValid())
+                    return InstanceWriteStatus::XmlWriteError;
+
+                Utf8String sourceClassName;
+                if (0 != relationshipInstance->GetSource()->GetClass().GetSchema().GetFullSchemaName().CompareTo(fullSchemaName))
+                    sourceClassName.Sprintf("%s:%s", relationshipInstance->GetSource()->GetClass().GetSchema().GetFullSchemaName().c_str(), relationshipInstance->GetSource()->GetClass().GetName().c_str());
+                else
+                    sourceClassName.Sprintf("%s", relationshipInstance->GetSource()->GetClass().GetName().c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_SOURCEINSTANCEID_ATTRIBUTE, relationshipInstance->GetSource()->GetInstanceId().c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_SOURCECLASS_ATTRIBUTE, sourceClassName.c_str());
+
+                if (!relationshipInstance->GetTarget().IsValid())
+                    return InstanceWriteStatus::XmlWriteError;
+
+                Utf8String targetClassName;
+                if (0 != relationshipInstance->GetTarget()->GetClass().GetSchema().GetFullSchemaName().CompareTo(fullSchemaName))
+                    targetClassName.Sprintf("%s:%s", relationshipInstance->GetTarget()->GetClass().GetSchema().GetFullSchemaName().c_str(), relationshipInstance->GetTarget()->GetClass().GetName().c_str());
+                else
+                    targetClassName.Sprintf("%s", relationshipInstance->GetTarget()->GetClass().GetName().c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_TARGETINSTANCEID_ATTRIBUTE, relationshipInstance->GetTarget()->GetInstanceId().c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_TARGETCLASS_ATTRIBUTE, targetClassName.c_str());
+                }
+
+            if (writeInstanceId)
+                m_xmlWriter->WriteAttribute(ECXML_ECINSTANCE_INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceIdForSerialization().c_str());
+
+            InstanceWriteStatus status = WritePropertyValuesOfClassOrStructArrayMember(ecClass, ecInstance, NULL);
+            if (status != InstanceWriteStatus::Success)
+                return status;
+            m_xmlWriter->WriteElementEnd();
+            return InstanceWriteStatus::Success;
+            }
+
+        /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Prasanna.Prakash                03/16
         +---------------+---------------+---------------+---------------+---------------+------*/
         InstanceWriteStatus     WriteInstance(IECInstanceCR ecInstance, bool writeInstanceId)
@@ -4289,6 +4337,16 @@ InstanceWriteStatus     IECInstance::WriteToBeXmlNode(BeXmlWriterR xmlWriter, Ut
     InstanceXmlWriter instanceWriter(&xmlWriter);
 
     return instanceWriter.WriteInstance(*this, false, className);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Kyle.Abramowitz                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+InstanceWriteStatus     IECInstance::WriteToBeXmlNodeLatestVersion(BeXmlWriterR xmlWriter, Utf8CP className)
+    {
+    InstanceXmlWriter instanceWriter(&xmlWriter);
+
+    return instanceWriter.WriteInstanceLatestVersion(*this, false, className);
     }
 
 /*---------------------------------------------------------------------------------**//**
