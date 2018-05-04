@@ -26,7 +26,9 @@ class RealityConversionTestFixture : public testing::Test
     public:
 		static Utf8CP s_TwoSpatialEntityJSONString;
         static Utf8CP s_EnterpriseStatJSONString;
+        static Utf8CP s_UserStatJSONString;
         static Utf8CP s_ManyEnterpriseStatsJSONString;
+        static Utf8CP s_ManyUserStatsJSONString;
         static Utf8CP s_RealityDataJSONString;
         static Utf8CP s_RealityDataExtendedJSONString;
 		static Utf8CP s_EntityDataSourceJSONString;
@@ -133,6 +135,30 @@ Utf8CP RealityConversionTestFixture::s_EnterpriseStatJSONString = R"(
     }
     )";
 
+	
+Utf8CP RealityConversionTestFixture::s_UserStatJSONString = R"(
+    {
+        "instances": [
+            {
+                "instanceId": "",
+                "schemaName": "S3MX",
+                "className": "UserStat",
+                "properties": {
+                    "TotalSize": 23,
+                    "NumberOfRealityData": 3,
+                    "UltimateId": "72adad30-c07c-465d-a1fe-2f2dfac950a4",
+                    "Date": "2018-05-03",
+                    "UserId": "a93639e4-62f2-45b8-aa15-0c7dd6364247",
+                    "UserEmail": "Anastasia.Doe@bentley.com",
+                    "ServiceId": "2581",
+                    "DataLocationGuid": "99999999-9999-9999-9999-999999999999"
+                },
+                "eTag": "ifZwDzBbgEqb8b0Z62MNmrQTysQ="
+            }
+        ]
+    }
+    )";	
+
 
 Utf8CP RealityConversionTestFixture::s_ManyEnterpriseStatsJSONString = R"(
     {
@@ -160,6 +186,45 @@ Utf8CP RealityConversionTestFixture::s_ManyEnterpriseStatsJSONString = R"(
                     "OrganizationId": "af3c43a9-1797-4765-a7c3-fd154f7b9ef9",
                     "UltimateId": "af3c43a9-1797-4765-a7c3-fd154f7b9ef9",
                     "UltimateSite": "af3c43a9-1797-4765-a7c3-fd154f7b9ef9"
+                },
+                "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
+            }
+        ]
+    }
+    )";
+
+Utf8CP RealityConversionTestFixture::s_ManyUserStatsJSONString = R"(
+    {
+        "instances": [
+            {
+                "instanceId": "",
+                "schemaName": "S3MX",
+                "className": "UserStat",
+                "properties": {
+                    "TotalSize": 1036659,
+                    "NumberOfRealityData": 1,
+                    "UltimateId": "72adad30-c07c-465d-a1fe-2f2dfac950a4",
+                    "Date": "2018-05-03",
+                    "UserId": "0247d6e1-2e5a-431f-9a05-684cac625d30",
+                    "UserEmail": "Anastasia.Doe2@bentley.com",
+                    "ServiceId": "2581",
+                    "DataLocationGuid": null
+                },
+                "eTag": "ifZwDzBbgEqb8b0Z62MNmrQTysQ="
+            },
+            {
+                "instanceId": "",
+                "schemaName": "S3MX",
+                "className": "UserStat",
+                "properties": {
+                    "TotalSize": 129834,
+                    "NumberOfRealityData": 3,
+                    "UltimateId": "72adad30-c07c-465d-a1fe-2f2dfac950a4",
+                    "Date": "2018-05-03",
+                    "UserId": "8a8c13b9-c4c0-49df-b02a-20f2cb6b09e6",
+                    "UserEmail": "Anastasia.Doe3@bentley.com",
+                    "ServiceId": "2581",
+                    "DataLocationGuid": "99999999-9999-9999-9999-999999999999"
                 },
                 "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
             }
@@ -225,7 +290,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "ModifiedTimestamp": "2017-02-01T22:26:06.414Z",
                     "CreatedTimestamp": "2017-02-01T22:26:06.414Z",
                     "LastAccessedTimestamp": "2017-02-01T22:26:06.414Z",
-                    "OwnedBy": "francis.boily@bentley.com",
+                    "OwnedBy": "Jane.Doe@bentley.com",
                     "Hidden": false,
                     "DelegatePermissions": false
                 },
@@ -286,7 +351,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "ModifiedTimestamp": "2017-02-01T22:26:06.414Z",
                     "CreatedTimestamp": "2017-02-01T22:26:06.414Z",
                     "LastAccessedTimestamp": "2017-02-01T22:26:06.414Z",
-                    "OwnedBy": "francis.boily@bentley.com",
+                    "OwnedBy": "Jane.Doe@bentley.com",
                     "Hidden": true,
                     "DelegatePermissions": true
                 },
@@ -355,7 +420,7 @@ Utf8CP RealityConversionTestFixture::s_RealityDataJSONString = R"(
                     "ModifiedTimestamp": "2017-02-01T22:26:06.414Z",
                     "Date": "2017-02-01T22:26:06.414Z",
                     "LastAccessedTimestamp": "2017-02-01T22:26:06.414Z",
-                    "OwnedBy": "francis.boily@bentley.com",
+                    "OwnedBy": "Jane.Doe@bentley.com",
                     "Hidden": false,
                     "DelegatePermissions": false,
                     "OriginService": "ServiceOrigin",
@@ -616,6 +681,54 @@ TEST_F(RealityConversionTestFixture, JsonToManyEnterpriseStats)
     ASSERT_EQ(stats[1].GetUltimateSite(), "af3c43a9-1797-4765-a7c3-fd154f7b9ef9");
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            04/2018
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToUserStat)
+    {
+    RealityDataUserStat stat;
+    StatusInt status = RealityConversionTools::JsonToUserStat(s_UserStatJSONString, stat);
+    ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(stat.GetNbRealityData(), 3);
+    ASSERT_EQ(stat.GetTotalSizeKB(), 23);
+    ASSERT_EQ(stat.GetUserId(), "a93639e4-62f2-45b8-aa15-0c7dd6364247");
+    ASSERT_EQ(stat.GetUserEmail(), "Anastasia.Doe@bentley.com");
+    ASSERT_EQ(stat.GetUltimateId(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
+    ASSERT_EQ(stat.GetServiceId(), "2581");
+    ASSERT_EQ(stat.GetDataLocationGuid(), "99999999-9999-9999-9999-999999999999");
+    ASSERT_STREQ(stat.GetDate().ToString().c_str(), "2018-05-03");
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            04/2018
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToManyUserStats)
+    {
+    bvector<RealityDataUserStat> stats;
+    StatusInt status = RealityConversionTools::JsonToUserStats(s_ManyUserStatsJSONString, stats);
+
+    ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(2, stats.size());
+
+    ASSERT_EQ(stats[0].GetNbRealityData(), 1);
+    ASSERT_EQ(stats[0].GetTotalSizeKB(), 1036659);
+    ASSERT_EQ(stats[0].GetUserId(), "0247d6e1-2e5a-431f-9a05-684cac625d30");
+    ASSERT_EQ(stats[0].GetUserEmail(), "Anastasia.Doe2@bentley.com");
+    ASSERT_EQ(stats[0].GetUltimateId(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
+    ASSERT_EQ(stats[0].GetServiceId(), "2581");
+    ASSERT_EQ(stats[0].GetDataLocationGuid(), "");
+    ASSERT_STREQ(stats[0].GetDate().ToString().c_str(), "2018-05-03");
+    
+    ASSERT_EQ(stats[1].GetNbRealityData(), 3);
+    ASSERT_EQ(stats[1].GetTotalSizeKB(), 129834);
+    ASSERT_EQ(stats[1].GetUserId(), "8a8c13b9-c4c0-49df-b02a-20f2cb6b09e6");
+    ASSERT_EQ(stats[1].GetUserEmail(), "Anastasia.Doe3@bentley.com");
+    ASSERT_EQ(stats[1].GetUltimateId(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
+    ASSERT_EQ(stats[1].GetServiceId(), "2581");
+    ASSERT_EQ(stats[1].GetDataLocationGuid(), "99999999-9999-9999-9999-999999999999");
+    ASSERT_STREQ(stats[1].GetDate().ToString().c_str(), "2018-05-03");
+
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                        Remi.Charbonneau                           05/2017
@@ -657,6 +770,47 @@ TEST_F(RealityConversionTestFixture, BadJsonToEnterpriseStat3)
 	ASSERT_EQ(ERROR, status);
 	}
 
+	
+//-------------------------------------------------------------------------------------
+// @bsimethod                        Remi.Charbonneau                           05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, BadJsonToUserStat)
+	{
+	RealityDataUserStat stat;
+	StatusInt status = RealityConversionTools::JsonToUserStat("BadlyformatedJSONString", stat);
+	ASSERT_EQ(ERROR, status);
+	}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                        Remi.Charbonneau                           05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, BadJsonToUserStat2)
+	{
+	RealityDataUserStat stat;
+	StatusInt status = RealityConversionTools::JsonToUserStat(R"({ "notInstances": { "child": "value" }})", stat);
+	ASSERT_EQ(ERROR, status);
+	}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                        Remi.Charbonneau                           05/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, BadJsonToUserStat3)
+	{
+	RealityDataUserStat stat;
+	StatusInt status = RealityConversionTools::JsonToUserStat(R"(
+		{
+			"instances": [
+				{
+					"Notproperties": {
+						"Id": "myid"
+					}
+				}
+			]
+		}
+		)", stat);
+	ASSERT_EQ(ERROR, status);
+	}
+	
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            04/2017
 //-------------------------------------------------------------------------------------
@@ -700,7 +854,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityData)
     ASSERT_EQ(realityData->GetModifiedDateTime().ToString(), "2017-02-01T22:26:06.414Z");
     ASSERT_EQ(realityData->GetLastAccessedDateTime().ToString(), "2017-02-01T22:26:06.414Z");
     ASSERT_EQ(realityData->GetCreationDateTime().ToString(), "2017-02-01T22:26:06.414Z");
-    ASSERT_EQ(realityData->GetOwner(), "francis.boily@bentley.com");
+    ASSERT_EQ(realityData->GetOwner(), "Jane.Doe@bentley.com");
     ASSERT_EQ(realityData->IsHidden(), false);
     ASSERT_EQ(realityData->HasDelegatePermissions(), false);
     ASSERT_EQ(realityData->HasApproximateFootprint(), false);
@@ -755,7 +909,7 @@ TEST_F(RealityConversionTestFixture, JsonToRealityDataExtended)
     ASSERT_EQ(realityData->GetModifiedDateTime().ToString(), "2017-02-01T22:26:06.414Z");
     ASSERT_EQ(realityData->GetLastAccessedDateTime().ToString(), "2017-02-01T22:26:06.414Z");
     ASSERT_EQ(realityData->GetCreationDateTime().ToString(), "2017-02-01T22:26:06.414Z");
-    ASSERT_EQ(realityData->GetOwner(), "francis.boily@bentley.com");
+    ASSERT_EQ(realityData->GetOwner(), "Jane.Doe@bentley.com");
     ASSERT_EQ(realityData->IsHidden(), false);
     ASSERT_EQ(realityData->HasDelegatePermissions(), false);
     ASSERT_EQ(realityData->GetOriginService(), "ServiceOrigin");

@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/RealityDataServiceExample.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -71,8 +71,8 @@ int main(int argc, char *argv[])
 
     RawServerResponse idResponse = RawServerResponse();
 
-    RealityDataByIdRequest* idReq = new RealityDataByIdRequest(id);
-    RealityDataPtr entity = RealityDataService::Request(*idReq, idResponse);
+    RealityDataByIdRequest idReq(id);
+    RealityDataPtr entity = RealityDataService::Request(idReq, idResponse);
 
     if (idResponse.status != RequestStatus::BADREQ)
         {
@@ -82,9 +82,9 @@ int main(int argc, char *argv[])
     else
         std::cout << "error retrieving provenance for id" << std::endl;
 
-    RealityDataRelationshipByProjectIdRequest* relationReq = new RealityDataRelationshipByProjectIdRequest(projectId);
+    RealityDataRelationshipByProjectIdRequest relationReq(projectId);
     RawServerResponse relationResponse = RawServerResponse();
-    bvector<RealityDataRelationshipPtr> relationships = RealityDataService::Request(*relationReq, relationResponse);
+    bvector<RealityDataRelationshipPtr> relationships = RealityDataService::Request(relationReq, relationResponse);
 
     if (relationResponse.status != RequestStatus::BADREQ)
         {
@@ -94,9 +94,9 @@ int main(int argc, char *argv[])
     else
         std::cout << "error retrieving relationships for id" << std::endl;
 
-    RealityDataFolderByIdRequest* folderReq = new RealityDataFolderByIdRequest(folderId);
+    RealityDataFolderByIdRequest folderReq(folderId);
     RawServerResponse folderResponse = RawServerResponse();
-    RealityDataFolderPtr folder = RealityDataService::Request(*folderReq, folderResponse);
+    RealityDataFolderPtr folder = RealityDataService::Request(folderReq, folderResponse);
 
     if (folderResponse.status != RequestStatus::BADREQ)
         {
@@ -106,9 +106,9 @@ int main(int argc, char *argv[])
     else
         std::cout << "error retrieving folder for id" << std::endl;
 
-    RealityDataDocumentByIdRequest* documentReq = new RealityDataDocumentByIdRequest(documentId);
+    RealityDataDocumentByIdRequest documentReq(documentId);
     RawServerResponse documentResponse = RawServerResponse();
-    RealityDataDocumentPtr document = RealityDataService::Request(*documentReq, documentResponse);
+    RealityDataDocumentPtr document = RealityDataService::Request(documentReq, documentResponse);
 
     if (documentResponse.status != RequestStatus::BADREQ)
         {
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
     else
         std::cout << "error retrieving document for id" << std::endl;
 
-    RealityDataDocumentContentByIdRequest* contentRequest = new RealityDataDocumentContentByIdRequest(documentId);
+    RealityDataDocumentContentByIdRequest contentRequest(documentId);
     
     WChar exePath[MAX_PATH];
     GetModuleFileNameW(NULL, exePath, MAX_PATH);
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
     file.Create(fileName.GetName(), true);
 
     RawServerResponse contentResponse = RawServerResponse();
-    RealityDataService::Request(*contentRequest, &file, contentResponse);
+    RealityDataService::Request(contentRequest, &file, contentResponse);
     file.Close();
     
     bvector<RDSFilter> filter1 = bvector<RDSFilter>();
@@ -147,13 +147,13 @@ int main(int argc, char *argv[])
     // results may differ from their intended goal
     RDSFilter filters = RealityDataFilterCreator::GroupFiltersOR(filter2);
 
-    RealityDataPagedRequest* filteredRequest = new RealityDataPagedRequest();
+    RealityDataPagedRequest filteredRequest;
 
-    filteredRequest->SetFilter(filters);
-    filteredRequest->SortBy(RealityDataField::ModifiedTimestamp, true);
+    filteredRequest.SetFilter(filters);
+    filteredRequest.SortBy(RealityDataField::ModifiedTimestamp, true);
 
-    RawServerResponse filteredResponse = RawServerResponse();
-    bvector<RealityDataPtr> filteredSpatialEntities = RealityDataService::Request(*filteredRequest, filteredResponse);
+    RawServerResponse filteredResponse;
+    bvector<RealityDataPtr> filteredSpatialEntities = RealityDataService::Request(filteredRequest, filteredResponse);
 
     if (filteredResponse.status != RequestStatus::BADREQ)
         {
@@ -163,9 +163,9 @@ int main(int argc, char *argv[])
     else
         std::cout << "error retrieving spatial entities with filter" << std::endl;
 
-    RealityDataListByUltimateIdPagedRequest* organizationReq = new RealityDataListByUltimateIdPagedRequest(organizationId);
+    RealityDataListByUltimateIdPagedRequest organizationReq(organizationId);
     RawServerResponse organizationResponse = RawServerResponse();
-    bvector<RealityDataPtr> organizationVec = RealityDataService::Request(*organizationReq, organizationResponse);
+    bvector<RealityDataPtr> organizationVec = RealityDataService::Request(organizationReq, organizationResponse);
 
     if (organizationResponse.status != RequestStatus::BADREQ)
         {
@@ -176,9 +176,9 @@ int main(int argc, char *argv[])
         std::cout << "error retrieving spatial entities with organization id" << std::endl;
 
 
-    RealityDataRelationshipByProjectIdPagedRequest* relationByIdReq = new RealityDataRelationshipByProjectIdPagedRequest(projectId);
+    RealityDataRelationshipByProjectIdPagedRequest relationByIdReq(projectId);
     RawServerResponse relationResponse2 = RawServerResponse();
-    bvector<RealityDataRelationshipPtr> relationVec = RealityDataService::Request(*relationByIdReq, relationResponse2);
+    bvector<RealityDataRelationshipPtr> relationVec = RealityDataService::Request(relationByIdReq, relationResponse2);
 
     if (relationResponse2.status != RequestStatus::BADREQ)
         {

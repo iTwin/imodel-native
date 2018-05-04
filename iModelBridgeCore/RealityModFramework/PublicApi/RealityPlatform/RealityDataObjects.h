@@ -607,5 +607,57 @@ protected:
     DateTime   m_date;
     };
    
+struct RealityDataUserStat
+    {
+public:
+    //! Create invalid data.
+    REALITYDATAPLATFORM_EXPORT RealityDataUserStat();
+
+    //! Copy constructor and assignement operator.
+    REALITYDATAPLATFORM_EXPORT RealityDataUserStat(const RealityDataUserStat& object);
+    REALITYDATAPLATFORM_EXPORT RealityDataUserStat& operator=(const RealityDataUserStat& object);
+
+    //! number of entries belonging to the organisation
+    REALITYDATAPLATFORM_EXPORT uint64_t GetNbRealityData() const;
+    REALITYDATAPLATFORM_EXPORT void SetNbRealityData(uint64_t nbRealityData);
+
+    //! total size of the organisations data (at time of last calculation)
+    REALITYDATAPLATFORM_EXPORT uint64_t GetTotalSizeKB() const;
+    REALITYDATAPLATFORM_EXPORT void SetTotalSizeKB(uint64_t totalSizeKB);
+
+    //! UserId 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUserId() const;
+    REALITYDATAPLATFORM_EXPORT void SetUserId(Utf8CP userId);
+	
+    //! User Mail
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUserEmail() const;
+    REALITYDATAPLATFORM_EXPORT void SetUserEmail(Utf8CP userEmail);
+	
+    //! UltimateId 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUltimateId() const;
+    REALITYDATAPLATFORM_EXPORT void SetUltimateId(Utf8CP ultimateId);
+
+    //! Data Location GUID
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDataLocationGuid() const;
+    REALITYDATAPLATFORM_EXPORT void SetDataLocationGuid(Utf8CP dataLocationGuid);
+	
+    //! Service ID
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServiceId() const;
+    REALITYDATAPLATFORM_EXPORT void SetServiceId(Utf8CP originService);	
+	
+	//! Date
+    REALITYDATAPLATFORM_EXPORT DateTimeCR GetDate() const;
+    REALITYDATAPLATFORM_EXPORT void SetDate(DateTimeCR date);
+
+protected:
+    uint64_t   m_nbRealityData;
+    uint64_t   m_totalSizeKB;
+    Utf8String m_userId;
+    Utf8String m_userEmail;	
+    Utf8String m_ultimateId;
+    Utf8String m_dataLocationGuid;
+	Utf8String m_serviceId;
+    DateTime   m_date;
+    };   
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

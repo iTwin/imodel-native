@@ -95,6 +95,52 @@ private:
 
     DateTime m_date;
     };
+	
+//=====================================================================================
+//! @bsiclass                                         Donald.Morissette         03/2017
+//! RealityDataUserStat
+//! This class returns the user stats  currently used.
+//=====================================================================================
+struct RealityDataUserStatRequest : public RealityDataUrl
+    {
+public:
+    // Only identifier is required to retreive RealityData
+    REALITYDATAPLATFORM_EXPORT RealityDataUserStatRequest(Utf8StringCR ultimateId, DateTime date = DateTime::GetCurrentTimeUtc()) { m_validRequestString = false; m_id = ultimateId; m_date = date;}
+
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    RealityDataUserStatRequest() {}
+    DateTime m_date;
+    };
+
+//=====================================================================================
+//! @bsiclass                                         Donald.Morissette         03/2017
+//! RealityDataAllUserStatsRequest
+//! This class returns the size in KB currently used.
+//=====================================================================================
+struct RealityDataAllUserStatsRequest : public RealityDataUrl
+    {
+public:
+    // Only identifier is required to retreive RealityData
+    REALITYDATAPLATFORM_EXPORT RealityDataAllUserStatsRequest(DateTime date) 
+        { 
+        m_validRequestString = false; 
+        m_date = date;
+        }
+    REALITYDATAPLATFORM_EXPORT RealityDataAllUserStatsRequest() 
+        {
+        m_validRequestString = false; 
+        m_date = DateTime::GetCurrentTimeUtc();
+        }
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+
+    DateTime m_date;
+    };	
 
 //=====================================================================================
 //! Overview:
@@ -1044,6 +1090,11 @@ public:
     //! Returns a list of EnterpriseStat objects for every organization.
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataEnterpriseStat> Request(const RealityDataAllEnterpriseStatsRequest& request, RawServerResponse& rawResponse);
 
+	    //! Returns the user stats for the specify Enterprise, or the default one.
+    REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataUserStatRequest& request, RealityDataUserStat& statObject, RawServerResponse& rawResponse);
+
+    //! Returns a list of UserStat objects for every organization.
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataUserStat> Request(const RealityDataAllUserStatsRequest& request, RawServerResponse& rawResponse);
 
     //! Returns the list of all documents in a repo
     REALITYDATAPLATFORM_EXPORT static bvector<bpair<WString, uint64_t>> Request(const AllRealityDataByRootId& request, RawServerResponse& rawResponse);

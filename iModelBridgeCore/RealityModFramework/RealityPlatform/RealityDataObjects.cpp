@@ -866,3 +866,62 @@ void RealityDataEnterpriseStat::SetUltimateSite(Utf8CP ultimateSite) { m_ultimat
 
 DateTimeCR RealityDataEnterpriseStat::GetDate() const { return m_date; }
 void RealityDataEnterpriseStat::SetDate(DateTimeCR date) { m_date = date; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                Spencer.Mason         	         12/2017
+//-------------------------------------------------------------------------------------
+RealityDataUserStat::RealityDataUserStat(): m_totalSizeKB(0), m_nbRealityData(0){}
+
+RealityDataUserStat::RealityDataUserStat(const RealityDataUserStat& object)
+    {
+    if (this != &object)
+        {
+
+        m_totalSizeKB = object.m_totalSizeKB;
+        m_nbRealityData = object.m_nbRealityData;
+        m_userId = object.m_userId;
+        m_userEmail = object.m_userEmail;
+        m_ultimateId = object.m_ultimateId;
+        m_dataLocationGuid = object.m_dataLocationGuid;
+        m_serviceId = object.m_serviceId;
+        m_date = object.m_date;
+        }
+    }
+
+RealityDataUserStat& RealityDataUserStat::operator=(const RealityDataUserStat& object)
+    {
+    m_totalSizeKB = object.m_totalSizeKB;
+    m_nbRealityData = object.m_nbRealityData;
+    m_userId = object.m_userId;
+    m_userEmail = object.m_userEmail;
+    m_ultimateId = object.m_ultimateId;
+    m_dataLocationGuid = object.m_dataLocationGuid;
+    m_serviceId = object.m_serviceId;
+    m_date = object.m_date;
+
+    return *this;
+    }
+
+uint64_t RealityDataUserStat::GetTotalSizeKB() const { return m_totalSizeKB; }
+void RealityDataUserStat::SetTotalSizeKB(uint64_t totalSizeKB) { m_totalSizeKB = totalSizeKB; }
+
+uint64_t RealityDataUserStat::GetNbRealityData() const { return m_nbRealityData; }
+void RealityDataUserStat::SetNbRealityData(uint64_t nbRealityData) { m_nbRealityData = nbRealityData; }
+
+Utf8StringCR RealityDataUserStat::GetUserId() const { return m_userId; }
+void RealityDataUserStat::SetUserId(Utf8CP userId) { m_userId = userId; }
+
+Utf8StringCR RealityDataUserStat::GetUserEmail() const { return m_userEmail; }
+void RealityDataUserStat::SetUserEmail(Utf8CP userEmail) { m_userEmail = userEmail; }
+
+Utf8StringCR RealityDataUserStat::GetUltimateId() const { return m_ultimateId; }
+void RealityDataUserStat::SetUltimateId(Utf8CP ultimateId) { m_ultimateId = ultimateId; }
+
+Utf8StringCR RealityDataUserStat::GetDataLocationGuid() const { return m_dataLocationGuid; }
+void RealityDataUserStat::SetDataLocationGuid(Utf8CP dataLocationGuid) { m_dataLocationGuid = dataLocationGuid; }
+
+Utf8StringCR RealityDataUserStat::GetServiceId() const { return m_serviceId; }
+void RealityDataUserStat::SetServiceId(Utf8CP serviceId) { m_serviceId = serviceId; }
+
+DateTimeCR RealityDataUserStat::GetDate() const { return m_date; }
+void RealityDataUserStat::SetDate(DateTimeCR date) { m_date = date; }

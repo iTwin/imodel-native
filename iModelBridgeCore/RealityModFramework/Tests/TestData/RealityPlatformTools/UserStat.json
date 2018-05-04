@@ -1,0 +1,20 @@
+{
+    "instances": [
+        {
+            "instanceId": "",
+            "schemaName": "S3MX",
+            "className": "UserStat",
+            "properties": {
+                "TotalSize": 23,
+                "NumberOfRealityData": 3,
+                "UltimateId": "72adad30-c07c-465d-a1fe-2f2dfac950a4",
+                "Date": "2018-05-03",
+                "UserId": "a93639e4-62f2-45b8-aa15-0c7dd6364247",
+                "UserEmail": "Anastasia.Doe@bentley.com",
+                "ServiceId": "2581",
+                "DataLocationGuid": "99999999-9999-9999-9999-999999999999"
+            },
+            "eTag": "ifZwDzBbgEqb8b0Z62MNmrQTysQ="
+        }
+    ]
+}

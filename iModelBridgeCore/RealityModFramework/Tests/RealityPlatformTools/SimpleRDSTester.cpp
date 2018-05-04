@@ -119,12 +119,32 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatTest)
         }));
 
     ConnectedRealityDataEnterpriseStat stat = ConnectedRealityDataEnterpriseStat();
-    ConnectedResponse response = stat.GetStats();
+    ConnectedResponse response = stat.GetEnterpriseStats();
     
     EXPECT_TRUE(response.simpleSuccess);
     EXPECT_EQ(stat.GetUltimateId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
     }
 
+//=====================================================================================
+//! @bsimethod                                  Alain.Robert                  04/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataUserStatTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\UserStat.json");
+        }));
+
+    ConnectedRealityDataUserStat stat = ConnectedRealityDataUserStat();
+    ConnectedResponse response = stat.GetUserStats();
+    
+    EXPECT_TRUE(response.simpleSuccess);
+    EXPECT_EQ(stat.GetUltimateId(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
+    }
+	
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  02/2018
 //=====================================================================================
@@ -150,7 +170,7 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatTest)
 //=====================================================================================
 TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatCloneTest)
     {
-    RealityDataEnterpriseStat stat = RealityDataEnterpriseStat();
+    RealityDataEnterpriseStat stat;
 
     stat.SetNbRealityData(100);
     stat.SetTotalSizeKB(1000);
@@ -169,6 +189,33 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataEnterpriseStatCloneTest)
     EXPECT_EQ(stat.GetDate(), cStat.GetDate());
     }
 
+//=====================================================================================
+//! @bsimethod                                  Alain.Robert                  04/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataUserStatCloneTest)
+    {
+    RealityDataUserStat stat;
+
+    stat.SetNbRealityData(100);
+    stat.SetTotalSizeKB(1000);
+    stat.SetUserId("usrID");
+    stat.SetUserEmail("usrEmail");
+    stat.SetUltimateId("ultID");
+	stat.SetServiceId("4686");
+    stat.SetDataLocationGuid("dataGuid");
+    stat.SetDate(DateTime::GetCurrentTimeUtc());
+
+    ConnectedRealityDataUserStat cStat(stat);
+
+    EXPECT_EQ(stat.GetNbRealityData(), cStat.GetNbRealityData());
+    EXPECT_EQ(stat.GetTotalSizeKB(), cStat.GetTotalSizeKB());
+    EXPECT_EQ(stat.GetUserId(), cStat.GetUserId());
+    EXPECT_EQ(stat.GetUserEmail(), cStat.GetUserEmail());
+    EXPECT_EQ(stat.GetUltimateId(), cStat.GetUltimateId());
+    EXPECT_EQ(stat.GetServiceId(), cStat.GetServiceId());
+    EXPECT_EQ(stat.GetDataLocationGuid(), cStat.GetDataLocationGuid());
+    EXPECT_EQ(stat.GetDate(), cStat.GetDate());
+    }
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  10/2017
 //=====================================================================================

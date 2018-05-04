@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/RealityPlatformAPI.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -113,6 +113,9 @@ REALITYPLATFORM_REF_COUNTED_PTR(RealityDataExtended)
 
 REALITYPLATFORM_TYPEDEFS(ConnectedRealityDataEnterpriseStat)
 REALITYPLATFORM_REF_COUNTED_PTR(ConnectedRealityDataEnterpriseStat)
+
+REALITYPLATFORM_TYPEDEFS(ConnectedRealityDataUserStat)
+REALITYPLATFORM_REF_COUNTED_PTR(ConnectedRealityDataUserStat)
 
 REALITYPLATFORM_TYPEDEFS(ConnectedRealityDataRelationship)
 REALITYPLATFORM_REF_COUNTED_PTR(ConnectedRealityDataRelationship)

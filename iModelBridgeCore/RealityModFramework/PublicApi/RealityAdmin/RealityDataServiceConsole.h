@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityAdmin/RealityDataServiceConsole.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -49,6 +49,9 @@ enum class Command
     Stat,
     AllStats,
     AllStatsJson,
+    UserStat,
+    AllUserStats,
+    AllUserStatsJson,	
     Download,
     Upload,
     FileAccess,
@@ -92,9 +95,13 @@ private:
     void ListRoots();
     void ChangeDir();
     void EnterpriseStat();
+    void UserStat();
     void AllEnterpriseStats();
     void AllEnterpriseStatsGen(bool displayAsJson);
     void AllEnterpriseStatsJson();
+    void AllUserStats();
+    void AllUserStatsGen(bool displayAsJson);
+    void AllUserStatsJson();	
     void Download();
     void Upload();
     void Details();
@@ -114,7 +121,8 @@ private:
     void ForceMassUnlink();
     Utf8String MakeBuddiCall(int region = 0);
 
-    void DisplayStats(const bvector<RealityDataEnterpriseStat>& stats, const DateTime& curInfoDate);
+    void DisplayEnterpriseStats(const bvector<RealityDataEnterpriseStat>& stats, const DateTime& curInfoDate);
+    void DisplayUserStats(const bvector<RealityDataUserStat>& stats, const DateTime& curInfoDate);
     void DisplayInfo(Utf8StringCR msg, DisplayOption option= DisplayOption::Info);
 
 private:    

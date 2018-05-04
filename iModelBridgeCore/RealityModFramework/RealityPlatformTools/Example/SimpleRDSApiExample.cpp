@@ -59,7 +59,7 @@ void Inspect()
 
     ConnectedRealityDataEnterpriseStat stats = ConnectedRealityDataEnterpriseStat();
 
-    response = stats.GetStats();
+    response = stats.GetEnterpriseStats();
 
     std::cout << "total size on server: " << stats.GetTotalSizeKB() << "KB" << std::endl;
     }

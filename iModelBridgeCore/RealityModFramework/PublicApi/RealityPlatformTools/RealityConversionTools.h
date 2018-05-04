@@ -71,10 +71,16 @@ public:
     //! To retreive EnterpriseStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToEnterpriseStat(Utf8CP data, RealityDataEnterpriseStat& statObject);
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToEnterpriseStat(Json::Value properties, RealityDataEnterpriseStat& statObject);
-
-
+	
     //! To retreive many EnterpriseStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToEnterpriseStats(Utf8CP data, bvector<RealityDataEnterpriseStat>& statObjects);
+
+    //! To retreive EnterpriseStat from a JSON fragment 
+    REALITYDATAPLATFORM_EXPORT static StatusInt JsonToUserStat(Utf8CP data, RealityDataUserStat& statObject);
+    REALITYDATAPLATFORM_EXPORT static StatusInt JsonToUserStat(Json::Value properties, RealityDataUserStat& statObject);
+
+    //! To retreive many UserStat from a JSON fragment 
+    REALITYDATAPLATFORM_EXPORT static StatusInt JsonToUserStats(Utf8CP data, bvector<RealityDataUserStat>& statObjects);
 
     //! Utility function to extract a SpatialEntity from a SpatialEntityWithDetailsView JSON fragment.
     //! They take the JSON value as input and creates the SpatialEntity or Reality Data object.    

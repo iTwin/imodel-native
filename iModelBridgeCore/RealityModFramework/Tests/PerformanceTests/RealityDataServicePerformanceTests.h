@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/PerformanceTests/RealityDataServicePerformanceTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,6 +39,7 @@ public:
         int64_t m_deleteRelationship;
         int64_t m_deleteRealityData;
         int64_t m_enterpriseStats;
+        int64_t m_userStats;
         };
 
 
@@ -70,6 +71,7 @@ public:
     StatusInt GetRealityDataWithPolygon(timeStats& theTimeStats);
     StatusInt GetRealityData(timeStats& theTimeStats);
     StatusInt EnterpriseStatTest(timeStats& theTimeStats);
+    StatusInt UserStatTest(timeStats& theTimeStats);
     StatusInt GetFolderTest(timeStats& theTimeStats);
 
     

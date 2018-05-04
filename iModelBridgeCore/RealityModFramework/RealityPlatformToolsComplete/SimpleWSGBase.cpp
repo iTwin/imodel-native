@@ -73,5 +73,7 @@ Utf8String WSGRequestManager::MakeBuddiCall(WString serviceName)
 
     CCApi_FreeApi(api);
 
-    return Utf8String(charServer);
+	Utf8String returnedString(charServer);
+	delete [] charServer;
+    return returnedString;
     }

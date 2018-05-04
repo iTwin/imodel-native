@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/WSGServicesExample.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -145,10 +145,10 @@ int main(int argc, char *argv[])
     objectId.ReplaceAll("/","~2F");
 
     versionResponse = RawServerResponse();
-    WSGObjectRequest* objRequest = new WSGObjectRequest(server.GetServerName(), server.GetVersion(versionResponse), repos[0], subNodes[0].GetSchemaName(), subNodes[0].GetECClassName(), objectId);
+    WSGObjectRequest objRequest(server.GetServerName(), server.GetVersion(versionResponse), repos[0], subNodes[0].GetSchemaName(), subNodes[0].GetECClassName(), objectId);
 
     RawServerResponse objResponse = RawServerResponse();
-    WSGRequest::GetInstance().PerformRequest(*objRequest, objResponse, 0);
+    WSGRequest::GetInstance().PerformRequest(objRequest, objResponse, 0);
 
     std::cout << "Object JSON :" << std::endl;
     std::cout << objResponse.body << std::endl << std::endl;

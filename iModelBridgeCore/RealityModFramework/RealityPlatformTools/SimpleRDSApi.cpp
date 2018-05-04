@@ -71,14 +71,14 @@ ConnectedResponse ConnectedNavNode::GetChildNodes(bvector<ConnectedNavNode>& nod
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityDataEnterpriseStat::GetStats()
+ConnectedResponse ConnectedRealityDataEnterpriseStat::GetEnterpriseStats()
     {
     ConnectedResponse response = ConnectedResponse();
-    RealityDataEnterpriseStatRequest* ptt = new RealityDataEnterpriseStatRequest("");
+    RealityDataEnterpriseStatRequest ptt("");
 
     RawServerResponse rawResponse = RawServerResponse();
     RealityDataEnterpriseStat stat;
-    RealityDataService::Request(*ptt, stat, rawResponse);
+    RealityDataService::Request(ptt, stat, rawResponse);
     Clone(stat);
 
     response.Clone(rawResponse);
@@ -94,6 +94,32 @@ ConnectedRealityDataEnterpriseStat::ConnectedRealityDataEnterpriseStat(const Rea
     Clone(stat);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2018
+//-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityDataUserStat::GetUserStats()
+    {
+    ConnectedResponse response = ConnectedResponse();
+    RealityDataUserStatRequest ptt("");
+
+    RawServerResponse rawResponse = RawServerResponse();
+    RealityDataUserStat stat;
+    RealityDataService::Request(ptt, stat, rawResponse);
+    Clone(stat);
+
+    response.Clone(rawResponse);
+
+    return response;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                04/2018
+//-------------------------------------------------------------------------------------
+ConnectedRealityDataUserStat::ConnectedRealityDataUserStat(const RealityDataUserStat& stat)
+    {
+    Clone(stat);
+    }	
+	
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
@@ -126,6 +152,21 @@ void ConnectedRealityDataEnterpriseStat::Clone(const RealityDataEnterpriseStat& 
     m_date = stat.GetDate();
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+void ConnectedRealityDataUserStat::Clone(const RealityDataUserStat& stat)
+    {
+    m_nbRealityData = stat.GetNbRealityData();
+    m_totalSizeKB = stat.GetTotalSizeKB();
+    m_userId = stat.GetUserId();
+    m_userEmail = stat.GetUserEmail();
+    m_ultimateId = stat.GetUltimateId();
+    m_serviceId = stat.GetServiceId();
+    m_dataLocationGuid = stat.GetDataLocationGuid();
+    m_date = stat.GetDate();
+    }	
+	
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------

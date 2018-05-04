@@ -291,6 +291,31 @@ void RealityDataAllEnterpriseStatsRequest::_PrepareHttpRequestStringAndPayload()
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
+void RealityDataUserStatRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    RealityDataUrl::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/UserStat/");
+    if(!m_encodedId.empty())
+        {
+        Utf8String date = Utf8PrintfString("%d-%d-%d",m_date.GetYear(), m_date.GetMonth(), m_date.GetDay());
+        m_httpRequestString.append(Utf8PrintfString("%s~2F%s", date, m_encodedId));
+        }
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+void RealityDataAllUserStatsRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    RealityDataUrl::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/UserStat?extended=true");
+    Utf8String date = Utf8PrintfString("&$filter=Date+eq+\'%d-%d-%d\'",m_date.GetYear(), m_date.GetMonth(), m_date.GetDay());
+    m_httpRequestString.append(date);
+    }	
+	
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void RealityDataByIdRequest::_PrepareHttpRequestStringAndPayload() const
     {
     RealityDataUrl::_PrepareHttpRequestStringAndPayload();
@@ -1925,6 +1950,25 @@ void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request
 
     RealityConversionTools::JsonToEnterpriseStat(rawResponse.body.c_str(), statObject);
     }
+	
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+void RealityDataService::Request(const RealityDataUserStatRequest& request, RealityDataUserStat& statObject, RawServerResponse& rawResponse)
+    {
+    if (!RealityDataService::AreParametersSet())
+        {
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
+        return;
+        }
+
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request));
+
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("RealityDataUserStatRequest failed with response", rawResponse);
+
+    RealityConversionTools::JsonToUserStat(rawResponse.body.c_str(), statObject);
+    }	
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
@@ -1951,6 +1995,31 @@ bvector<RealityDataEnterpriseStat>  RealityDataService::Request(const RealityDat
     return entities;
     }
     
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+bvector<RealityDataUserStat>  RealityDataService::Request(const RealityDataAllUserStatsRequest& request, RawServerResponse& rawResponse)
+    {
+
+    bvector<RealityDataUserStat> entities;
+    if(!RealityDataService::AreParametersSet())
+        {
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
+        return entities;
+        }
+
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request));
+
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("RealityDataAllUserStatsRequest failed with response", rawResponse);
+    else
+        {
+        RealityConversionTools::JsonToUserStats(rawResponse.body.c_str(), entities);
+        }
+
+    return entities;
+    }	
+	
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================

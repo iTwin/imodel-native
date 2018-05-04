@@ -584,7 +584,26 @@ TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestBadRequest)
 	s_realityDataService->Request(requestUT, stat, rawResponse);
 	EXPECT_EQ(rawResponse.status, ::BADREQ);
 	}
+	
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              04/2018
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataUserStatRequestBadRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataUserStatRequest failed with response"), _)).Times(1);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+		response.status = ::BADREQ;
+		}));
 
+	RealityDataUserStatRequest requestUT("RealityDataID");
+	RawServerResponse rawResponse{};
+
+    RealityDataUserStat stat {};
+	s_realityDataService->Request(requestUT, stat, rawResponse);
+	EXPECT_EQ(rawResponse.status, ::BADREQ);
+	}
+	
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================
@@ -921,6 +940,36 @@ TEST_F(RealityDataServiceFixture, RealityDataEnterpriseStatRequestGoodRequest)
     
 	}
 
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              04/2018
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataUserStatRequestGoodRequest)
+	{
+	EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataUserStatRequest failed with response"), _)).Times(0);
+	ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+		{
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/UserStat/2017-6-6~2F72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a4");
+		response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\UserStat.json");
+		}));
+
+    DateTime dt = DateTime::GetCurrentTimeUtc();
+    DateTime::FromString(dt, "2017-06-06");
+	RealityDataUserStatRequest requestUT("72adad30-c07c-465d-a1fe-2f2dfac950a4", dt);
+
+    EXPECT_STREQ(requestUT.GetId().c_str(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
+
+	RawServerResponse rawResponse{};
+    RealityDataUserStat stats;
+
+	s_realityDataService->Request(requestUT, stats, rawResponse);
+	EXPECT_EQ(rawResponse.status, RequestStatus::OK);
+    EXPECT_EQ(stats.GetUltimateId(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
+    
+	}
+	
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
 //=====================================================================================

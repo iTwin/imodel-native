@@ -76,6 +76,12 @@ void RealityDataConsole::InterpretCommand(bool emptyDisplayMessage)
         m_lastCommand = Command::AllStats;
     else if (args[0].EqualsI("allstatsjson"))
         m_lastCommand = Command::AllStatsJson;
+    else if (args[0].EqualsI("userstat"))
+        m_lastCommand = Command::UserStat;
+    else if (args[0].EqualsI("alluserstats"))
+        m_lastCommand = Command::AllUserStats;
+    else if (args[0].EqualsI("alluserstatsjson"))
+        m_lastCommand = Command::AllUserStatsJson;	
     else if (args[0].EqualsI("cancel"))
         m_lastCommand = Command::Cancel;
     else if (args[0].EqualsI("details"))
@@ -148,7 +154,10 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::ChangeDir, &RealityDataConsole::ChangeDir);
     m_functionMap.Insert(Command::Stat, &RealityDataConsole::EnterpriseStat);
     m_functionMap.Insert(Command::AllStats, &RealityDataConsole::AllEnterpriseStats);
-    m_functionMap.Insert(Command::AllStatsJson, &RealityDataConsole::AllEnterpriseStatsJson);
+    m_functionMap.Insert(Command::AllStatsJson, &RealityDataConsole::AllEnterpriseStatsJson);	
+    m_functionMap.Insert(Command::UserStat, &RealityDataConsole::UserStat);
+    m_functionMap.Insert(Command::AllUserStats, &RealityDataConsole::AllUserStats);	
+    m_functionMap.Insert(Command::AllUserStatsJson, &RealityDataConsole::AllUserStatsJson);
     m_functionMap.Insert(Command::Details, &RealityDataConsole::Details);
     m_functionMap.Insert(Command::Download, &RealityDataConsole::Download);
     m_functionMap.Insert(Command::Upload, &RealityDataConsole::Upload);
@@ -368,6 +377,9 @@ void RealityDataConsole::Usage()
     DisplayInfo("  Stat                show enterprise statistics\n");
     DisplayInfo("  AllStats            show statistics for all enterprises , for a given date (requires priviledge access)\n");
     DisplayInfo("  AllStatsJson        show statistics for all enterprises in raw JSON format , for a given date (requires priviledge access)\n");
+    DisplayInfo("  UserStat            show enterprise user statistics\n");
+    DisplayInfo("  AllUserStats        show user statistics for all enterprises , for a given date (requires priviledge access)\n");
+    DisplayInfo("  AllUserStatsJson    show user statistics for all enterprises in raw JSON format , for a given date (requires priviledge access)\n");
     DisplayInfo("  Download            Download files from the current location on the server\n");
     DisplayInfo("  Upload              Upload files to the server\n");
     DisplayInfo("  FileAccess <opt>    Prints the URL to use if you wish to request an azure file access (option \"w\" for write access or \"r\" for read access)\n");
@@ -482,7 +494,9 @@ Utf8String RealityDataConsole::MakeBuddiCall(int region)
     
     CCApi_FreeApi(api);
 
-    return Utf8String(charServer);
+	Utf8String returnedString(charServer);
+	delete [] charServer;
+    return returnedString;
     }
 
 void RealityDataConsole::ConfigureServer()
@@ -949,7 +963,7 @@ void RealityDataConsole::EnterpriseStat()
     }
 
 
-void RealityDataConsole::DisplayStats(const bvector<RealityDataEnterpriseStat>& stats, const DateTime& curInfoDate)
+void RealityDataConsole::DisplayEnterpriseStats(const bvector<RealityDataEnterpriseStat>& stats, const DateTime& curInfoDate)
     {
     DisplayInfo(Utf8PrintfString("Enterprise statistics (%4u-%02u-%02u): \n", curInfoDate.GetYear(),
                                                                               curInfoDate.GetMonth(),
@@ -1057,7 +1071,7 @@ void RealityDataConsole::AllEnterpriseStatsGen(bool displayAsJson)
                 DisplayInfo("\n");
                 }
             else
-                DisplayStats(stats, currentDate);
+                DisplayEnterpriseStats(stats, currentDate);
             }
     
 
@@ -1092,9 +1106,178 @@ void RealityDataConsole::AllEnterpriseStatsGen(bool displayAsJson)
             DisplayInfo("\n");
             }
         else
-            DisplayStats(stats, curInfoDate);
+            DisplayEnterpriseStats(stats, curInfoDate);
         }
     }
+	
+	
+void RealityDataConsole::UserStat()
+    {
+    RawServerResponse rawResponse = RawServerResponse();
+    RealityDataUserStatRequest* ptt = new RealityDataUserStatRequest("");
+    RealityDataUserStat stat;
+    RealityDataService::Request(*ptt, stat, rawResponse);
+
+    DisplayInfo("User statistics: \n");
+    DisplayInfo(Utf8PrintfString("   NbRealityData : %lu\n", stat.GetNbRealityData()));
+    DisplayInfo(Utf8PrintfString("   TotalSize(KB) : %lu\n", stat.GetTotalSizeKB()));
+    DisplayInfo(Utf8PrintfString("   UserId        : %s\n", stat.GetUserId().c_str()));
+    DisplayInfo(Utf8PrintfString("   UserEmail     : %s\n", stat.GetUserEmail().c_str()));
+    DisplayInfo(Utf8PrintfString("   UltimateId    : %s\n", stat.GetUltimateId().c_str()));
+    DisplayInfo(Utf8PrintfString("   ServiceId     : %s\n", stat.GetServiceId().c_str()));
+    DisplayInfo(Utf8PrintfString("   DataLocation  : %s\n\n", stat.GetDataLocationGuid().c_str()));
+    }
+
+
+void RealityDataConsole::DisplayUserStats(const bvector<RealityDataUserStat>& stats, const DateTime& curInfoDate)
+    {
+    DisplayInfo(Utf8PrintfString("User statistics (%4u-%02u-%02u): \n", curInfoDate.GetYear(),
+                                                                        curInfoDate.GetMonth(),
+                                                                        curInfoDate.GetDay()));
+    DisplayInfo("======================================================\n");
+    for (auto currentStat : stats)
+        {
+        DisplayInfo(Utf8PrintfString("   NbRealityData : %lu\n", currentStat.GetNbRealityData()));
+        DisplayInfo(Utf8PrintfString("   TotalSize(KB) : %lu\n", currentStat.GetTotalSizeKB()));
+        DisplayInfo(Utf8PrintfString("   UserId        : %s\n", currentStat.GetUserId().c_str()));
+        DisplayInfo(Utf8PrintfString("   UserEmail     : %s\n", currentStat.GetUserEmail().c_str()));
+        DisplayInfo(Utf8PrintfString("   UltimateId    : %s\n", currentStat.GetUltimateId().c_str()));
+        DisplayInfo(Utf8PrintfString("   ServiceId     : %s\n", currentStat.GetServiceId().c_str()));
+        DisplayInfo(Utf8PrintfString("   DataLocation  : %s\n\n", currentStat.GetDataLocationGuid().c_str()));		
+        DisplayInfo("======================================================\n");
+        }
+    }
+
+void RealityDataConsole::AllUserStats()
+    {
+    AllUserStatsGen(false);
+    }
+
+void RealityDataConsole::AllUserStatsJson()
+    {
+    AllUserStatsGen(true);
+    }
+void RealityDataConsole::AllUserStatsGen(bool displayAsJson)
+    {
+    DisplayInfo("Please enter the date requested\n", DisplayOption::Question);
+    DisplayInfo("   ''                   --> current date\n", DisplayOption::Question);
+    DisplayInfo("   yyyy-mm-dd           --> Specific date\n", DisplayOption::Question);
+    DisplayInfo("   yyyy-mm-dd yyy-mm-dd --> Range date \n", DisplayOption::Question);
+    DisplayInfo("Choice ? ", DisplayOption::Question);
+
+    InterpretCommand(false);    // accept empty input
+    if (m_lastCommand == Command::Cancel)
+        return;
+
+    bvector<Utf8String> specDates;
+    BeStringUtilities::Split(m_lastInput.c_str(), " ", specDates);
+
+    RawServerResponse rawResponse = RawServerResponse();
+    RealityDataAllUserStatsRequest* ptt=0;
+
+    DisplayInfo("List of User Stats for ALL enterprises\n");
+    DisplayInfo("\n");
+
+    if (specDates.size() > 2)
+        {
+        DisplayInfo("Invalid format for date range\n", DisplayOption::Error);
+        return;
+        }
+        
+    if (specDates.size() == 2)
+        {
+        DateTime startDate;
+        DateTime endDate;
+        DateTime::FromString(startDate, specDates[0].c_str());
+        DateTime::FromString(endDate, specDates[1].c_str());
+
+        if (!startDate.IsValid() || !endDate.IsValid())
+            {
+            DisplayInfo("Invalid format for start or end date\n", DisplayOption::Error);
+            return;
+            }
+
+        // first date must be earlier than second
+        if (DateTime::CompareResult::EarlierThan != DateTime::Compare(startDate, endDate))
+            {
+            DisplayInfo("Start date must be earlier than end date\n", DisplayOption::Error);
+            return;
+            }
+
+        double julianStartDate;
+        double julianEndDate;
+        
+        if (SUCCESS != startDate.ToJulianDay(julianStartDate) || SUCCESS != endDate.ToJulianDay(julianEndDate))
+            {
+            DisplayInfo("Unexpected error occured while converting dates to Julian\n", DisplayOption::Error);
+            return;
+            }
+
+        if (julianEndDate - julianStartDate > 100.0)
+            {
+            DisplayInfo("Date range cannot exceed 100 days\n", DisplayOption::Error);
+            return;
+            }       
+
+        for (double currentJulianDay = julianStartDate; currentJulianDay <= julianEndDate+0.0001; currentJulianDay +=1.0)
+            {
+            DateTime currentDate;
+            DateTime::Info theInfo = DateTime::Info::CreateForDate();
+            if (SUCCESS != DateTime::FromJulianDay(currentDate, currentJulianDay, theInfo))
+                {
+                DisplayInfo("Unexpected error occured while converting from Julian Day\n", DisplayOption::Error);
+                return;
+                }
+
+            RealityDataAllUserStatsRequest theCurrentRequest(currentDate);
+            bvector<RealityDataUserStat> stats;
+            stats = RealityDataService::Request(theCurrentRequest, rawResponse);
+
+            if (displayAsJson)
+                {
+                DisplayInfo(rawResponse.body);
+                DisplayInfo("\n");
+                }
+            else
+                DisplayUserStats(stats, currentDate);
+            }
+    
+
+        
+        }
+    else
+        {
+        DateTime curInfoDate;
+        if (specDates.size() == 0)
+            {
+            ptt = new RealityDataAllUserStatsRequest(); // All enterprise
+            curInfoDate = DateTime::GetCurrentTimeUtc();
+            }
+        else if (specDates.size() == 1)
+            {
+            DateTime::FromString(curInfoDate, specDates[0].c_str());
+
+            if (!curInfoDate.IsValid())
+                {
+                DisplayInfo("Invalid format for date\n", DisplayOption::Error);
+                return;
+                }
+            ptt = new RealityDataAllUserStatsRequest(curInfoDate);
+            }
+
+        bvector<RealityDataUserStat> stats;
+        stats = RealityDataService::Request(*ptt, rawResponse);
+
+        if (displayAsJson)
+            {
+            DisplayInfo(rawResponse.body);
+            DisplayInfo("\n");
+            }
+        else
+            DisplayUserStats(stats, curInfoDate);
+        }
+    }
+	
 
 static void downloadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)
     {

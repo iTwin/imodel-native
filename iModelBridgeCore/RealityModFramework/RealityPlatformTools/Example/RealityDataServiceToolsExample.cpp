@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatformTools/Example/RealityDataServiceToolsExample.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -262,8 +262,8 @@ void ListCmd()
     {
     if (s_cmd & (CmdList | CmdListDetail | CmdListAll | CmdListAllDetail))
         {
-        RealityDataPagedRequest* enterpriseReq = new RealityDataPagedRequest();
-        enterpriseReq->SetPageSize(25);
+        RealityDataPagedRequest enterpriseReq;
+        enterpriseReq.SetPageSize(25);
 
         // Filters ?
         if (s_option & (OptFilterOwner))
@@ -273,24 +273,24 @@ void ListCmd()
             filter1.push_back(RealityDataFilterCreator::FilterByOwner(s_filterOwner));
             RDSFilter filters = RealityDataFilterCreator::GroupFiltersOR(filter1);
 
-            enterpriseReq->SetFilter(filters);
+            enterpriseReq.SetFilter(filters);
             }
 
         if (s_option & (OptSortModDate))
-            enterpriseReq->SortBy(RealityDataField::ModifiedTimestamp, true);
+            enterpriseReq.SortBy(RealityDataField::ModifiedTimestamp, true);
 
         if (s_option & (OptSortGroup))
-            enterpriseReq->SortBy(RealityDataField::Group, true);
+            enterpriseReq.SortBy(RealityDataField::Group, true);
 
         RawServerResponse enterpriseResponse = RawServerResponse();
-        bvector<RealityDataPtr> enterpriseVec = RealityDataService::Request(*enterpriseReq, enterpriseResponse);
+        bvector<RealityDataPtr> enterpriseVec = RealityDataService::Request(enterpriseReq, enterpriseResponse);
 
         bvector<RealityDataRelationshipPtr> relationships;
         if (s_option & (OptFilterProject))
             {
-            RealityDataRelationshipByProjectIdRequest* relationReq = new RealityDataRelationshipByProjectIdRequest(s_filterProject);
+            RealityDataRelationshipByProjectIdRequest relationReq(s_filterProject);
             RawServerResponse relationResponse = RawServerResponse();
-            relationships = RealityDataService::Request(*relationReq, relationResponse);
+            relationships = RealityDataService::Request(relationReq, relationResponse);
             }
 
 
@@ -305,8 +305,8 @@ void ListCmd()
 
 #if 0   // Validation only
                 RequestStatus status2;
-                RealityDataByIdRequest* idReq = new RealityDataByIdRequest(pData->GetIdentifier());
-                RealityDataPtr entity = RealityDataService::Request(*idReq, status2);
+                RealityDataByIdRequest idReq(pData->GetIdentifier());
+                RealityDataPtr entity = RealityDataService::Request(idReq, status2);
 
                 assert(entity->GetOragnizationId() == pData->GetOragnizationId());
                 assert(entity->GetApproximateFileSize() == pData->GetApproximateFileSize());
@@ -341,7 +341,7 @@ void ListCmd()
             enterpriseVec.clear();
             enterpriseResponse = RawServerResponse();
             }
-        while ((enterpriseVec = RealityDataService::Request(*enterpriseReq, enterpriseResponse)).size() > 0);
+        while ((enterpriseVec = RealityDataService::Request(enterpriseReq, enterpriseResponse)).size() > 0);
         std::cout << std::endl << "*** Size total : " << EnterpriseSizeKB << "KB" << std::endl;
         std::cout << std::endl;
 
@@ -395,9 +395,9 @@ void DownloadCmd()
     BeFileStatus fileStatus = file.Create(fileName.GetName(), true);
     if (fileStatus == BeFileStatus::Success)
         {
-        RealityDataDocumentContentByIdRequest* contentRequest = new RealityDataDocumentContentByIdRequest(s_itemPath);
+        RealityDataDocumentContentByIdRequest contentRequest(s_itemPath);
         RawServerResponse contentResponse = RawServerResponse();
-        RealityDataService::Request(*contentRequest, &file, contentResponse);
+        RealityDataService::Request(contentRequest, &file, contentResponse);
         file.Close();
         std::cout << "  Done." << std::endl;
         }
@@ -431,9 +431,9 @@ int main(int argc, char* argv[])
     if (s_cmd == CmdEntrStat)
         {
         RawServerResponse statResponse = RawServerResponse();
-        RealityDataEnterpriseStatRequest* ptt = new RealityDataEnterpriseStatRequest("");
+        RealityDataEnterpriseStatRequest ptt("");
         RealityDataEnterpriseStat stat;
-        RealityDataService::Request(*ptt, stat, statResponse);
+        RealityDataService::Request(ptt, stat, statResponse);
 
         std::cout << "Organization statistics: " << std::endl;
         std::cout << "   NbRealityData : %lu\n" << stat.GetNbRealityData() << std::endl;

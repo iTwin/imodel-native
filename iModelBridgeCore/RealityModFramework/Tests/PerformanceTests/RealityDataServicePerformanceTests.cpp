@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/PerformanceTests/RealityDataServicePerformanceTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -198,6 +198,8 @@ void RealityDataServicePerformanceTests::Run(Utf8String serverName, int numberOf
     
                 EnterpriseStatTest(currentTimeStats);
     
+                UserStatTest(currentTimeStats);
+	
                 }
             }
 
@@ -226,6 +228,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
         int64_t mean_deleteRelationship;
         int64_t mean_deleteRealityData;
         int64_t mean_enterpriseStats;
+        int64_t mean_userStats;
 
         int64_t total_handshake = 0;
         int64_t total_createRealityData = 0;
@@ -240,6 +243,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
         int64_t total_deleteRelationship = 0;
         int64_t total_deleteRealityData = 0;
         int64_t total_enterpriseStats = 0;
+        int64_t total_userStats = 0;
 
 
 
@@ -256,6 +260,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
         int64_t min_deleteRelationship      = m_listOfStats[0].m_deleteRelationship;
         int64_t min_deleteRealityData       = m_listOfStats[0].m_deleteRealityData;
         int64_t min_enterpriseStats         = m_listOfStats[0].m_enterpriseStats;
+        int64_t min_userStats               = m_listOfStats[0].m_userStats;
 
         int64_t max_handshake               = m_listOfStats[0].m_handshake;
         int64_t max_createRealityData       = m_listOfStats[0].m_createRealityData;
@@ -270,6 +275,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
         int64_t max_deleteRelationship      = m_listOfStats[0].m_deleteRelationship;
         int64_t max_deleteRealityData       = m_listOfStats[0].m_deleteRealityData;
         int64_t max_enterpriseStats         = m_listOfStats[0].m_enterpriseStats;
+        int64_t max_userStats               = m_listOfStats[0].m_userStats;
 
 
         
@@ -289,6 +295,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
             min_deleteRelationship  = min(min_deleteRelationship   ,  currentTimeStats.m_deleteRelationship  );
             min_deleteRealityData   = min(min_deleteRealityData    ,  currentTimeStats.m_deleteRealityData   );
             min_enterpriseStats     = min(min_enterpriseStats      ,  currentTimeStats.m_enterpriseStats     );
+            min_userStats           = min(min_userStats            ,  currentTimeStats.m_userStats           );
 
 
 
@@ -305,6 +312,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
             max_deleteRelationship  = max(max_deleteRelationship   ,  currentTimeStats.m_deleteRelationship  );
             max_deleteRealityData   = max(max_deleteRealityData    ,  currentTimeStats.m_deleteRealityData   );
             max_enterpriseStats     = max(max_enterpriseStats      ,  currentTimeStats.m_enterpriseStats     );
+            max_userStats           = max(max_userStats            ,  currentTimeStats.m_userStats           );
 
 
             total_handshake           += currentTimeStats.m_handshake         ;
@@ -320,6 +328,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
             total_deleteRelationship  += currentTimeStats.m_deleteRelationship;
             total_deleteRealityData   += currentTimeStats.m_deleteRealityData ;
             total_enterpriseStats     += currentTimeStats.m_enterpriseStats   ;
+            total_userStats           += currentTimeStats.m_userStats         ;
 
 
             }
@@ -336,6 +345,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
         mean_deleteRelationship  = total_deleteRelationship  / m_listOfStats.size();      
         mean_deleteRealityData   = total_deleteRealityData   / m_listOfStats.size();
         mean_enterpriseStats     = total_enterpriseStats     / m_listOfStats.size();
+        mean_userStats           = total_userStats           / m_listOfStats.size();
 
         std::cout << "  TEST                                        mean              min             max" << std::endl;
         std::cout << "WSG Handshake                            : " << mean_handshake           << ",         " << min_handshake             << ",           " << max_handshake           << std::endl;
@@ -351,6 +361,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
         std::cout << "Delete Relationship                      : " << mean_deleteRelationship  << ",         " << min_deleteRelationship    << ",           " << max_deleteRelationship  << std::endl;
         std::cout << "Delete Reality Data                      : " << mean_deleteRealityData   << ",         " << min_deleteRealityData     << ",           " << max_deleteRealityData   << std::endl;
         std::cout << "Enterprise stats                         : " << mean_enterpriseStats     << ",         " << min_enterpriseStats       << ",           " << max_enterpriseStats     << std::endl;
+        std::cout << "User stats                               : " << mean_userStats           << ",         " << min_userStats             << ",           " << max_userStats           << std::endl;
 
     }
 
@@ -1097,7 +1108,39 @@ StatusInt RealityDataServicePerformanceTests::EnterpriseStatTest(timeStats& theT
 
     return (StatusInt)response.status;
     }
+	
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+StatusInt RealityDataServicePerformanceTests::UserStatTest(timeStats& theTimeStats)
+    {
+    RawServerResponse response;
+    RealityDataUserStatRequest ptt("");
+    RealityDataUserStat stat;
 
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
+    // Perform operation
+    RealityDataService::Request(ptt, stat, response);
+    
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (SUCCESS != response.status)
+        std::cout << "Get User stats Test: Failure no: " << response.status << std::endl;
+    else
+        std::cout << "Get User stats Test: " << (endTime - startTime) << std::endl;
+
+    theTimeStats.m_userStats = (endTime - startTime);
+
+
+    return (StatusInt)response.status;
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Alain.Robert                            03/2017
