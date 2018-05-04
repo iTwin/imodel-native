@@ -70,7 +70,7 @@ void ClassificationSystem::_OnInserted(Dgn::DgnElementP copiedFrom) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              04/2018
 //---------------------------------------------------------------------------------------
-ClassificationSystemCPtr ClassificationSystem::TryGetSystem
+ClassificationSystemCPtr ClassificationSystem::TryGet
 (
     Dgn::DgnDbR db,
     Utf8CP name

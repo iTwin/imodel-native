@@ -115,7 +115,7 @@ ClassificationSystemCPtr ClassificationSystemsDomain::TryAndGetSystem
 ) const
     {
     //TODO Make this static in elements
-    ClassificationSystemCPtr system = ClassificationSystem::TryGetSystem(db,name);
+    ClassificationSystemCPtr system = ClassificationSystem::TryGet(db,name);
     if (system.IsNull())
         {
         return InsertSystem(db, name);

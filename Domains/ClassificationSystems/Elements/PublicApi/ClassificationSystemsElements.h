@@ -44,7 +44,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem : Dgn::DefinitionElement
         //! @return     a ptr to created ClassificationSystem
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemPtr Create(Dgn::DgnDbR db, Utf8CP name);
 
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemCPtr TryGetSystem(Dgn::DgnDbR db, Utf8CP name);
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemCPtr TryGet(Dgn::DgnDbR db, Utf8CP name);
 
         //! Gets the name of this ClassificationSystem
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const;
