@@ -95,8 +95,10 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         ECN::ECSchemaPtr _LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR) override;
 
         //! Implementation of IECClassLocater
-        ECN::ECClassCP _LocateClass(Utf8CP schemaName, Utf8CP className) override { return GetClass(Utf8String(schemaName), Utf8String(className)); }
-        ECN::ECClassId _LocateClassId(Utf8CP schemaName, Utf8CP className) override { return GetClassId(Utf8String(schemaName), Utf8String(className)); }
+        //! @note You can either pass a schema name or a schema alias to the method.
+        ECN::ECClassCP _LocateClass(Utf8CP schemaNameOrAlias, Utf8CP className) override { return GetClass(Utf8String(schemaNameOrAlias), Utf8String(className), SchemaLookupMode::AutoDetect); }
+        //! @note You can either pass a schema name or a schema alias to the method.
+        ECN::ECClassId _LocateClassId(Utf8CP schemaNameOrAlias, Utf8CP className) override { return GetClassId(Utf8String(schemaNameOrAlias), Utf8String(className), SchemaLookupMode::AutoDetect); }
         
     public:
 #if !defined (DOCUMENTATION_GENERATOR)
