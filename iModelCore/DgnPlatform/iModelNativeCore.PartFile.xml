@@ -18,9 +18,9 @@
         iModelJsNodeAddon. See iModelJsNodeAddon:iModelJsNodeAddonLibCommon.
      -->
     <Part Name="iModelNativeCore">
-        <SubPart PartName="DgnPlatformDLL" PartFile="iModelNativeCore/DgnPlatform/DgnPlatform"/>
-        <SubPart PartName="ECPresentation" PartFile="iModelNativeCore/ECPresentation/ECPresentation"/>
-        <SubPart PartName="ECObjectsNative" PartFile="iModelNativeCore/ECObjects/ECObjects"/>
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="ECObjectsNative" PartFile="ECObjects" Repository="ECObjects"/>
     </Part>
 
     <Part Name="RunAllTests" DeferType="RunUnitTests"
@@ -29,15 +29,15 @@
             >
         <SubPart PartName="iModelNativeCore"/>
 
-        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/BeHttp/BeHttp"/>
-        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/Bentley/Bentley"/>
-        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/BeSQLite/BeSQLite"/>
-        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/DgnPlatform/DgnPlatform"/>
-        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/ECDb/ECDb"/>
-        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/ecobjects/ECObjects"/>
-        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/ECPresentation/ECPresentation"/>
-        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/GeomLibs/geomlibs"/>
-        <SubPart PartName="RunGtest" PartFile="iModelNativeCore/Units/Units"/>
+        <SubPart PartName="RunGtest" PartFile="BeHttp" Repository="BeHttp"/>
+        <SubPart PartName="RunGtest" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="RunGtest" PartFile="BeSQLite" Repository="BeSQLite"/>
+        <SubPart PartName="RunGtest" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="RunGtest" PartFile="ECDb" Repository="ECDb"/>
+        <SubPart PartName="RunGtest" PartFile="ECObjects" Repository="ecobjects"/>
+        <SubPart PartName="RunGtest" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="RunGtest" PartFile="geomlibs" Repository="GeomLibs"/>
+        <SubPart PartName="RunGtest" PartFile="Units" Repository="Units"/>
     </Part>
 
     <!-- ======================================================================================================================================== -->
@@ -51,12 +51,12 @@
     -->
     <Part Name="__ParasiteSubParts">
         <!-- Testing -->
-        <SubPart PartName="Gtest-Tools" PartFile="iModelNativeCore/BeGTest/BeGTest"/>
-        <SubPart PartName="google_gmock_lib" PartFile="iModelNativeCore/util/gmock/gmock"/>
-        <SubPart PartName="google_gtest_lib" PartFile="iModelNativeCore/util/gtest/gtest"/>
+        <SubPart PartName="Gtest-Tools" PartFile="BeGTest" Repository="BeGTest"/>
+        <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock"/>
+        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest"/>
 
         <!-- For DgnClientSdk -->
-        <SubProduct ProductName="IModelExtractor" PartFile="iModelNativeCore/BeSQLite/IModelExtractor"/>
+        <SubProduct ProductName="IModelExtractor" PartFile="IModelExtractor" Repository="BeSQLite"/>
     </Part>
 
 </BuildContext>
