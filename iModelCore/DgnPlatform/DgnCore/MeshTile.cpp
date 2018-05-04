@@ -2013,7 +2013,18 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
 +---------------+---------------+---------------+---------------+---------------+------*/
 Transform   TileGenerator::GetTransformFromDgn(DgnModelCR model) const
     {
-    return model.IsSpatialModel() ?  GetSpatialTransformFromDgn() : Transform::FromIdentity(); 
+    if (model.IsSpatialModel())
+        return GetSpatialTransformFromDgn();
+        
+    auto    geometricModel = model.ToGeometricModel();
+
+    if (nullptr != geometricModel)
+        {
+        DPoint3d origin = geometricModel->QueryModelRange().GetCenter();
+        return Transform::From(-origin.x, -origin.y, -origin.z);
+        }
+        
+    return Transform::FromIdentity(); 
     }
 
 /*---------------------------------------------------------------------------------**//**
