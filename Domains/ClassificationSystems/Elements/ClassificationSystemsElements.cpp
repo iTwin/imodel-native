@@ -15,6 +15,17 @@ DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystem)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(Classification)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationGroup)
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              04/2018
+//---------------------------------------------------------------------------------------
+Dgn::DgnCode ClassificationSystem::GetSystemCode
+(
+    Dgn::DgnDbR db,
+    Utf8CP name
+)
+    {
+    return Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), db.Elements().GetRootSubjectId(), name);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -24,7 +35,8 @@ CreateParams const& params,
 Utf8CP name
 ) : T_Super(params)
     {
-    SetName(name);
+        Dgn::DgnCode code = GetSystemCode(params.m_dgndb, name);
+        SetCode(code);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,12 +67,54 @@ void ClassificationSystem::_OnInserted(Dgn::DgnElementP copiedFrom) const
         if (Dgn::DgnDbStatus::Success != model->Insert())
             return;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              04/2018
+//---------------------------------------------------------------------------------------
+ClassificationSystemCPtr ClassificationSystem::TryGetSystem
+(
+    Dgn::DgnDbR db,
+    Utf8CP name
+)
+    {
+    Dgn::DgnCode code = GetSystemCode(db, name);
+    Dgn::DgnElementId id = db.Elements().QueryElementIdByCode(code);
+    if (id.IsValid())
+        {
+        ClassificationSystemCPtr system = db.Elements().Get<ClassificationSystem>(id);
+        return system;
+        }
+    else {
+        return nullptr;
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              05/2018
+//---------------------------------------------------------------------------------------
+Utf8CP ClassificationSystem::GetName() const
+    {
+    return GetCode().GetValueUtf8CP();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              04/2018
+//---------------------------------------------------------------------------------------
+Dgn::DgnCode Classification::GetClassificationCode
+(
+    Dgn::DgnDbR db,
+    Utf8CP name,
+    Dgn::DgnElementId id
+) const
+    {
+    return Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), id, name);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 Classification::Classification
 (
 CreateParams const& params,
+ClassificationSystemCR system,
 Utf8CP name,
 Utf8CP id,
 Utf8CP description,
@@ -68,14 +122,22 @@ ClassificationGroupCP group,
 ClassificationCP specializes
 ) : T_Super(params) 
     {
+    Dgn::DgnElementId elemid;
     SetName(name);
-    SetClassificationId(id);
     SetDescription(description);
-    if(group != nullptr)
+    if(group != nullptr) 
+        {
         SetGroupId(group->GetElementId());
+        elemid = group->GetElementId();
+        }
+    else 
+        {
+        elemid = system.GetElementId();
+        }
+    Dgn::DgnCode code = GetClassificationCode(params.m_dgndb, id, elemid);
+    SetCode(code);
     if(specializes != nullptr) 
         SetSpecializationId(specializes->GetElementId());
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -93,7 +155,7 @@ ClassificationCP specializes
     {
     Dgn::DgnClassId classId = QueryClassId(system.GetDgnDb());
     Dgn::DgnElement::CreateParams params(system.GetDgnDb(), system.GetSubModelId(), classId);
-    ClassificationPtr classification = new Classification(params, name, id, description, group, specializes);
+    ClassificationPtr classification = new Classification(params, system, name, id, description, group, specializes);
     return classification;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -105,7 +167,7 @@ CreateParams const& params,
 Utf8CP name
 ) : T_Super(params)
     {
-    SetName(name);
+    SetUserLabel(name);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -20,6 +20,8 @@ BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 //=======================================================================================
 DOMAIN_DEFINE_MEMBERS(ClassificationSystemsDomain)
 
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                 03/2018
 //---------------------------------------------------------------------------------------
@@ -91,17 +93,38 @@ void ClassificationSystemsDomain::InsertCodeSpec(Dgn::DgnDbR db, Utf8CP name) co
         BeAssert(codeSpec->GetCodeSpecId().IsValid());
         }
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              04/2018
 //---------------------------------------------------------------------------------------
 Dgn::DgnCode ClassificationSystemsDomain::GetSystemCode
 (
-Dgn::DgnDbR db,
-Utf8CP name
+    Dgn::DgnDbR db,
+    Utf8CP name
 ) const
     {
     return Dgn::DgnCode(db.CodeSpecs().QueryCodeSpecId(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem), db.Elements().GetRootSubjectId(), name);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              05/2018
+//---------------------------------------------------------------------------------------
+ClassificationSystemCPtr ClassificationSystemsDomain::TryAndGetSystem
+(
+    Dgn::DgnDbR db,
+    Utf8CP name
+) const
+    {
+    //TODO Make this static in elements
+    ClassificationSystemCPtr system = ClassificationSystem::TryGetSystem(db,name);
+    if (system.IsNull())
+        {
+        return InsertSystem(db, name);
+        }
+    else {
+        return system;
+    }
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              04/2018
 //---------------------------------------------------------------------------------------
@@ -111,37 +134,13 @@ Dgn::DgnDbR db,
 Utf8CP name
 ) const
     {
-    Dgn::DgnCode code = GetSystemCode(db, name);
     ClassificationSystemPtr classSystem = ClassificationSystem::Create(db, name);
-    classSystem->SetCode(code);
     if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classSystem.get(), BeSQLite::DbOpcode::Insert, "ClassificationSystem : Insertion"))
         {
         classSystem->Insert();
         return classSystem;
         }
     return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Martynas.Saulius              04/2018
-//---------------------------------------------------------------------------------------
-ClassificationSystemCPtr ClassificationSystemsDomain::TryAndGetSystem
-(
-Dgn::DgnDbR db,
-Utf8CP name
-) const
-    {
-    //TODO Insert CodeSpec (Check BuildingDomain) 
-    Dgn::DgnCode code = GetSystemCode(db, name);
-    Dgn::DgnElementId id = db.Elements().QueryElementIdByCode(code);
-    if (id.IsValid()) 
-        {
-        ClassificationSystemCPtr system = db.Elements().Get<ClassificationSystem>(id);
-        return system;
-        }
-    else {
-        return InsertSystem(db, name);
-        }
     }
 
 

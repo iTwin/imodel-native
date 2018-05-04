@@ -23,7 +23,6 @@
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
-        <ECProperty propertyName="ClassificationId" typeName="string" displayLabel="ClassificationId"/>
         <ECProperty propertyName="Description" typeName="string" displayLabel="Description"/>
         <ECNavigationProperty propertyName="Group" relationshipName="ClassificationIsInClassificationGroup" direction="Forward" description="Group this definition belong to" />
         <ECNavigationProperty propertyName="Specialization" relationshipName="ClassificationSpecializesClassification" direction="Forward" description="Classification this Specializes in" />
@@ -34,7 +33,6 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
     </ECEntityClass>
         
     <ECRelationshipClass typeName="ClassificationIsInClassificationGroup" modifier="None" strength="referencing" description="a relationship to map Classification to its' group">
