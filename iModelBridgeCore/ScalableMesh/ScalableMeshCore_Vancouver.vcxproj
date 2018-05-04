@@ -744,12 +744,12 @@ bb -ax64 -p ScalableMeshCore -f  ScalableMeshCore -r  ScalableMesh re  ScalableM
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ScalableMesh_Vancouver.mke" />
-  </ItemGroup>
-  <ItemGroup>
     <Xml Include="ScalableMeshCore.PartFile.xml">
       <SubType>Designer</SubType>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ScalableMeshCore_Vancouver.mke" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
