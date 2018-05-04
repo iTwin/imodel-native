@@ -318,3 +318,34 @@ void    DwgFileEditor::FindXrefBlock (DwgStringCR blockName)
         EXPECT_PRESENT (block->GetPath().c_str());
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgFileEditor::RenameAndActivateLayout (DwgStringCR oldName, DwgStringCR newName)
+    {
+    DwgDbLayoutManagerPtr   manager = DwgImportHost::GetHost().GetLayoutManager ();
+    ASSERT_TRUE (manager.IsValid()) << "Unable to instantiate DwgDbLayoutManager!";
+
+    ASSERT_DWGDBSUCCESS (manager->RenameLayout(oldName, newName, m_dwgdb.get())) << "Unable to name a layout!";
+
+    m_currentObjectId = manager->FindLayoutByName (newName, m_dwgdb.get());
+    ASSERT_TRUE (m_currentObjectId.IsValid()) << "Cannot find layout from given name!";
+    ASSERT_DWGDBSUCCESS (manager->ActivateLayout(m_currentObjectId)) << "Unable to activate a layout!";
+
+    DwgDbLayoutPtr  layout(m_currentObjectId, DwgDbOpenMode::ForRead);
+    ASSERT_DWGDBSUCCESS (layout.OpenStatus()) << "Failed to open the active layout object!";
+    
+    // check printable origin
+    DPoint2d    point;
+    ASSERT_DWGDBSUCCESS (layout->GetPaperImageOrigin(point)) << "Failed to read printable origin!";
+    EXPECT_EQ (point.x, 0.0) << "The printable origin.x should be 0.0!";
+    EXPECT_EQ (point.y, 0.0) << "The printable origin.y should be 0.0!";
+
+    ASSERT_DWGDBSUCCESS (layout->GetPlotOrigin(point)) << "Failed to read plot origin offset!";
+    EXPECT_EQ (point.x, 0.0) << "The plot origin offset.x should be 0.0!";
+    EXPECT_EQ (point.y, 0.0) << "The plot origin offset.y should be 0.0!";
+
+    EXPECT_EQ (layout->GetPlotBy(), DwgDbLayout::PlotBy::Layout) << "The plot type should be PlotBy::Layout!";
+    }
+

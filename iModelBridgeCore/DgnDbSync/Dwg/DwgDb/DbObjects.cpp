@@ -26,6 +26,12 @@ DWGDB_OBJECT_DEFINE_MEMBERS2 (SpatialIndex)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (SortentsTable)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (Xrecord)
 
+#ifdef DWGTOOLKIT_RealDwg
+// An unpublished API in acdbxx.dll
+typedef Acad::ErrorStatus (*acdbGetPaperImageOriginFunc)(AcDbPlotSettings* p, double& x, double& y);
+static char s_acdbGetPaperImageOrigin[] = "?acdbGetPaperImageOrigin@@YA?AW4ErrorStatus@Acad@@PEAVAcDbPlotSettings@@AEAN1@Z";
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -571,6 +577,43 @@ DwgDbStatus     DwgDbLayout::GetCustomScale (double& numerator, double& denomina
     return  status;
     }
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbLayout::GetPaperImageOrigin (DPoint2dR origin) const
+    {
+    // get DXF groud codes 148 and 149 in negative so they are read the same as in ACAD:
+    origin.Zero ();
+#ifdef DWGTOOLKIT_OpenDwg
+    BeAssert (false && "DwgDbLayout::GetPaperImageOrigin not implemented for Teigha!");
+    return  DwgDbStatus::NotSupported;
+
+#elif DWGTOOLKIT_RealDwg
+    // need to call unpublished API acdbGetPaperImageOrigin, in acdbxx.dll.
+    auto dllHandle = Util::GetOrLoadToolkitDll (L"acdb");
+    if (nullptr != dllHandle)
+        {
+        static acdbGetPaperImageOriginFunc acdbGetPaperImageOrigin = (Acad::ErrorStatus(*)(AcDbPlotSettings*,double&,double&)) ::GetProcAddress (dllHandle, s_acdbGetPaperImageOrigin);
+        if (nullptr != acdbGetPaperImageOrigin)
+            {
+            AcDbPlotSettings*   ps = dynamic_cast<AcDbPlotSettings*>(const_cast<DwgDbLayout*>(this));
+            Acad::ErrorStatus   es = (*acdbGetPaperImageOrigin)(ps, origin.x, origin.y);
+            if (Acad::eOk == es)
+                {
+                // negate the readout values
+                origin.x = -origin.x;
+                origin.y = -origin.y;
+                return  ToDwgDbStatus(es);
+                }
+            }
+        else
+            {
+            BeAssert (false && "Unpublished function acdbGetPaperImageOrigin not found in acdbxx.dll!");
+            }
+        }
+    return  DwgDbStatus::UnknownError;
+#endif
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 double          DwgDbLayout::GetStandardScale () const
@@ -585,6 +628,7 @@ DwgDbObjectId   DwgDbLayout::GetBlockTableRecordId () const { return T_Super::ge
 bool            DwgDbLayout::IsStandardScale () const { return T_Super::useStandardScale(); }
 double          DwgDbLayout::GetCustomScale () const { double n=1.0,d=1.0; T_Super::getCustomPrintScale(n,d); return d!=0.0 ? n/d : 1.0; }
 DwgDbLayout::PaperOrientation DwgDbLayout::GetPaperOrientation () const { return static_cast<PaperOrientation>(T_Super::plotRotation()); }
+DwgDbLayout::PlotBy DwgDbLayout::GetPlotBy () const { return DWGDB_UPWARDCAST(Layout::PlotBy)(T_Super::plotType()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/18

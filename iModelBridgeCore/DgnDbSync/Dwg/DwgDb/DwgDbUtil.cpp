@@ -9,6 +9,37 @@
 
 USING_NAMESPACE_DWGDB
 
+#ifdef DWGTOOLKIT_OpenDwg
+    #define     VendorDllSuffix     L"4.3_14"
+
+#elif DWGTOOLKIT_RealDwg
+    #if VendorVersion == 2017
+    #define     VendorDllSuffix     L"21"
+    #elif VendorVersion == 2018
+    #define     VendorDllSuffix     L"22"
+    #elif VendorVersion == 2019
+    #define     VendorDllSuffix     L"23"
+    #else
+    #error Must define RealDWG DLL suffix!!
+    #endif
+#endif  // DWGTOOLKIT_
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+::HMODULE       Util::GetOrLoadToolkitDll (DwgStringCR dllPrefix)
+    {
+    // append the version suffix to dll name:
+    DwgString   dllName = dllPrefix + VendorDllSuffix + L".dll";
+    // try finding or loading the dll
+    ::HMODULE   dllHandle = ::GetModuleHandle (dllName);
+    if (nullptr == dllHandle)
+        dllHandle = ::LoadLibrary (dllName);
+    BeAssert (nullptr != dllHandle && "A toolkit DLL cannot be loaded (is the suffix up to date?)");
+    return  dllHandle;
+    }
+
 DPoint3d    Util::DPoint3dFrom (DWGGE_TypeCR(Point3d) gePoint) { return DPoint3d::From(gePoint.x, gePoint.y, gePoint.z); }
 DPoint3d    Util::DPoint3dFrom (DWGGE_TypeCR(Point2d) gePoint) { return DPoint3d::From(gePoint.x, gePoint.y, 0.0); }
 DPoint3d    Util::DPoint3dFrom (DWGGE_TypeCR(Vector3d) geVector) { return DPoint3d::From(geVector.x, geVector.y, geVector.z); }

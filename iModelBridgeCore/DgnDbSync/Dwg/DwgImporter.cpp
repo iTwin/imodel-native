@@ -158,6 +158,26 @@ DgnCode         DwgImporter::CreateCode (Utf8StringCR value) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus     DwgImporter::UpdateElementName (DgnElementR editElement, Utf8StringCR newValue, Utf8CP label, bool save)
+    {
+    // change both the code value, and optional a user lable as well, of an element.
+    auto code = editElement.GetCode ();
+    auto status = editElement.SetCode (DgnCode::From(code.GetCodeSpecId(), code.GetScopeString(), newValue));
+    if (status == DgnDbStatus::Success)
+        {
+        if (nullptr != label)
+            editElement.SetUserLabel (label);
+        if (save)
+            editElement.Update (&status);
+        }
+    if (status != DgnDbStatus::Success)
+        this->ReportIssueV (IssueSeverity::Error, IssueCategory::Briefcase(), Issue::CannotUpdateName(), code.GetValueUtf8().c_str(), newValue.c_str());
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::InitBusinessKeyCodeSpec ()
@@ -312,8 +332,12 @@ BentleyStatus   DwgImporter::OpenDwgFile (BeFileNameCR dwgdxfName)
     iterated through in a master file's block table.  Since the importer does not need to 
     change the file on disc, i.e. delete etc, we opt for the file open mode DenyWrite.  
     We can still make changes on objects and save changes back into database.
+
+    However, if someone else has already had the file open for write, we resort to DenyNo.
     -----------------------------------------------------------------------------------*/
-    m_dwgdb = DwgImportHost::GetHost().ReadFile (dwgdxfName, false, false, FileShareMode::DenyWrite, password);
+    auto openMode = DwgHelper::CanOpenForWrite(dwgdxfName) ? FileShareMode::DenyWrite : FileShareMode::DenyNo;
+
+    m_dwgdb = DwgImportHost::GetHost().ReadFile (dwgdxfName, false, false, openMode, password);
     if (!m_dwgdb.IsValid())
         return  BSIERROR;
 
@@ -707,6 +731,8 @@ DgnElementId    DwgImporter::CreateModelElement (DwgDbBlockTableRecordCR block, 
         if (!sheet.IsValid())
             return modelElementId;
 
+        sheet->SetUserLabel (modelName.c_str());
+
         m_dgndb->Elements().Insert <Sheet::Element> (*sheet);
 
         if (sheet.IsValid())
@@ -800,6 +826,17 @@ ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbBlockTableReco
         return  modelMap;
         }
 
+    // if a known insert entity is given, use its handle value as model suffix:
+    Utf8CP      suffix = nullptr;
+    Utf8String  idSuffix;
+    if (nullptr != xrefInsert)
+        {
+        idSuffix.Sprintf ("(%llx)", xrefInsert->GetObjectId().ToUInt64());
+        suffix = idSuffix.c_str ();
+        }
+    // build a consistent & valid model name for all DWG models:
+    auto modelName = this->_ComputeModelName (dwgBlock, suffix);
+
     IDwgChangeDetector& changeDetector = this->_GetChangeDetector ();
     if (this->IsUpdating())
         {
@@ -810,6 +847,15 @@ ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbBlockTableReco
 
         if (modelMap.IsValid())
             {
+            // update model name if changed
+            auto model = modelMap.GetModel ();
+            if (nullptr != model && !model->GetName().Equals(modelName))
+                {
+                auto modelElement = this->GetDgnDb().Elements().GetForEdit<DgnElement>(model->GetModeledElementId());
+                if (modelElement.IsValid())
+                    this->UpdateElementName (*modelElement, modelName, modelName.c_str());
+                }
+
             // add the model to cache if not already added(need the check for a multiset):
             if (!this->FindModel(dwgModelId, trans, sourceType).IsValid())
                 this->AddToDwgModelMap (modelMap);
@@ -825,17 +871,7 @@ ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbBlockTableReco
     if (modelMap.IsValid())
         return  modelMap;
 
-    // if a known insert entity is given, use its handle value as model suffix:
-    Utf8CP      suffix = nullptr;
-    Utf8String  idSuffix;
-    if (nullptr != xrefInsert)
-        {
-        idSuffix.Sprintf ("(%llx)", xrefInsert->GetObjectId().ToUInt64());
-        suffix = idSuffix.c_str ();
-        }
-    
     // create a new model
-    Utf8String  modelName = this->_ComputeModelName(dwgBlock, suffix).c_str ();
     DgnClassId  modelType = this->_GetModelType (dwgBlock);
     DgnModelId  modelId = this->CreateModel (dwgBlock, modelName.c_str(), modelType);
     if (!modelId.IsValid())

@@ -65,6 +65,51 @@ BentleyStatus   LayoutFactory::CalculateSheetSize (DPoint2dR sheetSize) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   LayoutFactory::AlignSheetToPaperOrigin (TransformR transform) const
+    {
+    /*-----------------------------------------------------------------------------------
+    Currently, Sheet::Border can only be placed at 0,0 in the sheet model.  To make the
+    sheet geometry & view attachments appear relative to the border correctly, we have to
+    relocate the geometry & viewports.  This method aligns DWG paper origin to Sheet::Border
+    origin by adding a translation in the output transformation.
+    
+    In the future if/when Sheet::Border can be moved, we shall set the border origin from 
+    the paper origin, instead of moving geometry.
+
+    The way to find the DWG paper origin turns out to be simple: it is the lower-left corner
+    of the LIMITS of the layout.  Apparently the paper origin is the final product of margins,
+    plot origin, scale and all other settings from the Page Setup Manager in ACAD.  It is
+    different than printable origin, which varies with those parameters.
+    -----------------------------------------------------------------------------------*/
+    if (!this->IsValid())
+        return  BSIERROR;
+
+    // get the paper range, in layout units:
+    DRange2d    limits = m_layout->GetLimits ();
+    if (limits.IsEmpty())
+        return  BSIERROR;
+
+    // the lower-left cornor is the paper origin, regardless how the layout gets set up:
+    DPoint2d    paperOrigin = limits.low;
+    if (paperOrigin.MaxAbs() > 1.e-4)
+        {
+        // apply the translation to the sheet transformation:
+        DPoint3d    offset = DPoint3d::From (paperOrigin);
+        transform.MultiplyMatrixOnly (offset);
+
+        DPoint3d    translation;
+        transform.GetTranslation (translation);
+
+        translation.Subtract (offset);
+        transform.SetTranslation (translation);
+        }
+
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbObjectId   LayoutFactory::FindOverallViewport (DwgDbBlockTableRecordCR block)
@@ -138,9 +183,19 @@ BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgD
     // import the overall paperspace viewport
     this->_ImportPaperspaceViewport (*sheetModel, modelMap.GetTransform(), layout);
 
+    auto trans = modelMap.GetTransform ();
+
+    // WIP - when/if Sheet::Border supports location in the future, switching code to set the origin, instead of moving geometry:
+    LayoutFactory*  factory = new LayoutFactory (*this, layout.GetObjectId());
+    if (nullptr != factory)
+        {
+        factory->AlignSheetToPaperOrigin (trans);
+        delete factory;
+        }
+
     ElementImportInputs     inputs (*sheetModel);
     inputs.SetClassId (this->_GetElementType(block));
-    inputs.SetTransform (modelMap.GetTransform());
+    inputs.SetTransform (trans);
     inputs.SetSpatialFilter (nullptr);
     inputs.SetModelMapping (modelMap);
 
