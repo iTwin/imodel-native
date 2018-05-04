@@ -1184,7 +1184,7 @@ TEST_F(FileFormatCompatibilityTests, PreEC32EnumsWithSchemaUpgrade)
     // now run schema upgrade that modifies the names
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="IntEnum" backingTypeName="int" >
                     <ECEnumerator name="On" value="0" />
                     <ECEnumerator name="Off" value="1" />

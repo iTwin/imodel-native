@@ -142,7 +142,7 @@ TEST_F(SchemaManagerTests, SchemaECVersion)
     ASSERT_EQ(BeVersion(3, 1), GetHelper().GetOriginalECXmlVersion("TestSchema"));
 
     ASSERT_EQ(SUCCESS, SetupECDb("SchemaECVersion.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                        <ECEntityClass typeName="Foo">
                                         <ECProperty propertyName="Pet" typeName="string"/>
                                        </ECEntityClass>
@@ -737,7 +737,7 @@ TEST_F(SchemaManagerTests, ImportWithLocalizationSchemas)
     ASSERT_EQ(SUCCESS, ImportSchemas({SchemaItem(
         "<?xml version='1.0' encoding='utf-8' ?>"
         "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
-        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA' />"
         "    <ECEnumeration typeName='Animal' displayLabel='Animal' backingTypeName='int' isStrict='True'>"
         "        <ECEnumerator name='Dog' value='1' />"
         "        <ECEnumerator name='Cat' value='2' />"
@@ -1794,7 +1794,7 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
 
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                     <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                     <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                      <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                      <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
                                      <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
@@ -1803,7 +1803,7 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
                                      </ECSchema>)xml"));
 
     testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                     <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                     <ECSchema schemaName="Schema2" alias="s2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                      <ECSchemaReference name="Schema1" version="01.00.00" alias="s1" />
                                        <ECEntityClass typeName="Foo" >
                                          <ECProperty propertyName="Length" typeName="double" kindOfQuantity="s1:MyKindOfQuantity" />
@@ -1868,7 +1868,7 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
     //a KOQ is loaded, a unit is loaded, a unit system is loaded or a phenomenon is loaded.
 
     ASSERT_EQ(SUCCESS, SetupECDb("LoadAllUnitsImplicitly.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                      <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                      <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
                                      <KindOfQuantity typeName="KoqWithoutPresentation" description="My KindOfQuantity"
@@ -2089,7 +2089,7 @@ TEST_F(SchemaManagerTests, GetPreEC32KindOfQuantity)
 TEST_F(SchemaManagerTests, Formats)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("schemamanager_formats.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                     <Unit typeName="MyMeter" displayLabel="My Metre" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
                                     <Format typeName="Format1" displayLabel="Format 1" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"

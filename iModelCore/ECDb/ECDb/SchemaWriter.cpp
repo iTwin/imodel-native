@@ -4030,7 +4030,7 @@ BentleyStatus SchemaWriter::CompareSchemas(Context& ctx, bvector<ECSchemaCP> con
         {
         SchemaComparer comparer;
         //We do not require detail if schema is added or deleted the name and version suffice
-        SchemaComparer::Options options = SchemaComparer::Options(SchemaComparer::AppendDetailLevel::Partial, SchemaComparer::AppendDetailLevel::Partial);
+        SchemaComparer::Options options = SchemaComparer::Options(SchemaComparer::DetailLevel::NoSchemaElements, SchemaComparer::DetailLevel::NoSchemaElements);
         if (SUCCESS != comparer.Compare(ctx.GetDiff(), ctx.GetExistingSchemas(), ctx.GetSchemasToImport(), options))
             return ERROR;
 

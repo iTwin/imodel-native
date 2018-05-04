@@ -269,25 +269,25 @@ TEST_F(SchemaUpgradeTestFixture, ECVersions)
 
     ASSERT_EQ(SUCCESS, SetupECDb("SchemaOriginalECXmlVersion.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "</ECSchema>")));
     verifySchemaVersion(m_ecdb, "TestSchema", ECVersion::Latest, 3, 0);
 
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "</ECSchema>")));
     verifySchemaVersion(m_ecdb, "TestSchema", ECVersion::Latest, 3, 1);
 
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         "</ECSchema>")));
     verifySchemaVersion(m_ecdb, "TestSchema", ECVersion::Latest, 3, 2);
 
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "</ECSchema>"))) << "Downgrade of ECXml version is not supported";
     }
     
@@ -6394,7 +6394,7 @@ TEST_F(SchemaUpgradeTestFixture, ExtendedTypeName)
 
     ASSERT_EQ(SUCCESS, SetupECDb("ModifyExtendedTypeName.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Foo" >
                    <ECProperty propertyName="noext" typeName="string" />
                    <ECProperty propertyName="ext" typeName="string" extendedTypeName="url" />
@@ -6411,7 +6411,7 @@ TEST_F(SchemaUpgradeTestFixture, ExtendedTypeName)
     //add extended type name
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Foo" >
                    <ECProperty propertyName="noext" typeName="string" extendedTypeName="json" />
                    <ECProperty propertyName="ext" typeName="string" extendedTypeName="url" />
@@ -6428,7 +6428,7 @@ TEST_F(SchemaUpgradeTestFixture, ExtendedTypeName)
     //modify extended type name
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Foo" >
                    <ECProperty propertyName="noext" typeName="string" extendedTypeName="json" />
                    <ECProperty propertyName="ext" typeName="string" extendedTypeName="http" />
@@ -6445,7 +6445,7 @@ TEST_F(SchemaUpgradeTestFixture, ExtendedTypeName)
     //remove extended type name
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Foo" >
                    <ECProperty propertyName="noext" typeName="string" />
                    <ECProperty propertyName="ext" typeName="string" />
@@ -8948,7 +8948,7 @@ TEST_F(SchemaUpgradeTestFixture, ChangeECEnumeratorValue)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ChangeECEnumeratorValue.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="IntEnum" backingTypeName="int" >
                     <ECEnumerator name="On" value="0" />
                     <ECEnumerator name="Off" value="1" />
@@ -8974,7 +8974,7 @@ TEST_F(SchemaUpgradeTestFixture, ChangeECEnumeratorValue)
 
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="IntEnum" backingTypeName="int" >
                     <ECEnumerator name="On" value="0" />
                     <ECEnumerator name="Off" value="1" />
@@ -9006,7 +9006,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyEnumeratorNameInPre32ECSchema)
 
     EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="IntEnum" backingTypeName="int" >
                     <ECEnumerator name="IntEnum0" value="0" />
                     <ECEnumerator name="IntEnum1" value="1" />
@@ -9019,7 +9019,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyEnumeratorNameInPre32ECSchema)
 
     EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="IntEnum" backingTypeName="int" >
                     <ECEnumerator name="On" value="0" />
                     <ECEnumerator name="Off" value="1" />
@@ -9032,7 +9032,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyEnumeratorNameInPre32ECSchema)
 
     EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="IntEnum" backingTypeName="int" >
                     <ECEnumerator name="TurnOn" value="0" />
                     <ECEnumerator name="TurnOff" value="1" />
@@ -9046,7 +9046,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyEnumeratorNameInPre32ECSchema)
     //now start with EC3.2 enum which should never allow to rename an enumerator
     ASSERT_EQ(SUCCESS, SetupECDb("ModifyEnumeratorNameInPre32ECSchema.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="IntEnum" backingTypeName="int" >
                     <ECEnumerator name="IntEnum0" value="0" />
                     <ECEnumerator name="IntEnum1" value="1" />
@@ -9059,7 +9059,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyEnumeratorNameInPre32ECSchema)
 
     EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="IntEnum" backingTypeName="int" >
                     <ECEnumerator name="On" value="0" />
                     <ECEnumerator name="Off" value="1" />
@@ -9072,7 +9072,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyEnumeratorNameInPre32ECSchema)
 
     EXPECT_EQ(ERROR, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8" ?>
-              <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+              <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="IntEnum" backingTypeName="int" >
                     <ECEnumerator name="TurnOn" value="0" />
                     <ECEnumerator name="TurnOff" value="1" />
@@ -9306,14 +9306,14 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategory)
     }
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <PropertyCategory typeName="C1" description="My Category 1" displayLabel="Category 1" priority="1" />
                                         <PropertyCategory typeName="C2" description="My Category 2" displayLabel="Category 2" priority="2" />
                                         <PropertyCategory typeName="C4" description="My Category 4" displayLabel="Category 4" priority="4" />
                                     </ECSchema>)xml"))) << "Deleting a category is not supported";
 
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <PropertyCategory typeName="C1" description="My Category 1" displayLabel="Category 1" priority="1" />
                                         <PropertyCategory typeName="C2" description="My Category 2" displayLabel="Category 2" priority="2" />
                                         <PropertyCategory typeName="C3" description="My Category 3" displayLabel="Category 3" priority="3" />
@@ -9335,7 +9335,7 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategory)
     }
 
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <PropertyCategory typeName="C1" displayLabel="Category 1" priority="1" />
                                         <PropertyCategory typeName="C2" description="My Category 2" priority="2" />
                                         <PropertyCategory typeName="C3" description="My nice Category 3" displayLabel="Category 3" priority="3" />
@@ -9365,7 +9365,7 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategory)
 TEST_F(SchemaUpgradeTestFixture, UnitSystems)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_unitsystems.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <UnitSystem typeName="UNUSEDU" displayLabel="Unused" description="Unused" />
@@ -9390,13 +9390,13 @@ TEST_F(SchemaUpgradeTestFixture, UnitSystems)
     }
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                     </ECSchema>)xml"))) << "Deleting a unit system is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <UnitSystem typeName="UNUSEDUS" displayLabel="Unused" description="Unused" />
@@ -9404,7 +9404,7 @@ TEST_F(SchemaUpgradeTestFixture, UnitSystems)
 
     {
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="ImperialSystem" description="Units of measure from the British Empire." />
                                         <UnitSystem typeName="UNUSEDU" displayLabel="Unused" description="Unused" />
@@ -9427,7 +9427,7 @@ TEST_F(SchemaUpgradeTestFixture, UnitSystems)
 TEST_F(SchemaUpgradeTestFixture, Phenomena)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_phenomena.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH*LENGTH" />
                                         <Phenomenon typeName="UNUSEDP" displayLabel="Unused" definition="LENGTH*LENGTH" />
                                     </ECSchema>)xml")));
@@ -9452,25 +9452,25 @@ TEST_F(SchemaUpgradeTestFixture, Phenomena)
     }
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH*LENGTH" />
                                     </ECSchema>)xml"))) << "Deleting a phenomenon is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.5" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH*LENGTH" />
                                         <Phenomenon typeName="UNUSEDPHEN" displayLabel="Unused" definition="LENGTH*LENGTH" />
                                     </ECSchema>)xml"))) << "Renaming a Phenomenon is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.7" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH*LENGTH*LENGTH" />
                                         <Phenomenon typeName="UNUSEDP" displayLabel="Unused" definition="LENGTH*LENGTH" />
                                     </ECSchema>)xml"))) << "Modifying Phenomenon.Definition is not supported";
 
     {
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.15" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.4" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <Phenomenon typeName="AREA" displayLabel="Areal" description="Area" definition="LENGTH*LENGTH" />
                                         <Phenomenon typeName="UNUSEDP" displayLabel="Unused" definition="LENGTH*LENGTH" />
                                         <Phenomenon typeName="VOLUME" displayLabel="Volume" definition="LENGTH*LENGTH*LENGTH" />
@@ -9491,7 +9491,7 @@ TEST_F(SchemaUpgradeTestFixture, Phenomena)
 TEST_F(SchemaUpgradeTestFixture, Units)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_units.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH*LENGTH" />
@@ -9525,7 +9525,7 @@ TEST_F(SchemaUpgradeTestFixture, Units)
     }
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH*LENGTH" />
@@ -9538,7 +9538,7 @@ TEST_F(SchemaUpgradeTestFixture, Units)
 
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.6" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH*LENGTH" />
@@ -9549,7 +9549,7 @@ TEST_F(SchemaUpgradeTestFixture, Units)
 
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.8" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH*LENGTH" />
@@ -9559,7 +9559,7 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                     </ECSchema>)xml"))) << "Modifying Unit.Definition is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.9" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.4" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH*LENGTH" />
@@ -9569,7 +9569,7 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                     </ECSchema>)xml"))) << "Modifying Unit.Numerator is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.10" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.5" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH*LENGTH" />
@@ -9579,7 +9579,7 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                     </ECSchema>)xml"))) << "Modifying Unit.Denominator is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.11" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.6" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH*LENGTH" />
@@ -9589,7 +9589,7 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                     </ECSchema>)xml"))) << "Modifying Unit.Offset is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.12" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.7" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH*LENGTH" />
@@ -9599,7 +9599,7 @@ TEST_F(SchemaUpgradeTestFixture, Units)
                                     </ECSchema>)xml"))) << "Modifying Unit.UnitSystem is not supported";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.13" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.8" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" displayLabel="Metric" description="Metric Units of measure" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="Imperial" description="Units of measure from the British Empire" />
                                         <Phenomenon typeName="AREA" displayLabel="Area" definition="LENGTH*LENGTH" />
@@ -9610,7 +9610,7 @@ TEST_F(SchemaUpgradeTestFixture, Units)
 
     {
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                    <ECSchema schemaName="Schema1" alias="s1" version="1.16" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0.9" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                         <UnitSystem typeName="METRIC" />
                                         <UnitSystem typeName="IMPERIAL" displayLabel="ImperialSystem" description="Units of measure from the British Empire." />
                                         <Phenomenon typeName="AREA" displayLabel="Areal" description="Area" definition="LENGTH*LENGTH" />
@@ -9635,7 +9635,7 @@ TEST_F(SchemaUpgradeTestFixture, Units)
 TEST_F(SchemaUpgradeTestFixture, Formats)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_formats.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                <ECSchema schemaName="Schema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECSchema schemaName="Schema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                     <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
                                             precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
@@ -9680,7 +9680,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
 
 
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                <ECSchema schemaName="Schema" alias="ts" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECSchema schemaName="Schema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                     <Format typeName="MyFormat" displayLabel="My nice Format" description="Real nice format" roundFactor="1.3" type="Scientific" scientificType="ZeroNormalized" showSignOption="SignAlways" formatTraits="KeepSingleZero"
                                             precision="5" decSeparator="," thousandSeparator="." uomSeparator="#">
@@ -9693,7 +9693,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
 
 
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                <ECSchema schemaName="Schema" alias="ts" version="1.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECSchema schemaName="Schema" alias="ts" version="1.0.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                     <Format typeName="MyFormat" roundFactor="1.3" type="Scientific" scientificType="ZeroNormalized" showSignOption="SignAlways"
                                             precision="5">
@@ -9705,7 +9705,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
                  JsonValue());
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                <ECSchema schemaName="Schema" alias="ts" version="1.3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECSchema schemaName="Schema" alias="ts" version="1.0.3" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                     <Format typeName="MyFormat" roundFactor="1.3" type="Scientific" scientificType="ZeroNormalized" showSignOption="SignAlways"
                                             precision="5">
@@ -9718,7 +9718,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
     // now start with format that already has a composite
 
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_formats.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                <ECSchema schemaName="Schema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECSchema schemaName="Schema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                     <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
                                             precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
@@ -9734,7 +9734,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
                  JsonValue(R"json({"spacer":" ", "includeZero":true, "units": [{"name":"MyMeter", "label":"m"}, {"name":"MM", "label":"mm"}]})json"));
 
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                                <ECSchema schemaName="Schema" alias="ts" version="2.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                <ECSchema schemaName="Schema" alias="ts" version="2.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                     <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
                                             precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
