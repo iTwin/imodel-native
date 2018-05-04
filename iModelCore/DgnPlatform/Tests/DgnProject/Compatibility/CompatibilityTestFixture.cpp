@@ -65,7 +65,6 @@ BeFileName const& ProfileManager::Profile::GetSeedFolder() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-
 std::vector<BeFileName> ProfileManager::Profile::GetCopyOfAllVersionOfTestFile(Utf8CP name) const
     {
     Init();
@@ -99,6 +98,7 @@ bool ProfileManager::Profile::GenerateAllSeedFiles() const
 
     return false;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -334,23 +334,17 @@ void ProfileManager::_BeDb::_Init() const
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ProfileManager::_DgnDb::_GetSchemaVersion(ProfileVersion& schemaVersion, PropertySpec const& spec) const
     {
-#if 0
-    Db db;
-    DbResult r = db.CreateNewDb(BEDB_MemoryDb);
+    BeFileName temporaryDir;
+    BeTest::GetHost().GetTempDir(temporaryDir);
+    temporaryDir.AppendUtf8("temp");
+
+    CreateDgnDbParams temp("SchemaVersion");
+    DbResult r;
+    DgnDbPtr db = DgnDb::CreateDgnDb(&r, temporaryDir, temp);
     if (BE_SQLITE_OK != r)
         return r;
 
-    Utf8String schemaVersionJSon;
-    r = db.QueryProperty(schemaVersionJSon, spec);
-    if (BE_SQLITE_ROW != r)
-        return r;
-
-    if (schemaVersionJSon.empty())
-        return BE_SQLITE_ERROR;
-
-    schemaVersion.FromJson(schemaVersionJSon.c_str());
-    return BE_SQLITE_OK;
-#endif
+    schemaVersion = db->GetProfileVersion();
     return BE_SQLITE_OK;
     }
 
@@ -359,7 +353,17 @@ DbResult ProfileManager::_DgnDb::_GetSchemaVersion(ProfileVersion& schemaVersion
 //+---------------+---------------+---------------+---------------+---------------+------
 void ProfileManager::_DgnDb::_Init() const
     {
+    if (DgnDb::IsInitialized())
+        return;
 
+    BeFileName applicationSchemaDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
+
+    BeFileName temporaryDir;
+    BeTest::GetHost().GetOutputRoot(temporaryDir);
+
+    DgnDb::Initialize(temporaryDir, &applicationSchemaDir);
+    srand((uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
     }
 
 //=====================================ProfileManager====================================
@@ -433,8 +437,8 @@ void ProfileManager::Register(TestFile* tf)
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
 BeFileName const& ProfileManager::GetSeedFolder() const 
-    { 
-    if( m_testSeedFolder.empty())
+    {
+    if(m_testSeedFolder.empty())
         {
         BeTest::GetHost().GetDocumentsRoot(m_testSeedFolder);
         m_testSeedFolder.AppendSeparator().AppendUtf8("compatibility");
@@ -449,9 +453,7 @@ BeFileName const& ProfileManager::GetSeedFolder() const
 BeFileName const& ProfileManager::GetOutFolder() const
     {
     if (m_outFolder.empty())
-        {
         BeTest::GetHost().GetOutputRoot(m_outFolder);
-        }
     return m_outFolder;
     }
 
@@ -491,4 +493,3 @@ int ProfileManager::CompareFileVersion(BeFileName const& in)
 bool CompatibilityTestFixture::HasNewProfile(BeFileName const& fileName) { return ProfileManager::CompareFileVersion(fileName) > 0; }
 bool CompatibilityTestFixture::HasOldProfile(BeFileName const& fileName) { return ProfileManager::CompareFileVersion(fileName) < 0; }
 bool CompatibilityTestFixture::HasCurrentProfile(BeFileName const& fileName) { return ProfileManager::CompareFileVersion(fileName) == 0; }
-

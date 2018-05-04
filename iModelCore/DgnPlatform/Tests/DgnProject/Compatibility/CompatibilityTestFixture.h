@@ -13,13 +13,15 @@
 #include <Logging/bentleylogging.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeTimeUtilities.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
+#include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 
 #define PROFILE_NAMESPACE_BEDB    "be_Db"
 #define PROFILE_NAMESPACE_ECDB    "ec_Db"
-#define PROFILE_NAMESPACE_DGNPROJ "dgn_Proj"
+#define PROFILE_NAMESPACE_DGNDB   "dgn_Db"
 #define PROFILE_EXTENSION_BEDB    "bedb"
 #define PROFILE_EXTENSION_ECDB    "ecdb"
-#define PROFILE_EXTENSION_DGNPROJ "dgndb"
+#define PROFILE_EXTENSION_DGNDB   "dgndb"
 #define PROFILE_SCHEMAVERSION     "SchemaVersion"
 //BeDb/2.0.0.1
 
@@ -133,7 +135,7 @@ struct ProfileManager final : NonCopyableClass
                 DbResult _GetSchemaVersion(ProfileVersion& schemaVersion, PropertySpec const& spec) const override;
                 void _Init() const override;
             public:
-                _DgnDb() :Profile(Kind::PROFILE_DgnDb, PROFILE_NAMESPACE_DGNPROJ, PROFILE_SCHEMAVERSION, PROFILE_EXTENSION_DGNPROJ) {}
+                _DgnDb() :Profile(Kind::PROFILE_DgnDb, PROFILE_NAMESPACE_DGNDB, PROFILE_SCHEMAVERSION, PROFILE_EXTENSION_DGNDB) {}
             } m_dgndb;
 
         ProfileManager();
@@ -166,8 +168,6 @@ struct CompatibilityTestFixture : ::testing::Test
         static bool HasCurrentProfile(BeFileName const& fileName);
     };
 
-
-
 //===========================================================================================================
 #define TESTFILE_CLASS_NAME(profile, fileName) TEST_##profile##_##fileName
 #define TESTFILE(profile, fileName, persisted)                                                              \
@@ -196,13 +196,11 @@ struct CompatibilityTestFixture : ::testing::Test
 #define BEDB_FOR_EACH(X,fileName) FOR_EACH_TESTFILE(BEDB,X, fileName)
 #define DGNDB_FOR_EACH(X,fileName) FOR_EACH_TESTFILE(DGNDB,X, fileName)
 
-
 #define ECDB_OPEN_READONLY(T, testFile)   ECDb T; ASSERT_EQ(BE_SQLITE_OK, T.OpenBeSQLiteDb(testFile, Db::OpenParams(Db::OpenMode::Readonly)));
 #define ECDB_OPEN_READOWRITE(T, testFile) ECDb T; ASSERT_EQ(BE_SQLITE_OK, T.OpenBeSQLiteDb(testFile, Db::OpenParams(Db::OpenMode::ReadWrite)));
 
 #define BEDB_OPEN_READONLY(T, testFile)   Db T; ASSERT_EQ(BE_SQLITE_OK, T.OpenBeSQLiteDb(testFile, Db::OpenParams(Db::OpenMode::Readonly)));
 #define BEDB_OPEN_READOWRITE(T, testFile) Db T; ASSERT_EQ(BE_SQLITE_OK, T.OpenBeSQLiteDb(testFile, Db::OpenParams(Db::OpenMode::ReadWrite)));
 
-#define DGNDB_OPEN_READONLY(T, testFile)
-#define DGNDB_OPEN_READOWRITE(T, testFile)
-
+#define DGNDB_OPEN_READONLY(T, testFile)   DbResult r; DgnDbPtr T = DgnDb::OpenDgnDb(&r, testFile, DgnDb::OpenParams(Db::OpenMode::Readonly)); ASSERT_EQ(BE_SQLITE_OK, r);
+#define DGNDB_OPEN_READOWRITE(T, testFile) DbResult r; DgnDbPtr T = DgnDb::OpenDgnDb(&r, testFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite)); ASSERT_EQ(BE_SQLITE_OK, r);
