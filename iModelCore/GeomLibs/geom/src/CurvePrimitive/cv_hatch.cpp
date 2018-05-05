@@ -70,69 +70,6 @@ bool GetSegment (size_t i, DSegment3dR segment) const
 };
 
 
-/*---------------------------------------------------------------------------------**//**
-* @description Return a scale factor to be applied to the z-axis of the hatch transform so that
-* at most maxLines scan planes are defined within the combined range of two GPAs.
-* @param pTransform => proposed hatch transform.  xy plane is hatch plane.  z direction
-*       is advance vector between successive planes.
-* @param pGPA0 => first geometry source.  May be NULL. For instance, send boundary geometry here.
-* @param pGPA1 => second geometry source.  May be NULL, for instance, send corners of clip planes.
-* @param maxLines => max number of lines allowed in specified ranges. If 0 or negative, a default
-*               is applied.
-* @return scale factor to apply to z vector. Any error condition returns 1.0.  Example error
-*       conditions are (a) no geometry to determine range, and (b) singular transform.
-*
-* @bsimethod                                                    EarlinLutz      08/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool    ComputeHatchDensityScale
-(
-        double                          *pScale,
-const   Transform                    *pTransform,
-DRange3dCR  worldRange,
-        int                             maxLines
-)
-    {
-    DRange3d localRange;
-    Transform inverse;
-    double dNumLines;
-    double dMaxLines = (double)maxLines;
-    double bigNum = (double)(0x7FffFFff);
-
-    double zScale = 1.0;
-    if (pScale)
-        *pScale = 1.0;
-
-    if (!inverse.InverseOf (*pTransform))
-        return false;
-
-    if (bsiDRange3d_isNull (&worldRange))
-        return false;
-
-    bsiTransform_multiplyRange (&inverse, &localRange, &worldRange);
-
-    /* Converted V7 files sometimes ask for 1 UOR spacing.
-       Just blow these off
-    */
-    if (fabs (localRange.high.z) > bigNum)
-        return false;
-    if (fabs (localRange.low.z) > bigNum)
-        return false;
-
-    if (dMaxLines <= 0)
-        dMaxLines = (double)s_maxLines;
-
-    dNumLines = localRange.high.z - localRange.low.z;
-    if (dNumLines > dMaxLines)
-        {
-        double exactScale = dNumLines / dMaxLines;
-        int integerScale = jmdlGPA_roundUp (exactScale);
-        zScale = (double)integerScale;
-        }
-
-    if (pScale)
-        *pScale = zScale;
-    return true;
-    }
 
 
 /*====================================================================================
@@ -175,7 +112,7 @@ struct GPA_TransformedHatchContext
 bool    InitTransform
 (
         CurveVectorCR boundary,
-const   Transform                    *pTransform,
+TransformCR transformA,
         int                             maxLines
 )
     {
@@ -190,39 +127,34 @@ const   Transform                    *pTransform,
 
     //cvHatch_appendWithArcsAsBezier (pBoundary, pBoundary);
     //cvHatch_forceBezierAndLinestringEndsToNeighbors (pBoundary, maxGapTol);
-    transform = *pTransform;
+    transform = transformA;
     zRangeLimits = false;
     altitudeTolerance = s_endTolerance;
-    boolstat = inverse.InverseOf (*pTransform);
+    boolstat = inverse.InverseOf (transformA);
 
     if (boolstat)
         {
 
         if (maxLines > 0)
             {
-            double zScale;
             RotMatrix scaleMatrix1;
-            if (!ComputeHatchDensityScale (&zScale, pTransform, range, maxLines))
+            auto zScale = CurveVector::ComputeHatchDensityScale (transformA, range, maxLines);
+            if (!zScale.IsValid ())
                 return false;
             // Be sure the saved index for each line reflects the scaling.....
             //  in a grouped hole, saved index must correspond to actual plane shared across holes.
-            scaleMatrix1.InitFromScaleFactors (1.0, 1.0, zScale);
+            scaleMatrix1.InitFromScaleFactors (1.0, 1.0, zScale.Value ());
             transform = transform *scaleMatrix1;
             if (!inverse.InverseOf (transform))
                 return false;
             }
-
-        bsiDPoint4d_setComponents
-                        (
-                        &fixedPlane,
+        fixedPlane.Init (
                         inverse.form3d[2][0],
                         inverse.form3d[2][1],
                         inverse.form3d[2][2],
                         inverse.form3d[2][3]
                         );
-        bsiDPoint4d_setComponents
-                        (
-                        &incrementalPlane,
+        incrementalPlane.Init (
                         0.0,
                         0.0,
                         0.0,
@@ -231,7 +163,6 @@ const   Transform                    *pTransform,
         }
     return boolstat;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 @bsimethod                                                      EarlinLutz      08/98
@@ -506,7 +437,7 @@ const GraphicsPoint   *pPoint1
 * @param numDashLength => number of dash lengths in pattern.
 * @bsimethod                                                    EarlinLutz      08/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double jmdlGPA_computeDashPeriod
+Public double jmdlGPA_computeDashPeriod
 (
 const   double                  *pDashLengths,
         int                     numDashLength
@@ -580,7 +511,7 @@ static void    jmdlGPA_insertDash
 * @param dashPeriod => total of all dash lengths.
 * @bsimethod                                                    EarlinLutz      08/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void jmdlGPA_expandSingleLineDashPattern
+Public void jmdlGPA_expandSingleLineDashPattern
 (
         CurveVectorR collector,
         DPoint3dCR xyz0,
@@ -646,7 +577,7 @@ const   double                      *pDashLengths,
 * @param numDashLength => number of dash lengths in pattern.
 * @bsimethod                                                    EarlinLutz      08/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     cvHatch_expandDashPattern
+Public void     cvHatch_expandDashPattern
 (
 CurveVectorCR collector,
 CurveVectorCR source,
@@ -1613,34 +1544,61 @@ bool            bOutBit
         }
     }
 
-
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @description Return a scale factor to be applied to the z-axis of the hatch transform so that
-* at most maxLines scan planes are defined within the combined range of two GPAs.
-* @param pTransform => proposed hatch transform.  xy plane is hatch plane.  z direction
+* at most maxLines scan planes are defined within specified range.
+* @param transform => proposed hatch transform.  xy plane is hatch plane.  z direction
 *       is advance vector between successive planes.
-* @param pGPA0 => first geometry source.  May be NULL. For instance, send boundary geometry here.
-* @param pGPA1 => second geometry source.  May be NULL, for instance, send corners of clip planes.
+* @param range range of data.
 * @param maxLines => max number of lines allowed in specified ranges. If 0 or negative, a default
 *               is applied.
 * @return scale factor to apply to z vector. Any error condition returns 1.0.  Example error
-*       conditions are (a) no geometry to determine range, and (b) singular transform.
-*
-* @bsimethod                                                    EarlinLutz      08/98
+*       conditions are (a) null range, and (b) singular transform.
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double jmdlGPA_hatchDensityScale
+ValidatedDouble CurveVector::ComputeHatchDensityScale
 (
-const   Transform                      *pTransform,
-GraphicsPointArrayCP pGPA0,
-GraphicsPointArrayCP pGPA1,
-        int                             maxLines
+TransformCR transform,
+DRange3dCR worldRange,
+int                             maxLines
 )
     {
     double scale;
-    ComputeHatchDensityScale (&scale, pTransform, pGPA0, pGPA1, maxLines);
-    return scale;
+    DRange3d localRange;
+    Transform inverse;
+    double dNumLines;
+    double dMaxLines = (double)maxLines;
+    double bigNum = (double)(0x7FffFFff);
+
+    if (!inverse.InverseOf (transform))
+        return ValidatedDouble (1.0, false);
+
+    if (worldRange.IsNull ())
+        return ValidatedDouble (1.0, false);
+
+    bsiTransform_multiplyRange (&inverse, &localRange, &worldRange);
+
+    /* Converted V7 files sometimes ask for 1 UOR spacing.
+    Just blow these off
+    */
+    if (fabs (localRange.high.z) > bigNum)
+        return ValidatedDouble (1.0, false);
+    if (fabs (localRange.low.z) > bigNum)
+        return ValidatedDouble (1.0, false);
+
+    if (dMaxLines <= 0)
+        dMaxLines = (double)s_maxLines;
+
+    dNumLines = localRange.high.z - localRange.low.z;
+    if (dNumLines > dMaxLines)
+        {
+        double exactScale = dNumLines / dMaxLines;
+        int integerScale = jmdlGPA_roundUp (exactScale);
+        scale = (double)integerScale;
+        }
+
+    return ValidatedDouble (scale, true);
     }
-#endif
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -1670,23 +1628,18 @@ GraphicsPointArrayCP pGPA1,
 *                                       pairs matter.
 * @bsimethod                                                    EarlinLutz      08/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     cvHatch_addTransformedCrossHatchClipped
+static void     cvHatch_addTransformedCrossHatchClipped
 (
 HatchArray &collector,
 CurveVectorCR curves,
-const   Transform                *pTransform,
+TransformCR transformA,
 GraphicsPointArrayCP pClipRangePoints,
 GraphicsPointArrayCP pClipPlanes,
 int     selectRule
 )
     {
     GPA_TransformedHatchContext context;
-
-#ifdef HATCH_DEBUG
-    if (s_noisy)
-        printf("\n ADD TRANSFORMED CROSSHATCH\n");
-#endif
-    if (context.InitTransform (curves, pTransform, s_maxLines))
+    if (context.InitTransform (curves, transformA, s_maxLines))
         {
         jmdlGPA_TCH_collectCrossings (&context, curves);
         jmdlGPA_TCH_sort (&context);
@@ -1703,7 +1656,7 @@ On return the intersection is a sequence of alternating start/stop graphics poin
 @param selectRule           => selects inside/outside rule.  On each scan line,
 @bsimethod                                                      EarlinLutz      03/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     cvHatch_intersectDPlane3d
+Public void     cvHatch_intersectDPlane3d
 (
         HatchArray &collector,
 GraphicsPointArrayCP pBoundary,
@@ -1742,7 +1695,7 @@ DPlane3dCP                          pPlane
 @param
 * @bsimethod                                                    EarlinLutz      08/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool     cvHatch_applyLineLimitsToTransform
+Public bool     cvHatch_applyLineLimitsToTransform
 (
 GraphicsPointArrayP      *pBoundaryArray1,
 int                      numBoundary1,
@@ -1810,7 +1763,7 @@ double                   *pScale
 *                               integer z.
 * @bsimethod                                                    EarlinLutz      08/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     cvHatch_addTransformedCrossHatchCutPoints
+Public void     cvHatch_addTransformedCrossHatchCutPoints
 (
 HatchCollector &collector,
 GraphicsPointArrayCP pBoundary,
@@ -1841,7 +1794,7 @@ const   Transform                *pTransform
 * @param pGPA1 => inner boundary cross hatch
 * @bsimethod                                                    EarlinLutz      08/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     cvHatch_crossHatchDifference
+Public void     cvHatch_crossHatchDifference
 (
         GraphicsPointArray  *pGPAOut,
 GraphicsPointArrayCP pGPA0,
@@ -2168,7 +2121,7 @@ BooleanSweepFunction    mergeFunc
 * @param pGPA1 => inner boundary cross hatch
 * @bsimethod                                                    EarlinLutz      08/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     cvHatch_crossHatchUnion
+Public void     cvHatch_crossHatchUnion
 (
         GraphicsPointArray  *pGPAOut,
 GraphicsPointArrayCP pGPA0,
@@ -2193,7 +2146,7 @@ GraphicsPointArrayCP pGPA1
 * @param pGPA1 => inner boundary cross hatch
 * @bsimethod                                                    EarlinLutz      08/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     cvHatch_crossHatchIntersection
+Public void     cvHatch_crossHatchIntersection
 (
         GraphicsPointArray  *pGPAOut,
 GraphicsPointArrayCP pGPA0,
@@ -2206,7 +2159,7 @@ GraphicsPointArrayCP pGPA1
 #endif
 
 //! Return a curve vector (of type BOUNDARY_TYPE_None) containing hatch sticks.
-GEOMDLLIMPEXP CurveVectorPtr CurveVector::CreateXYHatch (
+CurveVectorPtr CurveVector::CreateXYHatch (
 CurveVectorCR        boundary,      //!< [in] boundary curves.
 DPoint3dCR           startPoint,    //!< [in] Start point for hatch lines
 double               angleRadians,  //!< [in] angle from X axis.
@@ -2226,7 +2179,7 @@ int                  selectRule     //!< 0 for parity rules, 1 for longest possi
     CurveVectorPtr sticks = CurveVector::Create (BOUNDARY_TYPE_None);
 
     HatchArray segments;
-    cvHatch_addTransformedCrossHatchClipped (segments, boundary, &localToWorld, nullptr, nullptr, selectRule);
+    cvHatch_addTransformedCrossHatchClipped (segments, boundary, localToWorld, nullptr, nullptr, selectRule);
     DSegment3d segment;
     for (size_t i = 0; segments.GetSegment (i, segment); i += 2)
         {
@@ -2235,5 +2188,23 @@ int                  selectRule     //!< 0 for parity rules, 1 for longest possi
     return sticks;
     }
 
+//! Return a curve vector (of type BOUNDARY_TYPE_None) containing hatch sticks.
+CurveVectorPtr CurveVector::CreateHatch (
+CurveVectorCR        boundary,      //!< [in] boundary curves.
+TransformCR          worldToIntegerZPlanes, //< [in] Transform to space where each integer Z value is a cut plane.
+int                  selectRule     //!< 0 for parity rules, 1 for longest possible strokes (first to last crossings), 2 for leftmsot and rightmost of parity set.
+)
+    {
+    CurveVectorPtr sticks = CurveVector::Create (BOUNDARY_TYPE_None);
+
+    HatchArray segments;
+    cvHatch_addTransformedCrossHatchClipped (segments, boundary, worldToIntegerZPlanes, nullptr, nullptr, selectRule);
+    DSegment3d segment;
+    for (size_t i = 0; segments.GetSegment (i, segment); i += 2)
+        {
+        sticks->push_back (ICurvePrimitive::CreateLine (segment));
+        }
+    return sticks;
+    }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

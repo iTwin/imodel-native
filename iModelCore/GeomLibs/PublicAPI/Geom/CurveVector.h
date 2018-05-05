@@ -1053,6 +1053,31 @@ double               spacing,       //!< [in] spacing perpendicular to hatch dir
 int                  selection = 0  //!< 0 for parity rules, 1 for longest possible strokes (first to last crossings), 2 for leftmsot and rightmost of parity set.
 );
 
+//! Return a curve vector (of type BOUNDARY_TYPE_None) containing hatch sticks.
+GEOMDLLIMPEXP static CurveVectorPtr CreateHatch (
+CurveVectorCR        boundary,      //!< [in] boundary curves.
+TransformCR          worldToIntegerZPlanes, //< [in] Transform to space where each integer Z value is a cut plane.
+int                  selection = 0  //!< 0 for parity rules, 1 for longest possible strokes (first to last crossings), 2 for leftmsot and rightmost of parity set.
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @description Return a scale factor to be applied to the z-axis of the hatch transform so that
+* at most maxLines scan planes are defined within specified range.
+* @param transform => proposed hatch transform.  xy plane is hatch plane.  z direction
+*       is advance vector between successive planes.
+* @param worldRange range of data.
+* @param maxLines => max number of lines allowed in specified ranges. If 0 or negative, a default
+*               is applied.
+* @return scale factor to apply to z vector. Any error condition returns 1.0.  Example error
+*       conditions are (a) null range, and (b) singular transform.
++---------------+---------------+---------------+---------------+---------------+------*/
+GEOMDLLIMPEXP static ValidatedDouble ComputeHatchDensityScale
+(
+TransformCR transform,
+DRange3dCR worldRange,
+int                             maxLines
+);
+
 //! Return a curveVector with spiral transition between two lines, with shoulder points controlling the spiral max curvatures.
 //!<ul>
 //!<li>Initial spiral starts at pointA, heading towards shoulderB with zero curvature.
