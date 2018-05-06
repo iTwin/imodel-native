@@ -306,7 +306,7 @@ bool CheckArea (char const* title, CurveVectorPtr region, double expectedArea)
         stat = Check::True (region->CentroidNormalArea (centroid, normal, area));
         }
     stat &= Check::Near (expectedArea, area, "Expected Area");
-    double hatchLength, hatchArea;
+    double hatchArea;
     if (region.IsValid ())
         {
         double length;
@@ -317,8 +317,12 @@ bool CheckArea (char const* title, CurveVectorPtr region, double expectedArea)
         double spacing = s_hatchSpaceFactor * sqrt (area);    // maybe we get 100 lines?
         DPoint3d startPoint = DPoint3d::From (0,0,0);
         double angleRadians = Angle::DegreesToRadians (30.0);
-        CurveVectorPtr hatch = CurveVector::CreateXYHatch (*region, startPoint, angleRadians, spacing);
-        hatchLength = hatch->Length ();
+        bvector<DSegment3d> hatch;
+        bvector<HatchSegmentPosition> positions;
+        CurveVector::CreateXYHatch (hatch, &positions, *region, startPoint, angleRadians, spacing);
+        double hatchLength = 0.0;
+        for (auto &s : hatch)
+            hatchLength += s.Length ();
         hatchArea = hatchLength * spacing;  // APPROXIMATE !!!!
         stat &= Check::True (fabs (hatchArea - area) < s_hatchAreaErrorMultiplier * s_hatchSpaceFactor * area,
                     "hatch area approximation close to area?");

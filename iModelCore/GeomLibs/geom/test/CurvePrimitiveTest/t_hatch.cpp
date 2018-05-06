@@ -20,16 +20,22 @@ void ExerciseHatch (CurveVectorR region, double angleDegrees = 30.0, double spac
         {
         DRange3d range;
         region.GetRange (range);
-        SaveAndRestoreCheckTransform shifter (s_batchSpace + range.XLength (), 0, 0);
+        SaveAndRestoreCheckTransform shifter (s_batchSpace + 2.0 * range.XLength (), 0, 0);
         DPoint3d startPoint = DPoint3d::From (x0, y0, 0);
         double angleRadians = Angle::DegreesToRadians (angleDegrees);
-        CurveVectorPtr hatch = CurveVector::CreateXYHatch (region, startPoint, angleRadians, spacing);
+        bvector<DSegment3d> hatch;
+        bvector<HatchSegmentPosition> positions;
+        CurveVector::CreateXYHatch (hatch, &positions, region, startPoint, angleRadians, spacing);
         Check::SaveTransformed (region);
-        if (hatch.IsValid ())
-            {
-    //        Check::Shift (0, s_batchSpace + range.YLength (), 0);
-            Check::SaveTransformed (*hatch);
-            }
+        Check::SaveTransformed (hatch);
+        Check::Shift (2.0 * range.YLength (), 0);
+        bvector<DSegment3d> dashes;
+        //double a = 0.25 * range.XLength ();
+        bvector<double> dashLengths {5,-2,2,-1};
+        DashData dashData;
+        dashData.SetDashLengths (dashLengths);
+        dashData.AppendDashes (hatch,  positions, dashes);
+        Check::SaveTransformed (dashes);
         }
     }
 
@@ -99,17 +105,18 @@ TEST(XYHatch,WithArcs)
         auto lastTransform = Check::GetTransform ();
         for (auto spacing : {1.0, 2.0, 5.0})
             {
-            SaveAndRestoreCheckTransform shifter (0, 80, 0);
+            SaveAndRestoreCheckTransform shifter (0, 200, 0);
 
             for (auto degrees : {0.0, 30.0, 120.0, 0.0, 90.0})
                 {
-                auto regionB = SampleGeometryCreator::CreateBoundaryWithAllCurveTypes (10.0);
-                ExerciseHatch (*regionB, degrees, spacing, 0,0,asBspline);
-
                 auto regionA = SampleGeometryCreator::CircleInRectangle (0,0, 10,
                             -11,-15, 18, 8);
                 ExerciseHatch (*regionA, degrees, spacing, 0,0, asBspline);
                 Check::Shift (20,0,0);  // regionA messes up spacing
+
+                auto regionB = SampleGeometryCreator::CreateBoundaryWithAllCurveTypes (10.0);
+                ExerciseHatch (*regionB, degrees, spacing, 0,0,asBspline);
+
 
                 auto regionC = SampleGeometryCreator::CreateAnnulusWithManyArcSectors (5, 3);
                 ExerciseHatch (*regionC, degrees, spacing, 0,0, asBspline);

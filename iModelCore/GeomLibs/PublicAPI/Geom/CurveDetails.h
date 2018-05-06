@@ -910,6 +910,53 @@ bvector<NeighborEntry> &Neighbors (){return m_neighbor;}
 };
 #endif
 
+//! Description of where a hatch line is along its containing infinite line (with known origin)
+struct HatchSegmentPosition
+{
+//! Distance to segment start
+double startDistance;
+//! Distance to segment end
+double endDistance;
+//! line identifier. (origin is 0, first hatch line is 1, etc)
+double hatchLine;       
+};
+#define DEFAULT_MAX_DASH 100000
+//! Array of (signed) dash lengths, with computed total of all lengths.
+//! Negative lengths are gaps.
+struct DashData
+{
+// PRIMARY
+private: bvector<double> m_dashLengths;
+private: size_t m_maxDash;
+// DERIVED
+private: double m_period;
+
+public: GEOMDLLIMPEXP DashData (size_t maxDash = DEFAULT_MAX_DASH);
+//! Clear the length array.   Replace by new data and period.
+public: GEOMDLLIMPEXP void SetDashLengths (double const *lengths, uint32_t count);
+//! Clear the length array.   Replace by new data and period.
+public: GEOMDLLIMPEXP void SetDashLengths (bvector<double> const &lengths);
+//! Add one dash to the array.  Update the summed period.
+public: GEOMDLLIMPEXP void AddDash (double length);
+
+//! Compute dashes for the segment positioned within the cyclic dash pattern.
+public: GEOMDLLIMPEXP void AppendDashes
+(
+DSegment3dCR segment,               //!< [in] segment to be expanded
+double startDistance,               //!< [in] distance (along containing line, scaled for dash lengths) to start of this segment.
+double endDistance,                 //!< [in] distance (along containing line, scaled for dash lengths) to end of this segment.
+bvector<DSegment3d> &segments       //!< [out] segments
+);
+//! For each segmentA, create dashes under control of dashLengths its position data
+GEOMDLLIMPEXP void AppendDashes
+(
+bvector<DSegment3d> const &segmentA,               //!< [in] segments to be expanded
+bvector<HatchSegmentPosition> const &positionA,     //!< [in] dash position data.  Assumed compatible with segmentA
+bvector<DSegment3d> &segmentB       //!< [out] segments
+);
+
+};
+
 END_BENTLEY_GEOMETRY_NAMESPACE
 
 #ifdef BENTLEY_WIN32

@@ -1045,7 +1045,9 @@ GEOMDLLIMPEXP static CurveVectorPtr ReduceToCCWAreas (CurveVectorCR regionA);
 
 
 //! Return a curve vector (of type BOUNDARY_TYPE_None) containing hatch sticks.
-GEOMDLLIMPEXP static CurveVectorPtr CreateXYHatch (
+GEOMDLLIMPEXP static void CreateXYHatch (
+bvector<DSegment3d> &sticks,         //!< [out] computed hatch segments
+bvector<HatchSegmentPosition> *segmentPosition, //!< [out] For each stick, description of hatch level and distance along.
 CurveVectorCR        boundary,      //!< [in] boundary curves.
 DPoint3dCR           startPoint,    //!< [in] Start point for hatch lines
 double               angleRadians,  //!< [in] angle from X axis.
@@ -1054,7 +1056,10 @@ int                  selection = 0  //!< 0 for parity rules, 1 for longest possi
 );
 
 //! Return a curve vector (of type BOUNDARY_TYPE_None) containing hatch sticks.
-GEOMDLLIMPEXP static CurveVectorPtr CreateHatch (
+
+GEOMDLLIMPEXP static void CreateHatch (
+bvector<DSegment3d> &sticks,         //!< [out] computed hatch segments
+bvector<HatchSegmentPosition> *segmentPosition, //!< [out] For each stick, description of hatch level and distance along.
 CurveVectorCR        boundary,      //!< [in] boundary curves.
 TransformCR          worldToIntegerZPlanes, //< [in] Transform to space where each integer Z value is a cut plane.
 int                  selection = 0  //!< 0 for parity rules, 1 for longest possible strokes (first to last crossings), 2 for leftmsot and rightmost of parity set.

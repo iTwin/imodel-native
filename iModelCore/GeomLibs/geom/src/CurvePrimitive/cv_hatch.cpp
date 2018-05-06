@@ -29,7 +29,7 @@ typedef enum
 */
 static int s_maxLines = 20000;
 
-static int jmdlGPA_roundUp
+static int jmdlGPA_roundUpInt
 (
 double value
 )
@@ -37,12 +37,19 @@ double value
     return (int)ceil (value);
     }
 
-static int jmdlGPA_roundDown
+static int jmdlGPA_roundDownInt
 (
 double value
 )
     {
     return (int)floor (value);
+    }
+static double jmdlGPA_roundDownDouble
+(
+double value
+)
+    {
+    return floor (value);
     }
 
 struct HatchArray : bvector <GraphicsPoint>
@@ -57,15 +64,30 @@ void Add (DPoint4dCR point, bool markBreak)
     push_back (GraphicsPoint (point));
     }
 // Bundle 2 consecutive points starting at point index i as a DSegment3d
-bool GetSegment (size_t i, DSegment3dR segment) const
+bool GetSegment (size_t i, DSegment3dR segment, HatchSegmentPosition &position) const
     {
     if (i + 1 < size ())
         {
         at(i).point.GetXYZ (segment.point[0]);
         at(i + 1).point.GetXYZ (segment.point[1]);
+        position.hatchLine = at(i).userData;
+        position.startDistance = at(i).a;
+        position.endDistance = at(i+1).a;
         return true;
         }
     return false;
+    }
+// Append simple DSegment3d's to bvector.
+void AppendSegments (bvector<DSegment3d> &segments, bvector<HatchSegmentPosition> *segmentPosition)
+    {
+    DSegment3d segment;
+    HatchSegmentPosition position;
+    for (size_t i = 0; GetSegment (i, segment, position); i += 2)
+        {
+        segments.push_back (segment);
+        if (nullptr != segmentPosition)
+            segmentPosition->push_back (position);
+        }
     }
 };
 
@@ -426,29 +448,7 @@ const GraphicsPoint   *pPoint1
     return 0;
     }
 
-#ifdef CompileDashExpansion
-/*---------------------------------------------------------------------------------**//**
-*
-* Compute the overall period of a dash pattern.
-*
-* @param pDashLengths => array of dash lengths.  Negative lengths are "off".
-*   (Remark: It seems obvious that alternate entries will have alternate signs.
-*   If not, we just do as we're told.)
-* @param numDashLength => number of dash lengths in pattern.
-* @bsimethod                                                    EarlinLutz      08/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public double jmdlGPA_computeDashPeriod
-(
-const   double                  *pDashLengths,
-        int                     numDashLength
-)
-    {
-    double sum;
-    int i;
-    for (sum = 0.0, i = 0; i < numDashLength; i++)
-        sum += fabs (pDashLengths[i]);
-    return sum;
-    }
+
 /*---------------------------------------------------------------------------------**//**
 *
 * Add a single dash to the output.  Parameter values are assumed to be ordered, and
@@ -463,9 +463,9 @@ const   double                  *pDashLengths,
 * @param divDeltaA => 1 over (a1 - a0), to save the divide.
 * @bsimethod                                                    EarlinLutz      08/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void    jmdlGPA_insertDash
+static void    InsertInterpolatedDash
 (
-        CurveVectorR       dashCollector,
+bvector<DSegment3d> &segments,
         DPoint3dCR           xyz0,
         DPoint3dCR           xyz1,
         double                  a0,
@@ -495,9 +495,51 @@ static void    jmdlGPA_insertDash
                                 &pGP1->point, (b1 - a0) * divDeltaA
                                 );
 */
-        dashCollector.Add (ICurvePrimitive::CreateLine (DSegment3d::From (xyzA, xyzB)));
+        segments.push_back (DSegment3d::From (xyzA, xyzB));
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DashData::DashData (size_t maxDash)
+    {
+    m_maxDash = maxDash;
+    m_period = 0;
+    m_dashLengths.clear ();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DashData::SetDashLengths (double const *lengths, uint32_t count)
+    {
+    m_period = 0.0;
+    m_dashLengths.clear ();
+    for (uint32_t i = 0; i < count; i++)
+        AddDash (lengths[i]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DashData::SetDashLengths (bvector<double> const &lengths)
+    {
+    m_period = 0.0;
+    m_dashLengths.clear ();
+    for (auto a : lengths)
+        AddDash (a);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DashData::AddDash (double length)
+    {
+    m_dashLengths.push_back (length); m_period += fabs (length);
+    }
+#ifdef abc
 /*---------------------------------------------------------------------------------**//**
 *
 * Apply dash patterning to a single line.
@@ -511,9 +553,9 @@ static void    jmdlGPA_insertDash
 * @param dashPeriod => total of all dash lengths.
 * @bsimethod                                                    EarlinLutz      08/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void jmdlGPA_expandSingleLineDashPattern
+static void ExpandSingleLineDashPattern
 (
-        CurveVectorR collector,
+bvector<DPoint3d> &collector,
         DPoint3dCR xyz0,
         double a0,
         DPoint3dCR xyz1,
@@ -531,7 +573,7 @@ const   double                      *pDashLengths,
 
     if (a0 > a1)
         {
-        jmdlGPA_expandSingleLineDashPattern (collector, xyz1, a1, xyz1, a0,
+        ExpandSingleLineDashPattern (collector, xyz1, a1, xyz1, a0,
                                     pDashLengths, numDashLength, dashPeriod, maxCollectorPoints);
         }
     else
@@ -550,7 +592,7 @@ const   double                      *pDashLengths,
             db = pDashLengths[i];
             b1 = b0 + fabs (db);
             if (db >= 0.0)
-                jmdlGPA_insertDash
+                InsertInterpolatedDash
                             (
                             collector,
                             xyz0, xyz1,
@@ -562,60 +604,68 @@ const   double                      *pDashLengths,
             }
         }
     }
-
-
+#endif
 /*---------------------------------------------------------------------------------**//**
-*
-* Copy lines from one array to another, applying dash logic to replace each
-*   line by a dash pattern.
-*
-* @param pSource => array of line segments.  Each point is assumed to be
-*   marked with a dash-space coordinate as its "a" value.
-* @param pDashLengths => array of dash lengths.  Negative lengths are "off".
-*   (Remark: It seems obvious that alternate entries will have alternate signs.
-*   If not, we just do as we're told.)
-* @param numDashLength => number of dash lengths in pattern.
-* @bsimethod                                                    EarlinLutz      08/98
+* @bsimethod                                                    EarlinLutz      05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public void     cvHatch_expandDashPattern
+void DashData::AppendDashes
 (
-CurveVectorCR collector,
-CurveVectorCR source,
-const   double                      *pDashLengths,
-        int                         numDashLength
+DSegment3dCR segment,               //!< [in] segment to be expanded
+double startDistance,               //!< [in] distance (along containing line, scaled for dash lengths) to start of this segment.
+double endDistance,                 //!< [in] distance (along containing line, scaled for dash lengths) to end of this segment.
+bvector<DSegment3d> &segments       //!< [out] segments
 )
     {
-    int i0, i1, i;
-    DPoint4d point0, point1;
-    int curveType;
-    GraphicsPoint gp0, gp1;
-    static int s_maxCollectorPoint = 100000;
-    double dashPeriod = jmdlGPA_computeDashPeriod (pDashLengths, numDashLength);
+    if (m_period <= 0.0 || m_dashLengths.empty ())
+        return;
 
-    for (auto &c : source)
+    if (endDistance < startDistance)
         {
-        if (collector.size () >  s_maxCollectorPoint)
-            break;
-        DSegment3d segment;
-        if (c->TryGetLine (segment))
+        AppendDashes (segment, endDistance, startDistance, segments);
+        }
+    else
+        {
+        double b0 = jmdlGPA_roundDownDouble (startDistance / m_period) * m_period;
+        double db;
+        double b1;
+        size_t numDashLength = m_dashLengths.size ();
+        double delta = endDistance - startDistance;
+        if (delta == 0.0)
+            delta = 1.0;
+        double divDeltaA = 1.0 / delta;
+
+        for (size_t i = 0; b0 < endDistance && segments.size () < m_maxDash;)
             {
-            jmdlGPA_expandSingleLineDashPattern
-                            (
-                            collector,
-                            segment.point[0], segment.point[1],
-                            pDashLengths,
-                            numDashLength,
-                            dashPeriod,
-                            s_maxCollectorPoint
-                            );
-            }
-        else
-            {
-            collector.Add (c->Clone ());
+            db = m_dashLengths[i];
+            b1 = b0 + fabs (db);
+            if (db >= 0.0)
+                InsertInterpolatedDash
+                (
+                    segments,
+                    segment.point[0], segment.point[1],
+                    startDistance, endDistance, b0, b1,
+                    divDeltaA);
+            b0 = b1;
+            if (++i >= numDashLength)
+                i = 0;
             }
         }
     }
-#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DashData::AppendDashes
+(
+bvector<DSegment3d> const &segmentA,               //!< [in] segments to be expanded
+bvector<HatchSegmentPosition> const &positionA,     //!< [in] dash position data.  Assumed compatible with segmentA
+bvector<DSegment3d> &segmentB       //!< [out] segments
+)
+    {
+    for (size_t i = 0; i < segmentA.size (); i++)
+        AppendDashes (segmentA[i], positionA[i].startDistance, positionA[i].endDistance, segmentB);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * Split a double into integer and fraction parts, specifically for use in identifying
 *   parallel cutting planes, hence possibly requiring referene to the context for
@@ -679,8 +729,8 @@ int         numPole
             {
             if (bsiTrig_safeDivide (&a, -pF[i], pG[i], 0.0))
                 {
-                m0 = jmdlGPA_roundDown (a);
-                m1 = jmdlGPA_roundUp   (a);
+                m0 = jmdlGPA_roundDownInt (a);
+                m1 = jmdlGPA_roundUpInt   (a);
                 if (i == 0)
                     {
                     k0 = m0;
@@ -1140,8 +1190,8 @@ DEllipse3dCR ellipse
             }
         if (numOK > 0)
             {
-            *pPlane0 = jmdlGPA_roundDown (hMin);
-            *pPlane1 = jmdlGPA_roundUp (hMax);
+            *pPlane0 = jmdlGPA_roundDownInt (hMin);
+            *pPlane1 = jmdlGPA_roundUpInt (hMax);
             return true;
             }
         }
@@ -1154,8 +1204,8 @@ DEllipse3dCR ellipse
         if (numSortDist == 2)
             {
             DoubleOps::Sort (sortDist, numSortDist, true);
-            *pPlane0 = jmdlGPA_roundDown (sortDist[0]);
-            *pPlane1 = jmdlGPA_roundUp (sortDist[1]);
+            *pPlane0 = jmdlGPA_roundDownInt (sortDist[0]);
+            *pPlane1 = jmdlGPA_roundUpInt (sortDist[1]);
             result = true;
             }
         }
@@ -1202,8 +1252,8 @@ DEllipse3dCR ellipse
         if (numClippedSort >= 1)
             {
             DoubleOps::Sort (clippedSortDist, numClippedSort, true);
-            *pPlane0 = jmdlGPA_roundDown (clippedSortDist[0]);
-            *pPlane1 = jmdlGPA_roundUp (clippedSortDist[numClippedSort - 1]);
+            *pPlane0 = jmdlGPA_roundDownInt (clippedSortDist[0]);
+            *pPlane1 = jmdlGPA_roundUpInt (clippedSortDist[numClippedSort - 1]);
             result = true;
             }
 
@@ -1563,7 +1613,7 @@ DRange3dCR worldRange,
 int                             maxLines
 )
     {
-    double scale;
+    double scale = 1.0;
     DRange3d localRange;
     Transform inverse;
     double dNumLines;
@@ -1593,7 +1643,7 @@ int                             maxLines
     if (dNumLines > dMaxLines)
         {
         double exactScale = dNumLines / dMaxLines;
-        int integerScale = jmdlGPA_roundUp (exactScale);
+        int integerScale = jmdlGPA_roundUpInt (exactScale);
         scale = (double)integerScale;
         }
 
@@ -2159,7 +2209,9 @@ GraphicsPointArrayCP pGPA1
 #endif
 
 //! Return a curve vector (of type BOUNDARY_TYPE_None) containing hatch sticks.
-CurveVectorPtr CurveVector::CreateXYHatch (
+void CurveVector::CreateXYHatch (
+bvector<DSegment3d> &sticks,         //!< [out] computed hatch segments
+bvector<HatchSegmentPosition> *segmentPosition, //!< [out] For each stick, description of hatch level and distance along.
 CurveVectorCR        boundary,      //!< [in] boundary curves.
 DPoint3dCR           startPoint,    //!< [in] Start point for hatch lines
 double               angleRadians,  //!< [in] angle from X axis.
@@ -2176,35 +2228,30 @@ int                  selectRule     //!< 0 for parity rules, 1 for longest possi
         s * spacing, 0,  c * spacing, startPoint.y,
         0,      spacing, 0.0,         startPoint.z
         );
-    CurveVectorPtr sticks = CurveVector::Create (BOUNDARY_TYPE_None);
 
     HatchArray segments;
     cvHatch_addTransformedCrossHatchClipped (segments, boundary, localToWorld, nullptr, nullptr, selectRule);
-    DSegment3d segment;
-    for (size_t i = 0; segments.GetSegment (i, segment); i += 2)
-        {
-        sticks->push_back (ICurvePrimitive::CreateLine (segment));
-        }
-    return sticks;
+    sticks.clear ();
+    if (segmentPosition)
+        segmentPosition->clear ();
+    segments.AppendSegments (sticks, segmentPosition);
     }
 
 //! Return a curve vector (of type BOUNDARY_TYPE_None) containing hatch sticks.
-CurveVectorPtr CurveVector::CreateHatch (
+void CurveVector::CreateHatch (
+bvector<DSegment3d> &sticks,
+bvector<HatchSegmentPosition> *segmentPosition, //!< [out] For each stick, description of hatch level and distance along.
 CurveVectorCR        boundary,      //!< [in] boundary curves.
 TransformCR          worldToIntegerZPlanes, //< [in] Transform to space where each integer Z value is a cut plane.
 int                  selectRule     //!< 0 for parity rules, 1 for longest possible strokes (first to last crossings), 2 for leftmsot and rightmost of parity set.
 )
     {
-    CurveVectorPtr sticks = CurveVector::Create (BOUNDARY_TYPE_None);
-
     HatchArray segments;
     cvHatch_addTransformedCrossHatchClipped (segments, boundary, worldToIntegerZPlanes, nullptr, nullptr, selectRule);
-    DSegment3d segment;
-    for (size_t i = 0; segments.GetSegment (i, segment); i += 2)
-        {
-        sticks->push_back (ICurvePrimitive::CreateLine (segment));
-        }
-    return sticks;
+    sticks.clear ();
+    if (segmentPosition)
+        segmentPosition->clear ();
+    segments.AppendSegments (sticks, segmentPosition);
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE
