@@ -1612,7 +1612,7 @@ int numB
     bsiDRange3d_initFromArray (&rangeA_localB, pXYZA_localB, numA);
     bsiDRange3d_initFromArray (&rangeB_localB, pXYZB_localB, numB);
 
-    bsiDVec3d_fromTransformColumn (&zvecB, &worldToLocalB, 2);
+    zvecB = worldToLocalB.GetMatrixColumn (2);
 
     largeCoordinate = bsiDRange3d_getLargestCoordinate (&rangeA_localB)
                     + bsiDRange3d_getLargestCoordinate (&rangeB_localB);
@@ -1686,8 +1686,8 @@ int numB
     bsiDRange3d_initFromArray (&rangeA_localB, pXYZA_localB, numA);
     bsiDRange3d_initFromArray (&rangeB_localA, pXYZB_localA, numB);
 
-    bsiDVec3d_fromTransformColumn (&zvecA, &worldToLocalA, 2);
-    bsiDVec3d_fromTransformColumn (&zvecB, &worldToLocalB, 2);
+    zvecA = worldToLocalA.GetMatrixColumn (2);
+    zvecB = worldToLocalB.GetMatrixColumn (2);
 
     largeCoordinate = bsiDRange3d_getLargestCoordinate (&rangeA_localA)
                     + bsiDRange3d_getLargestCoordinate (&rangeB_localA);

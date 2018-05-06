@@ -1476,6 +1476,7 @@ bool                    extend
     jmdlGraphicsPointArray_addDPlane3dIntersectionPoints (this, &source, &plane, extend);
     }
 
+#ifdef CompileAddPlaneIntersectionEdges
 //! @description compute line segments of intersections with a plane, using parity rules to determine in and out.
 //!    Intersection edges are added to the instance array in start-end pairs.
 //! @param [in] boundary boundary geometry
@@ -1488,5 +1489,5 @@ DPlane3dCR              plane
     {
     jmdlGraphicsPointArray_intersectDPlane3d (this, &boundary, &plane);
     }
-
+#endif
 END_BENTLEY_GEOMETRY_NAMESPACE

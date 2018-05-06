@@ -45,7 +45,7 @@ $(OUT_DIR)dpoint3d$(OUT_EXT)        : $(geomSrcStructs)dpoint3d.cpp         $(OT
 $(OUT_DIR)XYZRangeTree$(OUT_EXT)    :$(geomSrcFuncs)XYZRangeTree.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 %ifdef COMPILE_bvRangeTree
-$(OUT_DIR)bvRangeTree$(OUT_EXT)         :$(geomSrcFuncs)bvRangeTree.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)bvRangeTree$(OUT_EXT)         :$(geomSrcFuncs)bvRangeTree.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 %endif
 
@@ -80,7 +80,7 @@ $(OUT_DIR)dvec3d$(OUT_EXT)          : $(geomSrcStructs)dvec3d.cpp           $(OT
 
 $(OUT_DIR)dvec3drotmatrix$(OUT_EXT) : $(geomSrcStructs)dvec3drotmatrix.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dvec3dtransform$(OUT_EXT) : $(geomSrcStructs)dvec3dtransform.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dvec3dtransform$(OUT_EXT) : $(geomSrcStructs)dvec3dtransform.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)dpoint4d$(OUT_EXT)        : $(geomSrcStructs)dpoint4d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -357,7 +357,7 @@ $(OUT_DIR)bspLocal$(OUT_EXT)    : $(geomSrcBspline)bspLocal.cpp $(OTHER_DEPENDEN
 
 $(OUT_DIR)sortutil$(OUT_EXT)    : $(geomSrcBspline)sortutil.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-$(OUT_DIR)bspv7$(OUT_EXT)    : $(geomSrcBspline)bspv7.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+#$(OUT_DIR)bspv7$(OUT_EXT)    : $(geomSrcBspline)bspv7.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 $(OUT_DIR)bspcurvcurv$(OUT_EXT)    : $(geomSrcBspline)bspcurvcurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
@@ -442,7 +442,7 @@ $(OUT_DIR)bspPolysolve$(OUT_EXT)    : $(geomSrcBspline)bspPolysolve.cpp $(OTHER_
 # (end funcs_sources_pubinc.mki)
 # (begin funcs_sources_bsiinc.mki)
 
-$(OUT_DIR)pencil$(OUT_EXT)          : $(geomSrcFuncs)pencil.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)pencil$(OUT_EXT)          : $(geomSrcFuncs)pencil.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)polycoff$(OUT_EXT)        : $(geomSrcFuncs)polycoff.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -879,9 +879,9 @@ $(OUT_DIR)gp_beziersection$(OUT_EXT) : $(geomSrcGpa)gp_beziersection.cpp        
 
 $(OUT_DIR)gp_ellipse$(OUT_EXT) : $(geomSrcGpa)gp_ellipse.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)gp_hatch$(OUT_EXT) : $(geomSrcGpa)gp_hatch.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)gp_hatch$(OUT_EXT) : $(geomSrcGpa)gp_hatch.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)gp_hatchblock$(OUT_EXT) : $(geomSrcGpa)gp_hatchblock.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)gp_hatchblock$(OUT_EXT) : $(geomSrcGpa)gp_hatchblock.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)gp_inout$(OUT_EXT) : $(geomSrcGpa)gp_inout.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
