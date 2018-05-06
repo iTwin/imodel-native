@@ -1061,7 +1061,7 @@ GEOMDLLIMPEXP static void CreateHatch (
 bvector<DSegment3d> &sticks,         //!< [out] computed hatch segments
 bvector<HatchSegmentPosition> *segmentPosition, //!< [out] For each stick, description of hatch level and distance along.
 CurveVectorCR        boundary,      //!< [in] boundary curves.
-TransformCR          worldToIntegerZPlanes, //< [in] Transform to space where each integer Z value is a cut plane.
+TransformCR          worldToIntegerZPlanes, //!< [in] Transform to space where each integer Z value is a cut plane.
 int                  selection = 0  //!< 0 for parity rules, 1 for longest possible strokes (first to last crossings), 2 for leftmsot and rightmost of parity set.
 );
 
