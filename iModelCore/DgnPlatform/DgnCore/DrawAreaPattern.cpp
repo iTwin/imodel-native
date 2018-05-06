@@ -704,66 +704,50 @@ static void ProcessAreaPattern(ViewContextR context, Render::GraphicBuilderR gra
     DrawCellTiles(context, graphic, params, boundary, *symbolGeometry, low, high, spacing, scale, orgTrans, symbolCorners);
     }
 
+static void DrawSegment (bool is3d, Render::GraphicBuilderR graphic, double priority, DSegment3dCR segment)
+    {
+    if (is3d)
+        {
+        graphic.AddLineString (2, segment.point);
+        }
+    else
+        {
+        // To ensure display priority is properly honored in non-rasterized plots, it is necessary to call QuickVision 2D draw methods. TR 180390.
+        int nGot = 2;
+        DPoint2d localPoints[2];
+
+        for (size_t iPoint = 0; iPoint < nGot; iPoint++)
+            {
+            localPoints[iPoint].x = segment.point[iPoint].x;
+            localPoints[iPoint].y = segment.point[iPoint].y;
+            }
+
+        graphic.AddLineString2d (2, localPoints, priority);
+        }
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int DrawHatchGPA(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsCR params, GPArrayP pGPA)
+static int DrawHatch(
+ViewContextR context,
+Render::GraphicBuilderR graphic,
+Render::GeometryParamsCR params,
+TransformCR transform,
+bvector<DSegment3d> const &hatch,
+size_t &numCheck)
     {
-    size_t        nGot, sourceCount = pGPA->GetGraphicsPointCount();
-    DPoint3d      localPoints[MAX_GPA_STROKES];
     bool          is3d = context.Is3dView();
     double        priority = params.GetNetDisplayPriority();
-    GraphicsPoint gp;
-
-    for (size_t i=0; i < sourceCount;)
+    DSegment3d    segmentB;
+    for (auto &segmentA : hatch)
         {
-        if (0 == (i % 100) && context.CheckStop())
+        if (0 == (numCheck++ % 100) && context.CheckStop())
             return ERROR;
-
-        nGot = 0;
-        
-        while (pGPA->GetGraphicsPoint(i, gp))
-            {
-            gp.point.GetProjectedXYZ(localPoints[nGot++]);
-
-            if (gp.IsCurveBreak())
-                {
-                i++;
-                break;
-                }
-            else if (nGot >= MAX_GPA_STROKES)
-                {
-                // Leave i where it is to resume from non-break !!!
-                break;
-                }
-            else
-                {
-                i++;
-                }
-            }
-
-        if (nGot <= 1)
-            continue;
-
-        if (is3d)
-            {
-            graphic.AddLineString((int) nGot, localPoints);
-            }
-        else
-            {
-            // To ensure display priority is properly honored in non-rasterized plots, it is necessary to call QuickVision 2D draw methods. TR 180390.
-            std::valarray<DPoint2d> localPoints2dBuf(nGot);
-
-            for (size_t iPoint = 0; iPoint < nGot; iPoint++)
-                {
-                localPoints2dBuf[iPoint].x = localPoints[iPoint].x;
-                localPoints2dBuf[iPoint].y = localPoints[iPoint].y;
-                }
-
-            graphic.AddLineString2d((int) nGot, &localPoints2dBuf[0], priority);
-            }
+        transform.Multiply (segmentB.point, segmentA.point, 2);
+        DrawSegment (is3d, graphic, priority, segmentB);
         }
-
     return SUCCESS;
     }
 
@@ -801,61 +785,25 @@ static void GetBoundaryShapePts(DPoint3dP pts, CurveVectorCR boundary, RotMatrix
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static GPArrayP GetBoundaryGPA(CurveVectorCR boundary, RotMatrixCR rMatrix, DPoint3dCR origin, bool useRange)
+static void GetHatchLineLimitTransform(TransformR scaledTransform, TransformCR hatchTransform, CurveVectorCR boundary)
     {
-    GPArrayP    gpa = GPArray::Grab();
-
-    if (!useRange)
+    scaledTransform = hatchTransform;
+    DRange3d worldRange;
+    if (boundary.GetRange (worldRange))
         {
-        gpa->Add(boundary);
-
-        return gpa;
-        }
-
-    DPoint3d    shapePts[5];
-
-    GetBoundaryShapePts(shapePts, boundary, rMatrix, origin);
-
-    gpa->Add(shapePts, 5);
-    gpa->MarkBreak();
-    gpa->MarkMajorBreak();
-
-    return gpa;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void GetHatchLineLimitTransform(TransformR scaledTransform, TransformCR hatchTransform, GPArrayP boundGpa)
-    {
-    double      zScale;
-
-    // modify the transform to limit the number of hatch lines.
-    if ((zScale = jmdlGPA_hatchDensityScale(&hatchTransform, boundGpa, NULL, MAX_GPA_HATCH_LINES)) > 1.0)
-        {
-        RotMatrix   scaleMatrix;
-
-        bsiRotMatrix_initFromScaleFactors(&scaleMatrix, 1.0, 1.0, zScale);
-        scaledTransform.InitProduct(hatchTransform, scaleMatrix);
-        }
-    else
-        {
-        scaledTransform = hatchTransform;
+        auto zScale = CurveVector::ComputeHatchDensityScale (hatchTransform, worldRange, MAX_GPA_HATCH_LINES);
+        if (zScale.IsValid ())
+            {
+            RotMatrix   scaleMatrix = RotMatrix::FromScaleFactors (1.0, 1.0, zScale.Value ());
+            scaledTransform.InitProduct(hatchTransform, scaleMatrix);
+            }
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void AddHatchLinesToGPA(GPArrayP hatchGpa, GPArrayP boundGpa, TransformR scaledTransform)
-    {
-    jmdlGraphicsPointArray_addTransformedCrossHatchClipped(hatchGpa, boundGpa, &scaledTransform, nullptr, nullptr, 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessHatchBoundary(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsCR params, GPArrayP boundGpa, TransformR baseTransform, TransformR hatchTransform, double angle, double space)
+static void ProcessHatchBoundary(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsCR params, CurveVectorCR boundary, TransformR baseTransform, TransformR hatchTransform, double angle, double space)
     {
     DVec3d      xVec,yVec, zVec;
     DPoint3d    origin;
@@ -867,14 +815,13 @@ static void ProcessHatchBoundary(ViewContextR context, Render::GraphicBuilderR g
     hatchTransform.InitFromOriginAndVectors(origin, xVec, yVec, zVec);
 
     Transform       scaledTransform;
-    GPArraySmartP   hatchGpa;
 
-    GetHatchLineLimitTransform(scaledTransform, hatchTransform, boundGpa);
-    AddHatchLinesToGPA(hatchGpa, boundGpa, scaledTransform);
-
-    hatchGpa->Transform(&baseTransform);
-
-    PatternHelper::DrawHatchGPA(context, graphic, params, hatchGpa);
+    GetHatchLineLimitTransform(scaledTransform, hatchTransform, boundary);
+    bvector<DSegment3d> hatch;
+    CurveVector::CreateHatch (hatch, nullptr, boundary, scaledTransform);
+    
+    size_t numCheck = 0;
+    PatternHelper::DrawHatch (context, graphic, params, baseTransform, hatch, numCheck);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -883,10 +830,6 @@ static void ProcessHatchBoundary(ViewContextR context, Render::GraphicBuilderR g
 static void ProcessHatchPattern(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsR params, CurveVectorCR boundary)
     {
     PatternParamsCR pattern = *params.GetPatternParams();
-    GPArraySmartP   boundGpa(PatternHelper::GetBoundaryGPA(boundary, pattern.GetOrientation(), pattern.GetOrigin(), false));
-
-    if (nullptr == boundGpa || 0 == boundGpa->GetCount())
-        return;
 
     Transform baseTransform, invBaseTransform;
     Transform hatchTransform;
@@ -895,12 +838,15 @@ static void ProcessHatchPattern(ViewContextR context, Render::GraphicBuilderR gr
     baseTransform.InitFrom(pattern.GetOrientation(), pattern.GetOrigin());
     invBaseTransform.InverseOf(baseTransform);
 
-    boundGpa->Transform(&invBaseTransform);
+    auto xzBoundary = boundary.Clone (invBaseTransform);
 
-    PatternHelper::ProcessHatchBoundary(context, graphic, params, boundGpa, baseTransform, hatchTransform, pattern.GetPrimaryAngle(), pattern.GetPrimarySpacing());
+    if (xzBoundary.IsValid ())
+        {
+        PatternHelper::ProcessHatchBoundary(context, graphic, params, *xzBoundary, baseTransform, hatchTransform, pattern.GetPrimaryAngle(), pattern.GetPrimarySpacing());
 
-    if (0.0 != pattern.GetSecondarySpacing())
-        PatternHelper::ProcessHatchBoundary(context, graphic, params, boundGpa, baseTransform, hatchTransform, pattern.GetSecondaryAngle(), pattern.GetSecondarySpacing());
+        if (0.0 != pattern.GetSecondarySpacing())
+            PatternHelper::ProcessHatchBoundary(context, graphic, params, *xzBoundary, baseTransform, hatchTransform, pattern.GetSecondaryAngle(), pattern.GetSecondarySpacing());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -927,25 +873,27 @@ static bool IsValidPatternDefLine(DwgHatchDefLine const* lineP, double rangeDiag
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessDWGHatchBoundary(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsCR params, GPArrayP boundGpa, TransformR baseTransform, TransformR hatchTransform, DwgHatchDefLine const* hatchLines, int nDefLines)
+static void ProcessDWGHatchBoundary(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsCR params, CurveVectorCR boundary, TransformR baseTransform, TransformR hatchTransform, DwgHatchDefLine const* hatchLines, int nDefLines)
     {
     DRange3d    boundRange;
-
-    bsiDRange3d_init(&boundRange);
-    jmdlDRange3d_extendByGraphicsPointArray(&boundRange, boundGpa);
+    boundary.GetRange (boundRange);
 
     if (!context.Is3dView())
         boundRange.low.z = boundRange.high.z = 0.0;
 
     StatusInt       status = SUCCESS;
     double          rangeDiagonal = boundRange.low.Distance(boundRange.high);
-    GPArraySmartP   hatchGpa, dashGpa;
-
+    bvector<DSegment3d> dashSegments;
+    size_t numCheck = 0;
+    DashData dashLengths;
+    bvector<DSegment3d> hatch;
+    bvector<HatchSegmentPosition> positions;
     // NOTE: In ACAD hatch definitions both the base angle and scale have already been applied to the definitions and MUST not be applied again!
     for (DwgHatchDefLine const* lineP = hatchLines; SUCCESS == status && lineP < &hatchLines[nDefLines]; lineP++)
         {
         if (!IsValidPatternDefLine(lineP, rangeDiagonal))
             continue;
+        dashLengths.SetDashLengths (lineP->m_dashes, lineP->m_nDashes);
 
         DVec3d      xVec, yVec, zVec;
         DPoint3d    origin;
@@ -958,53 +906,19 @@ static void ProcessDWGHatchBoundary(ViewContextR context, Render::GraphicBuilder
 
         Transform   scaledTransform;
 
-        GetHatchLineLimitTransform(scaledTransform, hatchTransform, boundGpa);
-        AddHatchLinesToGPA(hatchGpa, boundGpa, scaledTransform);
+        GetHatchLineLimitTransform(scaledTransform, hatchTransform, boundary);
 
         if (0 != lineP->m_nDashes)
             {
-            // NOTE: Copy of jmdlGraphicsPointArray_expandDashPattern to avoid s_maxCollectorPoint limit...
-            int         i1;
-            DPoint4d    point0, point1;
-            int         curveType;
-            double      dashPeriod = jmdlGPA_computeDashPeriod(lineP->m_dashes, lineP->m_nDashes);
-
-            for (int i0 = 0; SUCCESS == status && jmdlGraphicsPointArray_parseFragment(hatchGpa, &i1, &point0, &point1, &curveType, i0); i0 = i1 + 1)
-                {
-                if (0 == curveType)
-                    {
-                    GraphicsPoint   gp0, gp1;
-
-                    jmdlGraphicsPointArray_getGraphicsPoint(hatchGpa, &gp0, i0);
-
-                    for (int i = i0 + 1; SUCCESS == status && i <= i1; i++, gp0 = gp1)
-                        {
-                        jmdlGraphicsPointArray_getGraphicsPoint(hatchGpa, &gp1, i);
-                        jmdlGPA_expandSingleLineDashPattern(dashGpa, &gp0, &gp1, lineP->m_dashes, lineP->m_nDashes, dashPeriod, MAX_LINE_DASHES);
-
-                        dashGpa->Transform(&baseTransform);
-                        status = PatternHelper::DrawHatchGPA(context, graphic, params, dashGpa);
-                        dashGpa->Empty();
-                        }
-                    }
-                else
-                    {
-                    jmdlGraphicsPointArray_appendFragment(dashGpa, hatchGpa, i0, i1, 0);
-                    jmdlGraphicsPointArray_markBreak(dashGpa);
-
-                    dashGpa->Transform(&baseTransform);
-                    status = PatternHelper::DrawHatchGPA(context, graphic, params, dashGpa);
-                    dashGpa->Empty();
-                    }
-                }
+            CurveVector::CreateHatch (hatch, &positions, boundary, scaledTransform);
+            dashLengths.AppendDashes (hatch, positions, dashSegments);
+            status = PatternHelper::DrawHatch (context, graphic, params, baseTransform, dashSegments, numCheck);
             }
         else
             {
-            hatchGpa->Transform(&baseTransform);
-            status = PatternHelper::DrawHatchGPA(context, graphic, params, hatchGpa);
+            CurveVector::CreateHatch (hatch, nullptr, boundary, scaledTransform);
+            status = PatternHelper::DrawHatch (context, graphic, params, baseTransform, hatch, numCheck);
             }
-
-        hatchGpa->Empty();
         }
     }
 
@@ -1014,10 +928,6 @@ static void ProcessDWGHatchBoundary(ViewContextR context, Render::GraphicBuilder
 static void ProcessDWGHatchPattern(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsR params, CurveVectorCR boundary)
     {
     PatternParamsCR pattern = *params.GetPatternParams();
-    GPArraySmartP   boundGpa(PatternHelper::GetBoundaryGPA(boundary, pattern.GetOrientation(), pattern.GetOrigin(), false));
-
-    if (nullptr == boundGpa || 0 == boundGpa->GetCount())
-        return;
 
     Transform baseTransform, invBaseTransform;
     Transform hatchTransform;
@@ -1025,9 +935,9 @@ static void ProcessDWGHatchPattern(ViewContextR context, Render::GraphicBuilderR
     hatchTransform.InitFromRowValues(1,0,0, 0, 0,0,0, 0, 0,-1,0, 0);
     baseTransform.InitFrom(pattern.GetOrientation(), pattern.GetOrigin());
     invBaseTransform.InverseOf(baseTransform);
-    boundGpa->Transform(&invBaseTransform);
+    auto xzBoundary = boundary.Clone(invBaseTransform);
 
-    PatternHelper::ProcessDWGHatchBoundary(context, graphic, params, boundGpa, baseTransform, hatchTransform, &pattern.GetDwgHatchDef().front(), (int) pattern.GetDwgHatchDef().size());
+    PatternHelper::ProcessDWGHatchBoundary(context, graphic, params, *xzBoundary, baseTransform, hatchTransform, &pattern.GetDwgHatchDef().front(), (int) pattern.GetDwgHatchDef().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
