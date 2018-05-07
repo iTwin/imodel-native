@@ -1610,7 +1610,7 @@ bool SyncInfo::V8ModelSource::operator<(V8ModelSource const& rhs) const
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SyncInfo::CreateNamedGroupTable(bool createIndex)
     {
-    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups), "SourceId INTEGER, TargetId INTEGER");
+    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups), "SourceId INTEGER NOT NULL, TargetId INTEGER NOT NULL");
     if (createIndex)
         MUSTBEOK(m_dgndb->ExecuteSql("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) "_ng_uix ON " SYNC_TABLE_NamedGroups "(SourceId, TargetId);"));
 
@@ -1666,7 +1666,7 @@ BentleyStatus SyncInfo::CheckNamedGroupTable()
 bool SyncInfo::IsElementInNamedGroup(DgnElementId sourceId, DgnElementId targetId)
     {
     CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "SELECT SourceId, TargetId FROM " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) " WHERE SourceId=? AND TargetId=?");
+    m_dgndb->GetCachedStatement(stmt, "SELECT 1 FROM " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) " WHERE SourceId=? AND TargetId=?");
     if (!stmt.IsValid())
         return BentleyApi::ERROR;
 
