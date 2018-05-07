@@ -18,7 +18,7 @@ LineGridSurfaceManipulationStrategyPtr LineGridSurfaceManipulationStrategy::Crea
     SketchLineGridSurfaceR surface
 )
     {
-    LineGridSurfaceManipulationStrategyPtr strategy = Create();
+    LineGridSurfaceManipulationStrategyPtr strategy = Create(surface.GetDgnDb());
     strategy->m_surface = &surface;
     DPoint2d start2d, end2d;
     surface.GetBaseLine(start2d, end2d);
@@ -33,10 +33,24 @@ LineGridSurfaceManipulationStrategyPtr LineGridSurfaceManipulationStrategy::Crea
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LineGridSurfaceManipulationStrategyPtr LineGridSurfaceManipulationStrategy::Create
+(
+    Dgn::DgnDbR db
+)
+    {
+    return new LineGridSurfaceManipulationStrategy(db);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-LineGridSurfaceManipulationStrategy::LineGridSurfaceManipulationStrategy()
-    : T_Super()
+LineGridSurfaceManipulationStrategy::LineGridSurfaceManipulationStrategy
+(
+    Dgn::DgnDbR db
+)
+    : T_Super(db)
     , m_geometryManipulationStrategy(LineManipulationStrategy::Create())
     , m_surface(nullptr)
     {
@@ -48,10 +62,11 @@ LineGridSurfaceManipulationStrategy::LineGridSurfaceManipulationStrategy()
 //---------------+---------------+---------------+---------------+---------------+------
 LineGridSurfaceManipulationStrategyPtr LineGridSurfaceManipulationStrategy::Create
 (
-    BBS::LinePlacementStrategyType linePlacementStrategyType
+    BBS::LinePlacementStrategyType linePlacementStrategyType,
+    Dgn::DgnDbR db
 )
     {
-    LineGridSurfaceManipulationStrategyPtr strategy = Create();
+    LineGridSurfaceManipulationStrategyPtr strategy = Create(db);
     if (strategy.IsNull())
         {
         BeAssert(false);

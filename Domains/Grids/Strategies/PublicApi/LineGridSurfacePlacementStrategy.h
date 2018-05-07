@@ -22,7 +22,7 @@ struct LineGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrat
         LineGridSurfaceManipulationStrategyPtr m_manipulationStrategy;
 
     protected:
-        LineGridSurfacePlacementStrategy(BBS::LinePlacementStrategyType linePlacementStrategyType);
+        LineGridSurfacePlacementStrategy(BBS::LinePlacementStrategyType linePlacementStrategyType, Dgn::DgnDbR db);
 
         virtual SketchGridSurfaceManipulationStrategyCR _GetSketchGridSurfaceManipulationStrategy() const { return *m_manipulationStrategy; }
         virtual SketchGridSurfaceManipulationStrategyR _GetSketchGridSurfaceManipulationStrategyForEdit() { return *m_manipulationStrategy; }
@@ -34,7 +34,7 @@ struct LineGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrat
         virtual void _SetProperty(Utf8CP key, double const & value) override;
 
     public:
-        GRIDSTRATEGIES_EXPORT static LineGridSurfacePlacementStrategyPtr Create(BBS::LinePlacementStrategyType linePlacementStrategyType) { return new LineGridSurfacePlacementStrategy(linePlacementStrategyType); }
+        GRIDSTRATEGIES_EXPORT static LineGridSurfacePlacementStrategyPtr Create(BBS::LinePlacementStrategyType linePlacementStrategyType, Dgn::DgnDbR db);
     };
 
 END_GRIDS_NAMESPACE

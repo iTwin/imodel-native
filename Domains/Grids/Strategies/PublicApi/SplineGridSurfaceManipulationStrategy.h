@@ -1,9 +1,14 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Grids/Strategies/PublicApi/SplineGridSurfaceManipulationStrategy.h $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #pragma once
 
-
-
-namespace BBS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 BEGIN_GRIDS_NAMESPACE
+namespace BBS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 //=======================================================================================
 // @bsiclass                                     Martynas.Saulius             02/2018
 //=======================================================================================
@@ -17,7 +22,7 @@ struct SplineGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulat
         SketchSplineGridSurfacePtr m_surface;
 
     protected:
-        SplineGridSurfaceManipulationStrategy(BBS::SplinePlacementStrategyType strategyType);
+        SplineGridSurfaceManipulationStrategy(BBS::SplinePlacementStrategyType strategyType, Dgn::DgnDbR db);
 
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) override;
         virtual BBS::GeometryManipulationStrategyCR _GetGeometryManipulationStrategy() const override { return *m_geometryManipulationStrategy; }
@@ -34,6 +39,6 @@ struct SplineGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulat
 
         
     public:
-        GRIDSTRATEGIES_EXPORT static SplineGridSurfaceManipulationStrategyPtr Create(BBS::SplinePlacementStrategyType strategyType) {return new SplineGridSurfaceManipulationStrategy(strategyType);}
+        GRIDSTRATEGIES_EXPORT static SplineGridSurfaceManipulationStrategyPtr Create(BBS::SplinePlacementStrategyType strategyType, Dgn::DgnDbR db);
     };
 END_GRIDS_NAMESPACE

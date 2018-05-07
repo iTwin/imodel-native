@@ -13,11 +13,25 @@ USING_NAMESPACE_GRIDS
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-ArcGridSurfaceManipulationStrategy::ArcGridSurfaceManipulationStrategy()
-    : T_Super() 
+ArcGridSurfaceManipulationStrategy::ArcGridSurfaceManipulationStrategy
+(
+    Dgn::DgnDbR db
+)
+    : T_Super(db) 
     , m_geometryManipulationStrategy(ArcManipulationStrategy::Create())
     {
     BeAssert(m_geometryManipulationStrategy.IsValid());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcGridSurfaceManipulationStrategyPtr ArcGridSurfaceManipulationStrategy::Create
+(
+    Dgn::DgnDbR db
+)
+    {
+    return new ArcGridSurfaceManipulationStrategy(db);
     }
 
 //--------------------------------------------------------------------------------------
@@ -25,10 +39,11 @@ ArcGridSurfaceManipulationStrategy::ArcGridSurfaceManipulationStrategy()
 //---------------+---------------+---------------+---------------+---------------+------
 ArcGridSurfaceManipulationStrategyPtr ArcGridSurfaceManipulationStrategy::Create
 (
-    BBS::ArcPlacementMethod arcPlacementMethod
+    BBS::ArcPlacementMethod arcPlacementMethod,
+    Dgn::DgnDbR db
 )
     {
-    ArcGridSurfaceManipulationStrategyPtr strategy = Create();
+    ArcGridSurfaceManipulationStrategyPtr strategy = Create(db);
     if (strategy.IsNull())
         {
         BeAssert(false);

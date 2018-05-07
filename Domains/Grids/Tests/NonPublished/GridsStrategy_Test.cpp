@@ -128,7 +128,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementStrategy_ByPoints)
     DgnDbR db = *DgnClientApp::App().Project();
 
     // Create strategy
-    LineGridSurfacePlacementStrategyPtr strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::Points);
+    LineGridSurfacePlacementStrategyPtr strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::Points, db);
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
     
     double botElevation, topElevation;
@@ -289,7 +289,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementStrategy_ByPoints)
     //////////////////////////////////////
     // Try using dynamic points
     //////////////////////////////////////
-    strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::Points);
+    strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::Points, db);
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
 
     ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
@@ -377,7 +377,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementStrategy_ByPointsLength)
     DgnDbR db = *DgnClientApp::App().Project();
 
     // Create strategy
-    LineGridSurfacePlacementStrategyPtr strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointsLength);
+    LineGridSurfacePlacementStrategyPtr strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointsLength, db);
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
 
     double botElevation, topElevation, length;
@@ -549,7 +549,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementStrategy_ByPointsLength)
     //////////////////////////////////////
     // Try using dynamic points
     //////////////////////////////////////
-    strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointsLength);
+    strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointsLength, db);
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
 
     ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
@@ -645,7 +645,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementStrategy_ByPointsAngle)
     DgnDbR db = *DgnClientApp::App().Project();
 
     // Create strategy
-    LineGridSurfacePlacementStrategyPtr strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointsAngle);
+    LineGridSurfacePlacementStrategyPtr strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointsAngle, db);
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
 
     double botElevation, topElevation, angle;
@@ -817,7 +817,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementStrategy_ByPointsAngle)
     //////////////////////////////////////
     // Try using dynamic points
     //////////////////////////////////////
-    strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointsAngle);
+    strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointsAngle, db);
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
 
     ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Incorrect number of key points";
@@ -913,7 +913,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementStrategy_ByPointLengthAngle)
     DgnDbR db = *DgnClientApp::App().Project();
 
     // Create strategy
-    LineGridSurfacePlacementStrategyPtr strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointLengthAngle);
+    LineGridSurfacePlacementStrategyPtr strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointLengthAngle, db);
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
 
     double botElevation, topElevation, length, angle;
@@ -1087,7 +1087,7 @@ TEST_F(GridsStrategyTests, LineGridSurfacePlacementStrategy_ByPointLengthAngle)
     //////////////////////////////////////
     // Try using dynamic points
     //////////////////////////////////////
-    strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointLengthAngle);
+    strategy = LineGridSurfacePlacementStrategy::Create(LinePlacementStrategyType::PointLengthAngle, db);
     ASSERT_TRUE(strategy.IsValid()) << "Failed to create strategy";
 
     ASSERT_EQ(0, strategy->GetKeyPoints().size()) << "Incorrect number of key points";

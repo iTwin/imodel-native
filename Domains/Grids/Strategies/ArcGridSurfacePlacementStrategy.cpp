@@ -15,12 +15,25 @@ USING_NAMESPACE_GRIDS
 //---------------+---------------+---------------+---------------+---------------+------
 ArcGridSurfacePlacementStrategy::ArcGridSurfacePlacementStrategy
 (
-    BBS::ArcPlacementMethod arcPlacementStrategyType
+    BBS::ArcPlacementMethod arcPlacementStrategyType,
+    Dgn::DgnDbR db
 )
     : T_Super()
-    , m_manipulationStrategy(ArcGridSurfaceManipulationStrategy::Create(arcPlacementStrategyType))
+    , m_manipulationStrategy(ArcGridSurfaceManipulationStrategy::Create(arcPlacementStrategyType, db))
     {
     BeAssert(m_manipulationStrategy.IsValid());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcGridSurfacePlacementStrategyPtr ArcGridSurfacePlacementStrategy::Create
+(
+    BBS::ArcPlacementMethod arcPlacementStrategyType, 
+    Dgn::DgnDbR db
+)
+    {
+    return new ArcGridSurfacePlacementStrategy(arcPlacementStrategyType, db);
     }
 
 //--------------------------------------------------------------------------------------

@@ -25,7 +25,7 @@ struct SketchGridSurfaceManipulationStrategy : public BBS::DgnElementManipulatio
         Utf8String m_gridName;
         DPlane3d m_workingPlane;
 
-        SketchGridSurfaceManipulationStrategy();
+        SketchGridSurfaceManipulationStrategy(Dgn::DgnDbR db);
 
         // GeometryManipulationStrategyBase
         virtual bvector<DPoint3d> _GetKeyPoints() const override;

@@ -19,7 +19,9 @@ struct GridPlanarSurfaceManipulationStrategy : public SketchGridSurfaceManipulat
     private:
 
     protected:
-        GridPlanarSurfaceManipulationStrategy() : T_Super() {}
+        GridPlanarSurfaceManipulationStrategy(Dgn::DgnDbR db) 
+            : T_Super(db) 
+            {}
 
         virtual PlanGridPlanarSurfaceCP _GetPlanGridPlanarSurfaceCP() const = 0;
         virtual PlanGridPlanarSurfaceP _GetPlanGridPlanarSurfaceP() const = 0;

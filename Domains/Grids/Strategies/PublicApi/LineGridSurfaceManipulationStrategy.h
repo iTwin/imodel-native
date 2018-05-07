@@ -24,7 +24,7 @@ struct LineGridSurfaceManipulationStrategy : public GridPlanarSurfaceManipulatio
         SketchLineGridSurfacePtr m_surface;
 
     protected:
-        LineGridSurfaceManipulationStrategy();
+        LineGridSurfaceManipulationStrategy(Dgn::DgnDbR db);
 
         // ElementManipulationStrategy
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) override;
@@ -44,9 +44,9 @@ struct LineGridSurfaceManipulationStrategy : public GridPlanarSurfaceManipulatio
         virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() override { return *m_geometryManipulationStrategy; }
 
     public:
-        static LineGridSurfaceManipulationStrategyPtr Create() { return new LineGridSurfaceManipulationStrategy(); }
+        GRIDSTRATEGIES_EXPORT static LineGridSurfaceManipulationStrategyPtr Create(Dgn::DgnDbR db);
         GRIDSTRATEGIES_EXPORT static LineGridSurfaceManipulationStrategyPtr Create(SketchLineGridSurfaceR surface);
-        static LineGridSurfaceManipulationStrategyPtr Create(BBS::LinePlacementStrategyType linePlacementStrategyType);
+        static LineGridSurfaceManipulationStrategyPtr Create(BBS::LinePlacementStrategyType linePlacementStrategyType, Dgn::DgnDbR db);
     };
 
 END_GRIDS_NAMESPACE

@@ -191,8 +191,11 @@ void SketchGridSurfaceManipulationStrategy::_OnWorkingPlaneChanged(DPlane3d cons
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-SketchGridSurfaceManipulationStrategy::SketchGridSurfaceManipulationStrategy()
-    : T_Super()
+SketchGridSurfaceManipulationStrategy::SketchGridSurfaceManipulationStrategy
+(
+    Dgn::DgnDbR db
+)
+    : T_Super(db)
     , m_axis(nullptr)
     , m_gridName("")
     , m_bottomElevation(0)

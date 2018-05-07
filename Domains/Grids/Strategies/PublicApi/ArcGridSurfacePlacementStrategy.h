@@ -22,7 +22,7 @@ struct ArcGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrate
         ArcGridSurfaceManipulationStrategyPtr m_manipulationStrategy;
 
     protected:
-        ArcGridSurfacePlacementStrategy(BBS::ArcPlacementMethod arcPlacementStrategyType);
+        ArcGridSurfacePlacementStrategy(BBS::ArcPlacementMethod arcPlacementStrategyType, Dgn::DgnDbR db);
 
         virtual SketchGridSurfaceManipulationStrategyCR _GetSketchGridSurfaceManipulationStrategy() const { return *m_manipulationStrategy; }
         virtual SketchGridSurfaceManipulationStrategyR _GetSketchGridSurfaceManipulationStrategyForEdit() { return *m_manipulationStrategy; }
@@ -41,7 +41,7 @@ struct ArcGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrate
         virtual void _SetRadius(double radius) override;
 
     public:
-        GRIDSTRATEGIES_EXPORT static ArcGridSurfacePlacementStrategyPtr Create(BBS::ArcPlacementMethod arcPlacementStrategyType) { return new ArcGridSurfacePlacementStrategy(arcPlacementStrategyType); }
+        GRIDSTRATEGIES_EXPORT static ArcGridSurfacePlacementStrategyPtr Create(BBS::ArcPlacementMethod arcPlacementStrategyType, Dgn::DgnDbR db);
     };
 
 END_GRIDS_NAMESPACE

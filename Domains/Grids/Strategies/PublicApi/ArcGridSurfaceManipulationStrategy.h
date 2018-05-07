@@ -24,7 +24,7 @@ struct ArcGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulation
         SketchArcGridSurfacePtr m_surface;
 
     protected:
-        ArcGridSurfaceManipulationStrategy();
+        ArcGridSurfaceManipulationStrategy(Dgn::DgnDbR db);
 
         // ElementManipulationStrategy
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) override;
@@ -42,8 +42,8 @@ struct ArcGridSurfaceManipulationStrategy : public SketchGridSurfaceManipulation
         virtual BBS::CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() override { return *m_geometryManipulationStrategy; }
 
     public:
-        GRIDSTRATEGIES_EXPORT static ArcGridSurfaceManipulationStrategyPtr Create() { return new ArcGridSurfaceManipulationStrategy(); }
-        static ArcGridSurfaceManipulationStrategyPtr Create(BBS::ArcPlacementMethod arcPlacementMethod);
+        GRIDSTRATEGIES_EXPORT static ArcGridSurfaceManipulationStrategyPtr Create(Dgn::DgnDbR db);
+        static ArcGridSurfaceManipulationStrategyPtr Create(BBS::ArcPlacementMethod arcPlacementMethod, Dgn::DgnDbR db);
     };
 
 END_GRIDS_NAMESPACE

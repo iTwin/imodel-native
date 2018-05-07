@@ -15,11 +15,24 @@ USING_NAMESPACE_GRIDS
 //---------------+---------------+---------------+---------------+---------------+------
 LineGridSurfacePlacementStrategy::LineGridSurfacePlacementStrategy
 (
-    LinePlacementStrategyType linePlacementStrategyType
+    LinePlacementStrategyType linePlacementStrategyType,
+    Dgn::DgnDbR db
 )   : T_Super()
-    , m_manipulationStrategy(LineGridSurfaceManipulationStrategy::Create(linePlacementStrategyType))
+    , m_manipulationStrategy(LineGridSurfaceManipulationStrategy::Create(linePlacementStrategyType, db))
     {
     BeAssert(m_manipulationStrategy.IsValid() && "Manipulation strategy should be valid");
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LineGridSurfacePlacementStrategyPtr LineGridSurfacePlacementStrategy::Create
+(
+    BBS::LinePlacementStrategyType linePlacementStrategyType, 
+    Dgn::DgnDbR db
+)
+    {
+    return new LineGridSurfacePlacementStrategy(linePlacementStrategyType, db);
     }
 
 //--------------------------------------------------------------------------------------

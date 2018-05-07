@@ -95,7 +95,7 @@ TEST_F(SplineGridSurfacePlacementStrategyTestFixture, CreateControlPointsSplineG
 
     int order = 3;
     
-    SplineGridSurfacePlacementStrategyPtr strat = SplineGridSurfacePlacementStrategy::Create(SplinePlacementStrategyType::ControlPoints);
+    SplineGridSurfacePlacementStrategyPtr strat = SplineGridSurfacePlacementStrategy::Create(SplinePlacementStrategyType::ControlPoints, GetDgnDb());
     ASSERT_TRUE(strat.IsValid()) << "Strategy failed to create";
     strat->SetProperty(SplineControlPointsPlacementStrategy::prop_Order(), order);
     strat->SetProperty(SketchGridSurfacePlacementStrategy::prop_BottomElevation, 0.0);
@@ -129,7 +129,7 @@ TEST_F(SplineGridSurfacePlacementStrategyTestFixture, CreateControlPointsSplineG
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SplineGridSurfacePlacementStrategyTestFixture, CreateThroughPointsSplineGridSurface)
     {
-    SplineGridSurfacePlacementStrategyPtr strat = SplineGridSurfacePlacementStrategy::Create(SplinePlacementStrategyType::ThroughPoints);
+    SplineGridSurfacePlacementStrategyPtr strat = SplineGridSurfacePlacementStrategy::Create(SplinePlacementStrategyType::ThroughPoints, GetDgnDb());
     ASSERT_TRUE(strat.IsValid()) << "Strategy failed to create";
     strat->SetProperty(SketchGridSurfacePlacementStrategy::prop_BottomElevation, 0.0);
     strat->SetProperty(SketchGridSurfacePlacementStrategy::prop_TopElevation, 10.0);

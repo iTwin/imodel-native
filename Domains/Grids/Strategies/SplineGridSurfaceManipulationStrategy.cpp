@@ -1,15 +1,35 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Grids/Strategies/SplineGridSurfaceManipulationStrategy.cpp $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <Grids\GridsApi.h>
 
 USING_NAMESPACE_BUILDING_SHARED
 USING_NAMESPACE_GRIDS
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplineGridSurfaceManipulationStrategyPtr SplineGridSurfaceManipulationStrategy::Create
+(
+    BBS::SplinePlacementStrategyType strategyType, 
+    Dgn::DgnDbR db
+)
+    {
+    return new SplineGridSurfaceManipulationStrategy(strategyType, db);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
 SplineGridSurfaceManipulationStrategy::SplineGridSurfaceManipulationStrategy
 (
-    SplinePlacementStrategyType strategyType
-)   : T_Super()
+    SplinePlacementStrategyType strategyType,
+    Dgn::DgnDbR db
+)   : T_Super(db)
     , m_geometryManipulationStrategy(SplineManipulationStrategy::Create(strategyType))
     , m_geometryPlacementStrategy(m_geometryManipulationStrategy->CreatePlacement())
     , m_surface(nullptr)
