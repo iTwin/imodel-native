@@ -54,6 +54,8 @@ struct DgnElementPlacementStrategy : ElementPlacementStrategy
         DGNELEM_P_PROPERTY(Dgn::ColorDef)
         using T_Super::SetProperty;
         using T_Super::TryGetProperty;
+
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnDbR GetDgnDb() const;
     };
 
 END_BUILDING_SHARED_NAMESPACE

@@ -71,6 +71,14 @@ void DgnElementPlacementStrategy::AddViewOverlay
     _AddViewOverlay(builder, viewRange, worldToView, contrastingToBackgroundColor);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnDbR DgnElementPlacementStrategy::GetDgnDb() const
+    {
+    return _GetDgnElementManipulationStrategy().GetDgnDb();
+    }
+
 EPS_V_PROPERTY_IMPL(Dgn::DgnElementCP)
 EPS_V_PROPERTY_IMPL(Dgn::DgnElementId)
 EPS_V_PROPERTY_IMPL(Dgn::ColorDef)
