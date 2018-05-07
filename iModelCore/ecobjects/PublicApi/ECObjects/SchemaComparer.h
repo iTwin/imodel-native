@@ -412,9 +412,14 @@ struct PrimitiveChange final : public ECChange
     public:
         PrimitiveChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChange(state, systemId, parent, customId) {}
         ~PrimitiveChange() {}
+        //! Gets the value after the change
         Nullable<T> const& GetNew() const { return m_new; }
+        //! Gets the value before the change
         Nullable<T> const& GetOld() const { return m_old; }
 
+        //! Sets @p value as 
+        //! - the 'old' value if change type is 'Deleted'
+        //! - the 'new' value if change type is 'New'
         BentleyStatus Set(Nullable<T> const& value)
             {
             if (GetChangeType() == ChangeType::Modified)
@@ -422,6 +427,9 @@ struct PrimitiveChange final : public ECChange
                 BeAssert(false && "Cannot use this method for Changes marked as Modified");
                 return ERROR;
                 }
+
+            m_old = nullptr;
+            m_new = nullptr;
 
             if (GetChangeType() == ChangeType::Deleted)
                 m_old = value;
@@ -434,6 +442,7 @@ struct PrimitiveChange final : public ECChange
             return SUCCESS;
             }
 
+        //! Sets old and new value only if the differ from each other
         BentleyStatus Set(Nullable<T> const& oldValue, Nullable<T> const& newValue)
             {
             if (GetChangeType() != ChangeType::Modified)
@@ -442,12 +451,14 @@ struct PrimitiveChange final : public ECChange
                 return ERROR;
                 }
 
-            if (oldValue != nullptr)
-                m_old = oldValue;
+            m_old = nullptr;
+            m_new = nullptr;
 
-            if (newValue != nullptr)
-                m_new = newValue;
+            if (oldValue == newValue)
+                return SUCCESS;
 
+            m_old = oldValue;
+            m_new = newValue;
             return SUCCESS;
             }
 
