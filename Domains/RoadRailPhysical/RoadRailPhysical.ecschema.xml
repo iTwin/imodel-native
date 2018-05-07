@@ -145,7 +145,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="DesignSpeed" typeName="double" KindOfQuantity="VELOCITY"/>
+        <ECProperty propertyName="DesignSpeed" typeName="double" kindOfQuantity="VELOCITY"/>
     </ECEntityClass>
     <ECEntityClass typeName="DesignSpeed" modifier="Sealed"  displayLabel="Design Speed" description="Linearly located property of a Pathway specifying uniform design-speeds along it." >
         <BaseClass>DesignSpeedElement</BaseClass>
