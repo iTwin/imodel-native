@@ -441,7 +441,6 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
 
 static BingAuthenticationCallbackPtr s_bingAuthCallback;
 
-
 void ScalableMeshLib::Host::Initialize()
     {
     BeAssert(NULL == m_scalableTerrainModelAdmin);
@@ -454,7 +453,7 @@ void ScalableMeshLib::Host::Initialize()
     InitializeProgressiveQueries();
 
 #ifdef VANCOUVER_API
-    RegisterPODImportPlugin();
+    //RegisterPODImportPlugin();
 #else
     //NEEDS_WORK_SM_POD_B0200
     //RegisterPODImportPlugin();
