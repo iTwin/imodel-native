@@ -253,6 +253,26 @@ ECSchemaPtr BaseCacheTest::GetTestSchema2()
     return schema;
     }
 
+ECSchemaPtr BaseCacheTest::GetMockIssueSchema()
+    {
+    Utf8String schemaXml =
+        R"xml(<ECSchema schemaName="Issue" nameSpacePrefix="issue" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca" />
+            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+            <ECClass typeName="BaseClass" isDomainClass="True">
+                <ECProperty propertyName="CreatedBy" typeName="string" />
+            </ECClass>
+            <ECClass typeName="ChildClass" isDomainClass="False">
+                <BaseClass>BaseClass</BaseClass>
+                <ECProperty propertyName="ApprovedBy" typeName="string" displayLabel="Approved By" />
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *ECSchemaReadContext::CreateContext());
+    return schema;
+    }
+
 BeFileName BaseCacheTest::GetTestSchemaPath()
     {
     BeFileName testSchemaPath(GetTestsTempDir().AppendToPath(L"TestSchema.xml"));
@@ -302,7 +322,7 @@ std::shared_ptr<DataSourceCache> BaseCacheTest::CreateTestCache(BeFileName fileP
     {
     auto cache = std::make_shared<DataSourceCache>();
     EXPECT_EQ(SUCCESS, cache->Create(filePath, environment));
-    EXPECT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema(), GetTestSchema2()}));
+    EXPECT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {GetTestSchema(), GetTestSchema2(), GetMockIssueSchema()}));
     return cache;
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/BaseCacheTest.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -29,6 +29,7 @@ class BaseCacheTest : public WSClientBaseTest
 
         virtual ECSchemaPtr GetTestSchema();
         virtual ECSchemaPtr GetTestSchema2();
+        virtual ECSchemaPtr GetMockIssueSchema();
         BeFileName GetTestSchemaPath();
         static CacheEnvironment GetTestCacheEnvironment();
 
