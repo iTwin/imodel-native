@@ -56,25 +56,30 @@ BentleyStatus SchemaComparer::Compare(SchemaDiff& diff, bvector<ECN::ECSchemaCP>
         const bool existInRhs = rhsIt != rhsMap.end();
         if (existInLhs && existInRhs)
             {
-            SchemaChange& schemaChange = diff.Changes().Add(ChangeType::Modified, SystemId::Schema, schemaName);
-            if (SUCCESS != CompareECSchema(schemaChange, *lhsIt->second, *rhsIt->second))
+            RefCountedPtr<SchemaChange> schemaChange = diff.Changes().CreateElement(ChangeType::Modified, SystemId::Schema, schemaName);
+            if (SUCCESS != CompareECSchema(*schemaChange, *lhsIt->second, *rhsIt->second))
                 return ERROR;
+
+            diff.Changes().Add(schemaChange);
             }
         else if (existInLhs && !existInRhs)
             {
-            SchemaChange& schemaChange = diff.Changes().Add(ChangeType::Deleted, SystemId::Schema, schemaName);
-            if (AppendECSchema(schemaChange, *lhsIt->second) == ERROR)
+            RefCountedPtr<SchemaChange> schemaChange = diff.Changes().CreateElement(ChangeType::Deleted, SystemId::Schema, schemaName);
+            if (AppendECSchema(*schemaChange, *lhsIt->second) == ERROR)
                 return ERROR;
+
+            diff.Changes().Add(schemaChange);
             }
         else if (!existInLhs && existInRhs)
             {
-            SchemaChange& schemaChange = diff.Changes().Add(ChangeType::New, SystemId::Schema, schemaName);
-            if (AppendECSchema(schemaChange, *rhsIt->second) == ERROR)
+            RefCountedPtr<SchemaChange> schemaChange = diff.Changes().CreateElement(ChangeType::New, SystemId::Schema, schemaName);
+            if (AppendECSchema(*schemaChange, *rhsIt->second) == ERROR)
                 return ERROR;
+
+            diff.Changes().Add(schemaChange);
             }
         }
 
-    diff.Changes().Optimize();
     return SUCCESS;
     }
 
@@ -193,19 +198,30 @@ BentleyStatus SchemaComparer::CompareECClass(ClassChange& change, ECClassCR oldV
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaComparer::CompareECBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b)
     {
-    auto m = std::min(a.size(), b.size());
-    for (size_t i = 0; i < m; i++)
+    const size_t minCount = std::min(a.size(), b.size());
+    for (size_t i = 0; i < minCount; i++)
         {
         if (strcmp(a[i]->GetFullName(), b[i]->GetFullName()) != 0)
             {
-            changes.Add(ChangeType::Modified, SystemId::BaseClass).Set(Utf8String(a[i]->GetFullName()), Utf8String(b[i]->GetFullName()));
+            RefCountedPtr<StringChange> baseClassChange = changes.CreateElement(ChangeType::Modified, SystemId::BaseClass);
+            baseClassChange->Set(Utf8String(a[i]->GetFullName()), Utf8String(b[i]->GetFullName()));
+            changes.Add(baseClassChange);
             }
         }
-    for (size_t i = m; i < a.size(); i++)
-        changes.Add(ChangeType::Deleted, SystemId::BaseClass).Set(Utf8String(a[i]->GetFullName()));
 
-    for (size_t i = m; i < b.size(); i++)
-        changes.Add(ChangeType::New, SystemId::BaseClass).Set(Utf8String(b[i]->GetFullName()));
+    for (size_t i = minCount; i < a.size(); i++)
+        {
+        RefCountedPtr<StringChange> baseClassChange = changes.CreateElement(ChangeType::Deleted, SystemId::BaseClass);
+        baseClassChange->Set(Utf8String(a[i]->GetFullName()));
+        changes.Add(baseClassChange);
+        }
+
+    for (size_t i = minCount; i < b.size(); i++)
+        {
+        RefCountedPtr<StringChange> baseClassChange = changes.CreateElement(ChangeType::New, SystemId::BaseClass);
+        baseClassChange->Set(Utf8String(b[i]->GetFullName()));
+        changes.Add(baseClassChange);
+        }
 
     return SUCCESS;
     }
@@ -258,9 +274,17 @@ BentleyStatus SchemaComparer::CompareECRelationshipConstraintClasses(Relationshi
         bool existInOld = oldValIt != aMap.end();
         bool existInNew = newValIt != bMap.end();
         if (existInOld && !existInNew)
-            change.Add(ChangeType::Deleted, SystemId::ConstraintClass).Set(Utf8String(oldValIt->second->GetFullName()));
+            {
+            RefCountedPtr<StringChange> constraintClassChange = change.CreateElement(ChangeType::Deleted, SystemId::ConstraintClass);
+            constraintClassChange->Set(Utf8String(oldValIt->second->GetFullName()));
+            change.Add(constraintClassChange);
+            }
         else if (!existInOld && existInNew)
-            change.Add(ChangeType::New, SystemId::ConstraintClass).Set(Utf8String(newValIt->second->GetFullName()));
+            {
+            RefCountedPtr<StringChange> constraintClassChange = change.CreateElement(ChangeType::New, SystemId::ConstraintClass);
+            constraintClassChange->Set(Utf8String(newValIt->second->GetFullName()));
+            change.Add(constraintClassChange);
+            }
         }
 
     return SUCCESS;
@@ -546,21 +570,27 @@ BentleyStatus SchemaComparer::CompareECProperties(PropertyChanges& changes, ECPr
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
             {
-            PropertyChange& propertyChange = changes.Add(ChangeType::Modified, SystemId::Property, u.first);
-            if (CompareECProperty(propertyChange, *itorA->second, *itorB->second) == ERROR)
+            RefCountedPtr<PropertyChange> propertyChange = changes.CreateElement(ChangeType::Modified, SystemId::Property, u.first);
+            if (CompareECProperty(*propertyChange, *itorA->second, *itorB->second) == ERROR)
                 return ERROR;
+
+            changes.Add(propertyChange);
             }
         else if (existInA && !existInB)
             {
-            PropertyChange& propertyChange = changes.Add(ChangeType::Deleted, SystemId::Property, u.first);
-            if (AppendECProperty(propertyChange, *itorA->second) == ERROR)
+            RefCountedPtr<PropertyChange> propertyChange = changes.CreateElement(ChangeType::Deleted, SystemId::Property, u.first);
+            if (AppendECProperty(*propertyChange, *itorA->second) == ERROR)
                 return ERROR;
+
+            changes.Add(propertyChange);
             }
         else if (!existInA && existInB)
             {
-            PropertyChange& propertyChange = changes.Add(ChangeType::New, SystemId::Property, u.first);
-            if (AppendECProperty(propertyChange, *itorB->second) == ERROR)
+            RefCountedPtr<PropertyChange> propertyChange = changes.CreateElement(ChangeType::New, SystemId::Property, u.first);
+            if (AppendECProperty(*propertyChange, *itorB->second) == ERROR)
                 return ERROR;
+
+            changes.Add(propertyChange);
             }
         }
 
@@ -591,21 +621,27 @@ BentleyStatus SchemaComparer::CompareECClasses(ClassChanges& changes, ECClassCon
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
             {
-            ClassChange& classChange = changes.Add(ChangeType::Modified, SystemId::Class, u.first);
-            if (CompareECClass(classChange, *itorA->second, *itorB->second) == ERROR)
+            RefCountedPtr<ClassChange> classChange = changes.CreateElement(ChangeType::Modified, SystemId::Class, u.first);
+            if (CompareECClass(*classChange, *itorA->second, *itorB->second) == ERROR)
                 return ERROR;
+
+            changes.Add(classChange);
             }
         else if (existInA && !existInB)
             {
-            ClassChange& classChange = changes.Add(ChangeType::Deleted, SystemId::Class, u.first);
-            if (AppendECClass(classChange, *itorA->second) == ERROR)
+            RefCountedPtr<ClassChange> classChange = changes.CreateElement(ChangeType::Deleted, SystemId::Class, u.first);
+            if (AppendECClass(*classChange, *itorA->second) == ERROR)
                 return ERROR;
+
+            changes.Add(classChange);
             }
         else if (!existInA && existInB)
             {
-            ClassChange& classChange = changes.Add(ChangeType::New, SystemId::Class, u.first);
-            if (AppendECClass(classChange, *itorB->second) == ERROR)
+            RefCountedPtr<ClassChange> classChange = changes.CreateElement(ChangeType::New, SystemId::Class, u.first);
+            if (AppendECClass(*classChange, *itorB->second) == ERROR)
                 return ERROR;
+
+            changes.Add(classChange);
             }
         }
 
@@ -636,21 +672,27 @@ BentleyStatus SchemaComparer::CompareECEnumerations(EnumerationChanges& changes,
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
             {
-            EnumerationChange& enumChange = changes.Add(ChangeType::Modified, SystemId::Enumeration, u.first);
-            if (CompareECEnumeration(enumChange, *itorA->second, *itorB->second) == ERROR)
+            RefCountedPtr<EnumerationChange> enumChange = changes.CreateElement(ChangeType::Modified, SystemId::Enumeration, u.first);
+            if (CompareECEnumeration(*enumChange, *itorA->second, *itorB->second) == ERROR)
                 return ERROR;
+
+            changes.Add(enumChange);
             }
         else if (existInA && !existInB)
             {
-            EnumerationChange& enumChange = changes.Add(ChangeType::Deleted, SystemId::Enumeration, u.first);
-            if (AppendECEnumeration(enumChange, *itorA->second) == ERROR)
+            RefCountedPtr<EnumerationChange> enumChange = changes.CreateElement(ChangeType::Deleted, SystemId::Enumeration, u.first);
+            if (AppendECEnumeration(*enumChange, *itorA->second) == ERROR)
                 return ERROR;
+
+            changes.Add(enumChange);
             }
         else if (!existInA && existInB)
             {
-            EnumerationChange& enumChange = changes.Add(ChangeType::New, SystemId::Enumeration, u.first);
-            if (AppendECEnumeration(enumChange, *itorB->second) == ERROR)
+            RefCountedPtr<EnumerationChange> enumChange = changes.CreateElement(ChangeType::New, SystemId::Enumeration, u.first);
+            if (AppendECEnumeration(*enumChange, *itorB->second) == ERROR)
                 return ERROR;
+
+            changes.Add(enumChange);
             }
         }
 
@@ -681,21 +723,27 @@ BentleyStatus SchemaComparer::CompareKindOfQuantities(KindOfQuantityChanges& cha
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
             {
-            KindOfQuantityChange& kindOfQuantityChange = changes.Add(ChangeType::Modified, SystemId::KindOfQuantity, u.first);
-            if (CompareKindOfQuantity(kindOfQuantityChange, *itorA->second, *itorB->second) == ERROR)
+            RefCountedPtr<KindOfQuantityChange> kindOfQuantityChange = changes.CreateElement(ChangeType::Modified, SystemId::KindOfQuantity, u.first);
+            if (CompareKindOfQuantity(*kindOfQuantityChange, *itorA->second, *itorB->second) == ERROR)
                 return ERROR;
+
+            changes.Add(kindOfQuantityChange);
             }
         else if (existInA && !existInB)
             {
-            KindOfQuantityChange& kindOfQuantityChange = changes.Add(ChangeType::Deleted, SystemId::KindOfQuantity, u.first);
-            if (AppendKindOfQuantity(kindOfQuantityChange, *itorA->second) == ERROR)
+            RefCountedPtr<KindOfQuantityChange> kindOfQuantityChange = changes.CreateElement(ChangeType::Deleted, SystemId::KindOfQuantity, u.first);
+            if (AppendKindOfQuantity(*kindOfQuantityChange, *itorA->second) == ERROR)
                 return ERROR;
+
+            changes.Add(kindOfQuantityChange);
             }
         else if (!existInA && existInB)
             {
-            KindOfQuantityChange& kindOfQuantityChange = changes.Add(ChangeType::New, SystemId::KindOfQuantity, u.first);
-            if (AppendKindOfQuantity(kindOfQuantityChange, *itorB->second) == ERROR)
+            RefCountedPtr<KindOfQuantityChange> kindOfQuantityChange = changes.CreateElement(ChangeType::New, SystemId::KindOfQuantity, u.first);
+            if (AppendKindOfQuantity(*kindOfQuantityChange, *itorB->second) == ERROR)
                 return ERROR;
+
+            changes.Add(kindOfQuantityChange);
             }
         }
 
@@ -727,27 +775,31 @@ BentleyStatus SchemaComparer::ComparePropertyCategories(PropertyCategoryChanges&
         const bool existInNew = newIt != newMap.end();
         if (existInOld && existInNew)
             {
-            PropertyCategoryChange& catChange = changes.Add(ChangeType::Modified, SystemId::PropertyCategory, name);
-            if (ComparePropertyCategory(catChange, *oldIt->second, *newIt->second) == ERROR)
+            RefCountedPtr<PropertyCategoryChange> catChange = changes.CreateElement(ChangeType::Modified, SystemId::PropertyCategory, name);
+            if (ComparePropertyCategory(*catChange, *oldIt->second, *newIt->second) == ERROR)
                 return ERROR;
 
+            changes.Add(catChange);
             continue;
             }
         
         if (existInOld && !existInNew)
             {
-            PropertyCategoryChange& catChange = changes.Add(ChangeType::Deleted, SystemId::PropertyCategory, name);
-            if (AppendPropertyCategory(catChange, *oldIt->second) == ERROR)
+            RefCountedPtr<PropertyCategoryChange> catChange = changes.CreateElement(ChangeType::Deleted, SystemId::PropertyCategory, name);
+            if (AppendPropertyCategory(*catChange, *oldIt->second) == ERROR)
                 return ERROR;
 
+            changes.Add(catChange);
             continue;
             }
 
         if (!existInOld && existInNew)
             {
-            PropertyCategoryChange& catChange = changes.Add(ChangeType::New, SystemId::PropertyCategory, name);
-            if (AppendPropertyCategory(catChange, *newIt->second) == ERROR)
+            RefCountedPtr<PropertyCategoryChange> catChange = changes.CreateElement(ChangeType::New, SystemId::PropertyCategory, name);
+            if (AppendPropertyCategory(*catChange, *newIt->second) == ERROR)
                 return ERROR;
+
+            changes.Add(catChange);
             }
         }
 
@@ -779,27 +831,31 @@ BentleyStatus SchemaComparer::ComparePhenomena(PhenomenonChanges& changes, Pheno
         const bool existInNew = newIt != newMap.end();
         if (existInOld && existInNew)
             {
-            PhenomenonChange& change = changes.Add(ChangeType::Modified, SystemId::Phenomenon, name);
-            if (SUCCESS != ComparePhenomenon(change, *oldIt->second, *newIt->second))
+            RefCountedPtr<PhenomenonChange> change = changes.CreateElement(ChangeType::Modified, SystemId::Phenomenon, name);
+            if (SUCCESS != ComparePhenomenon(*change, *oldIt->second, *newIt->second))
                 return ERROR;
 
+            changes.Add(change);
             continue;
             }
 
         if (existInOld && !existInNew)
             {
-            PhenomenonChange& change = changes.Add(ChangeType::Deleted, SystemId::Phenomenon, name);
-            if (SUCCESS != AppendPhenomenon(change, *oldIt->second))
+            RefCountedPtr<PhenomenonChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::Phenomenon, name);
+            if (SUCCESS != AppendPhenomenon(*change, *oldIt->second))
                 return ERROR;
 
+            changes.Add(change);
             continue;
             }
 
         if (!existInOld && existInNew)
             {
-            PhenomenonChange& change = changes.Add(ChangeType::New, SystemId::Phenomenon, name);
-            if (SUCCESS != AppendPhenomenon(change, *newIt->second))
+            RefCountedPtr<PhenomenonChange> change = changes.CreateElement(ChangeType::New, SystemId::Phenomenon, name);
+            if (SUCCESS != AppendPhenomenon(*change, *newIt->second))
                 return ERROR;
+
+            changes.Add(change);
             }
         }
 
@@ -831,27 +887,31 @@ BentleyStatus SchemaComparer::CompareUnitSystems(UnitSystemChanges& changes, Uni
         const bool existInNew = newIt != newMap.end();
         if (existInOld && existInNew)
             {
-            UnitSystemChange& change = changes.Add(ChangeType::Modified, SystemId::UnitSystem, name);
-            if (SUCCESS != CompareUnitSystem(change, *oldIt->second, *newIt->second))
+            RefCountedPtr<UnitSystemChange> change = changes.CreateElement(ChangeType::Modified, SystemId::UnitSystem, name);
+            if (SUCCESS != CompareUnitSystem(*change, *oldIt->second, *newIt->second))
                 return ERROR;
 
+            changes.Add(change);
             continue;
             }
 
         if (existInOld && !existInNew)
             {
-            UnitSystemChange& change = changes.Add(ChangeType::Deleted, SystemId::UnitSystem, name);
-            if (SUCCESS != AppendUnitSystem(change, *oldIt->second))
+            RefCountedPtr<UnitSystemChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::UnitSystem, name);
+            if (SUCCESS != AppendUnitSystem(*change, *oldIt->second))
                 return ERROR;
 
+            changes.Add(change);
             continue;
             }
 
         if (!existInOld && existInNew)
             {
-            UnitSystemChange& change = changes.Add(ChangeType::New, SystemId::UnitSystem, name);
-            if (SUCCESS != AppendUnitSystem(change, *newIt->second))
+            RefCountedPtr<UnitSystemChange> change = changes.CreateElement(ChangeType::New, SystemId::UnitSystem, name);
+            if (SUCCESS != AppendUnitSystem(*change, *newIt->second))
                 return ERROR;
+
+            changes.Add(change);
             }
         }
 
@@ -883,27 +943,31 @@ BentleyStatus SchemaComparer::CompareUnits(UnitChanges& changes, UnitContainerCR
         const bool existInNew = newIt != newMap.end();
         if (existInOld && existInNew)
             {
-            UnitChange& change = changes.Add(ChangeType::Modified, SystemId::Unit, name);
-            if (SUCCESS != CompareUnit(change, *oldIt->second, *newIt->second))
+            RefCountedPtr<UnitChange> change = changes.CreateElement(ChangeType::Modified, SystemId::Unit, name);
+            if (SUCCESS != CompareUnit(*change, *oldIt->second, *newIt->second))
                 return ERROR;
 
+            changes.Add(change);
             continue;
             }
 
         if (existInOld && !existInNew)
             {
-            UnitChange& change = changes.Add(ChangeType::Deleted, SystemId::Unit, name);
-            if (SUCCESS != AppendUnit(change, *oldIt->second))
+            RefCountedPtr<UnitChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::Unit, name);
+            if (SUCCESS != AppendUnit(*change, *oldIt->second))
                 return ERROR;
 
+            changes.Add(change);
             continue;
             }
 
         if (!existInOld && existInNew)
             {
-            UnitChange& change = changes.Add(ChangeType::New, SystemId::Unit, name);
-            if (SUCCESS != AppendUnit(change, *newIt->second))
+            RefCountedPtr<UnitChange> change = changes.CreateElement(ChangeType::New, SystemId::Unit, name);
+            if (SUCCESS != AppendUnit(*change, *newIt->second))
                 return ERROR;
+
+            changes.Add(change);
             }
         }
 
@@ -935,27 +999,31 @@ BentleyStatus SchemaComparer::CompareFormats(FormatChanges& changes, ECN::Format
         const bool existInNew = newIt != newMap.end();
         if (existInOld && existInNew)
             {
-            FormatChange& change = changes.Add(ChangeType::Modified, SystemId::Format, name);
-            if (SUCCESS != CompareFormat(change, *oldIt->second, *newIt->second))
+            RefCountedPtr<FormatChange> change = changes.CreateElement(ChangeType::Modified, SystemId::Format, name);
+            if (SUCCESS != CompareFormat(*change, *oldIt->second, *newIt->second))
                 return ERROR;
 
+            changes.Add(change);
             continue;
             }
 
         if (existInOld && !existInNew)
             {
-            FormatChange& change = changes.Add(ChangeType::Deleted, SystemId::Format, name);
-            if (SUCCESS != AppendFormat(change, *oldIt->second))
+            RefCountedPtr<FormatChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::Format, name);
+            if (SUCCESS != AppendFormat(*change, *oldIt->second))
                 return ERROR;
 
+            changes.Add(change);
             continue;
             }
 
         if (!existInOld && existInNew)
             {
-            FormatChange& change = changes.Add(ChangeType::New, SystemId::Format, name);
-            if (SUCCESS != AppendFormat(change, *newIt->second))
+            RefCountedPtr<FormatChange> change = changes.CreateElement(ChangeType::New, SystemId::Format, name);
+            if (SUCCESS != AppendFormat(*change, *newIt->second))
                 return ERROR;
+
+            changes.Add(change);
             }
         }
 
@@ -989,11 +1057,23 @@ BentleyStatus SchemaComparer::CompareCustomAttribute(CustomAttributeChange& chan
         bool existInOld = oldPropValuesIt != aMap.end();
         bool existInNew = newPropValuesIt != bMap.end();
         if (existInOld && existInNew)
-            change.PropValues().Add(ChangeType::Modified, SystemId::PropertyValue, accessString).Set(oldPropValuesIt->second, newPropValuesIt->second);
+            {
+            RefCountedPtr<PropertyValueChange> pvChange = change.PropValues().CreateElement(ChangeType::Modified, SystemId::PropertyValue, accessString);
+            pvChange->Set(oldPropValuesIt->second, newPropValuesIt->second);
+            change.PropValues().Add(pvChange);
+            }
         else if (existInOld && !existInNew)
-            change.PropValues().Add(ChangeType::Deleted, SystemId::PropertyValue, accessString).Set(oldPropValuesIt->second);
+            {
+            RefCountedPtr<PropertyValueChange> pvChange = change.PropValues().CreateElement(ChangeType::Deleted, SystemId::PropertyValue, accessString);
+            pvChange->Set(oldPropValuesIt->second);
+            change.PropValues().Add(pvChange);
+            }
         else if (!existInOld && existInNew)
-            change.PropValues().Add(ChangeType::New, SystemId::PropertyValue, accessString).Set(newPropValuesIt->second);
+            {
+            RefCountedPtr<PropertyValueChange> pvChange = change.PropValues().CreateElement(ChangeType::New, SystemId::PropertyValue, accessString);
+            pvChange->Set(newPropValuesIt->second);
+            change.PropValues().Add(pvChange);
+            }
         }
 
     return SUCCESS;
@@ -1009,7 +1089,11 @@ BentleyStatus SchemaComparer::AppendCustomAttribute(CustomAttributeChange& chang
         return ERROR;
 
     for (std::pair<Utf8String, ECValue> const& kvPair : propValueMap)
-        change.PropValues().Add(change.GetChangeType(), SystemId::PropertyValue, kvPair.first.c_str()).Set(kvPair.second);
+        {
+        RefCountedPtr<PropertyValueChange> pvChange = change.PropValues().CreateElement(change.GetChangeType(), SystemId::PropertyValue, kvPair.first.c_str());
+        pvChange->Set(kvPair.second);
+        change.PropValues().Add(pvChange);
+        }
 
     return SUCCESS;
     }
@@ -1022,9 +1106,13 @@ BentleyStatus SchemaComparer::AppendCustomAttributes(CustomAttributeChanges& cha
     for (IECInstancePtr ca : caContainer.GetCustomAttributes(false))
         {
         //key CA instances by the CA class name (as no more than one CA per class can be on a container
-        if (SUCCESS != AppendCustomAttribute(changes.Add(changes.GetChangeType(), SystemId::CustomAttribute, ca->GetClass().GetFullName()), *ca))
+        RefCountedPtr<CustomAttributeChange> caChange = changes.CreateElement(changes.GetChangeType(), SystemId::CustomAttribute, ca->GetClass().GetFullName());
+        if (SUCCESS != AppendCustomAttribute(*caChange, *ca))
             return ERROR;
+
+        changes.Add(caChange);
         }
+
     return SUCCESS;
     }
 
@@ -1052,21 +1140,27 @@ BentleyStatus SchemaComparer::CompareCustomAttributes(CustomAttributeChanges& ch
         bool existInNew = newCAIt != newCAs.end();
         if (existInOld && existInNew)
             {
-            CustomAttributeChange& caChange = changes.Add(ChangeType::Modified, SystemId::CustomAttribute, u.first);
-            if (CompareCustomAttribute(caChange, *oldCAIt->second, *newCAIt->second) == ERROR)
+            RefCountedPtr<CustomAttributeChange> caChange = changes.CreateElement(ChangeType::Modified, SystemId::CustomAttribute, u.first);
+            if (CompareCustomAttribute(*caChange, *oldCAIt->second, *newCAIt->second) == ERROR)
                 return ERROR;
+
+            changes.Add(caChange);
             }
         else if (existInOld && !existInNew)
             {
-            CustomAttributeChange& caChange = changes.Add(ChangeType::Deleted, SystemId::CustomAttribute, u.first);
-            if (AppendCustomAttribute(caChange, *oldCAIt->second) == ERROR)
+            RefCountedPtr<CustomAttributeChange> caChange = changes.CreateElement(ChangeType::Deleted, SystemId::CustomAttribute, u.first);
+            if (AppendCustomAttribute(*caChange, *oldCAIt->second) == ERROR)
                 return ERROR;
+
+            changes.Add(caChange);
             }
         else if (!existInOld && existInNew)
             {
-            CustomAttributeChange& caChange = changes.Add(ChangeType::New, SystemId::CustomAttribute, u.first);
-            if (AppendCustomAttribute(caChange, *newCAIt->second) == ERROR)
+            RefCountedPtr<CustomAttributeChange> caChange = changes.CreateElement(ChangeType::New, SystemId::CustomAttribute, u.first);
+            if (AppendCustomAttribute(*caChange, *newCAIt->second) == ERROR)
                 return ERROR;
+
+            changes.Add(caChange);
             }
         }
     return SUCCESS;
@@ -1131,12 +1225,12 @@ BentleyStatus SchemaComparer::CompareECEnumerators(EnumeratorChanges& changes, E
 
         if (existsInOld && existsInNew)
             {
-            EnumeratorChange& enumeratorChange = changes.Add(ChangeType::Modified, SystemId::Enumerator, enumeratorName);
+            RefCountedPtr<EnumeratorChange> enumeratorChange = changes.CreateElement(ChangeType::Modified, SystemId::Enumerator, enumeratorName);
             if (oldEnumerator->IsInteger())
-                enumeratorChange.Integer().Set(oldEnumerator->GetInteger(), newEnumerator->GetInteger());
+                enumeratorChange->Integer().Set(oldEnumerator->GetInteger(), newEnumerator->GetInteger());
 
             if (oldIt->second->IsString())
-                enumeratorChange.String().Set(oldEnumerator->GetString(), newEnumerator->GetString());
+                enumeratorChange->String().Set(oldEnumerator->GetString(), newEnumerator->GetString());
 
             {
             Nullable<Utf8String> oldLabel;
@@ -1147,32 +1241,42 @@ BentleyStatus SchemaComparer::CompareECEnumerators(EnumeratorChanges& changes, E
             if (newEnumerator->GetIsDisplayLabelDefined())
                 newLabel = newEnumerator->GetInvariantDisplayLabel();
 
-            enumeratorChange.DisplayLabel().Set(oldLabel, newLabel);
+            enumeratorChange->DisplayLabel().Set(oldLabel, newLabel);
             }
 
-            enumeratorChange.Description().Set(oldEnumerator->GetInvariantDescription(), newEnumerator->GetInvariantDescription());
+            enumeratorChange->Description().Set(oldEnumerator->GetInvariantDescription(), newEnumerator->GetInvariantDescription());
+            changes.Add(enumeratorChange);
+
             }
         else if (existsInOld && !existsInNew)
             {
-            EnumeratorChange& change = changes.Add(ChangeType::Deleted, SystemId::Enumerator, enumeratorName);
-            change.Name().Set(oldIt->second->GetName());
-            change.DisplayLabel().Set(oldIt->second->GetInvariantDisplayLabel());
-            change.Description().Set(oldIt->second->GetInvariantDescription());
+            RefCountedPtr<EnumeratorChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::Enumerator, enumeratorName);
+            change->Name().Set(oldEnumerator->GetName());
+            if (oldEnumerator->GetIsDisplayLabelDefined())
+                change->DisplayLabel().Set(oldEnumerator->GetInvariantDisplayLabel());
+
+            change->Description().Set(oldEnumerator->GetInvariantDescription());
             if (oldEnumerator->IsInteger())
-                change.Integer().Set(oldIt->second->GetInteger());
+                change->Integer().Set(oldEnumerator->GetInteger());
             else
-                change.String().Set(oldIt->second->GetString());
+                change->String().Set(oldEnumerator->GetString());
+
+            changes.Add(change);
             }
         else if (!existsInOld && existsInNew)
             {
-            EnumeratorChange& change = changes.Add(ChangeType::New, SystemId::Enumerator, enumeratorName);
-            change.Name().Set(newEnumerator->GetName());
-            change.DisplayLabel().Set(newEnumerator->GetInvariantDisplayLabel());
-            change.Description().Set(newEnumerator->GetInvariantDescription());
+            RefCountedPtr<EnumeratorChange> change = changes.CreateElement(ChangeType::New, SystemId::Enumerator, enumeratorName);
+            change->Name().Set(newEnumerator->GetName());
+            if (newEnumerator->GetIsDisplayLabelDefined())
+                change->DisplayLabel().Set(newEnumerator->GetInvariantDisplayLabel());
+
+            change->Description().Set(newEnumerator->GetInvariantDescription());
             if (newEnumerator->IsInteger())
-                change.Integer().Set(newEnumerator->GetInteger());
+                change->Integer().Set(newEnumerator->GetInteger());
             else
-                change.String().Set(newEnumerator->GetString());
+                change->String().Set(newEnumerator->GetString());
+
+            changes.Add(change);
             }
         }
 
@@ -1223,18 +1327,26 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
         {
         if (i < oldPresFormatCount && i < newPresFormatCount)
             {
-            presFormatChanges.Add(ChangeType::Modified, SystemId::KoqPresentationFormat).Set(oldPresFormats[i], newPresFormats[i]);
+            RefCountedPtr<StringChange> presFormatChange = presFormatChanges.CreateElement(ChangeType::Modified, SystemId::KoqPresentationFormat);
+            presFormatChange->Set(oldPresFormats[i], newPresFormats[i]);
+            presFormatChanges.Add(presFormatChange);
             continue;
             }
 
         if (i >= oldPresFormatCount)
             {
-            presFormatChanges.Add(ChangeType::New, SystemId::KoqPresentationFormat).Set(newPresFormats[i]);
+            RefCountedPtr<StringChange> presFormatChange = presFormatChanges.CreateElement(ChangeType::New, SystemId::KoqPresentationFormat);
+            presFormatChange->Set(newPresFormats[i]);
+            presFormatChanges.Add(presFormatChange);
             continue;
             }
 
         if (i >= newPresFormatCount)
-            presFormatChanges.Add(ChangeType::Deleted, SystemId::KoqPresentationFormat).Set(oldPresFormats[i]);
+            {
+            RefCountedPtr<StringChange> presFormatChange = presFormatChanges.CreateElement(ChangeType::Deleted, SystemId::KoqPresentationFormat);
+            presFormatChange->Set(oldPresFormats[i]);
+            presFormatChanges.Add(presFormatChange);
+            }
         }
 
     return SUCCESS;
@@ -1505,9 +1617,17 @@ BentleyStatus SchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBa
         bool existInA = itorA != aMap.end();
         bool existInB = itorB != bMap.end();
         if (existInA && !existInB)
-            changes.Add(ChangeType::Deleted, SystemId::BaseClass).Set(Utf8String(u));
+            {
+            RefCountedPtr<StringChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::BaseClass);
+            change->Set(Utf8String(u));
+            changes.Add(change);
+            }
         else if (!existInA && existInB)
-            changes.Add(ChangeType::New, SystemId::BaseClass).Set(Utf8String(u));
+            {
+            RefCountedPtr<StringChange> change = changes.CreateElement(ChangeType::New, SystemId::BaseClass);
+            change->Set(Utf8String(u));
+            changes.Add(change);
+            }
         }
 
     return SUCCESS;
@@ -1536,11 +1656,23 @@ BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes,
         bool existInA = itorA != aMap.end();
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
-            changes.Add(ChangeType::Modified, SystemId::SchemaReference).Set(itorA->second->GetFullSchemaName(), itorB->second->GetFullSchemaName());
+            {
+            RefCountedPtr<StringChange> change = changes.CreateElement(ChangeType::Modified, SystemId::SchemaReference);
+            change->Set(itorA->second->GetFullSchemaName(), itorB->second->GetFullSchemaName());
+            changes.Add(change);
+            }
         else if (existInA && !existInB)
-            changes.Add(ChangeType::Deleted, SystemId::SchemaReference).Set(itorA->second->GetFullSchemaName());
+            {
+            RefCountedPtr<StringChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::SchemaReference);
+            change->Set(itorA->second->GetFullSchemaName());
+            changes.Add(change);
+            }
         else if (!existInA && existInB)
-            changes.Add(ChangeType::New, SystemId::SchemaReference).Set(itorB->second->GetFullSchemaName());
+            {
+            RefCountedPtr<StringChange> change = changes.CreateElement(ChangeType::New, SystemId::SchemaReference);
+            change->Set(itorB->second->GetFullSchemaName());
+            changes.Add(change);
+            }
         }
     return SUCCESS;
     }
@@ -1572,58 +1704,74 @@ BentleyStatus SchemaComparer::AppendECSchema(SchemaChange& change, ECSchemaCR sc
 
     for (ECClassCP classCP : schema.GetClasses())
         {
-        ClassChange& classChange = change.Classes().Add(change.GetChangeType(), SystemId::Class, classCP->GetName().c_str());
-        if (AppendECClass(classChange, *classCP) == ERROR)
+        RefCountedPtr<ClassChange> classChange = change.Classes().CreateElement(change.GetChangeType(), SystemId::Class, classCP->GetName().c_str());
+        if (AppendECClass(*classChange, *classCP) == ERROR)
             return ERROR;
+
+        change.Classes().Add(classChange);
         }
 
     for (ECEnumerationCP enumerationCP : schema.GetEnumerations())
         {
-        EnumerationChange& enumChange = change.Enumerations().Add(change.GetChangeType(), SystemId::Enumeration, enumerationCP->GetName().c_str());
-        if (AppendECEnumeration(enumChange, *enumerationCP) == ERROR)
+        RefCountedPtr<EnumerationChange> enumChange = change.Enumerations().CreateElement(change.GetChangeType(), SystemId::Enumeration, enumerationCP->GetName().c_str());
+        if (AppendECEnumeration(*enumChange, *enumerationCP) == ERROR)
             return ERROR;
+
+        change.Enumerations().Add(enumChange);
         }
 
     for (KindOfQuantityCP kindOfQuantityCP : schema.GetKindOfQuantities())
         {
-        KindOfQuantityChange& koqChange = change.KindOfQuantities().Add(change.GetChangeType(), SystemId::KindOfQuantity, kindOfQuantityCP->GetName().c_str());
-        if (AppendKindOfQuantity(koqChange, *kindOfQuantityCP) == ERROR)
+        RefCountedPtr<KindOfQuantityChange> koqChange = change.KindOfQuantities().CreateElement(change.GetChangeType(), SystemId::KindOfQuantity, kindOfQuantityCP->GetName().c_str());
+        if (AppendKindOfQuantity(*koqChange, *kindOfQuantityCP) == ERROR)
             return ERROR;
+
+        change.KindOfQuantities().Add(koqChange);
         }
 
     for (PropertyCategoryCP cat : schema.GetPropertyCategories())
         {
-        PropertyCategoryChange& catChange = change.PropertyCategories().Add(change.GetChangeType(), SystemId::PropertyCategory, cat->GetName().c_str());
-        if (SUCCESS != AppendPropertyCategory(catChange, *cat))
+        RefCountedPtr<PropertyCategoryChange> catChange = change.PropertyCategories().CreateElement(change.GetChangeType(), SystemId::PropertyCategory, cat->GetName().c_str());
+        if (SUCCESS != AppendPropertyCategory(*catChange, *cat))
             return ERROR;
+
+        change.PropertyCategories().Add(catChange);
         }
 
     for (UnitSystemCP us : schema.GetUnitSystems())
         {
-        UnitSystemChange& usChange = change.UnitSystems().Add(change.GetChangeType(), SystemId::UnitSystem, us->GetName().c_str());
-        if (SUCCESS != AppendUnitSystem(usChange, *us))
+        RefCountedPtr<UnitSystemChange> usChange = change.UnitSystems().CreateElement(change.GetChangeType(), SystemId::UnitSystem, us->GetName().c_str());
+        if (SUCCESS != AppendUnitSystem(*usChange, *us))
             return ERROR;
+
+        change.UnitSystems().Add(usChange);
         }
 
     for (PhenomenonCP ph : schema.GetPhenomena())
         {
-        PhenomenonChange& phChange = change.Phenomena().Add(change.GetChangeType(), SystemId::Phenomenon, ph->GetName().c_str());
-        if (SUCCESS != AppendPhenomenon(phChange, *ph))
+        RefCountedPtr<PhenomenonChange> phChange = change.Phenomena().CreateElement(change.GetChangeType(), SystemId::Phenomenon, ph->GetName().c_str());
+        if (SUCCESS != AppendPhenomenon(*phChange, *ph))
             return ERROR;
+
+        change.Phenomena().Add(phChange);
         }
 
     for (ECUnitCP unit : schema.GetUnits())
         {
-        UnitChange& unitChange = change.Units().Add(change.GetChangeType(), SystemId::Unit, unit->GetName().c_str());
-        if (SUCCESS != AppendUnit(unitChange, *unit))
+        RefCountedPtr<UnitChange> unitChange = change.Units().CreateElement(change.GetChangeType(), SystemId::Unit, unit->GetName().c_str());
+        if (SUCCESS != AppendUnit(*unitChange, *unit))
             return ERROR;
+
+        change.Units().Add(unitChange);
         }
 
     for (ECFormatCP format : schema.GetFormats())
         {
-        FormatChange& formatChange = change.Formats().Add(change.GetChangeType(), SystemId::Format, format->GetName().c_str());
-        if (SUCCESS != AppendFormat(formatChange, *format))
+        RefCountedPtr<FormatChange> formatChange = change.Formats().CreateElement(change.GetChangeType(), SystemId::Format, format->GetName().c_str());
+        if (SUCCESS != AppendFormat(*formatChange, *format))
             return ERROR;
+
+        change.Formats().Add(formatChange);
         }
 
     if (AppendReferences(change.References(), schema.GetReferencedSchemas()) != SUCCESS)
@@ -1647,10 +1795,11 @@ BentleyStatus SchemaComparer::AppendECClass(ClassChange& change, ECClassCR v)
 
     for (ECPropertyCP prop : v.GetProperties(false))
         {
-        PropertyChange& propertyChange = change.Properties().Add(change.GetChangeType(), SystemId::Property, prop->GetName().c_str());
-
-        if (AppendECProperty(propertyChange, *prop) == ERROR)
+        RefCountedPtr<PropertyChange> propertyChange = change.Properties().CreateElement(change.GetChangeType(), SystemId::Property, prop->GetName().c_str());
+        if (AppendECProperty(*propertyChange, *prop) == ERROR)
             return ERROR;
+
+        change.Properties().Add(propertyChange);
         }
 
     if (v.GetRelationshipClassCP() != nullptr)
@@ -1702,7 +1851,9 @@ BentleyStatus SchemaComparer::AppendECRelationshipConstraintClasses(Relationship
     {
     for (ECClassCP constraintClass : constraintClasses)
         {
-        changes.Add(changes.GetChangeType(), SystemId::ConstraintClass).Set(Utf8String(constraintClass->GetFullName()));
+        RefCountedPtr<StringChange> change = changes.CreateElement(changes.GetChangeType(), SystemId::ConstraintClass);
+        change->Set(Utf8String(constraintClass->GetFullName()));
+        changes.Add(change);
         }
 
     return SUCCESS;
@@ -1721,20 +1872,22 @@ BentleyStatus SchemaComparer::AppendECEnumeration(EnumerationChange& enumeration
     enumerationChange.TypeName().Set(v.GetTypeName());
     for (ECEnumeratorCP enumeratorCP : v.GetEnumerators())
         {
-        EnumeratorChange& enumeratorChange = enumerationChange.Enumerators().Add(enumerationChange.GetChangeType(), SystemId::Enumerator, enumeratorCP->GetName().c_str());
-        enumeratorChange.Name().Set(enumeratorCP->GetName());
+        RefCountedPtr<EnumeratorChange> enumeratorChange = enumerationChange.Enumerators().CreateElement(enumerationChange.GetChangeType(), SystemId::Enumerator, enumeratorCP->GetName().c_str());
+        enumeratorChange->Name().Set(enumeratorCP->GetName());
 
         if (enumeratorCP->IsInteger())
-            enumeratorChange.Integer().Set(enumeratorCP->GetInteger());
+            enumeratorChange->Integer().Set(enumeratorCP->GetInteger());
 
         if (enumeratorCP->IsString())
-            enumeratorChange.String().Set(enumeratorCP->GetString());
+            enumeratorChange->String().Set(enumeratorCP->GetString());
 
         if (enumeratorCP->GetIsDisplayLabelDefined())
-            enumeratorChange.DisplayLabel().Set(enumeratorCP->GetInvariantDisplayLabel());
+            enumeratorChange->DisplayLabel().Set(enumeratorCP->GetInvariantDisplayLabel());
 
-        enumeratorChange.Description().Set(enumeratorCP->GetInvariantDescription());
+        enumeratorChange->Description().Set(enumeratorCP->GetInvariantDescription());
+        enumerationChange.Enumerators().Add(enumeratorChange);
         }
+
     return SUCCESS;
     }
 
@@ -1750,7 +1903,11 @@ BentleyStatus SchemaComparer::AppendKindOfQuantity(KindOfQuantityChange& change,
     change.PersistenceUnit().Set(koq.GetPersistenceUnit()->GetFullName());
     change.RelativeError().Set(koq.GetRelativeError());
     for (NamedFormat const& format : koq.GetPresentationFormats())
-        change.PresentationFormats().Add(change.GetChangeType(), SystemId::KoqPresentationFormat).Set(format.GetName());
+        {
+        RefCountedPtr<StringChange> presFormatChange = change.PresentationFormats().CreateElement(change.GetChangeType(), SystemId::KoqPresentationFormat);
+        presFormatChange->Set(format.GetName());
+        change.PresentationFormats().Add(presFormatChange);
+        }
 
     return SUCCESS;
     }
@@ -1952,7 +2109,11 @@ BentleyStatus SchemaComparer::AppendBaseClasses(BaseClassChanges& changes, ECBas
     {
     const ChangeType state = changes.GetChangeType();
     for (ECClassCP baseClassCP : baseClasses)
-        changes.Add(state, SystemId::BaseClass).Set(Utf8String(baseClassCP->GetFullName()));
+        {
+        RefCountedPtr<StringChange> change = changes.CreateElement(state, SystemId::BaseClass);
+        change->Set(Utf8String(baseClassCP->GetFullName()));
+        changes.Add(change);
+        }
 
     return SUCCESS;
     }
@@ -1963,8 +2124,12 @@ BentleyStatus SchemaComparer::AppendBaseClasses(BaseClassChanges& changes, ECBas
 BentleyStatus SchemaComparer::AppendReferences(SchemaReferenceChanges& changes, ECSchemaReferenceListCR references)
     {
     const ChangeType state = changes.GetChangeType();
-    for (auto& referenceCP : references)
-        changes.Add(state, SystemId::SchemaReference).Set(referenceCP.first.GetFullSchemaName());
+    for (auto& reference : references)
+        {
+        RefCountedPtr<StringChange> change = changes.CreateElement(state, SystemId::SchemaReference);
+        change->Set(reference.first.GetFullSchemaName());
+        changes.Add(change);
+        }
 
     return SUCCESS;
     }
@@ -2010,60 +2175,6 @@ BentleyStatus SchemaComparer::ConvertECValuesCollectionToValueMap(std::map<Utf8S
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-std::vector<Utf8String> SchemaComparer::Split(Utf8StringCR path , bool stripArrayIndex)
-    {
-    auto stripArrayIndexIfRequired = [&stripArrayIndex] (Utf8String str)
-        {
-        if (stripArrayIndex)
-            {
-            auto i = str.find("[");
-            if (i == Utf8String::npos)
-                {
-                return str;
-                }
-
-            str = str.substr(0, i);
-            }
-        return str;
-        };
-
-    std::vector<Utf8String> axis;
-    size_t b = 0;
-    size_t i = 0;
-    for (; i < path.size(); i++)
-        {
-        if (path[i] == '.')
-            {
-
-            axis.push_back(stripArrayIndexIfRequired(path.substr(b, i - b)));
-            b = i + 1;
-            }
-        }
-
-    if (b < i)
-        axis.push_back(stripArrayIndexIfRequired(path.substr(b , i - b )));
-
-    return axis;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SchemaComparer::Join(std::vector<Utf8String> const& paths, Utf8CP delimiter)
-    {
-    Utf8String str;
-    for (auto itor = paths.begin(); itor != paths.end(); ++itor)
-        {
-        if (itor != paths.begin())
-            str.append(delimiter);
-
-        str.append(*itor);
-        }
-
-    return str;
-    }
 //======================================================================================
 //ECChange
 //======================================================================================
@@ -2255,22 +2366,6 @@ bool CompositeECChange::_IsChanged() const
         }
 
     return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-void CompositeECChange::_Optimize()
-    {
-    auto itor = m_changes.begin();
-    while (itor != m_changes.end())
-        {
-        itor->second->Optimize();
-        if (!itor->second->IsChanged())
-            itor = m_changes.erase(itor);
-        else
-            ++itor;
-        }
     }
 
 //======================================================================================>
@@ -2932,85 +3027,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
     }
 
 
-//======================================================================================>
-//CustomAttributeValidator::Rule
-//======================================================================================>
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-bool CustomAttributeValidator::Rule::Match(std::vector<Utf8String> const& source) const
-    {
-    if (source.empty())
-        return false;
 
-    if (m_pattern.size() == 1)//Foo:*
-        if (m_pattern.front().EndsWith("*"))
-            return true;
-
-    auto sb = source.begin();
-    auto pb = m_pattern.begin();
-    auto se = source.end();
-    auto pe = m_pattern.end();
-    while (sb != se && pb != pe)
-        {
-        if (*sb == *pb)
-            {
-            ++sb;
-            ++pb;
-
-            if (sb == se && pb == pe) //both stream ended its a match
-                return true;
-
-            if (sb != se && pb == pe)
-                return false;
-
-            if (sb == se && pb != pe)
-                {
-                while (pb != pe && *pb == "*") ++pb;
-                if (pb == pe)
-                    return true;
-
-                return false;
-                }
-            }
-        else if (*pb == "*")
-            {
-            while (pb != pe && *pb == "*") ++pb; //skip *.*.*
-            if (pb == pe) //last token seen was a * which mean success
-                return true;
-            else
-                {
-                while (*sb != *pb) //last token is not a * which mean we need to find a token in source that matchs it
-                    {
-                    ++sb;
-                    if (sb == se)
-                        return false;
-                    }
-                //we found one
-                ++sb; //next token
-                ++pb; //next token
-                if (sb == se && pb == pe) //both stream ended its a match
-                    return true;
-
-                if (sb != se && pb == pe)
-                    return false;
-
-                if (sb == se && pb != pe)
-                    {
-                    while (pb != pe && *pb == "*") ++pb;
-                    if (pb == pe)
-                        return true;
-
-                    return false;
-                    }
-                }
-            }
-        else
-            return false;
-        }
-
-    return true;
-    }
 
 //======================================================================================>
 //CustomAttributeValidator
@@ -3062,30 +3079,38 @@ CustomAttributeValidator::Policy CustomAttributeValidator::Validate(CustomAttrib
     {
     std::vector<std::unique_ptr<Rule>> const& rules = GetRelevantRules(change);
     if (rules.empty())
-        return GetDefaultPolicy();
+        return Policy::Accept;
+
+    std::vector<Utf8String> caFullClassNameTokens = Split(change.GetId());
+    for (std::unique_ptr<Rule> const& rule : rules)
+        {
+        if (rule->Match(caFullClassNameTokens))
+            {
+            if (rule->GetPolicy() != Policy::Accept)
+                return rule->GetPolicy();
+            }
+        }
 
     const size_t propValueCount = change.PropValues().Count();
     for (size_t i = 0; i < propValueCount; i++)
         {
         PropertyValueChange const& propValueChange = change.PropValues()[i];
 
-        std::vector<Utf8String> path = SchemaComparer::Split(propValueChange.GetAccessString(), true);
+        std::vector<Utf8String> accessStringTokens = Split(propValueChange.GetAccessString(), true);
 
         for (std::unique_ptr<Rule> const& rule : rules)
             {
-            if (rule->Match(path))
+            if (rule->Match(accessStringTokens))
                 {
-                if (rule->GetPolicy() == GetDefaultPolicy())
-                    break; //test next item
-                else
-                    {
-                    return GetDefaultPolicy() == Policy::Accept ? Policy::Reject : Policy::Accept;
-                    }
+                if (rule->GetPolicy() != Policy::Accept)
+                    return rule->GetPolicy();
+
+                break; //test next item
                 }
             }
         }
 
-    return GetDefaultPolicy();
+    return Policy::Accept;
     }
 
 //---------------------------------------------------------------------------------------
@@ -3101,4 +3126,133 @@ Utf8String CustomAttributeValidator::GetSchemaName(Utf8StringCR path)
     return path.substr(0, i);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+std::vector<Utf8String> CustomAttributeValidator::Split(Utf8StringCR path, bool stripArrayIndex)
+    {
+    auto stripArrayIndexIfRequired = [&stripArrayIndex] (Utf8String str)
+        {
+        if (stripArrayIndex)
+            {
+            auto i = str.find("[");
+            if (i == Utf8String::npos)
+                {
+                return str;
+                }
+
+            str = str.substr(0, i);
+            }
+        return str;
+        };
+
+    std::vector<Utf8String> tokens;
+    size_t b = 0;
+    size_t i = 0;
+    for (; i < path.size(); i++)
+        {
+        if (path[i] == '.' || path[i] == ':')
+            {
+            tokens.push_back(stripArrayIndexIfRequired(path.substr(b, i - b)));
+            b = i + 1;
+            }
+        }
+
+    if (b < i)
+        tokens.push_back(stripArrayIndexIfRequired(path.substr(b, i - b)));
+
+    return tokens;
+    }
+
+//======================================================================================>
+//CustomAttributeValidator::Rule
+//======================================================================================>
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+CustomAttributeValidator::Rule::Rule(Policy policy, Utf8StringCR accessString) : m_policy(policy), m_accessString(CustomAttributeValidator::Split(accessString)) {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool CustomAttributeValidator::Rule::Match(std::vector<Utf8String> const& candidateAccessString) const
+    {
+    if (candidateAccessString.empty())
+        return false;
+
+    auto candidateIt = candidateAccessString.begin();
+    auto candidateEndIt = candidateAccessString.end();
+    auto accessStringIt = m_accessString.begin();
+    auto accessStringEndIt = m_accessString.end();
+    while (candidateIt != candidateEndIt && accessStringIt != accessStringEndIt)
+        {
+        if (*candidateIt == *accessStringIt)
+            {
+            ++candidateIt;
+            ++accessStringIt;
+
+            if (candidateIt == candidateEndIt && accessStringIt == accessStringEndIt) //both stream ended its a match
+                return true;
+
+            if (candidateIt != candidateEndIt && accessStringIt == accessStringEndIt)
+                return false;
+
+            if (candidateIt == candidateEndIt && accessStringIt != accessStringEndIt)
+                {
+                while (accessStringIt != accessStringEndIt && *accessStringIt == "*")
+                    {
+                    ++accessStringIt;
+                    }
+
+                return accessStringIt == accessStringEndIt;
+                }
+
+            continue;
+            }
+
+        if (*accessStringIt == "*")
+            {
+            while (accessStringIt != accessStringEndIt && *accessStringIt == "*")
+                {
+                ++accessStringIt; //skip *.*.*
+                }
+
+            if (accessStringIt == accessStringEndIt) //last token seen was a * which mean success
+                return true;
+            else
+                {
+                while (*candidateIt != *accessStringIt) //last token is not a * which mean we need to find a token in source that matchs it
+                    {
+                    ++candidateIt;
+                    if (candidateIt == candidateEndIt)
+                        return false;
+                    }
+                //we found one
+                ++candidateIt; //next token
+                ++accessStringIt; //next token
+                if (candidateIt == candidateEndIt && accessStringIt == accessStringEndIt) //both stream ended its a match
+                    return true;
+
+                if (candidateIt != candidateEndIt && accessStringIt == accessStringEndIt)
+                    return false;
+
+                if (candidateIt == candidateEndIt && accessStringIt != accessStringEndIt)
+                    {
+                    while (accessStringIt != accessStringEndIt && *accessStringIt == "*")
+                        ++accessStringIt;
+
+                    return accessStringIt == accessStringEndIt;
+                    }
+                }
+
+            continue;
+            }
+
+        return false;
+        }
+
+    return true;
+    }
 END_BENTLEY_ECOBJECT_NAMESPACE

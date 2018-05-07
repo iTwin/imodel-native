@@ -166,7 +166,6 @@ struct ECChange : RefCountedBase
 
         virtual bool _IsChanged() const = 0;
         virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const = 0;
-        virtual void _Optimize() {}
 
     protected:
         ECChange(ChangeType changeType, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : m_systemId(systemId), m_customId(customId), m_changeType(changeType), m_parent(parent) {}
@@ -183,8 +182,9 @@ struct ECChange : RefCountedBase
         ECOBJECTS_EXPORT Utf8CP GetId() const;
         ChangeType GetChangeType() const { return m_changeType; }
         ECChange const* GetParent() const { return m_parent; }
-        bool IsChanged() const { return _IsChanged(); }
-        void Optimize() { _Optimize(); }
+        //! IsChanged is always true if ECChange::GetChangeType is ChangeType::New or ChangeType::Deleted.
+        //! If ECChange::GetChangeType is ChangeType::Modified, IsChanged returns true if old and new value differ from each other
+        bool IsChanged() const { return m_changeType != ChangeType::Modified || _IsChanged(); }
         Status GetStatus() { return m_status; }
         void SetStatus(Status status) { m_status = status; }
         void WriteToString(Utf8StringR str, int initIndex = 0, int indentSize = 4) const { _WriteToString(str, initIndex, indentSize); }
@@ -211,7 +211,6 @@ struct CompositeECChange : public ECChange
 
         ECOBJECTS_EXPORT bool _IsChanged() const override;
         ECOBJECTS_EXPORT void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
-        ECOBJECTS_EXPORT void _Optimize() override;
 
     protected:
         CompositeECChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChange(state, systemId, parent, customId) {}
@@ -278,19 +277,6 @@ struct ECChangeArray final : public ECChange
                 }
             }
 
-        void _Optimize() override
-            {
-            auto it = m_changes.begin();
-            while (it != m_changes.end())
-                {
-                (*it)->Optimize();
-                if (!(*it)->IsChanged())
-                    it = m_changes.erase(it);
-                else
-                    ++it;
-                }
-            }
-
     public:
         ECChangeArray(ChangeType state, SystemId systemId, ECChange const* parent, Utf8CP customId = nullptr) : ECChange(state, systemId, parent, customId)
             {
@@ -302,12 +288,21 @@ struct ECChangeArray final : public ECChange
         size_t Count() const { return m_changes.size(); }
         bool IsEmpty() const { return m_changes.empty(); }
         TArrayElement& operator[](size_t index) { return static_cast<TArrayElement&>(*m_changes[index]); }
-        TArrayElement& Add(ChangeType state, SystemId elementSystemId, Utf8CP customId = nullptr)
+
+        RefCountedPtr<TArrayElement> CreateElement(ChangeType state, SystemId elementSystemId, Utf8CP customId = nullptr) { return new TArrayElement(state, elementSystemId, this, customId); }
+
+        //! Adds a change to the array.
+        //! Changes for which IsChanged is false are skipped
+        //! The typical workflow is:
+        //! - Call CreateElement
+        //! - Populate the array element change
+        //! - Call Add
+        void Add(RefCountedPtr<TArrayElement>& change)
             {
-            ECChangePtr changePtr = new TArrayElement(state, elementSystemId, this, customId);
-            TArrayElement* changeP = static_cast<TArrayElement*>(changePtr.get());
-            m_changes.push_back(changePtr);
-            return *changeP;
+            if (!change->IsChanged())
+                return;
+
+            m_changes.push_back(change);
             }
     };
 
@@ -321,7 +316,7 @@ struct PrimitiveChange final : public ECChange
         Nullable<T> m_old;
         Nullable<T> m_new;
 
-        bool _IsChanged() const override { return (m_old != nullptr || m_new != nullptr) && m_old != m_new; }
+        bool _IsChanged() const override { return m_old != m_new; }
 
         void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
             {
@@ -518,11 +513,6 @@ struct PropertyValueChange final : public ECChange
 
         bool _IsChanged() const override { return m_value != nullptr && m_value->IsChanged(); }
         void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
-        void _Optimize() override
-            {
-            if (m_value != nullptr && !m_value->IsChanged())
-                m_value = nullptr;
-            }
 
         BentleyStatus Inititalize(ECN::PrimitiveType);
 
@@ -561,7 +551,6 @@ struct CustomAttributeChange final : public ECChange
         std::unique_ptr<ECChangeArray<PropertyValueChange>> m_propValueChanges;
 
         bool _IsChanged() const override { return m_propValueChanges->IsChanged(); }
-        void _Optimize() override { m_propValueChanges->Optimize(); }
         void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override
             {
             AppendBegin(str, *this, currentIndex);
@@ -596,9 +585,6 @@ struct RelationshipConstraintChange final : public CompositeECChange
         RelationshipConstraintClassChanges& ConstraintClasses() { return Get<RelationshipConstraintClassChanges>(SystemId::ConstraintClasses); }
         CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(SystemId::CustomAttributes); }
     };
-
-
-
 
 //=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
@@ -985,8 +971,6 @@ public:
     SchemaComparer(){}
 
     ECOBJECTS_EXPORT BentleyStatus Compare(SchemaDiff&, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
-    static std::vector<Utf8String> Split(Utf8StringCR path, bool stripArrayIndex = false);
-    static Utf8String Join(std::vector<Utf8String> const& paths, Utf8CP delimiter);
     };
 
 //=======================================================================================
@@ -1004,22 +988,22 @@ struct CustomAttributeValidator final : NonCopyableClass
         struct Rule final : NonCopyableClass
             {
             private:
-                Policy m_policy;
-                std::vector<Utf8String> m_pattern;
+                Policy m_policy = Policy::Accept;
+                std::vector<Utf8String> m_accessString;
             public:
-                Rule(Policy policy, Utf8StringCR pattern) :m_policy(policy), m_pattern(SchemaComparer::Split(pattern)) {}
-                ~Rule() {}
-                bool Match(std::vector<Utf8String> const& source) const;
+                Rule(Policy policy, Utf8StringCR accessString);
+                bool Match(std::vector<Utf8String> const& accessString) const;
                 Policy GetPolicy() const { return m_policy; }
             };
 
-        Policy m_defaultPolicy = Policy::Accept;
         std::map<Utf8String, std::vector<std::unique_ptr<Rule>>> m_rules;
         Utf8String m_wildcard = Utf8String("*");
 
         std::vector<std::unique_ptr<Rule>> const& GetRelevantRules(CustomAttributeChange&) const;
 
         static Utf8String GetSchemaName(Utf8StringCR path);
+
+        static std::vector<Utf8String> Split(Utf8StringCR path, bool stripArrayIndex = false);
 
     public:
         CustomAttributeValidator() 
@@ -1032,10 +1016,6 @@ struct CustomAttributeValidator final : NonCopyableClass
 
         ECOBJECTS_EXPORT void AddAcceptRule(Utf8StringCR accessString);
         ECOBJECTS_EXPORT void AddRejectRule(Utf8StringCR accessString);
-        Policy GetDefaultPolicy() const { return m_defaultPolicy; }
-        void SetDefaultPolicy(Policy defaultPolicy) { m_defaultPolicy = defaultPolicy; }
-        bool HasRuleForSchema(Utf8StringCR schemaName) const { return m_rules.find(schemaName) != m_rules.end(); }
-
         ECOBJECTS_EXPORT Policy Validate(CustomAttributeChange&) const;
     };
 END_BENTLEY_ECOBJECT_NAMESPACE
