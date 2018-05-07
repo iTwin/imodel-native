@@ -453,7 +453,7 @@ void ScalableMeshLib::Host::Initialize()
     InitializeProgressiveQueries();
 
 #ifdef VANCOUVER_API
-    //RegisterPODImportPlugin();
+    RegisterPODImportPlugin();
 #else
     //NEEDS_WORK_SM_POD_B0200
     //RegisterPODImportPlugin();
