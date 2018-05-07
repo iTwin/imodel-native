@@ -1112,7 +1112,7 @@ BentleyStatus SchemaReader::ReadFormat(ECN::ECFormatCP& format, Context& ctx, EC
         if (!Json::Reader::Parse(numericSpecJsonStr, numericSpecJson))
             return ERROR;
 
-        if (SUCCESS != Formatting::NumericFormatSpec::FromJson(numSpec, numericSpecJson))
+        if (!Formatting::NumericFormatSpec::FromJson(numSpec, numericSpecJson))
             return ERROR;
         }
 
@@ -1193,7 +1193,7 @@ BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, 
         if (!Json::Reader::Parse(compositeSpecJsonWithoutUnits, compSpecJson))
             return ERROR;
 
-        if (SUCCESS != Formatting::CompositeValueSpec::FromJson(spec, compSpecJson, units, labels))
+        if (!Formatting::CompositeValueSpec::FromJson(spec, compSpecJson, units, labels))
             return ERROR;
         }
 

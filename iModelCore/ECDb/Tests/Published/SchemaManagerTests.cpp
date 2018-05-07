@@ -2093,23 +2093,23 @@ TEST_F(SchemaManagerTests, Formats)
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                     <Unit typeName="MyMeter" displayLabel="My Metre" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
                                     <Format typeName="Format1" displayLabel="Format 1" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
-                                            precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                                            precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
                                     </Format>
                                     <Format typeName="Format2" displayLabel="Format 2" description="Nice format 2" roundFactor="0.3" type="Scientific" scientificType="ZeroNormalized" showSignOption="NegativeParentheses" formatTraits="ShowUnitLabel|PrependUnitLabel|KeepSingleZero"
-                                            precision="4" decSeparator="," thousandSeparator="." uomSeparator="*">
+                                            precision="4" decimalSeparator="," thousandSeparator="." uomSeparator="*">
                                         <Composite>
                                             <Unit label="m">MyMeter</Unit>
                                             <Unit label="mm">u:MM</Unit>
                                         </Composite>
                                     </Format>
                                     <Format typeName="Format3" displayLabel="Format 3" roundFactor="2.3" type="Station" stationOffsetSize="12" showSignOption="SignAlways" formatTraits="Use1000Separator|ShowUnitLabel|ApplyRounding"
-                                            precision="5" decSeparator="," thousandSeparator="." uomSeparator="(">
+                                            precision="5" decimalSeparator="," thousandSeparator="." uomSeparator="(">
                                         <Composite spacer="/" includeZero="False">
                                             <Unit label="kilogram">u:KG</Unit>
                                         </Composite>
                                     </Format>
                                     <Format typeName="Format4" displayLabel="Format 4" description="Nice format 4" roundFactor="12" type="Station" statSeparator="$" stationOffsetSize="12" showSignOption="SignAlways" formatTraits="ShowUnitLabel|ApplyRounding|ZeroEmpty"
-                                            precision="2" decSeparator="," thousandSeparator="." uomSeparator="#">
+                                            precision="2" decimalSeparator="," thousandSeparator="." uomSeparator="#">
                                         <Composite spacer="?" includeZero="True">
                                             <Unit label="Newton">u:N</Unit>
                                         </Composite>
@@ -2148,22 +2148,22 @@ TEST_F(SchemaManagerTests, Formats)
     ASSERT_TRUE(schema != nullptr);
 
     assertFormat(*schema, "Format1", "Format 1", "",
-                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decimalSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
                  JsonValue());
 
     assertFormat(*schema, "Format2", "Format 2", "Nice format 2",
-                 JsonValue(R"json({"roundFactor":0.3, "type": "Scientific", "scientificType": "ZeroNormalized", "showSignOption": "NegativeParentheses", "formatTraits": "KeepSingleZero|ShowUnitLabel|PrependUnitLabel", "precision": 4, "decSeparator": ",", "thousandSeparator": ".", "uomSeparator": "*"})json"),
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Scientific", "scientificType": "ZeroNormalized", "showSignOption": "NegativeParentheses", "formatTraits": "KeepSingleZero|ShowUnitLabel|PrependUnitLabel", "precision": 4, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "*"})json"),
                  JsonValue(R"json({"spacer":" ", "includeZero": true, "units": [
                               { "name": "MyMeter", "label": "m" },
                               { "name": "MM", "label": "mm" }]})json"));
 
     assertFormat(*schema, "Format3", "Format 3", "",
-                 JsonValue(R"json({"roundFactor":2.3, "type": "Station", "stationOffsetSize":12, "showSignOption": "SignAlways", "formatTraits":"ApplyRounding|ShowUnitLabel|Use1000Separator", "precision": 5, "decSeparator": ",", "thousandSeparator": ".", "uomSeparator": "("})json"),
+                 JsonValue(R"json({"roundFactor":2.3, "type": "Station", "stationOffsetSize":12, "showSignOption": "SignAlways", "formatTraits":"ApplyRounding|ShowUnitLabel|Use1000Separator", "precision": 5, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "("})json"),
                  JsonValue(R"json({"spacer": "/", "includeZero": false, "units": [
                               { "name": "KG", "label": "kilogram" }]})json"));
 
     assertFormat(*schema, "Format4", "Format 4", "Nice format 4",
-                 JsonValue(R"json({"roundFactor":12.0, "type": "Station", "stationOffsetSize":12, "stationSeparator":"$", "showSignOption": "SignAlways", "formatTraits":"ZeroEmpty|ApplyRounding|ShowUnitLabel", "precision": 2, "decSeparator": ",", "thousandSeparator": ".", "uomSeparator": "#"})json"),
+                 JsonValue(R"json({"roundFactor":12.0, "type": "Station", "stationOffsetSize":12, "stationSeparator":"$", "showSignOption": "SignAlways", "formatTraits":"ZeroEmpty|ApplyRounding|ShowUnitLabel", "precision": 2, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "#"})json"),
                  JsonValue(R"json({"spacer": "?", "includeZero": true, "units": [
                               { "name": "N", "label": "Newton"}]})json"));
 

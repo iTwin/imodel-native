@@ -4101,13 +4101,13 @@ BentleyStatus SchemaWriter::ReloadSchemas(Context& ctx)
         ECSchemaCP schema = ctx.GetSchemaManager().GetSchema(name);
         if (schema == nullptr)
             {
-            ctx.Issues().ReportV("Schema import failed. Failed to read schema %s from ECDb.", name.c_str());
+            ctx.Issues().ReportV("Schema import failed. Failed to read schema '%s' from ECDb.", name.c_str());
             return ERROR;
             }
 
         if (!ValidateSchema(*schema))
             {
-            ctx.Issues().ReportV("Schema import failed. Failed to validate previously imported schema %s.", name.c_str());
+            ctx.Issues().ReportV("Schema import failed. Failed to validate previously imported schema '%s'.", name.c_str());
             return ERROR;
             }
 
@@ -4119,13 +4119,13 @@ BentleyStatus SchemaWriter::ReloadSchemas(Context& ctx)
         ECSchemaCP schema = ctx.GetSchemaManager().GetSchema(name);
         if (schema == nullptr)
             {
-            ctx.Issues().ReportV("Schema import failed. Failed to read imported schema %s from ECDb.", name.c_str());
+            ctx.Issues().ReportV("Schema import failed. Failed to read imported schema '%s' from ECDb.", name.c_str());
             return ERROR;
             }
 
         if (!ValidateSchema(*schema))
             {
-            ctx.Issues().ReportV("Schema import failed. Failed to validate imported schema %s.", name.c_str());
+            ctx.Issues().ReportV("Schema import failed. Failed to validate imported schema '%s'.", name.c_str());
             return ERROR;
             }
 

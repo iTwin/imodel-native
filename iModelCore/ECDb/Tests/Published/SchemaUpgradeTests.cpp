@@ -9638,7 +9638,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
                                 <ECSchema schemaName="Schema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                     <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
-                                            precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                                            precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
                                     </Format>
                                 </ECSchema>)xml")));
 
@@ -9675,7 +9675,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
         };
 
     assertFormat(m_ecdb, "MyFormat", "My Format", "",
-                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decimalSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
                  JsonValue());
 
 
@@ -9683,12 +9683,12 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
                                 <ECSchema schemaName="Schema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                     <Format typeName="MyFormat" displayLabel="My nice Format" description="Real nice format" roundFactor="1.3" type="Scientific" scientificType="ZeroNormalized" showSignOption="SignAlways" formatTraits="KeepSingleZero"
-                                            precision="5" decSeparator="," thousandSeparator="." uomSeparator="#">
+                                            precision="5" decimalSeparator="," thousandSeparator="." uomSeparator="#">
                                     </Format>
                                 </ECSchema>)xml"))) << "Modify DisplayLabel, Description, NumericSpec";
 
     assertFormat(m_ecdb, "MyFormat", "My nice Format", "Real nice format",
-                 JsonValue(R"json({"roundFactor":1.3, "type": "Scientific", "scientificType":"ZeroNormalized", "showSignOption": "SignAlways", "formatTraits": "KeepSingleZero", "precision": 5, "decSeparator": ",", "thousandSeparator": ".", "uomSeparator": "#"})json"),
+                 JsonValue(R"json({"roundFactor":1.3, "type": "Scientific", "scientificType":"ZeroNormalized", "showSignOption": "SignAlways", "formatTraits": "KeepSingleZero", "precision": 5, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "#"})json"),
                  JsonValue());
 
 
@@ -9721,7 +9721,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
                                 <ECSchema schemaName="Schema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                     <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
-                                            precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                                            precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
                                         <Composite>
                                             <Unit label="m">MyMeter</Unit>
                                             <Unit label="mm">u:MM</Unit>
@@ -9730,14 +9730,14 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
                                 </ECSchema>)xml")));
 
     assertFormat(m_ecdb, "MyFormat", "My Format", "",
-                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decimalSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
                  JsonValue(R"json({"spacer":" ", "includeZero":true, "units": [{"name":"MyMeter", "label":"m"}, {"name":"MM", "label":"mm"}]})json"));
 
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                 <ECSchema schemaName="Schema" alias="ts" version="2.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                     <ECSchemaReference name="Units" version="01.00.00" alias="u" />
                                     <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
-                                            precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                                            precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
                                         <Composite spacer="=" includeZero="False">
                                             <Unit label="meterle">MyMeter</Unit>
                                             <Unit label="millimeterle">u:MM</Unit>
@@ -9746,7 +9746,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
                                 </ECSchema>)xml"))) << "Modify CompSpec except for units";
 
     assertFormat(m_ecdb, "MyFormat", "My Format", "",
-                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decimalSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
                  JsonValue(R"json({"spacer":"=", "includeZero":false, "units": [{"name":"MyMeter", "label":"meterle"}, {"name":"MM", "label":"millimeterle"}]})json"));
 
     }
