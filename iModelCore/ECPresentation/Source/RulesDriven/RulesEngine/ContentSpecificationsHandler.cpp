@@ -315,7 +315,8 @@ void ContentSpecificationsHandler::AppendClass(ECClassCR ecClass, ContentSpecifi
         return;
     
     SelectClassInfo info(ecClass, isSpecificationPolymorphic);
-
+    info.SetRelatedInstanceClasses(QueryBuilderHelpers::GetRelatedInstanceClasses(GetContext().GetSchemaHelper(), info.GetSelectClass(),
+        spec.GetRelatedInstances(), GetContext().GetRelationshipUseCounts()));
     bvector<RelatedClass> navigationPropertiesPaths;
     PropertyAppenderPtr appender = _CreatePropertyAppender(ecClass, s_emptyRelationshipPath, RelationshipMeaning::SameInstance);
     ECPropertyIterable properties = ecClass.GetProperties(true);
@@ -369,6 +370,8 @@ void ContentSpecificationsHandler::AppendClassPaths(bvector<RelatedClassPath> co
 
         SelectClassInfo appendInfo(selectClass, isSelectPolymorphic);
         appendInfo.SetPathToPrimaryClass(path);
+        appendInfo.SetRelatedInstanceClasses(QueryBuilderHelpers::GetRelatedInstanceClasses(GetContext().GetSchemaHelper(), appendInfo.GetSelectClass(),
+            spec.GetRelatedInstances(), GetContext().GetRelationshipUseCounts()));
         
         if (_ShouldIncludeRelatedProperties())
             {

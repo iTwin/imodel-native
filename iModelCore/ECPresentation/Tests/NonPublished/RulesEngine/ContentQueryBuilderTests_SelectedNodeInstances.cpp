@@ -669,3 +669,28 @@ TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_InstanceLabelOverride_Ov
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, SelectedNodeInstances_JoinsRelatedInstanceWithInnerJoin)
+    {
+    ECClassCP gadgetClass = GetECClass("RulesEngineTest", "Gadget");
+    TestParsedInput info(*gadgetClass, ECInstanceId((uint64_t) 1));
+
+    SelectedNodeInstancesSpecification spec(1, false, "", "", false);
+    spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket", "sprocketAlias", true));
+
+    ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("SelectedNodeInstances_JoinsRelatedInstanceWithInnerJoin");
+    EXPECT_TRUE(expected->IsEqual(*query))
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+

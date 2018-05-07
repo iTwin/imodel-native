@@ -191,6 +191,27 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_AppliesInsta
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_AppliesInstanceFilterUsingRelatedInstanceSpecification)
+    {
+    ContentInstancesOfSpecificClassesSpecification spec(1, "sprocketAlias.MyID = \"Sprocket MyID\"", "RulesEngineTest:Gadget", false);
+    spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket", "sprocketAlias"));
+
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentInstancesOfSpecificClasses_AppliesInstanceFilterUsingRelatedInstanceSpecification");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_CategorizesFields)

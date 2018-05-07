@@ -666,6 +666,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
     bool resultsMerged = descriptor.HasContentFlag(ContentFlags::MergeResults);
     int columnIndex = 0;
     uint64_t contractId = 0;
+    Utf8CP relatedInstanceInfo = nullptr;
 
     bvector<ECClassInstanceKey> primaryRecordKeys;
     if (!descriptor.OnlyDistinctValues())
@@ -704,8 +705,14 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
                 }
             }
 
-        ContentQueryContractCPtr fieldsContract = m_query->GetContract(contractId);
         bool possiblyMerged = (resultsMerged && primaryRecordKeys.size() > 1);
+        // note: the record consists of multiple merged ECInstance values - not clear
+        // which one's related instance info should be used for customizing
+        if (!possiblyMerged)
+            relatedInstanceInfo = statement.GetValueText(columnIndex);
+        columnIndex++;
+
+        ContentQueryContractCPtr fieldsContract = m_query->GetContract(contractId);
         for (ContentDescriptor::Field const* field : descriptor.GetAllFields())
             {
             Utf8StringCR fieldName = field->GetName();
@@ -778,6 +785,7 @@ void ContentQueryExecutor::_ReadRecord(ECSqlStatement& statement)
         values.GetValues(), values.GetDisplayValues(), values.GetMergedFieldNames(), fieldValueInstanceKeyReader.GetKeys());
     record->SetClass(recordClass);
     ContentSetItemExtendedData(*record).SetContractId(contractId);
+    ContentSetItemExtendedData(*record).SetRelatedInstanceKeys(relatedInstanceInfo);
 
     m_records.push_back(record);
     }

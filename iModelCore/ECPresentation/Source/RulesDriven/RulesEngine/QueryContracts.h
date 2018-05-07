@@ -175,6 +175,9 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE PresentationQueryContract : RefCountedBase
 {
+public:
+    ECPRESENTATION_EXPORT static Utf8CP RelatedInstanceInfoFieldName;
+
 private:
     uint64_t m_id;
 
@@ -184,6 +187,7 @@ protected:
     virtual bvector<PresentationQueryContractFieldCPtr> _GetFields() const = 0;
     virtual void _SetECInstanceIdFieldName(Utf8CP name){}
     virtual void _SetECClassIdFieldName(Utf8CP name){}
+    static RefCountedPtr<PresentationQueryContractSimpleField> CreateRelatedInstanceInfoField(bvector<RelatedClass> const&);
 
 public:
     uint64_t GetId() const {return m_id;}
@@ -232,7 +236,6 @@ public:
     ECPRESENTATION_EXPORT static Utf8CP ECInstanceIdFieldName;
     ECPRESENTATION_EXPORT static Utf8CP ECClassIdFieldName;
     ECPRESENTATION_EXPORT static Utf8CP DisplayLabelFieldName;
-    ECPRESENTATION_EXPORT static Utf8CP RelatedInstanceInfoFieldName;
 
 private:
     RefCountedPtr<PresentationQueryContractSimpleField> m_ecInstanceIdField;
@@ -243,7 +246,6 @@ private:
 private:
     ECPRESENTATION_EXPORT ECInstanceNodesQueryContract(ECClassCP, bvector<RelatedClass> const&, bvector<ECPropertyCP> const&);
     static RefCountedPtr<PresentationQueryContractFunctionField> CreateDisplayLabelField(ECClassCP, bvector<RelatedClass> const&, bvector<ECPropertyCP> const&);
-    static RefCountedPtr<PresentationQueryContractSimpleField> CreateRelatedInstanceInfoField(bvector<RelatedClass> const&);
 
 protected:
     NavigationQueryResultType _GetResultType() const override {return NavigationQueryResultType::ECInstanceNodes;}
@@ -476,10 +478,11 @@ private:
     ContentDescriptorCPtr m_descriptor;
     ECClassCP m_class;
     IQueryInfoProvider const& m_queryInfo;
+    bvector<RelatedClass> m_relatedClasses;
     bool m_skipCompositePropertyFields;
 
 private:
-    ECPRESENTATION_EXPORT ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const&, bool);
+    ECPRESENTATION_EXPORT ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const&, bvector<RelatedClass> const&, bool);
     PresentationQueryContractFunctionField const& GetDisplayLabelField(ContentDescriptor::DisplayLabelField const* field) const;
     PresentationQueryContractFieldCPtr GetCalculatedPropertyField(Utf8String const&, Utf8String const&, bool) const;
     PresentationQueryContractFieldCPtr CreateInstanceKeyField(Utf8CP fieldName, Utf8CP alias, ECClassId defaultClassId, bool isMerging) const;
@@ -489,9 +492,9 @@ protected:
     ECPRESENTATION_EXPORT bvector<PresentationQueryContractFieldCPtr> _GetFields() const override;
 
 public:
-    static ContentQueryContractPtr Create(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo, bool skipCompositePropertyFields = true)
+    static ContentQueryContractPtr Create(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo, bvector<RelatedClass> const& relatedClasses = bvector<RelatedClass>(), bool skipCompositePropertyFields = true)
         {
-        return new ContentQueryContract(id, descriptor, ecClass, queryInfo, skipCompositePropertyFields);
+        return new ContentQueryContract(id, descriptor, ecClass, queryInfo, relatedClasses, skipCompositePropertyFields);
         }
     ContentDescriptorCR GetDescriptor() const {return *m_descriptor;}
     ContentDescriptor::Property const* FindMatchingProperty(ContentDescriptor::ECPropertiesField const&, ECClassCP) const;

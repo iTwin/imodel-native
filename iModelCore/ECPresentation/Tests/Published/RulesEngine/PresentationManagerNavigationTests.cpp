@@ -2351,6 +2351,39 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, ImageIdOverride)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Mantas.Kontrimas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, UsesRelatedInstanceInImageIdOverrideCondition)
+    {
+    ECRelationshipClassCR relationshipWidgetHasGadget = *m_schema->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, 
+        [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Gadget ID"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ImageIdOverrideP imageIdOverride = new ImageIdOverride("ThisNode.ClassName = \"Widget\" ANDALSO gadgetAlias.MyID = \"Gadget ID\"", 1, "\"overridedImageId\"");
+    rules->AddPresentationRule(*imageIdOverride);
+
+    RootNodeRule* rule = new RootNodeRule();
+    InstanceNodesOfSpecificClassesSpecificationP instanceNodesOfSpecificClassesSpecification = new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false);
+    instanceNodesOfSpecificClassesSpecification->AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget", "gadgetAlias"));
+    rule->AddSpecification(*instanceNodesOfSpecificClassesSpecification);
+    rules->AddPresentationRule(*rule);
+
+    // request for nodes
+    Json::Value options = RulesDrivenECPresentationManager::NavigationOptions(rules->GetRuleSetId().c_str(), TargetTree_MainTree).GetJson();
+    DataContainer<NavNodeCPtr> nodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options).get();
+
+    // make sure we have 1 node with overrided ImageId
+    ASSERT_EQ(1, nodes.GetSize());
+    ASSERT_STREQ("overridedImageId", nodes[0]->GetCollapsedImageId().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Pranciskus.Ambrazas               02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, LabelOverride)

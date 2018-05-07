@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/ContentSpecification.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -33,6 +33,7 @@ private:
     CalculatedPropertiesSpecificationList m_calculatedPropertiesSpecification;
     DisplayRelatedItemsSpecificationList m_displayRelatedItemsSpecification;
     PropertyEditorsSpecificationList     m_propertyEditorsSpecification;
+    RelatedInstanceSpecificationList     m_relatedInstances;
 
 protected:
     //! Constructor. It is used to initialize the rule with default settings.
@@ -113,6 +114,12 @@ public:
 
     //! Include related items with current instances when display commands are executed.
     ECPRESENTATION_EXPORT void AddDisplayRelatedItem(DisplayRelatedItemsSpecificationR specification);
+
+    //! A writable list of related instance specifications.
+    ECPRESENTATION_EXPORT void AddRelatedInstance(RelatedInstanceSpecificationR relatedInstance);
+
+    //! A const list of related instance specifications.
+    RelatedInstanceSpecificationList const& GetRelatedInstances() const {return m_relatedInstances;}
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

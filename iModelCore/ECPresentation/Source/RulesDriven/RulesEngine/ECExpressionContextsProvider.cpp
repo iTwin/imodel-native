@@ -663,8 +663,8 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(
 
     // related instance contexts
     NavNodeExtendedData extendedData(params.GetNode());
-    bvector<NavNodeExtendedData::RelatedInstanceKey> relatedInstanceKeys = extendedData.GetRelatedInstanceKeys();
-    for (NavNodeExtendedData::RelatedInstanceKey const& key : relatedInstanceKeys)
+    bvector<ItemExtendedData::RelatedInstanceKey> relatedInstanceKeys = extendedData.GetRelatedInstanceKeys();
+    for (ItemExtendedData::RelatedInstanceKey const& key : relatedInstanceKeys)
         {
         rootCtx->GetSymbolsContext().AddSymbol(*PropertySymbol::Create(key.GetAlias(), 
             *ECInstanceContextEvaluator::Create(params.GetConnection(), key.GetInstanceKey())));

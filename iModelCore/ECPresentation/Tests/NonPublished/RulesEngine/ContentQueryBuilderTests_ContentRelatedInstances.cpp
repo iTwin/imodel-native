@@ -155,6 +155,29 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_AppliesInstanceFilter)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_AppliesInstanceFilterUsingRelatedInstanceSpecification)
+    {
+    ECClassCP ecClass = GetECClass("RulesEngineTest", "Widget");
+    ContentRelatedInstancesSpecification spec(1, 0, false, "sprocket.MyID = \"Sprocket MyID\"", RequiredRelationDirection_Forward, "RulesEngineTest:WidgetsHaveGadgets", "RulesEngineTest:Gadget");
+    spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:GadgetHasSprockets", "RulesEngineTest:Sprocket", "sprocket"));
+    
+    TestParsedInput info(*ecClass, ECInstanceId((uint64_t)123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("ContentRelatedInstances_AppliesInstanceFilterUsingRelatedInstanceSpecification");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_SkipsRelatedLevel)
