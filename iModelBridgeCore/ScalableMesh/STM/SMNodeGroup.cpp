@@ -668,56 +668,64 @@ bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, Data
     if (!readOK) return false;
     if (m_isRoot && dataSource->isFromCache())
         { // Must download so that we can check timestamp and clear cache if necessary
-        bool cacheEnabled = dataSource->getCachingEnabled();
-        dataSource->setCachingEnabled(false);
-        std::unique_ptr<DataSource::Buffer[]> newDest;
-        DataSourceBuffer::BufferSize newSize;
-        if ((dataSource = this->InitializeDataSource(newDest, destSize)) != nullptr &&
-            dataSource->open(url, DataSourceMode_Read).isOK() &&
-            dataSource->read(newDest.get(), destSize, newSize, 0).isOK())
+        Json::Value cachedTileset;
+        if (ConvertToJsonFromBytes(cachedTileset, dest, readSize) &&
+            !cachedTileset.isNull() &&
+            cachedTileset["root"].isMember("SMMasterHeader") &&
+            cachedTileset["root"]["SMMasterHeader"].isMember("LastModifiedDateTime"))
             {
-            // Compare timestamps
-            Json::Value cachedTileset, networkTileset;
-            if (ConvertToJsonFromBytes(cachedTileset, dest, readSize) &&
-                ConvertToJsonFromBytes(networkTileset, newDest, newSize) &&
-                !cachedTileset.isNull() && !networkTileset.isNull())
+            bool cacheEnabled = dataSource->getCachingEnabled();
+            dataSource->setCachingEnabled(false);
+            std::unique_ptr<DataSource::Buffer[]> newDest;
+            DataSourceBuffer::BufferSize newSize;
+            if ((dataSource = this->InitializeDataSource(newDest, destSize)) != nullptr &&
+                dataSource->open(url, DataSourceMode_Read).isOK() &&
+                dataSource->read(newDest.get(), destSize, newSize, 0).isOK())
                 {
-                DateTime cachedTimestamp;
-                DateTime networkTimestamp;
-
-                if (BentleyStatus::SUCCESS == DateTime::FromString(cachedTimestamp, cachedTileset["root"]["SMMasterHeader"]["LastModifiedDateTime"].asCString()) &&
-                    BentleyStatus::SUCCESS == DateTime::FromString(networkTimestamp, networkTileset["root"]["SMMasterHeader"]["LastModifiedDateTime"].asCString()) &&
-                    DateTime::CompareResult::EarlierThan == DateTime::Compare(cachedTimestamp, networkTimestamp))
+                // Compare timestamps
+                Json::Value networkTileset;
+                if (ConvertToJsonFromBytes(networkTileset, newDest, newSize) &&
+                    !networkTileset.isNull() &&
+                    networkTileset["root"].isMember("SMMasterHeader") &&
+                    networkTileset["root"]["SMMasterHeader"].isMember("LastModifiedDateTime"))
                     {
-                    // Construct path to tempory folder
-                    BeFileName tempPath;
-                    if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
-                        BeAssert(false); // Couldn't retrieve the temporary path
-                    tempPath.AppendToPath(L"RealityDataCache");
-                    auto accountName = m_parametersPtr->GetDataSourceAccount()->getAccountName();
-                    tempPath.AppendToPath(accountName.c_str());
-                    DataSourceURL cachedDataSourcePath;
-                    dataSource->getURL(cachedDataSourcePath);
-                    tempPath.AppendToPath(cachedDataSourcePath.c_str());
+                    DateTime cachedTimestamp;
+                    DateTime networkTimestamp;
 
-                    // Clear cache
-                    if (BeFileNameStatus::Success != BeFileName::EmptyAndRemoveDirectory(BeFileName::GetDirectoryName(tempPath.c_str()).c_str()))
+                    if (BentleyStatus::SUCCESS == DateTime::FromString(cachedTimestamp, cachedTileset["root"]["SMMasterHeader"]["LastModifiedDateTime"].asCString()) &&
+                        BentleyStatus::SUCCESS == DateTime::FromString(networkTimestamp, networkTileset["root"]["SMMasterHeader"]["LastModifiedDateTime"].asCString()) &&
+                        DateTime::CompareResult::EarlierThan == DateTime::Compare(cachedTimestamp, networkTimestamp))
                         {
-                        BeAssert(false); // Couldn't remove temp directory
+                        // Construct path to tempory folder
+                        BeFileName tempPath;
+                        if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
+                            BeAssert(false); // Couldn't retrieve the temporary path
+                        tempPath.AppendToPath(L"RealityDataCache");
+                        auto accountName = m_parametersPtr->GetDataSourceAccount()->getAccountName();
+                        tempPath.AppendToPath(accountName.c_str());
+                        DataSourceURL cachedDataSourcePath;
+                        dataSource->getURL(cachedDataSourcePath);
+                        tempPath.AppendToPath(cachedDataSourcePath.c_str());
+
+                        // Clear cache
+                        if (BeFileNameStatus::Success != BeFileName::EmptyAndRemoveDirectory(BeFileName::GetDirectoryName(tempPath.c_str()).c_str()))
+                            {
+                            BeAssert(false); // Couldn't remove temp directory
+                            }
+
+                        // Update data
+                        dest = std::move(newDest);
+
+                        // Recreate cache with updated data
+                        dataSource->setForceWriteToCache();
                         }
-
-                    // Update data
-                    dest = std::move(newDest);
-
-                    // Recreate cache with updated data
-                    dataSource->setForceWriteToCache();
                     }
                 }
-            }
-        dataSource->setCachingEnabled(cacheEnabled);
+            dataSource->setCachingEnabled(cacheEnabled);
 
-        // Closing the DataSource will write to cache if need be
-        dataSource->close();
+            // Closing the DataSource will write to cache if need be
+            dataSource->close();
+            }
         }
     return readOK;
     }

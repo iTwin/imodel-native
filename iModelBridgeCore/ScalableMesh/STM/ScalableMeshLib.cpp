@@ -453,8 +453,13 @@ void ScalableMeshLib::Host::Initialize()
     m_smPaths = new bmap<WString, IScalableMesh*>();
     InitializeProgressiveQueries();
 
+#ifdef VANCOUVER_API
+    RegisterPODImportPlugin();
+#else
     //NEEDS_WORK_SM_POD_B0200
     //RegisterPODImportPlugin();
+#endif
+    
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();

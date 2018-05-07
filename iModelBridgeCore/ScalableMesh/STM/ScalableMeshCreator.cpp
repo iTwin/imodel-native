@@ -560,16 +560,6 @@ bool scm_isCompressed ()
     return true;
     }
 
-
-bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename)
-    {
-    BENTLEY_NAMESPACE_NAME::WString dgndbFilename;
-    //stmFilename
-    size_t size = stmFilename.ReplaceAll(L".3sm", L".bim");
-    assert(size==1);
-    return true;
-    }
-
 /*---------------------------------------------------------------------------------**//**
                                                                                       * @description
                                                                                       * @bsimethod                                                  Raymond.Gauthier   03/2011
@@ -695,7 +685,15 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
         {
         // SM_NEEDS_WORK_STREAMING : path should not depend on path to stm file. It should be a parameter to the creation process?
         auto position = m_scmFileName.find_last_of(L".3sm");
-        WString streamingFilePath = m_scmFileName.substr(0, position - 3) + L"_stream\\";
+        int positionShift = 3;
+    
+        if (position == string::npos)
+            {            
+            position = m_scmFileName.find_last_of(L".stm2");
+            positionShift = 4;
+            }
+
+        WString streamingFilePath = m_scmFileName.substr(0, position - positionShift) + L"_stream\\";
         BeFileName path(streamingFilePath.c_str());
         BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
         if (createStatus != BeFileNameStatus::Success && createStatus != BeFileNameStatus::AlreadyExists)

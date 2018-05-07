@@ -108,7 +108,7 @@ void GroundDetectionTester::DoDetection()
             
     uint64_t groundId = 21;
 
-    WPrintfString groundOutputName(L"%s\\groundArea%i.3sm", outputDir.c_str(), groundId);
+    WPrintfString groundOutputName(L"%s\\groundArea%i.stm2", outputDir.c_str(), groundId);
 
     if (BeFileName::DoesPathExist(groundOutputName.c_str()))
         {

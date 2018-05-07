@@ -1501,9 +1501,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ScalableMesh_Vancouver.mke" />
+    <Xml Include="ScalableMeshCore.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ScalableMeshCore.PartFile.xml" />
+    <None Include="ScalableMeshCore_Vancouver.mke" />
   </ItemGroup>
 </Project>

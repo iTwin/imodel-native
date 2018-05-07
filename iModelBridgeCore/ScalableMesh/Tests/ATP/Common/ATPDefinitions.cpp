@@ -405,7 +405,7 @@ void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     for (int areaInd = 0; areaInd < areas.size(); areaInd++)
         {
-        WPrintfString groundOutputName(L"%s\\groundArea%i.3sm", outputDir.c_str(), areaInd);
+        WPrintfString groundOutputName(L"%s\\groundArea%i.stm2", outputDir.c_str(), areaInd);
 
         if (BeFileName::DoesPathExist(groundOutputName.c_str()))
             {            
@@ -5034,7 +5034,15 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         {
         // Use default path to output files
         auto position = smFileName.find_last_of(L".3sm");
-        cloudContainer = smFileName.substr(0, position - 3) + L"_stream\\";
+        int positionShift = 3;
+
+        if (position == string::npos)
+            {
+            position = smFileName.find_last_of(L".stm2");
+            positionShift = 4;
+            }   
+
+        cloudContainer = smFileName.substr(0, position - positionShift) + L"_stream\\";
         printf("%ls\n", cloudContainer.c_str());
         }
 
