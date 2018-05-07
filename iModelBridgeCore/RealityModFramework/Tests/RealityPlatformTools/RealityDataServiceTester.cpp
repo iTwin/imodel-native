@@ -967,7 +967,7 @@ TEST_F(RealityDataServiceFixture, RealityDataServiceStatRequestGoodRequest)
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataServiceStatRequest failed with response"), _)).Times(0);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
         {
-        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/ServiceStat/2017-6-6~2F72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a4");
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/ServiceStat/2017-06-06~2F72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a4");
         response.status = ::OK;
         response.responseCode = 200;
         response.toolCode = CURLE_OK;
@@ -997,7 +997,7 @@ TEST_F(RealityDataServiceFixture, RealityDataUserStatRequestGoodRequest)
     EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataUserStatRequest failed with response"), _)).Times(0);
     ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
         {
-        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/UserStat/2017-6-6~2F72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a4");
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/UserStat/2017-06-06~2F72adad30%2Dc07c%2D465d%2Da1fe%2D2f2dfac950a4");
         response.status = ::OK;
         response.responseCode = 200;
         response.toolCode = CURLE_OK;
