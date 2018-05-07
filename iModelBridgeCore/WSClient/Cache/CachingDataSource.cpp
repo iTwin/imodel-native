@@ -195,9 +195,11 @@ ICancellationTokenPtr ct
             return;
             }
 
-        LOG.infov(L"CachingDataSource::OpenOrCreate() using environment:\n%ls\n%ls",
-            cacheEnvironment.persistentFileCacheDir.c_str(),
-            cacheEnvironment.temporaryFileCacheDir.c_str());
+        LOG.infov("CachingDataSource::OpenOrCreate() URL:'%s' ID:'%s' using environment:\n%s\n%s",
+            client->GetWSClient()->GetServerUrl().c_str(),
+            client->GetRepositoryId().c_str(),
+            cacheEnvironment.persistentFileCacheDir.GetNameUtf8().c_str(),
+            cacheEnvironment.temporaryFileCacheDir.GetNameUtf8().c_str());
 
         ECDb::CreateParams params;
         params.SetStartDefaultTxn(DefaultTxn_No); // Allow concurrent multiple connection access
@@ -284,12 +286,17 @@ ICancellationTokenPtr ct
                 }
 
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms",
-                openResult->IsSuccess() ? "succeeded" : "failed", end - start);
+            LOG.infov("CachingDataSource::OpenOrCreate() URL:'%s' ID:'%s' %s and took: %.2f ms",
+                client->GetWSClient()->GetServerUrl().c_str(),
+                client->GetRepositoryId().c_str(),
+                openResult->IsSuccess() ? "succeeded" : "failed",
+                end - start);
 
             if (!openResult->IsSuccess())
                 {
-                LOG.errorv("CachingDataSource::OpenOrCreate() error: %s %s",
+                LOG.errorv("CachingDataSource::OpenOrCreate() URL:'%s' ID:'%s' error: %s %s",
+                    client->GetWSClient()->GetServerUrl().c_str(),
+                    client->GetRepositoryId().c_str(),
                     openResult->GetError().GetMessage().c_str(),
                     openResult->GetError().GetDescription().c_str());
 
