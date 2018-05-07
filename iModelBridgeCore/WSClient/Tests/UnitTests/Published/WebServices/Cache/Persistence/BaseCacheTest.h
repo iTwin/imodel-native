@@ -29,7 +29,6 @@ class BaseCacheTest : public WSClientBaseTest
 
         virtual ECSchemaPtr GetTestSchema();
         virtual ECSchemaPtr GetTestSchema2();
-        virtual ECSchemaPtr GetMockIssueSchema();
         BeFileName GetTestSchemaPath();
         static CacheEnvironment GetTestCacheEnvironment();
 
