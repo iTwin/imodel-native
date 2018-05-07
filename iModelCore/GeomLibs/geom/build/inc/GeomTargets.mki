@@ -726,6 +726,7 @@ $(OUT_DIR)PolyfaceQueryCarrier$(OUT_EXT)      : $(geomSrcPolyface)PolyfaceQueryC
 
 $(OUT_DIR)polyfaceToMTG$(OUT_EXT)      : $(geomSrcPolyface)polyfaceToMTG.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+%ifdef buildGPA
 $(OUT_DIR)graphicspointarray$(OUT_EXT)      : $(geomSrcGpa)graphicspointarray.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)gp_bspline$(OUT_EXT)      : $(geomSrcGpa)gp_bspline.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
@@ -736,6 +737,7 @@ $(OUT_DIR)gpa_properties$(OUT_EXT)    : $(geomSrcGpa)gpa_properties.cpp         
 
 $(OUT_DIR)gpa_parser$(OUT_EXT)    : $(geomSrcGpa)gpa_parser.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+%endif
 $(OUT_DIR)MSBsplineCurvePtr$(OUT_EXT)    : $(geomSrcBspline)MSBsplineCurvePtr.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 #$(OUT_DIR)BezierTriangleDPoint3d$(OUT_EXT)    : $(geomSrcBspline)BezierTriangleDPoint3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(geomSrcPubGeomInteral)BezierTriangle.h
@@ -871,6 +873,7 @@ $(OUT_DIR)cv_inout$(OUT_EXT)    : $(geomSrcCurvePrimitive)cv_inout.cpp         $
 
 $(OUT_DIR)cv_ops$(OUT_EXT)    : $(geomSrcCurvePrimitive)cv_ops.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+%ifdef buildGPA
 $(OUT_DIR)gpaCurvePrimitive$(OUT_EXT)    : $(geomSrcGpa)gpaCurvePrimitive.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)gp_beziersection$(OUT_EXT) : $(geomSrcGpa)gp_beziersection.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
@@ -885,19 +888,18 @@ $(OUT_DIR)gp_ellipse$(OUT_EXT) : $(geomSrcGpa)gp_ellipse.cpp         $(OTHER_DEP
 
 $(OUT_DIR)gp_inout$(OUT_EXT) : $(geomSrcGpa)gp_inout.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)gp_intersectxy$(OUT_EXT) : $(geomSrcGpa)gp_intersectxy.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)gp_intersectxy$(OUT_EXT) : $(geomSrcGpa)gp_intersectxy.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 #$(OUT_DIR)gp_offset$(OUT_EXT) : $(geomSrcGpa)gp_offset.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)gp_pairs$(OUT_EXT) : $(geomSrcGpa)gp_pairs.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)gp_perptan$(OUT_EXT) : $(geomSrcGpa)gp_perptan.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)gp_perptan$(OUT_EXT) : $(geomSrcGpa)gp_perptan.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 #$(OUT_DIR)gp_prop1$(OUT_EXT)         : $(geomSrcGpa)gp_prop1.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 #$(OUT_DIR)gp_silhouette$(OUT_EXT) : $(geomSrcGpa)gp_silhouette.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)gp_gp_lastUsedFunctions$(OUT_EXT) : $(geomSrcGpa)gp_lastUsedFunctions.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)gp_stroke$(OUT_EXT) : $(geomSrcGpa)gp_stroke.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
@@ -905,12 +907,18 @@ $(OUT_DIR)gp_stroke$(OUT_EXT) : $(geomSrcGpa)gp_stroke.cpp         $(OTHER_DEPEN
 
 $(OUT_DIR)bspintersect$(OUT_EXT) : $(geomSrcGpa)bspintersect.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+%endif
+
+$(OUT_DIR)gp_gp_lastUsedFunctions$(OUT_EXT) : $(geomSrcGpa)gp_lastUsedFunctions.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
 $(OUT_DIR)akima$(OUT_EXT) : $(geomSrcBspline)akima.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+%ifdef buildGPA
 $(OUT_DIR)gp_developable$(OUT_EXT) : $(geomSrcGpa)gp_developable.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 #$(OUT_DIR)gp_polygon$(OUT_EXT) : $(geomSrcGpa)gp_polygon.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+%endif
 
 # gp_clip -- needs ClipDescr
 
@@ -929,7 +937,7 @@ $(OUT_DIR)MTGGraph$(OUT_EXT)      : $(geomSrcMTG)MTGGraph.cpp         $(OTHER_DE
 
 $(OUT_DIR)jmdl_mtgbase1$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgbase1.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)MtgFacetPlanarMerge$(OUT_EXT) : $(geomSrcMTG)MtgFacetPlanarMerge.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)MtgFacetPlanarMerge$(OUT_EXT) : $(geomSrcMTG)MtgFacetPlanarMerge.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 
 $(OUT_DIR)jmdl_mtgmask$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgmask.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
@@ -966,7 +974,7 @@ $(OUT_DIR)mtgSmoothNormals$(OUT_EXT) : $(geomSrcMTG)mtgSmoothNormals.cpp        
 
 %endif
 
-$(OUT_DIR)facetout$(OUT_EXT) : $(geomSrcMTG)facetout.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)facetout$(OUT_EXT) : $(geomSrcMTG)facetout.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 #%ifdef CompileMtgPrint
 $(OUT_DIR)mtgprint$(OUT_EXT) : $(geomSrcMTG)mtgprint.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
@@ -1013,7 +1021,7 @@ $(OUT_DIR)rimsbs_intersect1$(OUT_EXT)        :$(geomSrcRimsbs)rimsbs_intersect1.
 
 ##$(OUT_DIR)gpaff_context$(OUT_EXT)        :$(geomSrcRimsbs)gpaff_context.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)decimatexyz$(OUT_EXT)         :$(geomSrcMTG)decimatexyz.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)decimatexyz$(OUT_EXT)         :$(geomSrcMTG)decimatexyz.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 %ifdef COMPILE_PLATFORM_GEOMETRY
 

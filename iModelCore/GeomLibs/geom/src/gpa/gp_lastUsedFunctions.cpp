@@ -874,5 +874,39 @@ DPoint3dCP pPoint
     {
     return bsiDPoint3d_dotDifference (pPoint, &pPlane->origin, &pPlane->normal);
     }
+/*---------------------------------------------------------------------------------**//**
+*
+* Add a point to the array.
+*
+* @param    pInstance <=> header to receive new point
+* @param pPoint => point being added.
+* @return true unless rubber array could not be extended.
+* @bsihdr                                       EarlinLutz      11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addDPoint3d
+(
+GraphicsPointArrayP pInstance,
+const DPoint3d              *pPoint
+)
+    {
+    GraphicsPoint  element;
+    bsiGraphicsPoint_init (&element,
+                    pPoint->x, pPoint->y, pPoint->z, 1.0,
+                    0.0, HPOINT_NORMAL, 0);
+    pInstance->vbArray_hdr.push_back (element);
+    return true;
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* Mark the break between disconnected line segments.
+* @bsihdr                                       EarlinLutz      11/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_markBreak
+(
+GraphicsPointArrayP         pInstance
+)
+    {
+    if (pInstance && pInstance->vbArray_hdr.size () > 0)
+        pInstance->vbArray_hdr.back ().mask |= HPOINT_MASK_BREAK;
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE
