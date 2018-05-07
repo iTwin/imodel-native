@@ -11,7 +11,12 @@ SMStatus IScalableMeshDetectGround::DetectGroundForRegion(IScalableMeshPtr& sour
 
     Utf8String coverageName(createdTerrain);
 
+#ifndef VANCOUVER_API
+    WString str(source->GetEditFilesBasePath().c_str(), true);
+#else
     WString str(source->GetEditFilesBasePath().c_str());
+#endif
+
     GetCoverageTerrainAbsFileName(terrainAbsName, str, coverageName);
 
 #ifndef VANCOUVER_API

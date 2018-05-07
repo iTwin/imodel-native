@@ -57,6 +57,55 @@
           <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
+
+
+    <Part Name="ScalableMeshCore" BentleyBuildMakeFile="ScalableMeshCore.mke" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDll"   PartFile="DgnPlatform"                          Repository="DgnPlatform" />
+        <!--<SubPart PartName="TilePublisherLib" PartFile="DgnPlatform"                          Repository="DgnPlatform"/>-->
+        <!--<SubPart PartName="PCLWrapper" />
+        <SubPart PartName="EigenAPI"        PartFile="pcl"                                  Repository="Libsrc-Pcl"/>   -->
+        <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"/>
+        <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />
+        <!--<SubPart PartName="GdalLib"         PartFile="ImagePP"                                  Repository="ImagePP"/>-->        
+        <SubPart PartName="Core"            PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
+        <SubPart PartName="Formats"         PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
+        <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
+        <SubPart PartName="CloudDataSource" PartFile="CloudDataSource" Repository="ScalableMesh" />        
+        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+        <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />        
+        <SubPart PartName="FreeImage"           PartFile="${SrcRoot}bsicommon/CvsPartfiles/freeimage" Repository="Bin-FreeImage"/>
+        <SubPart PartName="ScalableMeshRDSDependencies"/>
+
+        <!--Not required until we support importing .dgn element as terrain data-->
+        <!--<SdkSource>V8_InternalSDK</SdkSource>-->
+        <!-- For Importer-->
+        <!--<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
+        <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>  -->
+        <!--<SubPart PartName="ElementHandler"         PartFile="TerrainModelElement"                         Repository="TerrainModel"/>    -->
+        <Bindings>
+            <!--<Directory SourceName="SdkSources/V8_InternalSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />-->
+            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMeshCore$(libext)</Libs>
+            <Assemblies>delivery/$(shlibprefix)ScalableMeshCore$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="Assemblies" Required="true">delivery/ScalableMeshCacert.pem</Files>
+            <PublicAPI Domain="ScalableMesh" />
+        </Bindings>
+    </Part>
+
+
+    <Part Name="ScalableMeshCreator" BMakeFile="ScalableMeshCreator.mke">
+        <SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModelDgnDb" Repository="TerrainModel"/>
+        <SubPart PartName="ThreeMxReaderLegacy" PartFile="RealityModeling" Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="Cgal" PartFile="Libsrc-Nugets" Repository="bsicommon"/>                
+        <SubPart PartName="ScalableMeshCore"/>
+        <Bindings>
+            <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMeshCreator$(libext)</Libs>
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMeshCreator$(shlibext)</Assemblies>
+            <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMeshCreator$(shlibext)</Assemblies>
+            <PublicAPI Domain="ScalableMesh" />
+        </Bindings>
+    </Part>
+
     
     <Part Name="ScalableMeshSDKexe" BentleyBuildMakeFile="SDK/ScalableMeshSDKexe.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
         <SubPart PartName="ScalableMesh" PartFile="ScalableMeshCore" Repository="ScalableMesh" />   
@@ -82,7 +131,8 @@
     </Part>
 
     <Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
-        <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />        
+        <SubPart PartName="ScalableMeshCore"/>
+        <SubPart PartName="ScalableMeshCreator"/>        
         <Bindings>
             <Assemblies>Delivery\ScalableMeshATPexe.exe</Assemblies>
         </Bindings>

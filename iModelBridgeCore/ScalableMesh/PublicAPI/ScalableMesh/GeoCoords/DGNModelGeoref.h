@@ -36,6 +36,8 @@ inline const TransfoMatrix& FromBSITransform (const Transform& transform)
     return reinterpret_cast<const TransfoMatrix&>(transform);
     }
 
+#ifdef VANCOUVER_API
+
 BENTLEY_SM_IMPORT_EXPORT GCS                   GetBSIElementGCSFromRootPerspective    (DgnModelRefP            modelRef);
 
 GCS                                     ReinterpretModelGCSFromRootPerspective (const GCS&              elementAsSeenFromModelGCS,
@@ -65,5 +67,6 @@ TransfoModel                            GetModelLocalToGlobalTransfoModel      (
 
 TransfoMatrix                           GetModelDesignToGlobalTransfoMatrix    (DgnModelRefP            modelRefP,
                                                                                 const Unit&             globalFrameUnit);
+#endif
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
