@@ -2062,29 +2062,29 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
     if (caChanges.IsEmpty() || caChanges.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
+    BeAssert(caChanges.GetParent() != nullptr);
+    const bool caContainerIsNew = caChanges.GetParent()->GetChangeType() == ChangeType::New;
+
     for (size_t i = 0; i < caChanges.Count(); i++)
         {
         CustomAttributeChange& change = caChanges[i];
         if (change.GetStatus() == ECChange::Status::Done)
             continue;
 
-        bvector<Utf8String> tokens;
-        BeStringUtilities::Split(change.GetId(), ":", tokens);
-        if (tokens.size() != 2)
-            return ERROR;
-
-        Utf8StringCR schemaName = tokens[0];
-        Utf8StringCR className = tokens[1];
-
-        if (change.GetParent()->GetChangeType() != ChangeType::New)
+        Utf8String schemaName, className;
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(schemaName, className, change.GetId()))
             {
-            if (ctx.GetSchemaUpgradeCustomAttributeValidator().HasRuleForSchema(schemaName))
+            ctx.Issues().ReportV("ECSchema Upgrade failed. CustomAttribute change must have fully qualified class name, but was '%s'", change.GetId());
+            return ERROR;
+            }
+
+        if (!caContainerIsNew)
+            {
+            //only validate CA rules, if the container has not just been added with this schema import/update
+            if (ctx.GetSchemaUpgradeCustomAttributeValidator().Validate(change) == CustomAttributeValidator::Policy::Reject)
                 {
-                if (ctx.GetSchemaUpgradeCustomAttributeValidator().Validate(change) == CustomAttributeValidator::Policy::Reject)
-                    {
-                    ctx.Issues().ReportV("ECSchema Upgrade failed. Adding or modifying %s custom attributes is not supported.", schemaName.c_str());
-                    return ERROR;
-                    }
+                ctx.Issues().ReportV("ECSchema Upgrade failed. Adding or modifying %s custom attributes is not supported.", schemaName.c_str());
+                return ERROR;
                 }
             }
 
