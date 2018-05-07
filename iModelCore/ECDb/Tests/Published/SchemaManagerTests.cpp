@@ -2108,7 +2108,7 @@ TEST_F(SchemaManagerTests, Formats)
                                             <Unit label="kilogram">u:KG</Unit>
                                         </Composite>
                                     </Format>
-                                    <Format typeName="Format4" displayLabel="Format 4" description="Nice format 4" roundFactor="12" type="Station" statSeparator="$" stationOffsetSize="12" showSignOption="SignAlways" formatTraits="ShowUnitLabel|ApplyRounding|ZeroEmpty"
+                                    <Format typeName="Format4" displayLabel="Format 4" description="Nice format 4" roundFactor="12" type="Station" stationSeparator="$" stationOffsetSize="12" showSignOption="SignAlways" formatTraits="ShowUnitLabel|ApplyRounding|ZeroEmpty"
                                             precision="2" decimalSeparator="," thousandSeparator="." uomSeparator="#">
                                         <Composite spacer="?" includeZero="True">
                                             <Unit label="Newton">u:N</Unit>
