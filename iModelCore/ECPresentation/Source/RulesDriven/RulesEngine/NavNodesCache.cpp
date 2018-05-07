@@ -1871,24 +1871,22 @@ bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(Utf8StringCR c
         }
 
     bvector<HierarchyLevelInfo> infos;
-    Utf8CP query = "SELECT [ConnectionId], [RulesetId], [PhysicalParentNodeId], [Filter], MAX([Priority]) "
-                   "  FROM (SELECT [ConnectionId], [RulesetId], [PhysicalParentNodeId], [Filter], 1 AS Priority "
-                   "          FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
-                   "          JOIN [" NODESCACHE_TABLENAME_DataSourceClasses "] dsc ON [dsc].[DataSourceId] = [ds].[Id] "
-                   "         WHERE [ds].[ConnectionId] = ? AND NOT [ds].[IsUpdatesDisabled] AND InVirtualSet(?, [dsc].[ECClassId]) AND [Polymorphic]"
-                   "        UNION ALL"
-                   "        SELECT [ConnectionId], [RulesetId], [PhysicalParentNodeId], [Filter], 1 AS Priority "
-                   "          FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
-                   "          JOIN [" NODESCACHE_TABLENAME_DataSourceClasses "] dsc ON [dsc].[DataSourceId] = [ds].[Id] "
-                   "         WHERE [ds].[ConnectionId] = ? AND NOT [ds].[IsUpdatesDisabled] AND InVirtualSet(?, [dsc].[ECClassId]) AND NOT [Polymorphic]"
-                   "        UNION ALL"
-                   "        SELECT [ConnectionId], [RulesetId], [PhysicalParentNodeId], [Filter], 2 AS Priority "
-                   "          FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
-                   "          JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id] "
-                   "          JOIN [" NODESCACHE_TABLENAME_AffectingInstances "] ai ON [ai].[NodeId] = [n].[Id] "
-                   "         WHERE [ds].[ConnectionId] = ? AND NOT [ds].[IsUpdatesDisabled] AND InVirtualSet(?, [ai].[ECClassId], [ai].[ECInstanceId])"
-                   ")"
-                   "GROUP BY [ConnectionId], [RulesetId], [PhysicalParentNodeId]";
+
+    Utf8CP query = "SELECT [ConnectionId], [RulesetId], [PhysicalParentNodeId], [Filter], 1 AS Priority "
+                   "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
+                   "  JOIN [" NODESCACHE_TABLENAME_DataSourceClasses "] dsc ON [dsc].[DataSourceId] = [ds].[Id] "
+                   " WHERE [ds].[ConnectionId] = ? "
+                   "       AND NOT [ds].[IsUpdatesDisabled] "
+                   "       AND (InVirtualSet(?, [dsc].[ECClassId]) AND [Polymorphic] "
+                   "            OR InVirtualSet(?, [dsc].[ECClassId]) AND NOT [Polymorphic]) "
+                   "UNION ALL "
+                   "SELECT [ConnectionId], [RulesetId], [PhysicalParentNodeId], [Filter], 2 AS Priority "
+                   "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
+                   "  JOIN [" NODESCACHE_TABLENAME_Nodes "] n ON [n].[DataSourceId] = [ds].[Id] "
+                   "  JOIN [" NODESCACHE_TABLENAME_AffectingInstances "] ai ON [ai].[NodeId] = [n].[Id] "
+                   " WHERE [ds].[ConnectionId] = ? "
+                   "       AND NOT [ds].[IsUpdatesDisabled] "
+                   "       AND InVirtualSet(?, [ai].[ECClassId], [ai].[ECInstanceId]) ";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
@@ -1904,17 +1902,15 @@ bvector<HierarchyLevelInfo> NodesCache::GetRelatedHierarchyLevels(Utf8StringCR c
     AddBaseAndDerivedClasses(ids, connection->GetECDb(), keys);
     ECClassIdSet polymorphicIds(ids);
     stmt->BindVirtualSet(2, polymorphicIds);
-
-    stmt->BindText(3, connectionId.c_str(), Statement::MakeCopy::No);
-
+    
     // bind classes for nonpolymorphic search
     ECClassIdSet nonPolymorphicIds(keys);
-    stmt->BindVirtualSet(4, nonPolymorphicIds);
+    stmt->BindVirtualSet(3, nonPolymorphicIds);
 
-    stmt->BindText(5, connectionId.c_str(), Statement::MakeCopy::No);
+    stmt->BindText(4, connectionId.c_str(), Statement::MakeCopy::No);    
 
     ECInstanceKeySet instanceKeysVirtualSet(keys);
-    stmt->BindVirtualSet(6, instanceKeysVirtualSet);
+    stmt->BindVirtualSet(5, instanceKeysVirtualSet);
 
     ECSqlStatementCache& ecsqlStatements = m_ecsqlStamementCache.GetECSqlStatementCache(*connection);
     while (BE_SQLITE_ROW == stmt->Step())

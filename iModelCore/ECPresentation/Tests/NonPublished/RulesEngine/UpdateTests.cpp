@@ -5251,6 +5251,81 @@ TEST_F (HierarchyUpdateTests, DoesNotCollapseNodeIfItWasExpandedAndLastChildrenW
     EXPECT_FALSE(rootNodes[0]->HasChildren());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* TFS#887406
+* @betest                                       Grigas.Petraitis                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, UpdatesDataSourceAfterInsertWhenItAlreadyHasManyToManyRelatedInstanceNodeGroupedUnderVirtualPropertyGroupingNode)
+    {
+    ECRelationshipClassCP widgetHasGadgetsClass = m_db.Schemas().GetClass("RulesEngineTest", "WidgetHasGadgets")->GetRelationshipClassCP();
+    ECRelationshipClassCP widgetsHaveGadgetsClass = m_db.Schemas().GetClass("RulesEngineTest", "WidgetsHaveGadgets")->GetRelationshipClassCP();
+
+    // insert some instances
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("1"));});
+    RulesEngineTestHelpers::InsertRelationship(m_db, *widgetsHaveGadgetsClass, *widget, *gadget, nullptr, true);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    GroupingRule* groupingRule = new GroupingRule("", 1, false, "RulesEngineTest", "Gadget", "", "", "");
+    groupingRule->AddGroup(*new PropertyGroup("", "", false, "MyID"));
+    rules->AddPresentationRule(*groupingRule);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, 
+        "this.Widget.Id = parent.ECInstanceId", "RulesEngineTest:Gadget", false));
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, false, false, false, false, false, false, false, 0, 
+        "", RequiredRelationDirection_Forward, "", "RulesEngineTest:WidgetsHaveGadgets", "RulesEngineTest:Gadget"));
+    rules->AddPresentationRule(*childRule);
+    
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    
+    // expect 1 root node 
+    ASSERT_EQ(1, rootNodes.GetSize());
+    ASSERT_TRUE(rootNodes[0].IsValid());
+
+    // expand root node
+    SetNodeExpanded(*rootNodes[0]);
+
+    // request for children
+    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get();
+
+    // expect 1 child
+    ASSERT_EQ(1, childNodes.GetSize());
+
+    // add a new gadget 
+    IECInstancePtr gadget2 = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("2"));});
+    RulesEngineTestHelpers::InsertRelationship(m_db, *widgetHasGadgetsClass, *widget, *gadget2, nullptr, true);    
+    m_eventsSource->NotifyECInstanceInserted(m_db, *gadget2);
+    
+    // make sure we still have 1 root node
+    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    
+    // make sure now it has 2 children nodes
+    childNodes = IECPresentationManager::GetManager().GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(2, childNodes.GetSize());
+    EXPECT_STREQ(gadget2->GetInstanceId().c_str(), childNodes[0]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
+    EXPECT_STREQ(gadget->GetInstanceId().c_str(), childNodes[1]->GetKey()->AsECInstanceNodeKey()->GetInstanceId().ToString().c_str());
+
+    // expect 2 records
+    ASSERT_EQ(2, m_updateRecordsHandler->GetRecords().size());
+    
+    EXPECT_EQ(ChangeType::Insert, m_updateRecordsHandler->GetRecords()[0].GetChangeType());
+    EXPECT_EQ(*childNodes[0]->GetKey(), *m_updateRecordsHandler->GetRecords()[0].GetNode()->GetKey());
+
+    EXPECT_EQ(ChangeType::Update, m_updateRecordsHandler->GetRecords()[1].GetChangeType());
+    EXPECT_EQ(*childNodes[1]->GetKey(), *m_updateRecordsHandler->GetRecords()[1].GetNode()->GetKey());
+    }
+
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                10/2016
 +===============+===============+===============+===============+===============+======*/
