@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCoreAPI.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,7 +19,6 @@
 #include "ElementHandler.h"
 #include "ElementGeometry.h"
 #include "FenceParams.h"
-#include "GPArray.h"
 #include "HitDetail.h"
 #include "IAuxCoordSys.h"
 #include "TxnManager.h"
