@@ -9651,8 +9651,16 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
         assertMessage.append(".").append(format->GetName());
 
         ASSERT_STREQ(name, format->GetName().c_str()) << assertMessage;
-        ASSERT_STREQ(displayLabel, format->GetDisplayLabel().c_str()) << assertMessage;
-        ASSERT_STREQ(description, format->GetDescription().c_str()) << assertMessage;
+        if (Utf8String::IsNullOrEmpty(displayLabel))
+            ASSERT_FALSE(format->GetIsDisplayLabelDefined()) << assertMessage;
+        else
+            ASSERT_STREQ(displayLabel, format->GetInvariantDisplayLabel().c_str()) << assertMessage;
+
+        if (Utf8String::IsNullOrEmpty(description))
+            ASSERT_FALSE(format->GetIsDescriptionDefined()) << assertMessage;
+        else
+            ASSERT_STREQ(description, format->GetInvariantDescription().c_str()) << assertMessage;
+
         if (numericSpec.m_value.isNull())
             ASSERT_FALSE(format->HasNumeric()) << assertMessage;
         else

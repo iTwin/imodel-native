@@ -445,7 +445,7 @@ BentleyStatus SchemaWriter::ImportUnitSystem(Context& ctx, UnitSystemCR us)
             return ERROR;
         }
 
-    if (!us.GetInvariantDescription().empty())
+    if (us.GetIsDescriptionDefined())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, us.GetInvariantDescription(), Statement::MakeCopy::No))
             return ERROR;
@@ -493,7 +493,7 @@ BentleyStatus SchemaWriter::ImportPhenomenon(Context& ctx, PhenomenonCR ph)
             return ERROR;
         }
 
-    if (!ph.GetInvariantDescription().empty())
+    if (ph.GetIsDescriptionDefined())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, ph.GetInvariantDescription(), Statement::MakeCopy::No))
             return ERROR;
@@ -578,7 +578,7 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
             return ERROR;
         }
 
-    if (!unit.GetInvariantDescription().empty())
+    if (unit.GetIsDescriptionDefined())
         {
         if (BE_SQLITE_OK != stmt->BindText(descParamIx, unit.GetInvariantDescription(), Statement::MakeCopy::No))
             return ERROR;
@@ -676,7 +676,7 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
             return ERROR;
         }
 
-    if (!format.GetInvariantDescription().empty())
+    if (format.GetIsDescriptionDefined())
         {
         if (BE_SQLITE_OK != stmt->BindText(descParamIx, format.GetInvariantDescription(), Statement::MakeCopy::No))
             return ERROR;
