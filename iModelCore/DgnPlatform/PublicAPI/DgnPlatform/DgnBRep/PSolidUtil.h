@@ -196,7 +196,7 @@ DGNPLATFORM_EXPORT static BentleyStatus CreateMSBsplineSurfaceFromSurface(MSBspl
 DGNPLATFORM_EXPORT static BentleyStatus CreateSurfaceFromMSBsplineSurface(PK_BSURF_t* surfTag, MSBsplineSurfaceCR surface);
 DGNPLATFORM_EXPORT static BentleyStatus CreateSheetBodyFromTrimmedSurface(PK_ENTITY_t* bodyTagP, PK_ENTITY_t** spaceCurveEntitiesPP, PK_ENTITY_t** uvCurveEntitiesPP, int preferSpaceCurvesFlag, double** trimPP, int boundCount, PK_ENTITY_t surfaceTag, double tolerance, int adaptive);
 
-DGNPLATFORM_EXPORT static BentleyStatus BodyFromGPA(PK_BODY_t* bodyTag, PK_VERTEX_t* startVertexP, GPArrayCP gpa, TransformCR gpaToBodyTransform, bool cap);
+//DGNPLATFORM_EXPORT static BentleyStatus BodyFromGPA(PK_BODY_t* bodyTag, PK_VERTEX_t* startVertexP, GPArrayCP gpa, TransformCR gpaToBodyTransform, bool cap);
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromCurveVector(PK_BODY_t& bodyTag, PK_VERTEX_t* startVertexP, CurveVectorCR profile, TransformCR curveToBodyTransform, bool coverClosed = true, EdgeToCurveIdMap* idMap = NULL);
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromPolyface(PK_BODY_t& bodyTag, PolyfaceQueryCR polyface, TransformCR dgnToSolid);
 DGNPLATFORM_EXPORT static BentleyStatus BodyFromMSBsplineSurface(PK_BODY_t& bodyTag, MSBsplineSurfaceCR surface);

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidUtil.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -705,9 +705,8 @@ static void computeZRangeFromBody (double& zMin, double& zMax, PK_BODY_t entityT
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus bodyFromSingleParallelClip (PK_BODY_t& clipBody, ClipPrimitiveCR clip, PK_BODY_t entityToClip, TransformCR clipToSolid, TransformCR solidToClip)
     {
-    GPArrayCP   gpa;
-
-    if (NULL == (gpa = clip.GetGPA (false)))
+    auto curves = clip.GetCurvesCP ();
+    if (nullptr == curves)
         return ERROR;
 
     double      zMin, zMax;
@@ -727,8 +726,9 @@ static BentleyStatus bodyFromSingleParallelClip (PK_BODY_t& clipBody, ClipPrimit
     DPoint3d    clipSweep = DPoint3d::From (0.0, 0.0, zMax - zMin), solidSweep;
 
     compound.InitProduct (clipToSolid, clipZTranslation);
-                                               
-    if (SUCCESS != PSolidGeom::BodyFromGPA (&clipBody, NULL, gpa, compound, true))
+    EdgeToCurveIdMap    idMap;
+
+    if (SUCCESS != PSolidGeom::BodyFromCurveVector (clipBody, nullptr, *curves, compound, 0L, &idMap))
         return ERROR;
     
     clipToSolid.MultiplyMatrixOnly (solidSweep, clipSweep);

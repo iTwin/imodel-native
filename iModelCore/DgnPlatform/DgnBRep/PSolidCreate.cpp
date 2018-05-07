@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidCreate.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1187,7 +1187,7 @@ BentleyStatus   PSolidUtil::MakeEllipseCurve (PK_CURVE_t* curve, double* startPa
 
     return (BentleyStatus) pki_make_ellipse_curve_from_standard_data (curve, center, &normal, &majorAxisVec, r1, r2);
     }
-
+#ifdef CompileBodyFromGPA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1406,7 +1406,7 @@ BentleyStatus PSolidGeom::BodyFromGPA (PK_BODY_t* body, PK_VERTEX_t* startVertex
 
     return (BentleyStatus) status;
     }
-
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -13,38 +13,6 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipVector::ClipVector(GPArrayCR gpa, double chordTolerance, double angleTolerance, double* zLow, double* zHigh, TransformCP pTransform)
-    {
-    Transform  transform, inverseTransform;
-
-    if (NULL == pTransform)
-        gpa.GraphicsPointArray::GetPlane(transform);
-    else
-        transform = *pTransform;
-
-    inverseTransform.InverseOf(transform);
-
-    size_t n = gpa.GetGraphicsPointCount();
-    for (size_t loopStart = 0, loopEnd = 0; loopStart < n; loopStart = loopEnd+1)
-        {
-        gpa.FindMajorBreakAfter(loopStart, loopEnd);
-
-        GPArraySmartP    loopGpa;
-
-        loopGpa->AppendFrom(gpa, loopStart, loopEnd);
-        loopGpa->Transform(&inverseTransform);
-
-        ClipPrimitivePtr    primitive = ClipPrimitive::CreateFromGPA (loopGpa, chordTolerance, angleTolerance, 0 != loopStart, zLow, zHigh, &transform);
-    
-        if (primitive.IsValid())
-            push_back(primitive);
-        }
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
 ClipVectorPtr ClipVector::CreateFromCurveVector(CurveVectorCR curveVector, double chordTolerance, double angleTolerance, double* zLow, double* zHigh)
     {
     Transform       localToWorld, worldToLocal;;

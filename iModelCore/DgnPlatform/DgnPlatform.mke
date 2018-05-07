@@ -251,7 +251,7 @@ $(CoreObjs)DgnCorePolyfaceClip$(oext) :             $(DgnCoreDir)DgnCorePolyface
 
 $(CoreObjs)FenceParams$(oext) :                     $(DgnCoreDir)FenceParams.cpp $(DgnPlatformAPISrc)FenceParams.h $(contextDepends) ${MultiCompileDepends}
 
-$(CoreObjs)GParray$(oext) :                         $(DgnCoreDir)GParray.cpp $(DgnPlatformAPISrc)GPArray.h ${MultiCompileDepends}
+#$(CoreObjs)GParray$(oext) :                         $(DgnCoreDir)GParray.cpp $(DgnPlatformAPISrc)GPArray.h ${MultiCompileDepends}
 
 $(CoreObjs)GradientSettings$(oext) :                $(DgnCoreDir)GradientSettings.cpp ${MultiCompileDepends}
 
