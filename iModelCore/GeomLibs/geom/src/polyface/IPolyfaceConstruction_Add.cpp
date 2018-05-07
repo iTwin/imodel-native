@@ -1006,9 +1006,7 @@ static bool IsVisibleJoint(DPoint3dCR pointA, DPoint3dCR pointB, DVec3dCR tangen
     return !tangentA.IsParallelTo (tangentB);
     }
 
-#ifdef BUILD_FOR_811
-#else
-
+#ifdef BuildGraphicsPointArray
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
@@ -3910,9 +3908,7 @@ size_t &numLoop
 
 
 
-#ifdef BUILD_FOR_811
-#else
-
+#ifdef BuildGraphicsPointArray
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
@@ -3963,9 +3959,7 @@ size_t &numLoop
     }
 #endif
 
-#ifdef BUILD_FOR_811
-#else
-
+#ifdef BuildGraphicsPointArray
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
@@ -3991,7 +3985,7 @@ bool     capped
             capped,
             !Angle::IsFullCircle (totalSweepRadians), CurveTopologyId::Type::SweepProfile);
     }
-
+#endif
 
 // to be called for curves confirmed as outer or parity region (with correct outer/inner)
 static void AddRotationalSweep_singleRegion (IPolyfaceConstructionR builder,
@@ -4109,7 +4103,6 @@ void IPolyfaceConstruction::AddRegion (CurveVectorCR region)
         }
     }
 
-#endif
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012

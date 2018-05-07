@@ -1683,8 +1683,6 @@ static void     cvHatch_addTransformedCrossHatchClipped
 HatchArray &collector,
 CurveVectorCR curves,
 TransformCR transformA,
-GraphicsPointArrayCP pClipRangePoints,
-GraphicsPointArrayCP pClipPlanes,
 int     selectRule
 )
     {
@@ -2230,7 +2228,7 @@ int                  selectRule     //!< 0 for parity rules, 1 for longest possi
         );
 
     HatchArray segments;
-    cvHatch_addTransformedCrossHatchClipped (segments, boundary, localToWorld, nullptr, nullptr, selectRule);
+    cvHatch_addTransformedCrossHatchClipped (segments, boundary, localToWorld, selectRule);
     sticks.clear ();
     if (segmentPosition)
         segmentPosition->clear ();
@@ -2247,7 +2245,7 @@ int                  selectRule     //!< 0 for parity rules, 1 for longest possi
 )
     {
     HatchArray segments;
-    cvHatch_addTransformedCrossHatchClipped (segments, boundary, worldToIntegerZPlanes, nullptr, nullptr, selectRule);
+    cvHatch_addTransformedCrossHatchClipped (segments, boundary, worldToIntegerZPlanes, selectRule);
     sticks.clear ();
     if (segmentPosition)
         segmentPosition->clear ();

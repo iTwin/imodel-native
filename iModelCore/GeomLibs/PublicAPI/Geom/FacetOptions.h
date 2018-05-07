@@ -706,13 +706,6 @@ int numSectionEdge
 
 /*__PUBLISH_SECTION_END__*/
 
-//! Add ruled mesh between each pair of successive contours.
-GEOMDLLIMPEXP bool AddRuledBetweenCorespondingCurves (bvector<GraphicsPointArrayP> const &contours, bool capped);
-//! Add rotational sweep from curves
-GEOMDLLIMPEXP void AddRotationalSweep (GraphicsPointArrayCR, DPoint3dCR center, DVec3dCR axis, double totalSweep, bool capped);
-
-//! Stroke with facet options from the PolyfaceConstruction.
-GEOMDLLIMPEXP void Stroke(GraphicsPointArrayCR, bvector<DPoint3d> &points, bvector<DVec3d>&tangents, size_t &numLoop);
 
 /*__PUBLISH_SECTION_START__*/
 
