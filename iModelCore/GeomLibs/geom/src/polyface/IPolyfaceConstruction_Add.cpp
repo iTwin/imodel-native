@@ -1006,45 +1006,6 @@ static bool IsVisibleJoint(DPoint3dCR pointA, DPoint3dCR pointB, DVec3dCR tangen
     return !tangentA.IsParallelTo (tangentB);
     }
 
-#ifdef BuildGraphicsPointArray
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-static bool AppendGPABsplineStrokes(
-IPolyfaceConstruction &builder,
-GraphicsPointArrayCR curves,
-size_t readIndex,
-bvector<DPoint3d> &xyz,
-bvector<DVec3d> &tangent
-)
-    {
-    size_t poleIndex0, poleIndex1;
-    double knotA, knotB;
-    int order;
-    size_t numBezier;
-    DPoint4d poles[MAX_BEZIER_CURVE_ORDER];
-    if (!curves.ParseBsplineCurveKnotDomain (readIndex,
-                poleIndex0, poleIndex1,
-                knotA, knotB,
-                order, numBezier))
-        return false;
-
-    for (size_t bezierIndex = 0; bezierIndex < numBezier; bezierIndex++)
-        {
-        bool isNullInterval;
-        if (!curves.GetBezierSpanFromBsplineCurve (readIndex, bezierIndex, poles,
-                order, MAX_BEZIER_CURVE_ORDER, isNullInterval, knotA, knotB))
-            return false;
-        size_t strokeCount = 0;
-        if (!builder.GetFacetOptionsR ().BezierStrokeCount (poles, order, strokeCount))
-            return false;
-        bsiBezierDPoint4d_appendEvaluations (&xyz, &tangent, NULL, &poles[0], order, strokeCount);
-        }
-    return true;
-    }
-#endif
-
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
@@ -2236,25 +2197,6 @@ int  orientationSelect
         }
     }
 
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-bool IPolyfaceConstruction::AddRuledBetweenCorespondingCurves
-    (
-    bvector<GraphicsPointArrayP> const &gpaCurves,
-    bool capped
-    )
-    {
-    bvector<CurveVectorPtr> curves;
-    for (size_t i = 0; i < gpaCurves.size (); i++)
-        {
-        curves.push_back (gpaCurves[i]->CreateCurveVector ());
-        if (!curves.back ().IsValid ())
-            return false;
-        }
-    return AddRuledBetweenCorrespondingCurves (curves, capped);
-    }
 
 static bool AllPhysicallyClosed (bvector<CurveVectorPtr> const &curves)
     {
@@ -3904,88 +3846,6 @@ size_t &numLoop
     return true;
     }
 
-
-
-
-
-#ifdef BuildGraphicsPointArray
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-void IPolyfaceConstruction::Stroke
-(
-GraphicsPointArrayCR curves,
-bvector<DPoint3d> &points,
-bvector<DVec3d>   &tangents,
-size_t &numLoop
-)
-    {
-    GraphicsPointArray::Parser parser (&curves);
-    IFacetOptionsR options = GetFacetOptionsR ();
-    //int errors = 0;
-    numLoop = 1;
-    for (parser.Reset (); parser.MoveToNextPrimitive ();)
-        {
-        size_t readIndex = parser.GetReadIndex ();
-        size_t nextReadIndex;
-        DSegment3d segment;
-        DEllipse3d ellipse;
-        size_t count = 0;
-
-        if (curves.GetDSegment3d (readIndex, nextReadIndex, segment))
-            count = options.SegmentStrokeCount (segment);
-        else if (curves.GetDEllipse3d (readIndex, nextReadIndex, ellipse))
-            count = options.EllipseStrokeCount (ellipse);
-            
-        if (count > 0)
-            {
-            double df = 1.0 / (double)count;
-            DPoint3d xyz;
-            DVec3d tangent;
-            for (size_t i = 0; i <= count; i++)
-                {
-                double f = i * df;
-                if (i == count)
-                    f = 1.0;    // prevent numerical fuzz
-                curves.PrimitiveFractionToDPoint3d (readIndex, f, xyz, tangent);
-                points.push_back (xyz);
-                tangents.push_back (tangent);
-                }
-            }
-        else if (AppendGPABsplineStrokes (*this, curves, readIndex, points, tangents))
-            {
-            }
-        }
-    }
-#endif
-
-#ifdef BuildGraphicsPointArray
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-void IPolyfaceConstruction::AddRotationalSweep
-(
-GraphicsPointArrayCR curve,
-DPoint3dCR origin,
-DVec3dCR axis,
-double   totalSweepRadians,
-bool     capped
-)
-    {
-    bvector<DPoint3d> points;
-    bvector<DVec3d>tangents;
-    size_t numLoop;
-    Stroke (curve, points, tangents, numLoop);
-    double curveLength = curve.CurveLength ();
-    bvector<DPoint3d> capA, capB;
-    bool reverse = ComputeRotationalSweepLoopSense (points, origin, axis, totalSweepRadians);
-    AddRotationalSweepLoop (points, tangents, origin, axis, totalSweepRadians, reverse, curveLength, &capA, &capB, nullptr);
-
-    AddTriangulationPair (capA, !reverse, capB, reverse,
-            capped,
-            !Angle::IsFullCircle (totalSweepRadians), CurveTopologyId::Type::SweepProfile);
-    }
-#endif
 
 // to be called for curves confirmed as outer or parity region (with correct outer/inner)
 static void AddRotationalSweep_singleRegion (IPolyfaceConstructionR builder,
