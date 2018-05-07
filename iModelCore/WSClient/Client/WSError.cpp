@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSError.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -31,6 +31,8 @@
 #define XML_Azure_Code          "Code"
 #define XML_Azure_Message       "Message"
 #define XML_Azure_BlobNotFound  "BlobNotFound"
+
+std::once_flag s_initErrorIdmap;
 
 std::once_flag s_initErrorIdmap;
 
