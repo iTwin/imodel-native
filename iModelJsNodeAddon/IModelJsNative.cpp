@@ -2687,7 +2687,8 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NativeECPresentationManager", {
           InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
-          InstanceMethod("setupRulesetDirectories", &NativeECPresentationManager::SetupRulesetDirectories)
+          InstanceMethod("setupRulesetDirectories", &NativeECPresentationManager::SetupRulesetDirectories),
+          InstanceMethod("terminate", &NativeECPresentationManager::Terminate)
         });
 
         exports.Set("NativeECPresentationManager", t);
@@ -2755,6 +2756,11 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, rulesetDirectories,);
         ECPresentationUtils::SetupRulesetDirectories(*m_presentationManager, rulesetDirectories);
+        }
+
+    void Terminate(Napi::CallbackInfo const& info)
+        {
+        m_presentationManager.reset();
         }
     };
 

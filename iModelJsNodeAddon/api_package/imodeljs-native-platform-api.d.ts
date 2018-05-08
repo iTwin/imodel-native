@@ -777,6 +777,10 @@ declare class NativeECPresentationManager {
      * @param directories Ruleset locations
      */
     setupRulesetDirectories(directories: string[]): void;
+    /**
+     * Terminates the presentation manager.
+     */
+    terminate(): void;
 }
 
 /* Some types used by the NativeECSchemaXmlContext class. */
