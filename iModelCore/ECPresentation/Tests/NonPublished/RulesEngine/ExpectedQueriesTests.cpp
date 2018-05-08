@@ -4151,13 +4151,18 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         AddField(*descriptor, ret_ClassH, ContentDescriptor::Property("this", ret_ClassH, *ret_ClassH.GetPropertyP("PointProperty")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
-        ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, &ret_ClassH, *query);
-        query->SelectContract(*contract, "this");
-        query->From(ret_ClassH, false, "this");
-        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
-        query->GroupByContract(*contract);
-        RegisterQuery("SelectedNodeInstances_SelectsRawValueAndGroupsByDisplayValue", *query);
+        ComplexContentQueryPtr nestedQuery = ComplexContentQuery::Create();
+        ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, &ret_ClassH, *nestedQuery);
+        nestedQuery->SelectContract(*contract, "this");
+        nestedQuery->From(ret_ClassH, false, "this");
+        nestedQuery->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
+
+        ComplexContentQueryPtr groupedQuery = ComplexContentQuery::Create();
+        groupedQuery->SelectAll();
+        groupedQuery->From(*nestedQuery);
+        groupedQuery->GroupByContract(*contract);
+
+        RegisterQuery("SelectedNodeInstances_SelectsRawValueAndGroupsByDisplayValue", *groupedQuery);
         }
 
     //SelectedNodeInstances_InstanceLabelOverride_AppliedByPriority
@@ -4250,6 +4255,32 @@ void ExpectedQueries::RegisterExpectedQueries()
         UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
         RegisterQuery("SelectedNodeInstances_InstanceLabelOverride_OverrideNavigationProperty", *query);
         }
+
+    //SelectedNodeInstances_JoinsRelatedInstanceWithInnerJoin
+        {
+        RelatedClass relatedInstanceClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "sprocketAlias", "rel_RET_GadgetHasSprockets_0", true, false);
+
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
+        descriptor->GetSelectClasses().back().SetRelatedInstanceClasses({relatedInstanceClass});
+
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
+        descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query, {relatedInstanceClass}), "this");
+        query->From(ret_Gadget, false, "this");
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"));
+        query->Join(relatedInstanceClass);
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)1))});
+
+        RegisterQuery("SelectedNodeInstances_JoinsRelatedInstanceWithInnerJoin", *query);
+        }
+
     // SetsShowImagesFlag
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
@@ -4331,6 +4362,33 @@ void ExpectedQueries::RegisterExpectedQueries()
 #else
         RegisterQuery("SetsNoFieldsAndShowLabelsFlagsForListContentType", *nested);
 #endif
+        }
+
+    // AppliesRelatedInstanceSpecificationForTheSameXToManyRelationshipAndClassTwoTimes
+        {
+        RelatedClass relatedInstanceClass1(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets, false, "widgetAlias", "rel_RET_WidgetsHaveGadgets_0");
+        RelatedClass relatedInstanceClass2(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets, false, "widgetAlias2", "rel_RET_WidgetsHaveGadgets_1");
+
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
+        descriptor->GetSelectClasses().back().SetRelatedInstanceClasses({relatedInstanceClass1, relatedInstanceClass2});
+
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
+        descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query, {relatedInstanceClass1, relatedInstanceClass2}), "this");
+        query->From(ret_Gadget, false, "this");
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"));
+        query->Join(relatedInstanceClass1);
+        query->Join(relatedInstanceClass2);
+        query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t) 123))});
+
+        RegisterQuery("AppliesRelatedInstanceSpecificationForTheSameXToManyRelationshipAndClassTwoTimes", *query);
         }
 
     // ContentInstancesOfSpecificClasses_ReturnsQueryBasedOnSingleClass
@@ -4478,6 +4536,34 @@ void ExpectedQueries::RegisterExpectedQueries()
         RegisterQuery("ContentInstancesOfSpecificClasses_AppliesInstanceFilter", *query);
         }
 
+    // ContentInstancesOfSpecificClasses_AppliesInstanceFilterUsingRelatedInstanceSpecification
+        {
+        RelatedClass relatedInstanceClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "sprocketAlias", "rel_RET_GadgetHasSprockets_0");
+
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, false));
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({{RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")}});
+        descriptor->GetSelectClasses().back().SetRelatedInstanceClasses({relatedInstanceClass});
+
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
+        descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
+
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query, {relatedInstanceClass}), "this");
+        query->From(ret_Gadget, false, "this");
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"));
+        query->Join(relatedInstanceClass);
+        query->Where("[sprocketAlias].[MyID] = 'Sprocket MyID'", BoundQueryValuesList());
+#ifdef WIP_SORTING_GRID_CONTENT
+        query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
+#endif
+
+        RegisterQuery("ContentInstancesOfSpecificClasses_AppliesInstanceFilterUsingRelatedInstanceSpecification", *query);
+        }
+
     // ContentInstancesOfSpecificClasses_SetsMergeResultsFlagForPropertyPaneContentType1
         {
         ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::PropertyPane);
@@ -4537,12 +4623,17 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         AddField(*descriptor, ret_ClassH, ContentDescriptor::Property("this", ret_ClassH, *ret_ClassH.GetPropertyP("PointProperty")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
-        ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, &ret_ClassH, *query);
-        query->SelectContract(*contract, "this");
-        query->From(ret_ClassH, false, "this");
-        query->GroupByContract(*contract);
-        RegisterQuery("ContentInstancesOfSpecificClasses_SelectPointPropertyRawDataGroupedByDisplayValue", *query);
+        ComplexContentQueryPtr nestedQuery = ComplexContentQuery::Create();
+        ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, &ret_ClassH, *nestedQuery);
+        nestedQuery->SelectContract(*contract, "this");
+        nestedQuery->From(ret_ClassH, false, "this");
+
+        ComplexContentQueryPtr groupedQuery = ComplexContentQuery::Create();
+        groupedQuery->SelectAll();
+        groupedQuery->From(*nestedQuery);
+        groupedQuery->GroupByContract(*contract);
+
+        RegisterQuery("ContentInstancesOfSpecificClasses_SelectPointPropertyRawDataGroupedByDisplayValue", *groupedQuery);
         }
 
      // ContentInstancesOfSpecificClasses_InstanceLabelOverride_AppliedByPriority
@@ -4963,6 +5054,41 @@ void ExpectedQueries::RegisterExpectedQueries()
         RegisterQuery("ContentRelatedInstances_AppliesInstanceFilter", *query);
         }
 
+        // ContentRelatedInstances_AppliesInstanceFilterUsingRelatedInstanceSpecification
+        {
+        RelatedClass relatedInstanceClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "sprocket", "rel_RET_GadgetHasSprockets_0");
+
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        descriptor->GetSelectClasses().push_back(SelectClassInfo(ret_Gadget, true));
+        descriptor->GetSelectClasses().back().SetPathToPrimaryClass({
+            RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets, false, "related", "rel_RET_WidgetsHaveGadgets_0", false)
+            });
+        descriptor->GetSelectClasses().back().SetRelatedPropertyPaths({
+                { RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0") }
+            });
+        descriptor->GetSelectClasses().back().SetRelatedInstanceClasses({relatedInstanceClass});
+
+        descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("MyID")));
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("this", ret_Gadget, *ret_Gadget.GetPropertyP("Description")));
+        field = &AddField(*descriptor, ret_Gadget, ContentDescriptor::Property("nav_RET_Widget_0", ret_Gadget, *ret_Gadget.GetPropertyP("Widget")));
+        descriptor->AddField(new ContentDescriptor::ECNavigationInstanceIdField(*field->AsPropertiesField()));
+        
+        ComplexContentQueryPtr query = ComplexContentQuery::Create();
+        query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query, {relatedInstanceClass}), "this");
+        query->From(ret_Gadget, true, "this");
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"));
+        query->Join(relatedInstanceClass);
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets, false, "related", "rel_RET_WidgetsHaveGadgets_0", false, false));
+        query->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
+        query->Where("[sprocket].[MyID] = 'Sprocket MyID'", BoundQueryValuesList());
+#ifdef WIP_SORTING_GRID_CONTENT
+        query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
+#endif
+
+        RegisterQuery("ContentRelatedInstances_AppliesInstanceFilterUsingRelatedInstanceSpecification", *query);
+        }
+
     // ContentRelatedInstances_SkipsRelatedLevel
         {
         RelatedClassPath relationshipPath11 = {
@@ -5331,15 +5457,19 @@ void ExpectedQueries::RegisterExpectedQueries()
         descriptor->AddField(new ContentDescriptor::DisplayLabelField("Label", 0));
         AddField(*descriptor, ret_ClassH, ContentDescriptor::Property("this", ret_ClassH, *ret_ClassH.GetPropertyP("PointProperty")));
 
-        ComplexContentQueryPtr query = ComplexContentQuery::Create();
-        ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, &ret_ClassH, *query);
-        query->SelectContract(*contract, "this");
-        query->From(ret_ClassH, true, "this");
-        query->Join(RelatedClass(ret_ClassH, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", false, false));
-        query->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
-        query->GroupByContract(*contract);
+        ComplexContentQueryPtr nestedQuery = ComplexContentQuery::Create();
+        ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, &ret_ClassH, *nestedQuery);
+        nestedQuery->SelectContract(*contract, "this");
+        nestedQuery->From(ret_ClassH, true, "this");
+        nestedQuery->Join(RelatedClass(ret_ClassH, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", false, false));
+        nestedQuery->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
-        RegisterQuery("ContentRelatedInstances_SelectPointPropertyRawDataGroupedByDisplayValue", *query);
+        ComplexContentQueryPtr groupedQuery = ComplexContentQuery::Create();
+        groupedQuery->SelectAll();
+        groupedQuery->From(*nestedQuery);
+        groupedQuery->GroupByContract(*contract);
+
+        RegisterQuery("ContentRelatedInstances_SelectPointPropertyRawDataGroupedByDisplayValue", *groupedQuery);
         }
 
     //ContentRelatedInstances_InstanceLabelOverride_AppliedByPriorityForSpecifiedClass

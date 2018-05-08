@@ -402,6 +402,7 @@
                 <xs:element name="RelatedProperties" type="ContentRelatedPropertiesDef" />
                 <xs:element name="HiddenProperties" type="HiddenPropertiesDef" />
                 <xs:element name="DisplayedProperties" type="DisplayedPropertiesDef" />
+                <xs:element name="RelatedInstance" type="RelatedInstanceDef" />
             </xs:choice>
             <xs:element name="CalculatedProperties" type="CalculatedPropertiesDef" minOccurs="0" maxOccurs="1"/>
             <xs:element name="PropertyEditors" type="PropertyEditorsDef" minOccurs="0" maxOccurs="1"/>

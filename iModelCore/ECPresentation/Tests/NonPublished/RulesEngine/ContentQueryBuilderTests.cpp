@@ -383,3 +383,29 @@ TEST_F (ContentQueryBuilderTests, SetsNoFieldsAndShowLabelsFlagsForListContentTy
         << "Actual:   " << query->ToString();
     EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentQueryBuilderTests, AppliesRelatedInstanceSpecificationForTheSameXToManyRelationshipAndClassTwoTimes)
+    {
+    ECClassCP gadgetClass = GetECClass("RulesEngineTest", "Gadget");
+    SelectedNodeInstancesSpecification spec(1, false, "RulesEngineTest", "Gadget", false);
+    spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Backward,
+        "RulesEngineTest:WidgetsHaveGadgets", "RulesEngineTest:Widget", "widgetAlias"));
+    spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Backward,
+        "RulesEngineTest:WidgetsHaveGadgets", "RulesEngineTest:Widget", "widgetAlias2"));
+
+    TestParsedInput info(*gadgetClass, ECInstanceId((uint64_t) 123));
+    ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentQueryPtr query = GetQueryBuilder().CreateQuery(spec, *descriptor, info);
+    ASSERT_TRUE(query.IsValid());
+
+    ContentQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetContentQuery("AppliesRelatedInstanceSpecificationForTheSameXToManyRelationshipAndClassTwoTimes");
+    EXPECT_TRUE(expected->IsEqual(*query)) 
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    EXPECT_TRUE(expected->GetContract()->GetDescriptor().Equals(query->GetContract()->GetDescriptor()));
+    }

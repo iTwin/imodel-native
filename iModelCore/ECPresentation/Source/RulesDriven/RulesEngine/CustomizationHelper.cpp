@@ -316,6 +316,7 @@ void CustomizationHelper::Customize(ContentProviderContextCR context, ContentSet
 
     ECClassInstanceKeyCR itemKey = item.GetKeys().front();
     JsonNavNodePtr node = context.GetNodesFactory().CreateECInstanceNode(context.GetConnection(), itemKey.GetClass()->GetId(), itemKey.GetId(), "");
+    NavNodeExtendedData(*node).SetRelatedInstanceKeys(extendedData.GetRelatedInstanceKeys());
     // create temporary key
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(context.GetConnection(), *node, bvector<Utf8String>()));
     ContentSetItemPropertiesSetter setter(item);

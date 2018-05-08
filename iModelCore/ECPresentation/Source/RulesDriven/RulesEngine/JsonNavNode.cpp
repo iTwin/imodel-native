@@ -604,13 +604,7 @@ void NavNodesHelper::SwapData(JsonNavNode& lhs, JsonNavNode& rhs) {lhs.m_json.Sw
 +---------------+---------------+---------------+---------------+---------------+------*/
 void NavNodesHelper::AddRelatedInstanceInfo(NavNodeR node, Utf8CP serializedJson)
     {
-    if (nullptr == serializedJson || 0 == *serializedJson)
-        return;
-    
-    rapidjson::Document doc(&node.GetExtendedDataAllocator());
-    doc.Parse(serializedJson);
-    if (doc.IsArray())
-        NavNodeExtendedData(node).SetRelatedInstanceKeys(std::move(doc));
+    NavNodeExtendedData(node).SetRelatedInstanceKeys(serializedJson);
     }
 
 /*---------------------------------------------------------------------------------**//**

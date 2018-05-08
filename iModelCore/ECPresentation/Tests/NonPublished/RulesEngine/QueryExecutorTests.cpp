@@ -1559,7 +1559,7 @@ TEST_F(ContentQueryExecutorTests, HandlesStructProperties)
     AddField(*descriptor, *classI, ContentDescriptor::Property("this", *classI, *classI->GetPropertyP("StructProperty")));
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classI, *query, false), "this");
+    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classI, *query, bvector<RelatedClass>(), false), "this");
     query->From(*classI, false, "this");
     
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
@@ -1624,7 +1624,7 @@ TEST_F(ContentQueryExecutorTests, HandlesArrayProperties)
     AddField(*descriptor, *classR, ContentDescriptor::Property("this", *classR, *classR->GetPropertyP("StructsArray")));
 
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classR, *query, false), "this");
+    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classR, *query, bvector<RelatedClass>(), false), "this");
     query->From(*classR, false, "this");
     
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
@@ -1835,10 +1835,14 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromPropertyField)
     AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
 
+    ComplexContentQueryPtr nestedQuery = ComplexContentQuery::Create();
+    ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, m_widgetClass, *nestedQuery);
+    nestedQuery->SelectContract(*contract, "widget");
+    nestedQuery->From(*m_widgetClass, false, "widget");
+
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query);
-    query->SelectContract(*contract, "widget");
-    query->From(*m_widgetClass, false, "widget");
+    query->SelectAll();
+    query->From(*nestedQuery);
     query->GroupByContract(*contract);
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
@@ -1878,10 +1882,14 @@ TEST_F(ContentQueryExecutorTests, GetDistinctValuesFromCalculatedPropertyField)
     descriptor->AddField(new ContentDescriptor::CalculatedPropertyField("label", "MyID", "this.MyID", nullptr));
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
 
+    ComplexContentQueryPtr nestedQuery = ComplexContentQuery::Create();
+    ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, m_widgetClass, *nestedQuery);
+    nestedQuery->SelectContract(*contract, "widget");
+    nestedQuery->From(*m_widgetClass, false, "widget");
+
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query);
-    query->SelectContract(*contract, "widget");
-    query->From(*m_widgetClass, false, "widget");
+    query->SelectAll();
+    query->From(*nestedQuery);
     query->GroupByContract(*contract);
     
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);
@@ -1924,16 +1932,24 @@ TEST_F(QueryExecutorTests, GetDistinctStringValuesFromMergedECPropertyField)
     descriptor->AddField(field);
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
 
+    ComplexContentQueryPtr nestedQuery1 = ComplexContentQuery::Create();
+    ContentQueryContractPtr contract1 = ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *nestedQuery1);
+    nestedQuery1->SelectContract(*contract1, "gadget");
+    nestedQuery1->From(*m_gadgetClass, false, "gadget");
+
     ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
-    ContentQueryContractPtr contract1 = ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query1);
-    query1->SelectContract(*contract1, "gadget");
-    query1->From(*m_gadgetClass, false, "gadget");
+    query1->SelectAll();
+    query1->From(*nestedQuery1);
     query1->GroupByContract(*contract1);
     
+    ComplexContentQueryPtr nestedQuery2 = ComplexContentQuery::Create();
+    ContentQueryContractPtr contract2 = ContentQueryContract::Create(2, *descriptor, m_widgetClass, *nestedQuery2);
+    nestedQuery2->SelectContract(*contract2, "widget");
+    nestedQuery2->From(*m_widgetClass, false, "widget");
+
     ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
-    ContentQueryContractPtr contract2 = ContentQueryContract::Create(2, *descriptor, m_widgetClass, *query2);
-    query2->SelectContract(*contract2, "widget");
-    query2->From(*m_widgetClass, false, "widget");
+    query2->SelectAll();
+    query2->From(*nestedQuery2);
     query2->GroupByContract(*contract2);
 
     UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
@@ -1974,10 +1990,14 @@ TEST_F(QueryExecutorTests, GetDistinctPointValuesFromPropertiesField)
     descriptor->AddContentFlag(ContentFlags::DistinctValues);
     AddField(*descriptor, *classH, ContentDescriptor::Property("h", *classH, *classH->GetPropertyP("PointProperty")->GetAsPrimitiveProperty()));
 
+    ComplexContentQueryPtr nestedQuery = ComplexContentQuery::Create();
+    ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, classH, *nestedQuery);
+    nestedQuery->SelectContract(*contract, "h");
+    nestedQuery->From(*classH, false, "h");
+
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, classH, *query);
-    query->SelectContract(*contract, "h");
-    query->From(*classH, false, "h");
+    query->SelectAll();
+    query->From(*nestedQuery);
     query->GroupByContract(*contract);
     
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData(), m_propertyFormatter);

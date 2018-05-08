@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/ExtendedData.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,11 +18,27 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define ITEM_EXTENDEDDATA_IsCustomized                          "IsNodeCustomized"
 #define ITEM_EXTENDEDDATA_CheckboxBoundPropertyName             "CheckboxBoundPropertyName"
 #define ITEM_EXTENDEDDATA_IsCheckboxBoundPropertyInversed       "IsCheckboxBoundPropertyInversed"
+#define ITEM_EXTENDEDDATA_RelatedInstanceKeys                   "RelatedInstanceKeys"
+#define ITEM_EXTENDEDDATA_RelatedInstanceKey_ECClassId          "ECClassId"
+#define ITEM_EXTENDEDDATA_RelatedInstanceKey_ECInstanceId       "ECInstanceId"
+#define ITEM_EXTENDEDDATA_RelatedInstanceKeys_Alias             "Alias"
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2015
 +===============+===============+===============+===============+===============+======*/
 struct ItemExtendedData : RapidJsonAccessor
 {
+    struct RelatedInstanceKey
+        {
+        private:
+            BeSQLite::EC::ECInstanceKey m_instanceKey;
+            Utf8CP m_alias;
+        public:
+            RelatedInstanceKey() {}
+            RelatedInstanceKey(BeSQLite::EC::ECInstanceKey instanceKey, Utf8CP alias) : m_instanceKey(instanceKey), m_alias(alias) {}
+            BeSQLite::EC::ECInstanceKey const& GetInstanceKey() const { return m_instanceKey; }
+            Utf8CP GetAlias() const { return m_alias; }
+        };
+
     ItemExtendedData() : RapidJsonAccessor() {}
     ItemExtendedData(RapidJsonValueCR data) : RapidJsonAccessor(data) {}
     ItemExtendedData(RapidJsonValueR data, rapidjson::MemoryPoolAllocator<>& allocator) : RapidJsonAccessor(data, allocator) {}
@@ -47,6 +63,15 @@ struct ItemExtendedData : RapidJsonAccessor
 
     bool IsCheckboxBoundPropertyInversed() const {return GetJson().HasMember(ITEM_EXTENDEDDATA_IsCheckboxBoundPropertyInversed) ? GetJson()[ITEM_EXTENDEDDATA_IsCheckboxBoundPropertyInversed].GetBool() : false;}
     void SetCheckboxBoundPropertyInversed(bool value) {AddMember(ITEM_EXTENDEDDATA_IsCheckboxBoundPropertyInversed, rapidjson::Value(value));}
+
+    // Related instance keys list contains definitions (key + alias) of instances that are related
+    // to the primary instance. The relationship is set up in the ruleset by using RelatedInstance 
+    // sub-specification in navigation specifications.
+    ECPRESENTATION_EXPORT bvector<RelatedInstanceKey> GetRelatedInstanceKeys() const;
+    ECPRESENTATION_EXPORT void SetRelatedInstanceKeys(rapidjson::Value&& json);
+    ECPRESENTATION_EXPORT void SetRelatedInstanceKeys(Utf8CP serializedJson);
+    ECPRESENTATION_EXPORT void SetRelatedInstanceKeys(bvector<RelatedInstanceKey> const& keys);
+    ECPRESENTATION_EXPORT void SetRelatedInstanceKey(RelatedInstanceKey const& key);
 };
 
 #define CONTENTSETITEM_EXTENDEDDATA_ContractId                  "ContractId"
@@ -83,27 +108,13 @@ struct ContentSetItemExtendedData : ItemExtendedData
 #define NAVNODE_EXTENDEDDATA_PropertyValue                      "PropertyValue"
 #define NAVNODE_EXTENDEDDATA_PropertyValueRangeIndex            "PropertyValueRangeIndex"
 #define NAVNODE_EXTENDEDDATA_GroupedInstanceKeys                "GroupedInstanceKeys"
-#define NAVNODE_EXTENDEDDATA_RelatedInstanceKeys                "RelatedInstanceKeys"
 #define NAVNODE_EXTENDEDDATA_InstanceKey_ECClassId              "ECClassId"
 #define NAVNODE_EXTENDEDDATA_InstanceKey_ECInstanceId           "ECInstanceId"
-#define NAVNODE_EXTENDEDDATA_RelatedInstanceKeys_Alias          "Alias"
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2015
 +===============+===============+===============+===============+===============+======*/
 struct NavNodeExtendedData : ItemExtendedData
 {
-    struct RelatedInstanceKey
-    {
-    private:
-        BeSQLite::EC::ECInstanceKey m_instanceKey;
-        Utf8CP m_alias;
-    public:
-        RelatedInstanceKey() {}
-        RelatedInstanceKey(BeSQLite::EC::ECInstanceKey instanceKey, Utf8CP alias) : m_instanceKey(instanceKey), m_alias(alias) {}
-        BeSQLite::EC::ECInstanceKey const& GetInstanceKey() const {return m_instanceKey;}
-        Utf8CP GetAlias() const {return m_alias;}
-    };
-
     NavNodeExtendedData() : ItemExtendedData() {}
     NavNodeExtendedData(RapidJsonValueCR data) : ItemExtendedData(data) {}
     NavNodeExtendedData(RapidJsonValueR data, rapidjson::MemoryPoolAllocator<>& allocator) : ItemExtendedData(data, allocator) {}
@@ -173,14 +184,6 @@ struct NavNodeExtendedData : ItemExtendedData
     ECPRESENTATION_EXPORT void SetGroupedInstanceKeys(bvector<BeSQLite::EC::ECInstanceKey> const& keys);
     ECPRESENTATION_EXPORT void SetGroupedInstanceKey(BeSQLite::EC::ECInstanceKey const& key);
     rapidjson::SizeType GetGroupedInstanceKeysCount() const;
-    
-    // Related instance keys list contains definitions (key + alias) of instances that are related
-    // to the primary instance. The relationship is set up in the ruleset by using RelatedInstance 
-    // sub-specification in navigation specifications.
-    ECPRESENTATION_EXPORT bvector<RelatedInstanceKey> GetRelatedInstanceKeys() const;
-    ECPRESENTATION_EXPORT void SetRelatedInstanceKeys(rapidjson::Value&& json);
-    ECPRESENTATION_EXPORT void SetRelatedInstanceKeys(bvector<RelatedInstanceKey> const& keys);
-    ECPRESENTATION_EXPORT void SetRelatedInstanceKey(RelatedInstanceKey const& key);
 
     // Skipped instance keys contains keys of ECInstances which were skipped using SkipRelatedLevel
     // specification attribute.

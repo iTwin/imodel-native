@@ -73,6 +73,18 @@ static bvector<RelatedClassPath> GetPathsToPrimary(bvector<SelectClassInfo> cons
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static ComplexContentQueryPtr WrapQueryIntoGroupingClause(ComplexContentQueryR query, ContentQueryContractCR queryContract)
+    {
+    ComplexContentQueryPtr grouped = ComplexContentQuery::Create();
+    grouped->SelectAll();
+    grouped->From(query);
+    grouped->GroupByContract(queryContract);
+    return grouped;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificationCR specification, ContentDescriptorCR descriptor, IParsedInput const& input)
@@ -88,13 +100,17 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
-        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery);
+        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery, selectClassInfo.GetRelatedInstanceClasses());
         classQuery->SelectContract(*contract, "this");
         classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
 
         // handle related properties
         for (RelatedClassPath const& path : selectClassInfo.GetRelatedPropertyPaths())
             classQuery->Join(path, true);
+
+        // handle related instances
+        for (RelatedClass const& relatedInstanceClass : selectClassInfo.GetRelatedInstanceClasses())
+            classQuery->Join(relatedInstanceClass);
         
         // handle filtering 
         InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), &input, selectClassInfo, nullptr, nullptr);
@@ -102,7 +118,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
         
         // handle selecting property for distinct values 
         if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())
-            classQuery->GroupByContract(*contract);
+            classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
         }
@@ -164,13 +180,17 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
             }
 
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
-        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery);
+        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery, selectClassInfo.GetRelatedInstanceClasses());
         classQuery->SelectContract(*contract, "this");
         classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
 
         // handle related properties
         for (RelatedClassPath const& path : selectClassInfo.GetRelatedPropertyPaths())
             classQuery->Join(path, true);
+
+        // handle related instances
+        for (RelatedClass const& relatedInstanceClass : selectClassInfo.GetRelatedInstanceClasses())
+            classQuery->Join(relatedInstanceClass);
         
         // handle filtering 
         InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), &input, 
@@ -179,7 +199,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
             
         // handle selecting property for distinct values 
         if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())
-            classQuery->GroupByContract(*contract);
+            classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
         }
@@ -206,13 +226,17 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
     for (SelectClassInfo const& selectClassInfo : specificationDescriptor->GetSelectClasses())
         {
         ComplexContentQueryPtr classQuery = ComplexContentQuery::Create();
-        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery);
+        ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectClassInfo.GetSelectClass(), *classQuery, selectClassInfo.GetRelatedInstanceClasses());
         classQuery->SelectContract(*contract, "this");
         classQuery->From(selectClassInfo.GetSelectClass(), selectClassInfo.IsSelectPolymorphic(), "this");
 
         // handle related properties
         for (RelatedClassPath const& path : selectClassInfo.GetRelatedPropertyPaths())
             classQuery->Join(path, true);
+
+        // handle related instances
+        for (RelatedClass const& relatedInstanceClass : selectClassInfo.GetRelatedInstanceClasses())
+            classQuery->Join(relatedInstanceClass);
         
         // handle filtering 
         InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), nullptr, 
@@ -221,7 +245,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
 
         // handle selecting property for distinct values 
         if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())
-            classQuery->GroupByContract(*contract);
+            classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 
         QueryBuilderHelpers::SetOrUnion<ContentQuery>(query, *classQuery);
         }
@@ -244,7 +268,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentDescriptor::NestedConten
         return nullptr;
         
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
-    ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, *descriptor, &contentField.GetContentClass(), *query, false);
+    ContentQueryContractPtr contract = ContentQueryContract::Create(++m_contractIdsCounter, *descriptor, &contentField.GetContentClass(), *query, bvector<RelatedClass>(), false);
     query->SelectContract(*contract, contentField.GetContentClassAlias().c_str());
     query->From(contentField.GetContentClass(), true, contentField.GetContentClassAlias().c_str());
 

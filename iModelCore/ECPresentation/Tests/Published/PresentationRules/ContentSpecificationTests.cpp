@@ -96,6 +96,7 @@ TEST_F(ContentSpecificationsTests, LoadsFromXml)
             <PropertyEditors>
                <Editor PropertyName="TestProperty" EditorName="TestEditor" />
             </PropertyEditors>
+            <RelatedInstance RelationshipName="TestRelName" ClassName="TestClassName" Alias="TestAlias" />
         </TestSpecification>
         )";
     BeXmlStatus xmlStatus;
@@ -109,7 +110,8 @@ TEST_F(ContentSpecificationsTests, LoadsFromXml)
     EXPECT_EQ(2, spec.GetCalculatedProperties().size());
     EXPECT_EQ(2, spec.GetPropertiesDisplaySpecifications().size());
     EXPECT_EQ(1, spec.GetRelatedProperties().size());
-    EXPECT_EQ(1, spec.GetPropertyEditors().size());    
+    EXPECT_EQ(1, spec.GetPropertyEditors().size());
+    EXPECT_EQ(1, spec.GetRelatedInstances().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -173,6 +175,7 @@ TEST_F(ContentSpecificationsTests, WritesToXml)
     spec.AddPropertyEditor(*new PropertyEditorsSpecification("Property1", "Editor1"));
     spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
     spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label2", 456, "Expression2"));
+    spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Both, "TestRelName", "TestClassName", "TestAlias"));
     spec.WriteXml(xml->GetRootElement());
 
     static Utf8CP expected = ""
@@ -182,6 +185,7 @@ TEST_F(ContentSpecificationsTests, WritesToXml)
                     R"(PropertyNames="Properties" RequiredDirection="Forward" RelationshipMeaning="SameInstance" IsPolymorphic="false"/>)"
                 R"(<DisplayedProperties PropertyNames="DisplayedProperty" Priority="123"/>)"
                 R"(<HiddenProperties PropertyNames="HiddenProperty" Priority="456"/>)"
+                R"(<RelatedInstance ClassName="TestClassName" RelationshipName="TestRelName" RelationshipDirection="Both" Alias="TestAlias" IsRequired="false" />)"
                 R"(<CalculatedProperties>)"
                     R"(<Property Label="Label1" Priority="123">Expression1</Property>)"
                     R"(<Property Label="Label2" Priority="456">Expression2</Property>)"
@@ -249,6 +253,7 @@ TEST_F(ContentSpecificationsTests, ComputesCorrectHashes)
     spec1.AddPropertyEditor(*new PropertyEditorsSpecification("Property1", "Editor1"));
     spec1.AddDisplayRelatedItem(*new DisplayRelatedItemsSpecification(true, 1, "TestSchema:TestClass"));
     spec1.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
+    spec1.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Both, "TestRelName", "TestClassName", "TestAlias"));
     TestContentSpecification spec2;
     spec2.SetShowImages(true);
     spec2.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("HiddenProperty", 456, false));
@@ -257,6 +262,7 @@ TEST_F(ContentSpecificationsTests, ComputesCorrectHashes)
     spec2.AddPropertyEditor(*new PropertyEditorsSpecification("Property1", "Editor1"));
     spec2.AddDisplayRelatedItem(*new DisplayRelatedItemsSpecification(true, 1, "TestSchema:TestClass"));
     spec2.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
+    spec2.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Both, "TestRelName", "TestClassName", "TestAlias"));
     TestContentSpecification spec3;
     spec3.AddPropertiesDisplaySpecification(*new PropertiesDisplaySpecification("HiddenProperty", 456, false));
 

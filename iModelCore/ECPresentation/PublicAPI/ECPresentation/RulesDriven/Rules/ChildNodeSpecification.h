@@ -14,7 +14,6 @@
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 typedef bvector<struct ChildNodeRule*>          ChildNodeRuleList;
-typedef bvector<RelatedInstanceSpecificationP>  RelatedInstanceSpecificationList;
 
 /*---------------------------------------------------------------------------------**//**
 Base class for all ChildNodeSpecifications.

@@ -38,6 +38,7 @@ ContentSpecification::ContentSpecification(ContentSpecificationCR other)
     CommonTools::CopyRules(m_displayRelatedItemsSpecification, other.m_displayRelatedItemsSpecification);
     CommonTools::CopyRules(m_calculatedPropertiesSpecification, other.m_calculatedPropertiesSpecification);
     CommonTools::CopyRules(m_propertyEditorsSpecification, other.m_propertyEditorsSpecification);
+    CommonTools::CopyRules(m_relatedInstances, other.m_relatedInstances);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -50,6 +51,7 @@ ContentSpecification::~ContentSpecification ()
     CommonTools::FreePresentationRules (m_displayRelatedItemsSpecification);
     CommonTools::FreePresentationRules (m_calculatedPropertiesSpecification);
     CommonTools::FreePresentationRules (m_propertyEditorsSpecification);
+    CommonTools::FreePresentationRules (m_relatedInstances);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -68,6 +70,7 @@ bool ContentSpecification::ReadXml (BeXmlNodeP xmlNode)
     CommonTools::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList> (xmlNode, m_propertiesDisplaySpecification, HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
     CommonTools::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList> (xmlNode, m_propertiesDisplaySpecification, DISPLAYED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
     CommonTools::LoadSpecificationsFromXmlNode<DisplayRelatedItemsSpecification, DisplayRelatedItemsSpecificationList> (xmlNode, m_displayRelatedItemsSpecification, DISPLAYRELATEDITEMS_SPECIFICATION_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList> (xmlNode, m_relatedInstances, RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME);
     BeXmlNodeP xmlPropertyNode = xmlNode->SelectSingleNode(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
     if (xmlPropertyNode)
         CommonTools::LoadSpecificationsFromXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList> (xmlPropertyNode, m_calculatedPropertiesSpecification, CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME);
@@ -111,6 +114,7 @@ void ContentSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (specificationNode, m_relatedPropertiesSpecification);
     CommonTools::WriteRulesToXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList> (specificationNode, m_propertiesDisplaySpecification);
     CommonTools::WriteRulesToXmlNode<DisplayRelatedItemsSpecification, DisplayRelatedItemsSpecificationList> (specificationNode, m_displayRelatedItemsSpecification);
+    CommonTools::WriteRulesToXmlNode<RelatedInstanceSpecification, RelatedInstanceSpecificationList> (specificationNode, m_relatedInstances);
     if (!m_calculatedPropertiesSpecification.empty())
         {
         BeXmlNodeP calculatedPropertiesNode = specificationNode->AddEmptyElement(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
@@ -197,6 +201,16 @@ void ContentSpecification::AddPropertyEditor(PropertyEditorsSpecificationR speci
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentSpecification::AddRelatedInstance(RelatedInstanceSpecificationR relatedInstance)
+    {
+    InvalidateHash();
+    relatedInstance.SetParent(this);
+    m_relatedInstances.push_back(&relatedInstance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 ContentSpecification::_ComputeHash(Utf8CP parentHash) const
@@ -229,6 +243,11 @@ MD5 ContentSpecification::_ComputeHash(Utf8CP parentHash) const
         md5.Add(specHash.c_str(), specHash.size());
         }
     for (PropertyEditorsSpecificationP spec : m_propertyEditorsSpecification)
+        {
+        Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
+        md5.Add(specHash.c_str(), specHash.size());
+        }
+    for (RelatedInstanceSpecificationP spec : m_relatedInstances)
         {
         Utf8StringCR specHash = spec->GetHash(currentHash.c_str());
         md5.Add(specHash.c_str(), specHash.size());

@@ -186,7 +186,9 @@ public:
             BeMutexHolder lock(m_mutex);
             m_cancelationToken->SetCanceled(true);
             m_cancelableTasks.Remove(*this);
-            T_Super::setException(e);
+            lock.unlock();
+            if (!T_Super::isFulfilled())
+                T_Super::setException(e);
             });
         m_cancelableTasks.Add(*this);
         }
@@ -198,9 +200,10 @@ public:
     template<class M> void SetValue(M&& value)
         {
         BeMutexHolder lock(m_mutex);
+        m_cancelableTasks.Remove(*this);
+        lock.unlock();
         if (!T_Super::isFulfilled())
             T_Super::setValue(std::forward<M>(value));
-        m_cancelableTasks.Remove(*this);
         }
     void SetValue() {SetValue(folly::unit);}
     folly::Future<T> GetFuture() {return m_future.then([](T&& result){return result;});}
