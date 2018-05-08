@@ -215,9 +215,11 @@ ICancellationTokenPtr ct
             return;
             }
 
-        LOG.infov(L"CachingDataSource::OpenOrCreate() using environment:\n%ls\n%ls",
-            cacheEnvironment.persistentFileCacheDir.c_str(),
-            cacheEnvironment.temporaryFileCacheDir.c_str());
+        LOG.infov("CachingDataSource::OpenOrCreate() URL:'%s' ID:'%s' using environment:\n%s\n%s",
+            client->GetWSClient()->GetServerUrl().c_str(),
+            client->GetRepositoryId().c_str(),
+            cacheEnvironment.persistentFileCacheDir.GetNameUtf8().c_str(),
+            cacheEnvironment.temporaryFileCacheDir.GetNameUtf8().c_str());
 
         const DefaultTxn defaultTxnMode = DefaultTxn::No;// Allow concurrent multiple connection access
 
@@ -307,22 +309,20 @@ ICancellationTokenPtr ct
                 }
 
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms",
-                openResult->IsSuccess() ? "succeeded" : "failed", end - start);
+            LOG.infov("CachingDataSource::OpenOrCreate() URL:'%s' ID:'%s' %s and took: %.2f ms",
+                client->GetWSClient()->GetServerUrl().c_str(),
+                client->GetRepositoryId().c_str(),
+                openResult->IsSuccess() ? "succeeded" : "failed",
+                end - start);
 
             if (!openResult->IsSuccess())
                 {
-                LOG.errorv(
-                    "CachingDataSource::OpenOrCreate() failed with error: '%s %s' for:\n"
-                    "file: '%s'\n"
-                    "repository: '%s'\n"
-                    "server: '%s'",
-                    openResult->GetError().GetMessage().c_str(),
-                    openResult->GetError().GetDescription().c_str(),
-                    cacheFilePath.GetNameUtf8().c_str(),
+                LOG.errorv("CachingDataSource::OpenOrCreate() URL:'%s' ID:'%s' failed:\nFile: '%s'\nError: %s %s",
+                    client->GetWSClient()->GetServerUrl().c_str(),
                     client->GetRepositoryId().c_str(),
-                    client->GetWSClient()->GetServerUrl().c_str()
-                    );
+                    cacheFilePath.GetNameUtf8().c_str(),
+                    openResult->GetError().GetMessage().c_str(),
+                    openResult->GetError().GetDescription().c_str());
 
                 // Force close cache
                 if (nullptr != ds)

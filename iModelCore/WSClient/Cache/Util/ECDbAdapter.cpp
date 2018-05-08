@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Util/ECDbAdapter.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -489,10 +489,11 @@ ECInstanceKey ECDbAdapter::GetInstanceKeyFromJsonInstance(JsonValueCR ecInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::ExtractJsonInstanceArrayFromStatement(ECSqlStatement& statement, ECClassCP ecClass, JsonValueR jsonInstancesArrayOut, ICancellationTokenPtr ct)
     {
-    if (ct && ct->IsCanceled())
-        {
+    if (nullptr == ecClass)
         return ERROR;
-        }
+
+    if (ct && ct->IsCanceled())
+        return ERROR;
 
     Utf8String className(ecClass->GetName());
 
@@ -722,6 +723,9 @@ bset<ECInstanceId> ECDbAdapter::FindInstances(ECClassCP ecClass, Utf8CP whereCla
     {
     bset<ECInstanceId> ids;
 
+    if (nullptr == ecClass)
+        return ids;
+
     Utf8String ecsql = "SELECT ECInstanceId FROM ONLY " + ecClass->GetECSqlName() + " ";
     if (nullptr != whereClause)
         {
@@ -755,6 +759,9 @@ BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR objectOut, ECInstanceKeyCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR jsonOut, ECClassCP ecClass, ECInstanceId ecId)
     {
+    if (nullptr == ecClass)
+        return ERROR;
+
     Utf8String ecsql = "SELECT * FROM ONLY " + ecClass->GetECSqlName() + " WHERE ECInstanceId = ? LIMIT 1 ";
 
     ECSqlStatement statement;
@@ -773,6 +780,9 @@ BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR jsonOut, ECClassCP ecClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR objectOut, ECClassCP ecClass, Utf8CP whereClause, Utf8CP select)
     {
+    if (nullptr == ecClass)
+        return ERROR;
+
     Utf8String ecsql;
     if (nullptr != select)
         {
@@ -804,6 +814,9 @@ BentleyStatus ECDbAdapter::GetJsonInstance(JsonValueR objectOut, ECClassCP ecCla
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbAdapter::GetJsonInstances(JsonValueR jsonOut, ECClassCP ecClass, Utf8CP whereClause, ICancellationTokenPtr ct)
     {
+    if (nullptr == ecClass)
+        return ERROR;
+
     Utf8String ecsql = "SELECT * FROM ONLY " + ecClass->GetECSqlName() + " ";
     if (whereClause != nullptr)
         {
