@@ -36,6 +36,9 @@ struct ECPresentationUtils
     static void GetContentSetSize(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
     static void GetDistinctValues(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
     static void SaveValueChange(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
+    static void AddRuleSet(SimpleRuleSetLocater&, JsonValueCR params);
+    static void RemoveRuleSet(SimpleRuleSetLocater&, JsonValueCR params);
+    static void ClearRuleSets(SimpleRuleSetLocater&);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

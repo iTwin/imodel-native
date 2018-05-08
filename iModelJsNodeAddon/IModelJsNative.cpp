@@ -2527,11 +2527,14 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
 
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
+    RefCountedPtr<SimpleRuleSetLocater> m_simpleRuleSetLocater;
 
     NativeECPresentationManager(Napi::CallbackInfo const& info)
         : Napi::ObjectWrap<NativeECPresentationManager>(info)
         {
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections, T_HOST.GetIKnownLocationsAdmin()));
+        m_simpleRuleSetLocater = SimpleRuleSetLocater::Create();
+        m_presentationManager->GetLocaters().RegisterLocater(*m_simpleRuleSetLocater);
         }
 
     static bool InstanceOf(Napi::Value val) {
@@ -2602,6 +2605,12 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             ECPresentationUtils::GetDistinctValues(*m_presentationManager, db->GetDgnDb(), params, response);
         else if (0 == strcmp("SaveValueChange", requestId))
             ECPresentationUtils::SaveValueChange(*m_presentationManager, db->GetDgnDb(), params, response);
+        else if (0 == strcmp("AddRuleSet", requestId))
+            ECPresentationUtils::AddRuleSet(*m_simpleRuleSetLocater, params);
+        else if (0 == strcmp("RemoveRuleSet", requestId))
+            ECPresentationUtils::RemoveRuleSet(*m_simpleRuleSetLocater, params);
+        else if (0 == strcmp("ClearRuleSets", requestId))
+            ECPresentationUtils::ClearRuleSets(*m_simpleRuleSetLocater);
         else
             return NapiUtils::CreateErrorObject0(ERROR, nullptr, Env());
 

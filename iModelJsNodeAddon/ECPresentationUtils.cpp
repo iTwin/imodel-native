@@ -1206,3 +1206,32 @@ void ECPresentationUtils::SaveValueChange(IECPresentationManagerR manager, ECDbR
     {
     BeAssert(false);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kililnskas                 05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECPresentationUtils::AddRuleSet(SimpleRuleSetLocater& locater, JsonValueCR params)
+    {
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonValue(params);
+    if (ruleSet == nullptr)
+        return;
+
+    locater.AddRuleSet(*ruleSet);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kililnskas                 05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECPresentationUtils::RemoveRuleSet(SimpleRuleSetLocater& locater, JsonValueCR params)
+    {
+    Utf8StringCR ruleSetId = params["ruleSetId"].asCString();
+    locater.RemoveRuleSet(ruleSetId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kililnskas                 05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECPresentationUtils::ClearRuleSets(SimpleRuleSetLocater& locater)
+    {
+    locater.Clear();
+    }
