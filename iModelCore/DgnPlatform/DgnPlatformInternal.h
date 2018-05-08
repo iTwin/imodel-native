@@ -46,7 +46,6 @@
 #include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ElementGraphics.h>
-#include <DgnPlatform/GPArray.h>
 #include <DgnPlatform/GenericDomain.h>
 #include <DgnPlatform/IGeoCoordServices.h>
 #include <DgnPlatform/JsonUtils.h>

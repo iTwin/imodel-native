@@ -662,7 +662,8 @@ bool FenceParams::AcceptByCurve()
     for (ClipPrimitivePtr const& primitive: *m_clip)
         {
         // If any clip is curved accept by curve...
-        if (NULL != primitive->GetGPA (true))
+        auto curves = primitive->GetCurvesCP ();
+        if (curves != nullptr && curves->ContainsNonLinearPrimitive ())
             return true;
         }
 
