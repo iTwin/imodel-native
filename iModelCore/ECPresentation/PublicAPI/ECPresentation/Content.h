@@ -106,8 +106,8 @@ struct ContentDisplayType
 
 //=======================================================================================
 //! Data structure that describes an ECClass in ContentDescriptor. In addition to the class
-//! itself the structure holds its relationship path to the primary ECClass and paths
-//! to related property classes. Dependencies are related as follows:
+//! itself the structure holds its relationship path to the primary ECClass, paths to related 
+//! property classes and related classes of related instances. Dependencies are related as follows:
 //! 
 //!                                  /---- Related Properties Path 1
 //! Primary Class ----- Select Class
@@ -123,6 +123,7 @@ private:
     bool m_isPolymorphic;
     bvector<RelatedClassPath> m_relatedPropertyPaths;
     RelatedClassPath m_pathToPrimaryClass;
+    bvector<RelatedClass> m_relatedInstanceClasses;
 
 public:
     //! Constructor. Creates an invalid object.
@@ -136,7 +137,8 @@ public:
         return m_selectClass == other.m_selectClass
             && m_isPolymorphic == other.m_isPolymorphic
             && m_pathToPrimaryClass == other.m_pathToPrimaryClass
-            && m_relatedPropertyPaths == other.m_relatedPropertyPaths;
+            && m_relatedPropertyPaths == other.m_relatedPropertyPaths
+            && m_relatedInstanceClasses == other.m_relatedInstanceClasses;
         }
     //! Equals operator override.
     bool operator==(SelectClassInfo const& other) const {return Equals(other);}
@@ -163,6 +165,11 @@ public:
     RelatedClassPath const& GetPathToPrimaryClass() const {return m_pathToPrimaryClass;}
     //! Set path to the primary ECClass.
     void SetPathToPrimaryClass(RelatedClassPath path) {m_pathToPrimaryClass = path;}
+
+    //! Get related classes of related instances.
+    bvector<RelatedClass> const& GetRelatedInstanceClasses() const {return m_relatedInstanceClasses;}
+    //! Set related classes of related instances.
+    void SetRelatedInstanceClasses(bvector<RelatedClass> relatedInstanceClasses) {m_relatedInstanceClasses = relatedInstanceClasses;}
 };
 
 //=======================================================================================

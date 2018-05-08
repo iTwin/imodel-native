@@ -239,6 +239,86 @@ TEST_F (ContentProviderTests, CustomizesImageId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentProviderTests, UsesRelatedInstanceInImageIdOverrideCondition)
+    {
+    ECRelationshipClassCR relationshipWidgetHasGadget = *s_project->GetECDb().Schemas().GetSchema("RulesEngineTest")->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, 
+        [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Gadget ID"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
+
+    NavNodePtr node = TestNodesHelper::CreateInstanceNode(*m_connection, *widgetInstance);
+    
+    NavNodeKeyList keys;
+    keys.push_back(node->GetKey());
+    m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
+
+    bvector<ECInstanceKey> instanceKeys;
+    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    
+    m_ruleset->AddPresentationRule(*new ImageIdOverride("ThisNode.ClassName = \"Widget\" ANDALSO gadgetAlias.MyID = \"Gadget ID\"", 1, "\"TestImageId\""));
+
+    SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
+    spec->SetShowImages(true);
+    spec->AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget", "gadgetAlias"));
+    ContentRule rule;
+    rule.AddSpecification(*spec);
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule, instanceKeys));
+
+    ContentDescriptorCP descriptor = provider->GetContentDescriptor();
+    ASSERT_TRUE(nullptr != descriptor);
+    EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
+    
+    ASSERT_EQ(1, provider->GetContentSetSize());
+
+    ContentSetItemPtr item;
+    ASSERT_TRUE(provider->GetContentSetItem(item, 0));
+    RulesEngineTestHelpers::ValidateContentSetItem(*widgetInstance, *item, *descriptor, nullptr, "TestImageId");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ContentProviderTests, UsesRelatedInstanceInImageIdOverrideExpression)
+    {
+    ECRelationshipClassCR relationshipWidgetHasGadget = *s_project->GetECDb().Schemas().GetSchema("RulesEngineTest")->GetClassCP("WidgetHasGadget")->GetRelationshipClassCP();
+    IECInstancePtr widgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass);
+    IECInstancePtr gadgetInstance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_gadgetClass, 
+        [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Gadget ID"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), relationshipWidgetHasGadget, *widgetInstance, *gadgetInstance);
+
+    NavNodePtr node = TestNodesHelper::CreateInstanceNode(*m_connection, *widgetInstance);
+    
+    NavNodeKeyList keys;
+    keys.push_back(node->GetKey());
+    m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
+
+    bvector<ECInstanceKey> instanceKeys;
+    instanceKeys.push_back(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey());
+    
+    m_ruleset->AddPresentationRule(*new ImageIdOverride("ThisNode.ClassName = \"Widget\"", 1, "gadgetAlias.MyID"));
+
+    SelectedNodeInstancesSpecificationP spec = new SelectedNodeInstancesSpecification(1, false, "", "", false);
+    spec->SetShowImages(true);
+    spec->AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Forward, "RulesEngineTest:WidgetHasGadget", "RulesEngineTest:Gadget", "gadgetAlias"));
+    ContentRule rule;
+    rule.AddSpecification(*spec);
+    SpecificationContentProviderPtr provider = SpecificationContentProvider::Create(*m_context, ContentRuleInstanceKeys(rule, instanceKeys));
+
+    ContentDescriptorCP descriptor = provider->GetContentDescriptor();
+    ASSERT_TRUE(nullptr != descriptor);
+    EXPECT_EQ(m_widgetClass->GetPropertyCount(), descriptor->GetVisibleFields().size());
+    
+    ASSERT_EQ(1, provider->GetContentSetSize());
+
+    ContentSetItemPtr item;
+    ASSERT_TRUE(provider->GetContentSetItem(item, 0));
+    RulesEngineTestHelpers::ValidateContentSetItem(*widgetInstance, *item, *descriptor, nullptr, "Gadget ID");
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ContentProviderTests, CreatesLabelWhenSpecified)

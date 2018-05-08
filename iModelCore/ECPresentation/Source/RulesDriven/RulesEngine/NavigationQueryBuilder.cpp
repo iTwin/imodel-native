@@ -2477,81 +2477,6 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCR par
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<RelatedClass> GetRelatedInstanceClasses(ECSchemaHelper const& schemaHelper, MultiQueryContext& ctx, ECClassCR selectClass, RelatedInstanceSpecificationList const& relatedInstanceSpecs)
-    {
-    bvector<RelatedClass> relatedClasses;
-    bset<Utf8String> aliases;
-    for (RelatedInstanceSpecificationCP spec : relatedInstanceSpecs)
-        {
-        if (aliases.end() != aliases.find(spec->GetAlias()))
-            {
-            BeAssert(false && "related instance alias must be unique per parent specification");
-            continue;
-            }
-
-        ECClassCP relatedClass = schemaHelper.GetECClass(spec->GetClassName().c_str());
-        if (nullptr == relatedClass || !relatedClass->IsEntityClass())
-            {
-            BeAssert(false && "related class not found");
-            continue;
-            }
-        
-        ECClassCP relationshipClass = schemaHelper.GetECClass(spec->GetRelationshipName().c_str());
-        if (nullptr == relationshipClass || !relationshipClass->IsRelationshipClass())
-            {
-            BeAssert(false && "relationship class not found");
-            continue;
-            }
-        
-        bool isForward;
-        switch (spec->GetRelationshipDirection())
-            {
-            case RequiredRelationDirection_Forward:
-                {
-                if (!relationshipClass->GetRelationshipClassCP()->GetSource().SupportsClass(selectClass))
-                    continue;
-                isForward = true; 
-                BeAssert(relationshipClass->GetRelationshipClassCP()->GetTarget().SupportsClass(*relatedClass));
-                break;
-                }
-            case RequiredRelationDirection_Backward:
-                {
-                if (!relationshipClass->GetRelationshipClassCP()->GetTarget().SupportsClass(selectClass))
-                    continue;
-                isForward = false;
-                BeAssert(relationshipClass->GetRelationshipClassCP()->GetSource().SupportsClass(*relatedClass));
-                break;
-                }
-            default:
-                {
-                if (relationshipClass->GetRelationshipClassCP()->GetSource().SupportsClass(selectClass))
-                    {
-                    isForward = true;
-                    BeAssert(relationshipClass->GetRelationshipClassCP()->GetTarget().SupportsClass(*relatedClass));
-                    }
-                else if (relationshipClass->GetRelationshipClassCP()->GetTarget().SupportsClass(selectClass))
-                    {
-                    isForward = false;
-                    BeAssert(relationshipClass->GetRelationshipClassCP()->GetSource().SupportsClass(*relatedClass));
-                    }
-                else
-                    continue;
-                }
-            }
-
-        RelatedClass relatedClassInfo(selectClass, *relatedClass->GetEntityClassCP(), *relationshipClass->GetRelationshipClassCP(), isForward);
-        relatedClassInfo.SetTargetClassAlias(spec->GetAlias().c_str());
-        relatedClassInfo.SetRelationshipAlias(Utf8PrintfString("rel_%s_%s_%d", relationshipClass->GetSchema().GetAlias().c_str(), relationshipClass->GetName().c_str(), ctx.GetRelationshipUseCount(*relationshipClass->GetRelationshipClassCP())).c_str());
-        relatedClassInfo.SetIsOuterJoin(!spec->IsRequired());
-        relatedClasses.push_back(relatedClassInfo);
-        aliases.insert(spec->GetAlias());
-        }
-    return relatedClasses;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bset<unsigned> GetUsedParentInstanceLevels(Utf8String instanceFilter)
@@ -2748,7 +2673,7 @@ static SelectQueryInfo CreateSelectInfo(ECSchemaHelper const& helper, MultiQuery
 
     SelectQueryInfo selectInfo = CreateSelectInfo(specification, *path.back().GetTargetClass(), path.back().IsPolymorphic(), labelOverridingProperties, purpose);
     selectInfo.GetRelatedClassPath() = relatedClassPath;
-    selectInfo.GetRelatedClasses() = GetRelatedInstanceClasses(helper, ctx, *selectInfo.GetSelectClass(), specification.GetRelatedInstances());
+    selectInfo.GetRelatedClasses() = QueryBuilderHelpers::GetRelatedInstanceClasses(helper, *selectInfo.GetSelectClass(), specification.GetRelatedInstances(), ctx.GetRelationshipUseCounter());
     return selectInfo;
     }
 
@@ -2787,8 +2712,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
     // determine additional related joins
     for (SelectQueryInfo& info : selectInfos)
         {
-        info.GetRelatedClasses() = GetRelatedInstanceClasses(m_params.GetSchemaHelper(), *queryContext, 
-            *info.GetSelectClass(), specification.GetRelatedInstances());
+        info.GetRelatedClasses() = QueryBuilderHelpers::GetRelatedInstanceClasses(m_params.GetSchemaHelper(), *info.GetSelectClass(),
+            specification.GetRelatedInstances(), queryContext->GetRelationshipUseCounter());
         }
 
     // may need to split some base classes into their derived classes if there are customization rules that only apply for 
@@ -2960,8 +2885,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
     // determine additional related joins
     for (SelectQueryInfo& info : selectInfos)
         {
-        info.GetRelatedClasses() = GetRelatedInstanceClasses(m_params.GetSchemaHelper(), *queryContext, 
-            *info.GetSelectClass(), specification.GetRelatedInstances());
+        info.GetRelatedClasses() = QueryBuilderHelpers::GetRelatedInstanceClasses(m_params.GetSchemaHelper(), *info.GetSelectClass(),
+            specification.GetRelatedInstances(), queryContext->GetRelationshipUseCounter());
         }
     
     // may need to split some base classes into their derived classes if there are customization rules that only apply for 
@@ -3125,8 +3050,8 @@ bvector<NavigationQueryPtr> NavigationQueryBuilder::GetQueries(JsonNavNodeCP par
             continue;
 
         SelectQueryInfo selectInfo = CreateSelectInfo(specification, *entityClass, true, labelOverridingProperties);
-        selectInfo.GetRelatedClasses() = GetRelatedInstanceClasses(m_params.GetSchemaHelper(), *queryContext, 
-            *selectInfo.GetSelectClass(), specification.GetRelatedInstances());
+        selectInfo.GetRelatedClasses() = QueryBuilderHelpers::GetRelatedInstanceClasses(m_params.GetSchemaHelper(), *selectInfo.GetSelectClass(),
+            specification.GetRelatedInstances(), queryContext->GetRelationshipUseCounter());
         
         // may need to split some base classes into their derived classes if there are customization rules that only apply for 
         // derived classes.

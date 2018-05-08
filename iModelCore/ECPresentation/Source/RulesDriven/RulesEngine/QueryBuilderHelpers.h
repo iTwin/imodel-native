@@ -79,6 +79,7 @@ public:
     static ContentQueryPtr CreateMergedResultsQuery(ContentQueryR, ContentDescriptorR);
 
     static bmap<ECClassCP, bvector<ECPropertyCP>> GetMappedLabelOverridingProperties(ECSchemaHelper const& helper, InstanceLabelOverrideList labelOverrides);
+    static bvector<RelatedClass> GetRelatedInstanceClasses(ECSchemaHelper const& schemaHelper, ECClassCR selectClass, RelatedInstanceSpecificationList const& relatedInstanceSpecs, bmap<ECRelationshipClassCP, int>& relationshipUsedCount);
 
     static IdSet<BeInt64Id> CreateIdSetFromJsonArray(RapidJsonValueCR);
     static ECValue CreateECValueFromJson(RapidJsonValueCR);

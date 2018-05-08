@@ -627,3 +627,79 @@ bmap<ECClassCP, bvector<ECPropertyCP>> QueryBuilderHelpers::GetMappedLabelOverri
         }
     return mappedProperties;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<RelatedClass> QueryBuilderHelpers::GetRelatedInstanceClasses(ECSchemaHelper const& schemaHelper, ECClassCR selectClass,
+    RelatedInstanceSpecificationList const& relatedInstanceSpecs, bmap<ECRelationshipClassCP, int>& relationshipUsedCount)
+    {
+    bvector<RelatedClass> relatedClasses;
+    bset<Utf8String> aliases;
+    for (RelatedInstanceSpecificationCP spec : relatedInstanceSpecs)
+        {
+        if (aliases.end() != aliases.find(spec->GetAlias()))
+            {
+            BeAssert(false && "related instance alias must be unique per parent specification");
+            continue;
+            }
+
+        ECClassCP relatedClass = schemaHelper.GetECClass(spec->GetClassName().c_str());
+        if (nullptr == relatedClass || !relatedClass->IsEntityClass())
+            {
+            BeAssert(false && "related class not found");
+            continue;
+            }
+
+        ECClassCP relationshipClass = schemaHelper.GetECClass(spec->GetRelationshipName().c_str());
+        if (nullptr == relationshipClass || !relationshipClass->IsRelationshipClass())
+            {
+            BeAssert(false && "relationship class not found");
+            continue;
+            }
+
+        bool isForward;
+        switch (spec->GetRelationshipDirection())
+            {
+            case RequiredRelationDirection_Forward:
+                {
+                if (!relationshipClass->GetRelationshipClassCP()->GetSource().SupportsClass(selectClass))
+                    continue;
+                isForward = true;
+                BeAssert(relationshipClass->GetRelationshipClassCP()->GetTarget().SupportsClass(*relatedClass));
+                break;
+                }
+            case RequiredRelationDirection_Backward:
+                {
+                if (!relationshipClass->GetRelationshipClassCP()->GetTarget().SupportsClass(selectClass))
+                    continue;
+                isForward = false;
+                BeAssert(relationshipClass->GetRelationshipClassCP()->GetSource().SupportsClass(*relatedClass));
+                break;
+                }
+            default:
+                {
+                if (relationshipClass->GetRelationshipClassCP()->GetSource().SupportsClass(selectClass))
+                    {
+                    isForward = true;
+                    BeAssert(relationshipClass->GetRelationshipClassCP()->GetTarget().SupportsClass(*relatedClass));
+                    }
+                else if (relationshipClass->GetRelationshipClassCP()->GetTarget().SupportsClass(selectClass))
+                    {
+                    isForward = false;
+                    BeAssert(relationshipClass->GetRelationshipClassCP()->GetSource().SupportsClass(*relatedClass));
+                    }
+                else
+                    continue;
+                }
+            }
+
+        RelatedClass relatedClassInfo(selectClass, *relatedClass->GetEntityClassCP(), *relationshipClass->GetRelationshipClassCP(), isForward);
+        relatedClassInfo.SetTargetClassAlias(spec->GetAlias().c_str());
+        relatedClassInfo.SetRelationshipAlias(Utf8PrintfString("rel_%s_%s_%d", relationshipClass->GetSchema().GetAlias().c_str(), relationshipClass->GetName().c_str(), relationshipUsedCount[relationshipClass->GetRelationshipClassCP()]++).c_str());
+        relatedClassInfo.SetIsOuterJoin(!spec->IsRequired());
+        relatedClasses.push_back(relatedClassInfo);
+        aliases.insert(spec->GetAlias());
+        }
+    return relatedClasses;
+    }

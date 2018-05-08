@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/ChildNodeSpecification.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,7 +14,6 @@
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 typedef bvector<struct ChildNodeRule*>          ChildNodeRuleList;
-typedef bvector<RelatedInstanceSpecificationP>  RelatedInstanceSpecificationList;
 
 /*---------------------------------------------------------------------------------**//**
 Base class for all ChildNodeSpecifications.

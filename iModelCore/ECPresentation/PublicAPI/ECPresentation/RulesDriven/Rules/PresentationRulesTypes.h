@@ -84,5 +84,6 @@ typedef bvector<SortingRuleP>                       SortingRuleList;
 typedef bvector<ContentModifierP>                   ContentModifierList;
 typedef bvector<InstanceLabelOverrideP>             InstanceLabelOverrideList;
 typedef bvector<PropertyEditorParametersSpecificationP> PropertyEditorParametersList;
+typedef bvector<RelatedInstanceSpecificationP>      RelatedInstanceSpecificationList;
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE
