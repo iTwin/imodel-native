@@ -176,8 +176,8 @@ public:
         ECOBJECTS_EXPORT Utf8CP GetChangeName() const;
         OpCode GetOpCode() const { return m_opCode; }
         ECChange const* GetParent() const { return m_parent; }
-        //! IsChanged is always true if ECChange::GetChangeType is ChangeType::New or ChangeType::Deleted.
-        //! If ECChange::GetChangeType is ChangeType::Modified, IsChanged returns true if old and new value differ from each other
+        //! IsChanged is always true if ECChange::GetOpCode is OpCode::New or OpCode::Deleted.
+        //! If ECChange::GetOpCode is OpCode::Modified, IsChanged returns true if old and new value differ from each other
         bool IsChanged() const { return m_opCode != OpCode::Modified || _IsChanged(); }
         void WriteToString(Utf8StringR str, int initIndex = 0, int indentSize = 4) const { _WriteToString(str, initIndex, indentSize); }
         Utf8String ToString() const { Utf8String str;  WriteToString(str); return str; }
