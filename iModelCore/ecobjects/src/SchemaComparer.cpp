@@ -26,6 +26,444 @@ struct CompareIUtf8Ascii
     bool operator()(Utf8StringCP s1, Utf8StringCP s2) const { BeAssert(s1 != nullptr && s2 != nullptr); return BeStringUtilities::StricmpAscii(s1->c_str(), s2->c_str()) < 0; }
     };
 
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      05/2018
+//+===============+===============+===============+===============+===============+======
+struct SchemaProxy final
+    {
+    private:
+        ECN::ECSchemaCP m_schema = nullptr;
+
+    public:
+        explicit SchemaProxy(ECN::ECSchemaCP schema) : m_schema(schema) {}
+
+        Nullable<Utf8String> Name() const { return m_schema != nullptr ? m_schema->GetName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> DisplayLabel() const { return m_schema != nullptr && m_schema->GetIsDisplayLabelDefined() ? m_schema->GetInvariantDisplayLabel() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Description() const { return m_schema != nullptr ? m_schema->GetInvariantDescription() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Alias() const { return m_schema != nullptr ? m_schema->GetAlias() : Nullable<Utf8String>(); }
+        Nullable<uint32_t> VersionRead() const { return m_schema != nullptr ? m_schema->GetVersionRead() : Nullable<uint32_t>(); }
+        Nullable<uint32_t> VersionMinor() const { return m_schema != nullptr ? m_schema->GetVersionMinor() : Nullable<uint32_t>(); }
+        Nullable<uint32_t> VersionWrite() const { return m_schema != nullptr ? m_schema->GetVersionWrite() : Nullable<uint32_t>(); }
+        Nullable<uint32_t> ECVersion() const { return m_schema != nullptr ? (uint32_t) m_schema->GetECVersion() : Nullable<uint32_t>(); }
+        Nullable<uint32_t> OriginalECXmlVersionMajor() const { return m_schema != nullptr ? m_schema->GetOriginalECXmlVersionMajor() : Nullable<uint32_t>(); }
+        Nullable<uint32_t> OriginalECXmlVersionMinor() const { return m_schema != nullptr ? m_schema->GetOriginalECXmlVersionMinor() : Nullable<uint32_t>(); }
+
+        ECN::ECSchemaReferenceList const* References() const { return m_schema != nullptr ? &m_schema->GetReferencedSchemas() : nullptr; }
+        ECN::ECClassContainerCP Classes() const { return m_schema != nullptr ? &m_schema->GetClasses() : nullptr; }
+        ECN::ECEnumerationContainerCP Enumerations() const { return m_schema != nullptr ? &m_schema->GetEnumerations() : nullptr; }
+        ECN::PropertyCategoryContainerCP PropertyCategories() const { return m_schema != nullptr ? &m_schema->GetPropertyCategories() : nullptr; }
+        ECN::KindOfQuantityContainerCP KindOfQuantities() const { return m_schema != nullptr ? &m_schema->GetKindOfQuantities() : nullptr; }
+        ECN::PhenomenonContainerCP Phenomena() const { return m_schema != nullptr ? &m_schema->GetPhenomena() : nullptr; }
+        ECN::UnitSystemContainerCP UnitSystems() const { return m_schema != nullptr ? &m_schema->GetUnitSystems() : nullptr; }
+        ECN::UnitContainerCP Units() const { return m_schema != nullptr ? &m_schema->GetUnits() : nullptr; }
+        ECN::FormatContainerCP Formats() const { return m_schema != nullptr ? &m_schema->GetFormats() : nullptr; }
+        bvector<ECN::IECInstancePtr> CustomAttributes() const 
+            { 
+            bvector<ECN::IECInstancePtr> cas;
+            if (m_schema == nullptr)
+                return cas;
+
+            for (ECN::IECInstancePtr const& ca : m_schema->GetCustomAttributes(false))
+                {
+                cas.push_back(ca);
+                }
+
+            return cas;
+            }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      05/2018
+//+===============+===============+===============+===============+===============+======
+struct ClassProxy final
+    {
+    private:
+        ECN::ECClassCP m_class = nullptr;
+
+        bool IsRelationship() const { return m_class != nullptr && m_class->IsRelationshipClass(); }
+    public:
+        explicit ClassProxy(ECN::ECClassCP ecClass) : m_class(ecClass) {}
+
+        Nullable<Utf8String> Name() const { return m_class != nullptr ? m_class->GetName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> DisplayLabel() const { return m_class != nullptr && m_class->GetIsDisplayLabelDefined() ? m_class->GetInvariantDisplayLabel() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Description() const { return m_class != nullptr ? m_class->GetInvariantDescription() : Nullable<Utf8String>(); }
+        Nullable<ECN::ECClassType> ClassType() const { return m_class != nullptr ? m_class->GetClassType() : Nullable<ECN::ECClassType>(); }
+        Nullable<ECN::ECClassModifier> ClassModifier() const { return m_class != nullptr ? m_class->GetClassModifier() : Nullable<ECN::ECClassModifier>(); }
+        Nullable<ECN::StrengthType> RelationStrength() const { return IsRelationship() ? m_class->GetRelationshipClassCP()->GetStrength() : Nullable<ECN::StrengthType>(); }
+        Nullable<ECN::ECRelatedInstanceDirection> RelationStrengthDirection() const { return IsRelationship() ? m_class->GetRelationshipClassCP()->GetStrengthDirection() : Nullable<ECN::ECRelatedInstanceDirection>(); }
+        ECN::ECRelationshipConstraint const* RelationSource() const { return IsRelationship() ? &m_class->GetRelationshipClassCP()->GetSource() : nullptr; }
+        ECN::ECRelationshipConstraint const* RelationTarget() const { return IsRelationship() ? &m_class->GetRelationshipClassCP()->GetTarget() : nullptr; }
+
+        ECN::ECBaseClassesList const* BaseClasses() const { return m_class != nullptr ? &m_class->GetBaseClasses() : nullptr; }
+        bvector<ECN::ECPropertyCP> Properties() const 
+            { 
+            bvector<ECN::ECPropertyCP> props;
+            if (m_class == nullptr)
+                return props;
+
+            for (ECN::ECPropertyCP prop : m_class->GetProperties(false))
+                {
+                props.push_back(prop);
+                }
+
+            return props;
+            }
+
+        bvector<ECN::IECInstancePtr> CustomAttributes() const
+            {
+            bvector<ECN::IECInstancePtr> cas;
+            if (m_class == nullptr)
+                return cas;
+
+            for (ECN::IECInstancePtr const& ca : m_class->GetCustomAttributes(false))
+                {
+                cas.push_back(ca);
+                }
+
+            return cas;
+            }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      05/2018
+//+===============+===============+===============+===============+===============+======
+struct RelationshipConstraintProxy final
+    {
+    private:
+        ECN::ECRelationshipConstraintCP m_constraint = nullptr;
+    public:
+        explicit RelationshipConstraintProxy(ECN::ECRelationshipConstraintCP constraint) : m_constraint(constraint) {}
+
+        Nullable<Utf8String> RoleLabel() const { return m_constraint != nullptr ? m_constraint->GetRoleLabel() : Nullable<Utf8String>(); }
+        Nullable<bool> IsPolymorphic() const { return m_constraint != nullptr ? m_constraint->GetIsPolymorphic() : Nullable<bool>(); }
+        Nullable<Utf8String> Multiplicity() const { return m_constraint != nullptr ? m_constraint->GetMultiplicity().ToString() : Nullable<Utf8String>(); }
+
+        ECN::ECRelationshipConstraintClassList const* ConstraintClasses() const { return m_constraint != nullptr ? &m_constraint->GetConstraintClasses() : nullptr; }
+        bvector<ECN::IECInstancePtr> CustomAttributes() const
+            {
+            bvector<ECN::IECInstancePtr> cas;
+            if (m_constraint == nullptr)
+                return cas;
+
+            for (ECN::IECInstancePtr const& ca : m_constraint->GetCustomAttributes(false))
+                {
+                cas.push_back(ca);
+                }
+
+            return cas;
+            }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      05/2018
+//+===============+===============+===============+===============+===============+======
+struct PropertyProxy final
+    {
+    private:
+        ECN::ECPropertyCP m_prop = nullptr;
+
+    public:
+        explicit PropertyProxy(ECN::ECPropertyCP prop) : m_prop(prop) {}
+
+        Nullable<Utf8String> Name() const { return m_prop != nullptr ? m_prop->GetName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> DisplayLabel() const { return m_prop != nullptr && m_prop->GetIsDisplayLabelDefined() ? m_prop->GetInvariantDisplayLabel() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Description() const { return m_prop != nullptr ? m_prop->GetInvariantDescription() : Nullable<Utf8String>(); }
+
+        Nullable<Utf8String> TypeName() const { return m_prop != nullptr ? m_prop->GetTypeName() : Nullable<Utf8String>(); }
+
+        Nullable<bool> IsPrimitive() const { return m_prop != nullptr ? m_prop->GetIsPrimitive() : Nullable<bool>(); }
+        Nullable<bool> IsStruct() const { return m_prop != nullptr ? m_prop->GetIsStruct() : Nullable<bool>(); }
+        Nullable<bool> IsPrimitiveArray() const { return m_prop != nullptr ? m_prop->GetIsPrimitiveArray() : Nullable<bool>(); }
+        Nullable<bool> IsStructArray() const { return m_prop != nullptr ? m_prop->GetIsStructArray() : Nullable<bool>(); }
+        Nullable<bool> IsNavigation() const { return m_prop != nullptr ? m_prop->GetIsNavigation() : Nullable<bool>(); }
+
+        Nullable<bool> IsReadOnly() const { return m_prop != nullptr ? m_prop->GetIsReadOnly() : Nullable<bool>(); }
+        Nullable<int32_t> Priority() const { return m_prop != nullptr ? m_prop->GetPriority() : Nullable<int32_t>(); }
+
+        Nullable<uint32_t> MinimumLength() const { return m_prop != nullptr && m_prop->IsMinimumLengthDefined() ? m_prop->GetMinimumLength() : Nullable<uint32_t>(); }
+        Nullable<uint32_t> MaximumLength() const { return m_prop != nullptr && m_prop->IsMaximumLengthDefined() ? m_prop->GetMaximumLength() : Nullable<uint32_t>(); }
+
+        Nullable<ECN::ECValue> MinimumValue() const
+            {
+            if (m_prop == nullptr || !m_prop->IsMinimumValueDefined())
+                return Nullable<ECValue>();
+
+            ECN::ECValue v;
+            if (ECObjectsStatus::Success != m_prop->GetMinimumValue(v))
+                {
+                LOG.errorv("Could not retrieve minimum value from property '%s.%s'", m_prop->GetClass().GetFullName(), m_prop->GetName().c_str());
+                return Nullable<ECValue>();
+                }
+
+            return v;
+            }
+
+        Nullable<ECN::ECValue> MaximumValue() const
+            {
+            if (m_prop == nullptr || !m_prop->IsMaximumValueDefined())
+                return Nullable<ECValue>();
+
+            ECN::ECValue v;
+            if (ECObjectsStatus::Success != m_prop->GetMaximumValue(v))
+                {
+                LOG.errorv("Could not retrieve maximum value from property '%s.%s'", m_prop->GetClass().GetFullName(), m_prop->GetName().c_str());
+                return Nullable<ECValue>();
+                }
+
+            return v;
+            }
+
+
+        Nullable<Utf8String> KindOfQuantity() const { return m_prop != nullptr && m_prop->GetKindOfQuantity() != nullptr ? m_prop->GetKindOfQuantity()->GetFullName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Category() const { return m_prop != nullptr && m_prop->GetCategory() != nullptr ? m_prop->GetCategory()->GetFullName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Enumeration() const
+            {
+            if (m_prop == nullptr)
+                return Nullable<Utf8String>();
+
+            ECEnumerationCP ecEnum = nullptr;
+            if (m_prop->GetIsPrimitive())
+                ecEnum = m_prop->GetAsPrimitiveProperty()->GetEnumeration();
+            else if (m_prop->GetIsPrimitiveArray())
+                ecEnum = m_prop->GetAsPrimitiveArrayProperty()->GetEnumeration();
+
+            return ecEnum != nullptr ? ecEnum->GetFullName() : Nullable<Utf8String>();
+            }
+
+        Nullable<Utf8String> ExtendedTypeName() const
+            {
+            if (m_prop == nullptr || !m_prop->HasExtendedType())
+                return Nullable<Utf8String>();
+
+            if (m_prop->GetIsPrimitive())
+                return m_prop->GetAsPrimitiveProperty()->GetExtendedTypeName();
+
+            if (m_prop->GetIsPrimitiveArray())
+                return m_prop->GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
+
+            BeAssert(false && "Only primitive and primitive array properties are expected to have an extended type name");
+            return Nullable<Utf8String>();
+            }
+
+        Nullable<ECRelatedInstanceDirection> NavigationDirection() const 
+            {
+            Nullable<ECRelatedInstanceDirection> direction;
+            if (m_prop == nullptr || !m_prop->GetIsNavigation())
+                return direction;
+
+            return m_prop->GetAsNavigationProperty()->GetDirection();
+            }
+
+        Nullable<Utf8String> NavigationRelationship() const
+            {
+            Nullable<Utf8String> rel;
+            if (m_prop == nullptr || !m_prop->GetIsNavigation())
+                return rel;
+
+            ECRelationshipClassCP relClass = m_prop->GetAsNavigationProperty()->GetRelationshipClass();
+            return relClass != nullptr ? Utf8String(relClass->GetFullName()) : nullptr;
+            }
+
+        Nullable<uint32_t> ArrayMinOccurs() const { return m_prop != nullptr && m_prop->GetIsArray() ? m_prop->GetAsArrayProperty()->GetMinOccurs() : Nullable<uint32_t>(); }
+        Nullable<uint32_t> ArrayMaxOccurs() const { return m_prop != nullptr && m_prop->GetIsArray() ? m_prop->GetAsArrayProperty()->GetStoredMaxOccurs() : Nullable<uint32_t>(); }
+
+        bvector<ECN::IECInstancePtr> CustomAttributes() const
+            {
+            bvector<ECN::IECInstancePtr> cas;
+            if (m_prop == nullptr)
+                return cas;
+
+            for (ECN::IECInstancePtr const& ca : m_prop->GetCustomAttributes(false))
+                {
+                cas.push_back(ca);
+                }
+
+            return cas;
+            }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      05/2018
+//+===============+===============+===============+===============+===============+======
+struct EnumProxy final
+    {
+    private:
+        ECN::ECEnumerationCP m_enum = nullptr;
+
+    public:
+        explicit EnumProxy(ECN::ECEnumerationCP ecEnum) : m_enum(ecEnum) {}
+
+        Nullable<Utf8String> Name() const { return m_enum != nullptr ? m_enum->GetName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> DisplayLabel() const { return m_enum != nullptr && m_enum->GetIsDisplayLabelDefined() ? m_enum->GetInvariantDisplayLabel() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Description() const { return m_enum != nullptr ? m_enum->GetInvariantDescription() : Nullable<Utf8String>(); }
+
+        Nullable<bool> IsStrict() const { return m_enum != nullptr ? m_enum->GetIsStrict() : Nullable<bool>(); }
+        Nullable<Utf8String> TypeName() const { return m_enum != nullptr ? m_enum->GetTypeName() : Nullable<Utf8String>(); }
+        bvector<ECN::ECEnumeratorCP> Enumerators() const 
+            {
+            bvector<ECN::ECEnumeratorCP> ens;
+            if (m_enum == nullptr)
+                return ens;
+
+            for (ECN::ECEnumeratorCP en : m_enum->GetEnumerators())
+                {
+                ens.push_back(en);
+                }
+
+            return ens;
+            }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      05/2018
+//+===============+===============+===============+===============+===============+======
+struct EnumeratorProxy final
+    {
+    private:
+        ECN::ECEnumeratorCP m_en = nullptr;
+
+    public:
+        explicit EnumeratorProxy(ECN::ECEnumeratorCP en) : m_en(en) {}
+
+        Nullable<Utf8String> Name() const { return m_en != nullptr ? m_en->GetName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> DisplayLabel() const { return m_en != nullptr && m_en->GetIsDisplayLabelDefined() ? m_en->GetInvariantDisplayLabel() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Description() const { return m_en != nullptr ? m_en->GetInvariantDescription() : Nullable<Utf8String>(); }
+
+        Nullable<bool> IsInteger() const { return m_en != nullptr ? m_en->IsInteger() : Nullable<bool>(); }
+        Nullable<bool> IsString() const { return m_en != nullptr ? m_en->IsString() : Nullable<bool>(); }
+
+        Nullable<Utf8String> String() const { return m_en != nullptr && m_en->IsString() ? m_en->GetString() : Nullable<Utf8String>(); }
+        Nullable<int32_t> Integer() const { return m_en != nullptr && m_en->IsInteger() ? m_en->GetInteger() : Nullable<int32_t>(); }
+    };
+
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      05/2018
+//+===============+===============+===============+===============+===============+======
+struct KoqProxy final
+    {
+    private:
+        ECN::KindOfQuantityCP m_koq = nullptr;
+
+    public:
+        explicit KoqProxy(ECN::KindOfQuantityCP koq) : m_koq(koq) {}
+
+        Nullable<Utf8String> Name() const { return m_koq != nullptr ? m_koq->GetName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> DisplayLabel() const { return m_koq != nullptr && m_koq->GetIsDisplayLabelDefined() ? m_koq->GetInvariantDisplayLabel() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Description() const { return m_koq != nullptr ? m_koq->GetInvariantDescription() : Nullable<Utf8String>(); }
+
+        Nullable<double> RelativeError() const { return m_koq != nullptr ? m_koq->GetRelativeError() : Nullable<double>(); }
+        Nullable<Utf8String> PersistenceUnit() const { return m_koq != nullptr && m_koq->GetPersistenceUnit() != nullptr ? m_koq->GetPersistenceUnit()->GetFullName() : Nullable<Utf8String>(); }
+        bvector<Utf8String> PresentationFormats() const 
+            {
+            bvector<Utf8String> formats;
+            if (m_koq == nullptr || m_koq->GetPresentationFormats().empty())
+                return formats;
+
+            for (NamedFormat const& format : m_koq->GetPresentationFormats())
+                {
+                formats.push_back(format.GetQualifiedName(m_koq->GetSchema()));
+                }
+
+            return formats;
+            }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      05/2018
+//+===============+===============+===============+===============+===============+======
+struct PropertyCategoryProxy final
+    {
+    private:
+        ECN::PropertyCategoryCP m_cat = nullptr;
+
+    public:
+        explicit PropertyCategoryProxy(ECN::PropertyCategoryCP cat) : m_cat(cat) {}
+
+        Nullable<Utf8String> Name() const { return m_cat != nullptr ? m_cat->GetName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> DisplayLabel() const { return m_cat != nullptr && m_cat->GetIsDisplayLabelDefined() ? m_cat->GetInvariantDisplayLabel() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Description() const { return m_cat != nullptr ? m_cat->GetInvariantDescription() : Nullable<Utf8String>(); }
+        Nullable<uint32_t> Priority() const { return m_cat != nullptr ? m_cat->GetPriority() : Nullable<uint32_t>(); }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      05/2018
+//+===============+===============+===============+===============+===============+======
+struct UnitSystemProxy final
+    {
+    private:
+        ECN::UnitSystemCP m_us = nullptr;
+
+    public:
+        explicit UnitSystemProxy(ECN::UnitSystemCP us) : m_us(us) {}
+
+        Nullable<Utf8String> Name() const { return m_us != nullptr ? m_us->GetName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> DisplayLabel() const { return m_us != nullptr && m_us->GetIsDisplayLabelDefined() ? m_us->GetInvariantDisplayLabel() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Description() const { return m_us != nullptr && m_us->GetIsDescriptionDefined() ? m_us->GetInvariantDescription() : Nullable<Utf8String>(); }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      05/2018
+//+===============+===============+===============+===============+===============+======
+struct PhenomenonProxy final
+    {
+    private:
+        ECN::PhenomenonCP m_ph = nullptr;
+
+    public:
+        explicit PhenomenonProxy(ECN::PhenomenonCP ph) : m_ph(ph) {}
+
+        Nullable<Utf8String> Name() const { return m_ph != nullptr ? m_ph->GetName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> DisplayLabel() const { return m_ph != nullptr && m_ph->GetIsDisplayLabelDefined() ? m_ph->GetInvariantDisplayLabel() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Description() const { return m_ph != nullptr && m_ph->GetIsDescriptionDefined() ? m_ph->GetInvariantDescription() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Definition() const { return m_ph != nullptr ? m_ph->GetDefinition() : Nullable<Utf8String>(); }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      05/2018
+//+===============+===============+===============+===============+===============+======
+struct UnitProxy final
+    {
+    private:
+        ECN::ECUnitCP m_u = nullptr;
+
+    public:
+        explicit UnitProxy(ECN::ECUnitCP u) : m_u(u) {}
+
+        Nullable<Utf8String> Name() const { return m_u != nullptr ? m_u->GetName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> DisplayLabel() const { return m_u != nullptr && m_u->GetIsDisplayLabelDefined() ? m_u->GetInvariantDisplayLabel() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Description() const { return m_u != nullptr && m_u->GetIsDescriptionDefined() ? m_u->GetInvariantDescription() : Nullable<Utf8String>(); }
+
+        Nullable<bool> IsConstant() const { return m_u != nullptr ? m_u->IsConstant() : Nullable<bool>(); }
+        Nullable<Utf8String> InvertingUnit() const { return m_u != nullptr && m_u->IsInvertedUnit() ? m_u->GetInvertingUnit()->GetFullName() : Nullable<Utf8String>(); }
+
+        Nullable<Utf8String> Definition() const { return m_u != nullptr && m_u->HasDefinition() ? m_u->GetDefinition() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Phenomenon() const { return m_u != nullptr && m_u->GetPhenomenon() != nullptr ? m_u->GetPhenomenon()->GetFullName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> UnitSystem() const { return m_u != nullptr && m_u->HasUnitSystem() ? m_u->GetUnitSystem()->GetFullName() : Nullable<Utf8String>(); }
+        Nullable<double> Numerator() const { return m_u != nullptr && m_u->HasNumerator() ? m_u->GetNumerator() : Nullable<double>(); }
+        Nullable<double> Denominator() const { return m_u != nullptr && m_u->HasDenominator() ? m_u->GetDenominator() : Nullable<double>(); }
+        Nullable<double> Offset() const { return m_u != nullptr && m_u->HasOffset() ? m_u->GetOffset() : Nullable<double>(); }
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      05/2018
+//+===============+===============+===============+===============+===============+======
+struct FormatProxy final
+    {
+    private:
+        ECN::ECFormatCP m_f = nullptr;
+
+    public:
+        explicit FormatProxy(ECN::ECFormatCP f) : m_f(f) {}
+
+        Nullable<Utf8String> Name() const { return m_f != nullptr ? m_f->GetName() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> DisplayLabel() const { return m_f != nullptr && m_f->GetIsDisplayLabelDefined() ? m_f->GetInvariantDisplayLabel() : Nullable<Utf8String>(); }
+        Nullable<Utf8String> Description() const { return m_f != nullptr && m_f->GetIsDescriptionDefined() ? m_f->GetInvariantDescription() : Nullable<Utf8String>(); }
+
+        Formatting::NumericFormatSpecCP NumericSpec() const { return m_f != nullptr ? m_f->GetNumericSpec() : nullptr; }
+        Formatting::CompositeValueSpecCP CompositeSpec() const { return m_f != nullptr ? m_f->GetCompositeSpec() : nullptr; }
+    };
+
 //======================================================================================>
 //ECSchemaComparer
 //======================================================================================>
@@ -33,258 +471,181 @@ struct CompareIUtf8Ascii
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::Compare(SchemaDiff& diff, bvector<ECN::ECSchemaCP> const& lhs, bvector<ECN::ECSchemaCP> const& rhs, Options options)
+BentleyStatus SchemaComparer::Compare(SchemaDiff& diff, bvector<ECN::ECSchemaCP> const& oldSchemas, bvector<ECN::ECSchemaCP> const& newSchemas, Options options)
     {
     m_options = options;
-    std::map<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> lhsMap, rhsMap, allSchemasMap;
-    for (ECSchemaCP schema : lhs)
-        lhsMap[schema->GetName().c_str()] = schema;
+    bmap<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> oldSchemaMap, newSchemaMap;
+    bset<Utf8CP, CompareIUtf8Ascii> allSchemas;
 
-    for (ECSchemaCP schema : rhs)
-        rhsMap[schema->GetName().c_str()] = schema;
-
-    allSchemasMap.insert(lhsMap.cbegin(), lhsMap.cend());
-    allSchemasMap.insert(rhsMap.cbegin(), rhsMap.cend());
-
-    for (std::pair<Utf8CP, ECSchemaCP> const& kvPair : allSchemasMap)
+    for (ECSchemaCP schema : oldSchemas)
         {
-        Utf8CP schemaName = kvPair.first;
-        auto lhsIt = lhsMap.find(schemaName);
-        auto rhsIt = rhsMap.find(schemaName);
-
-        const bool existInLhs = lhsIt != lhsMap.end();
-        const bool existInRhs = rhsIt != rhsMap.end();
-        if (existInLhs && existInRhs)
-            {
-            RefCountedPtr<SchemaChange> schemaChange = diff.Changes().CreateElement(ChangeType::Modified, SystemId::Schema, schemaName);
-            if (SUCCESS != CompareECSchema(*schemaChange, *lhsIt->second, *rhsIt->second))
-                return ERROR;
-
-            diff.Changes().Add(schemaChange);
-            }
-        else if (existInLhs && !existInRhs)
-            {
-            RefCountedPtr<SchemaChange> schemaChange = diff.Changes().CreateElement(ChangeType::Deleted, SystemId::Schema, schemaName);
-            if (AppendECSchema(*schemaChange, *lhsIt->second) == ERROR)
-                return ERROR;
-
-            diff.Changes().Add(schemaChange);
-            }
-        else if (!existInLhs && existInRhs)
-            {
-            RefCountedPtr<SchemaChange> schemaChange = diff.Changes().CreateElement(ChangeType::New, SystemId::Schema, schemaName);
-            if (AppendECSchema(*schemaChange, *rhsIt->second) == ERROR)
-                return ERROR;
-
-            diff.Changes().Add(schemaChange);
-            }
+        Utf8CP schemaName = schema->GetName().c_str();
+        oldSchemaMap[schemaName] = schema;
+        allSchemas.insert(schemaName);
         }
 
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECSchema(SchemaChange& change, ECSchemaCR a, ECSchemaCR b)
-    {
-    change.Name().Set(a.GetName(), b.GetName());
-
-    {
-    Nullable<Utf8String> oldLabel;
-    if (a.GetIsDisplayLabelDefined())
-        oldLabel = a.GetInvariantDisplayLabel();
-
-    Nullable<Utf8String> newLabel;
-    if (b.GetIsDisplayLabelDefined())
-        newLabel = b.GetInvariantDisplayLabel();
-
-    change.DisplayLabel().Set(oldLabel, newLabel);
-    }
-
-    change.Description().Set(a.GetInvariantDescription(), b.GetInvariantDescription());
-    change.Alias().Set(a.GetAlias(), b.GetAlias());
-    change.VersionRead().Set(a.GetVersionRead(), b.GetVersionRead());
-    change.VersionMinor().Set(a.GetVersionMinor(), b.GetVersionMinor());
-    change.VersionWrite().Set(a.GetVersionWrite(), b.GetVersionWrite());
-    change.ECVersion().Set((uint32_t) a.GetECVersion(), (uint32_t) b.GetECVersion());
-    change.OriginalECXmlVersionMajor().Set(a.GetOriginalECXmlVersionMajor(), b.GetOriginalECXmlVersionMajor());
-    change.OriginalECXmlVersionMinor().Set(a.GetOriginalECXmlVersionMinor(), b.GetOriginalECXmlVersionMinor());
-
-    if (CompareECClasses(change.Classes(), a.GetClasses(), b.GetClasses()) != SUCCESS)
-        return ERROR;
-
-    if (CompareECEnumerations(change.Enumerations(), a.GetEnumerations(), b.GetEnumerations()) != SUCCESS)
-        return ERROR;
-
-    if (CompareKindOfQuantities(change.KindOfQuantities(), a.GetKindOfQuantities(), b.GetKindOfQuantities()) != SUCCESS)
-        return ERROR;
-
-    if (ComparePropertyCategories(change.PropertyCategories(), a.GetPropertyCategories(), b.GetPropertyCategories()) != SUCCESS)
-        return ERROR;
-
-    if (ComparePhenomena(change.Phenomena(), a.GetPhenomena(), b.GetPhenomena()) != SUCCESS)
-        return ERROR;
-
-    if (CompareUnitSystems(change.UnitSystems(), a.GetUnitSystems(), b.GetUnitSystems()) != SUCCESS)
-        return ERROR;
-
-    if (CompareUnits(change.Units(), a.GetUnits(), b.GetUnits()) != SUCCESS)
-        return ERROR;
-
-    if (SUCCESS != CompareFormats(change.Formats(), a.GetFormats(), b.GetFormats()))
-        return ERROR;
-
-    if (CompareReferences(change.References(), a.GetReferencedSchemas(), b.GetReferencedSchemas()) != SUCCESS)
-        return ERROR;
-
-    return CompareCustomAttributes(change.CustomAttributes(), a, b);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECClass(ClassChange& change, ECClassCR oldVal, ECClassCR newVal)
-    {
-    change.Name().Set(oldVal.GetName(), newVal.GetName());
-
-    {
-    Nullable<Utf8String> oldLabel;
-    if (oldVal.GetIsDisplayLabelDefined())
-        oldLabel = oldVal.GetInvariantDisplayLabel();
-
-    Nullable<Utf8String> newLabel;
-    if (newVal.GetIsDisplayLabelDefined())
-        newLabel = newVal.GetInvariantDisplayLabel();
-
-    change.DisplayLabel().Set(oldLabel, newLabel);
-    }
-
-    change.Description().Set(oldVal.GetInvariantDescription(), newVal.GetInvariantDescription());
-    change.ClassModifier().Set(oldVal.GetClassModifier(), newVal.GetClassModifier());
-    change.ClassType().Set(oldVal.GetClassType(), newVal.GetClassType());
-
-    if (oldVal.IsRelationshipClass() != newVal.IsRelationshipClass())
+    for (ECSchemaCP schema : newSchemas)
         {
-        if (oldVal.IsRelationshipClass())
+        Utf8CP schemaName = schema->GetName().c_str();
+        newSchemaMap[schemaName] = schema;
+        allSchemas.insert(schemaName);
+        }
+
+
+    for (Utf8CP schemaName : allSchemas)
+        {
+        auto oldIt = oldSchemaMap.find(schemaName);
+        auto newIt = newSchemaMap.find(schemaName);
+
+        const bool existInOld = oldIt != oldSchemaMap.end();
+        const bool existInNew = newIt != newSchemaMap.end();
+
+        ECChange::ECChange::OpCode opCode;
+        ECSchemaCP oldSchema = nullptr;
+        ECSchemaCP newSchema = nullptr;
+        if (existInOld && existInNew)
             {
-            if (AppendECRelationshipClass(change, *oldVal.GetRelationshipClassCP()) != SUCCESS)
-                return ERROR;
+            opCode = ECChange::ECChange::OpCode::Modified;
+            oldSchema = oldIt->second;
+            newSchema = newIt->second;
             }
-        else if (newVal.IsRelationshipClass())
+        else if (existInOld && !existInNew)
             {
-            if (AppendECRelationshipClass(change, *newVal.GetRelationshipClassCP()) != SUCCESS)
-                return ERROR;
-            }
-        }
-    else
-        {
-        if (oldVal.IsRelationshipClass() && newVal.IsRelationshipClass())
-            if (CompareECRelationshipClass(change, *oldVal.GetRelationshipClassCP(), *newVal.GetRelationshipClassCP()) != SUCCESS)
-                return ERROR;
-        }
-
-    if (CompareECBaseClasses(change.BaseClasses(), oldVal.GetBaseClasses(), newVal.GetBaseClasses()) != SUCCESS)
-        return ERROR;
-
-    if (CompareECProperties(change.Properties(), oldVal.GetProperties(false), newVal.GetProperties(false)) != SUCCESS)
-        return ERROR;
-
-    return CompareCustomAttributes(change.CustomAttributes(), oldVal, newVal);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b)
-    {
-    const size_t minCount = std::min(a.size(), b.size());
-    for (size_t i = 0; i < minCount; i++)
-        {
-        if (strcmp(a[i]->GetFullName(), b[i]->GetFullName()) != 0)
-            {
-            RefCountedPtr<StringChange> baseClassChange = changes.CreateElement(ChangeType::Modified, SystemId::BaseClass);
-            baseClassChange->Set(Utf8String(a[i]->GetFullName()), Utf8String(b[i]->GetFullName()));
-            changes.Add(baseClassChange);
-            }
-        }
-
-    for (size_t i = minCount; i < a.size(); i++)
-        {
-        RefCountedPtr<StringChange> baseClassChange = changes.CreateElement(ChangeType::Deleted, SystemId::BaseClass);
-        baseClassChange->Set(Utf8String(a[i]->GetFullName()));
-        changes.Add(baseClassChange);
-        }
-
-    for (size_t i = minCount; i < b.size(); i++)
-        {
-        RefCountedPtr<StringChange> baseClassChange = changes.CreateElement(ChangeType::New, SystemId::BaseClass);
-        baseClassChange->Set(Utf8String(b[i]->GetFullName()));
-        changes.Add(baseClassChange);
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECRelationshipClass(ClassChange& change, ECRelationshipClassCR a, ECRelationshipClassCR b)
-    {
-    change.Strength().Set(a.GetStrength(), b.GetStrength());
-    change.StrengthDirection().Set(a.GetStrengthDirection(), b.GetStrengthDirection());
-
-    if (CompareECRelationshipConstraint(change.Source(), a.GetSource(), b.GetSource()) != SUCCESS)
-        return ERROR;
-
-    return CompareECRelationshipConstraint(change.Target(), a.GetTarget(), b.GetTarget());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECRelationshipConstraint(RelationshipConstraintChange& change, ECRelationshipConstraintCR a, ECRelationshipConstraintCR b)
-    {
-    change.RoleLabel().Set(a.GetRoleLabel(), b.GetRoleLabel());
-    change.IsPolymorphic().Set(a.GetIsPolymorphic(), b.GetIsPolymorphic());
-    change.Multiplicity().Set(a.GetMultiplicity().ToString(), b.GetMultiplicity().ToString());
-    return CompareECRelationshipConstraintClasses(change.ConstraintClasses(), a.GetConstraintClasses(), b.GetConstraintClasses());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECRelationshipConstraintClasses(RelationshipConstraintClassChanges& change, ECRelationshipConstraintClassList const& a, ECRelationshipConstraintClassList const& b)
-    {
-    std::map<Utf8CP, ECClassCP, CompareIUtf8Ascii> aMap, bMap, cMap;
-    for (ECClassCP constraintClassCP : a)
-        aMap[constraintClassCP->GetFullName()] = constraintClassCP;
-
-    for (ECClassCP constraintClassCP : b)
-        bMap[constraintClassCP->GetFullName()] = constraintClassCP;
-
-    cMap.insert(aMap.cbegin(), aMap.cend());
-    cMap.insert(bMap.cbegin(), bMap.cend());
-
-    for (auto& u : cMap)
-        {
-        auto oldValIt = aMap.find(u.first);
-        auto newValIt = bMap.find(u.first);
-
-        bool existInOld = oldValIt != aMap.end();
-        bool existInNew = newValIt != bMap.end();
-        if (existInOld && !existInNew)
-            {
-            RefCountedPtr<StringChange> constraintClassChange = change.CreateElement(ChangeType::Deleted, SystemId::ConstraintClass);
-            constraintClassChange->Set(Utf8String(oldValIt->second->GetFullName()));
-            change.Add(constraintClassChange);
+            opCode = ECChange::ECChange::OpCode::Deleted;
+            oldSchema = oldIt->second;
             }
         else if (!existInOld && existInNew)
             {
-            RefCountedPtr<StringChange> constraintClassChange = change.CreateElement(ChangeType::New, SystemId::ConstraintClass);
-            constraintClassChange->Set(Utf8String(newValIt->second->GetFullName()));
-            change.Add(constraintClassChange);
+            opCode = ECChange::ECChange::OpCode::New;
+            newSchema = newIt->second;
             }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        RefCountedPtr<SchemaChange> schemaChange = diff.Changes().CreateElement(opCode, ECChange::Type::Schema, schemaName);
+        if (SUCCESS != CompareSchema(*schemaChange, oldSchema, newSchema))
+            return ERROR;
+
+        diff.Changes().Add(schemaChange);
+        }
+
+    return SUCCESS;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareSchema(SchemaChange& change, ECSchemaCP oldVal, ECSchemaCP newVal)
+    {
+    SchemaProxy oldSchema(oldVal);
+    SchemaProxy newSchema(newVal);
+    change.Name().Set(oldSchema.Name(), newSchema.Name());
+    change.DisplayLabel().Set(oldSchema.DisplayLabel(), newSchema.DisplayLabel());
+    change.Description().Set(oldSchema.Description(), newSchema.Description());
+    change.Alias().Set(oldSchema.Alias(), newSchema.Alias());
+    change.VersionRead().Set(oldSchema.VersionRead(), newSchema.VersionRead());
+    change.VersionMinor().Set(oldSchema.VersionMinor(), newSchema.VersionMinor());
+    change.VersionWrite().Set(oldSchema.VersionWrite(), newSchema.VersionWrite());
+    change.ECVersion().Set(oldSchema.ECVersion(), newSchema.ECVersion());
+    change.OriginalECXmlVersionMajor().Set(oldSchema.OriginalECXmlVersionMajor(), newSchema.OriginalECXmlVersionMajor());
+    change.OriginalECXmlVersionMinor().Set(oldSchema.OriginalECXmlVersionMinor(), newSchema.OriginalECXmlVersionMinor());
+
+    if (CompareClasses(change.Classes(), oldSchema.Classes(), newSchema.Classes()) != SUCCESS)
+        return ERROR;
+
+    if (CompareEnumerations(change.Enumerations(), oldSchema.Enumerations(), newSchema.Enumerations()) != SUCCESS)
+        return ERROR;
+
+    if (CompareKindOfQuantities(change.KindOfQuantities(), oldSchema.KindOfQuantities(), newSchema.KindOfQuantities()) != SUCCESS)
+        return ERROR;
+
+    if (ComparePropertyCategories(change.PropertyCategories(), oldSchema.PropertyCategories(), newSchema.PropertyCategories()) != SUCCESS)
+        return ERROR;
+
+    if (ComparePhenomena(change.Phenomena(), oldSchema.Phenomena(), newSchema.Phenomena()) != SUCCESS)
+        return ERROR;
+
+    if (CompareUnitSystems(change.UnitSystems(), oldSchema.UnitSystems(), newSchema.UnitSystems()) != SUCCESS)
+        return ERROR;
+
+    if (CompareUnits(change.Units(), oldSchema.Units(), newSchema.Units()) != SUCCESS)
+        return ERROR;
+
+    if (SUCCESS != CompareFormats(change.Formats(), oldSchema.Formats(), newSchema.Formats()))
+        return ERROR;
+
+    if (CompareReferences(change.References(), oldSchema.References(), newSchema.References()) != SUCCESS)
+        return ERROR;
+
+    return CompareCustomAttributes(change.CustomAttributes(), oldSchema.CustomAttributes(), newSchema.CustomAttributes());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes, ECSchemaReferenceList const* oldVal, ECSchemaReferenceList const* newVal)
+    {
+    bset<Utf8String, CompareIUtf8Ascii> oldReferences, newReferences, allReferences;
+    if (oldVal != nullptr)
+        {
+        for (auto const& kvPair : *oldVal)
+            {
+            Utf8String name = kvPair.second->GetFullSchemaName();
+            oldReferences.insert(name);
+            allReferences.insert(name);
+            }
+        }
+
+    if (newVal != nullptr)
+        {
+        for (auto const& kvPair : *newVal)
+            {
+            Utf8String name = kvPair.second->GetFullSchemaName();
+            newReferences.insert(name);
+            allReferences.insert(name);
+            }
+        }
+
+    for (Utf8StringCR schemaName : allReferences)
+        {
+        const bool existsInOld = oldReferences.find(schemaName) != oldReferences.end();
+        const bool existsInNew = newReferences.find(schemaName) != newReferences.end();
+
+        ECChange::ECChange::ECChange::OpCode opCode;
+        Nullable<Utf8String> oldRef;
+        Nullable<Utf8String> newRef;
+
+        if (existsInOld && existsInNew)
+            {
+            opCode = ECChange::ECChange::ECChange::OpCode::Modified;
+            oldRef = schemaName;
+            newRef = schemaName;
+            }
+        else if (existsInOld && !existsInNew)
+            {
+            opCode = ECChange::ECChange::ECChange::OpCode::Deleted;
+            oldRef = schemaName;
+            }
+        else if (!existsInOld && existsInNew)
+            {
+            opCode = ECChange::ECChange::ECChange::OpCode::New;
+            newRef = schemaName;
+            }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        RefCountedPtr<StringChange> change = changes.CreateElement(opCode, ECChange::Type::SchemaReference, schemaName.c_str());
+        if (SUCCESS != change->Set(oldRef, newRef))
+            return ERROR;
+
+        changes.Add(change);
         }
 
     return SUCCESS;
@@ -293,305 +654,406 @@ BentleyStatus SchemaComparer::CompareECRelationshipConstraintClasses(Relationshi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECProperty(PropertyChange& change, ECPropertyCR a, ECPropertyCR b)
+BentleyStatus SchemaComparer::CompareClasses(ClassChanges& changes, ECClassContainerCP oldVal, ECClassContainerCP newVal)
     {
-    change.Name().Set(a.GetName(), b.GetName());
-    change.TypeName().Set(a.GetTypeName(), b.GetTypeName());
-
-    {
-    Nullable<Utf8String> oldLabel;
-    if (a.GetIsDisplayLabelDefined())
-        oldLabel = a.GetInvariantDisplayLabel();
-
-    Nullable<Utf8String> newLabel;
-    if (b.GetIsDisplayLabelDefined())
-        newLabel = b.GetInvariantDisplayLabel();
-
-    change.DisplayLabel().Set(oldLabel, newLabel);
-    }
-
-    change.Description().Set(a.GetInvariantDescription(), b.GetInvariantDescription());
-
-    PrimitiveECPropertyCP aPrimProp = a.GetAsPrimitiveProperty();
-    PrimitiveECPropertyCP bPrimProp = b.GetAsPrimitiveProperty();
-    NavigationECPropertyCP aNavProp = a.GetAsNavigationProperty();
-    NavigationECPropertyCP bNavProp = b.GetAsNavigationProperty();
-    ArrayECPropertyCP aArrayProp = a.GetAsArrayProperty();
-    ArrayECPropertyCP bArrayProp = b.GetAsArrayProperty();
-    PrimitiveArrayECPropertyCP aPrimArrayProp = a.GetAsPrimitiveArrayProperty();
-    PrimitiveArrayECPropertyCP bPrimArrayProp = b.GetAsPrimitiveArrayProperty();
-
-    change.IsPrimitive().Set(a.GetIsPrimitive(), b.GetIsPrimitive());
-    change.IsStruct().Set(a.GetIsStruct(), b.GetIsStruct());
-    change.IsStructArray().Set(a.GetIsStructArray(), b.GetIsStructArray());
-    change.IsPrimitiveArray().Set(a.GetIsPrimitiveArray(), b.GetIsPrimitiveArray());
-    change.IsNavigation().Set(a.GetIsNavigation(), b.GetIsNavigation());
-    change.IsReadonly().Set(a.GetIsReadOnly(), b.GetIsReadOnly());
-    change.Priority().Set(a.GetPriority(), b.GetPriority());
-
-    // MinimumLength
-    {
-    Nullable<uint32_t> oldVal;
-    if (a.IsMinimumLengthDefined())
-        oldVal = a.GetMinimumLength();
-
-    Nullable<uint32_t> newVal;
-    if (b.IsMinimumLengthDefined())
-        newVal = b.GetMinimumLength();
-
-    change.MinimumLength().Set(oldVal, newVal);
-    }
-
-    // MaximumLength
-    {
-    Nullable<uint32_t> oldVal;
-    if (a.IsMaximumLengthDefined())
-        oldVal = a.GetMaximumLength();
-
-    Nullable<uint32_t> newVal;
-    if (b.IsMaximumLengthDefined())
-        newVal = b.GetMaximumLength();
-
-    change.MaximumLength().Set(oldVal, newVal);
-    }
-
-    // MinimumValue
-    {
-    Nullable<ECValue> oldVal;
-    if (a.IsMinimumValueDefined())
+    bmap<Utf8CP, ECClassCP, CompareIUtf8Ascii> oldClasses, newClasses;
+    bset<Utf8CP, CompareIUtf8Ascii> allClasses;
+    if (oldVal != nullptr)
         {
-        ECValue v;
-        if (ECObjectsStatus::Success != a.GetMinimumValue(v))
-            return ERROR;
-
-        oldVal = v;
-        }
-
-    Nullable<ECValue> newVal;
-    if (b.IsMinimumValueDefined())
-        {
-        ECValue v;
-
-        if (ECObjectsStatus::Success != a.GetMinimumValue(v))
-            return ERROR;
-
-        newVal = v;
-        }
-
-    change.MinimumValue().Set(oldVal, newVal);
-    }
-
-    // MaximumValue
-    {
-    Nullable<ECValue> oldVal;
-    if (a.IsMaximumValueDefined())
-        {
-        ECValue v;
-        if (ECObjectsStatus::Success != a.GetMaximumValue(v))
-            return ERROR;
-
-        oldVal = v;
-        }
-
-    Nullable<ECValue> newVal;
-    if (b.IsMaximumValueDefined())
-        {
-        ECValue v;
-
-        if (ECObjectsStatus::Success != a.GetMaximumValue(v))
-            return ERROR;
-
-        newVal = v;
-        }
-
-    change.MaximumValue().Set(oldVal, newVal);
-    }
-
-    // KOQ
-    {
-    KindOfQuantityCP aKoq = a.GetKindOfQuantity();
-    KindOfQuantityCP bKoq = b.GetKindOfQuantity();
-
-    Nullable<Utf8String> oldVal;
-    if (aKoq != nullptr)
-        oldVal = aKoq->GetFullName();
-
-    Nullable<Utf8String> newVal;
-    if (bKoq != nullptr)
-        newVal = bKoq->GetFullName();
-
-    change.KindOfQuantity().Set(oldVal, newVal);
-    }
-
-    // PropertyCategory
-    {
-    PropertyCategoryCP oldCat = a.GetCategory();
-    PropertyCategoryCP newCat = b.GetCategory();
-
-    Nullable<Utf8String> oldVal;
-    if (oldCat != nullptr)
-        oldVal = oldCat->GetFullName();
-
-    Nullable<Utf8String> newVal;
-    if (newCat != nullptr)
-        newVal = newCat->GetFullName();
-
-    change.Category().Set(oldVal, newVal);
-    }
-
-    //ECEnumeration
-    {
-    ECEnumerationCP oldEnum = nullptr, newEnum = nullptr;
-    if (aPrimProp != nullptr)
-        oldEnum = aPrimProp->GetEnumeration();
-    else if (aPrimArrayProp != nullptr)
-        oldEnum = aPrimArrayProp->GetEnumeration();
-
-    if (bPrimProp != nullptr)
-        newEnum = bPrimProp->GetEnumeration();
-    else if (bPrimArrayProp != nullptr)
-        newEnum = bPrimArrayProp->GetEnumeration();
-
-    Nullable<Utf8String> oldVal;
-    if (oldEnum != nullptr)
-        oldVal = oldEnum->GetFullName();
-
-    Nullable<Utf8String> newVal;
-    if (newEnum != nullptr)
-        newVal = newEnum->GetFullName();
-
-    change.Enumeration().Set(oldVal, newVal);
-    }
-
-
-    {
-    //ExtendedType
-    Nullable<Utf8String> oldVal;
-    if (a.HasExtendedType())
-        {
-        if (aPrimProp != nullptr)
-            oldVal = aPrimProp->GetExtendedTypeName();
-        else if (aPrimArrayProp != nullptr)
-            oldVal = aPrimArrayProp->GetExtendedTypeName();
-        else
+        for (ECClassCP cl : *oldVal)
             {
-            BeAssert(false && "Property type which is not expected to have an extended type name. Code needs to be adjusted");
-            return ERROR;
+            Utf8CP name = cl->GetName().c_str();
+            oldClasses[name] = cl;
+            allClasses.insert(name);
             }
         }
 
-    Nullable<Utf8String> newVal;
-    if (b.HasExtendedType())
+    if (newVal != nullptr)
         {
-        if (bPrimProp != nullptr)
-            newVal = bPrimProp->GetExtendedTypeName();
-        else if (bPrimArrayProp != nullptr)
-            newVal = bPrimArrayProp->GetExtendedTypeName();
-        else
+        for (ECClassCP cl : *newVal)
             {
-            BeAssert(false && "Property type which is not expected to have an extended type name. Code needs to be adjusted");
-            return ERROR;
+            Utf8CP name = cl->GetName().c_str();
+            newClasses[name] = cl;
+            allClasses.insert(name);
             }
         }
 
-    change.ExtendedTypeName().Set(oldVal, newVal);
+    for (Utf8CP className : allClasses)
+        {
+        auto oldIt = oldClasses.find(className);
+        auto newIt = newClasses.find(className);
+
+        const bool existsInOld = oldIt != oldClasses.end();
+        const bool existsInNew = newIt != newClasses.end();
+
+        ECChange::ECChange::OpCode opCode;
+        ECClassCP oldClass = nullptr;
+        ECClassCP newClass = nullptr;
+
+        if (existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::Modified;
+            oldClass = oldIt->second;
+            newClass = newIt->second;
+            }
+        else if (existsInOld && !existsInNew)
+            {
+            opCode = ECChange::OpCode::Deleted;
+            oldClass = oldIt->second;
+            }
+        else if (!existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::New;
+            newClass = newIt->second;
+            }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        RefCountedPtr<ClassChange> classChange = changes.CreateElement(opCode, ECChange::Type::Class, className);
+        if (SUCCESS != CompareClass(*classChange, oldClass, newClass))
+            return ERROR;
+
+        changes.Add(classChange);
+        }
+
+    return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareClass(ClassChange& change, ECClassCP oldVal, ECClassCP newVal)
     {
-    // Nav prop
-    Nullable<ECRelatedInstanceDirection> oldDirection;
-    Nullable<Utf8String> oldRel;
-    if (aNavProp != nullptr)
-        {
-        oldDirection = aNavProp->GetDirection();
-        if (aNavProp->GetRelationshipClass() != nullptr)
-            oldRel = aNavProp->GetRelationshipClass()->GetFullName();
-        }
+    ClassProxy oldClass(oldVal);
+    ClassProxy newClass(newVal);
 
-    Nullable<ECRelatedInstanceDirection> newDirection;
-    Nullable<Utf8String> newRel;
-    if (bNavProp != nullptr)
-        {
-        newDirection = bNavProp->GetDirection();
-        if (bNavProp->GetRelationshipClass() != nullptr)
-            newRel = bNavProp->GetRelationshipClass()->GetFullName();
-        }
+    change.Name().Set(oldClass.Name(), newClass.Name());
+    change.DisplayLabel().Set(oldClass.DisplayLabel(), newClass.DisplayLabel());
+    change.Description().Set(oldClass.Description(), newClass.Description());
+    change.ClassType().Set(oldClass.ClassType(), newClass.ClassType());
+    change.ClassModifier().Set(oldClass.ClassModifier(), newClass.ClassModifier());
+    change.Strength().Set(oldClass.RelationStrength(), newClass.RelationStrength());
+    change.StrengthDirection().Set(oldClass.RelationStrengthDirection(), newClass.RelationStrengthDirection());
 
-    change.Navigation().Direction().Set(oldDirection, newDirection);
-    change.Navigation().Relationship().Set(oldRel, newRel);
+    if (CompareRelationshipConstraint(change.Source(), oldClass.RelationSource(), newClass.RelationSource()) != SUCCESS)
+        return ERROR;
+
+    if (CompareRelationshipConstraint(change.Target(), oldClass.RelationTarget(), newClass.RelationTarget()) != SUCCESS)
+        return ERROR;
+
+    if (CompareBaseClasses(change.BaseClasses(), oldClass.BaseClasses(), newClass.BaseClasses()) != SUCCESS)
+        return ERROR;
+
+    if (CompareProperties(change.Properties(), oldClass.Properties(), newClass.Properties()) != SUCCESS)
+        return ERROR;
+
+    return CompareCustomAttributes(change.CustomAttributes(), oldClass.CustomAttributes(), newClass.CustomAttributes());
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBaseClassesList const* oldList, ECBaseClassesList const* newList)
+    {
+    bset<Utf8CP, CompareIUtf8Ascii> oldBaseClasses, newBaseClasses, allBaseClasses;
+
+    if (oldList != nullptr)
+        {
+        for (ECClassCP ecClass : *oldList)
+            {
+            Utf8CP className = ecClass->GetFullName();
+            oldBaseClasses.insert(className);
+            allBaseClasses.insert(className);
+            }
+        }
+
+    if (newList != nullptr)
+        {
+        for (ECClassCP ecClass : *newList)
+            {
+            Utf8CP className = ecClass->GetFullName();
+            newBaseClasses.insert(className);
+            allBaseClasses.insert(className);
+            }
+        }
+
+    for (Utf8CP className : allBaseClasses)
+        {
+        Nullable<Utf8String> oldName;
+        if (oldBaseClasses.find(className) != oldBaseClasses.end())
+            oldName = Utf8String(className);
+
+        Nullable<Utf8String> newName;
+        if (newBaseClasses.find(className) != newBaseClasses.end())
+            newName = Utf8String(className);
+
+        RefCountedPtr<StringChange> baseClassChange;
+        if (oldName == nullptr && newName != nullptr)
+            baseClassChange = changes.CreateElement(ECChange::OpCode::New, ECChange::Type::BaseClass);
+        else if (oldName != nullptr && newName == nullptr)
+            baseClassChange = changes.CreateElement(ECChange::OpCode::Deleted, ECChange::Type::BaseClass);
+        else
+            continue; // if exists in both, no change -> continue
+
+        baseClassChange->Set(oldName, newName);
+        changes.Add(baseClassChange);
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareRelationshipConstraint(RelationshipConstraintChange& change, ECRelationshipConstraintCP oldVal, ECRelationshipConstraintCP newVal)
+    {
+    RelationshipConstraintProxy oldConstraint(oldVal);
+    RelationshipConstraintProxy newConstraint(newVal);
+
+    change.RoleLabel().Set(oldConstraint.RoleLabel(), newConstraint.RoleLabel());
+    change.IsPolymorphic().Set(oldConstraint.IsPolymorphic(), newConstraint.IsPolymorphic());
+    change.Multiplicity().Set(oldConstraint.Multiplicity(), newConstraint.Multiplicity());
+
+    if (SUCCESS != CompareRelationshipConstraintClasses(change.ConstraintClasses(), oldConstraint.ConstraintClasses(), newConstraint.ConstraintClasses()))
+        return ERROR;
+
+    return CompareCustomAttributes(change.CustomAttributes(), oldConstraint.CustomAttributes(), newConstraint.CustomAttributes());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareRelationshipConstraintClasses(RelationshipConstraintClassChanges& change, ECRelationshipConstraintClassList const* oldValue, ECRelationshipConstraintClassList const* newValue)
+    {
+    bset<Utf8CP, CompareIUtf8Ascii> oldConstraintClasses, newConstraintClasses, allConstraintClasses;
+    if (oldValue != nullptr)
+        {
+        for (ECClassCP constraintClass : *oldValue)
+            {
+            Utf8CP className = constraintClass->GetFullName();
+            oldConstraintClasses.insert(className);
+            allConstraintClasses.insert(className);
+            }
+        }
+
+    if (newValue != nullptr)
+        {
+        for (ECClassCP constraintClass : *newValue)
+            {
+            Utf8CP className = constraintClass->GetFullName();
+            newConstraintClasses.insert(className);
+            allConstraintClasses.insert(className);
+            }
+        }
+
+    for (Utf8CP constraintClassName : allConstraintClasses)
+        {
+        auto oldValIt = oldConstraintClasses.find(constraintClassName);
+        auto newValIt = newConstraintClasses.find(constraintClassName);
+
+        bool existInOld = oldValIt != oldConstraintClasses.end();
+        bool existInNew = newValIt != newConstraintClasses.end();
+        Nullable<Utf8String> oldName, newName;
+        ECChange::OpCode opCode = ECChange::OpCode::Modified;
+        if (existInOld && !existInNew)
+            {
+            opCode = ECChange::OpCode::Deleted;
+            oldName = Utf8String(constraintClassName);
+            }
+        else if (!existInOld && existInNew)
+            {
+            opCode = ECChange::OpCode::New;
+            newName = Utf8String(constraintClassName);
+            }
+        else if (existInOld && existInNew)
+            continue;
+        else
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        BeAssert(opCode != ECChange::OpCode::Modified);
+        RefCountedPtr<StringChange> constraintClassChange = change.CreateElement(opCode, ECChange::Type::ConstraintClass);
+        constraintClassChange->Set(oldName, newName);
+        change.Add(constraintClassChange);
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareProperties(PropertyChanges& changes, bvector<ECN::ECPropertyCP> const& oldVal, bvector<ECN::ECPropertyCP> const& newVal)
+    {
+    bmap<Utf8CP, ECPropertyCP, CompareIUtf8Ascii> oldProps, newProps;
+    bset<Utf8CP, CompareIUtf8Ascii> allProps;
+    for (ECPropertyCP prop : oldVal)
+        {
+        Utf8CP propName = prop->GetName().c_str();
+        oldProps[propName] = prop;
+        allProps.insert(propName);
+        }
+    for (ECPropertyCP prop : newVal)
+        {
+        Utf8CP propName = prop->GetName().c_str();
+        newProps[propName] = prop;
+        allProps.insert(propName);
+        }
+
+    for (Utf8CP propName : allProps)
+        {
+        auto oldIt = oldProps.find(propName);
+        auto newIt = newProps.find(propName);
+
+        const bool existsInOld = oldIt != oldProps.end();
+        const bool existsInNew = newIt != newProps.end();
+
+        ECChange::OpCode opCode;
+        ECPropertyCP oldProp = nullptr;
+        ECPropertyCP newProp = nullptr;
+
+        if (existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::Modified;
+            oldProp = oldIt->second;
+            newProp = newIt->second;
+            }
+        else if (existsInOld && !existsInNew)
+            {
+            opCode = ECChange::OpCode::Deleted;
+            oldProp = oldIt->second;
+            }
+        else if (!existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::New;
+            newProp = newIt->second;
+            }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        RefCountedPtr<PropertyChange> propertyChange = changes.CreateElement(opCode, ECChange::Type::Property, propName);
+        if (SUCCESS != CompareProperty(*propertyChange, oldProp, newProp))
+            return ERROR;
+
+        changes.Add(propertyChange);
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareProperty(PropertyChange& change, ECPropertyCP oldVal, ECPropertyCP newVal)
+    {
+    PropertyProxy oldProp(oldVal), newProp(newVal);
+    change.Name().Set(oldProp.Name(), newProp.Name());
+    change.TypeName().Set(oldProp.TypeName(), newProp.TypeName());
+    change.DisplayLabel().Set(oldProp.DisplayLabel(), newProp.DisplayLabel());
+    change.Description().Set(oldProp.Description(), newProp.Description());
+
+    change.IsPrimitive().Set(oldProp.IsPrimitive(), newProp.IsPrimitive());
+    change.IsStruct().Set(oldProp.IsStruct(), newProp.IsStruct());
+    change.IsStructArray().Set(oldProp.IsStructArray(), newProp.IsStructArray());
+    change.IsPrimitiveArray().Set(oldProp.IsPrimitiveArray(), newProp.IsPrimitiveArray());
+    change.IsNavigation().Set(oldProp.IsNavigation(), newProp.IsNavigation());
     
-    {
-    //Array
-    Nullable<uint32_t> oldMinOccurs;
-    Nullable<uint32_t> oldMaxOccurs;
-    if (aArrayProp != nullptr)
-        {
-        oldMinOccurs = aArrayProp->GetMinOccurs();
-        oldMaxOccurs = aArrayProp->GetStoredMaxOccurs();
-        }
+    change.IsReadonly().Set(oldProp.IsReadOnly(), newProp.IsReadOnly());
+    change.Priority().Set(oldProp.Priority(), newProp.Priority());
 
-    Nullable<uint32_t> newMinOccurs;
-    Nullable<uint32_t> newMaxOccurs;
-    if (bArrayProp != nullptr)
-        {
-        newMinOccurs = bArrayProp->GetMinOccurs();
-        newMaxOccurs = bArrayProp->GetStoredMaxOccurs();
-        }
+    change.MinimumLength().Set(oldProp.MinimumLength(), newProp.MinimumLength());
+    change.MaximumLength().Set(oldProp.MaximumLength(), newProp.MaximumLength());
+    change.MinimumValue().Set(oldProp.MinimumValue(), newProp.MinimumValue());
+    change.MaximumValue().Set(oldProp.MaximumValue(), newProp.MaximumValue());
 
-    change.Array().MinOccurs().Set(oldMinOccurs, newMinOccurs);
-    change.Array().MaxOccurs().Set(oldMaxOccurs, newMaxOccurs);
-    }
+    change.KindOfQuantity().Set(oldProp.KindOfQuantity(), newProp.KindOfQuantity());
+    change.Category().Set(oldProp.Category(), newProp.Category());
+    change.Enumeration().Set(oldProp.Enumeration(), newProp.Enumeration());
+    change.ExtendedTypeName().Set(oldProp.ExtendedTypeName(), newProp.ExtendedTypeName());
 
-    return CompareCustomAttributes(change.CustomAttributes(), a, b);
+    change.NavigationDirection().Set(oldProp.NavigationDirection(), newProp.NavigationDirection());
+    change.NavigationRelationship().Set(oldProp.NavigationRelationship(), newProp.NavigationRelationship());
+
+    change.ArrayMinOccurs().Set(oldProp.ArrayMinOccurs(), newProp.ArrayMinOccurs());
+    change.ArrayMaxOccurs().Set(oldProp.ArrayMaxOccurs(), newProp.ArrayMaxOccurs());
+
+    return CompareCustomAttributes(change.CustomAttributes(), oldProp.CustomAttributes(), newProp.CustomAttributes());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECProperties(PropertyChanges& changes, ECPropertyIterableCR a, ECPropertyIterableCR b)
+BentleyStatus SchemaComparer::CompareEnumerations(EnumerationChanges& changes, ECEnumerationContainerCP oldVal, ECEnumerationContainerCP newVal)
     {
-    std::map<Utf8CP, ECPropertyCP, CompareIUtf8Ascii> aMap, bMap, cMap;
-    for (ECPropertyCP propertyCP : a)
-        aMap[propertyCP->GetName().c_str()] = propertyCP;
-
-    for (ECPropertyCP propertyCP : b)
-        bMap[propertyCP->GetName().c_str()] = propertyCP;
-
-    cMap.insert(aMap.cbegin(), aMap.cend());
-    cMap.insert(bMap.cbegin(), bMap.cend());
-
-    for (auto& u : cMap)
+    bmap<Utf8CP, ECEnumerationCP, CompareIUtf8Ascii> oldEnums, newEnums;
+    bset<Utf8CP, CompareIUtf8Ascii> allEnums;
+    if (oldVal != nullptr)
         {
-        auto itorA = aMap.find(u.first);
-        auto itorB = bMap.find(u.first);
-
-        bool existInA = itorA != aMap.end();
-        bool existInB = itorB != bMap.end();
-        if (existInA && existInB)
+        for (ECEnumerationCP en : *oldVal)
             {
-            RefCountedPtr<PropertyChange> propertyChange = changes.CreateElement(ChangeType::Modified, SystemId::Property, u.first);
-            if (CompareECProperty(*propertyChange, *itorA->second, *itorB->second) == ERROR)
-                return ERROR;
-
-            changes.Add(propertyChange);
+            Utf8CP name = en->GetName().c_str();
+            oldEnums[name] = en;
+            allEnums.insert(name);
             }
-        else if (existInA && !existInB)
+        }
+
+    if (newVal != nullptr)
+        {
+        for (ECEnumerationCP en : *newVal)
             {
-            RefCountedPtr<PropertyChange> propertyChange = changes.CreateElement(ChangeType::Deleted, SystemId::Property, u.first);
-            if (AppendECProperty(*propertyChange, *itorA->second) == ERROR)
-                return ERROR;
-
-            changes.Add(propertyChange);
+            Utf8CP name = en->GetName().c_str();
+            newEnums[name] = en;
+            allEnums.insert(name);
             }
-        else if (!existInA && existInB)
+        }
+
+    for (Utf8CP enumName : allEnums)
+        {
+        auto oldIt = oldEnums.find(enumName);
+        auto newIt = newEnums.find(enumName);
+
+        const bool existsInOld = oldIt != oldEnums.end();
+        const bool existsInNew = newIt != newEnums.end();
+
+        ECChange::OpCode opCode;
+        ECEnumerationCP oldEnum = nullptr;
+        ECEnumerationCP newEnum = nullptr;
+
+        if (existsInOld && existsInNew)
             {
-            RefCountedPtr<PropertyChange> propertyChange = changes.CreateElement(ChangeType::New, SystemId::Property, u.first);
-            if (AppendECProperty(*propertyChange, *itorB->second) == ERROR)
-                return ERROR;
-
-            changes.Add(propertyChange);
+            opCode = ECChange::OpCode::Modified;
+            oldEnum = oldIt->second;
+            newEnum = newIt->second;
             }
+        else if (existsInOld && !existsInNew)
+            {
+            opCode = ECChange::OpCode::Deleted;
+            oldEnum = oldIt->second;
+            }
+        else if (!existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::New;
+            newEnum = newIt->second;
+            }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        RefCountedPtr<EnumerationChange> enumChange = changes.CreateElement(opCode, ECChange::Type::Enumeration, enumName);
+        if (SUCCESS != CompareEnumeration(*enumChange, oldEnum, newEnum))
+            return ERROR;
+
+        changes.Add(enumChange);
         }
 
     return SUCCESS;
@@ -600,207 +1062,302 @@ BentleyStatus SchemaComparer::CompareECProperties(PropertyChanges& changes, ECPr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECClasses(ClassChanges& changes, ECClassContainerCR a, ECClassContainerCR b)
+BentleyStatus SchemaComparer::CompareEnumeration(EnumerationChange& change, ECEnumerationCP oldVal, ECEnumerationCP newVal)
     {
-    std::map<Utf8CP, ECClassCP, CompareIUtf8Ascii> aMap, bMap, cMap;
-    for (ECClassCP classCP : a)
-        aMap[classCP->GetName().c_str()] = classCP;
+    EnumProxy oldEnum(oldVal), newEnum(newVal);
+    change.Name().Set(oldEnum.Name(), newEnum.Name());
+    change.DisplayLabel().Set(oldEnum.DisplayLabel(), newEnum.DisplayLabel());
+    change.Description().Set(oldEnum.Description(), newEnum.Description());
+    change.TypeName().Set(oldEnum.TypeName(), newEnum.TypeName());
+    change.IsStrict().Set(oldEnum.IsStrict(), newEnum.IsStrict());
+    return CompareEnumerators(change.Enumerators(), oldEnum.Enumerators(), newEnum.Enumerators());
+    }
 
-    for (ECClassCP classCP : b)
-        bMap[classCP->GetName().c_str()] = classCP;
-
-    cMap.insert(aMap.cbegin(), aMap.cend());
-    cMap.insert(bMap.cbegin(), bMap.cend());
-
-    for (auto& u : cMap)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareEnumerators(EnumeratorChanges& changes, bvector<ECN::ECEnumeratorCP> const& oldVal, bvector<ECN::ECEnumeratorCP> const& newVal)
+    {
+    bmap<Utf8CP, ECEnumeratorCP, CompareIUtf8Ascii> oldEnumerators, newEnumerators;
+    bset<Utf8CP, CompareIUtf8Ascii> allEnumerators;
+    for (ECEnumeratorCP en : oldVal)
         {
-        auto itorA = aMap.find(u.first);
-        auto itorB = bMap.find(u.first);
+        Utf8CP name = en->GetName().c_str();
+        oldEnumerators[name] = en;
+        allEnumerators.insert(name);
+        }
+    for (ECEnumeratorCP en : newVal)
+        {
+        Utf8CP name = en->GetName().c_str();
+        newEnumerators[name] = en;
+        allEnumerators.insert(name);
+        }
 
-        bool existInA = itorA != aMap.end();
-        bool existInB = itorB != bMap.end();
-        if (existInA && existInB)
+    for (Utf8CP name : allEnumerators)
+        {
+        auto oldIt = oldEnumerators.find(name);
+        auto newIt = newEnumerators.find(name);
+
+        const bool existsInOld = oldIt != oldEnumerators.end();
+        const bool existsInNew = newIt != newEnumerators.end();
+
+        ECChange::OpCode opCode;
+        ECEnumeratorCP oldEn = nullptr;
+        ECEnumeratorCP newEn = nullptr;
+
+        if (existsInOld && existsInNew)
             {
-            RefCountedPtr<ClassChange> classChange = changes.CreateElement(ChangeType::Modified, SystemId::Class, u.first);
-            if (CompareECClass(*classChange, *itorA->second, *itorB->second) == ERROR)
-                return ERROR;
-
-            changes.Add(classChange);
+            opCode = ECChange::OpCode::Modified;
+            oldEn = oldIt->second;
+            newEn = newIt->second;
             }
-        else if (existInA && !existInB)
+        else if (existsInOld && !existsInNew)
             {
-            RefCountedPtr<ClassChange> classChange = changes.CreateElement(ChangeType::Deleted, SystemId::Class, u.first);
-            if (AppendECClass(*classChange, *itorA->second) == ERROR)
-                return ERROR;
-
-            changes.Add(classChange);
+            opCode = ECChange::OpCode::Deleted;
+            oldEn = oldIt->second;
             }
-        else if (!existInA && existInB)
+        else if (!existsInOld && existsInNew)
             {
-            RefCountedPtr<ClassChange> classChange = changes.CreateElement(ChangeType::New, SystemId::Class, u.first);
-            if (AppendECClass(*classChange, *itorB->second) == ERROR)
-                return ERROR;
-
-            changes.Add(classChange);
+            opCode = ECChange::OpCode::New;
+            newEn = newIt->second;
             }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        RefCountedPtr<EnumeratorChange> change = changes.CreateElement(opCode, ECChange::Type::Enumerator, name);
+        if (SUCCESS != CompareEnumerator(*change, oldEn, newEn))
+            return ERROR;
+
+        changes.Add(change);
         }
 
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
+// @bsimethod                                                  Krischan.Eberle 05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECEnumerations(EnumerationChanges& changes, ECEnumerationContainerCR a, ECEnumerationContainerCR b)
+BentleyStatus SchemaComparer::CompareEnumerator(EnumeratorChange& change, ECEnumeratorCP oldVal, ECEnumeratorCP newVal)
     {
-    std::map<Utf8CP, ECEnumerationCP, CompareIUtf8Ascii> aMap, bMap, cMap;
-    for (ECEnumerationCP enumCP : a)
-        aMap[enumCP->GetName().c_str()] = enumCP;
-
-    for (ECEnumerationCP enumCP : b)
-        bMap[enumCP->GetName().c_str()] = enumCP;
-
-    cMap.insert(aMap.cbegin(), aMap.cend());
-    cMap.insert(bMap.cbegin(), bMap.cend());
-
-    for (auto& u : cMap)
-        {
-        auto itorA = aMap.find(u.first);
-        auto itorB = bMap.find(u.first);
-
-        bool existInA = itorA != aMap.end();
-        bool existInB = itorB != bMap.end();
-        if (existInA && existInB)
-            {
-            RefCountedPtr<EnumerationChange> enumChange = changes.CreateElement(ChangeType::Modified, SystemId::Enumeration, u.first);
-            if (CompareECEnumeration(*enumChange, *itorA->second, *itorB->second) == ERROR)
-                return ERROR;
-
-            changes.Add(enumChange);
-            }
-        else if (existInA && !existInB)
-            {
-            RefCountedPtr<EnumerationChange> enumChange = changes.CreateElement(ChangeType::Deleted, SystemId::Enumeration, u.first);
-            if (AppendECEnumeration(*enumChange, *itorA->second) == ERROR)
-                return ERROR;
-
-            changes.Add(enumChange);
-            }
-        else if (!existInA && existInB)
-            {
-            RefCountedPtr<EnumerationChange> enumChange = changes.CreateElement(ChangeType::New, SystemId::Enumeration, u.first);
-            if (AppendECEnumeration(*enumChange, *itorB->second) == ERROR)
-                return ERROR;
-
-            changes.Add(enumChange);
-            }
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareKindOfQuantities(KindOfQuantityChanges& changes, KindOfQuantityContainerCR a, KindOfQuantityContainerCR b)
-    {
-    std::map<Utf8CP, KindOfQuantityCP, CompareIUtf8Ascii> aMap, bMap, cMap;
-    for (KindOfQuantityCP enumCP : a)
-        aMap[enumCP->GetName().c_str()] = enumCP;
-
-    for (KindOfQuantityCP enumCP : b)
-        bMap[enumCP->GetName().c_str()] = enumCP;
-
-    cMap.insert(aMap.cbegin(), aMap.cend());
-    cMap.insert(bMap.cbegin(), bMap.cend());
-
-    for (auto& u : cMap)
-        {
-        auto itorA = aMap.find(u.first);
-        auto itorB = bMap.find(u.first);
-
-        bool existInA = itorA != aMap.end();
-        bool existInB = itorB != bMap.end();
-        if (existInA && existInB)
-            {
-            RefCountedPtr<KindOfQuantityChange> kindOfQuantityChange = changes.CreateElement(ChangeType::Modified, SystemId::KindOfQuantity, u.first);
-            if (CompareKindOfQuantity(*kindOfQuantityChange, *itorA->second, *itorB->second) == ERROR)
-                return ERROR;
-
-            changes.Add(kindOfQuantityChange);
-            }
-        else if (existInA && !existInB)
-            {
-            RefCountedPtr<KindOfQuantityChange> kindOfQuantityChange = changes.CreateElement(ChangeType::Deleted, SystemId::KindOfQuantity, u.first);
-            if (AppendKindOfQuantity(*kindOfQuantityChange, *itorA->second) == ERROR)
-                return ERROR;
-
-            changes.Add(kindOfQuantityChange);
-            }
-        else if (!existInA && existInB)
-            {
-            RefCountedPtr<KindOfQuantityChange> kindOfQuantityChange = changes.CreateElement(ChangeType::New, SystemId::KindOfQuantity, u.first);
-            if (AppendKindOfQuantity(*kindOfQuantityChange, *itorB->second) == ERROR)
-                return ERROR;
-
-            changes.Add(kindOfQuantityChange);
-            }
-        }
-
+    EnumeratorProxy oldEn(oldVal), newEn(newVal);
+    change.Name().Set(oldEn.Name(), newEn.Name());
+    change.DisplayLabel().Set(oldEn.DisplayLabel(), newEn.DisplayLabel());
+    change.Description().Set(oldEn.Description(), newEn.Description());
+    change.IsInteger().Set(oldEn.IsInteger(), newEn.IsInteger());
+    change.Integer().Set(oldEn.Integer(), newEn.Integer());
+    change.IsString().Set(oldEn.IsString(), newEn.IsString());
+    change.String().Set(oldEn.String(), newEn.String());
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle  06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::ComparePropertyCategories(PropertyCategoryChanges& changes, PropertyCategoryContainerCR a, PropertyCategoryContainerCR b)
+BentleyStatus SchemaComparer::ComparePropertyCategories(PropertyCategoryChanges& changes, PropertyCategoryContainerCP oldVal, PropertyCategoryContainerCP newVal)
     {
-    std::map<Utf8CP, PropertyCategoryCP, CompareIUtf8Ascii> oldMap, newMap, allMap;
-    for (PropertyCategoryCP catCP : a)
-        oldMap[catCP->GetName().c_str()] = catCP;
-
-    for (PropertyCategoryCP catCP : b)
-        newMap[catCP->GetName().c_str()] = catCP;
-
-    allMap.insert(oldMap.cbegin(), oldMap.cend());
-    allMap.insert(newMap.cbegin(), newMap.cend());
-
-    for (auto& kvPair : allMap)
+    bmap<Utf8CP, PropertyCategoryCP, CompareIUtf8Ascii> oldVals, newVals;
+    bset<Utf8CP, CompareIUtf8Ascii> allVals;
+    if (oldVal != nullptr)
         {
-        Utf8CP name = kvPair.first;
-        auto oldIt = oldMap.find(name);
-        auto newIt = newMap.find(name);
-
-        const bool existInOld = oldIt != oldMap.end();
-        const bool existInNew = newIt != newMap.end();
-        if (existInOld && existInNew)
+        for (PropertyCategoryCP cat : *oldVal)
             {
-            RefCountedPtr<PropertyCategoryChange> catChange = changes.CreateElement(ChangeType::Modified, SystemId::PropertyCategory, name);
-            if (ComparePropertyCategory(*catChange, *oldIt->second, *newIt->second) == ERROR)
-                return ERROR;
-
-            changes.Add(catChange);
-            continue;
+            Utf8CP name = cat->GetName().c_str();
+            oldVals[name] = cat;
+            allVals.insert(name);
             }
-        
-        if (existInOld && !existInNew)
+        }
+
+    if (newVal != nullptr)
+        {
+        for (PropertyCategoryCP cat : *newVal)
             {
-            RefCountedPtr<PropertyCategoryChange> catChange = changes.CreateElement(ChangeType::Deleted, SystemId::PropertyCategory, name);
-            if (AppendPropertyCategory(*catChange, *oldIt->second) == ERROR)
-                return ERROR;
-
-            changes.Add(catChange);
-            continue;
+            Utf8CP name = cat->GetName().c_str();
+            newVals[name] = cat;
+            allVals.insert(name);
             }
+        }
 
-        if (!existInOld && existInNew)
+    for (Utf8CP catName : allVals)
+        {
+        auto oldIt = oldVals.find(catName);
+        auto newIt = newVals.find(catName);
+
+        const bool existsInOld = oldIt != oldVals.end();
+        const bool existsInNew = newIt != newVals.end();
+
+        ECChange::OpCode opCode;
+        PropertyCategoryCP oldCat = nullptr;
+        PropertyCategoryCP newCat = nullptr;
+
+        if (existsInOld && existsInNew)
             {
-            RefCountedPtr<PropertyCategoryChange> catChange = changes.CreateElement(ChangeType::New, SystemId::PropertyCategory, name);
-            if (AppendPropertyCategory(*catChange, *newIt->second) == ERROR)
-                return ERROR;
-
-            changes.Add(catChange);
+            opCode = ECChange::OpCode::Modified;
+            oldCat = oldIt->second;
+            newCat = newIt->second;
             }
+        else if (existsInOld && !existsInNew)
+            {
+            opCode = ECChange::OpCode::Deleted;
+            oldCat = oldIt->second;
+            }
+        else if (!existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::New;
+            newCat = newIt->second;
+            }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        RefCountedPtr<PropertyCategoryChange> change = changes.CreateElement(opCode, ECChange::Type::PropertyCategory, catName);
+        if (SUCCESS != ComparePropertyCategory(*change, oldCat, newCat))
+            return ERROR;
+
+        changes.Add(change);
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle  06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::ComparePropertyCategory(PropertyCategoryChange& change, PropertyCategoryCP oldVal, PropertyCategoryCP newVal)
+    {
+    PropertyCategoryProxy oldCat(oldVal), newCat(newVal);
+
+    change.Name().Set(oldCat.Name(), newCat.Name());
+    change.DisplayLabel().Set(oldCat.DisplayLabel(), newCat.DisplayLabel());
+    change.Description().Set(oldCat.Description(), newCat.Description());
+    change.Priority().Set(oldCat.Priority(), newCat.Priority());
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareKindOfQuantities(KindOfQuantityChanges& changes, KindOfQuantityContainerCP oldVal, KindOfQuantityContainerCP newVal)
+    {
+    bmap<Utf8CP, KindOfQuantityCP, CompareIUtf8Ascii> oldVals, newVals;
+    bset<Utf8CP, CompareIUtf8Ascii> allVals;
+    if (oldVal != nullptr)
+        {
+        for (KindOfQuantityCP koq : *oldVal)
+            {
+            Utf8CP name = koq->GetName().c_str();
+            oldVals[name] = koq;
+            allVals.insert(name);
+            }
+        }
+
+    if (newVal != nullptr)
+        {
+        for (KindOfQuantityCP koq : *newVal)
+            {
+            Utf8CP name = koq->GetName().c_str();
+            newVals[name] = koq;
+            allVals.insert(name);
+            }
+        }
+
+    for (Utf8CP koqName : allVals)
+        {
+        auto oldIt = oldVals.find(koqName);
+        auto newIt = newVals.find(koqName);
+
+        const bool existsInOld = oldIt != oldVals.end();
+        const bool existsInNew = newIt != newVals.end();
+
+        ECChange::OpCode opCode;
+        KindOfQuantityCP oldKoq = nullptr;
+        KindOfQuantityCP newKoq = nullptr;
+
+        if (existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::Modified;
+            oldKoq = oldIt->second;
+            newKoq = newIt->second;
+            }
+        else if (existsInOld && !existsInNew)
+            {
+            opCode = ECChange::OpCode::Deleted;
+            oldKoq = oldIt->second;
+            }
+        else if (!existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::New;
+            newKoq = newIt->second;
+            }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        RefCountedPtr<KindOfQuantityChange> change = changes.CreateElement(opCode, ECChange::Type::KindOfQuantity, koqName);
+        if (SUCCESS != CompareKindOfQuantity(*change, oldKoq, newKoq))
+            return ERROR;
+
+        changes.Add(change);
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCP oldVal, KindOfQuantityCP newVal)
+    {
+    KoqProxy oldKoq(oldVal), newKoq(newVal);
+
+    change.Name().Set(oldKoq.Name(), newKoq.Name());
+    change.DisplayLabel().Set(oldKoq.DisplayLabel(), newKoq.DisplayLabel());
+    change.Description().Set(oldKoq.Description(), newKoq.Description());
+    change.RelativeError().Set(oldKoq.RelativeError(), newKoq.RelativeError());
+    change.PersistenceUnit().Set(oldKoq.PersistenceUnit(), newKoq.PersistenceUnit());
+
+    bvector<Utf8String> oldFormats = oldKoq.PresentationFormats();
+    bvector<Utf8String> newFormats = newKoq.PresentationFormats();
+    const size_t oldPresFormatCount = oldFormats.size();
+    const size_t newPresFormatCount = newFormats.size();
+    const size_t maxPresFormatCount = std::max(oldPresFormatCount, newPresFormatCount);
+    ECChangeArray<StringChange>& presFormatChanges = change.PresentationFormats();
+
+    for (size_t i = 0; i < maxPresFormatCount; i++)
+        {
+        ECChange::OpCode opCode;
+        Nullable<Utf8String> oldFormat, newFormat;
+        if (i < oldPresFormatCount && i < newPresFormatCount)
+            {
+            opCode = ECChange::OpCode::Modified;
+            oldFormat = oldFormats[i];
+            newFormat = newFormats[i];
+            }
+        else if (i >= oldPresFormatCount)
+            {
+            opCode = ECChange::OpCode::New;
+            newFormat = newFormats[i];
+            }
+        else if (i >= newPresFormatCount)
+            {
+            opCode = ECChange::OpCode::Deleted;
+            oldFormat = oldFormats[i];
+            }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        RefCountedPtr<StringChange> presFormatChange = presFormatChanges.CreateElement(opCode, ECChange::Type::KoqPresentationFormat);
+        presFormatChange->Set(oldFormat, newFormat);
+        presFormatChanges.Add(presFormatChange);
         }
 
     return SUCCESS;
@@ -809,222 +1366,412 @@ BentleyStatus SchemaComparer::ComparePropertyCategories(PropertyCategoryChanges&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::ComparePhenomena(PhenomenonChanges& changes, PhenomenonContainerCR oldValues, PhenomenonContainerCR newValues)
+BentleyStatus SchemaComparer::ComparePhenomena(PhenomenonChanges& changes, PhenomenonContainerCP oldVal, PhenomenonContainerCP newVal)
     {
-    std::map<Utf8CP, PhenomenonCP, CompareIUtf8Ascii> oldMap, newMap, allMap;
-    for (PhenomenonCP ph : oldValues)
-        oldMap[ph->GetName().c_str()] = ph;
-
-    for (PhenomenonCP ph : newValues)
-        newMap[ph->GetName().c_str()] = ph;
-
-    allMap.insert(oldMap.cbegin(), oldMap.cend());
-    allMap.insert(newMap.cbegin(), newMap.cend());
-
-    for (auto& kvPair : allMap)
+    bmap<Utf8CP, PhenomenonCP, CompareIUtf8Ascii> oldVals, newVals;
+    bset<Utf8CP, CompareIUtf8Ascii> allVals;
+    if (oldVal != nullptr)
         {
-        Utf8CP name = kvPair.first;
-        auto oldIt = oldMap.find(name);
-        auto newIt = newMap.find(name);
-
-        const bool existInOld = oldIt != oldMap.end();
-        const bool existInNew = newIt != newMap.end();
-        if (existInOld && existInNew)
+        for (PhenomenonCP ph : *oldVal)
             {
-            RefCountedPtr<PhenomenonChange> change = changes.CreateElement(ChangeType::Modified, SystemId::Phenomenon, name);
-            if (SUCCESS != ComparePhenomenon(*change, *oldIt->second, *newIt->second))
-                return ERROR;
+            Utf8CP name = ph->GetName().c_str();
+            oldVals[name] = ph;
+            allVals.insert(name);
+            }
+        }
 
-            changes.Add(change);
-            continue;
+    if (newVal != nullptr)
+        {
+        for (PhenomenonCP ph : *newVal)
+            {
+            Utf8CP name = ph->GetName().c_str();
+            newVals[name] = ph;
+            allVals.insert(name);
+            }
+        }
+
+    for (Utf8CP phName : allVals)
+        {
+        auto oldIt = oldVals.find(phName);
+        auto newIt = newVals.find(phName);
+
+        const bool existsInOld = oldIt != oldVals.end();
+        const bool existsInNew = newIt != newVals.end();
+
+        ECChange::OpCode opCode;
+        PhenomenonCP oldPh = nullptr;
+        PhenomenonCP newPh = nullptr;
+
+        if (existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::Modified;
+            oldPh = oldIt->second;
+            newPh = newIt->second;
+            }
+        else if (existsInOld && !existsInNew)
+            {
+            opCode = ECChange::OpCode::Deleted;
+            oldPh = oldIt->second;
+            }
+        else if (!existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::New;
+            newPh = newIt->second;
+            }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
             }
 
-        if (existInOld && !existInNew)
-            {
-            RefCountedPtr<PhenomenonChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::Phenomenon, name);
-            if (SUCCESS != AppendPhenomenon(*change, *oldIt->second))
-                return ERROR;
+        RefCountedPtr<PhenomenonChange> change = changes.CreateElement(opCode, ECChange::Type::Phenomenon, phName);
+        if (SUCCESS != ComparePhenomenon(*change, oldPh, newPh))
+            return ERROR;
 
-            changes.Add(change);
-            continue;
-            }
-
-        if (!existInOld && existInNew)
-            {
-            RefCountedPtr<PhenomenonChange> change = changes.CreateElement(ChangeType::New, SystemId::Phenomenon, name);
-            if (SUCCESS != AppendPhenomenon(*change, *newIt->second))
-                return ERROR;
-
-            changes.Add(change);
-            }
+        changes.Add(change);
         }
 
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::ComparePhenomenon(PhenomenonChange& change, PhenomenonCP oldVal, PhenomenonCP newVal)
+    {
+    PhenomenonProxy oldPh(oldVal), newPh(newVal);
+    change.Name().Set(oldPh.Name(), newPh.Name());
+    change.DisplayLabel().Set(oldPh.DisplayLabel(), newPh.DisplayLabel());
+    change.Description().Set(oldPh.Description(), newPh.Description());
+    change.Definition().Set(oldPh.Definition(), newPh.Definition());
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareUnitSystems(UnitSystemChanges& changes, UnitSystemContainerCR oldValues, UnitSystemContainerCR newValues)
+BentleyStatus SchemaComparer::CompareUnitSystems(UnitSystemChanges& changes, UnitSystemContainerCP oldVal, UnitSystemContainerCP newVal)
     {
-    std::map<Utf8CP, UnitSystemCP, CompareIUtf8Ascii> oldMap, newMap, allMap;
-    for (UnitSystemCP ph : oldValues)
-        oldMap[ph->GetName().c_str()] = ph;
-
-    for (UnitSystemCP ph : newValues)
-        newMap[ph->GetName().c_str()] = ph;
-
-    allMap.insert(oldMap.cbegin(), oldMap.cend());
-    allMap.insert(newMap.cbegin(), newMap.cend());
-
-    for (auto& kvPair : allMap)
+    bmap<Utf8CP, UnitSystemCP, CompareIUtf8Ascii> oldVals, newVals;
+    bset<Utf8CP, CompareIUtf8Ascii> allVals;
+    if (oldVal != nullptr)
         {
-        Utf8CP name = kvPair.first;
-        auto oldIt = oldMap.find(name);
-        auto newIt = newMap.find(name);
-
-        const bool existInOld = oldIt != oldMap.end();
-        const bool existInNew = newIt != newMap.end();
-        if (existInOld && existInNew)
+        for (UnitSystemCP us : *oldVal)
             {
-            RefCountedPtr<UnitSystemChange> change = changes.CreateElement(ChangeType::Modified, SystemId::UnitSystem, name);
-            if (SUCCESS != CompareUnitSystem(*change, *oldIt->second, *newIt->second))
-                return ERROR;
+            Utf8CP name = us->GetName().c_str();
+            oldVals[name] = us;
+            allVals.insert(name);
+            }
+        }
 
-            changes.Add(change);
-            continue;
+    if (newVal != nullptr)
+        {
+        for (UnitSystemCP us : *newVal)
+            {
+            Utf8CP name = us->GetName().c_str();
+            newVals[name] = us;
+            allVals.insert(name);
+            }
+        }
+
+    for (Utf8CP usName : allVals)
+        {
+        auto oldIt = oldVals.find(usName);
+        auto newIt = newVals.find(usName);
+
+        const bool existsInOld = oldIt != oldVals.end();
+        const bool existsInNew = newIt != newVals.end();
+
+        ECChange::OpCode opCode;
+        UnitSystemCP oldUs = nullptr;
+        UnitSystemCP newUs = nullptr;
+
+        if (existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::Modified;
+            oldUs = oldIt->second;
+            newUs = newIt->second;
+            }
+        else if (existsInOld && !existsInNew)
+            {
+            opCode = ECChange::OpCode::Deleted;
+            oldUs = oldIt->second;
+            }
+        else if (!existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::New;
+            newUs = newIt->second;
+            }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
             }
 
-        if (existInOld && !existInNew)
-            {
-            RefCountedPtr<UnitSystemChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::UnitSystem, name);
-            if (SUCCESS != AppendUnitSystem(*change, *oldIt->second))
-                return ERROR;
+        RefCountedPtr<UnitSystemChange> change = changes.CreateElement(opCode, ECChange::Type::UnitSystem, usName);
+        if (SUCCESS != CompareUnitSystem(*change, oldUs, newUs))
+            return ERROR;
 
-            changes.Add(change);
-            continue;
-            }
-
-        if (!existInOld && existInNew)
-            {
-            RefCountedPtr<UnitSystemChange> change = changes.CreateElement(ChangeType::New, SystemId::UnitSystem, name);
-            if (SUCCESS != AppendUnitSystem(*change, *newIt->second))
-                return ERROR;
-
-            changes.Add(change);
-            }
+        changes.Add(change);
         }
 
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareUnitSystem(UnitSystemChange& change, UnitSystemCP oldVal, UnitSystemCP newVal)
+    {
+    UnitSystemProxy oldUs(oldVal), newUs(newVal);
+    change.Name().Set(oldUs.Name(), newUs.Name());
+    change.DisplayLabel().Set(oldUs.DisplayLabel(), newUs.DisplayLabel());
+    change.Description().Set(oldUs.Description(), newUs.Description());
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareUnits(UnitChanges& changes, UnitContainerCR oldValues, UnitContainerCR newValues)
+BentleyStatus SchemaComparer::CompareUnits(UnitChanges& changes, UnitContainerCP oldVal, UnitContainerCP newVal)
     {
-    std::map<Utf8CP, ECUnitCP, CompareIUtf8Ascii> oldMap, newMap, allMap;
-    for (ECUnitCP ph : oldValues)
-        oldMap[ph->GetName().c_str()] = ph;
-
-    for (ECUnitCP ph : newValues)
-        newMap[ph->GetName().c_str()] = ph;
-
-    allMap.insert(oldMap.cbegin(), oldMap.cend());
-    allMap.insert(newMap.cbegin(), newMap.cend());
-
-    for (auto& kvPair : allMap)
+    bmap<Utf8CP, ECUnitCP, CompareIUtf8Ascii> oldVals, newVals;
+    bset<Utf8CP, CompareIUtf8Ascii> allVals;
+    if (oldVal != nullptr)
         {
-        Utf8CP name = kvPair.first;
-        auto oldIt = oldMap.find(name);
-        auto newIt = newMap.find(name);
-
-        const bool existInOld = oldIt != oldMap.end();
-        const bool existInNew = newIt != newMap.end();
-        if (existInOld && existInNew)
+        for (ECUnitCP u : *oldVal)
             {
-            RefCountedPtr<UnitChange> change = changes.CreateElement(ChangeType::Modified, SystemId::Unit, name);
-            if (SUCCESS != CompareUnit(*change, *oldIt->second, *newIt->second))
-                return ERROR;
+            Utf8CP name = u->GetName().c_str();
+            oldVals[name] = u;
+            allVals.insert(name);
+            }
+        }
 
-            changes.Add(change);
-            continue;
+    if (newVal != nullptr)
+        {
+        for (ECUnitCP u : *newVal)
+            {
+            Utf8CP name = u->GetName().c_str();
+            newVals[name] = u;
+            allVals.insert(name);
+            }
+        }
+
+    for (Utf8CP uName : allVals)
+        {
+        auto oldIt = oldVals.find(uName);
+        auto newIt = newVals.find(uName);
+
+        const bool existsInOld = oldIt != oldVals.end();
+        const bool existsInNew = newIt != newVals.end();
+
+        ECChange::OpCode opCode;
+        ECUnitCP oldU = nullptr;
+        ECUnitCP newU = nullptr;
+
+        if (existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::Modified;
+            oldU = oldIt->second;
+            newU = newIt->second;
+            }
+        else if (existsInOld && !existsInNew)
+            {
+            opCode = ECChange::OpCode::Deleted;
+            oldU = oldIt->second;
+            }
+        else if (!existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::New;
+            newU = newIt->second;
+            }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
             }
 
-        if (existInOld && !existInNew)
-            {
-            RefCountedPtr<UnitChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::Unit, name);
-            if (SUCCESS != AppendUnit(*change, *oldIt->second))
-                return ERROR;
+        RefCountedPtr<UnitChange> change = changes.CreateElement(opCode, ECChange::Type::Unit, uName);
+        if (SUCCESS != CompareUnit(*change, oldU, newU))
+            return ERROR;
 
-            changes.Add(change);
-            continue;
-            }
-
-        if (!existInOld && existInNew)
-            {
-            RefCountedPtr<UnitChange> change = changes.CreateElement(ChangeType::New, SystemId::Unit, name);
-            if (SUCCESS != AppendUnit(*change, *newIt->second))
-                return ERROR;
-
-            changes.Add(change);
-            }
+        changes.Add(change);
         }
 
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle  02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareUnit(UnitChange& change, ECUnitCP oldVal, ECUnitCP newVal)
+    {
+    UnitProxy oldUnit(oldVal), newUnit(newVal);
+
+    change.Name().Set(oldUnit.Name(), newUnit.Name());
+    change.DisplayLabel().Set(oldUnit.DisplayLabel(), newUnit.DisplayLabel());
+    change.Description().Set(oldUnit.Description(), newUnit.Description());
+
+    change.Phenomenon().Set(oldUnit.Phenomenon(), newUnit.Phenomenon());
+    change.UnitSystem().Set(oldUnit.UnitSystem(), newUnit.UnitSystem());
+
+    change.IsConstant().Set(oldUnit.IsConstant(), newUnit.IsConstant());
+    change.InvertingUnit().Set(oldUnit.InvertingUnit(), newUnit.InvertingUnit());
+
+    change.Definition().Set(oldUnit.Definition(), newUnit.Definition());
+    change.Numerator().Set(oldUnit.Numerator(), newUnit.Numerator());
+    change.Denominator().Set(oldUnit.Denominator(), newUnit.Denominator());
+    change.Offset().Set(oldUnit.Offset(), newUnit.Offset());
+
+    return SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Kyle.Abramowitz    04/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareFormats(FormatChanges& changes, ECN::FormatContainerCR oldValues, ECN::FormatContainerCR newValues)
+BentleyStatus SchemaComparer::CompareFormats(FormatChanges& changes, ECN::FormatContainerCP oldVal, ECN::FormatContainerCP newVal)
     {
-    std::map<Utf8CP, ECFormatCP, CompareIUtf8Ascii> oldMap, newMap, allMap;
-    for (ECFormatCP ph : oldValues)
-        oldMap[ph->GetName().c_str()] = ph;
-
-    for (ECFormatCP ph : newValues)
-        newMap[ph->GetName().c_str()] = ph;
-
-    allMap.insert(oldMap.cbegin(), oldMap.cend());
-    allMap.insert(newMap.cbegin(), newMap.cend());
-
-    for (auto& kvPair : allMap)
+    bmap<Utf8CP, ECFormatCP, CompareIUtf8Ascii> oldVals, newVals;
+    bset<Utf8CP, CompareIUtf8Ascii> allVals;
+    if (oldVal != nullptr)
         {
-        Utf8CP name = kvPair.first;
-        auto oldIt = oldMap.find(name);
-        auto newIt = newMap.find(name);
-
-        const bool existInOld = oldIt != oldMap.end();
-        const bool existInNew = newIt != newMap.end();
-        if (existInOld && existInNew)
+        for (ECFormatCP f : *oldVal)
             {
-            RefCountedPtr<FormatChange> change = changes.CreateElement(ChangeType::Modified, SystemId::Format, name);
-            if (SUCCESS != CompareFormat(*change, *oldIt->second, *newIt->second))
-                return ERROR;
+            Utf8CP name = f->GetName().c_str();
+            oldVals[name] = f;
+            allVals.insert(name);
+            }
+        }
 
-            changes.Add(change);
-            continue;
+    if (newVal != nullptr)
+        {
+        for (ECFormatCP f : *newVal)
+            {
+            Utf8CP name = f->GetName().c_str();
+            newVals[name] = f;
+            allVals.insert(name);
+            }
+        }
+
+    for (Utf8CP fName : allVals)
+        {
+        auto oldIt = oldVals.find(fName);
+        auto newIt = newVals.find(fName);
+
+        const bool existsInOld = oldIt != oldVals.end();
+        const bool existsInNew = newIt != newVals.end();
+
+        ECChange::OpCode opCode;
+        ECFormatCP oldF = nullptr;
+        ECFormatCP newF = nullptr;
+
+        if (existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::Modified;
+            oldF = oldIt->second;
+            newF = newIt->second;
+            }
+        else if (existsInOld && !existsInNew)
+            {
+            opCode = ECChange::OpCode::Deleted;
+            oldF = oldIt->second;
+            }
+        else if (!existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::New;
+            newF = newIt->second;
+            }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
             }
 
-        if (existInOld && !existInNew)
-            {
-            RefCountedPtr<FormatChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::Format, name);
-            if (SUCCESS != AppendFormat(*change, *oldIt->second))
-                return ERROR;
+        RefCountedPtr<FormatChange> change = changes.CreateElement(opCode, ECChange::Type::Format, fName);
+        if (SUCCESS != CompareFormat(*change, oldF, newF))
+            return ERROR;
 
-            changes.Add(change);
-            continue;
+        changes.Add(change);
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Kyle.Abramowitz  04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatCP oldVal, ECN::ECFormatCP newVal)
+    {
+    FormatProxy oldFormat(oldVal), newFormat(newVal);
+
+    change.Name().Set(oldFormat.Name(), newFormat.Name());
+    change.DisplayLabel().Set(oldFormat.DisplayLabel(), newFormat.DisplayLabel());
+    change.Description().Set(oldFormat.Description(), newFormat.Description());
+
+    if (SUCCESS != change.NumericSpec().SetFrom(oldFormat.NumericSpec(), newFormat.NumericSpec()))
+        return ERROR;
+
+    return change.CompositeSpec().SetFrom(oldFormat.CompositeSpec(), newFormat.CompositeSpec());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan  03/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaComparer::CompareCustomAttributes(CustomAttributeChanges& changes, bvector<ECN::IECInstancePtr> const& oldVal, bvector<ECN::IECInstancePtr> const& newVal)
+    {
+    bmap<Utf8CP, IECInstancePtr, CompareIUtf8Ascii> oldVals, newVals;
+    bset<Utf8CP, CompareIUtf8Ascii> allVals;
+    for (IECInstancePtr const& ca : oldVal)
+        {
+        Utf8CP name = ca->GetClass().GetFullName();
+        oldVals[name] = ca;
+        allVals.insert(name);
+        }
+
+    for (IECInstancePtr const& ca : newVal)
+        {
+        Utf8CP name = ca->GetClass().GetFullName();
+        newVals[name] = ca;
+        allVals.insert(name);
+        }
+
+    for (Utf8CP caName : allVals)
+        {
+        auto oldIt = oldVals.find(caName);
+        auto newIt = newVals.find(caName);
+
+        const bool existsInOld = oldIt != oldVals.end();
+        const bool existsInNew = newIt != newVals.end();
+
+        ECChange::OpCode opCode;
+        IECInstancePtr oldCA = nullptr;
+        IECInstancePtr newCA = nullptr;
+
+        if (existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::Modified;
+            oldCA = oldIt->second;
+            newCA = newIt->second;
+            }
+        else if (existsInOld && !existsInNew)
+            {
+            opCode = ECChange::OpCode::Deleted;
+            oldCA = oldIt->second;
+            }
+        else if (!existsInOld && existsInNew)
+            {
+            opCode = ECChange::OpCode::New;
+            newCA = newIt->second;
+            }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
             }
 
-        if (!existInOld && existInNew)
-            {
-            RefCountedPtr<FormatChange> change = changes.CreateElement(ChangeType::New, SystemId::Format, name);
-            if (SUCCESS != AppendFormat(*change, *newIt->second))
-                return ERROR;
+        RefCountedPtr<CustomAttributeChange> change = changes.CreateElement(opCode, ECChange::Type::CustomAttribute, caName);
+        if (SUCCESS != CompareCustomAttribute(*change, oldCA.get(), newCA.get()))
+            return ERROR;
 
-            changes.Add(change);
-            }
+        changes.Add(change);
         }
 
     return SUCCESS;
@@ -1033,65 +1780,69 @@ BentleyStatus SchemaComparer::CompareFormats(FormatChanges& changes, ECN::Format
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareCustomAttribute(CustomAttributeChange& change, IECInstanceCR a, IECInstanceCR b)
+BentleyStatus SchemaComparer::CompareCustomAttribute(CustomAttributeChange& change, IECInstanceCP oldVal, IECInstanceCP newVal)
     {
-    std::map<Utf8String, ECValue> aMap, bMap;
-    std::set<Utf8CP, CompareUtf8> cMap;
-    if (ConvertECInstanceToValueMap(aMap, a) != SUCCESS)
-        return ERROR;
-
-    if (ConvertECInstanceToValueMap(bMap, b) != SUCCESS)
-        return ERROR;
-
-    for (auto& i : aMap)
-        cMap.insert(i.first.c_str());
-
-    for (auto& i : bMap)
-        cMap.insert(i.first.c_str());
-
-    for (Utf8CP accessString : cMap)
+    bmap<Utf8String, ECValue> oldPropValues, newPropValues;
+    bset<Utf8CP, CompareUtf8> allAccessStrings;
+    if (oldVal != nullptr)
         {
-        auto oldPropValuesIt = aMap.find(accessString);
-        auto newPropValuesIt = bMap.find(accessString);
+        if (ConvertECInstanceToValueMap(oldPropValues, *oldVal) != SUCCESS)
+            return ERROR;
+        }
 
-        bool existInOld = oldPropValuesIt != aMap.end();
-        bool existInNew = newPropValuesIt != bMap.end();
+    if (newVal != nullptr)
+        {
+        if (ConvertECInstanceToValueMap(newPropValues, *newVal) != SUCCESS)
+            return ERROR;
+        }
+
+    for (bpair<Utf8String, ECValue> const& kvPair : oldPropValues)
+        {
+        allAccessStrings.insert(kvPair.first.c_str());
+        }
+
+    for (bpair<Utf8String, ECValue> const& kvPair : newPropValues)
+        {
+        allAccessStrings.insert(kvPair.first.c_str());
+        }
+
+    for (Utf8CP accessString : allAccessStrings)
+        {
+        auto oldIt = oldPropValues.find(accessString);
+        auto newIt = newPropValues.find(accessString);
+
+        bool existInOld = oldIt != oldPropValues.end();
+        bool existInNew = newIt != newPropValues.end();
+        ECChange::OpCode opCode;
+        ECValue oldValue;
+        ECValue newValue;
+
         if (existInOld && existInNew)
             {
-            RefCountedPtr<PropertyValueChange> pvChange = change.PropValues().CreateElement(ChangeType::Modified, SystemId::PropertyValue, accessString);
-            pvChange->Set(oldPropValuesIt->second, newPropValuesIt->second);
-            change.PropValues().Add(pvChange);
+            opCode = ECChange::OpCode::Modified;
+            oldValue = oldIt->second;
+            newValue = newIt->second;
             }
         else if (existInOld && !existInNew)
             {
-            RefCountedPtr<PropertyValueChange> pvChange = change.PropValues().CreateElement(ChangeType::Deleted, SystemId::PropertyValue, accessString);
-            pvChange->Set(oldPropValuesIt->second);
-            change.PropValues().Add(pvChange);
+            opCode = ECChange::OpCode::Deleted;
+            oldValue = oldIt->second;
             }
         else if (!existInOld && existInNew)
             {
-            RefCountedPtr<PropertyValueChange> pvChange = change.PropValues().CreateElement(ChangeType::New, SystemId::PropertyValue, accessString);
-            pvChange->Set(newPropValuesIt->second);
-            change.PropValues().Add(pvChange);
+            opCode = ECChange::OpCode::New;
+            newValue = newIt->second;
             }
-        }
+        else
+            {
+            BeAssert(false);
+            return ERROR;
+            }
 
-    return SUCCESS;
-    }
+        RefCountedPtr<PropertyValueChange> pvChange = change.PropValues().CreateElement(opCode, ECChange::Type::PropertyValue, accessString);
+        if (SUCCESS != pvChange->Set(oldValue, newValue))
+            return ERROR;
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendCustomAttribute(CustomAttributeChange& change, IECInstanceCR ca)
-    {
-    std::map<Utf8String, ECValue> propValueMap;
-    if (ConvertECInstanceToValueMap(propValueMap, ca) != SUCCESS)
-        return ERROR;
-
-    for (std::pair<Utf8String, ECValue> const& kvPair : propValueMap)
-        {
-        RefCountedPtr<PropertyValueChange> pvChange = change.PropValues().CreateElement(change.GetChangeType(), SystemId::PropertyValue, kvPair.first.c_str());
-        pvChange->Set(kvPair.second);
         change.PropValues().Add(pvChange);
         }
 
@@ -1101,1043 +1852,7 @@ BentleyStatus SchemaComparer::AppendCustomAttribute(CustomAttributeChange& chang
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendCustomAttributes(CustomAttributeChanges& changes, IECCustomAttributeContainerCR caContainer)
-    {
-    for (IECInstancePtr ca : caContainer.GetCustomAttributes(false))
-        {
-        //key CA instances by the CA class name (as no more than one CA per class can be on a container
-        RefCountedPtr<CustomAttributeChange> caChange = changes.CreateElement(changes.GetChangeType(), SystemId::CustomAttribute, ca->GetClass().GetFullName());
-        if (SUCCESS != AppendCustomAttribute(*caChange, *ca))
-            return ERROR;
-
-        changes.Add(caChange);
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareCustomAttributes(CustomAttributeChanges& changes, IECCustomAttributeContainerCR a, IECCustomAttributeContainerCR b)
-    {
-    std::map<Utf8CP, IECInstanceCP, CompareIUtf8Ascii> oldCAs, newCAs, cMap;
-    for (IECInstancePtr const& instancePtr : a.GetCustomAttributes(false))
-        oldCAs[instancePtr->GetClass().GetFullName()] = instancePtr.get();
-
-    for (IECInstancePtr const& instancePtr : b.GetCustomAttributes(false))
-        newCAs[instancePtr->GetClass().GetFullName()] = instancePtr.get();
-
-    cMap.insert(oldCAs.cbegin(), oldCAs.cend());
-    cMap.insert(newCAs.cbegin(), newCAs.cend());
-
-    for (auto& u : cMap)
-        {
-        auto oldCAIt= oldCAs.find(u.first);
-        auto newCAIt = newCAs.find(u.first);
-
-        bool existInOld = oldCAIt != oldCAs.end();
-        bool existInNew = newCAIt != newCAs.end();
-        if (existInOld && existInNew)
-            {
-            RefCountedPtr<CustomAttributeChange> caChange = changes.CreateElement(ChangeType::Modified, SystemId::CustomAttribute, u.first);
-            if (CompareCustomAttribute(*caChange, *oldCAIt->second, *newCAIt->second) == ERROR)
-                return ERROR;
-
-            changes.Add(caChange);
-            }
-        else if (existInOld && !existInNew)
-            {
-            RefCountedPtr<CustomAttributeChange> caChange = changes.CreateElement(ChangeType::Deleted, SystemId::CustomAttribute, u.first);
-            if (AppendCustomAttribute(*caChange, *oldCAIt->second) == ERROR)
-                return ERROR;
-
-            changes.Add(caChange);
-            }
-        else if (!existInOld && existInNew)
-            {
-            RefCountedPtr<CustomAttributeChange> caChange = changes.CreateElement(ChangeType::New, SystemId::CustomAttribute, u.first);
-            if (AppendCustomAttribute(*caChange, *newCAIt->second) == ERROR)
-                return ERROR;
-
-            changes.Add(caChange);
-            }
-        }
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECEnumeration(EnumerationChange& change, ECEnumerationCR oldVal, ECEnumerationCR newVal)
-    {
-    change.Name().Set(oldVal.GetName(), newVal.GetName());
-
-    {
-    Nullable<Utf8String> oldLabel;
-    if (oldVal.GetIsDisplayLabelDefined())
-        oldLabel = oldVal.GetInvariantDisplayLabel();
-
-    Nullable<Utf8String> newLabel;
-    if (newVal.GetIsDisplayLabelDefined())
-        newLabel = newVal.GetInvariantDisplayLabel();
-
-    change.DisplayLabel().Set(oldLabel, newLabel);
-    }
-
-    change.Description().Set(oldVal.GetInvariantDescription(), newVal.GetInvariantDescription());
-
-    change.TypeName().Set(oldVal.GetTypeName(), newVal.GetTypeName());
-    change.IsStrict().Set(oldVal.GetIsStrict(), newVal.GetIsStrict());
-
-    if (oldVal.GetType() == newVal.GetType())
-        return CompareECEnumerators(change.Enumerators(), oldVal.GetEnumerators(), newVal.GetEnumerators());
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareECEnumerators(EnumeratorChanges& changes, EnumeratorIterable const& oldValues, EnumeratorIterable const& newValues)
-    {
-    std::map<Utf8CP, ECEnumeratorCP, CompareIUtf8Ascii> oldEnumValues, newEnumValues, allEnumValues;
-    for (ECEnumeratorCP ecenum : oldValues)
-        oldEnumValues[ecenum->GetName().c_str()] = ecenum;
-
-    for (ECEnumeratorCP ecenum : newValues)
-        newEnumValues[ecenum->GetName().c_str()] = ecenum;
-
-
-    allEnumValues.insert(oldEnumValues.cbegin(), oldEnumValues.cend());
-    allEnumValues.insert(newEnumValues.cbegin(), newEnumValues.cend());
-
-    for (std::pair<Utf8CP, ECEnumeratorCP> const& kvPair : allEnumValues)
-        {
-        Utf8CP enumeratorName = kvPair.first;
-        auto oldIt = oldEnumValues.find(enumeratorName);
-        auto newIt = newEnumValues.find(enumeratorName);
-
-        bool existsInOld = oldIt != oldEnumValues.end();
-        ECEnumeratorCP oldEnumerator = existsInOld ? oldIt->second : nullptr;
-        bool existsInNew = newIt != newEnumValues.end();
-        ECEnumeratorCP newEnumerator = existsInNew ? newIt->second : nullptr;
-
-        if (existsInOld && existsInNew)
-            {
-            RefCountedPtr<EnumeratorChange> enumeratorChange = changes.CreateElement(ChangeType::Modified, SystemId::Enumerator, enumeratorName);
-            if (oldEnumerator->IsInteger())
-                enumeratorChange->Integer().Set(oldEnumerator->GetInteger(), newEnumerator->GetInteger());
-
-            if (oldIt->second->IsString())
-                enumeratorChange->String().Set(oldEnumerator->GetString(), newEnumerator->GetString());
-
-            {
-            Nullable<Utf8String> oldLabel;
-            if (oldEnumerator->GetIsDisplayLabelDefined())
-                oldLabel = oldEnumerator->GetInvariantDisplayLabel();
-
-            Nullable<Utf8String> newLabel;
-            if (newEnumerator->GetIsDisplayLabelDefined())
-                newLabel = newEnumerator->GetInvariantDisplayLabel();
-
-            enumeratorChange->DisplayLabel().Set(oldLabel, newLabel);
-            }
-
-            enumeratorChange->Description().Set(oldEnumerator->GetInvariantDescription(), newEnumerator->GetInvariantDescription());
-            changes.Add(enumeratorChange);
-
-            }
-        else if (existsInOld && !existsInNew)
-            {
-            RefCountedPtr<EnumeratorChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::Enumerator, enumeratorName);
-            change->Name().Set(oldEnumerator->GetName());
-            if (oldEnumerator->GetIsDisplayLabelDefined())
-                change->DisplayLabel().Set(oldEnumerator->GetInvariantDisplayLabel());
-
-            change->Description().Set(oldEnumerator->GetInvariantDescription());
-            if (oldEnumerator->IsInteger())
-                change->Integer().Set(oldEnumerator->GetInteger());
-            else
-                change->String().Set(oldEnumerator->GetString());
-
-            changes.Add(change);
-            }
-        else if (!existsInOld && existsInNew)
-            {
-            RefCountedPtr<EnumeratorChange> change = changes.CreateElement(ChangeType::New, SystemId::Enumerator, enumeratorName);
-            change->Name().Set(newEnumerator->GetName());
-            if (newEnumerator->GetIsDisplayLabelDefined())
-                change->DisplayLabel().Set(newEnumerator->GetInvariantDisplayLabel());
-
-            change->Description().Set(newEnumerator->GetInvariantDescription());
-            if (newEnumerator->IsInteger())
-                change->Integer().Set(newEnumerator->GetInteger());
-            else
-                change->String().Set(newEnumerator->GetString());
-
-            changes.Add(change);
-            }
-        }
-
-    return SUCCESS;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR oldVal, KindOfQuantityCR newVal)
-    {
-    change.Name().Set(oldVal.GetName(), newVal.GetName());
-
-    {
-    Nullable<Utf8String> oldLabel;
-    if (oldVal.GetIsDisplayLabelDefined())
-        oldLabel = oldVal.GetInvariantDisplayLabel();
-
-    Nullable<Utf8String> newLabel;
-    if (newVal.GetIsDisplayLabelDefined())
-        newLabel = newVal.GetInvariantDisplayLabel();
-
-    change.DisplayLabel().Set(oldLabel, newLabel);
-    }
-
-    change.Description().Set(oldVal.GetInvariantDescription(), newVal.GetInvariantDescription());
-    change.RelativeError().Set(oldVal.GetRelativeError(), newVal.GetRelativeError());
-    change.PersistenceUnit().Set(oldVal.GetPersistenceUnit()->GetFullName(), newVal.GetPersistenceUnit()->GetFullName());
-
-    std::vector<Utf8String> oldPresFormats, newPresFormats;
-    for (NamedFormat const& format : oldVal.GetPresentationFormats())
-        {
-        oldPresFormats.push_back(format.GetQualifiedName(oldVal.GetSchema()));
-        }
-
-    for (NamedFormat const& format : newVal.GetPresentationFormats())
-        {
-        newPresFormats.push_back(format.GetQualifiedName(newVal.GetSchema()));
-        }
-
-    const size_t oldPresFormatCount = oldPresFormats.size();
-    const size_t newPresFormatCount = newPresFormats.size();
-    const size_t maxPresFormatCount = std::max(oldPresFormatCount, newPresFormatCount);
-    ECChangeArray<StringChange>& presFormatChanges = change.PresentationFormats();
-
-    for (size_t i = 0; i < maxPresFormatCount; i++)
-        {
-        if (i < oldPresFormatCount && i < newPresFormatCount)
-            {
-            RefCountedPtr<StringChange> presFormatChange = presFormatChanges.CreateElement(ChangeType::Modified, SystemId::KoqPresentationFormat);
-            presFormatChange->Set(oldPresFormats[i], newPresFormats[i]);
-            presFormatChanges.Add(presFormatChange);
-            continue;
-            }
-
-        if (i >= oldPresFormatCount)
-            {
-            RefCountedPtr<StringChange> presFormatChange = presFormatChanges.CreateElement(ChangeType::New, SystemId::KoqPresentationFormat);
-            presFormatChange->Set(newPresFormats[i]);
-            presFormatChanges.Add(presFormatChange);
-            continue;
-            }
-
-        if (i >= newPresFormatCount)
-            {
-            RefCountedPtr<StringChange> presFormatChange = presFormatChanges.CreateElement(ChangeType::Deleted, SystemId::KoqPresentationFormat);
-            presFormatChange->Set(oldPresFormats[i]);
-            presFormatChanges.Add(presFormatChange);
-            }
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle  06/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::ComparePropertyCategory(PropertyCategoryChange& change, PropertyCategoryCR oldValue, PropertyCategoryCR newValue)
-    {
-    change.Name().Set(oldValue.GetName(), newValue.GetName());
-
-    {
-    Nullable<Utf8String> oldLabel;
-    if (oldValue.GetIsDisplayLabelDefined())
-        oldLabel = oldValue.GetInvariantDisplayLabel();
-
-    Nullable<Utf8String> newLabel;
-    if (newValue.GetIsDisplayLabelDefined())
-        newLabel = newValue.GetInvariantDisplayLabel();
-
-    change.DisplayLabel().Set(oldLabel, newLabel);
-    }
-
-    change.Description().Set(oldValue.GetInvariantDescription(), newValue.GetInvariantDescription());
-    change.Priority().Set(oldValue.GetPriority(), newValue.GetPriority());
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle  02/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::ComparePhenomenon(PhenomenonChange& change, PhenomenonCR oldVal, PhenomenonCR newVal)
-    {
-    change.Name().Set(oldVal.GetName(), newVal.GetName());
-
-    {
-    Nullable<Utf8String> oldLabel;
-    if (oldVal.GetIsDisplayLabelDefined())
-        oldLabel = oldVal.GetInvariantDisplayLabel();
-
-    Nullable<Utf8String> newLabel;
-    if (newVal.GetIsDisplayLabelDefined())
-        newLabel = newVal.GetInvariantDisplayLabel();
-
-    change.DisplayLabel().Set(oldLabel, newLabel);
-    }
-
-    {
-    Nullable<Utf8String> oldDesc;
-    if (oldVal.GetIsDescriptionDefined())
-        oldDesc = oldVal.GetInvariantDescription();
-
-    Nullable<Utf8String> newDesc;
-    if (newVal.GetIsDescriptionDefined())
-        newDesc = newVal.GetInvariantDescription();
-
-    change.Description().Set(oldDesc, newDesc);
-    }
-
-    change.Definition().Set(oldVal.GetDefinition(), newVal.GetDefinition());
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle  02/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareUnitSystem(UnitSystemChange& change, UnitSystemCR oldVal, UnitSystemCR newVal)
-    {
-    change.Name().Set(oldVal.GetName(), newVal.GetName());
-
-    {
-    Nullable<Utf8String> oldLabel;
-    if (oldVal.GetIsDisplayLabelDefined())
-        oldLabel = oldVal.GetInvariantDisplayLabel();
-
-    Nullable<Utf8String> newLabel;
-    if (newVal.GetIsDisplayLabelDefined())
-        newLabel = newVal.GetInvariantDisplayLabel();
-
-    change.DisplayLabel().Set(oldLabel, newLabel);
-    }
-
-    {
-    Nullable<Utf8String> oldDesc;
-    if (oldVal.GetIsDescriptionDefined())
-        oldDesc = oldVal.GetInvariantDescription();
-
-    Nullable<Utf8String> newDesc;
-    if (newVal.GetIsDescriptionDefined())
-        newDesc = newVal.GetInvariantDescription();
-
-    change.Description().Set(oldDesc, newDesc);
-    }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle  02/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareUnit(UnitChange& change, ECUnitCR oldVal, ECUnitCR newVal)
-    {
-    change.Name().Set(oldVal.GetName(), newVal.GetName());
-
-    {
-    Nullable<Utf8String> oldLabel;
-    if (oldVal.GetIsDisplayLabelDefined())
-        oldLabel = oldVal.GetInvariantDisplayLabel();
-
-    Nullable<Utf8String> newLabel;
-    if (newVal.GetIsDisplayLabelDefined())
-        newLabel = newVal.GetInvariantDisplayLabel();
-
-    change.DisplayLabel().Set(oldLabel, newLabel);
-    }
-
-    {
-    Nullable<Utf8String> oldDesc;
-    if (oldVal.GetIsDescriptionDefined())
-        oldDesc = oldVal.GetInvariantDescription();
-
-    Nullable<Utf8String> newDesc;
-    if (newVal.GetIsDescriptionDefined())
-        newDesc = newVal.GetInvariantDescription();
-
-    change.Description().Set(oldDesc, newDesc);
-    }
-
-    {
-    Nullable<Utf8String> oldDef;
-    if (oldVal.HasDefinition())
-        oldDef = oldVal.GetDefinition();
-
-    Nullable<Utf8String> newDef;
-    if (newVal.HasDefinition())
-        newDef = newVal.GetDefinition();
-
-    change.Definition().Set(oldDef, newDef);
-    }
-
-    {
-    Nullable<double> oldNum;
-    if (oldVal.HasNumerator())
-        oldNum = oldVal.GetNumerator();
-
-    Nullable<double> newNum;
-    if (newVal.HasNumerator())
-        newNum = newVal.GetNumerator();
-
-    change.Numerator().Set(oldNum, newNum);
-    }
-
-    {
-    Nullable<double> oldDen;
-    if (oldVal.HasDenominator())
-        oldDen = oldVal.GetDenominator();
-
-    Nullable<double> newDen;
-    if (newVal.HasDenominator())
-        newDen = newVal.GetDenominator();
-
-    change.Denominator().Set(oldDen, newDen);
-    }
-
-    {
-    Nullable<double> oldOff;
-    if (oldVal.HasOffset())
-        oldOff = oldVal.GetOffset();
-
-    Nullable<double> newOff;
-    if (newVal.HasOffset())
-        newOff = newVal.GetOffset();
-
-    change.Offset().Set(oldOff, newOff);
-    }
-
-    change.Phenomenon().Set(oldVal.GetPhenomenon()->GetFullName(), newVal.GetPhenomenon()->GetFullName());
-
-    {
-    Nullable<Utf8String> oldUs;
-    if (oldVal.HasUnitSystem())
-        oldUs = oldVal.GetUnitSystem()->GetFullName();
-
-    Nullable<Utf8String> newUs;
-    if (newVal.HasUnitSystem())
-        newUs = newVal.GetUnitSystem()->GetFullName();
-
-    change.UnitSystem().Set(oldUs, newUs);
-    }
-
-    change.IsConstant().Set(oldVal.IsConstant(), newVal.IsConstant());
-
-    Nullable<Utf8String> oldInvertingUnitName = oldVal.IsInvertedUnit() ? oldVal.GetInvertingUnit()->GetFullName() : nullptr;
-    Nullable<Utf8String> newInvertingUnitName = newVal.IsInvertedUnit() ? newVal.GetInvertingUnit()->GetFullName() : nullptr;
-    change.InvertingUnit().Set(oldInvertingUnitName, newInvertingUnitName);
-
-    return SUCCESS;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Kyle.Abramowitz  04/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatCR oldVal, ECN::ECFormatCR newVal)
-    {
-    change.Name().Set(oldVal.GetName(), newVal.GetName());
-
-    {
-    Nullable<Utf8String> oldLabel;
-    if (oldVal.GetIsDisplayLabelDefined())
-        oldLabel = oldVal.GetInvariantDisplayLabel();
-
-    Nullable<Utf8String> newLabel;
-    if (newVal.GetIsDisplayLabelDefined())
-        newLabel = newVal.GetInvariantDisplayLabel();
-
-    change.DisplayLabel().Set(oldLabel, newLabel);
-    }
-
-    {
-    Nullable<Utf8String> oldDesc;
-    if (oldVal.GetIsDescriptionDefined())
-        oldDesc = oldVal.GetInvariantDescription();
-
-    Nullable<Utf8String> newDesc;
-    if (newVal.GetIsDescriptionDefined())
-        newDesc = newVal.GetInvariantDescription();
-
-    change.Description().Set(oldDesc, newDesc);
-    }
-
-    {
-    Formatting::NumericFormatSpecCP oldSpec = oldVal.HasNumeric() ? oldVal.GetNumericSpec() : nullptr;
-    Formatting::NumericFormatSpecCP newSpec = newVal.HasNumeric() ? newVal.GetNumericSpec() : nullptr;
-    if (SUCCESS != change.NumericSpec().SetFrom(oldSpec, newSpec))
-        return ERROR;
-    }
-
-    {
-    Formatting::CompositeValueSpecCP oldSpec = oldVal.HasComposite() ? oldVal.GetCompositeSpec() : nullptr;
-    Formatting::CompositeValueSpecCP newSpec = newVal.HasComposite() ? newVal.GetCompositeSpec() : nullptr;
-    if (SUCCESS != change.CompositeSpec().SetFrom(oldSpec, newSpec))
-        return ERROR;
-    }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& a, ECBaseClassesList const& b)
-    {
-    bset<Utf8CP, CompareIUtf8Ascii> aMap, bMap, cMap;
-    for (ECClassCP classCP : a)
-        aMap.insert(classCP->GetFullName());
-
-    for (ECClassCP classCP : b)
-        bMap.insert(classCP->GetFullName());
-
-    cMap.insert(aMap.begin(), aMap.end());
-    cMap.insert(bMap.begin(), bMap.end());
-
-    for (Utf8CP u : cMap)
-        {
-        auto itorA = aMap.find(u);
-        auto itorB = bMap.find(u);
-
-        bool existInA = itorA != aMap.end();
-        bool existInB = itorB != bMap.end();
-        if (existInA && !existInB)
-            {
-            RefCountedPtr<StringChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::BaseClass);
-            change->Set(Utf8String(u));
-            changes.Add(change);
-            }
-        else if (!existInA && existInB)
-            {
-            RefCountedPtr<StringChange> change = changes.CreateElement(ChangeType::New, SystemId::BaseClass);
-            change->Set(Utf8String(u));
-            changes.Add(change);
-            }
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes, ECSchemaReferenceListCR a, ECSchemaReferenceListCR b)
-    {
-    bmap<Utf8CP, ECSchemaCP, CompareIUtf8Ascii> aMap, bMap, cMap;
-    for (bpair<SchemaKey, ECSchemaPtr> const& ref : a)
-        aMap[ref.first.GetName().c_str()] = ref.second.get();
-
-    for (bpair<SchemaKey, ECSchemaPtr> const& ref : b)
-        bMap[ref.first.GetName().c_str()] = ref.second.get();
-
-    cMap.insert(aMap.begin(), aMap.end());
-    cMap.insert(bMap.begin(), bMap.end());
-
-    for (bpair<Utf8CP, ECSchemaCP> const& u : cMap)
-        {
-        auto itorA = aMap.find(u.first);
-        auto itorB = bMap.find(u.first);
-
-        bool existInA = itorA != aMap.end();
-        bool existInB = itorB != bMap.end();
-        if (existInA && existInB)
-            {
-            RefCountedPtr<StringChange> change = changes.CreateElement(ChangeType::Modified, SystemId::SchemaReference);
-            change->Set(itorA->second->GetFullSchemaName(), itorB->second->GetFullSchemaName());
-            changes.Add(change);
-            }
-        else if (existInA && !existInB)
-            {
-            RefCountedPtr<StringChange> change = changes.CreateElement(ChangeType::Deleted, SystemId::SchemaReference);
-            change->Set(itorA->second->GetFullSchemaName());
-            changes.Add(change);
-            }
-        else if (!existInA && existInB)
-            {
-            RefCountedPtr<StringChange> change = changes.CreateElement(ChangeType::New, SystemId::SchemaReference);
-            change->Set(itorB->second->GetFullSchemaName());
-            changes.Add(change);
-            }
-        }
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECSchema(SchemaChange& change, ECSchemaCR schema)
-    {
-    change.Name().Set(schema.GetName());
-
-    if (schema.GetIsDisplayLabelDefined())
-        change.DisplayLabel().Set(schema.GetInvariantDisplayLabel());
-
-    change.Description().Set(schema.GetInvariantDescription());
-
-    change.Alias().Set(schema.GetAlias());
-    change.VersionRead().Set(schema.GetVersionRead());
-    change.VersionMinor().Set(schema.GetVersionMinor());
-    change.VersionWrite().Set(schema.GetVersionWrite());
-
-    change.ECVersion().Set((uint32_t) schema.GetECVersion());
-    change.OriginalECXmlVersionMajor().Set(schema.GetOriginalECXmlVersionMajor());
-    change.OriginalECXmlVersionMinor().Set(schema.GetOriginalECXmlVersionMinor());
-
-    if ((change.GetChangeType() == ChangeType::Deleted && m_options.GetDetailLevelForDeletedSchema() == DetailLevel::NoSchemaElements) ||
-        (change.GetChangeType() == ChangeType::New && m_options.GetDetailLevelForNewSchema() == DetailLevel::NoSchemaElements))
-        return SUCCESS;
-
-    for (ECClassCP classCP : schema.GetClasses())
-        {
-        RefCountedPtr<ClassChange> classChange = change.Classes().CreateElement(change.GetChangeType(), SystemId::Class, classCP->GetName().c_str());
-        if (AppendECClass(*classChange, *classCP) == ERROR)
-            return ERROR;
-
-        change.Classes().Add(classChange);
-        }
-
-    for (ECEnumerationCP enumerationCP : schema.GetEnumerations())
-        {
-        RefCountedPtr<EnumerationChange> enumChange = change.Enumerations().CreateElement(change.GetChangeType(), SystemId::Enumeration, enumerationCP->GetName().c_str());
-        if (AppendECEnumeration(*enumChange, *enumerationCP) == ERROR)
-            return ERROR;
-
-        change.Enumerations().Add(enumChange);
-        }
-
-    for (KindOfQuantityCP kindOfQuantityCP : schema.GetKindOfQuantities())
-        {
-        RefCountedPtr<KindOfQuantityChange> koqChange = change.KindOfQuantities().CreateElement(change.GetChangeType(), SystemId::KindOfQuantity, kindOfQuantityCP->GetName().c_str());
-        if (AppendKindOfQuantity(*koqChange, *kindOfQuantityCP) == ERROR)
-            return ERROR;
-
-        change.KindOfQuantities().Add(koqChange);
-        }
-
-    for (PropertyCategoryCP cat : schema.GetPropertyCategories())
-        {
-        RefCountedPtr<PropertyCategoryChange> catChange = change.PropertyCategories().CreateElement(change.GetChangeType(), SystemId::PropertyCategory, cat->GetName().c_str());
-        if (SUCCESS != AppendPropertyCategory(*catChange, *cat))
-            return ERROR;
-
-        change.PropertyCategories().Add(catChange);
-        }
-
-    for (UnitSystemCP us : schema.GetUnitSystems())
-        {
-        RefCountedPtr<UnitSystemChange> usChange = change.UnitSystems().CreateElement(change.GetChangeType(), SystemId::UnitSystem, us->GetName().c_str());
-        if (SUCCESS != AppendUnitSystem(*usChange, *us))
-            return ERROR;
-
-        change.UnitSystems().Add(usChange);
-        }
-
-    for (PhenomenonCP ph : schema.GetPhenomena())
-        {
-        RefCountedPtr<PhenomenonChange> phChange = change.Phenomena().CreateElement(change.GetChangeType(), SystemId::Phenomenon, ph->GetName().c_str());
-        if (SUCCESS != AppendPhenomenon(*phChange, *ph))
-            return ERROR;
-
-        change.Phenomena().Add(phChange);
-        }
-
-    for (ECUnitCP unit : schema.GetUnits())
-        {
-        RefCountedPtr<UnitChange> unitChange = change.Units().CreateElement(change.GetChangeType(), SystemId::Unit, unit->GetName().c_str());
-        if (SUCCESS != AppendUnit(*unitChange, *unit))
-            return ERROR;
-
-        change.Units().Add(unitChange);
-        }
-
-    for (ECFormatCP format : schema.GetFormats())
-        {
-        RefCountedPtr<FormatChange> formatChange = change.Formats().CreateElement(change.GetChangeType(), SystemId::Format, format->GetName().c_str());
-        if (SUCCESS != AppendFormat(*formatChange, *format))
-            return ERROR;
-
-        change.Formats().Add(formatChange);
-        }
-
-    if (AppendReferences(change.References(), schema.GetReferencedSchemas()) != SUCCESS)
-        return ERROR;
-
-    return AppendCustomAttributes(change.CustomAttributes(), schema);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECClass(ClassChange& change, ECClassCR v)
-    {
-    change.Name().Set(v.GetName());
-    if (v.GetIsDisplayLabelDefined())
-        change.DisplayLabel().Set(v.GetInvariantDisplayLabel());
-
-    change.Description().Set(v.GetInvariantDescription());
-    change.ClassModifier().Set(v.GetClassModifier());
-    change.ClassType().Set(v.GetClassType());
-
-    for (ECPropertyCP prop : v.GetProperties(false))
-        {
-        RefCountedPtr<PropertyChange> propertyChange = change.Properties().CreateElement(change.GetChangeType(), SystemId::Property, prop->GetName().c_str());
-        if (AppendECProperty(*propertyChange, *prop) == ERROR)
-            return ERROR;
-
-        change.Properties().Add(propertyChange);
-        }
-
-    if (v.GetRelationshipClassCP() != nullptr)
-        {
-        if (AppendECRelationshipClass(change, *v.GetRelationshipClassCP()) == ERROR)
-            return ERROR;
-        }
-
-    if (AppendBaseClasses(change.BaseClasses(), v.GetBaseClasses()) != SUCCESS)
-        return ERROR;
-
-    return AppendCustomAttributes(change.CustomAttributes(), v);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECRelationshipClass(ClassChange& change, ECRelationshipClassCR v)
-    {
-    change.StrengthDirection().Set(v.GetStrengthDirection());
-    change.Strength().Set(v.GetStrength());
-    if (AppendECRelationshipConstraint(change.Source(), v.GetSource()) == ERROR)
-        return ERROR;
-
-    if (AppendECRelationshipConstraint(change.Target(), v.GetTarget()) == ERROR)
-        return ERROR;
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECRelationshipConstraint(RelationshipConstraintChange& change, ECRelationshipConstraintCR v)
-    {
-    change.RoleLabel().Set(v.GetRoleLabel());
-    change.Multiplicity().Set(v.GetMultiplicity().ToString());
-    change.IsPolymorphic().Set(v.GetIsPolymorphic());
-    if (AppendECRelationshipConstraintClasses(change.ConstraintClasses(), v.GetConstraintClasses()) != SUCCESS)
-        return ERROR;
-
-    return AppendCustomAttributes(change.CustomAttributes(), v);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECRelationshipConstraintClasses(RelationshipConstraintClassChanges& changes, ECRelationshipConstraintClassList const& constraintClasses)
-    {
-    for (ECClassCP constraintClass : constraintClasses)
-        {
-        RefCountedPtr<StringChange> change = changes.CreateElement(changes.GetChangeType(), SystemId::ConstraintClass);
-        change->Set(Utf8String(constraintClass->GetFullName()));
-        changes.Add(change);
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECEnumeration(EnumerationChange& enumerationChange, ECEnumerationCR v)
-    {
-    if (v.GetIsDisplayLabelDefined())
-        enumerationChange.DisplayLabel().Set(v.GetInvariantDisplayLabel());
-
-    enumerationChange.Description().Set(v.GetInvariantDescription());
-    enumerationChange.IsStrict().Set(v.GetIsStrict());
-    enumerationChange.TypeName().Set(v.GetTypeName());
-    for (ECEnumeratorCP enumeratorCP : v.GetEnumerators())
-        {
-        RefCountedPtr<EnumeratorChange> enumeratorChange = enumerationChange.Enumerators().CreateElement(enumerationChange.GetChangeType(), SystemId::Enumerator, enumeratorCP->GetName().c_str());
-        enumeratorChange->Name().Set(enumeratorCP->GetName());
-
-        if (enumeratorCP->IsInteger())
-            enumeratorChange->Integer().Set(enumeratorCP->GetInteger());
-
-        if (enumeratorCP->IsString())
-            enumeratorChange->String().Set(enumeratorCP->GetString());
-
-        if (enumeratorCP->GetIsDisplayLabelDefined())
-            enumeratorChange->DisplayLabel().Set(enumeratorCP->GetInvariantDisplayLabel());
-
-        enumeratorChange->Description().Set(enumeratorCP->GetInvariantDescription());
-        enumerationChange.Enumerators().Add(enumeratorChange);
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR koq)
-    {
-    if (koq.GetIsDisplayLabelDefined())
-        change.DisplayLabel().Set(koq.GetInvariantDisplayLabel());
-
-    change.Description().Set(koq.GetInvariantDescription());
-    change.PersistenceUnit().Set(koq.GetPersistenceUnit()->GetFullName());
-    change.RelativeError().Set(koq.GetRelativeError());
-    for (NamedFormat const& format : koq.GetPresentationFormats())
-        {
-        RefCountedPtr<StringChange> presFormatChange = change.PresentationFormats().CreateElement(change.GetChangeType(), SystemId::KoqPresentationFormat);
-        presFormatChange->Set(format.GetName());
-        change.PresentationFormats().Add(presFormatChange);
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle  06/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendPropertyCategory(PropertyCategoryChange& catChange, PropertyCategoryCR cat)
-    {
-    catChange.Name().Set(cat.GetName());
-    catChange.DisplayLabel().Set(cat.GetInvariantDisplayLabel());
-    catChange.Description().Set(cat.GetInvariantDescription());
-    catChange.Priority().Set(cat.GetPriority());
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle  02/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendPhenomenon(PhenomenonChange& change, PhenomenonCR phen)
-    {
-    if (phen.GetIsDisplayLabelDefined())
-        change.DisplayLabel().Set(phen.GetInvariantDisplayLabel());
-
-    change.Description().Set(phen.GetInvariantDescription());
-    change.Definition().Set(phen.GetDefinition());
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle  02/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendUnitSystem(UnitSystemChange& change, UnitSystemCR system)
-    {
-    if (system.GetIsDisplayLabelDefined())
-        change.DisplayLabel().Set(system.GetInvariantDisplayLabel());
-
-    change.Description().Set(system.GetInvariantDescription());
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle  02/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendUnit(UnitChange& change, ECUnitCR unit)
-    {
-    if (unit.GetIsDisplayLabelDefined())
-        change.DisplayLabel().Set(unit.GetInvariantDisplayLabel());
-
-    change.Description().Set(unit.GetInvariantDescription());
-    change.Definition().Set(unit.GetDefinition());
-    if (unit.HasNumerator())
-        change.Numerator().Set(unit.GetNumerator());
-
-    if (unit.HasDenominator())
-        change.Denominator().Set(unit.GetDenominator());
-
-    if (unit.HasOffset())
-        change.Offset().Set(unit.GetOffset());
-
-    PhenomenonCP phen = unit.GetPhenomenon();
-    if (phen != nullptr)
-        change.Phenomenon().Set(phen->GetFullName());
-
-    if (unit.HasUnitSystem())
-        change.UnitSystem().Set(unit.GetUnitSystem()->GetFullName());
-
-    change.IsConstant().Set(unit.IsConstant());
-
-    if (unit.IsInvertedUnit())
-        {
-        Nullable<Utf8String> invertingUnitName = unit.GetInvertingUnit() != nullptr ? unit.GetInvertingUnit()->GetFullName() : nullptr;
-        change.InvertingUnit().Set(invertingUnitName);
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Kyle.Abramowitz     04/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendFormat(FormatChange& change, ECFormatCR format)
-    {
-    if (format.GetIsDisplayLabelDefined())
-        change.DisplayLabel().Set(format.GetInvariantDisplayLabel());
-
-    change.Description().Set(format.GetInvariantDescription());
-    if (format.HasNumeric())
-        {
-        Formatting::NumericFormatSpecCP num = format.GetNumericSpec();
-        if (SUCCESS != change.NumericSpec().SetFrom(*num))
-            return ERROR;
-        }
-
-    if (format.HasComposite())
-        {
-        Formatting::CompositeValueSpecCP spec = format.GetCompositeSpec();
-        if (SUCCESS != change.CompositeSpec().SetFrom(*spec))
-            return ERROR;
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendECProperty(PropertyChange& propertyChange, ECPropertyCR v)
-    {
-    propertyChange.Name().Set(v.GetName());
-    if (v.GetIsDisplayLabelDefined())
-        propertyChange.DisplayLabel().Set(v.GetInvariantDisplayLabel());
-
-    propertyChange.Description().Set(v.GetInvariantDescription());
-    propertyChange.TypeName().Set(v.GetTypeName());
-
-    propertyChange.IsReadonly().Set(v.GetIsReadOnly());
-    if (v.IsPriorityLocallyDefined())
-        propertyChange.Priority().Set(v.GetPriority());
-
-    if (v.GetKindOfQuantity() != nullptr)
-        propertyChange.KindOfQuantity().Set(v.GetKindOfQuantity()->GetFullName());
-
-    if (v.GetCategory() != nullptr)
-        propertyChange.Category().Set(v.GetCategory()->GetFullName());
-
-    if (NavigationECPropertyCP prop = v.GetAsNavigationProperty())
-        {
-        propertyChange.IsNavigation().Set(true);
-        NavigationPropertyChange& navigationChange = propertyChange.Navigation();
-        navigationChange.Direction().Set(prop->GetDirection());
-        if (prop->GetRelationshipClass())
-            navigationChange.Relationship().Set(Utf8String(prop->GetRelationshipClass()->GetFullName()));
-        }
-    else if (v.GetIsPrimitive())
-        {
-        propertyChange.IsPrimitive().Set(true);
-        auto primitiveProp = v.GetAsPrimitiveProperty();
-
-        propertyChange.ExtendedTypeName().Set(primitiveProp->GetExtendedTypeName());
-        if (primitiveProp->GetEnumeration())
-            propertyChange.Enumeration().Set(primitiveProp->GetEnumeration()->GetFullName());
-
-        if (primitiveProp->GetKindOfQuantity())
-            propertyChange.KindOfQuantity().Set(primitiveProp->GetKindOfQuantity()->GetFullName());
-        }
-    else if (v.GetIsStruct())
-        {
-        propertyChange.IsStruct().Set(true);
-        }
-    else if (v.GetIsStructArray())
-        {
-        propertyChange.IsStructArray().Set(true);
-        }
-    else if (v.GetIsPrimitiveArray())
-        {
-        propertyChange.IsPrimitiveArray().Set(true);
-        auto primitivePropArray = v.GetAsPrimitiveArrayProperty();
-        propertyChange.ExtendedTypeName().Set(primitivePropArray->GetExtendedTypeName());
-        if (primitivePropArray->GetKindOfQuantity())
-            propertyChange.KindOfQuantity().Set(primitivePropArray->GetKindOfQuantity()->GetFullName());
-        }
-    else
-        return ERROR;
-
-
-    if (v.IsMaximumValueDefined())
-        {
-        ECValue maxV;
-        if (ECObjectsStatus::Success != v.GetMaximumValue(maxV))
-            return ERROR;
-
-        propertyChange.MaximumValue().Set(maxV);
-        }
-
-    if (v.IsMinimumValueDefined())
-        {
-        ECValue minV;
-        if (ECObjectsStatus::Success != v.GetMinimumValue(minV))
-            return ERROR;
-
-        propertyChange.MinimumValue().Set(minV);
-        }
-
-    if (v.GetIsArray())
-        {
-        auto arrayProp = v.GetAsArrayProperty();
-        propertyChange.Array().MaxOccurs().Set(arrayProp->GetStoredMaxOccurs());
-        propertyChange.Array().MinOccurs().Set(arrayProp->GetMinOccurs());
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendBaseClasses(BaseClassChanges& changes, ECBaseClassesList const& baseClasses)
-    {
-    const ChangeType state = changes.GetChangeType();
-    for (ECClassCP baseClassCP : baseClasses)
-        {
-        RefCountedPtr<StringChange> change = changes.CreateElement(state, SystemId::BaseClass);
-        change->Set(Utf8String(baseClassCP->GetFullName()));
-        changes.Add(change);
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendReferences(SchemaReferenceChanges& changes, ECSchemaReferenceListCR references)
-    {
-    const ChangeType state = changes.GetChangeType();
-    for (auto& reference : references)
-        {
-        RefCountedPtr<StringChange> change = changes.CreateElement(state, SystemId::SchemaReference);
-        change->Set(reference.first.GetFullSchemaName());
-        changes.Add(change);
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::ConvertECInstanceToValueMap(std::map<Utf8String, ECValue>& map, IECInstanceCR instance)
+BentleyStatus SchemaComparer::ConvertECInstanceToValueMap(bmap<Utf8String, ECValue>& map, IECInstanceCR instance)
     {
     ECValuesCollectionPtr values = ECValuesCollection::Create(instance);
     if (values.IsNull())
@@ -2149,7 +1864,7 @@ BentleyStatus SchemaComparer::ConvertECInstanceToValueMap(std::map<Utf8String, E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::ConvertECValuesCollectionToValueMap(std::map<Utf8String, ECValue>& map, ECValuesCollectionCR values)
+BentleyStatus SchemaComparer::ConvertECValuesCollectionToValueMap(bmap<Utf8String, ECValue>& map, ECValuesCollectionCR values)
     {
     for (ECValuesCollection::const_iterator itor = values.begin(); itor != values.end(); ++itor)
         {
@@ -2181,12 +1896,12 @@ BentleyStatus SchemaComparer::ConvertECValuesCollectionToValueMap(std::map<Utf8S
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP ECChange::GetId() const
+Utf8CP ECChange::GetChangeName() const
     {
-    if (!m_customId.empty())
-        return m_customId.c_str();
+    if (!m_changeName.empty())
+        return m_changeName.c_str();
 
-    return SystemIdToString(m_systemId);
+    return TypeToString(m_type);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2195,146 +1910,145 @@ Utf8CP ECChange::GetId() const
 //static
 void ECChange::AppendBegin(Utf8StringR str, ECChange const& change, int currentIndex)
     {
-    if (change.GetChangeType() == ChangeType::Deleted)
+    if (change.GetOpCode() == OpCode::Deleted)
         str += "-";
-    else if (change.GetChangeType() == ChangeType::New)
+    else if (change.GetOpCode() == OpCode::New)
         str += "+";
-    else if (change.GetChangeType() == ChangeType::Modified)
+    else if (change.GetOpCode() == OpCode::Modified)
         str += "!";
 
     for (int i = 0; i < currentIndex; i++)
         str.append(" ");
 
-    str.append(SystemIdToString(change.GetSystemId()));
+    str.append(TypeToString(change.GetType()));
 
-    if (change.HasCustomId())
-        str.append("(").append(change.GetId()).append(")");
+    if (change.HasChangeName())
+        str.append("(").append(change.GetChangeName()).append(")");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Utf8CP ECChange::SystemIdToString(SystemId id)
+Utf8CP ECChange::TypeToString(Type type)
     {
-    switch (id)
+    switch (type)
         {
-            case SystemId::None: return "";
-            case SystemId::Alias: return "Alias";
-            case SystemId::ArrayProperty: return "ArrayProperty";
-            case SystemId::BaseClass: return "BaseClass";
-            case SystemId::BaseClasses: return "BaseClasses";
-            case SystemId::Classes: return "Classes";
-            case SystemId::Class: return "Class";
-            case SystemId::ClassModifier: return "ClassModifier";
-            case SystemId::CompositeIncludeZero: return "CompositeIncludeZero";
-            case SystemId::CompositeSpacer: return "CompositeSpacer";
-            case SystemId::CompositeMajorUnit: return "CompositeMajorUnit";
-            case SystemId::CompositeMajorLabel: return "CompositeMajorLabel";
-            case SystemId::CompositeMiddleUnit: return "CompositeMiddleUnit";
-            case SystemId::CompositeMiddleLabel: return "CompositeMiddleLabel";
-            case SystemId::CompositeMinorUnit: return "CompositeMinorUnit";
-            case SystemId::CompositeMinorLabel: return "CompositeMinorLabel";
-            case SystemId::CompositeSubUnit: return "CompositeSubUnit";
-            case SystemId::CompositeSubLabel: return "CompositeSubLabel";
-            case SystemId::CompositeValueSpec: return "CompositeValueSpec";
-            case SystemId::ConstraintClass: return "ConstraintClass";
-            case SystemId::ConstraintClasses: return "ConstraintClasses";
-            case SystemId::Constraint: return "Constraint";
-            case SystemId::CustomAttribute: return "CustomAttribute";
-            case SystemId::CustomAttributes: return "CustomAttributes";
-            case SystemId::DecimalPrecision: return "DecimalPrecision";
-            case SystemId::DecimalSeparator: return "DecimalSeparator";
-            case SystemId::Description: return "Description";
-            case SystemId::Direction: return "Direction";
-            case SystemId::DisplayLabel: return "DisplayLabel";
-            case SystemId::ECVersion: return "ECVersion";
-            case SystemId::Enumeration: return "Enumeration";
-            case SystemId::Enumerations: return "Enumerations";
-            case SystemId::Enumerator: return "Enumerator";
-            case SystemId::Enumerators: return "Enumerators";
-            case SystemId::ExtendedTypeName: return "ExtendedTypeName";
-            case SystemId::Format: return "Format";
-            case SystemId::Formats: return "Formats";
-            case SystemId::FormatTraits: return "FormatTraits";
-            case SystemId::FractionalPrecision: return "FractionalPrecision";
-            case SystemId::Integer: return "Integer";
-            case SystemId::ClassType: return "ClassType";
-            case SystemId::IsPolymorphic: return "IsPolymorphic";
-            case SystemId::IsReadonly: return "IsReadonly";
-            case SystemId::IsStrict: return "IsStrict";
-            case SystemId::IsStruct: return "IsStruct";
-            case SystemId::IsStructArray: return "IsStructArray";
-            case SystemId::IsPrimitive: return "IsPrimitive";
-            case SystemId::IsPrimitiveArray: return "IsPrimitiveArray";
-            case SystemId::IsNavigation: return "IsNavigation";
-            case SystemId::KindOfQuantities: return "KindOfQuantities";
-            case SystemId::KindOfQuantity: return "KindOfQuantity";
-            case SystemId::KoqPersistenceUnit: return "KoqPersistenceUnit";
-            case SystemId::KoqPresentationFormat: return "KoqPresentationFormat";
-            case SystemId::KoqPresentationFormats: return "KoqPresentationFormats";
-            case SystemId::KoqRelativeError: return "KoqRelativeError";
-            case SystemId::MaximumLength: return "MaximumLength";
-            case SystemId::MaximumValue: return "MaximumValue";
-            case SystemId::MaxOccurs: return "MaxOccurs";
-            case SystemId::MinimumLength: return "MinimumLength";
-            case SystemId::MinimumValue: return "MinimumValue";
-            case SystemId::MinOccurs: return "MinOccurs";
-            case SystemId::MinWidth: return "MinWidth";
-            case SystemId::Multiplicity: return "Multiplicity";
-            case SystemId::Name: return "Name";
-            case SystemId::NavigationProperty: return "NavigationProperty";
-            case SystemId::NumericFormatSpec: return "NumericFormatSpec";
-            case SystemId::OriginalECXmlVersionMajor: return "OriginalECXmlVersionMajor";
-            case SystemId::OriginalECXmlVersionMinor: return "OriginalECXmlVersionMinor";
-            case SystemId::Phenomena: return "Phenomena";
-            case SystemId::Phenomenon: return "Phenomenon";
-            case SystemId::PhenomenonDefinition: return "PhenomenonDefinition";
-            case SystemId::PresentationType: return "PresentationType";
-            case SystemId::Properties: return "Properties";
-            case SystemId::Property: return "Property";
-            case SystemId::PropertyCategories: return "PropertyCategories";
-            case SystemId::PropertyCategory: return "PropertyCategory";
-            case SystemId::PropertyCategoryPriority: return "PropertyCategoryPriority";
-            case SystemId::PropertyPriority: return "PropertyPriority";
-            case SystemId::PropertyType: return "PropertyType";
-            case SystemId::PropertyValue: return "PropertyValue";
-            case SystemId::PropertyValues: return "PropertyValues";
-            case SystemId::Relationship: return "Relationship";
-            case SystemId::RoleLabel: return "RoleLabel";
-            case SystemId::RoundingFactor: return "RoundingFactor";
-            case SystemId::Schema: return "Schema";
-            case SystemId::SchemaReference: return "SchemaReference";
-            case SystemId::SchemaReferences: return "SchemaReferences";
-            case SystemId::Schemas: return "Schemas";
-            case SystemId::ScientificType: return "ScientificType";
-            case SystemId::ShowSignOption: return "ShowSignOption";
-            case SystemId::Source: return "Source";
-            case SystemId::StationSeparator: return "StationSeparator";
-            case SystemId::StationOffsetSize: return "StationOffsetSize";
-            case SystemId::StrengthDirection: return "StrengthDirection";
-            case SystemId::StrengthType: return "StrengthType";
-            case SystemId::String: return "String";
-            case SystemId::Target: return "Target";
-            case SystemId::ThousandSeparator: return "ThousandSeparator";
-            case SystemId::TypeName: return "TypeName";
-            case SystemId::UnitSystem: return "UnitSystem";
-            case SystemId::UnitSystems: return "UnitSystems";
-            case SystemId::Unit: return "Unit";
-            case SystemId::UnitDefinition: return "UnitDefinition";
-            case SystemId::UnitNumerator: return "UnitNumerator";
-            case SystemId::UnitDenominator: return "UnitDenominator";
-            case SystemId::UnitInvertingUnit: return "UnitInvertingUnit";
-            case SystemId::UnitIsConstant: return "UnitIsConstant";
-            case SystemId::UnitOffset: return "UnitOffset";
-            case SystemId::Units: return "Units";
-            case SystemId::UomSeparator: return "UomSeparator";
-            case SystemId::VersionRead: return "VersionRead";
-            case SystemId::VersionMinor: return "VersionMinor";
-            case SystemId::VersionWrite: return "VersionWrite";
+            case Type::Alias: return "Alias";
+            case Type::BaseClass: return "BaseClass";
+            case Type::BaseClasses: return "BaseClasses";
+            case Type::Classes: return "Classes";
+            case Type::Class: return "Class";
+            case Type::ClassModifier: return "ClassModifier";
+            case Type::ClassType: return "ClassType";
+            case Type::CompositeIncludeZero: return "CompositeIncludeZero";
+            case Type::CompositeSpacer: return "CompositeSpacer";
+            case Type::CompositeMajorUnit: return "CompositeMajorUnit";
+            case Type::CompositeMajorLabel: return "CompositeMajorLabel";
+            case Type::CompositeMiddleUnit: return "CompositeMiddleUnit";
+            case Type::CompositeMiddleLabel: return "CompositeMiddleLabel";
+            case Type::CompositeMinorUnit: return "CompositeMinorUnit";
+            case Type::CompositeMinorLabel: return "CompositeMinorLabel";
+            case Type::CompositeSubUnit: return "CompositeSubUnit";
+            case Type::CompositeSubLabel: return "CompositeSubLabel";
+            case Type::CompositeValueSpec: return "CompositeValueSpec";
+            case Type::ConstraintClass: return "ConstraintClass";
+            case Type::ConstraintClasses: return "ConstraintClasses";
+            case Type::Constraint: return "Constraint";
+            case Type::CustomAttribute: return "CustomAttribute";
+            case Type::CustomAttributes: return "CustomAttributes";
+            case Type::DecimalPrecision: return "DecimalPrecision";
+            case Type::DecimalSeparator: return "DecimalSeparator";
+            case Type::Description: return "Description";
+            case Type::Direction: return "Direction";
+            case Type::DisplayLabel: return "DisplayLabel";
+            case Type::ECVersion: return "ECVersion";
+            case Type::Enumeration: return "Enumeration";
+            case Type::Enumerations: return "Enumerations";
+            case Type::Enumerator: return "Enumerator";
+            case Type::Enumerators: return "Enumerators";
+            case Type::ExtendedTypeName: return "ExtendedTypeName";
+            case Type::Format: return "Format";
+            case Type::Formats: return "Formats";
+            case Type::FormatTraits: return "FormatTraits";
+            case Type::FractionalPrecision: return "FractionalPrecision";
+            case Type::Integer: return "Integer";
+            case Type::IsInteger: return "IsInteger";
+            case Type::IsPolymorphic: return "IsPolymorphic";
+            case Type::IsReadonly: return "IsReadonly";
+            case Type::IsStrict: return "IsStrict";
+            case Type::IsString: return "IsString";
+            case Type::IsStruct: return "IsStruct";
+            case Type::IsStructArray: return "IsStructArray";
+            case Type::IsPrimitive: return "IsPrimitive";
+            case Type::IsPrimitiveArray: return "IsPrimitiveArray";
+            case Type::IsNavigation: return "IsNavigation";
+            case Type::KindOfQuantities: return "KindOfQuantities";
+            case Type::KindOfQuantity: return "KindOfQuantity";
+            case Type::KoqPersistenceUnit: return "KoqPersistenceUnit";
+            case Type::KoqPresentationFormat: return "KoqPresentationFormat";
+            case Type::KoqPresentationFormats: return "KoqPresentationFormats";
+            case Type::KoqRelativeError: return "KoqRelativeError";
+            case Type::MaximumLength: return "MaximumLength";
+            case Type::MaximumValue: return "MaximumValue";
+            case Type::MaxOccurs: return "MaxOccurs";
+            case Type::MinimumLength: return "MinimumLength";
+            case Type::MinimumValue: return "MinimumValue";
+            case Type::MinOccurs: return "MinOccurs";
+            case Type::MinWidth: return "MinWidth";
+            case Type::Multiplicity: return "Multiplicity";
+            case Type::Name: return "Name";
+            case Type::NumericFormatSpec: return "NumericFormatSpec";
+            case Type::OriginalECXmlVersionMajor: return "OriginalECXmlVersionMajor";
+            case Type::OriginalECXmlVersionMinor: return "OriginalECXmlVersionMinor";
+            case Type::Phenomena: return "Phenomena";
+            case Type::Phenomenon: return "Phenomenon";
+            case Type::PhenomenonDefinition: return "PhenomenonDefinition";
+            case Type::PresentationType: return "PresentationType";
+            case Type::Properties: return "Properties";
+            case Type::Property: return "Property";
+            case Type::PropertyCategories: return "PropertyCategories";
+            case Type::PropertyCategory: return "PropertyCategory";
+            case Type::PropertyCategoryPriority: return "PropertyCategoryPriority";
+            case Type::PropertyPriority: return "PropertyPriority";
+            case Type::PropertyType: return "PropertyType";
+            case Type::PropertyValue: return "PropertyValue";
+            case Type::PropertyValues: return "PropertyValues";
+            case Type::Relationship: return "Relationship";
+            case Type::RoleLabel: return "RoleLabel";
+            case Type::RoundFactor: return "RoundFactor";
+            case Type::Schema: return "Schema";
+            case Type::SchemaReference: return "SchemaReference";
+            case Type::SchemaReferences: return "SchemaReferences";
+            case Type::Schemas: return "Schemas";
+            case Type::ScientificType: return "ScientificType";
+            case Type::ShowSignOption: return "ShowSignOption";
+            case Type::Source: return "Source";
+            case Type::StationSeparator: return "StationSeparator";
+            case Type::StationOffsetSize: return "StationOffsetSize";
+            case Type::StrengthDirection: return "StrengthDirection";
+            case Type::StrengthType: return "StrengthType";
+            case Type::String: return "String";
+            case Type::Target: return "Target";
+            case Type::ThousandSeparator: return "ThousandSeparator";
+            case Type::TypeName: return "TypeName";
+            case Type::UnitSystem: return "UnitSystem";
+            case Type::UnitSystems: return "UnitSystems";
+            case Type::Unit: return "Unit";
+            case Type::UnitDefinition: return "UnitDefinition";
+            case Type::UnitNumerator: return "UnitNumerator";
+            case Type::UnitDenominator: return "UnitDenominator";
+            case Type::UnitInvertingUnit: return "UnitInvertingUnit";
+            case Type::UnitIsConstant: return "UnitIsConstant";
+            case Type::UnitOffset: return "UnitOffset";
+            case Type::Units: return "Units";
+            case Type::UomSeparator: return "UomSeparator";
+            case Type::VersionRead: return "VersionRead";
+            case Type::VersionMinor: return "VersionMinor";
+            case Type::VersionWrite: return "VersionWrite";
         }
 
-    BeAssert(false && "Unhandled SystemId");
+    BeAssert(false && "Unhandled Type");
     return "";
     }
 
@@ -2374,71 +2088,27 @@ bool CompositeECChange::_IsChanged() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PropertyValueChange::Set(ECValueCR value)
-    {
-    if (!value.IsPrimitive())
-        return ERROR;
-
-    if (Inititalize(value.GetPrimitiveType()) != SUCCESS)
-        return ERROR;
-
-    if (value.IsNull())
-        return SUCCESS;
-
-    switch (m_type)
-        {
-            case PRIMITIVETYPE_IGeometry:
-                {
-                BeAssert(false && "Geometry not supported type");
-                return ERROR;
-                }
-            case PRIMITIVETYPE_Binary:
-            {
-            Nullable<bvector<Byte>> blob = bvector<Byte>();
-            size_t binarySize = 0;
-            Byte const* binary = value.GetBinary(binarySize);
-            blob.ValueR().reserve(binarySize);
-            memcpy(blob.ValueR().data(), binary, binarySize);
-
-            return GetBinary()->Set(blob);
-            }
-            case PRIMITIVETYPE_Boolean:
-                return GetBoolean()->Set(value.GetBoolean());
-            case PRIMITIVETYPE_DateTime:
-                return GetDateTime()->Set(value.GetDateTime());
-            case PRIMITIVETYPE_Double:
-                return GetDouble()->Set(value.GetDouble());
-            case PRIMITIVETYPE_Integer:
-                return GetInteger()->Set(value.GetInteger());
-            case PRIMITIVETYPE_Long:
-                return GetLong()->Set(value.GetLong());
-            case PRIMITIVETYPE_Point2d:
-                return GetPoint2d()->Set(value.GetPoint2d());
-            case PRIMITIVETYPE_Point3d:
-                return GetPoint3d()->Set(value.GetPoint3d());
-            case PRIMITIVETYPE_String:
-                return GetString()->Set(Utf8String(value.GetUtf8CP()));
-        }
-
-    return ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
     {
-    if (!oldValue.IsPrimitive() || !newValue.IsPrimitive())
+    if (oldValue.IsNull() && newValue.IsNull())
+        return SUCCESS;
+
+    const bool bothAreNotNull = !oldValue.IsNull() && !newValue.IsNull();
+    if ((!oldValue.IsNull() && !oldValue.IsPrimitive()) || (!newValue.IsNull() && !newValue.IsPrimitive()))
+        {
+        BeAssert(false && "Only primitive values are supported for PropertyValueChange");
+        return ERROR;
+        }
+
+    if (bothAreNotNull && oldValue.GetPrimitiveType() != newValue.GetPrimitiveType())
         return ERROR;
 
-    PrimitiveType oldType = oldValue.GetPrimitiveType();
-    if (oldType != newValue.GetPrimitiveType())
+    PrimitiveType primType = oldValue.IsPrimitive() ? oldValue.GetPrimitiveType() : newValue.GetPrimitiveType();
+
+    if (Inititalize(primType) != SUCCESS)
         return ERROR;
 
-    if (Inititalize(oldType) != SUCCESS)
-        return ERROR;
-
-    switch (m_type)
+    switch (m_primType)
         {
             case PRIMITIVETYPE_IGeometry:
                 {
@@ -2453,7 +2123,7 @@ BentleyStatus PropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
                 size_t binarySize = 0;
                 Byte const* binary = oldValue.GetBinary(binarySize);
                 oldBlob = bvector<Byte>();
-                oldBlob.ValueR().reserve(binarySize);
+                oldBlob.ValueR().resize(binarySize);
                 memcpy(oldBlob.ValueR().data(), binary, binarySize);
                 }
 
@@ -2463,7 +2133,7 @@ BentleyStatus PropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
                 size_t binarySize = 0;
                 Byte const* binary = newValue.GetBinary(binarySize);
                 newBlob = bvector<Byte>();
-                newBlob.ValueR().reserve(binarySize);
+                newBlob.ValueR().resize(binarySize);
                 memcpy(newBlob.ValueR().data(), binary, binarySize);
                 }
 
@@ -2513,8 +2183,8 @@ BentleyStatus PropertyValueChange::Set(ECValueCR oldValue, ECValueCR newValue)
             }
             case PRIMITIVETYPE_String:
             {
-            Nullable<Utf8String> oldVal = oldValue.IsNull() ? nullptr : Utf8String(oldValue.GetUtf8CP());
-            Nullable<Utf8String> newVal = newValue.IsNull() ? nullptr : Utf8String(newValue.GetUtf8CP());
+            Nullable<Utf8String> oldVal = oldValue.IsNull() ? Nullable<Utf8String>() : Utf8String(oldValue.GetUtf8CP());
+            Nullable<Utf8String> newVal = newValue.IsNull() ? Nullable<Utf8String>() : Utf8String(newValue.GetUtf8CP());
             return GetString()->Set(oldVal, newVal);
             }
 
@@ -2549,20 +2219,20 @@ BentleyStatus PropertyValueChange::Inititalize(PrimitiveType type)
         return ERROR;
         }
 
-    m_type = type;
+    m_primType = type;
     switch (type)
         {
             case ECN::PRIMITIVETYPE_Binary:
-                m_value = std::make_unique<BinaryChange>(GetChangeType(), SystemId::PropertyValue, this, GetId());
+                m_value = std::make_unique<BinaryChange>(GetOpCode(), Type::PropertyValue, this, GetChangeName());
                 return SUCCESS;
             case ECN::PRIMITIVETYPE_Boolean:
-                m_value = std::unique_ptr<ECChange>(new BooleanChange(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                m_value = std::unique_ptr<ECChange>(new BooleanChange(GetOpCode(), Type::PropertyValue, this, GetChangeName()));
                 return SUCCESS;
             case ECN::PRIMITIVETYPE_DateTime:
-                m_value = std::unique_ptr<ECChange>(new DateTimeChange(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                m_value = std::unique_ptr<ECChange>(new DateTimeChange(GetOpCode(), Type::PropertyValue, this, GetChangeName()));
                 return SUCCESS;
             case ECN::PRIMITIVETYPE_Double:
-                m_value = std::unique_ptr<ECChange>(new DoubleChange(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                m_value = std::unique_ptr<ECChange>(new DoubleChange(GetOpCode(), Type::PropertyValue, this, GetChangeName()));
                 return SUCCESS;
             case ECN::PRIMITIVETYPE_IGeometry:
             {
@@ -2570,19 +2240,19 @@ BentleyStatus PropertyValueChange::Inititalize(PrimitiveType type)
             return ERROR;
             }
             case ECN::PRIMITIVETYPE_Integer:
-                m_value = std::unique_ptr<ECChange>(new Int32Change(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                m_value = std::unique_ptr<ECChange>(new Int32Change(GetOpCode(), Type::PropertyValue, this, GetChangeName()));
                 return SUCCESS;
             case ECN::PRIMITIVETYPE_Long:
-                m_value = std::unique_ptr<ECChange>(new Int64Change(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                m_value = std::unique_ptr<ECChange>(new Int64Change(GetOpCode(), Type::PropertyValue, this, GetChangeName()));
                 return SUCCESS;
             case ECN::PRIMITIVETYPE_Point2d:
-                m_value = std::unique_ptr<ECChange>(new Point2dChange(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                m_value = std::unique_ptr<ECChange>(new Point2dChange(GetOpCode(), Type::PropertyValue, this, GetChangeName()));
                 return SUCCESS;
             case ECN::PRIMITIVETYPE_Point3d:
-                m_value = std::unique_ptr<ECChange>(new Point3dChange(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                m_value = std::unique_ptr<ECChange>(new Point3dChange(GetOpCode(), Type::PropertyValue, this, GetChangeName()));
                 return SUCCESS;
             case ECN::PRIMITIVETYPE_String:
-                m_value = std::unique_ptr<ECChange>(new StringChange(GetChangeType(), SystemId::PropertyValue, this, GetId()));
+                m_value = std::unique_ptr<ECChange>(new StringChange(GetOpCode(), Type::PropertyValue, this, GetChangeName()));
                 return SUCCESS;
             default:
                 BeAssert(false && "Unexpected value for PrimitiveType");
@@ -2594,85 +2264,40 @@ BentleyStatus PropertyValueChange::Inititalize(PrimitiveType type)
 //***********************************************************************
 // NumericFormatSpecChange
 //***********************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle  05/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCR spec)
-    {
-    if (GetChangeType() == ChangeType::Modified)
-        {
-        BeAssert(false && "Wrong overload for ChangeType::Modified");
-        return ERROR;
-        }
-
-    PresentationType().Set(Formatting::Utils::GetPresentationTypeString(spec.GetPresentationType()));
-    ScientificType().Set(Formatting::Utils::GetScientificTypeString(spec.GetScientificType()));
-
-    if (spec.HasRoundingFactor())
-        RoundingFactor().Set(spec.GetRoundingFactor());
-
-    if (spec.HasPrecision())
-        {
-        DecimalPrecision().Set(Formatting::Utils::DecimalPrecisionToInt(spec.GetDecimalPrecision()));
-        FractionalPrecision().Set(Formatting::Utils::FractionalPrecisionDenominator(spec.GetFractionalPrecision()));
-        }
-
-    if (spec.HasMinWidth())
-        MinWidth().Set(spec.GetMinWidth());
-
-    if (spec.HasSignOption())
-        ShowSignOption().Set(Formatting::Utils::GetSignOptionString(spec.GetSignOption()));
-
-    if (spec.HasFormatTraits())
-        FormatTraits().Set(spec.GetFormatTraitsString());
-
-    if (spec.HasDecimalSeparator())
-        DecimalSeparator().Set(Utf8String(1, spec.GetDecimalSeparator()));
-
-    if (spec.HasThousandsSeparator())
-        ThousandsSeparator().Set(Utf8String(1, spec.GetThousandSeparator()));
-
-    if (spec.HasUomSeparator())
-        UomSeparator().Set(Utf8String(spec.GetUomSeparator()));
-
-    if (spec.HasStationSeparator())
-        StationSeparator().Set(Utf8String(1, spec.GetStationSeparator()));
-
-    StationOffsetSize().Set(spec.GetStationOffsetSize());
-
-    return SUCCESS;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle  05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP oldSpec, Formatting::NumericFormatSpecCP newSpec)
     {
-    if (GetChangeType() != ChangeType::Modified)
+    if (GetOpCode() == OpCode::New && oldSpec != nullptr)
         {
-        BeAssert(false && "Wrong overload for ChangeType::New or ChangeType::Deleted");
+        BeAssert(false && "Old spec must not be nullptr if OpCode is New");
+        return ERROR;
+        }
+
+    if (GetOpCode() == OpCode::Deleted && newSpec != nullptr)
+        {
+        BeAssert(false && "New spec must not be nullptr if OpCode is Deleted");
         return ERROR;
         }
 
     {
-    Nullable<Utf8String> oldVal = oldSpec != nullptr ? Formatting::Utils::GetPresentationTypeString(oldSpec->GetPresentationType()) : nullptr;
-    Nullable<Utf8String> newVal = newSpec != nullptr ? Formatting::Utils::GetPresentationTypeString(newSpec->GetPresentationType()) : nullptr;
-    if (oldVal != newVal)
-        PresentationType().Set(oldVal, newVal);
+    Nullable<Utf8String> oldVal = oldSpec != nullptr ? Formatting::Utils::GetPresentationTypeString(oldSpec->GetPresentationType()) : Nullable<Utf8String>();
+    Nullable<Utf8String> newVal = newSpec != nullptr ? Formatting::Utils::GetPresentationTypeString(newSpec->GetPresentationType()) : Nullable<Utf8String>();
+    PresentationType().Set(oldVal, newVal);
     }
 
     {
-    Nullable<Utf8String> oldVal = oldSpec != nullptr ? Formatting::Utils::GetScientificTypeString(oldSpec->GetScientificType()) : nullptr;
-    Nullable<Utf8String> newVal = newSpec != nullptr ? Formatting::Utils::GetScientificTypeString(newSpec->GetScientificType()) : nullptr;
-    if (oldVal != newVal)
-        ScientificType().Set(oldVal, newVal);
+    Nullable<Utf8String> oldVal = oldSpec != nullptr ? Formatting::Utils::GetScientificTypeString(oldSpec->GetScientificType()) : Nullable<Utf8String>();
+    Nullable<Utf8String> newVal = newSpec != nullptr ? Formatting::Utils::GetScientificTypeString(newSpec->GetScientificType()) : Nullable<Utf8String>();
+    ScientificType().Set(oldVal, newVal);
     }
 
     {
     Nullable<double> oldVal = oldSpec != nullptr && oldSpec->HasRoundingFactor() ? oldSpec->GetRoundingFactor() : Nullable<double>();
     Nullable<double> newVal = newSpec != nullptr && newSpec->HasRoundingFactor() ? newSpec->GetRoundingFactor() : Nullable<double>();
-    if (oldVal != newVal)
-        RoundingFactor().Set(oldVal, newVal);
+    RoundFactor().Set(oldVal, newVal);
     }
 
     {
@@ -2692,11 +2317,8 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
         newFractPrec = Formatting::Utils::FractionalPrecisionDenominator(newSpec->GetFractionalPrecision());
         }
 
-    if (oldDecPrec != newDecPrec)
-        DecimalPrecision().Set(oldDecPrec, newDecPrec);
-
-    if (oldFractPrec != newFractPrec)
-        FractionalPrecision().Set(oldFractPrec, newFractPrec);
+    DecimalPrecision().Set(oldDecPrec, newDecPrec);
+    FractionalPrecision().Set(oldFractPrec, newFractPrec);
     }
 
     {
@@ -2708,8 +2330,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
     if (newSpec != nullptr && newSpec->HasMinWidth())
         newVal = (uint32_t) newSpec->GetMinWidth();
 
-    if (oldVal != newVal)
-        MinWidth().Set(oldVal, newVal);
+    MinWidth().Set(oldVal, newVal);
     }
 
     {
@@ -2721,8 +2342,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
     if (newSpec != nullptr && newSpec->HasSignOption())
         newVal = Formatting::Utils::GetSignOptionString(newSpec->GetSignOption());
 
-    if (oldVal != newVal)
-        ShowSignOption().Set(oldVal, newVal);
+    ShowSignOption().Set(oldVal, newVal);
     }
 
     {
@@ -2734,8 +2354,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
     if (newSpec != nullptr && newSpec->HasFormatTraits())
         newVal = newSpec->GetFormatTraitsString();
 
-    if (oldVal != newVal)
-        FormatTraits().Set(oldVal, newVal);
+    FormatTraits().Set(oldVal, newVal);
     }
 
     {
@@ -2747,8 +2366,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
     if (newSpec != nullptr && newSpec->HasDecimalSeparator())
         newVal = Utf8String(1, newSpec->GetDecimalSeparator());
 
-    if (oldVal != newVal)
-        DecimalSeparator().Set(oldVal, newVal);
+    DecimalSeparator().Set(oldVal, newVal);
     }
 
     {
@@ -2760,8 +2378,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
     if (newSpec != nullptr && newSpec->HasThousandsSeparator())
         newVal = Utf8String(1, newSpec->GetThousandSeparator());
 
-    if (oldVal != newVal)
-        ThousandsSeparator().Set(oldVal, newVal);
+    ThousandsSeparator().Set(oldVal, newVal);
     }
 
     {
@@ -2773,8 +2390,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
     if (newSpec != nullptr && newSpec->HasUomSeparator())
         newVal = Utf8String(newSpec->GetUomSeparator());
 
-    if (oldVal != newVal)
-        UomSeparator().Set(oldVal, newVal);
+    UomSeparator().Set(oldVal, newVal);
     }
 
     {
@@ -2786,8 +2402,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
     if (newSpec != nullptr && newSpec->HasStationSeparator())
         newVal = Utf8String(1, newSpec->GetStationSeparator());
 
-    if (oldVal != newVal)
-        StationSeparator().Set(oldVal, newVal);
+    StationSeparator().Set(oldVal, newVal);
     }
 
     {
@@ -2799,8 +2414,7 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
     if (newSpec != nullptr)
         newVal = newSpec->GetStationOffsetSize();
 
-    if (oldVal != newVal)
-        StationOffsetSize().Set(oldVal, newVal);
+    StationOffsetSize().Set(oldVal, newVal);
     }
 
     return SUCCESS;
@@ -2812,66 +2426,17 @@ BentleyStatus NumericFormatSpecChange::SetFrom(Formatting::NumericFormatSpecCP o
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle  05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCR spec)
+BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP oldSpec, Formatting::CompositeValueSpecCP newSpec)
     {
-    if (GetChangeType() == ChangeType::Modified)
+    if (GetOpCode() == OpCode::New && oldSpec != nullptr)
         {
-        BeAssert(false && "Wrong overload for ChangeType::Modified");
+        BeAssert(false && "Old spec must not be nullptr if OpCode is New");
         return ERROR;
         }
 
-    if (spec.HasSpacer())
-        Spacer().Set(spec.GetSpacer());
-
-    IncludeZero().Set(spec.IsIncludeZero());
-
-    if (spec.HasMajorUnit())
+    if (GetOpCode() == OpCode::Deleted && newSpec != nullptr)
         {
-        BeAssert(dynamic_cast<ECUnitCP> (spec.GetMajorUnit()) != nullptr);
-        MajorUnit().Set(((ECUnitCP) spec.GetMajorUnit())->GetFullName());
-        }
-
-    if (spec.HasMajorLabel())
-        MajorLabel().Set(spec.GetMajorLabel());
-
-    if (spec.HasMiddleUnit())
-        {
-        BeAssert(dynamic_cast<ECUnitCP> (spec.GetMiddleUnit()) != nullptr);
-        MiddleUnit().Set(((ECUnitCP) spec.GetMiddleUnit())->GetFullName());
-        }
-
-    if (spec.HasMiddleLabel())
-        MiddleLabel().Set(spec.GetMiddleLabel());
-
-    if (spec.HasMinorUnit())
-        {
-        BeAssert(dynamic_cast<ECUnitCP> (spec.GetMinorUnit()) != nullptr);
-        MinorUnit().Set(((ECUnitCP) spec.GetMinorUnit())->GetFullName());
-        }
-
-    if (spec.HasMinorLabel())
-        MinorLabel().Set(spec.GetMinorLabel());
-
-    if (spec.HasSubUnit())
-        {
-        BeAssert(dynamic_cast<ECUnitCP> (spec.GetSubUnit()) != nullptr);
-        SubUnit().Set(((ECUnitCP) spec.GetSubUnit())->GetFullName());
-        }
-
-    if (spec.HasSubLabel())
-        SubLabel().Set(spec.GetSubLabel());
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Krischan.Eberle  05/2018
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP oldSpec, Formatting::CompositeValueSpecCP newSpec)
-    {
-    if (GetChangeType() != ChangeType::Modified)
-        {
-        BeAssert(false && "Wrong overload for ChangeType::New or ChangeType::Deleted");
+        BeAssert(false && "New spec must not be nullptr if OpCode is Deleted");
         return ERROR;
         }
 
@@ -2884,15 +2449,13 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
     if (newSpec != nullptr && newSpec->HasSpacer())
         newVal = newSpec->GetSpacer();
 
-    if (oldVal != newVal)
-        Spacer().Set(oldVal, newVal);
+    Spacer().Set(oldVal, newVal);
     }
 
     {
     Nullable<bool> oldVal = oldSpec != nullptr ? oldSpec->IsIncludeZero() : Nullable<bool>();
     Nullable<bool> newVal = newSpec != nullptr ? newSpec->IsIncludeZero() : Nullable<bool>();
-    if (oldVal != newVal)
-        IncludeZero().Set(oldVal, newVal);
+    IncludeZero().Set(oldVal, newVal);
     }
 
     {
@@ -2910,8 +2473,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
         newVal = ((ECUnitCP) newSpec->GetMajorUnit())->GetFullName();
         }
 
-    if (oldVal != newVal)
-        MajorUnit().Set(oldVal, newVal);
+    MajorUnit().Set(oldVal, newVal);
     }
 
     {
@@ -2923,8 +2485,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
     if (newSpec != nullptr && newSpec->HasMajorLabel())
         newVal = newSpec->GetMajorLabel();
 
-    if (oldVal != newVal)
-        MajorLabel().Set(oldVal, newVal);
+    MajorLabel().Set(oldVal, newVal);
     }
 
     {
@@ -2942,8 +2503,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
         newVal = ((ECUnitCP) newSpec->GetMiddleUnit())->GetFullName();
         }
 
-    if (oldVal != newVal)
-        MiddleUnit().Set(oldVal, newVal);
+    MiddleUnit().Set(oldVal, newVal);
     }
 
     {
@@ -2955,8 +2515,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
     if (newSpec != nullptr && newSpec->HasMiddleLabel())
         newVal = newSpec->GetMiddleLabel();
 
-    if (oldVal != newVal)
-        MiddleLabel().Set(oldVal, newVal);
+    MiddleLabel().Set(oldVal, newVal);
     }
 
     {
@@ -2974,8 +2533,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
         newVal = ((ECUnitCP) newSpec->GetMinorUnit())->GetFullName();
         }
 
-    if (oldVal != newVal)
-        MinorUnit().Set(oldVal, newVal);
+     MinorUnit().Set(oldVal, newVal);
     }
 
     {
@@ -2987,8 +2545,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
     if (newSpec != nullptr && newSpec->HasMinorLabel())
         newVal = newSpec->GetMinorLabel();
 
-    if (oldVal != newVal)
-        MinorLabel().Set(oldVal, newVal);
+    MinorLabel().Set(oldVal, newVal);
     }
 
     {
@@ -3006,8 +2563,7 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
         newVal = ((ECUnitCP) newSpec->GetSubUnit())->GetFullName();
         }
 
-    if (oldVal != newVal)
-        SubUnit().Set(oldVal, newVal);
+    SubUnit().Set(oldVal, newVal);
     }
 
     {
@@ -3019,14 +2575,11 @@ BentleyStatus CompositeValueSpecChange::SetFrom(Formatting::CompositeValueSpecCP
     if (newSpec != nullptr && newSpec->HasSubLabel())
         newVal = newSpec->GetSubLabel();
 
-    if (oldVal != newVal)
-        SubLabel().Set(oldVal, newVal);
+    SubLabel().Set(oldVal, newVal);
     }
 
     return SUCCESS;
     }
-
-
 
 
 //======================================================================================>
@@ -3061,7 +2614,7 @@ void CustomAttributeValidator::AddRejectRule(Utf8StringCR accessString)
 //+---------------+---------------+---------------+---------------+---------------+------
 std::vector<std::unique_ptr<CustomAttributeValidator::Rule>> const& CustomAttributeValidator::GetRelevantRules(CustomAttributeChange& change) const
     {
-    Utf8String schemaName = GetSchemaName(change.GetId());
+    Utf8String schemaName = GetSchemaName(change.GetChangeName());
     if (schemaName.empty())
         return m_rules.find(m_wildcard)->second;
 
@@ -3081,7 +2634,7 @@ CustomAttributeValidator::Policy CustomAttributeValidator::Validate(CustomAttrib
     if (rules.empty())
         return Policy::Accept;
 
-    std::vector<Utf8String> caFullClassNameTokens = Split(change.GetId());
+    std::vector<Utf8String> caFullClassNameTokens = Split(change.GetChangeName());
     for (std::unique_ptr<Rule> const& rule : rules)
         {
         if (rule->Match(caFullClassNameTokens))

@@ -17,140 +17,134 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //=======================================================================================
-// @bsienum                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-enum class ChangeType
-    {
-    Deleted = 1, //This need to be none zero base
-    Modified = 2,
-    New = 3
-    };
-
-//=======================================================================================
-// @bsienum                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-enum class SystemId
-    {
-    None,
-    Alias,
-    ArrayProperty,
-    BaseClass,
-    BaseClasses,
-    Class,
-    Classes,
-    ClassModifier,
-    ClassType,
-    CompositeIncludeZero,
-    CompositeSpacer,
-    CompositeMajorUnit,
-    CompositeMajorLabel,
-    CompositeMiddleUnit,
-    CompositeMiddleLabel,
-    CompositeMinorUnit,
-    CompositeMinorLabel,
-    CompositeSubUnit,
-    CompositeSubLabel,
-    CompositeValueSpec,
-    Constraint,
-    ConstraintClass,
-    ConstraintClasses,
-    CustomAttribute,
-    CustomAttributes,
-    DecimalPrecision,
-    DecimalSeparator,
-    Description,
-    Direction,
-    DisplayLabel,
-    ECVersion,
-    Enumeration,
-    Enumerations,
-    Enumerator,
-    Enumerators,
-    ExtendedTypeName,
-    Format,
-    Formats,
-    FormatTraits,
-    FractionalPrecision,
-    Integer,
-    IsPolymorphic,
-    IsReadonly,
-    IsStrict,
-    IsStruct,
-    IsStructArray,
-    IsPrimitive,
-    IsPrimitiveArray,
-    IsNavigation,
-    KindOfQuantities,
-    KindOfQuantity,
-    KoqRelativeError,
-    KoqPersistenceUnit,
-    KoqPresentationFormat,
-    KoqPresentationFormats,
-    MaximumLength,
-    MaximumValue,
-    MaxOccurs,
-    MinimumLength,
-    MinimumValue,
-    MinOccurs,
-    MinWidth,
-    Multiplicity,
-    Name,
-    NavigationProperty,
-    NumericFormatSpec,
-    OriginalECXmlVersionMajor,
-    OriginalECXmlVersionMinor,
-    Phenomena,
-    Phenomenon,
-    PhenomenonDefinition,
-    PresentationType,
-    Properties,
-    Property,
-    PropertyCategories,
-    PropertyCategory,
-    PropertyCategoryPriority,
-    PropertyPriority,
-    PropertyType,
-    PropertyValue,
-    PropertyValues,
-    Relationship,
-    RoleLabel,
-    RoundingFactor,
-    Schema,
-    SchemaReference,
-    SchemaReferences,
-    Schemas,
-    ScientificType,
-    ShowSignOption,
-    Source,
-    StationSeparator,
-    StationOffsetSize,
-    StrengthDirection,
-    StrengthType,
-    String,
-    Target,
-    ThousandSeparator,
-    TypeName,
-    Unit,
-    UnitDefinition,
-    UnitNumerator,
-    UnitDenominator,
-    UnitInvertingUnit,
-    UnitIsConstant,
-    UnitOffset,
-    Units,
-    UnitSystem,
-    UnitSystems,
-    UomSeparator,
-    VersionRead,
-    VersionMinor,
-    VersionWrite
-    };
-
-//=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
 struct ECChange : RefCountedBase
     {
+public:
+    enum class OpCode
+        {
+        Deleted = 1, //This need to be none zero base
+        Modified = 2,
+        New = 3
+        };
+
+    enum class Type
+        {
+        Alias,
+        BaseClass,
+        BaseClasses,
+        Class,
+        Classes,
+        ClassModifier,
+        ClassType,
+        CompositeIncludeZero,
+        CompositeSpacer,
+        CompositeMajorUnit,
+        CompositeMajorLabel,
+        CompositeMiddleUnit,
+        CompositeMiddleLabel,
+        CompositeMinorUnit,
+        CompositeMinorLabel,
+        CompositeSubUnit,
+        CompositeSubLabel,
+        CompositeValueSpec,
+        Constraint,
+        ConstraintClass,
+        ConstraintClasses,
+        CustomAttribute,
+        CustomAttributes,
+        DecimalPrecision,
+        DecimalSeparator,
+        Description,
+        Direction,
+        DisplayLabel,
+        ECVersion,
+        Enumeration,
+        Enumerations,
+        Enumerator,
+        Enumerators,
+        ExtendedTypeName,
+        Format,
+        Formats,
+        FormatTraits,
+        FractionalPrecision,
+        Integer,
+        IsInteger,
+        IsPolymorphic,
+        IsReadonly,
+        IsStrict,
+        IsString,
+        IsStruct,
+        IsStructArray,
+        IsPrimitive,
+        IsPrimitiveArray,
+        IsNavigation,
+        KindOfQuantities,
+        KindOfQuantity,
+        KoqRelativeError,
+        KoqPersistenceUnit,
+        KoqPresentationFormat,
+        KoqPresentationFormats,
+        MaximumLength,
+        MaximumValue,
+        MaxOccurs,
+        MinimumLength,
+        MinimumValue,
+        MinOccurs,
+        MinWidth,
+        Multiplicity,
+        Name,
+        NumericFormatSpec,
+        OriginalECXmlVersionMajor,
+        OriginalECXmlVersionMinor,
+        Phenomena,
+        Phenomenon,
+        PhenomenonDefinition,
+        PresentationType,
+        Properties,
+        Property,
+        PropertyCategories,
+        PropertyCategory,
+        PropertyCategoryPriority,
+        PropertyPriority,
+        PropertyType,
+        PropertyValue,
+        PropertyValues,
+        Relationship,
+        RoleLabel,
+        RoundFactor,
+        Schema,
+        SchemaReference,
+        SchemaReferences,
+        Schemas,
+        ScientificType,
+        ShowSignOption,
+        Source,
+        StationSeparator,
+        StationOffsetSize,
+        StrengthDirection,
+        StrengthType,
+        String,
+        Target,
+        ThousandSeparator,
+        TypeName,
+        Unit,
+        UnitDefinition,
+        UnitNumerator,
+        UnitDenominator,
+        UnitInvertingUnit,
+        UnitIsConstant,
+        UnitOffset,
+        Units,
+        UnitSystem,
+        UnitSystems,
+        UomSeparator,
+        VersionRead,
+        VersionMinor,
+        VersionWrite
+        };
+
     enum class Status
         {
         Pending,
@@ -158,9 +152,9 @@ struct ECChange : RefCountedBase
         };
 
     private:
-        SystemId m_systemId;
-        Utf8String m_customId;
-        ChangeType m_changeType;
+        Type m_type;
+        Utf8String m_changeName;
+        OpCode m_opCode;
         ECChange const* m_parent = nullptr;
         Status m_status = Status::Pending;
 
@@ -168,27 +162,28 @@ struct ECChange : RefCountedBase
         virtual void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const = 0;
 
     protected:
-        ECChange(ChangeType changeType, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : m_systemId(systemId), m_customId(customId), m_changeType(changeType), m_parent(parent) {}
+        ECChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : m_type(type), m_changeName(name), m_opCode(opCode), m_parent(parent) {}
 
         ECOBJECTS_EXPORT static void AppendBegin(Utf8StringR str, ECChange const& change, int currentIndex);
         static void AppendEnd(Utf8StringR str) { str.append("\r\n"); }
         
-        ECOBJECTS_EXPORT static Utf8CP SystemIdToString(SystemId);
+        ECOBJECTS_EXPORT static Utf8CP TypeToString(Type);
 
     public:
         virtual ~ECChange() {};
-        SystemId GetSystemId() const { return m_systemId; }
-        bool HasCustomId() const { return !m_customId.empty(); }
-        ECOBJECTS_EXPORT Utf8CP GetId() const;
-        ChangeType GetChangeType() const { return m_changeType; }
+        Type GetType() const { return m_type; }
+        bool HasChangeName() const { return !m_changeName.empty(); }
+        ECOBJECTS_EXPORT Utf8CP GetChangeName() const;
+        OpCode GetOpCode() const { return m_opCode; }
         ECChange const* GetParent() const { return m_parent; }
         //! IsChanged is always true if ECChange::GetChangeType is ChangeType::New or ChangeType::Deleted.
         //! If ECChange::GetChangeType is ChangeType::Modified, IsChanged returns true if old and new value differ from each other
-        bool IsChanged() const { return m_changeType != ChangeType::Modified || _IsChanged(); }
-        Status GetStatus() { return m_status; }
-        void SetStatus(Status status) { m_status = status; }
+        bool IsChanged() const { return m_opCode != OpCode::Modified || _IsChanged(); }
         void WriteToString(Utf8StringR str, int initIndex = 0, int indentSize = 4) const { _WriteToString(str, initIndex, indentSize); }
         Utf8String ToString() const { Utf8String str;  WriteToString(str); return str; }
+
+        Status GetStatus() { return m_status; }
+        void SetStatus(Status status) { m_status = status; }
     };
 
 typedef RefCountedPtr<ECChange> ECChangePtr;
@@ -213,20 +208,20 @@ struct CompositeECChange : public ECChange
         ECOBJECTS_EXPORT void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
 
     protected:
-        CompositeECChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChange(state, systemId, parent, customId) {}
+        CompositeECChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : ECChange(opCode, type, parent, name) {}
 
         template<typename T>
-        T& Get(SystemId memberSystemId)
+        T& Get(Type memberType)
             {
             static_assert(std::is_base_of<ECChange, T>::value, "T not derived from ECChange");
-            Utf8CP memberId = SystemIdToString(memberSystemId);
-            auto itor = m_changes.find(memberId);
+            Utf8CP memberTypeStr = TypeToString(memberType);
+            auto itor = m_changes.find(memberTypeStr);
             if (itor != m_changes.end())
                 return *(static_cast<T*>(itor->second.get()));
 
-            ECChangePtr changePtr = new T(GetChangeType(), memberSystemId, this, nullptr);
+            ECChangePtr changePtr = new T(GetOpCode(), memberType, this, nullptr);
             ECChange* changeP = changePtr.get();
-            m_changes[changePtr->GetId()] = changePtr;
+            m_changes[changePtr->GetChangeName()] = changePtr;
             return *(static_cast<T*>(changeP));
             }
 
@@ -278,7 +273,7 @@ struct ECChangeArray final : public ECChange
             }
 
     public:
-        ECChangeArray(ChangeType state, SystemId systemId, ECChange const* parent, Utf8CP customId = nullptr) : ECChange(state, systemId, parent, customId)
+        ECChangeArray(OpCode opCode, Type type, ECChange const* parent, Utf8CP name = nullptr) : ECChange(opCode, type, parent, name)
             {
             static_assert(std::is_base_of<ECChange, TArrayElement>::value, "TArrayElement not derived from ECChange");
             }
@@ -289,7 +284,7 @@ struct ECChangeArray final : public ECChange
         bool IsEmpty() const { return m_changes.empty(); }
         TArrayElement& operator[](size_t index) { return static_cast<TArrayElement&>(*m_changes[index]); }
 
-        RefCountedPtr<TArrayElement> CreateElement(ChangeType state, SystemId elementSystemId, Utf8CP customId = nullptr) { return new TArrayElement(state, elementSystemId, this, customId); }
+        RefCountedPtr<TArrayElement> CreateElement(OpCode opCode, Type elementType, Utf8CP name = nullptr) { return new TArrayElement(opCode, elementType, this, name); }
 
         //! Adds a change to the array.
         //! Changes for which IsChanged is false are skipped
@@ -405,45 +400,32 @@ struct PrimitiveChange final : public ECChange
             }
 
     public:
-        PrimitiveChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChange(state, systemId, parent, customId) {}
+        PrimitiveChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : ECChange(opCode, type, parent, name) {}
         ~PrimitiveChange() {}
         //! Gets the value after the change
         Nullable<T> const& GetNew() const { return m_new; }
         //! Gets the value before the change
         Nullable<T> const& GetOld() const { return m_old; }
 
-        //! Sets @p value as 
-        //! - the 'old' value if change type is 'Deleted'
-        //! - the 'new' value if change type is 'New'
-        BentleyStatus Set(Nullable<T> const& value)
-            {
-            if (GetChangeType() == ChangeType::Modified)
-                {
-                BeAssert(false && "Cannot use this method for Changes marked as Modified");
-                return ERROR;
-                }
-
-            m_old = nullptr;
-            m_new = nullptr;
-
-            if (GetChangeType() == ChangeType::Deleted)
-                m_old = value;
-            else
-                {
-                BeAssert(GetChangeType() == ChangeType::New);
-                m_new = value;
-                }
-
-            return SUCCESS;
-            }
-
         //! Sets old and new value only if the differ from each other
         BentleyStatus Set(Nullable<T> const& oldValue, Nullable<T> const& newValue)
             {
-            if (GetChangeType() != ChangeType::Modified)
+            if (GetOpCode() == OpCode::Deleted)
                 {
-                BeAssert(false && "Cannot set old and new value for Change which is not marked as Modified");
-                return ERROR;
+                if (newValue != nullptr)
+                    {
+                    BeAssert(false && "For Change marked as Deleted, new value must be nullptr");
+                    return ERROR;
+                    }
+                }
+
+            if (GetOpCode() == OpCode::New)
+                {
+                if (oldValue != nullptr)
+                    {
+                    BeAssert(false && "For Change marked as New, old value must be nullptr");
+                    return ERROR;
+                    }
                 }
 
             m_old = nullptr;
@@ -460,11 +442,11 @@ struct PrimitiveChange final : public ECChange
         Utf8String ToString() const
             {
             Utf8String str;
-            if (GetChangeType() == ChangeType::Deleted)
+            if (GetOpCode() == OpCode::Deleted)
                 str.append(Stringify(GetOld().Value()));
-            if (GetChangeType() == ChangeType::New)
+            if (GetOpCode() == OpCode::New)
                 str.append(Stringify(GetNew().Value()));
-            if (GetChangeType() == ChangeType::Modified)
+            if (GetOpCode() == OpCode::Modified)
                 str.append(Stringify(GetOld().Value())).append(" -> ").append(Stringify(GetNew().Value()));
             return str;
             }
@@ -488,14 +470,14 @@ typedef PrimitiveChange<Utf8String> StringChange;
 struct SchemaElementChange : public CompositeECChange
     {
 protected:
-    SchemaElementChange(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : CompositeECChange(type, systemId, parent, customId) {}
+    SchemaElementChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : CompositeECChange(opCode, type, parent, name) {}
 
 public:
     virtual ~SchemaElementChange() {}
 
-    StringChange& Name() { return Get<StringChange>(SystemId::Name); }
-    StringChange& DisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
-    StringChange& Description() { return Get<StringChange>(SystemId::Description); }
+    StringChange& Name() { return Get<StringChange>(Type::Name); }
+    StringChange& DisplayLabel() { return Get<StringChange>(Type::DisplayLabel); }
+    StringChange& Description() { return Get<StringChange>(Type::Description); }
     };
 
 typedef ECChangeArray<StringChange> SchemaReferenceChanges;
@@ -509,7 +491,7 @@ struct PropertyValueChange final : public ECChange
     {
     private:
         std::unique_ptr<ECChange> m_value;
-        ECN::PrimitiveType m_type;
+        ECN::PrimitiveType m_primType;
 
         bool _IsChanged() const override { return m_value != nullptr && m_value->IsChanged(); }
         void _WriteToString(Utf8StringR str, int currentIndex, int indentSize) const override;
@@ -517,29 +499,28 @@ struct PropertyValueChange final : public ECChange
         BentleyStatus Inititalize(ECN::PrimitiveType);
 
     public:
-        PropertyValueChange(ChangeType state, SystemId systemId = SystemId::PropertyValue, ECChange const* parent = nullptr, Utf8CP accessString = nullptr)
-            : ECChange(state, SystemId::PropertyValue, parent, accessString)
+        PropertyValueChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP accessString = nullptr)
+            : ECChange(opCode, Type::PropertyValue, parent, accessString)
             {
             BeAssert(!Utf8String::IsNullOrEmpty(accessString) && "access string must not be empty for PropertyValueChange");
-            BeAssert(systemId == GetSystemId());
+            BeAssert(type == GetType());
             }
 
         ~PropertyValueChange() {}
-        Utf8CP GetAccessString() const { BeAssert(HasCustomId()); return GetId(); }
+        Utf8CP GetAccessString() const { BeAssert(HasChangeName()); return GetChangeName(); }
         bool HasValue() const { return m_value != nullptr; }
-        ECN::PrimitiveType GetValueType() const { return m_type; }
-        StringChange* GetString() const { BeAssert(m_type == ECN::PRIMITIVETYPE_String); if (m_type != ECN::PRIMITIVETYPE_String) return nullptr; return static_cast<StringChange*>(m_value.get()); }
-        BooleanChange* GetBoolean() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Boolean); if (m_type != ECN::PRIMITIVETYPE_Boolean) return nullptr; return static_cast<BooleanChange*>(m_value.get()); }
-        DateTimeChange* GetDateTime() const { BeAssert(m_type == ECN::PRIMITIVETYPE_DateTime); if (m_type != ECN::PRIMITIVETYPE_DateTime) return nullptr; return static_cast<DateTimeChange*>(m_value.get()); }
-        DoubleChange* GetDouble() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Double); if (m_type != ECN::PRIMITIVETYPE_Double) return nullptr; return static_cast<DoubleChange*>(m_value.get()); }
-        Int32Change* GetInteger() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Integer); if (m_type != ECN::PRIMITIVETYPE_Integer) return nullptr; return static_cast<Int32Change*>(m_value.get()); }
-        Int64Change* GetLong() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Long); if (m_type != ECN::PRIMITIVETYPE_Long) return nullptr; return static_cast<Int64Change*>(m_value.get()); }
-        Point2dChange* GetPoint2d() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point2d); if (m_type != ECN::PRIMITIVETYPE_Point2d) return nullptr; return static_cast<Point2dChange*>(m_value.get()); }
-        Point3dChange* GetPoint3d() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Point3d); if (m_type != ECN::PRIMITIVETYPE_Point3d) return nullptr; return static_cast<Point3dChange*>(m_value.get()); }
-        BinaryChange* GetBinary() const { BeAssert(m_type == ECN::PRIMITIVETYPE_Binary); if (m_type != ECN::PRIMITIVETYPE_Binary) return nullptr; return static_cast<BinaryChange*>(m_value.get()); }
+        ECN::PrimitiveType GetValueType() const { return m_primType; }
+        StringChange* GetString() const { BeAssert(m_primType == ECN::PRIMITIVETYPE_String); if (m_primType != ECN::PRIMITIVETYPE_String) return nullptr; return static_cast<StringChange*>(m_value.get()); }
+        BooleanChange* GetBoolean() const { BeAssert(m_primType == ECN::PRIMITIVETYPE_Boolean); if (m_primType != ECN::PRIMITIVETYPE_Boolean) return nullptr; return static_cast<BooleanChange*>(m_value.get()); }
+        DateTimeChange* GetDateTime() const { BeAssert(m_primType == ECN::PRIMITIVETYPE_DateTime); if (m_primType != ECN::PRIMITIVETYPE_DateTime) return nullptr; return static_cast<DateTimeChange*>(m_value.get()); }
+        DoubleChange* GetDouble() const { BeAssert(m_primType == ECN::PRIMITIVETYPE_Double); if (m_primType != ECN::PRIMITIVETYPE_Double) return nullptr; return static_cast<DoubleChange*>(m_value.get()); }
+        Int32Change* GetInteger() const { BeAssert(m_primType == ECN::PRIMITIVETYPE_Integer); if (m_primType != ECN::PRIMITIVETYPE_Integer) return nullptr; return static_cast<Int32Change*>(m_value.get()); }
+        Int64Change* GetLong() const { BeAssert(m_primType == ECN::PRIMITIVETYPE_Long); if (m_primType != ECN::PRIMITIVETYPE_Long) return nullptr; return static_cast<Int64Change*>(m_value.get()); }
+        Point2dChange* GetPoint2d() const { BeAssert(m_primType == ECN::PRIMITIVETYPE_Point2d); if (m_primType != ECN::PRIMITIVETYPE_Point2d) return nullptr; return static_cast<Point2dChange*>(m_value.get()); }
+        Point3dChange* GetPoint3d() const { BeAssert(m_primType == ECN::PRIMITIVETYPE_Point3d); if (m_primType != ECN::PRIMITIVETYPE_Point3d) return nullptr; return static_cast<Point3dChange*>(m_value.get()); }
+        BinaryChange* GetBinary() const { BeAssert(m_primType == ECN::PRIMITIVETYPE_Binary); if (m_primType != ECN::PRIMITIVETYPE_Binary) return nullptr; return static_cast<BinaryChange*>(m_value.get()); }
 
         BentleyStatus Set(ECN::ECValueCR oldValue, ECN::ECValueCR newValue);
-        BentleyStatus Set(ECN::ECValueCR);
     };
 
 //=======================================================================================
@@ -559,10 +540,10 @@ struct CustomAttributeChange final : public ECChange
             }
 
     public:
-        CustomAttributeChange(ChangeType type, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : ECChange(type, SystemId::CustomAttribute, parent, customId) 
+        CustomAttributeChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : ECChange(opCode, Type::CustomAttribute, parent, name)
             { 
-            BeAssert(systemId == GetSystemId()); 
-            m_propValueChanges = std::make_unique<ECChangeArray<PropertyValueChange>>(type, GetSystemId(), this, GetId());
+            BeAssert(type == GetType());
+            m_propValueChanges = std::make_unique<ECChangeArray<PropertyValueChange>>(opCode, GetType(), this, GetChangeName());
             }
         ~CustomAttributeChange() {}
 
@@ -577,37 +558,13 @@ typedef ECChangeArray<CustomAttributeChange> CustomAttributeChanges;
 struct RelationshipConstraintChange final : public CompositeECChange
     {
     public:
-        RelationshipConstraintChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : CompositeECChange(state, systemId, parent, customId) { BeAssert(systemId == SystemId::Source || systemId == SystemId::Target); }
+        RelationshipConstraintChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : CompositeECChange(opCode, type, parent, name) { BeAssert(type == Type::Source || type == Type::Target); }
         ~RelationshipConstraintChange() {}
-        StringChange& RoleLabel() { return Get<StringChange>(SystemId::RoleLabel); }
-        StringChange& Multiplicity() { return Get<StringChange>(SystemId::Multiplicity); }
-        BooleanChange& IsPolymorphic() { return Get<BooleanChange>(SystemId::IsPolymorphic); }
-        RelationshipConstraintClassChanges& ConstraintClasses() { return Get<RelationshipConstraintClassChanges>(SystemId::ConstraintClasses); }
-        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(SystemId::CustomAttributes); }
-    };
-
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct NavigationPropertyChange final : public CompositeECChange
-    {
-    public:
-        NavigationPropertyChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : CompositeECChange(state, SystemId::NavigationProperty, parent, customId) { BeAssert(systemId == GetSystemId()); }
-        ~NavigationPropertyChange() {}
-        PrimitiveChange<ECN::ECRelatedInstanceDirection>& Direction() { return Get<PrimitiveChange<ECN::ECRelatedInstanceDirection>>(SystemId::Direction); }
-        StringChange& Relationship() { return Get<StringChange>(SystemId::Relationship); }
-    };
-
-//=======================================================================================
-// @bsiclass                                                Affan.Khan            03/2016
-//+===============+===============+===============+===============+===============+======
-struct ArrayPropertyChange final : public CompositeECChange
-    {
-    public:
-        ArrayPropertyChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : CompositeECChange(state, SystemId::ArrayProperty, parent, customId) { BeAssert(systemId == GetSystemId()); }
-        ~ArrayPropertyChange() {}
-        UInt32Change& MinOccurs() { return Get<UInt32Change>(SystemId::MinOccurs); }
-        UInt32Change& MaxOccurs() { return Get<UInt32Change>(SystemId::MaxOccurs); }
+        StringChange& RoleLabel() { return Get<StringChange>(Type::RoleLabel); }
+        StringChange& Multiplicity() { return Get<StringChange>(Type::Multiplicity); }
+        BooleanChange& IsPolymorphic() { return Get<BooleanChange>(Type::IsPolymorphic); }
+        RelationshipConstraintClassChanges& ConstraintClasses() { return Get<RelationshipConstraintClassChanges>(Type::ConstraintClasses); }
+        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(Type::CustomAttributes); }
     };
 
 //=======================================================================================
@@ -616,27 +573,31 @@ struct ArrayPropertyChange final : public CompositeECChange
 struct PropertyChange final : public SchemaElementChange
     {
     public:
-        PropertyChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::Property, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        PropertyChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(opCode, Type::Property, parent, customId) { BeAssert(type == GetType()); }
         ~PropertyChange() {}
-        StringChange& TypeName() { return Get<StringChange>(SystemId::TypeName); }
-        PrimitiveChange<ECN::ECValue>& MinimumValue() { return Get<PrimitiveChange<ECN::ECValue>>(SystemId::MinimumValue); }
-        PrimitiveChange<ECN::ECValue>& MaximumValue() { return Get<PrimitiveChange<ECN::ECValue>>(SystemId::MaximumValue); }
-        UInt32Change& MinimumLength() { return Get<UInt32Change>(SystemId::MinimumLength); }
-        UInt32Change& MaximumLength() { return Get<UInt32Change>(SystemId::MaximumLength); }
-        BooleanChange& IsStruct() { return Get<BooleanChange>(SystemId::IsStrict); }
-        BooleanChange& IsStructArray() { return Get<BooleanChange>(SystemId::IsStructArray); }
-        BooleanChange& IsPrimitive() { return Get<BooleanChange>(SystemId::IsPrimitive); }
-        BooleanChange& IsPrimitiveArray() { return Get<BooleanChange>(SystemId::IsPrimitiveArray); }
-        BooleanChange& IsNavigation() { return Get<BooleanChange>(SystemId::IsNavigation); }
-        ArrayPropertyChange& Array() { return Get<ArrayPropertyChange>(SystemId::ArrayProperty); }
-        NavigationPropertyChange& Navigation() { return Get<NavigationPropertyChange>(SystemId::NavigationProperty); }
-        StringChange& ExtendedTypeName() { return Get<StringChange>(SystemId::ExtendedTypeName); }
-        BooleanChange& IsReadonly() { return Get<BooleanChange>(SystemId::IsReadonly); }
-        Int32Change& Priority() { return Get<Int32Change>(SystemId::PropertyPriority); }
-        StringChange& KindOfQuantity() { return Get<StringChange>(SystemId::KindOfQuantity); }
-        StringChange& Enumeration() { return Get<StringChange>(SystemId::Enumeration); }
-        StringChange& Category() { return Get<StringChange>(SystemId::PropertyCategory); }
-        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(SystemId::CustomAttributes); }
+        StringChange& TypeName() { return Get<StringChange>(Type::TypeName); }
+        PrimitiveChange<ECN::ECValue>& MinimumValue() { return Get<PrimitiveChange<ECN::ECValue>>(Type::MinimumValue); }
+        PrimitiveChange<ECN::ECValue>& MaximumValue() { return Get<PrimitiveChange<ECN::ECValue>>(Type::MaximumValue); }
+        UInt32Change& MinimumLength() { return Get<UInt32Change>(Type::MinimumLength); }
+        UInt32Change& MaximumLength() { return Get<UInt32Change>(Type::MaximumLength); }
+        BooleanChange& IsStruct() { return Get<BooleanChange>(Type::IsStrict); }
+        BooleanChange& IsStructArray() { return Get<BooleanChange>(Type::IsStructArray); }
+        BooleanChange& IsPrimitive() { return Get<BooleanChange>(Type::IsPrimitive); }
+        BooleanChange& IsPrimitiveArray() { return Get<BooleanChange>(Type::IsPrimitiveArray); }
+        BooleanChange& IsNavigation() { return Get<BooleanChange>(Type::IsNavigation); }
+        StringChange& ExtendedTypeName() { return Get<StringChange>(Type::ExtendedTypeName); }
+        BooleanChange& IsReadonly() { return Get<BooleanChange>(Type::IsReadonly); }
+        Int32Change& Priority() { return Get<Int32Change>(Type::PropertyPriority); }
+        StringChange& KindOfQuantity() { return Get<StringChange>(Type::KindOfQuantity); }
+        StringChange& Enumeration() { return Get<StringChange>(Type::Enumeration); }
+        StringChange& Category() { return Get<StringChange>(Type::PropertyCategory); }
+
+        PrimitiveChange<ECN::ECRelatedInstanceDirection>& NavigationDirection() { return Get<PrimitiveChange<ECN::ECRelatedInstanceDirection>>(Type::Direction); }
+        StringChange& NavigationRelationship() { return Get<StringChange>(Type::Relationship); }
+        UInt32Change& ArrayMinOccurs() { return Get<UInt32Change>(Type::MinOccurs); }
+        UInt32Change& ArrayMaxOccurs() { return Get<UInt32Change>(Type::MaxOccurs); }
+
+        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(Type::CustomAttributes); }
     };
 
 typedef ECChangeArray<PropertyChange> PropertyChanges;
@@ -647,19 +608,19 @@ typedef ECChangeArray<PropertyChange> PropertyChanges;
 struct ClassChange final : public SchemaElementChange
     {
     public:
-        ClassChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, systemId, parent, customId) {}
+        ClassChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : SchemaElementChange(opCode, type, parent, name) {}
         ~ClassChange() {}
 
-        PrimitiveChange<ECN::ECClassModifier>& ClassModifier() { return Get<PrimitiveChange<ECN::ECClassModifier>>(SystemId::ClassModifier); }
-        PrimitiveChange<ECN::ECClassType>& ClassType() { return Get<PrimitiveChange<ECN::ECClassType>>(SystemId::ClassType); }
-        BaseClassChanges& BaseClasses() { return Get<BaseClassChanges>(SystemId::BaseClasses); }
-        PropertyChanges& Properties() { return Get<PropertyChanges>(SystemId::Properties); }
-        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(SystemId::CustomAttributes); }
+        PrimitiveChange<ECN::ECClassModifier>& ClassModifier() { return Get<PrimitiveChange<ECN::ECClassModifier>>(Type::ClassModifier); }
+        PrimitiveChange<ECN::ECClassType>& ClassType() { return Get<PrimitiveChange<ECN::ECClassType>>(Type::ClassType); }
+        BaseClassChanges& BaseClasses() { return Get<BaseClassChanges>(Type::BaseClasses); }
+        PropertyChanges& Properties() { return Get<PropertyChanges>(Type::Properties); }
+        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(Type::CustomAttributes); }
 
-        PrimitiveChange<ECN::StrengthType>& Strength() { return Get<PrimitiveChange<ECN::StrengthType>>(SystemId::StrengthType); }
-        PrimitiveChange<ECN::ECRelatedInstanceDirection>& StrengthDirection() { return Get<PrimitiveChange<ECN::ECRelatedInstanceDirection>>(SystemId::StrengthDirection); }
-        RelationshipConstraintChange& Source() { return Get<RelationshipConstraintChange>(SystemId::Source); }
-        RelationshipConstraintChange& Target() { return Get<RelationshipConstraintChange>(SystemId::Target); }
+        PrimitiveChange<ECN::StrengthType>& Strength() { return Get<PrimitiveChange<ECN::StrengthType>>(Type::StrengthType); }
+        PrimitiveChange<ECN::ECRelatedInstanceDirection>& StrengthDirection() { return Get<PrimitiveChange<ECN::ECRelatedInstanceDirection>>(Type::StrengthDirection); }
+        RelationshipConstraintChange& Source() { return Get<RelationshipConstraintChange>(Type::Source); }
+        RelationshipConstraintChange& Target() { return Get<RelationshipConstraintChange>(Type::Target); }
     };
 
 typedef ECChangeArray<ClassChange> ClassChanges;
@@ -670,10 +631,12 @@ typedef ECChangeArray<ClassChange> ClassChanges;
 struct EnumeratorChange final : public SchemaElementChange
     {
     public:
-        EnumeratorChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::Enumerator, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        EnumeratorChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : SchemaElementChange(opCode, Type::Enumerator, parent, name) { BeAssert(type == GetType()); }
         ~EnumeratorChange() {}
-        StringChange& String() { return Get<StringChange>(SystemId::String); }
-        Int32Change& Integer() { return Get<Int32Change>(SystemId::Integer); }
+        BooleanChange IsInteger() { return Get<BooleanChange>(Type::IsInteger); }
+        Int32Change& Integer() { return Get<Int32Change>(Type::Integer); }
+        BooleanChange IsString() { return Get<BooleanChange>(Type::IsString); }
+        StringChange& String() { return Get<StringChange>(Type::String); }
     };
 
 typedef ECChangeArray<EnumeratorChange> EnumeratorChanges;
@@ -684,11 +647,11 @@ typedef ECChangeArray<EnumeratorChange> EnumeratorChanges;
 struct EnumerationChange final : public SchemaElementChange
     {
     public:
-        EnumerationChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::Enumeration, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        EnumerationChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : SchemaElementChange(opCode, Type::Enumeration, parent, name) { BeAssert(type == GetType()); }
         ~EnumerationChange() {}
-        StringChange& TypeName() { return Get<StringChange>(SystemId::TypeName); }
-        BooleanChange& IsStrict() { return Get<BooleanChange>(SystemId::IsStrict); }
-        EnumeratorChanges& Enumerators() { return Get<EnumeratorChanges>(SystemId::Enumerators); }
+        StringChange& TypeName() { return Get<StringChange>(Type::TypeName); }
+        BooleanChange& IsStrict() { return Get<BooleanChange>(Type::IsStrict); }
+        EnumeratorChanges& Enumerators() { return Get<EnumeratorChanges>(Type::Enumerators); }
     };
 
 typedef ECChangeArray<EnumerationChange> EnumerationChanges;
@@ -699,11 +662,11 @@ typedef ECChangeArray<EnumerationChange> EnumerationChanges;
 struct KindOfQuantityChange final : public SchemaElementChange
     {
     public:
-        KindOfQuantityChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::KindOfQuantity, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        KindOfQuantityChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : SchemaElementChange(opCode, Type::KindOfQuantity, parent, name) { BeAssert(type == GetType()); }
         ~KindOfQuantityChange() {}
-        StringChange& PersistenceUnit() { return Get<StringChange>(SystemId::KoqPersistenceUnit); }
-        DoubleChange& RelativeError() { return Get<DoubleChange>(SystemId::KoqRelativeError); }
-        ECChangeArray<StringChange>& PresentationFormats() { return Get<ECChangeArray<StringChange>>(SystemId::KoqPresentationFormats); }
+        StringChange& PersistenceUnit() { return Get<StringChange>(Type::KoqPersistenceUnit); }
+        DoubleChange& RelativeError() { return Get<DoubleChange>(Type::KoqRelativeError); }
+        ECChangeArray<StringChange>& PresentationFormats() { return Get<ECChangeArray<StringChange>>(Type::KoqPresentationFormats); }
     };
 
 typedef ECChangeArray<KindOfQuantityChange> KindOfQuantityChanges;
@@ -714,9 +677,9 @@ typedef ECChangeArray<KindOfQuantityChange> KindOfQuantityChanges;
 struct PropertyCategoryChange final : public SchemaElementChange
     {
     public:
-        PropertyCategoryChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::PropertyCategory, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        PropertyCategoryChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : SchemaElementChange(opCode, Type::PropertyCategory, parent, name) { BeAssert(type == GetType()); }
         ~PropertyCategoryChange() {}
-        UInt32Change& Priority() { return Get<UInt32Change>(SystemId::PropertyCategoryPriority); }
+        UInt32Change& Priority() { return Get<UInt32Change>(Type::PropertyCategoryPriority); }
     };
 
 
@@ -729,9 +692,9 @@ typedef ECChangeArray<PropertyCategoryChange> PropertyCategoryChanges;
 struct PhenomenonChange final : public SchemaElementChange
     {
     public:
-        PhenomenonChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::Phenomenon, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        PhenomenonChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : SchemaElementChange(opCode, Type::Phenomenon, parent, name) { BeAssert(type == GetType()); }
         ~PhenomenonChange() {}
-        StringChange& Definition() { return Get<StringChange>(SystemId::PhenomenonDefinition); }
+        StringChange& Definition() { return Get<StringChange>(Type::PhenomenonDefinition); }
     };
 
 typedef ECChangeArray<PhenomenonChange> PhenomenonChanges;
@@ -742,7 +705,7 @@ typedef ECChangeArray<PhenomenonChange> PhenomenonChanges;
 struct UnitSystemChange final : public SchemaElementChange
     {
     public:
-        UnitSystemChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::UnitSystem, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        UnitSystemChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : SchemaElementChange(opCode, Type::UnitSystem, parent, name) { BeAssert(type == GetType()); }
         ~UnitSystemChange() {}
     };
 
@@ -754,16 +717,16 @@ typedef ECChangeArray<UnitSystemChange> UnitSystemChanges;
 struct UnitChange final : public SchemaElementChange
     {
     public:
-        UnitChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::Unit, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        UnitChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : SchemaElementChange(opCode, Type::Unit, parent, name) { BeAssert(type == GetType()); }
         ~UnitChange() {}
-        StringChange& Definition() { return Get<StringChange>(SystemId::UnitDefinition); }
-        StringChange& Phenomenon() { return Get<StringChange>(SystemId::Phenomenon); }
-        StringChange& UnitSystem() { return Get<StringChange>(SystemId::UnitSystem); }
-        DoubleChange& Numerator() { return Get<DoubleChange>(SystemId::UnitNumerator); }
-        DoubleChange& Denominator() { return Get<DoubleChange>(SystemId::UnitDenominator); }
-        DoubleChange& Offset() { return Get<DoubleChange>(SystemId::UnitOffset); }
-        BooleanChange& IsConstant() { return Get<BooleanChange>(SystemId::UnitIsConstant); }
-        StringChange& InvertingUnit() { return Get<StringChange>(SystemId::UnitInvertingUnit); }
+        StringChange& Definition() { return Get<StringChange>(Type::UnitDefinition); }
+        StringChange& Phenomenon() { return Get<StringChange>(Type::Phenomenon); }
+        StringChange& UnitSystem() { return Get<StringChange>(Type::UnitSystem); }
+        DoubleChange& Numerator() { return Get<DoubleChange>(Type::UnitNumerator); }
+        DoubleChange& Denominator() { return Get<DoubleChange>(Type::UnitDenominator); }
+        DoubleChange& Offset() { return Get<DoubleChange>(Type::UnitOffset); }
+        BooleanChange& IsConstant() { return Get<BooleanChange>(Type::UnitIsConstant); }
+        StringChange& InvertingUnit() { return Get<StringChange>(Type::UnitInvertingUnit); }
     };
 
 typedef ECChangeArray<UnitChange> UnitChanges;
@@ -774,25 +737,24 @@ typedef ECChangeArray<UnitChange> UnitChanges;
 struct NumericFormatSpecChange final : public CompositeECChange
     {
     public:
-        NumericFormatSpecChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : CompositeECChange(state, SystemId::NumericFormatSpec, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        NumericFormatSpecChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : CompositeECChange(opCode, Type::NumericFormatSpec, parent, name) { BeAssert(type == GetType()); }
         ~NumericFormatSpecChange() {}
 
-        DoubleChange& RoundingFactor() { return Get<DoubleChange>(SystemId::RoundingFactor); }
-        StringChange& PresentationType() { return Get<StringChange>(SystemId::PresentationType); }
-        Int32Change& DecimalPrecision() { return Get<Int32Change>(SystemId::DecimalPrecision); }
-        Int32Change& FractionalPrecision() { return Get<Int32Change>(SystemId::FractionalPrecision); }
-        UInt32Change& MinWidth() { return Get<UInt32Change>(SystemId::MinWidth); }
-        StringChange& ScientificType() { return Get<StringChange>(SystemId::ScientificType); }
-        StringChange& ShowSignOption() { return Get<StringChange>(SystemId::ShowSignOption); }
-        StringChange& FormatTraits() { return Get<StringChange>(SystemId::FormatTraits); }
-        StringChange& DecimalSeparator() { return Get<StringChange>(SystemId::DecimalSeparator); }
-        StringChange& ThousandsSeparator() { return Get<StringChange>(SystemId::ThousandSeparator); }
-        StringChange& UomSeparator() { return Get<StringChange>(SystemId::UomSeparator); }
-        StringChange& StationSeparator() { return Get<StringChange>(SystemId::StationSeparator); }
-        UInt32Change& StationOffsetSize() { return Get<UInt32Change>(SystemId::StationOffsetSize); }
+        DoubleChange& RoundFactor() { return Get<DoubleChange>(Type::RoundFactor); }
+        StringChange& PresentationType() { return Get<StringChange>(Type::PresentationType); }
+        Int32Change& DecimalPrecision() { return Get<Int32Change>(Type::DecimalPrecision); }
+        Int32Change& FractionalPrecision() { return Get<Int32Change>(Type::FractionalPrecision); }
+        UInt32Change& MinWidth() { return Get<UInt32Change>(Type::MinWidth); }
+        StringChange& ScientificType() { return Get<StringChange>(Type::ScientificType); }
+        StringChange& ShowSignOption() { return Get<StringChange>(Type::ShowSignOption); }
+        StringChange& FormatTraits() { return Get<StringChange>(Type::FormatTraits); }
+        StringChange& DecimalSeparator() { return Get<StringChange>(Type::DecimalSeparator); }
+        StringChange& ThousandsSeparator() { return Get<StringChange>(Type::ThousandSeparator); }
+        StringChange& UomSeparator() { return Get<StringChange>(Type::UomSeparator); }
+        StringChange& StationSeparator() { return Get<StringChange>(Type::StationSeparator); }
+        UInt32Change& StationOffsetSize() { return Get<UInt32Change>(Type::StationOffsetSize); }
 
         BentleyStatus SetFrom(Formatting::NumericFormatSpecCP oldSpec, Formatting::NumericFormatSpecCP newSpec);
-        BentleyStatus SetFrom(Formatting::NumericFormatSpecCR);
     };
 
 //=======================================================================================
@@ -801,22 +763,21 @@ struct NumericFormatSpecChange final : public CompositeECChange
 struct CompositeValueSpecChange final : public CompositeECChange
     {
     public:
-        CompositeValueSpecChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : CompositeECChange(state, SystemId::CompositeValueSpec, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        CompositeValueSpecChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : CompositeECChange(opCode, Type::CompositeValueSpec, parent, name) { BeAssert(type == GetType()); }
         ~CompositeValueSpecChange() {}
 
-        BooleanChange& IncludeZero() { return Get<BooleanChange>(SystemId::CompositeIncludeZero); }
-        StringChange& Spacer() { return Get<StringChange>(SystemId::CompositeSpacer); }
-        StringChange& MajorUnit() { return Get<StringChange>(SystemId::CompositeMajorUnit); }
-        StringChange& MajorLabel() { return Get<StringChange>(SystemId::CompositeMajorLabel); }
-        StringChange& MiddleUnit() { return Get<StringChange>(SystemId::CompositeMiddleUnit); }
-        StringChange& MiddleLabel() { return Get<StringChange>(SystemId::CompositeMiddleLabel); }
-        StringChange& MinorUnit() { return Get<StringChange>(SystemId::CompositeMinorUnit); }
-        StringChange& MinorLabel() { return Get<StringChange>(SystemId::CompositeMinorLabel); }
-        StringChange& SubUnit() { return Get<StringChange>(SystemId::CompositeSubUnit); }
-        StringChange& SubLabel() { return Get<StringChange>(SystemId::CompositeSubLabel); }
+        BooleanChange& IncludeZero() { return Get<BooleanChange>(Type::CompositeIncludeZero); }
+        StringChange& Spacer() { return Get<StringChange>(Type::CompositeSpacer); }
+        StringChange& MajorUnit() { return Get<StringChange>(Type::CompositeMajorUnit); }
+        StringChange& MajorLabel() { return Get<StringChange>(Type::CompositeMajorLabel); }
+        StringChange& MiddleUnit() { return Get<StringChange>(Type::CompositeMiddleUnit); }
+        StringChange& MiddleLabel() { return Get<StringChange>(Type::CompositeMiddleLabel); }
+        StringChange& MinorUnit() { return Get<StringChange>(Type::CompositeMinorUnit); }
+        StringChange& MinorLabel() { return Get<StringChange>(Type::CompositeMinorLabel); }
+        StringChange& SubUnit() { return Get<StringChange>(Type::CompositeSubUnit); }
+        StringChange& SubLabel() { return Get<StringChange>(Type::CompositeSubLabel); }
 
         BentleyStatus SetFrom(Formatting::CompositeValueSpecCP oldSpec, Formatting::CompositeValueSpecCP newSpec);
-        BentleyStatus SetFrom(Formatting::CompositeValueSpecCR);
     };
 
 //=======================================================================================
@@ -825,10 +786,10 @@ struct CompositeValueSpecChange final : public CompositeECChange
 struct FormatChange final : public SchemaElementChange
     {
     public:
-        FormatChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::Format, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        FormatChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : SchemaElementChange(opCode, Type::Format, parent, name) { BeAssert(type == GetType()); }
         ~FormatChange() {}
-        NumericFormatSpecChange& NumericSpec() { return Get<NumericFormatSpecChange>(SystemId::NumericFormatSpec); }
-        CompositeValueSpecChange& CompositeSpec() { return Get<CompositeValueSpecChange>(SystemId::CompositeValueSpec); }
+        NumericFormatSpecChange& NumericSpec() { return Get<NumericFormatSpecChange>(Type::NumericFormatSpec); }
+        CompositeValueSpecChange& CompositeSpec() { return Get<CompositeValueSpecChange>(Type::CompositeValueSpec); }
     };
 
 typedef ECChangeArray<FormatChange> FormatChanges;
@@ -840,27 +801,27 @@ typedef ECChangeArray<FormatChange> FormatChanges;
 struct SchemaChange final : public SchemaElementChange
     {
     public:
-        SchemaChange(ChangeType state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr) : SchemaElementChange(state, SystemId::Schema, parent, customId) { BeAssert(systemId == GetSystemId()); }
+        SchemaChange(OpCode opCode, Type type, ECChange const* parent = nullptr, Utf8CP name = nullptr) : SchemaElementChange(opCode, Type::Schema, parent, name) { BeAssert(type == GetType()); }
         ~SchemaChange() {}
 
-        StringChange& Alias() { return Get<StringChange>(SystemId::Alias); }
-        UInt32Change& VersionRead() { return Get<UInt32Change>(SystemId::VersionRead); }
-        UInt32Change& VersionMinor() { return Get<UInt32Change>(SystemId::VersionMinor); }
-        UInt32Change& VersionWrite() { return Get<UInt32Change>(SystemId::VersionWrite); }
-        UInt32Change& ECVersion() { return Get<UInt32Change>(SystemId::ECVersion); }
-        UInt32Change& OriginalECXmlVersionMajor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMajor); }
-        UInt32Change& OriginalECXmlVersionMinor() { return Get<UInt32Change>(SystemId::OriginalECXmlVersionMinor); }
+        StringChange& Alias() { return Get<StringChange>(Type::Alias); }
+        UInt32Change& VersionRead() { return Get<UInt32Change>(Type::VersionRead); }
+        UInt32Change& VersionMinor() { return Get<UInt32Change>(Type::VersionMinor); }
+        UInt32Change& VersionWrite() { return Get<UInt32Change>(Type::VersionWrite); }
+        UInt32Change& ECVersion() { return Get<UInt32Change>(Type::ECVersion); }
+        UInt32Change& OriginalECXmlVersionMajor() { return Get<UInt32Change>(Type::OriginalECXmlVersionMajor); }
+        UInt32Change& OriginalECXmlVersionMinor() { return Get<UInt32Change>(Type::OriginalECXmlVersionMinor); }
 
-        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(SystemId::CustomAttributes); }
-        SchemaReferenceChanges& References() { return Get<SchemaReferenceChanges>(SystemId::SchemaReferences); }
-        ClassChanges& Classes() { return Get<ClassChanges>(SystemId::Classes); }
-        EnumerationChanges& Enumerations() { return Get<EnumerationChanges>(SystemId::Enumerations); }
-        KindOfQuantityChanges& KindOfQuantities() { return Get<KindOfQuantityChanges>(SystemId::KindOfQuantities); }
-        PropertyCategoryChanges& PropertyCategories() { return Get<PropertyCategoryChanges>(SystemId::PropertyCategories); }
-        PhenomenonChanges& Phenomena() { return Get<PhenomenonChanges>(SystemId::Phenomena); }
-        UnitSystemChanges& UnitSystems() { return Get<UnitSystemChanges>(SystemId::UnitSystems); }
-        UnitChanges& Units() { return Get<UnitChanges>(SystemId::Units); }
-        FormatChanges& Formats() { return Get<FormatChanges>(SystemId::Formats); }
+        CustomAttributeChanges& CustomAttributes() { return Get<CustomAttributeChanges>(Type::CustomAttributes); }
+        SchemaReferenceChanges& References() { return Get<SchemaReferenceChanges>(Type::SchemaReferences); }
+        ClassChanges& Classes() { return Get<ClassChanges>(Type::Classes); }
+        EnumerationChanges& Enumerations() { return Get<EnumerationChanges>(Type::Enumerations); }
+        KindOfQuantityChanges& KindOfQuantities() { return Get<KindOfQuantityChanges>(Type::KindOfQuantities); }
+        PropertyCategoryChanges& PropertyCategories() { return Get<PropertyCategoryChanges>(Type::PropertyCategories); }
+        PhenomenonChanges& Phenomena() { return Get<PhenomenonChanges>(Type::Phenomena); }
+        UnitSystemChanges& UnitSystems() { return Get<UnitSystemChanges>(Type::UnitSystems); }
+        UnitChanges& Units() { return Get<UnitChanges>(Type::Units); }
+        FormatChanges& Formats() { return Get<FormatChanges>(Type::Formats); }
     };
 
 //=======================================================================================
@@ -872,7 +833,7 @@ private:
     ECChangeArray<SchemaChange> m_changes;
 
 public:
-    SchemaDiff() : m_changes(ChangeType::Modified, SystemId::Schemas, nullptr) {}
+    SchemaDiff() : m_changes(ECChange::OpCode::Modified, ECChange::Type::Schemas, nullptr) {}
 
     ECChangeArray<SchemaChange>& Changes() { return m_changes; }
 
@@ -881,7 +842,7 @@ public:
         for (size_t i = 0; i < Changes().Count(); i++)
             {
             SchemaChange& change = m_changes[i];
-            if (schemaName.Equals(change.GetId()))
+            if (schemaName.Equals(change.GetChangeName()))
                 return &change;
             }
 
@@ -917,55 +878,36 @@ public:
 private :
     Options m_options;
 
-    BentleyStatus CompareECSchema(SchemaChange&, ECN::ECSchemaCR, ECN::ECSchemaCR);
-    BentleyStatus CompareECClass(ClassChange&, ECN::ECClassCR, ECN::ECClassCR);
-    BentleyStatus CompareECBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const&, ECN::ECBaseClassesList const&);
-    BentleyStatus CompareECRelationshipClass(ClassChange&, ECN::ECRelationshipClassCR, ECN::ECRelationshipClassCR);
-    BentleyStatus CompareECRelationshipConstraint(RelationshipConstraintChange&, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipConstraintCR);
-    BentleyStatus CompareECRelationshipConstraintClasses(RelationshipConstraintClassChanges&, ECN::ECRelationshipConstraintClassList const&, ECN::ECRelationshipConstraintClassList const&);
-    BentleyStatus CompareECProperty(PropertyChange&, ECN::ECPropertyCR, ECN::ECPropertyCR);
-    BentleyStatus CompareECProperties(PropertyChanges&, ECN::ECPropertyIterableCR, ECN::ECPropertyIterableCR);
-    BentleyStatus CompareECClasses(ClassChanges&, ECN::ECClassContainerCR, ECN::ECClassContainerCR);
-    BentleyStatus CompareECEnumerations(EnumerationChanges&, ECN::ECEnumerationContainerCR, ECN::ECEnumerationContainerCR);
-    BentleyStatus CompareCustomAttributes(CustomAttributeChanges&, ECN::IECCustomAttributeContainerCR, ECN::IECCustomAttributeContainerCR);
-    BentleyStatus CompareCustomAttribute(CustomAttributeChange&, ECN::IECInstanceCR, ECN::IECInstanceCR);
-    BentleyStatus CompareECEnumeration(EnumerationChange&, ECN::ECEnumerationCR oldVal, ECN::ECEnumerationCR newVal);
-    BentleyStatus CompareECEnumerators(EnumeratorChanges&, ECN::EnumeratorIterable const&, ECN::EnumeratorIterable const&);
-    BentleyStatus CompareBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const&, ECN::ECBaseClassesList const&);
-    BentleyStatus CompareReferences(SchemaReferenceChanges&, ECN::ECSchemaReferenceListCR, ECN::ECSchemaReferenceListCR);
-    BentleyStatus CompareKindOfQuantity(KindOfQuantityChange&, ECN::KindOfQuantityCR, ECN::KindOfQuantityCR);
-    BentleyStatus CompareKindOfQuantities(KindOfQuantityChanges&, ECN::KindOfQuantityContainerCR, ECN::KindOfQuantityContainerCR);
-    BentleyStatus ComparePropertyCategory(PropertyCategoryChange&, ECN::PropertyCategoryCR, ECN::PropertyCategoryCR);
-    BentleyStatus ComparePropertyCategories(PropertyCategoryChanges&, ECN::PropertyCategoryContainerCR, ECN::PropertyCategoryContainerCR);
-    BentleyStatus ComparePhenomena(PhenomenonChanges&, ECN::PhenomenonContainerCR, ECN::PhenomenonContainerCR);
-    BentleyStatus ComparePhenomenon(PhenomenonChange&, ECN::PhenomenonCR, ECN::PhenomenonCR);
-    BentleyStatus CompareUnitSystems(UnitSystemChanges&, ECN::UnitSystemContainerCR, ECN::UnitSystemContainerCR);
-    BentleyStatus CompareUnitSystem(UnitSystemChange&, ECN::UnitSystemCR, ECN::UnitSystemCR);
-    BentleyStatus CompareUnits(UnitChanges&, ECN::UnitContainerCR, ECN::UnitContainerCR);
-    BentleyStatus CompareUnit(UnitChange&, ECN::ECUnitCR, ECN::ECUnitCR);
-    BentleyStatus CompareFormats(FormatChanges&, ECN::FormatContainerCR, ECN::FormatContainerCR);
-    BentleyStatus CompareFormat(FormatChange&, ECN::ECFormatCR, ECN::ECFormatCR);
+    BentleyStatus CompareSchema(SchemaChange&, ECN::ECSchemaCP, ECN::ECSchemaCP);
+    BentleyStatus CompareReferences(SchemaReferenceChanges&, ECN::ECSchemaReferenceList const*, ECN::ECSchemaReferenceList const*);
+    BentleyStatus CompareClasses(ClassChanges&, ECN::ECClassContainerCP, ECN::ECClassContainerCP);
+    BentleyStatus CompareClass(ClassChange&, ECN::ECClassCP, ECN::ECClassCP);
+    BentleyStatus CompareBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const*, ECN::ECBaseClassesList const*);
+    BentleyStatus CompareRelationshipConstraint(RelationshipConstraintChange&, ECN::ECRelationshipConstraintCP, ECN::ECRelationshipConstraintCP);
+    BentleyStatus CompareRelationshipConstraintClasses(RelationshipConstraintClassChanges&, ECN::ECRelationshipConstraintClassList const*, ECN::ECRelationshipConstraintClassList const*);
+    BentleyStatus CompareProperties(PropertyChanges&, bvector<ECN::ECPropertyCP> const&, bvector<ECN::ECPropertyCP> const&);
+    BentleyStatus CompareProperty(PropertyChange&, ECN::ECPropertyCP, ECN::ECPropertyCP);
+    BentleyStatus CompareEnumerations(EnumerationChanges&, ECN::ECEnumerationContainerCP, ECN::ECEnumerationContainerCP);
+    BentleyStatus CompareEnumeration(EnumerationChange&, ECN::ECEnumerationCP oldVal, ECN::ECEnumerationCP newVal);
+    BentleyStatus CompareEnumerators(EnumeratorChanges&, bvector<ECN::ECEnumeratorCP> const&, bvector<ECN::ECEnumeratorCP> const&);
+    BentleyStatus CompareEnumerator(EnumeratorChange&, ECN::ECEnumeratorCP oldVal, ECN::ECEnumeratorCP newVal);
+    BentleyStatus CompareKindOfQuantities(KindOfQuantityChanges&, ECN::KindOfQuantityContainerCP, ECN::KindOfQuantityContainerCP);
+    BentleyStatus CompareKindOfQuantity(KindOfQuantityChange&, ECN::KindOfQuantityCP, ECN::KindOfQuantityCP);
+    BentleyStatus ComparePropertyCategories(PropertyCategoryChanges&, ECN::PropertyCategoryContainerCP, ECN::PropertyCategoryContainerCP);
+    BentleyStatus ComparePropertyCategory(PropertyCategoryChange&, ECN::PropertyCategoryCP, ECN::PropertyCategoryCP);
+    BentleyStatus ComparePhenomena(PhenomenonChanges&, ECN::PhenomenonContainerCP, ECN::PhenomenonContainerCP);
+    BentleyStatus ComparePhenomenon(PhenomenonChange&, ECN::PhenomenonCP, ECN::PhenomenonCP);
+    BentleyStatus CompareUnitSystems(UnitSystemChanges&, ECN::UnitSystemContainerCP, ECN::UnitSystemContainerCP);
+    BentleyStatus CompareUnitSystem(UnitSystemChange&, ECN::UnitSystemCP, ECN::UnitSystemCP);
+    BentleyStatus CompareUnits(UnitChanges&, ECN::UnitContainerCP, ECN::UnitContainerCP);
+    BentleyStatus CompareUnit(UnitChange&, ECN::ECUnitCP, ECN::ECUnitCP);
+    BentleyStatus CompareFormats(FormatChanges&, ECN::FormatContainerCP, ECN::FormatContainerCP);
+    BentleyStatus CompareFormat(FormatChange&, ECN::ECFormatCP, ECN::ECFormatCP);
+    BentleyStatus CompareCustomAttributes(CustomAttributeChanges&, bvector<ECN::IECInstancePtr> const&, bvector<ECN::IECInstancePtr> const&);
+    BentleyStatus CompareCustomAttribute(CustomAttributeChange&, ECN::IECInstanceCP, ECN::IECInstanceCP);
 
-    BentleyStatus AppendECSchema(SchemaChange&, ECN::ECSchemaCR);
-    BentleyStatus AppendECClass(ClassChange&, ECN::ECClassCR);
-    BentleyStatus AppendECRelationshipClass(ClassChange&, ECN::ECRelationshipClassCR);
-    BentleyStatus AppendECRelationshipConstraintClasses(RelationshipConstraintClassChanges&, ECN::ECRelationshipConstraintClassList const&);
-    BentleyStatus AppendECRelationshipConstraint(RelationshipConstraintChange&, ECN::ECRelationshipConstraintCR);
-    BentleyStatus AppendECEnumeration(EnumerationChange&, ECN::ECEnumerationCR);
-    BentleyStatus AppendECProperty(PropertyChange&, ECN::ECPropertyCR);
-    BentleyStatus AppendCustomAttributes(CustomAttributeChanges&, ECN::IECCustomAttributeContainerCR);
-    BentleyStatus AppendCustomAttribute(CustomAttributeChange&, ECN::IECInstanceCR);
-    BentleyStatus AppendBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const&);
-    BentleyStatus AppendReferences(SchemaReferenceChanges&, ECN::ECSchemaReferenceListCR);
-    BentleyStatus AppendKindOfQuantity(KindOfQuantityChange&, ECN::KindOfQuantityCR);
-    BentleyStatus AppendPropertyCategory(PropertyCategoryChange&, ECN::PropertyCategoryCR);
-    BentleyStatus AppendPhenomenon(PhenomenonChange&, ECN::PhenomenonCR);
-    BentleyStatus AppendUnitSystem(UnitSystemChange&, ECN::UnitSystemCR);
-    BentleyStatus AppendUnit(UnitChange&, ECN::ECUnitCR);
-    BentleyStatus AppendFormat(FormatChange&, ECN::ECFormatCR);
-
-    BentleyStatus ConvertECInstanceToValueMap(std::map<Utf8String, ECN::ECValue>&, ECN::IECInstanceCR);
-    BentleyStatus ConvertECValuesCollectionToValueMap(std::map<Utf8String, ECN::ECValue>&, ECN::ECValuesCollectionCR);
+    BentleyStatus ConvertECInstanceToValueMap(bmap<Utf8String, ECN::ECValue>&, ECN::IECInstanceCR);
+    BentleyStatus ConvertECValuesCollectionToValueMap(bmap<Utf8String, ECN::ECValue>&, ECN::ECValuesCollectionCR);
 
 public:
     SchemaComparer(){}
