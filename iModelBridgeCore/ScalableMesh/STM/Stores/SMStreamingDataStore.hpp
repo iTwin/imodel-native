@@ -26,74 +26,110 @@
 
 USING_NAMESPACE_IMAGEPP
 
-template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamingSettings(const Json::Value & config)
+template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamingSettings(WString url)
     {
-    if (config.isMember("guid"))
+    BeFileName filename(url.c_str());
+    if (!filename.IsUrl())
         {
-        m_guid = config["guid"].asCString();
-        }
-    if (config.isMember("data_type"))
-        {
-        auto const& data_type = config["data_type"].asString();
-        if (data_type == "3DTiles") m_dataType = DataType::CESIUM3DTILES;
-        else if (data_type == "SM3DTiles") m_dataType = DataType::SMCESIUM3DTILES;
-        else if (data_type == "SMGroups") m_dataType = DataType::SMGROUPS;
-        else
+        // Local file, is it local 3dtiles or local stub file?
+        if (BeFileName::GetExtension(url.c_str()).CompareToI(L"s3sm") == 0)
             {
-            assert(!"Unknown data type for streaming");
-            }
-        }
-    if (config.isMember("server"))
-        {
-        auto const& server_config = config["server"];
-        if (!(server_config.isMember("type") && server_config.isMember("settings")))
-            {
-            assert(!"Type and settings must be defined in the config file");
-            }
-        auto const& server_type = server_config["type"].asString();
-        if (server_type == "rds")
-            {
-            m_location = ServerLocation::RDS;
-            m_commMethod = CommMethod::CURL;
-            }
-        else if (server_type == "local")
-            {
-            m_location = ServerLocation::LOCAL;
-            m_commMethod = CommMethod::CURL;
-            }
-        else if (server_type == "azure")
-            {
-            m_location = ServerLocation::AZURE;
-            m_commMethod = CommMethod::CURL;
+            // Local stub file
+            BeFile config_file;
+
+            if (BeFileStatus::Success == OPEN_FILE(config_file, url.c_str(), BeFileAccess::Read))
+                {
+                bvector<Byte> config_file_buffer;
+#ifndef VANCOUVER_API
+                config_file.ReadEntireFile(config_file_buffer);
+#else
+                uint32_t maxConfigFileBytes = 100000;
+                uint32_t bytesRead = 0;
+                config_file_buffer.resize(maxConfigFileBytes);
+                config_file.Read(config_file_buffer.data(), &bytesRead, maxConfigFileBytes);
+                assert(bytesRead > 0 && bytesRead < maxConfigFileBytes);
+                config_file_buffer.resize(bytesRead);
+#endif
+
+                Json::Value     config;
+                Json::Reader().parse(reinterpret_cast<char *>(config_file_buffer.data()), reinterpret_cast<char *>(config_file_buffer.data() + config_file_buffer.size()), config);
+                if (config.isMember("version") && config["version"].asDouble() == 1.0)
+                    {
+                    // Reset url
+                    url = config.isMember("url") ? WString(config["url"].asCString()) : L"";
+                    }
+                }
             }
         else
             {
-            }
-        auto const& server_settings = server_config["settings"];
-        if (server_settings.isMember("id"))
-            {
-            m_serverID = server_settings["id"].asCString();
-            }
-        if (server_settings.isMember("url"))
-            {
-            m_url = server_settings["url"].asCString();
-            }
-        if (server_settings.isMember("authentication"))
-            {
-            auto const& auth = server_settings["authentication"];
-            if (auth.isMember("public") && auth["public"] == true)
-                {
-                m_public = true;
-                s_stream_from_wsg = false;
-                }
-            else
-                {
-                s_stream_from_wsg = true;
-                }
+            // Local 3dtiles
+            this->m_url = Utf8String(url.c_str());
+            return;
             }
         }
+    ParseUrl(url);
     }
 
+template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::ParseUrl(const WString url)
+    {
+    Utf8String projectID;
+#ifndef VANCOUVER_API
+    if (url.ContainsI("realitydataservices") && url.ContainsI("S3MXECPlugin"))
+#else
+    Utf8String lowerPath(url.c_str());
+    lowerPath.ToLower();
+    auto position1 = lowerPath.find("realitydataservices");
+    auto position2 = lowerPath.find("s3mxecplugin");
+    if (position1 != Utf8String::npos && position2 != Utf8String::npos)
+#endif
+        { // RDS
+        this->m_location = ServerLocation::RDS;
+        this->m_commMethod = CommMethod::CURL;
+        auto firstSeparatorPos = url.find(L".");
+        this->m_serverID = Utf8String(url.substr(8, firstSeparatorPos - 8));
+
+        auto guidPos = url.find(L"RealityData/") + 12;
+        auto guidLength = url.find(L"/", guidPos) - guidPos;
+
+        // guid
+        this->m_guid = Utf8String(url.substr(guidPos, guidLength));
+        auto projectIDStartPos = url.find(L"S3MXECPlugin--") + 14;
+        auto projectIDEndPos = url.find_first_of(L"/", projectIDStartPos);
+        this->m_projectID = Utf8String(url.substr(projectIDStartPos, projectIDEndPos - projectIDStartPos));
+        }
+    else
+        { // Direct link to Azure
+        this->m_location = ServerLocation::RDS;
+        this->m_commMethod = CommMethod::CURL;
+        assert(url.substr(0, 8) == L"https://");
+        auto firstSeparatorPos = url.find(L".");
+        this->m_serverID = Utf8String(url.substr(8, firstSeparatorPos - 8));
+
+        // compute positions and lengths for guid, root file and azure token
+        auto guidPos = url.find(L"/", 8) + 1;
+        auto guidLength = url.find(L"/", guidPos) - guidPos;
+        auto rootTilesetPathPos = guidPos + guidLength + 1;
+        auto azureTokenPos = url.find(L"?", rootTilesetPathPos);
+        auto rootTilesetPathLength = azureTokenPos - rootTilesetPathPos;
+        auto azureTokenLength = url.size() - azureTokenPos;
+
+        // guid
+        this->m_guid = Utf8String(url.substr(guidPos, guidLength));
+
+        // root file
+        auto rootTilesetPath = Utf8String(url.substr(rootTilesetPathPos, rootTilesetPathLength));
+
+        // azure token
+        auto azureToken = Utf8String(url.substr(azureTokenPos + 1, azureTokenLength));
+
+        // NEEDS_WORK_SM_STREAMING : handle Azure token properly
+
+        this->m_url = rootTilesetPath.c_str();
+
+        this->m_projectID = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProjectID();
+        }
+    // NEEDS_WORK_SM_STREAMING : Handle invalid/unsupported urls (e.g. Azure urls which are not from RDS i.e. does not have a project associated)
+    }
 
 template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const WString& path, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path, FormatType formatType)
     : SMSQLiteSisterFile(nullptr),

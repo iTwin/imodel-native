@@ -528,9 +528,11 @@ void             ScalableMeshLib::Host::RemoveRegisteredScalableMesh(const WStri
     m_smPaths->erase(path);
     }
 
-void ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref)
+StatusInt ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref)
     {
-    m_smPaths->insert(make_bpair(path, ref.get()));
+    if (m_smPaths->insert(make_bpair(path, ref.get())).second)
+        return SUCCESS;
+    return ERROR;
     }
 
 /*======================================================================+

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/ScalableMeshLib.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -65,7 +65,7 @@ public:
 
         BENTLEY_SM_EXPORT IScalableMeshPtr GetRegisteredScalableMesh(const WString& path);
         BENTLEY_SM_EXPORT void             RemoveRegisteredScalableMesh(const WString& path);
-        void RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref);
+        StatusInt RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref);
 
         };
 

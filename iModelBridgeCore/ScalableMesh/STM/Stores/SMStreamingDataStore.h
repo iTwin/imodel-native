@@ -50,7 +50,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
             public:
                 SMStreamingSettings() {};
-                SMStreamingSettings(const Json::Value& fileName);
+                SMStreamingSettings(WString url);
                 SMStreamingSettings(const SMStreamingSettings& settings)
                     : m_location(settings.m_location),
                       m_commMethod(settings.m_commMethod),
@@ -58,6 +58,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
                       m_public(settings.m_public),
                       m_isPublishing(settings.m_isPublishing),
                       m_guid(settings.m_guid),
+                      m_projectID(settings.m_projectID),
                       m_serverID(settings.m_serverID),
                       m_url(settings.m_url)
                     {}
@@ -87,6 +88,11 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             Utf8String GetUtf8GUID() const
                 {
                 return m_guid;
+                }
+
+            Utf8String GetUtf8ProjectID() const
+                {
+                return m_projectID;
                 }
 
             WString GetURL() const
@@ -125,9 +131,15 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             bool m_isGCSSet = false;
             uint64_t   m_smID;
             Utf8String m_guid;
+            Utf8String m_projectID;
             Utf8String m_serverID;
             Utf8String m_url;
             Utf8String m_gcs;
+
+            private:
+
+                void ParseUrl(const WString url);
+
             };
         typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMStreamingSettings> SMStreamingSettingsPtr;
 
