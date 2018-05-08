@@ -938,8 +938,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         BENTLEY_SM_EXPORT virtual             ~SMMeshIndex<POINT, EXTENT>();
 
 
-        ISMPointIndexMesher<POINT, EXTENT>*
-            GetMesher2_5d();
+        BENTLEY_SM_EXPORT ISMPointIndexMesher<POINT, EXTENT>* GetMesher2_5d();
 
         ISMPointIndexMesher<POINT, EXTENT>*
             GetMesher3d();

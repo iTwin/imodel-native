@@ -2,17 +2,17 @@
 //:>
 //:>     $Source: STM/HPUPacket.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include "ScalableMeshPCH.h"
 #include <Imagepp/h/ImagePPAPI.h>
 #ifndef VANCOUVER_API
 #include "HPUPacket.h"
+   
+namespace HPU {       
 
-namespace HPU {
-
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------**//**`
 * @description  Construct a packet around a c string. Packet will contain the string
 *               + its null terminator. The packet will be read-only.
 * @param        pi_pStr     A null terminated string.

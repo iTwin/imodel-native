@@ -10,7 +10,7 @@ USING_NAMESPACE_IMAGEPP
 #include "SMMeshIndex.h"
 #include "SMMeshIndex.hpp"
 #include "ScalableMeshQuery.h"
-
+   
 
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/HPUPacket.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -37,18 +37,18 @@ public:
     typedef value_type*         iterator;
 
     // String data constructor
-     explicit        Packet                             (const char*             pi_pStr);
+    BENTLEY_SM_EXPORT explicit        Packet                             (const char*             pi_pStr);
 
     // Raw data constructor
-    explicit        Packet                             (const byte*             pi_pData,
-                                                                    size_t                  pi_Size);
+    BENTLEY_SM_EXPORT explicit        Packet                             (const byte*             pi_pData,
+                                                                          size_t                  pi_Size);
 
-    explicit        Packet                             (size_t                  pi_Capacity = 0);
+    BENTLEY_SM_EXPORT explicit        Packet                             (size_t                  pi_Capacity = 0);
 
     Packet                             (const Packet&           pi_rRight);
     Packet&         operator=                          (const Packet&           pi_rRight);
 
-    virtual         ~Packet                             ();
+    BENTLEY_SM_EXPORT virtual         ~Packet                             ();
 
 
 
@@ -58,28 +58,28 @@ public:
     void            WrapStr                            (const char*             pi_pStr);
 
     // Raw data accessors
-    const_iterator  Begin                              () const;
-    const_iterator  End                                () const;
+    BENTLEY_SM_EXPORT const_iterator  Begin                              () const;
+    BENTLEY_SM_EXPORT const_iterator  End                                () const;
 
     const byte*     Get                                () const;
-    size_t          GetSize                            () const;
+    BENTLEY_SM_EXPORT size_t          GetSize                            () const;
     size_t          GetCapacity                        () const;
 
-    bool            IsEmpty                            () const;
+    BENTLEY_SM_EXPORT bool            IsEmpty                            () const;
 
     iterator        BeginEdit                          ();
     iterator        EndEdit                            ();
 
     byte*           Edit                               ();
 
-    void            Wrap                               (const Packet&           pio_rRight);
+    BENTLEY_SM_EXPORT void            Wrap                               (const Packet&           pio_rRight);
 
-    void            Wrap                               (const byte*             pi_pData,
+    BENTLEY_SM_EXPORT void            Wrap                               (const byte*             pi_pData,
                                                                     size_t                  pi_Size);
 
-    void            WrapEditable                       (byte*                   pi_pData,
-                                                                    size_t                  pi_Size,
-                                                                    size_t                  pi_Capacity = 0);
+    BENTLEY_SM_EXPORT void            WrapEditable                       (byte*                   pi_pData,
+                                                                        size_t                  pi_Size,
+                                                                        size_t                  pi_Capacity = 0);
 
     bool            StealOwnership                     (Packet&                 pio_rRight);
 
@@ -89,7 +89,7 @@ public:
 
     void            Reserve                            (size_t                  pi_NewCapacity);
 
-    void            Clear                              ();
+    BENTLEY_SM_EXPORT void            Clear                              ();
 
     iterator        Erase                              (const_iterator          pi_Begin,
                                                                     const_iterator          pi_End);
@@ -100,7 +100,7 @@ public:
     iterator        Insert                             (const_iterator          pi_Position,
                                                                     size_t                  pi_Size = 1);
 
-    iterator        Append                             (size_t                  pi_Size = 1);
+    BENTLEY_SM_EXPORT iterator        Append                             (size_t                  pi_Size = 1);
 
 
     void            Swap                               (Packet&                 pio_rRight);
