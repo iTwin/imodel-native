@@ -14,13 +14,16 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
+#define BIS_ECSCHEMA_NAME       "BisCore"
+#define BIS_CLASS_Element                   "Element"
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 bool excludeSchema(ECN::ECSchemaCR schema)
     {
     return schema.IsStandardSchema() || schema.IsSystemSchema() || schema.IsSupplementalSchema() ||
-        schema.GetName().EqualsI("DgnDbSyncV8") || schema.GetName().EqualsI("BisCore") ||
+        schema.GetName().EqualsI("DgnDbSyncV8") || schema.GetName().EqualsI(BIS_ECSCHEMA_NAME) ||
         schema.GetName().EqualsIAscii("Generic") || schema.GetName().EqualsIAscii("Functional") ||
         schema.GetName().StartsWithI("ecdb") || schema.GetName().EqualsIAscii("ECv3ConversionAttributes");
     }
@@ -687,41 +690,134 @@ BentleyStatus SchemaFlattener::FlattenSchemas(ECN::ECSchemaP ecSchema)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void findBase(ECClassCP &inputClass)
+    {
+    ECClassCP test = inputClass;
+    while (true)
+        {
+        if (!test->HasBaseClasses())
+            break;
+        ECClassCP t2 = *test->GetBaseClasses().begin();
+        if (t2->GetName().Equals(inputClass->GetName()))
+            test = t2;
+        else
+            break;
+        }
+    inputClass = test;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void SchemaFlattener::ProcessConstraints(ECRelationshipConstraintR constraint, bool isSource, ECRelationshipClassR relClass, ECEntityClassP defaultConstraintClass)
+    {
+    if (relClass.HasBaseClasses())
+        {
+        ECRelationshipClassCP baseClass = nullptr;
+        for (ECClassCP ecClass : relClass.GetBaseClasses())
+            {
+            if (0 == strcmp(BIS_ECSCHEMA_NAME, ecClass->GetSchema().GetName().c_str()))
+                continue;
+            baseClass = ecClass->GetRelationshipClassCP();
+            break;
+            }
+        if (nullptr != baseClass)
+            {
+            ECRelationshipConstraintR baseConstraint = isSource ? baseClass->GetSource() : baseClass->GetTarget();
+            for (auto constraintClass : constraint.GetConstraintClasses())
+                {
+
+                bvector<ECClassCP> constraintsToRemove;
+                for (auto baseConstraintClass : baseConstraint.GetConstraintClasses())
+                    {
+                    if (!constraintClass->Is(baseConstraintClass))
+                        constraintsToRemove.push_back(baseConstraintClass);
+                    }
+
+                if (constraintsToRemove.size() > 0)
+                    {
+                    ECObjectsStatus status = baseConstraint.AddClass(*defaultConstraintClass);
+                    if (ECObjectsStatus::Success != status)
+                        return;
+
+                    for (ECClassCP ecClass : constraintsToRemove)
+                        {
+                        if (ecClass->IsEntityClass())
+                            baseConstraint.RemoveClass(*ecClass->GetEntityClassCP());
+                        else if (ecClass->IsRelationshipClass())
+                            baseConstraint.RemoveClass(*ecClass->GetRelationshipClassCP());
+                        }
+                    }
+                }
+            }
+        }
+
+    // It is possible that a constraint can have multiple classes, one of which got turned into an aspect.  This makes for an incompatible constraint.  Need to remove the conflicting type.
+    bool haveFirstType = false;
+    bool firstIsElement = true;
+    bvector<ECClassCP> constraintsToRemove;
+    for (auto constraintClass : constraint.GetConstraintClasses())
+        {
+        if (!haveFirstType)
+            {
+            haveFirstType = true;
+            firstIsElement = constraintClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
+            continue;
+            }
+        if (firstIsElement != constraintClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
+            constraintsToRemove.push_back(constraintClass);
+        }
+
+    for (ECClassCP ecClass : constraintsToRemove)
+        constraint.RemoveClass(*ecClass->GetEntityClassCP());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-void SchemaFlattener::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP baseInterface, ECN::ECClassCP baseObject)
+void SchemaFlattener::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP baseInterface, ECN::ECClassCP baseObject, bset<ECClassP>& rootClasses, ECEntityClassP defaultConstraintClass)
     {
     bool wasFlattened = false;
     m_baseInterface = baseInterface;
     m_baseObject = baseObject;
+    findBase(m_baseObject);
+    findBase(m_baseInterface);
 
-    bset<ECClassP> rootClasses;
-
+    bvector<ECRelationshipClassP> relationshipClasses;
     for (ECN::ECClassP ecClass : schema->GetClasses())
         {
         ECN::ECEntityClassP entityClass = ecClass->GetEntityClassP();
+        ECN::ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
+
+        if (nullptr != relClass)
+            relationshipClasses.push_back(relClass);
+
         // Classes derived from BaseObject can have multiple BaseInterface-derived base classes, but only one BaseObject base class
         // Classes derived from BaseInterface can only have one base class
         if (nullptr == entityClass)
             continue;
-        if (!ecClass->Is(baseInterface) && !ecClass->Is(baseObject))
+        if (!ecClass->Is(m_baseInterface) && !ecClass->Is(m_baseObject))
             continue;
         else if (ecClass->HasBaseClasses())
             {
-            bool isInterface = ecClass->Is(baseInterface) && !ecClass->Is(baseObject);
+            bool isInterface = ecClass->Is(m_baseInterface) && !ecClass->Is(m_baseObject);
             int baseClassCounter = 0;
             bvector<ECN::ECClassP> toRemove;
             for (auto& baseClass : ecClass->GetBaseClasses())
                 {
-                if (baseClass->GetSchema().GetName().Equals("BisCore") || baseClass->GetSchema().GetName().Equals("Generic"))
+                if (baseClass->GetSchema().GetName().Equals(BIS_ECSCHEMA_NAME) || baseClass->GetSchema().GetName().Equals("Generic"))
                     {
+                    if (ecClass == m_baseInterface)
+                        ecClass->RemoveBaseClasses();
                     rootClasses.insert(ecClass);
                     continue;
                     }
                 ECN::ECEntityClassCP asEntity = baseClass->GetEntityClassCP();
                 if (nullptr == asEntity)
                     continue;
-                else if (!isInterface && !asEntity->Is(baseObject))
+                else if (!isInterface && !asEntity->Is(m_baseObject))
                     continue;
                 baseClassCounter++;
                 if (baseClassCounter > 1)
@@ -749,6 +845,11 @@ void SchemaFlattener::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP ba
             verifyBaseClassAbstract(ecClass);
         }
 
+    for (ECRelationshipClassP relationshipClass : relationshipClasses)
+        {
+        ProcessConstraints(relationshipClass->GetSource(), true, *relationshipClass, defaultConstraintClass);
+        ProcessConstraints(relationshipClass->GetTarget(), false, *relationshipClass, defaultConstraintClass);
+        }
     if (wasFlattened)
         {
         ECN::IECInstancePtr flattenedInstance = ECN::ConversionCustomAttributeHelper::CreateCustomAttributeInstance("IsFlattened");
@@ -763,11 +864,6 @@ void SchemaFlattener::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP ba
             schema->SetCustomAttribute(*flattenedInstance);
             }
         }
-
-    for (ECClassP rootClass : rootClasses)
-        {
-        CheckForMixinConversion(*rootClass);
-        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -776,6 +872,17 @@ void SchemaFlattener::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP ba
 void SchemaFlattener::CheckForMixinConversion(ECN::ECClassR inputClass)
     {
     ECSchemaR targetSchema = inputClass.GetSchemaR();
+    if (nullptr == m_baseInterface)
+        {
+        m_baseInterface = targetSchema.GetClassP("BaseInterface");
+        findBase(m_baseInterface);
+        }
+    if (nullptr == m_baseObject)
+        {
+        m_baseObject = targetSchema.GetClassP("BaseObject");
+        findBase(m_baseObject);
+        }
+
     if (ShouldConvertECClassToMixin(targetSchema, inputClass))
         {
         ECClassP appliesTo;
@@ -798,7 +905,7 @@ bool SchemaFlattener::ShouldConvertECClassToMixin(ECN::ECSchemaR targetSchema, E
     // check base class
     for (auto baseClass : inputClass.GetBaseClasses())
         {
-        if (baseClass->GetSchemaR().GetName().EqualsI("BisCore"))
+        if (baseClass->GetSchemaR().GetName().EqualsI(BIS_ECSCHEMA_NAME))
             continue;
         if (baseClass->IsEntityClass())
             {
@@ -846,7 +953,7 @@ BentleyStatus SchemaFlattener::ConvertECClassToMixin(ECN::ECSchemaR targetSchema
 
     for (auto baseClass : inputClass.GetBaseClasses())
         {
-        if (baseClass->GetSchemaR().GetName().EqualsI("BisCore"))
+        if (baseClass->GetSchemaR().GetName().EqualsI(BIS_ECSCHEMA_NAME))
             inputClass.RemoveBaseClass(*baseClass);
         }
 
