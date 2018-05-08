@@ -45,7 +45,7 @@ void DgnGeometryPart::_ToJson(JsonValueR out, JsonValueCR opts) const
 
     // load geometry
     GeometryCollection collection(m_geometry, GetDgnDb());
-    out[json_geom()] = collection.ToJson();
+    out[json_geom()] = collection.ToJson(opts);
     }
 
 /*---------------------------------------------------------------------------------**//**

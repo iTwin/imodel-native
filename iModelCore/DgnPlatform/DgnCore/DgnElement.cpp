@@ -3731,7 +3731,7 @@ void GeometricElement::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     // load geometry
     GeometryCollection collection(*ToGeometrySource());
-    val[json_geom()] = collection.ToJson();
+    val[json_geom()] = collection.ToJson(opts);
     }
 
 /*---------------------------------------------------------------------------------**//**
