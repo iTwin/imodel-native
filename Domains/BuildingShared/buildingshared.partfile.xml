@@ -156,6 +156,7 @@
     <SubPart PartName="PrewireForUnitTests"/>
     <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
     <SubPart PartName="BuildingSharedBundle"/>
+      <SubPart PartName="DgnElementManipulationStrategies"/>
     <Bindings>
       <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="BuildingShared/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
     </Bindings>

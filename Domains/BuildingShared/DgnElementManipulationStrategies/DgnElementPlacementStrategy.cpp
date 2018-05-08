@@ -31,6 +31,15 @@ Formatting::FormatUnitSet FUSProperty::GetFUS() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                05/2018
 //---------------+---------------+---------------+---------------+---------------+------
+FUSProperty& FUSProperty::operator=(FUSProperty const& other)
+    {
+    m_fus = other.GetFUS();
+    return *this;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
 DgnElementPlacementStrategy::DgnElementPlacementStrategy()
     : T_Super()
     , m_lengthFUS(Formatting::FormatUnitSet("M(Meters4u)"))
@@ -213,21 +222,22 @@ BentleyStatus DgnElementPlacementStrategy::_TryGetProperty
     GeometryManipulationStrategyProperty& value
 ) const
     {
-    if (nullptr != dynamic_cast<FUSProperty*>(&value))
+    FUSProperty* fusProp = dynamic_cast<FUSProperty*>(&value);
+    if (nullptr != fusProp)
         {
         if (0 == strcmp(key, prop_LengthFUS()))
             {
-            value = FUSProperty(GetLengthFUS());
+            *fusProp = FUSProperty(GetLengthFUS());
             return BentleyStatus::SUCCESS;
             }
         if (0 == strcmp(key, prop_AreaFUS()))
             {
-            value = FUSProperty(GetAreaFUS());
+            *fusProp = FUSProperty(GetAreaFUS());
             return BentleyStatus::SUCCESS;
             }
         if (0 == strcmp(key, prop_VolumeFUS()))
             {
-            value = FUSProperty(GetVolumeFUS());
+            *fusProp = FUSProperty(GetVolumeFUS());
             return BentleyStatus::SUCCESS;
             }
         }

@@ -26,6 +26,8 @@ struct FUSProperty : GeometryManipulationStrategyProperty
         Formatting::FormatUnitSet m_fus;
 
     public:
+        FUSProperty() {}
+        FUSProperty& operator=(FUSProperty const&);
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT FUSProperty(Formatting::FormatUnitSet const& fus);
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Formatting::FormatUnitSet GetFUS() const;
     };
