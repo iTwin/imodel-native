@@ -473,7 +473,15 @@ Utf8String Changes::Change::FormatChange(Db const& db, Utf8CP tableName, DbOpcod
     Byte* pcols = nullptr;
     int npcols = 0;
     GetPrimaryKeyColumns(&pcols, &npcols);
-    BeAssert(npcols == (int) columnNames.size() && "Mismatch of columns in Db and ChangeSet. Likely that a required schema change has NOT happened");
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
+        {
+        if (npcols != (int)columnNames.size())
+            {
+            Utf8PrintfString msg("Db has %d columns, but change set has %d columns. Cannot dump - it's likely a required schema change has not happened yet", (int) columnNames.size(), npcols);
+            LOG.info(msg.c_str());
+            return msg;
+            }
+        }
 
     Utf8PrintfString line("key=%s", FormatPrimarykeyColumns((DbOpcode::Insert == opcode), detailLevel).c_str());
 
