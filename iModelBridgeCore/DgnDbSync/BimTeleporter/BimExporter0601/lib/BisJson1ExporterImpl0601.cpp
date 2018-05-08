@@ -1214,7 +1214,7 @@ BentleyStatus BisJson1ExporterImpl::ExportSchemas() const
                     if (prop->IsCalculated())
                         prop->SetIsReadOnly(false);
                     // BisCore renames several properties on core classes.  This could cause a conflict with an inherited class's property, so we need to rename it
-                    if (prop->GetName().EqualsIAscii("Model") || prop->GetName().EqualsIAscii("Parent") || prop->GetName().EqualsIAscii("Category"))
+                    if (prop->GetName().EqualsIAscii("Model") || prop->GetName().EqualsIAscii("Parent") || prop->GetName().EqualsIAscii("Category") || prop->GetName().EqualsIAscii("ID"))
                         {
                         nonConstClass->RenameConflictProperty(prop, true);
                         }
