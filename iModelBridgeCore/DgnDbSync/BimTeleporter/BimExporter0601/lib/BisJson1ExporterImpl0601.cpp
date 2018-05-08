@@ -390,6 +390,8 @@ bool BisJson1ExporterImpl::ExportDgnDb()
 
     m_meter->AddSteps(8);
 
+    CalculateEntities();
+
     SetStepName(BisJson1ExporterImpl::ProgressMessage::STEP_EXPORT_SCHEMAS());
     StopWatch timer(true);
     StopWatch totalTimer(true);
@@ -481,6 +483,35 @@ bool BisJson1ExporterImpl::ExportDgnDb()
     m_dgndb->CloseDb();
     m_dgndb = nullptr;
     return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void BisJson1ExporterImpl::CalculateEntities()
+    {
+    Utf8String sql("SELECT SUM(rows) as total FROM (");
+    sql.append("SELECT count(*) as rows FROM dgn_Element ");
+    sql.append("UNION ALL SELECT count(*) as rows FROM dgn_Authority ");
+    sql.append("UNION ALL SELECT count(*) as rows FROM dgn_Model ");
+    sql.append("UNION ALL SELECT count(*) as rows FROM dgn_Font ");
+    sql.append("UNION ALL SELECT count(*) as rows FROM dgn_GeometricElement2d ");
+    sql.append("UNION ALL SELECT count(*) as rows FROM dgn_GeometricElement3d ");
+    sql.append("UNION ALL SELECT count(*) as rows FROM dgn_ElementGroupsMembers ");
+    sql.append("UNION ALL SELECT count(*) as rows FROM ec_Schema ");
+    sql.append(") u");
+    
+    Statement stmt;
+    if (BE_SQLITE_OK != (stmt.Prepare(*m_dgndb, sql.c_str())))
+        return;
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        auto entry = Json::Value(Json::ValueType::objectValue);
+        int64_t id = stmt.GetValueInt64(0);
+        entry["entryCount"] = id;
+        (QueueJson) (entry.toStyledString().c_str());
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1128,7 +1159,6 @@ BentleyStatus BisJson1ExporterImpl::ExportCategories(Utf8CP tableName, Utf8CP bi
 BentleyStatus BisJson1ExporterImpl::ExportSchemas() const
     {
     bvector<Utf8String> knownSchemas = {"Bentley_Standard_Classes", "Bentley_Standard_CustomAttributes", "CoreCustomAttributes", "ECDbMap", "ECDbFileInfo", "ECDbSystem","ECDb_FileInfo", "ECDb_System", "EditorCustomAttributes", "Generic", "MetaSchema", "dgn", "PointCloud", "Raster", "ThreeMx", "ECv3ConversionAttributes"};
-    bvector<ECSchemaCP> ecSchemas = m_dgndb->Schemas().GetECSchemas();
     ECSchemaCP dgnSchema = m_dgndb->Schemas().GetECSchema("dgn");
     ECSchemaP nonConstDgn = const_cast<ECSchemaP>(dgnSchema);
     ECSchemaCP genericSchema = m_dgndb->Schemas().GetECSchema("generic");
@@ -1141,6 +1171,13 @@ BentleyStatus BisJson1ExporterImpl::ExportSchemas() const
     schemaReadContext = ECN::ECSchemaReadContext::CreateContext();
     schemaReadContext->AddSchemaLocater(m_dgndb->GetSchemaLocater());
 
+    auto entry = Json::Value(Json::ValueType::objectValue);
+    entry[JSON_TYPE_KEY] = JSON_TYPE_Schema;
+    entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::arrayValue);
+    entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
+    auto& schemas = entry[JSON_OBJECT_KEY];
+
+    bvector<ECSchemaCP> ecSchemas = m_dgndb->Schemas().GetECSchemas();
     for (ECN::ECSchemaCP ischema : ecSchemas)
         {
         bvector<ECSchemaCP> orderedSchemas;
@@ -1236,17 +1273,14 @@ BentleyStatus BisJson1ExporterImpl::ExportSchemas() const
             // There is no Authority class in bis.  Nor is there a way to remove a class from the schema.  Therefore, we just make it a DefinitionElement
             schemaXml.ReplaceAll("<BaseClass>bis:Authority</BaseClass>", "<BaseClass>bis:DefinitionElement</BaseClass>");
 
-            auto entry = Json::Value(Json::ValueType::objectValue);
-            entry[JSON_TYPE_KEY] = JSON_TYPE_Schema;
-            entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
-            entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
-            auto& obj = entry[JSON_OBJECT_KEY];
-            obj.clear();
-            obj[schema->GetFullSchemaName().c_str()] = schemaXml.c_str();
+            Json::Value schemaJson(Json::ValueType::objectValue);
+            schemaJson[schema->GetFullSchemaName().c_str()] = schemaXml.c_str();
             alreadyVisited.push_back(schema->GetName());
-            (QueueJson)(entry.toStyledString().c_str());
+            schemas.append(schemaJson);
             }
         }
+    (QueueJson) (entry.toStyledString().c_str());
+
     return SUCCESS;
     }
 
