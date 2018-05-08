@@ -77,8 +77,6 @@ STMAdmin& ScalableMeshLib::Host::_SupplySTMAdmin()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RegisterPODImportPlugin();
-
 
 //=======================================================================================
 // @bsiclass
@@ -353,7 +351,6 @@ class BingAuthenticationCallback : public HFCAuthenticationCallback, public RefC
 
 typedef RefCountedPtr<BingAuthenticationCallback> BingAuthenticationCallbackPtr;
 
-
 //=======================================================================================
 // @bsiclass                                                    Raphael.Lemieux 09/2017
 //=======================================================================================
@@ -439,6 +436,16 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
     }
 
 
+#ifdef VANCOUVER_API
+
+    #if defined(__BENTLEYSTM_BUILD__) && defined(__BENTLEYSTMIMPORT_BUILD__) 
+        void RegisterPODImportPlugin();
+    #else
+        RegisterPODImportPluginFP ScalableMeshLib::s_PODImportRegisterFP = nullptr;        
+    #endif
+
+#endif
+
 static BingAuthenticationCallbackPtr s_bingAuthCallback;
 
 void ScalableMeshLib::Host::Initialize()
@@ -453,7 +460,19 @@ void ScalableMeshLib::Host::Initialize()
     InitializeProgressiveQueries();
 
 #ifdef VANCOUVER_API
+
+#if defined(__BENTLEYSTM_BUILD__) && defined(__BENTLEYSTMIMPORT_BUILD__) 
+
     RegisterPODImportPlugin();
+
+#else
+       
+    if (ScalableMeshLib::GetPodRegister() != nullptr)
+        {
+        (*ScalableMeshLib::GetPodRegister())();
+        }
+#endif
+    
 #else
     //NEEDS_WORK_SM_POD_B0200
     //RegisterPODImportPlugin();
@@ -633,6 +652,26 @@ ScalableMeshLib::Host& ScalableMeshLib::GetHost()
     return *t_scalableTerrainModelHost;
     }
 
+
+#if defined(__BENTLEYSTM_BUILD__) && !defined(__BENTLEYSTMIMPORT_BUILD__)     
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                 05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RegisterPODImportPluginFP ScalableMeshLib::GetPodRegister()
+    {
+    return s_PODImportRegisterFP;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                 05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScalableMeshLib::SetPodRegister(RegisterPODImportPluginFP podRegisterFP)
+    {
+    s_PODImportRegisterFP = podRegisterFP;
+    }
+
+#endif
 
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/ScalableMeshLib.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,8 +20,17 @@ ScalableMeshLib defines interfaces that a "host" application must implement to e
 The host must initialize the ScalableMeshLib library by calling ScalableMeshLib::Initialize for each host on a separate thread.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
+typedef void(*RegisterPODImportPluginFP)();
+
 class ScalableMeshLib
 {
+private: 
+
+
+#if !(defined(__BENTLEYSTM_BUILD__) && defined(__BENTLEYSTMIMPORT_BUILD__))    
+    static RegisterPODImportPluginFP s_PODImportRegisterFP;
+#endif
+
 public:
 
     struct Host : public DgnHost
@@ -79,6 +88,14 @@ public:
 
     //! Get the ScalableMesh library host for this thread. 
     BENTLEY_SM_EXPORT static Host& GetHost(); 
+
+    
+    //Only required in split DLLs version of ScalableMesh
+#if !(defined(__BENTLEYSTM_BUILD__) && defined(__BENTLEYSTMIMPORT_BUILD__))     
+    BENTLEY_SM_EXPORT static RegisterPODImportPluginFP GetPodRegister();
+
+    BENTLEY_SM_EXPORT static void SetPodRegister(RegisterPODImportPluginFP podRegisterFP);
+#endif
 };
 
 
