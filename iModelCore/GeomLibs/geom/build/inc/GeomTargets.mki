@@ -255,7 +255,7 @@ $(OUT_DIR)ccctangent$(OUT_EXT)      : $(geomSrcFuncs)ccctangent.cpp     $(OTHER_
 
 $(OUT_DIR)biarc$(OUT_EXT)           : $(geomSrcStructsCpp)refmethods/biarc.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)ellipsefillet$(OUT_EXT)   : $(geomSrcFuncs)ellipsefillet.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)ellipsefillet$(OUT_EXT)   : $(geomSrcFuncs)ellipsefillet.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)linalg$(OUT_EXT)          : $(geomSrcFuncs)linalg.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -513,7 +513,7 @@ $(OUT_DIR)bezrootConics$(OUT_EXT)        : $(geomSrcBezier)bezrootConics.cpp $(O
 
 $(OUT_DIR)bezierDPoint4d$(OUT_EXT) : $(geomSrcBezier)bezierDPoint4d.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)bezierExtractionContext$(OUT_EXT) : $(geomSrcBezier)bezierExtractionContext.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)bezierExtractionContext$(OUT_EXT) : $(geomSrcBezier)bezierExtractionContext.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)implicitbezier$(OUT_EXT) : $(geomSrcBezier)implicitbezier.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -539,7 +539,7 @@ $(OUT_DIR)vumod$(OUT_EXT)               : $(vuSrc)vumod.cpp $(OTHER_DEPENDENCIES
 
 $(OUT_DIR)vumod2$(OUT_EXT)              : $(vuSrc)vumod2.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)vuconvex$(OUT_EXT)            : $(vuSrc)vuconvex.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)vuconvex$(OUT_EXT)            : $(vuSrc)vuconvex.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)vuaddedges$(OUT_EXT)          : $(vuSrc)vuaddedges.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
@@ -555,7 +555,7 @@ $(OUT_DIR)vumerge$(OUT_EXT)             : $(vuSrc)vumerge.cpp $(OTHER_DEPENDENCI
 
 $(OUT_DIR)vumerge2$(OUT_EXT)            : $(vuSrc)vumerge2.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)vufilter$(OUT_EXT)            : $(vuSrc)vufilter.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)vufilter$(OUT_EXT)            : $(vuSrc)vufilter.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)vutriang$(OUT_EXT)            : $(vuSrc)vutriang.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
@@ -567,7 +567,7 @@ $(OUT_DIR)vuexcise$(OUT_EXT)            : $(vuSrc)vuexcise.cpp $(OTHER_DEPENDENC
 
 $(OUT_DIR)vucluster$(OUT_EXT)           : $(vuSrc)vucluster.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)vuperiodicconnect$(OUT_EXT)   : $(vuSrc)vuperiodicconnect.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)vuperiodicconnect$(OUT_EXT)   : $(vuSrc)vuperiodicconnect.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)vugrid$(OUT_EXT)              : $(vuSrc)vugrid.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
@@ -946,7 +946,7 @@ $(OUT_DIR)jmdl_mtgloop$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgloop.cpp         $(OTHER
 
 $(OUT_DIR)jmdl_mtgmarkset$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgmarkset.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)jmdl_mtgclip$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgclip.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)jmdl_mtgclip$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgclip.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)jmdl_mtgfacet$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgfacet.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
