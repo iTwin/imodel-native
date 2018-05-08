@@ -18,14 +18,34 @@ BEGIN_BUILDING_SHARED_NAMESPACE
     DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT BentleyStatus TryGetProperty(Utf8CP key, value_type& value) const;
 
 //=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               05/2018
+//=======================================================================================
+struct FUSProperty : GeometryManipulationStrategyProperty
+    {
+    private:
+        Formatting::FormatUnitSet m_fus;
+
+    public:
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT FUSProperty(Formatting::FormatUnitSet const& fus);
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Formatting::FormatUnitSet GetFUS() const;
+    };
+
+//=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               01/2018
 //=======================================================================================
 struct DgnElementPlacementStrategy : ElementPlacementStrategy
     {
     DEFINE_T_SUPER(ElementPlacementStrategy)
 
+    private:
+        Formatting::FormatUnitSet m_lengthFUS;
+
+        Formatting::FormatUnitSet GetLengthFUS() const;
+        Formatting::FormatUnitSet GetAreaFUS() const;
+        Formatting::FormatUnitSet GetVolumeFUS() const;
+
     protected:
-        using T_Super::T_Super;
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT DgnElementPlacementStrategy();
 
         virtual DgnElementManipulationStrategyCR _GetDgnElementManipulationStrategy() const = 0;
         virtual DgnElementManipulationStrategyR _GetDgnElementManipulationStrategyForEdit() = 0;
@@ -37,13 +57,24 @@ struct DgnElementPlacementStrategy : ElementPlacementStrategy
 
         virtual void _AddViewOverlay(Dgn::Render::GraphicBuilderR builder, DRange3dCR viewRange, TransformCR worldToView, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const = 0;
 
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT virtual void _SetProperty(Utf8CP key, GeometryManipulationStrategyProperty const& value) override;
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, GeometryManipulationStrategyProperty& value) const override;
+
         DGNELEM_P_V_PROPERTY(Dgn::DgnElementCP)
         DGNELEM_P_V_PROPERTY(Dgn::DgnElementId)
         DGNELEM_P_V_PROPERTY(Dgn::ColorDef)
         using T_Super::_SetProperty;
         using T_Super::_TryGetProperty;
 
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Utf8String GetFormattedLength(double length) const;
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Utf8String GetFormattedArea(double area) const;
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Utf8String GetFormattedVolume(double volume) const;
+
     public:
+        static constexpr Utf8CP prop_LengthFUS() { return "LengthFUS"; } // Set/Get
+        static constexpr Utf8CP prop_AreaFUS() { return "AreaFUS"; }     // Get
+        static constexpr Utf8CP prop_VolumeFUS() { return "VolumeFUS"; } // Get
+
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement(Dgn::DgnModelR model);
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement();
 
