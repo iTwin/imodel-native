@@ -380,3 +380,49 @@ TEST(DPlane3d, Plane3Points)
     Check::Near(plane0.normal, plane1.normal);
     Check::Near(plane0.origin, plane1.origin);
     }
+bool CheckNear (DPlane3dCR planeA, DPlane3dCR planeB)
+    {
+    return Check::Near (planeA.origin, planeB.origin)
+        && Check::Near (planeA.normal, planeB.normal);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DPlane3d, Init)
+    {
+    for (DPoint4d coffA : {
+        DPoint4d::From (2,3,5,7),
+            DPoint4d::From (0,0,3,4),
+            DPoint4d::From (1,0,0,3),
+            DPoint4d::From (0,1,0,7)
+            })
+        {
+        DPlane3d planeFromDPoint4d;
+        planeFromDPoint4d.Init (coffA);
+        DPlane3d planeFromScalars;
+        planeFromScalars.Init (coffA.x, coffA.y, coffA.z, -coffA.w);
+        CheckNear (planeFromDPoint4d, planeFromScalars);
+        DPoint4d coffB;
+        planeFromScalars.GetDPoint4d (coffB);
+
+        DPoint4d coffB1, coffA1;
+        coffB1.InitWithNormalizedWeight (coffB);
+        coffA1.InitWithNormalizedWeight (coffA);
+        Check::Near (coffA1, coffB1);
+        for (DPoint3d xyz :
+            {
+            DPoint3d::From (1,2,3),
+            DPoint3d::From (9,2,3),
+            DPoint3d::From (1,3,3),
+            DPoint3d::From (1,2,7),
+            DPoint3d::From (-3,2,1)})
+            {
+            DPoint4d hPoint = DPoint4d::From (xyz, 1.0);
+
+            Check::Near (planeFromDPoint4d.Evaluate (xyz), planeFromScalars.Evaluate (xyz));
+            }
+        }
+
+
+    }

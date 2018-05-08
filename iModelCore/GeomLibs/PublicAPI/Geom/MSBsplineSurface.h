@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/MSBsplineSurface.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -547,14 +547,6 @@ struct GEOMDLLIMPEXP MSBsplineSurface
         bool inputPolesAlreadyWeighted   //!< [in] true if points are preweighted.  False if not.
         );
         
-    static MSBsplineSurfacePtr CreateCatmullRom
-          (
-          bvector<DPoint3d> const &points, //!< [in] data points
-          size_t numU,          //!< [in] u count
-          size_t numV,          //!< [in] v count
-          bvector<DPoint2d> const *uv //!< [in] optional uv parameters.
-          );
-
     //! Create a linear sweep from a (single) base curve.
     //! Fails (i.e. returns NULL) if the primitive has children.
     //! @param [in] primitive base curve to be swept

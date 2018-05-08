@@ -6,6 +6,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
+#include <Geom/MstnOnly/GeomPrivateApi.h>
+#define FIX_MIN(value, min)          if (value < min) min = value
+#define FIX_MAX(value, max)          if (value > max) max = value
+#define FIX_MINMAX(value, min, max)  FIX_MIN(value, min); FIX_MAX(value, max);
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 /*-----------------------------------------------------------------*//**
@@ -909,4 +913,735 @@ GraphicsPointArrayP         pInstance
     if (pInstance && pInstance->vbArray_hdr.size () > 0)
         pInstance->vbArray_hdr.back ().mask |= HPOINT_MASK_BREAK;
     }
+
+
+
+/*-----------------------------------------------------------------*//**
+* Get the i'th sector angular range
+* @instance pEllipse => ellipse whose angular range is queried.
+* @param pStartAngle <= start angle
+* @param pEndAngle <= end angle
+* @param i => sector to read
+* @see
+* @return true if sector index is valid.
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    bsiDEllipse4d_getSector
+
+(
+DEllipse4dCP pEllipse,
+double    *pStartAngle,
+double    *pEndAngle,
+int             i
+)
+    {
+    bool    boolStat = false;
+    if (pEllipse && 0 <= i && i < pEllipse->sectors.n)
+        {
+        *pStartAngle = pEllipse->sectors.interval[i].minValue;
+        *pEndAngle = pEllipse->sectors.interval[i].maxValue;
+        boolStat = true;
+        }
+    else
+        {
+        *pStartAngle = *pEndAngle = 0.0;
+        }
+    return boolStat;
+    }
+
+/*-----------------------------------------------------------------*//**
+* Compute the transfer matrix to normalize a weighted, uncentered
+* ellipse into a centered cartesian ellipse.
+
+* @param pMatrix <= transfer matrix
+* @param pInverse <= its inverse.   Pass NULL if not needed.
+* @param w0 => cosine weight
+* @param w90 => sine weight
+* @param wCenter => center weight
+* @see
+* @return true if weights define an angle change.
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    bsiEllipse_angularTransferMatrix
+
+(
+RotMatrixP pMatrix,
+RotMatrixP pInverse,
+double          w0,
+double          w90,
+double          wCenter
+)
+    {
+    double mu;
+    double wc2;
+    double ww2;
+    static double relTol = 1.0e-14;
+    bool    boolStat = true;
+
+    wc2 = wCenter * wCenter;
+    ww2 = w0 * w0 + w90 * w90;
+    mu = wc2 - ww2;
+    if ( mu <= relTol * wc2)
+        {
+        /* It's a hyperbola or parabola*/
+        bsiRotMatrix_initIdentity (pMatrix);
+        if (pInverse)
+            bsiRotMatrix_initIdentity (pInverse);
+        return false;
+        }
+    else if (mu == wc2)     /* Yes, exact equality test -- if wc2 is small the squaring will */
+                            /* wipe force its bits so far to the right they have no effect on the subtraction*/
+        {
+        /* It's already practically a circle.*/
+        bsiRotMatrix_initIdentity (pMatrix);
+        if (pInverse)
+            bsiRotMatrix_initIdentity (pInverse);
+        }
+    else
+        {
+        double divW = 1.0 / sqrt (ww2);
+        double bx = w0  * divW;
+        double by = w90 * divW;
+        double gamma = wc2 / mu;
+        double rootGamma = sqrt (gamma);
+        double centerScale = gamma / wCenter;
+
+        pMatrix->SetColumn (0, gamma * bx, gamma * by, 0.0);
+        pMatrix->SetColumn (1, rootGamma * -by, rootGamma * bx, 0.0);
+        pMatrix->SetColumn (2, - centerScale * w0, - centerScale * w90, 1.0);
+        if (pInverse)
+            {
+            bsiRotMatrix_invertRotMatrix (pInverse, pMatrix);
+            }
+        }
+    return boolStat;
+    }
+
+/*-----------------------------------------------------------------*//**
+* Let F = [cos(theta), sin(theta), 1+alpha*cos(theta)+beta*sin(theta)]
+*     G = [cos(phi), sin(phi), 1]
+* and G = M*F   (possibly scaled?)
+* Return the phi corresponding to theta.
+
+* @param theta => known angle prior to transform
+* @param pMatrix => transfer matrix.
+* @param  => matrix M
+* @param alpha => cosine coefficient
+* @param beta => sine coefficient
+* @see
+* @return modified angle
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double bsiDEllipse4d_transferAngle
+
+(
+double          theta,
+RotMatrixP pMatrix,
+
+double          alpha,
+double          beta
+)
+    {
+    DPoint3d G;
+    double cosTheta = cos(theta);
+    double sinTheta = sin(theta);
+    double wF       = 1.0 + alpha * cosTheta + beta * sinTheta;
+    double phi;
+    bsiRotMatrix_multiplyComponents (pMatrix, &G, cosTheta, sinTheta, wF);
+    phi = atan2 (G.y, G.x);
+    return phi;
+    }
+
+/*-----------------------------------------------------------------*//**
+* Let F = [cos(theta), sin(theta), 1+alpha*cos(theta)+beta*sin(theta)]
+*     G = [cos(phi), sin(phi), 1]
+* and G = M*F   (possibly scaled?)
+* Replace all angles (theta) in an ellispe's stroke intervals by
+* corresponding phi angles.
+
+* @param pDest <=> Ellipse whose angles are corrected.
+* @param pSource => source of angle data
+* @param pMatrix => matrix M
+* @param alpha => cosine coefficient
+* @param beta => sine coefficient
+* @see
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    bsiDEllipse4d_transferAngles
+
+(
+DEllipse4dP pDest,
+DEllipse4dCP pSource,
+RotMatrixP pMatrix,
+double          alpha,
+double          beta
+)
+    {
+    int i;
+    double phi0, phi1, theta0, theta1, thetaMid, phiMid, dPhi;
+    SmallSetRange1d sectors;
+
+    sectors = pSource->sectors;
+    bsiRange1d_clear (&pDest->sectors);
+    for (i = 0; i < sectors.n; i++)
+        {
+        theta0 = sectors.interval[i].minValue;
+        theta1 = sectors.interval[i].maxValue;
+        if (bsiTrig_isAngleFullCircle (theta1 - theta0))
+            {
+            bsiRange1d_setArcSweep (&pDest->sectors, 0.0, msGeomConst_2pi);
+            return true;
+            }
+        else
+            {
+            thetaMid = 0.5 * (theta1 + theta0);
+            phi0 = bsiDEllipse4d_transferAngle (theta0, pMatrix, alpha, beta);
+            phi1 = bsiDEllipse4d_transferAngle (theta1, pMatrix, alpha, beta);
+            dPhi = phi1 - phi0;
+            phiMid = bsiDEllipse4d_transferAngle (thetaMid, pMatrix, alpha, beta);
+
+            if ((phiMid - phi0) * (phi1 - phiMid) < 0.0)
+                {
+                if (dPhi > 0.0)
+                    {
+                    phi1 -= msGeomConst_2pi;
+                    }
+                else
+                    {
+                    phi1 +=  msGeomConst_2pi;
+                    }
+                }
+            bsiRange1d_addUnordered (&pDest->sectors, phi0, phi1);
+                }
+        }
+    return true;
+    }
+
+
+
+/*-----------------------------------------------------------------*//**
+*
+* Find new basis vectors with 0 weights on the U and V vectors, and unit
+* on the C vector.  This computation is not possible if the curve is
+* a hyperbola or parabola when projected to 3D.
+*
+* @instance pNormalized <= normalized form
+* @param pWeighted => unnormalized form
+* @see
+* @return true if the curve really is an ellipse (i.e. not hyperbola or parabola)
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    bsiDEllipse4d_normalizeWeights
+
+(
+DEllipse4dP pNormalized,
+DEllipse4dCP pWeighted
+)
+
+    {
+    double w0 = pWeighted->vector0.w;
+    double w90 = pWeighted->vector90.w;
+    double wCenter = pWeighted->center.w;
+    RotMatrix   transferMatrix;
+    RotMatrix   inverseTransferMatrix;
+    bool    boolStat = bsiEllipse_angularTransferMatrix(
+                                        &transferMatrix,
+                                        &inverseTransferMatrix,
+                                        w0,
+                                        w90,
+                                        wCenter
+                                        );
+    DPoint4d    vector0, vector90, center;
+
+    if (boolStat)
+        {
+        double recip = 1.0 / wCenter;
+        double alpha = w0 * recip;
+        double beta  = w90 * recip;
+
+        bsiDPoint4d_add2ScaledDPoint4d (&vector0,  NULL, &pWeighted->vector0,  recip, &pWeighted->center, - alpha * recip);
+        bsiDPoint4d_add2ScaledDPoint4d (&vector90, NULL, &pWeighted->vector90, recip, &pWeighted->center, - beta * recip);
+        bsiDPoint4d_scale               (&center,   &pWeighted->center,   recip);
+
+        /* The transfer matrix is of the form*/
+        /*          [ rxx  rxy  cx]*/
+        /*          [ ryx  ryy  cy]*/
+        /*          [  0    0    1]*/
+        bsiDPoint4d_add2ScaledDPoint4d (&pNormalized->vector0,
+                                            NULL,
+                                            &vector0, transferMatrix.form3d[0][0],
+                                            &vector90, transferMatrix.form3d[1][0]);
+        bsiDPoint4d_add2ScaledDPoint4d (&pNormalized->vector90,
+                                            NULL,
+                                            &vector0, transferMatrix.form3d[0][1],
+                                            &vector90, transferMatrix.form3d[1][1]);
+        bsiDPoint4d_add2ScaledDPoint4d (&pNormalized->center,
+                                            &center,
+                                            &vector0, transferMatrix.form3d[0][2],
+                                            &vector90, transferMatrix.form3d[1][2]);
+        bsiDEllipse4d_transferAngles( pNormalized, pWeighted, &inverseTransferMatrix, w0 / wCenter, w90 / wCenter);
+        }
+    else
+        {
+        *pNormalized = *pWeighted;
+        }
+    return boolStat;
+    }
+/*-----------------------------------------------------------------*//**
+* Computes the silhouette ellipse of an ellipsoid under arbitrary
+* DMap4d and viewpoint.
+*
+* @param pHEllipse <= silhouette ellipse/parabola/hyperbola
+* @param pEllipsoidPoint => 4 defining points of the ellipsoid
+* @param pHMap => further mapping
+* @param pEyePoint => eyepoint
+* @return false iff the eyeponit is inside the ellipsoid.
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    bsiGeom_ellipsoidSilhouette
+
+(
+DEllipse4dP pHEllipse,
+DPoint3dCP pEllipsoidPoint,
+DMap4dCP pHMap,
+DPoint4dCP pEyePoint
+)
+    {
+    Transform axisTransform; /* basis matrix defined by 4 ellipsoid points*/
+    DMap4d axisMap;       /* Homogeneous form of basis matrix*/
+    DMap4d BMap;                /* pHMap * axisMap -- the 'full' B matrix for the ellipsoid.*/
+    bool    result = false;
+
+    if (pEllipsoidPoint)
+        {
+        /* In its local coordinate system, the ellipsoid is a unit sphere centered at
+            the origin.  Construct this mapping and concatentate it with the given DMap4d
+            to give the full transformation of the 'ellipsoid' (which may go to infinity
+            if the weight vanishes)
+        */
+        bsiTransform_initFrom4Points (&axisTransform,
+                        &pEllipsoidPoint[0],
+                        &pEllipsoidPoint[1],
+                        &pEllipsoidPoint[2],
+                        &pEllipsoidPoint[3]);
+        result = bsiDMap4d_initFromTransform (&axisMap, &axisTransform, false);
+
+        if (pHMap)
+            bsiDMap4d_multiply (&BMap, pHMap, &axisMap);
+        else
+            BMap = axisMap;
+        }
+    else
+        {
+        if (pHMap)
+            BMap = *pHMap;
+        else
+            bsiDMap4d_initIdentity (&BMap);
+        result = true;
+        }
+
+
+    if (result)
+        {
+        DPoint4d localEye;
+        DMatrix4d Q, QT, BQT;
+        double mag;
+
+        static int indexVector[3] = {2, 0, 1};
+
+        result = false;
+
+
+        bsiDMatrix4d_multiply4dPoints (&BMap.M1, &localEye, pEyePoint, 1);
+        /* Characteristic matrix for sphere negates the w component to turn the eye 'point'*/
+        /* into an eye 'plane'.*/
+        localEye.w = - localEye.w;
+
+        /* Build orthgonal transformation which rotates z towards the eye.  After this*/
+        /* rotation, the silhouette is a constant-z curve.*/
+        if (bsiDMatrix3d_initSelectiveRotation (
+                        (double*)&Q, &mag, 4, (double *)&localEye, indexVector, 3)
+            && fabs (localEye.w) < mag
+           )
+            {
+            DPoint4d vectorW;
+            double sineThetaHat   = - localEye.w / mag;
+            double cosineThetaHat = sqrt (1.0 - sineThetaHat * sineThetaHat);
+
+            bsiDMatrix4d_transpose (&QT, &Q);
+            bsiDMatrix4d_multiply (&BQT, &BMap.M0, &QT);
+
+            bsiDMatrix4d_getColumnDPoint4d (&BQT, &pHEllipse->vector0 , 0);
+            bsiDMatrix4d_getColumnDPoint4d (&BQT, &pHEllipse->vector90, 1);
+            bsiDMatrix4d_getColumnDPoint4d (&BQT, &vectorW , 2);
+            bsiDMatrix4d_getColumnDPoint4d (&BQT, &pHEllipse->center  , 3);
+            bsiDPoint4d_scale (&pHEllipse->vector0 , &pHEllipse->vector0 , cosineThetaHat);
+            bsiDPoint4d_scale (&pHEllipse->vector90, &pHEllipse->vector90, cosineThetaHat);
+            bsiDPoint4d_addScaledDPoint4d (&pHEllipse->center, &pHEllipse->center,
+                                            &vectorW, sineThetaHat);
+            bsiRange1d_setArcSweep( &pHEllipse->sectors, 0.0, msGeomConst_2pi );
+
+            result = true;
+            }
+        }
+
+    return result;
+    }
+
+
+/*-----------------------------------------------------------------*//**
+@nodoc DEllipse4d
+@description Convert a homogeneous ellipse to cartesian.  Callers should beware of the following
+ significant points:
+<UL>
+<LI>A homogeneous "ellipse" may appear as a hyperbola or parabola in xyz space.
+   Hence the conversion can fail.
+<LI>When the conversion succeeds, it is still a Very Bad Thing To Do numerically
+   because a homogeneous ellipse with "nice" numbers can have very large center and axis
+   coordinates.   It is always preferable to do calculations directly on the homogeneous
+   ellipse if possible.
+<LI>When the conversion succeeds, the axis may be non-perpendicular.  A subsequent call
+   may be made to initWithPerpendicularAxes to correct this.
+</UL>
+ @param pEllipse <= initialized ellipse
+ @param pSource => homogeneous ellipse
+ @param sector  => angular sector index.  If out of bounds, a full ellipse is created.
+ @return true if homogeneous parts allow reduction to simple ellipse. (false if the homogeneous
+    parts are a parabola or hyperbola.)
+ @group "DEllipse3d Initialization"
+ @bsimethod                                                     EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     bsiDEllipse3d_initFromDEllipse4d
+
+(
+DEllipse3dP pEllipse,
+DEllipse4dCP pSource,
+int           sector
+)
+    {
+    DEllipse4d  normalizedSource;
+    double      theta0, theta1;
+    bool        funcStat = false;
+    /* Try to eliminate the weights on the vectors of the source ellipse */
+    if (bsiDEllipse4d_normalizeWeights (&normalizedSource, pSource))
+        {
+        funcStat = true;
+        bsiDPoint3d_getXYZ (&pEllipse->center,   &normalizedSource.center  );
+        bsiDPoint3d_getXYZ (&pEllipse->vector0,  &normalizedSource.vector0 );
+        bsiDPoint3d_getXYZ (&pEllipse->vector90, &normalizedSource.vector90);
+
+        if (bsiDEllipse4d_getSector (&normalizedSource, &theta0, &theta1, sector))
+            {
+            pEllipse->start = theta0;
+            pEllipse->sweep = theta1 - theta0;
+            }
+        else
+            {
+            pEllipse->start = 0.0;
+            pEllipse->sweep = msGeomConst_2pi;
+            }
+        }
+    return funcStat;
+    }
+
+/*-----------------------------------------------------------------*//**
+* This routine will find the intersection between a general conic
+* and a unit circle. The conic is in the form of:
+* x = centerx + ux * cos(theta) + vx*sin(theta)
+* y = centery + uy * cos(theta) + vy*sin(theta)
+* w = centerw + uw * cos(theta) + vw*sin(theta)
+*   where centerx, centery, centerw, ux, uy, uw, vx, vy, vw are constants
+*   and    PI < = theta < = PI
+* A unit circle is x^2 + Y^2 = 1
+* Return values: number of solutions found.
+*               0: no intersection
+*               -1: input error or polynomial solver failed.
+*
+* @param pCosValue <= 0 to 4 cosine values
+* @param pSinValue <= 0 to 4 sine values
+* @param pThetaValue <= 0 to 4 angle values
+* @param pNumInt <= number of intersections
+* @param centerx
+* @param ux
+* @param vx
+* @param centery
+* @param uy
+* @param vy
+* @param cenerw
+* @param uw
+* @param vw
+* @return -1 if the conic is (exactly) a unit circle,
+*               else number of intersections.
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int bsiMath_conicIntersectUnitCircle
+
+(
+double          *pCosValue,
+double          *pSinValue,
+double          *pThetaValue,
+int             *pNumInt,
+double          centerx,
+double          ux,
+double          vx,
+double          centery,
+double          uy,
+double          vy,
+double          centerw,
+double          uw,
+double          vw
+)
+    {
+    RotMatrix B;
+    B.form3d[0][0] = ux;
+    B.form3d[1][0] = uy;
+    B.form3d[2][0] = uw;
+
+    B.form3d[0][1] = vx;
+    B.form3d[1][1] = vy;
+    B.form3d[2][1] = vw;
+
+    B.form3d[0][2] = centerx;
+    B.form3d[1][2] = centery;
+    B.form3d[2][2] = centerw;
+    return bsiBezier_conicIntersectUnitCircle (pCosValue, pSinValue, pThetaValue, pNumInt,
+                                    NULL, NULL, &B);
+    }
+
+
+/*-----------------------------------------------------------------*//**
+* Compute B so X'BX = X'AX and B is symmetric.
+
+* @param pA <= symmetric coefficients
+* @param pB => nonsymmetric coefficients
+* @see
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiQCoff_symmetrize
+
+(
+RotMatrixP pA,
+RotMatrixCP pB
+)
+    {
+    double bxy = 0.5 * (pB->form3d[0][1] + pB->form3d[1][0]);
+    double bxz = 0.5 * (pB->form3d[0][2] + pB->form3d[2][0]);
+    double byz = 0.5 * (pB->form3d[2][1] + pB->form3d[1][2]);
+
+    pA->form3d[0][0] = pB->form3d[0][0];
+    pA->form3d[1][1] = pB->form3d[1][1];
+    pA->form3d[2][2] = pB->form3d[2][2];
+
+    pA->form3d[0][1] = pA->form3d[1][0] = bxy;
+    pA->form3d[0][2] = pA->form3d[2][0] = bxz;
+    pA->form3d[1][2] = pA->form3d[2][1] = byz;
+    }
+
+
+
+
+/*-----------------------------------------------------------------*//**
+* Compute a matrix A such that
+*   A*(c s 1)' = H * B where
+*  H is the matrix
+* [ 0 -1 -s][bx]        [c]
+* [ 1  0  c][by] == A * [s]
+* [ s -c  0][bz]        [1]
+
+* @param pA <= coefficient matrix
+* @param pVecB => vector
+* @see
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiQCoff_HOperator
+
+(
+RotMatrixP   pA,
+DPoint3dCP pVecB
+)
+    {
+    pA->InitFromColumnVectors (
+            DVec3d::From (0.0,      pVecB->z,   -pVecB->y),
+            DVec3d::From (-pVecB->z,     0.0,    pVecB->x),
+            DVec3d::From (-pVecB->y,   pVecB->x,     0.0)
+            );
+    }
+
+
+
+
+/*-----------------------------------------------------------------*//**
+* Compute the matrix of a quadric section whose intersections with
+* the unit circle are the cosine and sine of the angles where pPoint
+* projects to the quadric.
+* That is,
+*   A = sym(D*B'* (I - QW') * B)
+* Where sym is the symmetrizing operator and  B, D, Q, and W are things
+* that need some explanation.
+
+* @param pA <= matrix of new quadric section
+* @param pB => matrix of existing quadric section
+* @param pPoint => point being projected to matrix B.
+* @param pPoint
+* @see
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiQCoff_projectToEllipse
+
+(
+RotMatrixP pA,
+RotMatrixCP pB,
+DPoint3dCP pPoint
+)
+    {
+    RotMatrix D, DT;
+    RotMatrix E;
+    DVec3d BtW;
+    RotMatrix BT;
+    RotMatrix product;
+    BT.TransposeOf (*pB);
+
+    BtW = DVec3d::FromColumn (BT, 2);
+
+    bsiQCoff_HOperator (&D, &BtW);
+    DT.TransposeOf (D);
+    E.InitIdentity ();
+
+    DVec3d col2 = DVec3d::FromColumn (E, 2);
+    col2.DifferenceOf (col2, *pPoint);
+    E.SetColumn (col2, 2);
+
+    product.InitProduct (DT, BT);
+    product.InitProduct (product, E);
+    product.InitProduct (product, *pB);
+    bsiQCoff_symmetrize (pA, &product);
+    }
+
+/*-----------------------------------------------------------------*//**
+* This routine finds the points of intersection between an implicit
+* conic (specified by matrix A) X^AX = 0  and the unit circle
+* x^2 + Y^2 = 1
+* Returns  : number of intersections found.
+*            -1: conic = circle or input error or polynomial solver failed.
+*
+* @param pCosValue <= x coordinates of intersections
+* @param pSinValue <= y coordinates of intersections
+* @param pThetaValue <= angular positions of intersections
+* @param pNumInt <= number of intersections
+* @param pCoefficientMatrix => matrix defining implicit conic
+* @return 0 if success, nonzero if error
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP StatusInt bsiMath_implicitConicIntersectUnitCircle
+
+(
+double          *pCosValue,
+double    *pSinValue,
+double    *pThetaValue,
+int       *pNumInt,
+RotMatrixCP pCoefficientMatrix
+)
+    {
+    return 0 == bsiBezier_implicitConicIntersectUnitCircle
+                (pCosValue, pSinValue, pThetaValue, pNumInt, NULL, NULL, pCoefficientMatrix)
+        ? ERROR : SUCCESS;
+    }
+
+/*-----------------------------------------------------------------*//**
+*
+* Initializes a range cube with (inverted) large positive and negative
+* values.
+*
+* @param
+* @see
+* @indexVerb init
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     bsiDRange2d_init
+
+(
+DRange2dP pRange        /* <= range to be initialized */
+)
+
+    {
+    pRange->low.x = pRange->low.y = DBL_MAX;
+    pRange->high.x = pRange->high.y = -DBL_MAX;
+    }
+
+/*-----------------------------------------------------------------*//**
+*
+* Initizlizes the range to contain the range of the given array of points.
+* If there are no points in the array, the range is initialized by
+* DRange2d.init()
+*
+* @param pPoint => array of points to search
+* @param n => number of points in array
+* @see
+* @indexVerb init
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     bsiDRange2d_initFromArray
+
+(
+DRange2dP pRange,
+DPoint2dCP pPoint,
+int             n
+)
+
+    {
+    int i;
+    DPoint2d *  minP = &pRange->low;
+    DPoint2d *  maxP = &pRange->high;
+    if (n < 1)
+        {
+        bsiDRange2d_init (pRange);
+        }
+    else
+        {
+        *minP = *maxP = pPoint[0];
+        for (i=1; i<n; i++)
+            {
+            FIX_MINMAX ( pPoint[i].x, minP->x, maxP->x );
+            FIX_MINMAX ( pPoint[i].y, minP->y, maxP->y );
+            }
+        }
+    }
+
+/*-----------------------------------------------------------------*//**
+*
+* @return the largest individual coordinate value among (a) range min point,
+* (b) range max point, and (c) range diagonal vector.
+* @see
+* @indexVerb extrema
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double bsiDRange2d_getLargestCoordinate
+
+(
+DRange2dCP pRange
+)
+
+    {
+     double     max;
+     DPoint2d diagonal;
+
+     max = fabs(pRange->low.x);
+     FIX_MAX(fabs(pRange->high.x), max);
+     FIX_MAX(fabs(pRange->low.y), max);
+     FIX_MAX(fabs(pRange->high.y), max);
+
+     diagonal.DifferenceOf (pRange->high, pRange->low);
+
+     FIX_MAX(fabs(diagonal.x), max);
+     FIX_MAX(fabs(diagonal.y), max);
+
+     return max;
+
+    }
+
 END_BENTLEY_GEOMETRY_NAMESPACE

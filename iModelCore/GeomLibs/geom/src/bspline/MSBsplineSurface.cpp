@@ -1,8 +1,8 @@
-/*--------------------------------------------------------------------------------------+
+fca/*--------------------------------------------------------------------------------------+
 |
 |     $Source: geom/src/bspline/MSBsplineSurface.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -89,30 +89,6 @@ void MSBsplineSurface::Zero ()
     memset (this, 0, sizeof (MSBsplineSurface));
     }
 
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    earlin.lutz                     08/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-MSBsplineSurfacePtr MSBsplineSurface::CreateCatmullRom
-(
-bvector<DPoint3d> const &points, //!< [in] data points
-size_t numU,          //!< [in] u count
-size_t numV,          //!< [in] v count
-bvector<DPoint2d> const *uv //!< [in] optional uv parameters.
-)
-    {
-    if (numU * numV != points.size ())
-        return NULL;
-    if (NULL != uv && numU * numV != uv->size ())
-        return NULL;
-    MSBsplineSurface surface;
-    if (SUCCESS == bsprfit_catmullRomSurface (&surface, &points[0], (int)numU, (int)numV, uv == NULL ? NULL : &uv->at(0)))
-        {
-        return surface.CreateCapture ();
-        }
-    return NULL;
-    }
 
 MSBsplineSurfacePtr MSBsplineSurface::CreateFromPolesAndOrder
 (

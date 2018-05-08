@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspsurf.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -4269,6 +4269,364 @@ void                *argP              /* => passed through to strokeFunc */
     return SUCCESS;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EDL             04/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP StatusInt    bspssi_projectToTangentSystem
+(
+DPoint3d            *paramP,            /* <= x,y are parameters of projection
+                                                of pointP onto skewed plane.  z=0 */
+double              *duduP,             /* <= squared magnitude of U vector */
+double              *dvdvP,             /* <= squared magnitude of V vector */
+DPoint3d            *vectorUP,          /* => parameter space U direction */
+DPoint3d            *vectorVP,          /* => parameter space V direction */
+DPoint3d            *originP,           /* => origin of parameter system */
+DPoint3d            *pointP,            /* => space point to be projected */
+double              shortVecTol         /* => tolerance to consider short vectors zero */
+)
+    {
+    double a00, a01, a10, a11, b0, b1, det, p0, p1;
+    DPoint3d vectorW;
+    static double relTol = 1.0e-10;
+    StatusInt status;
+    double tol2 = shortVecTol * shortVecTol;
+    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorW, pointP, originP);
+
+    a00 = *duduP = bsiDPoint3d_dotProduct (vectorUP, vectorUP);
+    a01 = a10    = bsiDPoint3d_dotProduct (vectorUP, vectorVP);
+    a11 = *dvdvP = bsiDPoint3d_dotProduct (vectorVP, vectorVP);
+    if (a00 <= tol2 || a11 <= tol2)
+        return ERROR;
+
+    b0  = bsiDPoint3d_dotProduct (vectorUP, &vectorW);
+    b1  = bsiDPoint3d_dotProduct (vectorVP, &vectorW);
+
+    p0 = a00 * a11; /* Must be positive */
+    p1 = a01 * a10; /* Also must be positive !! */
+    det = p0 - p1;
+    if (det == 0.0 || fabs (det) < (p0 + p1) * relTol)
+        {
+        paramP->x = paramP->y = paramP->z = 0.0;
+        status = ERROR;
+        }
+    else
+        {
+        double inverseDet = 1.0 / det;
+        paramP->x = (b0 * a11 - b1 * a01) * inverseDet;
+        paramP->y = -(b0 * a10 - b1 * a00) * inverseDet;
+        paramP->z = 0.0;
+        status = SUCCESS;
+        }
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BFP             03/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bspssi_relaxToDifficultSurface
+(
+DPoint3d            *nearPt,           /* <= closest point on surface */
+DPoint3d            *normal,           /* <= normal to surf @ nearPt, scaled by sine angle */
+double              *degeneracy,       /* <= sine of angle between surface partials */
+DPoint2d            *uv,               /* <=> initial guess -> param of pt */
+DPoint3d            *testPt,           /* => want closest pt to this pt */
+Evaluator           *eval,
+int                 iterations,        /* => number of iterations to try */
+double              convTol            /* => convergence tolerance in UV space */
+)
+    {
+    int             count;
+    bool            bad_dPdu, bad_dPdv;
+    double          mag_cross, mag_dPdu, mag_dPdv, mag_dCrossDu, mag_dCrossDv,
+                    mag_cross2, prod;
+    double          dudu, dvdv;
+    DVec3d          du, dv, zeroVec, difference,
+                    dNormDu, dNormDv, cross, dCrossDu, dCrossDv, tmp0, tmp1;
+    RotMatrix       tmp;
+
+    StatusInt paramStat;
+
+    zeroVec.x = zeroVec.y = zeroVec.z =
+    difference.x = difference.y = 0.0;
+
+    for (count=0; count < iterations; count++)
+        {
+        uv->x += difference.x;
+        uv->y += difference.y;
+
+        /*---------------------------------------------------------------
+        Add the correction to the uv pair. If I am crossing an edge of the
+        [0,1] parameter square then if closed go around to the other side,
+        or if open, just relax to boundary. This assumes that the new uv
+        is no more than 1.0 outside the unit square; i.e. adding/subtracting
+        one will wrap around to the opposite side of a closed surface.
+        ---------------------------------------------------------------*/
+        if (uv->x < 0.0)
+            {
+            if (eval->surf->uParams.closed)
+                uv->x += 1.0;
+            else
+                uv->x = 0.0;
+            }
+        else if (uv->x > 1.0)
+            {
+            if (eval->surf->uParams.closed)
+                uv->x -= 1.0;
+            else
+                uv->x = 1.0;
+            }
+        if (uv->y < 0.0)
+            {
+            if (eval->surf->vParams.closed)
+                uv->y += 1.0;
+            else
+                uv->y = 0.0;
+            }
+        else if (uv->y > 1.0)
+            {
+            if (eval->surf->vParams.closed)
+                uv->y -= 1.0;
+            else
+                uv->y = 1.0;
+            }
+
+
+        if (eval->offset)
+            {
+            DPoint3d duu, duv, dvv, safeNormal;
+
+            bspsurf_computePartials (nearPt, NULL, &du, &dv, &duu, &dvv, &duv,
+                                 &safeNormal, uv->x, uv->y, eval->surf);
+            /*-----------------------------------------------------------
+            Must correct the partials, see Farouki, R.T. in CAGD vol 3, pp. 15-45.
+            -----------------------------------------------------------*/
+            bsiDPoint3d_addScaledDPoint3d (nearPt, nearPt, &safeNormal,
+                         eval->distance / bsiDPoint3d_magnitude (&safeNormal));
+
+            bsiDPoint3d_crossProduct (&cross, &du, &dv);
+            bsiDPoint3d_crossProduct (&tmp0, &duu, &dv);
+            bsiDPoint3d_crossProduct (&tmp1, &du, &duv);
+            bsiDPoint3d_addDPoint3dDPoint3d (&dCrossDu, &tmp0, &tmp1);
+            bsiDPoint3d_crossProduct (&tmp0, &duv, &dv);
+            bsiDPoint3d_crossProduct (&tmp1, &du, &dvv);
+            bsiDPoint3d_addDPoint3dDPoint3d (&dCrossDv, &tmp0, &tmp1);
+
+            mag_cross    = bsiDPoint3d_magnitude (&cross);
+            mag_cross2   = mag_cross * mag_cross;
+            mag_dCrossDu = bsiDPoint3d_dotProduct (&cross, &dCrossDu) / mag_cross;
+            mag_dCrossDv = bsiDPoint3d_dotProduct (&cross, &dCrossDv) / mag_cross;
+
+            bsiDPoint3d_scale (&dNormDu, &dCrossDu, mag_cross);
+            bsiDPoint3d_addScaledDPoint3d (&dNormDu, &dNormDu, &cross, - mag_dCrossDu);
+            bsiDPoint3d_scale (&dNormDu, &dNormDu, 1.0 / mag_cross2);
+            bsiDPoint3d_scale (&dNormDv, &dCrossDv, mag_cross);
+            bsiDPoint3d_addScaledDPoint3d (&dNormDv, &dNormDv, &cross, - mag_dCrossDv);
+            bsiDPoint3d_scale (&dNormDv, &dNormDv, 1.0 / mag_cross2);
+
+            bsiDPoint3d_addScaledDPoint3d (&du, &du, &dNormDu, eval->distance);
+            bsiDPoint3d_addScaledDPoint3d (&dv, &dv, &dNormDv, eval->distance);
+            }
+        else
+            {
+            bspsurf_evaluateSurfacePoint (nearPt, NULL, &du, &dv,
+                                 uv->x, uv->y, eval->surf);
+            }
+        mag_dPdu = bsiDPoint3d_magnitude (&du);
+        mag_dPdv = bsiDPoint3d_magnitude (&dv);
+        bad_dPdu = mag_dPdu < fc_epsilon;
+        bad_dPdv = mag_dPdv < fc_epsilon;
+        bsiDPoint3d_crossProduct (&cross, &du, &dv);
+        mag_cross = bsiDPoint3d_magnitude (&cross);
+
+        if (bad_dPdu || bad_dPdv)
+            {
+            /* Use the safe normal vector. */
+            DPoint3d safeNormal;
+            bspsurf_computePartials (NULL, NULL, &du, &dv, NULL, NULL, NULL,
+                                 &safeNormal, uv->x, uv->y, eval->surf);
+
+
+            *degeneracy = 0.0;
+            *normal = safeNormal;
+            mag_cross = bsiDPoint3d_magnitude (&safeNormal);
+
+            if (mag_cross < fc_epsilon)
+                return STATUS_NONCONVERGED;
+
+            /* Fix the bad partials so the Jacobian doesn't go wild. */
+            if (bad_dPdu && ! bad_dPdv)
+                {
+                bsiDPoint3d_crossProduct (&du, &dv, normal);
+                bsiDPoint3d_normalizeInPlace (&du);
+                bsiDPoint3d_scale (&du, &du, mag_cross / mag_dPdv);
+                }
+            else if (bad_dPdv && ! bad_dPdu)
+                {
+                bsiDPoint3d_crossProduct (&dv, normal, &du);
+                bsiDPoint3d_normalizeInPlace (&dv);
+                bsiDPoint3d_scale (&dv, &dv, mag_cross / mag_dPdu);
+                }
+            else
+                {
+                rotMatrix_orthogonalFromZRow (&tmp, (DVec3d*)normal);
+                bsiRotMatrix_getRow ( &tmp, &du,  0);
+                bsiRotMatrix_getRow ( &tmp, &dv,  1);
+                bsiDPoint3d_scale (&du, &du, sqrt (mag_cross));
+                bsiDPoint3d_scale (&dv, &dv, sqrt (mag_cross));
+                }
+            }
+        else
+            {
+            prod = 1.0 / (mag_dPdu * mag_dPdv);
+            mag_cross *= prod;
+            *degeneracy = mag_cross;     /* sine of angle between dPdu & dPdv */
+            bsiDPoint3d_scale (normal, &cross, prod);    /* scaled by sine angle btw partials */
+            }
+
+#if defined (debug_relax)
+    {
+    DPoint3d        line[2];
+    ElementUnion    u;
+
+    line[0] = *nearPt;
+    bsiDPoint3d_addScaledDPoint3d (line+1, line, normal, fc_1000);
+    mdlLine_directCreate (&u, NULL, line, NULL);
+    u.line_3d.dhdr.symb.b.style = 3;
+    mdlElement_display (&u, 2);
+    }
+#endif
+
+        paramStat = bspssi_projectToTangentSystem (&difference, &dudu, &dvdv, &du, &dv, nearPt, testPt, fc_epsilon);
+
+        if (fabs (difference.x) < convTol &&
+            fabs (difference.y) < convTol &&
+            SUCCESS == paramStat)
+            return STATUS_CONVERGED;
+        }
+
+    /* Failed to converge within iterations */
+    return STATUS_NONCONVERGED;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BFP             03/91
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bspssi_relaxToSurface
+(
+DPoint3d            *nearPt,           /* <= closest point on surface */
+DPoint3d            *normal,           /* <= normal to surf @ nearPt, scaled by sine angle */
+double              *degeneracy,       /* <= sine of angle between surface partials */
+DPoint2d            *uv,               /* <=> initial guess -> param of pt */
+DPoint3d            *testPt,           /* => want closest pt to this pt */
+Evaluator           *eval,
+int                 iterations,        /* => number of iterations to try */
+double              convTol            /* => convergence tolerance in UV space */
+)
+    {
+    int             count;
+    double          prod;
+    double          dudu, dvdv;
+    DPoint3d        du, dv, zeroVec, difference,
+                    cross;
+    DPoint3d        localNormal;
+    double          localDegeneracy;
+
+    StatusInt paramStat;
+    bool    converged;
+    static int alwaysDifficult = 0;
+
+    if (alwaysDifficult || eval->offset)
+        return bspssi_relaxToDifficultSurface (nearPt,
+                            normal ? normal : &localNormal,
+                            degeneracy ? degeneracy : &localDegeneracy,
+                            uv, testPt, eval, iterations, convTol);
+
+    zeroVec.x = zeroVec.y = zeroVec.z =
+    difference.x = difference.y = 0.0;
+
+    for (count=0; count++ < iterations;)
+        {
+        uv->x += difference.x;
+        uv->y += difference.y;
+
+        /*---------------------------------------------------------------
+        Add the correction to the uv pair. If I am crossing an edge of the
+        [0,1] parameter square then if closed go around to the other side,
+        or if open, just relax to boundary. This assumes that the new uv
+        is no more than 1.0 outside the unit square; i.e. adding/subtracting
+        one will wrap around to the opposite side of a closed surface.
+        ---------------------------------------------------------------*/
+        if (uv->x < 0.0)
+            {
+            if (eval->surf->uParams.closed)
+                uv->x += 1.0;
+            else
+                uv->x = 0.0;
+            }
+        else if (uv->x > 1.0)
+            {
+            if (eval->surf->uParams.closed)
+                uv->x -= 1.0;
+            else
+                uv->x = 1.0;
+            }
+        if (uv->y < 0.0)
+            {
+            if (eval->surf->vParams.closed)
+                uv->y += 1.0;
+            else
+                uv->y = 0.0;
+            }
+        else if (uv->y > 1.0)
+            {
+            if (eval->surf->vParams.closed)
+                uv->y -= 1.0;
+            else
+                uv->y = 1.0;
+            }
+
+
+        bspsurf_evaluateSurfacePoint (nearPt, NULL, &du, &dv,
+                                 uv->x, uv->y, eval->surf);
+
+        paramStat = bspssi_projectToTangentSystem (&difference, &dudu, &dvdv,
+                            &du, &dv, nearPt, testPt, fc_epsilon);
+
+        if (SUCCESS != paramStat)
+                return bspssi_relaxToDifficultSurface (nearPt,
+                            normal ? normal : &localNormal,
+                            degeneracy ? degeneracy : &localDegeneracy,
+                            uv, testPt, eval, iterations, convTol);
+
+        converged = fabs (difference.x) < convTol && fabs (difference.y) < convTol;
+
+        if (converged || count == iterations)
+            {
+            if (normal || degeneracy)
+                {
+                bsiDPoint3d_crossProduct (&cross, &du, &dv);
+                prod = 1.0 / sqrt (dudu * dvdv);
+
+                if (degeneracy)
+                    {
+                    double dwdw;
+                    dwdw = bsiDPoint3d_dotProduct (&cross, &cross);
+                    *degeneracy = sqrt (dwdw) * prod;   /* sine of angle btw partials */
+                    }
+
+                if (normal)
+                    bsiDPoint3d_scale (normal, &cross, prod);   /* scaled by sine angle btw partials */
+                }
+            }
+
+        if (converged)
+            return STATUS_CONVERGED;
+        }
+
+    /* Failed to converge within iterations */
+    return STATUS_NONCONVERGED;
+    }
 
 
 END_BENTLEY_GEOMETRY_NAMESPACE

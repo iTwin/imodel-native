@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/dellipse3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*-----------------------------------------------------------------*//**@doctext
@@ -1840,6 +1840,7 @@ double      theta
     return bsiDPoint3d_magnitude (&tangent);
     }
 
+#ifdef CompileDEllipse3dArcLength
 typedef struct
     {
     const DPoint4d *pPoleArray;
@@ -1946,7 +1947,7 @@ DEllipse3dCP pEllipse
                     (void *)pEllipse);
     */
     }
-
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 @description Return the sweep angle corresponding to an arc length.
@@ -1987,7 +1988,7 @@ double arcLength
     return sweepScale * bsiGeom_ellipseInverseArcLength (a, b, startRadians, arcLength);
     }
 
-
+#ifdef abc
 /*---------------------------------------------------------------------------------**//**
 @description Compute the (signed) arc length between specified fractional parameters.
 @remarks Fractions outside [0,1] return error.
@@ -2040,7 +2041,7 @@ double      fraction1
     *pArcLength = fabs (*pArcLength) * s;
     return stat;
     }
-
+#endif
 
 /*-----------------------------------------------------------------*//**
 @description Compute the xyz range limits of a 3D ellipse.

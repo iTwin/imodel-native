@@ -86,7 +86,7 @@ $(OUT_DIR)dpoint4d$(OUT_EXT)        : $(geomSrcStructs)dpoint4d.cpp         $(OT
 
 $(OUT_DIR)drange3d$(OUT_EXT)        : $(geomSrcStructs)drange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)drange2d$(OUT_EXT)        : $(geomSrcStructs)drange2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)drange2d$(OUT_EXT)        : $(geomSrcStructs)drange2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)dtransform3d$(OUT_EXT)    : $(geomSrcStructs)dtransform3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -104,7 +104,7 @@ $(OUT_DIR)DTriangle3d$(OUT_EXT)      : $(geomSrcStructs)DTriangle3d.cpp       $(
 
 $(OUT_DIR)dsegment4d$(OUT_EXT)      : $(geomSrcStructs)dsegment4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)proximitydata$(OUT_EXT)   : $(geomSrcStructs)proximitydata.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)proximitydata$(OUT_EXT)   : $(geomSrcStructs)proximitydata.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)graphicspoint$(OUT_EXT)   : $(geomSrcStructs)graphicspoint.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -132,7 +132,7 @@ $(OUT_DIR)dconic4d$(OUT_EXT)        : $(geomSrcStructs)dconic4d.cpp         $(OT
 # (end structs_sources_pubinc.mki)
 # (begin structs_sources_bsiinc.mki)
 
-$(OUT_DIR)dellipse4d$(OUT_EXT)      : $(geomSrcStructs)dellipse4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dellipse4d$(OUT_EXT)      : $(geomSrcStructs)dellipse4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)smallsetrange1d$(OUT_EXT) : $(geomSrcStructs)smallsetrange1d.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -263,7 +263,7 @@ $(OUT_DIR)polysolv$(OUT_EXT)        : $(geomSrcFuncs)polysolv.cpp       $(OTHER_
 
 $(OUT_DIR)quadeqn$(OUT_EXT)         : $(geomSrcFuncs)quadeqn.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)quadric$(OUT_EXT)         : $(geomSrcFuncs)quadric.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)quadric$(OUT_EXT)         : $(geomSrcFuncs)quadric.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)svd$(OUT_EXT)             : $(geomSrcFuncs)svd.cpp            $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -275,7 +275,7 @@ $(OUT_DIR)YawPitchRollAnglesInDegrees$(OUT_EXT)    : $(geomSrcFuncs)YawPitchRoll
 
 $(OUT_DIR)lineargeom$(OUT_EXT)      : $(geomSrcFuncs)lineargeom.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)quadraticgeom$(OUT_EXT)   : $(geomSrcFuncs)quadraticgeom.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)quadraticgeom$(OUT_EXT)   : $(geomSrcFuncs)quadraticgeom.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)eigensys3d$(OUT_EXT)      : $(geomSrcFuncs)eigensys3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -293,7 +293,7 @@ $(OUT_DIR)polygon2d$(OUT_EXT)       : $(geomSrcFuncs)polygon2d.cpp      $(OTHER_
 
 $(OUT_DIR)polyline3d$(OUT_EXT)      : $(geomSrcFuncs)polyline3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)polyline2d$(OUT_EXT)      : $(geomSrcFuncs)polyline2d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)polyline2d$(OUT_EXT)      : $(geomSrcFuncs)polyline2d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)polyplane4d$(OUT_EXT)     : $(geomSrcFuncs)polyplane4d.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -342,7 +342,7 @@ $(OUT_DIR)MSBsplineSurface$(OUT_EXT)    : $(geomSrcBspline)MSBsplineSurface.cpp 
 $(OUT_DIR)MSBsplineSurface_AddSurfaces$(OUT_EXT)    : $(geomSrcBspline)MSBsplineSurface_AddSurfaces.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 
-$(OUT_DIR)MSBsplineSurfaceLofting$(OUT_EXT)    : $(geomSrcBspline)MSBsplineSurfaceLofting.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+#$(OUT_DIR)MSBsplineSurfaceLofting$(OUT_EXT)    : $(geomSrcBspline)MSBsplineSurfaceLofting.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 
 $(OUT_DIR)BsplineCurveFit$(OUT_EXT)    : $(geomSrcBspline)BsplineCurveFit.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
@@ -389,7 +389,7 @@ $(OUT_DIR)bspbound$(OUT_EXT)    : $(geomSrcBspline)bspbound.cpp $(OTHER_DEPENDEN
 
 $(OUT_DIR)bspfit$(OUT_EXT)    : $(geomSrcBspline)bspfit.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-$(OUT_DIR)bsprfit$(OUT_EXT)    : $(geomSrcBspline)bsprfit.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+#$(OUT_DIR)bsprfit$(OUT_EXT)    : $(geomSrcBspline)bsprfit.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 $(OUT_DIR)bspdcurv$(OUT_EXT)    : $(geomSrcBspline)bspdcurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
@@ -401,7 +401,7 @@ $(OUT_DIR)bspdcurv$(OUT_EXT)    : $(geomSrcBspline)bspdcurv.cpp $(OTHER_DEPENDEN
 
 $(OUT_DIR)bspdsurf$(OUT_EXT)    : $(geomSrcBspline)bspdsurf.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-$(OUT_DIR)bspssi$(OUT_EXT)    : $(geomSrcBspline)bspssi.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+#$(OUT_DIR)bspssi$(OUT_EXT)    : $(geomSrcBspline)bspssi.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 $(OUT_DIR)bspicurv$(OUT_EXT)    : $(geomSrcBspline)bspicurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
@@ -444,7 +444,7 @@ $(OUT_DIR)bspPolysolve$(OUT_EXT)    : $(geomSrcBspline)bspPolysolve.cpp $(OTHER_
 
 #$(OUT_DIR)pencil$(OUT_EXT)          : $(geomSrcFuncs)pencil.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)polycoff$(OUT_EXT)        : $(geomSrcFuncs)polycoff.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)polycoff$(OUT_EXT)        : $(geomSrcFuncs)polycoff.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)qsic$(OUT_EXT)            : $(geomSrcFuncs)qsic.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -496,7 +496,7 @@ $(OUT_DIR)rotmatrix_dep$(OUT_EXT)               : $(geomSrcInterfac)rotmatrix_de
 # (end interfac_sources_pubinc.mki)
 # (begin interfac_sources_bsiinc.mki)
 
-$(OUT_DIR)basegeom_2ms$(OUT_EXT)                : $(geomSrcInterfac)basegeom_2ms.cpp            $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)basegeom_2ms$(OUT_EXT)                : $(geomSrcInterfac)basegeom_2ms.cpp            $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 
 # (end interfac_sources_bsiinc.mki)
@@ -539,7 +539,7 @@ $(OUT_DIR)vumod$(OUT_EXT)               : $(vuSrc)vumod.cpp $(OTHER_DEPENDENCIES
 
 $(OUT_DIR)vumod2$(OUT_EXT)              : $(vuSrc)vumod2.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-#$(OUT_DIR)vuconvex$(OUT_EXT)            : $(vuSrc)vuconvex.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+$(OUT_DIR)vuconvex$(OUT_EXT)            : $(vuSrc)vuconvex.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)vuaddedges$(OUT_EXT)          : $(vuSrc)vuaddedges.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
@@ -954,7 +954,7 @@ $(OUT_DIR)jmdl_mtgfacet$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgfacet.cpp         $(OTH
 
 $(OUT_DIR)jmdl_mtgedgestar$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgedgestar.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)jmdl_mtgparity$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgparity.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)jmdl_mtgparity$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgparity.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 #$(OUT_DIR)jmdl_mtgreduce$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgreduce.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 

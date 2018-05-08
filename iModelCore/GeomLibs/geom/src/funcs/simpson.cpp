@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/simpson.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -15,6 +15,40 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 |                                                                       |
 +----------------------------------------------------------------------*/
 #define MAX_DEPTH           10
+static int s_maxDepth = 0;  // running counter of maximum depth reached.
+static double s_relTolFactor = 1.414;
+static double s_absTolFactor = 0.707;
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          newtonCotes5PointQuadrature                             |
+|                                                                       |
+| author        EarlinLutz                              08/98           |
+|                                                                       |
+| Estimate an integral by 5 point newton cotes rule, and estimate the   |
+| absolute value integral by 4-part trapezoid rule.                     |
++----------------------------------------------------------------------*/
+static void nc5Quad
+
+(
+double          *sumP,      /* <= simpson's rule estimate of integral */
+double          *absP,      /* <= trapezoidal estimate of integral of absolute value */
+double          f0,         /* => integrand at 0 */
+double          f1,         /* => integrand at 0.25 */
+double          f2,         /* => integrand at 0.5 */
+double          f3,         /* => integrand at 0.75 */
+double          f4,         /* => integrand at 1 */
+double          delta       /* => interval width */
+)
+    {
+    *sumP = delta * (7.0 * (f0 + f4) + 32.0 * (f1 + f3) + 12.0 * f2) / 90.0;
+    *absP = delta * 0.25 *  (       fabs (f0)
+                            + 2.0 * (fabs (f1) + fabs (f2) + fabs (f3))
+                            +       fabs (f4)
+                            );
+    }
+
+#ifdef CompileSimpson
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   Major Public Code Section                                           |
@@ -30,7 +64,6 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 | Estimate an integral by simpson's rule, and estimate the absolute     |
 | value integral by 2-part trapezoid rule.                              |
 +----------------------------------------------------------------------*/
-static int s_maxDepth;
 static void simpQuad
 
 (
@@ -46,8 +79,6 @@ double          delta       /* => interval width */
     *absP = delta * 0.25 * ( fabs (f0) + 2.0 * fabs (fM) + fabs (f1));
     }
 
-static double s_relTolFactor = 1.414;
-static double s_absTolFactor = 0.707;
 /*----------------------------------------------------------------------+
 |                                                                       |
 | name          recursiveSubdivision                                    |
@@ -174,34 +205,7 @@ void            *userDataP          /* => passed through to evaluateFunc */
         userDataP, 0));
     }
 
-/*----------------------------------------------------------------------+
-|                                                                       |
-| name          newtonCotes5PointQuadrature                             |
-|                                                                       |
-| author        EarlinLutz                              08/98           |
-|                                                                       |
-| Estimate an integral by 5 point newton cotes rule, and estimate the   |
-| absolute value integral by 4-part trapezoid rule.                     |
-+----------------------------------------------------------------------*/
-static void nc5Quad
-
-(
-double          *sumP,      /* <= simpson's rule estimate of integral */
-double          *absP,      /* <= trapezoidal estimate of integral of absolute value */
-double          f0,         /* => integrand at 0 */
-double          f1,         /* => integrand at 0.25 */
-double          f2,         /* => integrand at 0.5 */
-double          f3,         /* => integrand at 0.75 */
-double          f4,         /* => integrand at 1 */
-double          delta       /* => interval width */
-)
-    {
-    *sumP = delta * (7.0 * (f0 + f4) + 32.0 * (f1 + f3) + 12.0 * f2) / 90.0;
-    *absP = delta * 0.25 *  (       fabs (f0)
-                            + 2.0 * (fabs (f1) + fabs (f2) + fabs (f3))
-                            +       fabs (f4)
-                            );
-    }
+#endif
 
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -296,7 +300,6 @@ void            *userDataP
 
     extendFunc (g0, xx, ff, gg, 5, userDataP);
     }
-
 /*----------------------------------------------------------------------+
 |                                                                       |
 | name          recursiveNC5                                            |
@@ -434,7 +437,7 @@ void            *userDataP          /* => passed through to evaluateFunc */
         absTol, relTol, evaluateFunc, NULL,
         userDataP, 0));
     }
-
+#ifdef CompileSimposonIntegrationContext
 typedef struct
     {
     int numPoint;
@@ -1169,7 +1172,7 @@ void            *userDataP          /* => passed through to evaluateFunc */
         absTol, relTol, evaluateFunc, extendFunc,
         userDataP, 0));
     }
-
+#endif
 
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -1432,7 +1435,7 @@ BSIVectorIntegrand &integrand
     }
 
 
-
+#ifdef abc
 // DEPRECATED BY HARD TO STOMP . . . 
 
 
@@ -1582,4 +1585,5 @@ int             numFunc             /* => number of functions being integrated *
         }
     return boolstat;
     }
+#endif
 END_BENTLEY_GEOMETRY_NAMESPACE

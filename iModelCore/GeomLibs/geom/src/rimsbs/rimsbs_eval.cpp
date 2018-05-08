@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/rimsbs/rimsbs_eval.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -783,7 +783,7 @@ bool            reversed
             }
         }
     if (myResult && reversed)
-        bsiDEllipse3d_initReversed (&arc, &arc);
+        arc = DEllipse3d::FromReversed (arc);
     return  myResult;
     }
 
