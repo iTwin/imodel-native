@@ -969,14 +969,6 @@ TEST(BsplineSurface, Boundary100)
     CurveVectorPtr curves = surface->GetUnstructuredBoundaryCurves (0.0, false, true);
     double length = curves->Length ();
     Check::True (length > 0.0);
-#ifdef PrintBoundary    
-    static bool s_printBoundary = false;
-    if (s_printBoundary)
-        {
-        CGWriter writer (stdout);
-        writer.EmitCurveVector (*curves);
-        }
-#endif        
     }
 
 /*---------------------------------------------------------------------------------**//**

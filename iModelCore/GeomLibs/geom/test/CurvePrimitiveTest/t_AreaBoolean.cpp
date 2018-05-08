@@ -1,7 +1,6 @@
 //
 //
 #include "testHarness.h"
-#include <Geom/CGWriter.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 
 #include <Regions/regionsAPI.h>

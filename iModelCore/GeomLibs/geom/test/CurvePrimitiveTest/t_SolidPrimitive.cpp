@@ -392,14 +392,11 @@ void CheckAllFaces (ISolidPrimitivePtr primitive, char const* typeName)
     {
     DRange3d range;
     Check::True (primitive->GetRange (range));
-    CGWriter writer (stdout);
     bvector <SolidLocationDetail::FaceIndices> faces;
     primitive->GetFaceIndices (faces);
     for (size_t i = 0; i < faces.size (); i++)
         {
         IGeometryPtr face = primitive->GetFace (faces[i]);
-        if (s_noisyFaces)
-            writer.Emit (face);
         DRange3d faceRange = DRange3d::NullRange();
         Check::True
             (
@@ -2277,7 +2274,6 @@ void CreateAllSolidsAroundOrigin (bvector<ISolidPrimitivePtr> &solids, bool doVa
 
 void CheckMessages (MeshAnnotationVector &messages, ISolidPrimitivePtr &solid, ICurvePrimitivePtr curve)
     {
-    CGWriter writer (stdout);
     if (messages.size () > 0 || messages.GetTotalFail () > 0)
         {
         printf ("\nMessages");

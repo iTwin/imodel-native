@@ -53,16 +53,7 @@ TEST(IGeoemtry,HelloWorld)
 // serializer=0 for flatbuffer, 1 for json string
 void DoRoundTrip (IGeometryPtr g0, bool emitGeometry, int serializerSelect)
     {
-    CGWriter writer (stdout);
     bvector<Byte> buffer0;
-    if (emitGeometry)
-        writer.WriteStartTag (L"DoRoundTrip");
-
-    if (emitGeometry)
-        {
-        writer.Emit (g0);
-        writer.Write (L"\n");
-        }
     IGeometryPtr g1 = nullptr;
     bool checkPolyfaceQueryCarrier = false;
     if (serializerSelect == 1)
@@ -102,15 +93,8 @@ void DoRoundTrip (IGeometryPtr g0, bool emitGeometry, int serializerSelect)
     if (Check::True (g1.IsValid (), 
             serializerSelect == 1 ? "JsonString RoundTrip" :"FlatBuffer Roundtrip"))
         {
-        if (emitGeometry)
-            {
-            writer.EmitSize (L"FBByptes", buffer0.size ());
-            writer.Emit (g1);
-            }
         Check::True (g0->IsSameStructureAndGeometry (*g1), "BGFB IsSameStructureAndGeoemtry");
         }
-    if (emitGeometry)
-        writer.WriteEndTag (L"DoRoundTrip");
     
     }
 

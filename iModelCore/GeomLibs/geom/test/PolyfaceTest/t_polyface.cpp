@@ -155,63 +155,11 @@ void PrintPolyfaceSummary (PolyfaceHeader& mesh, char const* title, FILE *file)
 
 void PrintPolyface (PolyfaceHeader& mesh, char const* title, FILE *file, size_t maxPrintSize, bool suppressSecondaryData)
     {
-    if (!Check::PrintDeepStructs ())
-        return;
-    if (maxPrintSize > 0 && mesh.Point ().size () > maxPrintSize)
-        {
-        //fprintf (file, "(%s) skipping print -- too big\n", title);
-        }
-    else
-        {
-#if defined (BENTLEY_WIN32)
-        if (suppressSecondaryData)
-            {
-            mesh.Param().SetActive(false);
-            mesh.ParamIndex().SetActive(false);
-            mesh.NormalIndex().SetActive(false);
-            mesh.Normal().SetActive(false);
-            mesh.ColorIndex().SetActive(false);
-            mesh.IntColor().SetActive(false);
-            }
-        fprintf (file, "<Mesh>(%s)\n", title);
-        CGWriter writer (file);
-        //writer.SetFormatMask (L"CSL");
-        writer.EmitPolyface (mesh);
-        writer.EmitIndexVector (mesh.FaceIndex (), L"FaceIndex", L"id");
-        fprintf (file, "</Mesh>\n");
-#else
-        fprintf (file, "(%s) skipping print -- CGWriter is not portable\n", title);
-#endif            
-        }
+    // TODO: Make these callers do Check::SaveTransformed and close their file.
     }
 void PrintPolyface (PolyfaceHeader& mesh, char const *title)
     {
-    if (!Check::PrintDeepStructs ())
-        return;
-    //static int s_coordinatePhase = 2;
-    if (NULL != title)
-#if defined (BENTLEY_WIN32_useOpenGeomTestOutputFile)
-        printf ("<Name>%s</Name>\n", title);
-        char path[1024];
-        sprintf (path, "mesh/%s", title);
-        FILE *file = OpenGeomTestOutputFile (path, ".xml");
-        if (file != NULL)
-            {
-            CGWriter writer (file);
-            writer.EmitPolyface (mesh);
-            DPoint3d xyz = sGridLocalOrigin;
-            xyz.y -= sCallerSize;
-            wchar_t wtitle[1024];
-            size_t i = 0;
-            for (i; title[i] != 0; i++)
-                wtitle[i] = title[i];
-            wtitle[i] = 0;
-            writer.EmitText (xyz, wtitle, sGridTextSize);
-            fclose (file);
-            }
-#else
-        printf ("<Name>%s</Name>  *** skipping output -- OpenGeomTestOutputFile is not portable ***\n", title);
-#endif            
+    // TODO: Make these callers do Check::SaveTransformed and close their file.
     }
 
 void PrintVisitor (PolyfaceVisitor &visitor, char const *title)

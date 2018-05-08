@@ -1568,14 +1568,6 @@ TEST(ClosestPointAndDistance,Test0)
 
 #if defined (_WIN32) && !defined(BENTLEY_WINRT)
 
-static void Write (CurveVectorPtr &cv, wchar_t const *name)
-    {
-    CGWriter writer (stdout);
-    writer.WriteStartTag (name);
-    if (cv.IsValid ())
-        writer.EmitCurveVector (*cv);
-    writer.WriteEndTag (name);
-    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1613,11 +1605,6 @@ TEST(Intersection,AllanB00)
         CurveVectorPtr split0 = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
         CurveVectorPtr split1 = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
         CurveVectorPtr split2 = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-        if (s_noisySplitter != 0)
-            {
-            Write (polygon, L"polygon");
-            Write (curves, L"curves");
-            }
         curves->AppendSplitCurvesByRegion (*polygon, split0.get (), split1.get (), split2.get());
         if (Check::Size (split0->size (), 0, "ON extension has no inside parts")
             && Check::Size (split1->size (), 2, "ON extension has 2 outside parts")
@@ -1626,12 +1613,6 @@ TEST(Intersection,AllanB00)
             {
             Check::Near (edgeLength, split2->Length (), "OUT length");
             Check::Near (ABLength, split1->Length () + split2->Length (), "OUT length");
-            }
-        if (s_noisySplitter != 0)
-            {
-            Write (split0, L"inside");
-            Write (split1, L"outside");
-            Write (split2, L"on");
             }
         }
     }

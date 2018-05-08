@@ -31,10 +31,6 @@ $(o)checkers$(oext)         : $(testDir)src/checkers.cpp
 
 $(o)FileOps$(oext)         : $(testDir)src/FileOps.cpp 
 
-%if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
-    $(o)GeomLibsTestOutputFiles$(oext) : $(testDir)src/GeomLibsTestOutputFiles.cpp
-%endif
-
 # Deliver 
 $(BuildContext)Delivery/UnitTests/Objects/Checkers : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)

@@ -53,9 +53,9 @@ $(OUT_DIR)DPoint3dDoubleArrays$(OUT_EXT)      : $(geomSrcStructs)DPoint3dDoubleA
 
 %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
 
-$(OUT_DIR)CGWriter$(OUT_EXT)    :$(geomSrcFuncs)CGWriter.cpp $(OTHER_DEPENDENCIES) \
-                                $(geomSrcPubGeom)CGWriter.h \
-                                ${MultiCompileDepends}
+#$(OUT_DIR)CGWriter$(OUT_EXT)    :$(geomSrcFuncs)CGWriter.cpp $(OTHER_DEPENDENCIES) \
+#                                $(geomSrcPubGeom)CGWriter.h \
+#                                ${MultiCompileDepends}
 %endif
 
 $(OUT_DIR)TernaryRangeSort$(OUT_EXT)    :$(geomSrcFuncs)TernaryRangeSort.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
@@ -937,7 +937,7 @@ $(OUT_DIR)MTGGraph$(OUT_EXT)      : $(geomSrcMTG)MTGGraph.cpp         $(OTHER_DE
 
 $(OUT_DIR)jmdl_mtgbase1$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgbase1.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-#$(OUT_DIR)MtgFacetPlanarMerge$(OUT_EXT) : $(geomSrcMTG)MtgFacetPlanarMerge.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+$(OUT_DIR)MtgFacetPlanarMerge$(OUT_EXT) : $(geomSrcMTG)MtgFacetPlanarMerge.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 
 $(OUT_DIR)jmdl_mtgmask$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgmask.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
@@ -967,7 +967,7 @@ $(OUT_DIR)jmdl_mtgswap$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgswap.cpp         $(OTHER
 
 #$(OUT_DIR)mtgflowlines$(OUT_EXT) : $(geomSrcMTG)mtgflowlines.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-$(OUT_DIR)unfold$(OUT_EXT) : $(geomSrcMTG)unfold.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)unfold$(OUT_EXT) : $(geomSrcMTG)unfold.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 %ifdef CompileSmoothMeshNormals
 $(OUT_DIR)mtgSmoothNormals$(OUT_EXT) : $(geomSrcMTG)mtgSmoothNormals.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}

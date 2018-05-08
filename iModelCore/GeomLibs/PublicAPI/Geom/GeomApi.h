@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/GeomApi.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -971,7 +971,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #endif
 
 /*__PUBLISH_SECTION_END__*/
-#include <Geom/CGWriter.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 

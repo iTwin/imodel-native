@@ -1,7 +1,6 @@
 //
 //
 #include "testHarness.h"
-#include <Geom/CGWriter.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 
 
@@ -246,15 +245,6 @@ void ReadCG (Utf8CP xmlString, int noisy = 0, bool expectFailure = false)
              GEOMAPI_PRINTF ("(\nBeXmlCGWriter XML\n%s\n)\n", beXmlA.c_str());
             }
 
-        CGWriter writer(stdout);
-        writer.WriteStartTag (L"BentleyGeometryInternalWriter_GeometryFromCG");
-        for (IGeometryPtr g : geometry)
-            {
-            writer.Emit (g);
-            }
-        writer.WriteEndTag (L"GeometryFromCG");
-
-
         for (IGeometryPtr g : geometry)
             {
             Json::Value jsonValue;
@@ -278,7 +268,6 @@ void ReadCG (Utf8CP xmlString, int noisy = 0, bool expectFailure = false)
                             GEOMAPI_PRINTF (" **********  returned from json reader (%d)\n", (int)g1.size ());
                             for (size_t i = 0; i < g1.size (); i++)
                                 {
-                                writer.Emit (g1[i]);
                                 Json::Value jsonValue1;
                                 if (BentleyGeometryJson::TryGeometryToJsonValue (jsonValue1, *g1[i]))
                                     Announce (jsonValue1, g);
