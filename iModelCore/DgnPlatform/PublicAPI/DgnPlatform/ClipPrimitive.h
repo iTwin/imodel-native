@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ClipPrimitive.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,8 +39,7 @@ protected:
     virtual ClipPlaneSetCP _GetMaskPlanes() const = 0;
     virtual ClipPrimitive* _Clone() const = 0;
     virtual bool _GetInvisible() const = 0;
-    virtual GPArrayCP _GetGPA (bool onlyIfNonLinear) const {return nullptr;}
-    virtual MSBsplineCurveCP _GetBCurve() const {return nullptr;}
+    virtual CurveVectorCP _GetCurvesCP () const {return nullptr;}
     virtual double _GetZLow() const {return 0.0;}
     virtual double _GetZHigh() const {return 0.0;}
     virtual bool _ClipZLow() const {return false;}
@@ -64,8 +63,6 @@ public:
     DGNPLATFORM_EXPORT static ClipPrimitivePtr CreateFromBlock(DPoint3dCR low, DPoint3dCR high, bool outside, ClipMask clipMask, TransformCP transform, bool invisible = false);
     DGNPLATFORM_EXPORT static ClipPrimitivePtr CreateFromShape(DPoint2dCP points, size_t numPoints, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible = false);
     DGNPLATFORM_EXPORT static ClipPrimitivePtr CreateFromClipPlanes(ClipPlaneSetCR planes, bool invisible = false);
-    DGNPLATFORM_EXPORT static ClipPrimitivePtr CreateFromGPA(GPArrayCR gpa, double chordTolerance, double angleTolerance, bool isMask, double const* zLow, double const* zHigh, TransformCP transform, bool invisible = false);
-    DGNPLATFORM_EXPORT static ClipPrimitivePtr CreateFromGPA(GPArrayCR gpa, ClipPolygonCR, bool isMask, double const* zLow, double const* zHigh, TransformCP transform, bool invisible = false);
     DGNPLATFORM_EXPORT static ClipPrimitivePtr CreateFromBoundaryCurveVector(CurveVectorCR curveVector, double chordTolerance, double angleTolerance, double const* zLow, double const* zHigh, TransformCP transform, bool invisible = false);
 
     ClipPlaneSetCP GetClipPlanes() const {return _GetClipPlanes();}
@@ -75,8 +72,7 @@ public:
     virtual Json::Value _ToJson() const = 0;
     static ClipPrimitivePtr FromJson(JsonValueCR);
 
-    GPArrayCP GetGPA(bool onlyIfNonLinear) const {return _GetGPA(onlyIfNonLinear);}
-    MSBsplineCurveCP GetBCurve() const {return _GetBCurve();}
+    CurveVectorCP GetCurvesCP() const {return _GetCurvesCP();}
     bool IsMask() const {return _IsMask();}
     bool ClipZLow() const {return _ClipZLow();}
     bool ClipZHigh() const {return _ClipZHigh();}

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/ViewDefinition_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -343,7 +343,7 @@ TEST_F(ViewDefinitionTests, ViewDefinition2dCRUD)
     ASSERT_EQ(DgnDbStatus::Success, SviewDef->Delete());
     ASSERT_EQ(0, ViewDefinition::QueryCount(*m_db));
     }
-
+#ifdef NOTNOW
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                               Ridha.Malik                   3/17
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -409,3 +409,4 @@ TEST_F(ViewDefinitionTests, ViewDefinition3dCRUD)
     ASSERT_EQ(DgnDbStatus::Success, view->Delete());
     ASSERT_EQ(0, ViewDefinition::QueryCount(*m_db));
     }
+#endif

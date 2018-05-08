@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ClipPrimitive.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -12,6 +12,11 @@
 #define HUGE_VALUE                      1.0E14
 #define POLYFILL_EXTERIOR_EDGE          0x01
 
+// EDL May 6 2018 replace m_gpa by m_curves.
+// Delete constructors with gpa.
+// Delete GetBCurve -- caller can GetCurves and manipulate as they wish.
+// GetCurvesCP always returns the pointer.   old param "only if nonlinear" is gone --
+//    caller can do that test easily enough (curves->ContainsNonLinearPrimitive())
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -649,19 +654,24 @@ struct  ClipShapePrimitive : ClipPlanesPrimitive
     bool                        m_isMask;
     bool                        m_zLowValid;
     bool                        m_zHighValid;
-    GPArrayP                    m_gpa;
-    mutable MSBsplineCurvePtr   m_bCurve;  
+    CurveVectorCPtr              m_curves;
+    double m_chordTol;
+    double m_angleTol;
     bool                        m_transformValid;
     Transform                   m_transformFromClip;
     Transform                   m_transformToClip;;
 
-    GPArrayCP _GetGPA (bool onlyIfNonLinear) const override {return (!onlyIfNonLinear || m_gpa->ContainsCurves()) ? m_gpa : NULL;}
     double _GetZLow() const override {return m_zLow;}
     double _GetZHigh() const override {return m_zHigh;}
     bool _ClipZLow() const override {return m_zLowValid;}
     bool _ClipZHigh() const override {return m_zHighValid;}
     bool _IsMask() const override {return m_isMask;}
     ClipPolygonCP _GetPolygon() const override {return &m_points;}
+    CurveVectorCP _GetCurvesCP () const override
+        {
+        return m_curves.get ();
+        }
+
     ClipPrimitive* _Clone() const override {return new ClipShapePrimitive(*this);}
     TransformCP _GetTransformFromClip() const override {return m_transformValid ? &m_transformFromClip : NULL;}
     TransformCP _GetTransformToClip() const override {return m_transformValid ? &m_transformToClip : NULL;}
@@ -686,20 +696,20 @@ ClipShapePrimitive(ClipShapePrimitive const& donor) : ClipPlanesPrimitive(donor)
     m_transformToClip   = donor.m_transformToClip;
     m_transformFromClip = donor.m_transformFromClip;
 
-    if (NULL != donor.m_gpa)
+    if (donor.m_curves.IsValid ())
         {
-        m_gpa           = GPArray::Grab();
-        m_gpa->CopyContentsOf(donor.m_gpa);
+        m_curves = donor.m_curves->Clone ();
         }
-
-    if (donor.m_bCurve.IsValid())
-        m_bCurve = donor.m_bCurve->CreateCopy();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipShapePrimitive(DPoint2dCP points, size_t numPoints, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible) : ClipPlanesPrimitive(invisible), m_gpa(NULL)
+ClipShapePrimitive(DPoint2dCP points, size_t numPoints, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible) :
+    ClipPlanesPrimitive(invisible),
+    m_curves(nullptr),
+    m_chordTol (0),
+    m_angleTol (0)
     {
     BeAssert(NULL != points);
     if (numPoints < 3 || NULL == points)
@@ -714,46 +724,40 @@ ClipShapePrimitive(DPoint2dCP points, size_t numPoints, bool outside, double con
 
     Init(outside, zLow, zHigh, transform);
 
-    m_gpa = GPArray::Grab();
-    m_gpa->Add(points, (int) numPoints);
+    m_curves = CurveVector::CreateLinear (
+            points,
+            numPoints,
+            CurveVector::BOUNDARY_TYPE_Outer,
+            true);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipShapePrimitive(GPArrayCR gpa, double chordTolerance, double angleTolerance, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible) : ClipPlanesPrimitive(invisible)
+ClipShapePrimitive
+(
+CurveVectorCP curves,
+double chordTol,
+double angleTol,
+bool outside,
+double const* zLow,
+double const* zHigh,
+TransformCP transform,
+bool invisible
+) : ClipPlanesPrimitive (invisible),
+    m_curves (curves),
+    m_chordTol (chordTol),
+    m_angleTol (angleTol)
     {
-    m_gpa = GPArray::Grab();
-    m_gpa->CopyContentsOf(&gpa);
-
-    GPArraySmartP   strokedGPA;
-    strokedGPA->AddStrokes(gpa, chordTolerance, angleTolerance, 0.0);
-
-    m_points.resize(strokedGPA->GetCount());
-
-    for (size_t iPt = 0; iPt < m_points.size(); iPt++)
-        {
-        DPoint3d    pt;
-
-        strokedGPA->GetNormalized(pt, (int) iPt);
-
-        m_points[iPt].x = pt.x;
-        m_points[iPt].y = pt.y;
-        }
-
-    Init(outside, zLow, zHigh, transform);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClipShapePrimitive(GPArrayCR gpa, ClipPolygonCR points, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible) : ClipPlanesPrimitive(invisible)
-    {
-    m_gpa = GPArray::Grab();
-    m_gpa->CopyContentsOf(&gpa);
-    m_points = points;
-
-    Init(outside, zLow, zHigh, transform);
+    bvector<DPoint3d> strokes;
+    auto options = IFacetOptions::CreateForCurves ();
+    options->SetAngleTolerance (angleTol);
+    options->SetChordTolerance (chordTol);
+    curves->AddStrokePoints (strokes, *options);
+    m_points.clear ();
+    for (auto &xyz : strokes)
+        m_points.push_back (DPoint2d::From (xyz.x, xyz.y));
+    Init (outside, zLow, zHigh, transform);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -761,8 +765,6 @@ ClipShapePrimitive(GPArrayCR gpa, ClipPolygonCR points, bool outside, double con
 +---------------+---------------+---------------+---------------+---------------+------*/
 ~ClipShapePrimitive()
     {
-    if (NULL != m_gpa)
-        m_gpa->Drop();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -941,19 +943,6 @@ ClipPlaneSetP _GetMaskPlanes() const override
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-MSBsplineCurveCP _GetBCurve() const override
-    {
-    if (!m_bCurve.IsValid())
-        {
-        m_bCurve = MSBsplineCurve::CreatePtr();
-        m_gpa->ToBCurve(m_bCurve.get());
-        }
-    return m_bCurve.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual bool _PointInside(DPoint3dCR point, double onTolerance, bool applyTransform) const
@@ -1085,13 +1074,6 @@ ClipPrimitivePtr ClipPrimitive::CreateFromBlock(DPoint3dCR low, DPoint3dCR high,
     return CreateFromShape(blockPoints, 5, outside, (ClipMask::None != (clipMask & ClipMask::ZLow)) ? &low.z : NULL, (ClipMask::None != (clipMask & ClipMask::ZHigh)) ? &high.z : NULL, transform, invisible);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClipPrimitivePtr ClipPrimitive::CreateFromGPA (GPArrayCR gpa, double chordTolerance, double angleTolerance, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible)
-    {
-    return new ClipShapePrimitive(gpa, chordTolerance, angleTolerance, outside, zLow, zHigh, transform, invisible);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
@@ -1104,24 +1086,15 @@ ClipPrimitivePtr ClipPrimitive::CreateFromBoundaryCurveVector(CurveVectorCR curv
         BeAssert(false);
         return ClipPrimitivePtr();
         }
-    
-    GPArraySmartP     loopGpa;
-    
-    if (SUCCESS != loopGpa->AddCurves(curveVector))
-        {
-        BeAssert(false);
-        return ClipPrimitivePtr();
-        }
 
-    return ClipPrimitive::CreateFromGPA (*loopGpa, chordTolerance, angleTolerance, CurveVector::BOUNDARY_TYPE_Inner == curveVector.GetBoundaryType(), zLow, zHigh, transform, invisible);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-ClipPrimitivePtr ClipPrimitive::CreateFromGPA (GPArrayCR gpa, ClipPolygonCR points, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible)
-    {
-    return new ClipShapePrimitive(gpa, points, outside, zLow, zHigh, transform, invisible);
+    return new ClipShapePrimitive (
+        &curveVector,
+        chordTolerance,
+        angleTolerance,
+        CurveVector::BOUNDARY_TYPE_Inner == curveVector.GetBoundaryType(),
+        zLow, zHigh,
+        transform,
+        invisible);
     }
 
 /*---------------------------------------------------------------------------------**//**
