@@ -201,6 +201,7 @@ BentleyStatus BimTeleporter::_ParseCommandLine(WStringR errmsg, int argc, WCharC
     if (argc < 2)
         return ERROR;
 
+    m_compress = false;
     for (int iArg = 1; iArg < argc; ++iArg)
         {
         if (argv[iArg] == wcsstr(argv[iArg], L"--input=") || argv[iArg] == wcsstr(argv[iArg], L"-i="))
@@ -215,6 +216,12 @@ BentleyStatus BimTeleporter::_ParseCommandLine(WStringR errmsg, int argc, WCharC
         if (argv[iArg] == wcsstr(argv[iArg], L"--output=") || argv[iArg] == wcsstr(argv[iArg], L"-o="))
             {
             m_outputPath.SetName(GetArgValueW(argv[iArg]));
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--compress="))
+            {
+            m_compress = true;
             continue;
             }
         }
@@ -318,6 +325,9 @@ int BimTeleporter::Run(int argc, WCharCP argv[])
 
     if (!converted)
         return 1;
+
+    if (!m_compress)
+        return 0;
 
     CreateIModelParams createImodelParams;
     createImodelParams.SetOverwriteExisting(true);

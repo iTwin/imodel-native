@@ -31,6 +31,7 @@ private:
     BeFileName m_outputPath;
     BeFileName m_loggingConfigFileName;
     BimTeleporterHost* m_host;
+    bool m_compress;
 
     void PrintError(WCharCP fmt, ...);
     void _PrintMessage(WCharCP fmt, ...);
