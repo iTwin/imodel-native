@@ -637,6 +637,9 @@ public:
 
     FormatSpecType GetSpecType() const { return m_specType; }
 
+    //! Returns true if this Format is explicitly defined as a CompositeFormat.
+    bool HasExplicitlyDefinedComposite() const { return m_explicitlyDefinedComposite; }
+
     //! Returns true if this Format contains a NumericFormatSpec.
     bool HasNumeric() const {return !IsProblem() || (m_problem.GetProblemCode() != FormatProblemCode::NotInitialized);}
     //! Returns true if this Format contains a CompositeFormatSpec.

@@ -180,7 +180,17 @@ Utf8String Format::StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::Uni
         CompositeValue dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
         Utf8String pref = dval.GetSignPrefix();
         Utf8String suff = dval.GetSignSuffix();
-        Utf8CP spacer = Utf8String::IsNullOrEmpty(space) ? compS->GetSpacer().c_str() : space;
+        Utf8String uomSeparator;
+        if (compS->HasSpacer())
+            uomSeparator = compS->GetSpacer();
+
+        // if the composite was auto created just to provide an override label for the numeric format then use the specified UomSeparator.
+        if (!nfs.HasExplicitlyDefinedComposite())
+            uomSeparator = fmtP->GetUomSeparator();
+
+        // if caller explicity defines space parameter when calling this method use it, else use what is defined in format specification
+        Utf8CP spacer = Utf8String::IsNullOrEmpty(space) ? uomSeparator.c_str() : space;
+
         // for all parts but the last one we need to format an integer 
         NumericFormatSpec fmtI;
         fmtI.SetPrecision(DecimalPrecision::Precision0);
@@ -193,7 +203,7 @@ Utf8String Format::StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::Uni
                 // if this composite only defines a single component then use format traits to determine if unit label is shown. This allows
                 // support for SuppressUnitLable options in DgnClientFx. Also in this single component situation use the define UomSeparator.
                 if (fmtP->IsShowUnitLabel())
-                    majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), (nullptr ==space) ? fmtP->GetUomSeparator() : space) + suff;
+                    majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), compS->HasSpacer()? spacer : fmtP->GetUomSeparator()) + suff;
                 break;
 
             case 2:
