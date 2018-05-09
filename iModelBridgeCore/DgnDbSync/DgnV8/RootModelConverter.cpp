@@ -1474,25 +1474,9 @@ BentleyApi::BentleyStatus RootModelConverter::RecreateElementRefersToElementsInd
                 {
                 Utf8String error;
                 error.Sprintf("Failed to recreate index '%s' for BisCore:ElementRefersToElements class hierarchy: %s", index.second.c_str(), GetDgnDb().GetLastError().c_str());
-                ReportIssue(IssueSeverity::Info, IssueCategory::Sync(), Issue::Message(), error.c_str());
-                CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("DELETE FROM ec_Index WHERE Name=?");
-                if (stmt == nullptr)
-                    {
-                    BeAssert(false && "Could not retrieve cached statement.");
-                    return BentleyApi::ERROR;
-                    }
-                if (BE_SQLITE_OK != stmt->BindText(1, index.first, Statement::MakeCopy::No))
-                    {
-                    BeAssert(false && "Could not bind to statement.");
-                    return BentleyApi::ERROR;
-                    }
-
-                if (BE_SQLITE_DONE != stmt->Step())
-                    {
-                    error.Sprintf("Failed to delete index '%s' from table ec_Index: %s", index.first.c_str(), GetDgnDb().GetLastError().c_str());
-                    ReportError(IssueCategory::Sync(), Issue::Message(), error.c_str());
-                    return BentleyApi::ERROR;
-                    }
+                ReportIssue(IssueSeverity::Fatal, IssueCategory::Sync(), Issue::Message(), error.c_str());
+                OnFatalError(Converter::IssueCategory::CorruptData());
+                return BentleyApi::ERROR;
                 }
             }
 
@@ -1582,6 +1566,9 @@ void RootModelConverter::_BeginConversion()
 void RootModelConverter::_FinishConversion()
     {
     ConvertNamedGroupsAndECRelationships();   // Now that we know all elements, work on the relationships between elements.
+    if (WasAborted())
+        return;
+
     if (IsUpdating())
         UpdateCalculatedProperties();
     _RemoveUnusedMaterials();

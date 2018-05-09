@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ECTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -1373,16 +1373,47 @@ TEST_F(ECConversionTests, ImportInstanceWithCalculatedSpecUsingRelated)
                                                createdDgnECInstance->GetElementRef(), createdDgnECInstance->GetLocalId());
         v8editor.Save();
         }
+
+    // Create a second relationship
+        {
+        ECObjectsV8::StandaloneECInstanceR owner2 = ownerElementEnabler->GetSharedWipInstance();
+        owner2.SetValue(L"FirstName", Bentley::ECN::ECValue(L"Jane"));
+        owner2.SetValue(L"LastName", Bentley::ECN::ECValue(L"Doe"));
+
+        DgnV8Api::DgnElementECInstancePtr dgnOwnerInstance;
+        DgnV8Api::ElementId eid3;
+        v8editor.AddLine(&eid3);
+        DgnV8Api::ElementHandle eh3(eid3, v8editor.m_defaultModel);
+        ecInstanceStatus = ownerElementEnabler->CreateInstanceOnElement(&dgnOwnerInstance, owner2, eh3);
+        ASSERT_EQ(DgnV8Api::DGNECINSTANCESTATUS_Success, ecInstanceStatus);
+
+        ECObjectsV8::StandaloneECInstanceR chair2 = chairElementEnabler->GetSharedWipInstance();
+        chair2.SetValue(L"Color", Bentley::ECN::ECValue(L"Aqua"));
+
+        DgnV8Api::DgnElementECInstancePtr dgnChairInstance;
+        DgnV8Api::ElementId eid4;
+        v8editor.AddLine(&eid4);
+        DgnV8Api::ElementHandle eh4(eid4, v8editor.m_defaultModel);
+        ecInstanceStatus = chairElementEnabler->CreateInstanceOnElement(&dgnChairInstance, chair2, eh4);
+        ASSERT_EQ(DgnV8Api::DGNECINSTANCESTATUS_Success, ecInstanceStatus);
+
+        ECObjectsV8::StandaloneECRelationshipInstanceR relInstance2 = relationshipEnabler->GetSharedStandaloneWipInstance();
+        DgnV8Api::IDgnECRelationshipInstancePtr ecxRelationship2 = NULL;
+        EXPECT_EQ(SUCCESS, relationshipEnabler->CreateRelationship(&ecxRelationship2, relInstance2, *dgnOwnerInstance, *dgnChairInstance, eh3.GetModelRef(), eh3.GetElementRef()));
+
+        v8editor.Save();
+        }
     DoUpdate(m_dgnDbFileName, m_v8FileName);
 
     // Verify the converted values
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         EC::ECSqlStatement stmt;
-        EXPECT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "SELECT Color, OwnerName FROM test.Chair WHERE OwnerName='Jack'"));
+        EXPECT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "SELECT Color, OwnerName FROM [test].[Chair] WHERE OwnerName=?"));
 
         EC::ECInstanceECSqlSelectAdapter adapter(stmt);
         bool found = false;
+        stmt.BindText(1, "Jack", EC::IECSqlBinder::MakeCopy::Yes);
         while (stmt.Step() == BE_SQLITE_ROW)
             {
             found = true;
@@ -1397,48 +1428,26 @@ TEST_F(ECConversionTests, ImportInstanceWithCalculatedSpecUsingRelated)
             ASSERT_TRUE(strcmp("Jack", v.GetUtf8CP()) == 0);
             }
         ASSERT_TRUE(found) << "Should have found an instance using a WHERE criteria after update";
+
+        stmt.Reset();
+        stmt.BindText(1, "Jane", EC::IECSqlBinder::MakeCopy::Yes);
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            found = true;
+            BentleyApi::ECN::IECInstancePtr actual = adapter.GetInstance();
+            BentleyApi::ECN::ECValue v;
+            ASSERT_TRUE(BentleyApi::ECN::ECObjectsStatus::Success == actual->GetValue(v, "Color"));
+            ASSERT_TRUE(!v.IsNull());
+            ASSERT_TRUE(strcmp("Aqua", v.GetUtf8CP()) == 0);
+
+            ASSERT_TRUE(BentleyApi::ECN::ECObjectsStatus::Success == actual->GetValue(v, "OwnerName"));
+            ASSERT_TRUE(!v.IsNull());
+            ASSERT_TRUE(strcmp("Jane", v.GetUtf8CP()) == 0);
+            }
+        ASSERT_TRUE(found) << "Should have found new instance using a WHERE criteria after update";
+
         }
 
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Umar.Hayat                          04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECConversionTests, RelationshipInstance)
-    {
-    LineUpFiles(L"UpdateWithChangedSchema.ibim", L"Test3d.dgn", false);
-
-    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
-    ECObjectsV8::ECSchemaPtr schema;
-    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext));
-
-    ECObjectsV8::ECRelationshipClassP relationshipClass;
-    schema->CreateRelationshipClass(relationshipClass, L"ALikesB");
-
-    ECObjectsV8::StandaloneECRelationshipEnablerPtr  enabler = ECObjectsV8::StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relationshipClass);
-    ECObjectsV8::StandaloneECRelationshipInstancePtr relInstance = enabler->CreateRelationshipInstance();
-
-    V8FileEditor v8editor;
-    v8editor.Open(m_v8FileName);
-    DgnV8Api::ElementId eid;
-    v8editor.AddLine(&eid);
-    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
-
-    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
-    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"TestClass"));
-
-    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
-    v8editor.Save();
-
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    {
-    ECObjectsV8::ECClassP newClass;
-    schema->CreateClass(newClass, L"NewClass");
-    EXPECT_EQ(DgnV8Api::SCHEMAUPDATE_Success, DgnV8Api::DgnECManager::GetManager().UpdateSchema(*schema, *(v8editor.m_file)));
-    v8editor.Save();
-    }
-
-    DoUpdate(m_dgnDbFileName, m_v8FileName, true);
     }
 
 //---------------------------------------------------------------------------------------

@@ -2869,7 +2869,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessReferenceSchemasFromExternal(ECObje
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::SchemaKey& schemaKey, Utf8CP schemaXml, bool isDynamicSchema, DgnV8ModelR v8Model)
     {
-    Bentley::Utf8String schemaName(schemaKey.GetName());
+    Utf8String schemaName(schemaKey.GetName().c_str());
     BECN::SchemaKey existingSchemaKey;
     SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
     if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str()))
@@ -2914,7 +2914,18 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                     ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                     }
                 else
-                    return BSISUCCESS;
+                    {
+                    // If on a previous conversion we found the schema but it wasn't used, it will have an entry in the SyncInfo table but won't actually exist in the dgndb.  We still need to import it
+                    if (m_converter.IsUpdating())
+                        {
+                        if (GetDgnDb().Schemas().GetSchema(schemaName, false) != nullptr)
+                            {
+                            return BSISUCCESS;
+                            }
+                        }
+                    else
+                        return BSISUCCESS;
+                    }
                 }
             }
         }

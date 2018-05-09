@@ -106,6 +106,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, uint64_t id);
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, Utf8CP id);
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, Json::Value& id);
+        void CalculateEntities();
         BentleyStatus ExportFonts();
         BentleyStatus ExportGeometryParts();
         BentleyStatus ExportLineStyles();
