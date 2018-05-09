@@ -395,7 +395,7 @@ TEST_F(SchemaCompareTest, CompareFormatsDeleted)
 
     auto formatChange = formatChanges[0];
 
-    ASSERT_EQ(4, formatChange.MemberChangesCount());
+    ASSERT_EQ(5, formatChange.MemberChangesCount());
     }
 
 //----------------------------------------------------------------------------------------
@@ -873,7 +873,7 @@ TEST_F(SchemaCompareTest, CompareEnumerationsDeleted)
     ASSERT_EQ(1, change.Count());
     auto enumChange = change[0];
 
-    ASSERT_EQ(4, enumChange.MemberChangesCount());
+    ASSERT_EQ(6, enumChange.MemberChangesCount());
     }
 
     {
@@ -898,7 +898,7 @@ TEST_F(SchemaCompareTest, CompareEnumerationsDeleted)
     ASSERT_EQ(1, change.Count());
     auto enumChange = change[0];
 
-    ASSERT_EQ(4, enumChange.MemberChangesCount());
+    ASSERT_EQ(6, enumChange.MemberChangesCount());
     }
     }
 
