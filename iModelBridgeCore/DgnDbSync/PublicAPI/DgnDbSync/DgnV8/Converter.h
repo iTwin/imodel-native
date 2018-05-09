@@ -671,7 +671,7 @@ struct Converter
     struct ProxyGraphicsDetector
         {
         //! Decides if the V8 attachment can or should have proxy graphics
-        virtual bool _UseProxyGraphicsFor(DgnAttachmentCR, Converter&) = 0;
+        DGNDBSYNC_EXPORT virtual bool _UseProxyGraphicsFor(DgnAttachmentCR, Converter&) = 0;
         };
 
     //! Determines where V8 proxy graphics will be stored as elements.
@@ -1357,6 +1357,13 @@ public:
     DGNDBSYNC_EXPORT virtual void _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
                                                                    SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
                                                                    SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments);
+
+    // WIP - Simplified drawing conversion.
+    void CreateProxyGraphics (ResolvedModelMapping const& target, DgnV8ModelRefR v8Model, ViewportR viewport, bmap<DgnAttachmentCP, ResolvedModelMapping>& toBeMerged, TransformCR transformToParent);
+    void MergeDrawingGraphics(ResolvedModelMapping const& v8mm, ViewportR viewport, bmap<DgnAttachmentCP, ResolvedModelMapping>const& toBeMerged);
+    void DrawingsConvertModelAndViews2(ResolvedModelMapping const& v8mm);
+    DGNDBSYNC_EXPORT bool _UseProxyGraphicsFor2(DgnAttachmentCR ref);
+
     //! @}
 
     //! @name Sheets
@@ -1481,6 +1488,9 @@ public:
 
     //! Convert the elements in a drawing or sheet model. This includes only the elements actually in the V8 drawing model.
     DGNDBSYNC_EXPORT void DoConvertDrawingElementsInModel(ResolvedModelMapping const&);
+
+    //! Convert levels in v8 element (used to preconvert drawing element levels).
+    void ConvertLevels(DgnV8EhCR v8eh);
 
     //! Default logic for converting a drawing or sheet element
     DGNDBSYNC_EXPORT void DoConvertDrawingElement(ElementConversionResults&, DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm, bool isNewElement);
@@ -2036,7 +2046,7 @@ struct ElementFilters
             };
         }
         
-    static IChangeDetector::T_SyncInfoElementFilter GetDrawingElementFiter()
+    static IChangeDetector::T_SyncInfoElementFilter GetDrawingElementFilter()
         {
         return [](SyncInfo::ElementIterator::Entry const& entry, Converter& converter)
             {

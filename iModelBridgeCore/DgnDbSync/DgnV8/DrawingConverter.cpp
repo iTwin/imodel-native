@@ -30,7 +30,7 @@ struct DrawingHoldsProxyGraphics : Converter::ProxyGraphicsDrawingFactory
         return parentModel;
         }
 
-    bool _UseProxyGraphicsFor(DgnAttachmentCR attachment, Converter&) override {return attachment.Is3d() && !attachment.IsTemporary();}
+    bool _UseProxyGraphicsFor(DgnAttachmentCR attachment, Converter&) override {return !attachment.IsDrawingOrSheet() && !attachment.IsTemporary();}
     };
 
 /*=================================================================================**//**
@@ -167,7 +167,13 @@ void RootModelConverter::_ConvertDrawings()
     for (auto v8mm : drawings)
         {
         SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), v8mm.GetDgnModel().GetName().c_str());
+
+#define MERGE_DRAWING_METHOD
+#ifdef MERGE_DRAWING_METHOD
+        DrawingsConvertModelAndViews2(v8mm);
+#else
         DrawingsConvertModelAndViews(v8mm);
+#endif
         // TFS#661407: Reset parasolid session to avoid running out of tags on long processing of VisEdgesLib
         DgnV8Api::PSolidKernelManager::StopSession();
         DgnV8Api::PSolidKernelManager::StartSession();
@@ -178,7 +184,7 @@ void RootModelConverter::_ConvertDrawings()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bpair<ResolvedModelMapping,bool> Converter::Import2dModel(DgnV8ModelR v8model)
+bpair<ResolvedModelMapping, bool> Converter::Import2dModel(DgnV8ModelR v8model)
     {
     BeAssert(GetV8FileSyncInfoIdFromAppData(*v8model.GetDgnFileP()).IsValid() && "All V8 files should have been found discovered by _InitRootModel");
 
@@ -762,9 +768,11 @@ void RootModelConverter::Transform2dAttachments(DgnV8ModelR v8ParentModel)
     if (!ScaledCopyMarker::IsFoundOn(v8ParentModel))    // *** NEEDS WORK: not sure why we need this check
         MakeAttachmentsMatchRootAnnotationScale(v8ParentModel);
     
+#ifdef DO_UNNEST
     UnnestAttachments(v8ParentModel);
     
     TransformSheetAttachmentsToDrawings(v8ParentModel);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

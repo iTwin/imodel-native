@@ -368,7 +368,7 @@ static StatusInt generateCve (DgnAttachmentP refP, ViewportP viewport, CachedVis
 
     //CompletionBarVisibleEdgesProgressMeter       progressMeter;
 
-    StatusInt   status =createProxyCache (*proxyCache, NULL, modelRef, viewport, meter);
+    StatusInt   status = createProxyCache (*proxyCache, NULL, modelRef, viewport, meter);
 
     //ustnmdl_callRefProxyHooks (refP, REFPROXYEVENT_AfterProxyCacheCalculation, ProxyCachingOption::Cached);
 
@@ -1312,5 +1312,6 @@ void ConvertDetailingSymbolExtension::RelateCalloutToDrawing(Converter& converte
     UNUSED_VARIABLE(status);
     UNUSED_VARIABLE(updateReturn);
     }
+
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
