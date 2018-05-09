@@ -658,7 +658,8 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : stmFileName attribute not found\r\n");
         }
     else
-        {
+        {                                
+        ScalableMeshSourceCreationMethod creationMethod = SCM_SOURCE_CREATION_ONE_SPLIT;
         int64_t useCpuVal = 0;
         WString accelerator;
         status = pTestNode->GetAttributeStringValue(accelerator, "accelerator");
@@ -684,6 +685,26 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             assert(defineStatus == SUCCESS);
             }
 
+        WString creationMethodStr;
+        status = pTestNode->GetAttributeStringValue(creationMethodStr, "creationMethod");
+        if (status == BEXML_Success )
+            {
+            if (0 == BeStringUtilities::Wcsicmp(creationMethodStr.c_str(), L"BIG_SPLIT_CUT"))
+                {
+                creationMethod = SCM_SOURCE_CREATION_BIG_SPLIT_CUT;
+                }
+            else
+            if (0 == BeStringUtilities::Wcsicmp(creationMethodStr.c_str(), L"ONE_SPLIT"))
+                {
+                creationMethod = SCM_SOURCE_CREATION_ONE_SPLIT;
+                }
+            else
+                {
+                assert(!"Unknown source creation method");
+                }            
+            }
+
+                    
         WString isSingleFileString;
         bool isSingleFile;
 
@@ -742,6 +763,8 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             }
         else
             {
+            creatorPtr->SetCreationMethod(creationMethod);
+
             IScalableMeshATP::StoreDouble(WString(L"nTimeToCreateSeeds"), 0.0);
             IScalableMeshATP::StoreDouble(WString(L"nTimeToEstimateParams"), 0.0);
             IScalableMeshATP::StoreDouble(WString(L"nTimeToFilterGround"), 0.0);

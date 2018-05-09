@@ -3969,6 +3969,116 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 
     }
 
+
+//=======================================================================================
+// @description Cut a tile to decrease the number of points toward target split threshold
+// @bsimethod                                                     Mathieu.St-Pierre 05/18
+//=======================================================================================
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::CutTile(uint32_t splitThreshold, Transform unitTransform)
+    {
+#if 0
+        m_SMIndex->m_nTexturedNodes++;
+        float progressForStep = (float)(m_SMIndex->m_nTexturedNodes) / m_SMIndex->m_countsOfNodesTotal;
+
+        if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
+
+        if (m_SMIndex->m_progress != nullptr && m_SMIndex->m_progress->IsCanceled()) return;
+#endif
+        
+        if (!IsLoaded()) Load();
+/*
+        DRange2d rasterBox = sourceRasterP->GetTextureExtent();
+        //get overlap between node and raster extent
+        DRange2d contentExtent = DRange2d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent),
+            ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
+
+        unitTransform.Multiply(contentExtent.low, contentExtent.low);
+        unitTransform.Multiply(contentExtent.high, contentExtent.high);
+        if (!rasterBox.IntersectsWith(contentExtent)) return;
+        if (GetPointsPtr()->size() == 0 || m_nodeHeader.m_nbFaceIndexes == 0) return;
+*/
+
+        m_nodeHeader.m_SplitTreshold = splitThreshold;
+      
+        if (IsLeaf() && (GetNbPoints() > splitThreshold))
+            SplitNodeBasedOnImageRes();
+
+
+
+
+/*
+
+        if (contentExtent.XLength() / pixSize.x > textureWidthInPixels || contentExtent.YLength() / pixSize.y > textureHeightInPixels)
+        {
+            m_nodeHeader.m_textureResolution = std::max(contentExtent.XLength() / textureWidthInPixels, contentExtent.YLength() / textureHeightInPixels);
+        }
+        else
+        {
+            m_nodeHeader.m_textureResolution = std::max(pixSize.x, pixSize.y);
+        }
+*/
+
+
+//        if (m_nodeHeader.m_geometricResolution == 0)m_nodeHeader.m_geometricResolution = m_nodeHeader.m_textureResolution;
+  
+
+
+#if 0
+        //UpdateNodeFromBcDTM();
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> existingFaces(GetPtsIndicePtr());
+
+        if (existingFaces->size() >= 4)
+        {
+            //compute uv's        
+            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+
+            vector<DPoint3d> points(pointsPtr->size());
+
+            for (size_t i = 0; i < pointsPtr->size(); ++i)
+                points[i] = DPoint3d::From(PointOp<POINT>::GetX(pointsPtr->operator[](i)), PointOp<POINT>::GetY(pointsPtr->operator[](i)), PointOp<POINT>::GetZ(pointsPtr->operator[](i)));
+            vector<int32_t> indicesOfTexturedRegion;
+            vector<DPoint2d> uvsOfTexturedRegion(points.size());
+
+            Transform t;
+            t.InverseOf(unitTransform);
+
+            t.Multiply(contentExtent.low, contentExtent.low);
+            t.Multiply(contentExtent.high, contentExtent.high);
+            for (size_t i = 0; i < existingFaces->size(); i += 3)
+            {
+                DPoint3d face[3];
+                int32_t idx[3] = { (*existingFaces)[i], (*existingFaces)[i + 1], (*existingFaces)[i + 2] };
+                DPoint2d uvCoords[3];
+                for (size_t j = 0; j < 3; ++j)
+                {
+                    face[j] = points[idx[j] - 1];
+                    uvCoords[j].x = max(0.0, min((face[j].x - contentExtent.low.x) / (contentExtent.XLength()), 1.0));
+                    uvCoords[j].y = max(0.0, min((face[j].y - contentExtent.low.y) / (contentExtent.YLength()), 1.0));
+                }
+                indicesOfTexturedRegion.push_back(idx[0]);
+                indicesOfTexturedRegion.push_back(idx[1]);
+                indicesOfTexturedRegion.push_back(idx[2]);
+                uvsOfTexturedRegion[idx[0] - 1] = uvCoords[0];
+                uvsOfTexturedRegion[idx[1] - 1] = uvCoords[1];
+                uvsOfTexturedRegion[idx[2] - 1] = uvCoords[2];
+            }
+
+            ClearPtsIndices();
+            PushPtsIndices(&indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());
+            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords = GetUVCoordsPtr();
+            uvCoords->clear();
+            PushUV(&uvsOfTexturedRegion[0], uvsOfTexturedRegion.size());
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndexes = GetUVsIndicesPtr();
+            uvIndexes->clear();
+            PushUVsIndices(0, &indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());
+        }
+#endif
+
+        SetDirty(true);
+
+    }
+
+
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/15
 //=======================================================================================
@@ -4001,6 +4111,7 @@ struct RasterTexturingWorkItem : RefCounted<WorkItem>
     };
 
 
+static bool s_multiThreadCutting = true;
 static bool s_multiThreadTexturing = true;
 
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRasterRecursive(ITextureProviderPtr sourceRasterP, Transform unitTransform)
@@ -4058,10 +4169,72 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
                     assert(mesh != nullptr);
                     mesh->TextureFromRasterRecursive(sourceRasterP, unitTransform);
                     }
+                }   
+            }
+        }
+    }
+
+
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::CutTileRecursive(uint32_t splitThreshold, Transform unitTransform)
+{
+#if 0 
+    if (s_multiThreadCutting)
+    {
+        assert(((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->m_texturingThreadPoolPtr.IsValid());
+
+
+        function <void()> textureFnc = std::bind([](SMMeshIndexNode<POINT, EXTENT>* node, ITextureProviderPtr sourceRasterP, Transform unitTransform/*, size_t threadId*/) ->void
+        {
+            node->TextureFromRaster(sourceRasterP, unitTransform);
+            if (node->m_SMIndex->m_progress != nullptr && node->m_SMIndex->m_progress->IsCanceled()) return;
+
+            if (node->m_pSubNodeNoSplit != NULL && !node->m_pSubNodeNoSplit->IsVirtualNode())
+            {
+                dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(node->m_pSubNodeNoSplit)->TextureFromRasterRecursive(sourceRasterP, unitTransform);
+            }
+            else if (!node->IsLeaf())
+            {
+                for (size_t indexNodes = 0; indexNodes < node->m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
+                {
+                    if (node->m_apSubNodes[indexNodes] != nullptr)
+                    {
+                        if (node->m_SMIndex->m_progress != nullptr && node->m_SMIndex->m_progress->IsCanceled()) return;
+                        auto mesh = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(node->m_apSubNodes[indexNodes]);
+                        assert(mesh != nullptr);
+                        mesh->TextureFromRasterRecursive(sourceRasterP, unitTransform);
+                    }
+                }
+            }
+        }, this, sourceRasterP, unitTransform);
+
+        WorkItemPtr texturingWorkItem(RasterTexturingWorkItem::Create(textureFnc));
+        ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->m_texturingThreadPoolPtr->QueueWork(texturingWorkItem);
+    }
+    else
+#endif
+    {
+        CutTile(splitThreshold, unitTransform);
+        if (m_SMIndex->m_progress != nullptr && m_SMIndex->m_progress->IsCanceled()) return;
+
+        if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
+        {
+            dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pSubNodeNoSplit)->CutTileRecursive(splitThreshold, unitTransform);
+        }
+        else if (!IsLeaf())
+        {
+            for (size_t indexNodes = 0; indexNodes < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
+            {
+                if (m_apSubNodes[indexNodes] != nullptr)
+                {
+                    if (m_SMIndex->m_progress != nullptr && m_SMIndex->m_progress->IsCanceled()) return;
+                    auto mesh = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes]);
+                    assert(mesh != nullptr);
+                    mesh->CutTileRecursive(splitThreshold, unitTransform);
                 }
             }
         }
     }
+}
 
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/15
@@ -5122,26 +5295,26 @@ template<class POINT, class EXTENT> ISMPointIndexMesher<POINT, EXTENT>* SMMeshIn
     return(m_mesher3d);
     }
 
-
-template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform)
+template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::CutTiles(uint32_t splitThreshold, Transform unitTransform)
     {
+/*
     if (m_indexHeader.m_terrainDepth == (size_t)-1)
         {
         m_indexHeader.m_terrainDepth = m_pRootNode->GetDepth();
         }
-    if (sourceRasterP == nullptr) return;
+*/
 
-    //compute estimated number of needed texture nodes
-    DRange2d rasterBox = sourceRasterP->GetTextureExtent();
-
-    DRange3d ext = GetContentExtent();
     //get overlap between node and raster extent
+/*
     DRange2d contentExtent = DRange2d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext),
         ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext));
 
     unitTransform.Multiply(contentExtent.low, contentExtent.low);
     unitTransform.Multiply(contentExtent.high, contentExtent.high);
+*/
 
+
+/*TBD Progress
 	DRange2d interExtent;
     if (interExtent.IntersectionOf(rasterBox, contentExtent))
     {
@@ -5179,31 +5352,124 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFr
 			}
 		}
     }
+    */
 
+
+    m_indexHeader.m_SplitTreshold = splitThreshold;
+    m_indexHeaderDirty = true;
+    
     if (m_pRootNode != NULL)
-	    {
-        //With local texture the texturing process is longer in multi-thread (because of the single thread nature of Image++) so keep it in single thread.
-        bool isStreamingTexturing = dynamic_cast<StreamTextureProvider*>(sourceRasterP.get()) != nullptr;
-
-	    if (s_multiThreadTexturing && isStreamingTexturing)
+	    {                
+/*
+	    if (s_multiThreadCutting && isStreamingTexturing)
             {
             m_texturingThreadPoolPtr = WorkerThreadPool::Create(std::thread::hardware_concurrency());
             }
+*/
 
-        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->TextureFromRasterRecursive(sourceRasterP, unitTransform);
+        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->CutTileRecursive(splitThreshold, unitTransform);
 
-        if (s_multiThreadTexturing && isStreamingTexturing)
+/*
+        if (s_multiThreadCutting && isStreamingTexturing)
             {
             m_texturingThreadPoolPtr->Start();
             m_texturingThreadPoolPtr->WaitAndStop();
             m_texturingThreadPoolPtr = nullptr;
             }                
+*/
 		}
+
    // WaitForThreadStop();
+    //for (auto& task : m_textureWorkerTasks) task.get();
+/*
+    m_indexHeader.m_depth = (size_t)-1;
+    m_indexHeader.m_depth = GetDepth();
+*/
+    }
+
+
+
+template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform)
+{
+    if (m_indexHeader.m_terrainDepth == (size_t)-1)
+    {
+        m_indexHeader.m_terrainDepth = m_pRootNode->GetDepth();
+    }
+    if (sourceRasterP == nullptr) return;
+
+    //compute estimated number of needed texture nodes
+    DRange2d rasterBox = sourceRasterP->GetTextureExtent();
+
+    DRange3d ext = GetContentExtent();
+    //get overlap between node and raster extent
+    DRange2d contentExtent = DRange2d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext),
+        ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext));
+
+    unitTransform.Multiply(contentExtent.low, contentExtent.low);
+    unitTransform.Multiply(contentExtent.high, contentExtent.high);
+
+    DRange2d interExtent;
+    if (interExtent.IntersectionOf(rasterBox, contentExtent))
+    {
+        //we compute an approximation of the number of extra nodes that will be created to obtain a more reliable progress on datasets with more texture
+        DPoint2d pixSize = sourceRasterP->GetMinPixelSize();
+
+        float dimensionSize = 1024.0;
+        if (dynamic_cast<StreamTextureProvider*>(sourceRasterP.get()))
+        {
+            dimensionSize = 256.0;
+        }
+
+        double neededResolutions = log2(std::max(contentExtent.XLength() / pixSize.x, contentExtent.YLength() / pixSize.y) / dimensionSize);
+        int finalDepth = (int)ceil(neededResolutions);
+        if (finalDepth > m_indexHeader.m_terrainDepth)
+        {
+            m_precomputedCountNodes = true;
+
+
+            IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+            DRange3d queryExtent = DRange3d::From(DPoint3d::From(interExtent.low.x, interExtent.low.y, ext.low.z), DPoint3d::From(interExtent.high.x, interExtent.high.y, ext.high.z));
+            DPoint3d box[8];
+            queryExtent.Get8Corners(box);
+            ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>(queryExtent, GetDepth(), box, params->GetTargetPixelTolerance()));
+            std::vector<typename SMPointIndexNode<POINT, Extent3dType>::QueriedNode> returnedMeshNodes;
+            if (Query(meshQueryP, returnedMeshNodes))
+            {
+                for (auto&node : returnedMeshNodes)
+                {
+                    neededResolutions = log2(std::max(node.m_indexNode->m_nodeHeader.m_nodeExtent.XLength() / pixSize.x, node.m_indexNode->m_nodeHeader.m_nodeExtent.YLength() / pixSize.y) / dimensionSize);
+                    finalDepth = (int)ceil(neededResolutions);
+                    if (finalDepth > 1)
+                        m_countsOfNodesTotal += pow(4, finalDepth);
+                }
+            }
+        }
+    }
+
+    if (m_pRootNode != NULL)
+    {
+        //With local texture the texturing process is longer in multi-thread (because of the single thread nature of Image++) so keep it in single thread.
+        bool isStreamingTexturing = dynamic_cast<StreamTextureProvider*>(sourceRasterP.get()) != nullptr;
+
+        if (s_multiThreadTexturing && isStreamingTexturing)
+        {
+            m_texturingThreadPoolPtr = WorkerThreadPool::Create(std::thread::hardware_concurrency());
+        }
+
+        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->TextureFromRasterRecursive(sourceRasterP, unitTransform);
+
+        if (s_multiThreadTexturing && isStreamingTexturing)
+        {
+            m_texturingThreadPoolPtr->Start();
+            m_texturingThreadPoolPtr->WaitAndStop();
+            m_texturingThreadPoolPtr = nullptr;
+        }
+    }
+    // WaitForThreadStop();
     for (auto& task : m_textureWorkerTasks) task.get();
     m_indexHeader.m_depth = (size_t)-1;
     m_indexHeader.m_depth = GetDepth();
-    }
+}
 
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn, Transform tr)
     {

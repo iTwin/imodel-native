@@ -31,8 +31,9 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
 
         friend struct                       IScalableMeshSourceCreator;
         IDTMSourceCollection                m_sources;
-        DRange2d                           m_extent;
-        bvector<DPoint3d>                 m_filterPolygon;
+        DRange2d                            m_extent;
+        bvector<DPoint3d>                   m_filterPolygon;
+        ScalableMeshSourceCreationMethod    m_sourceCreationType = SCM_SOURCE_CREATION_ONE_SPLIT;
 
         Time                                m_lastSourcesModificationTime;
         Time                                m_lastSourcesModificationCheckTime;

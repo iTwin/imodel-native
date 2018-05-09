@@ -664,8 +664,9 @@ void IScalableMeshCreator::Impl::ConfigureMesherFilter(ISMPointIndexFilter<Point
 * @description
 * @bsimethod                                                  Raymond.Gauthier   12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&                                    pDataIndex, 
-                                                       bool needBalancing) 
+StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>& pDataIndex, 
+                                                       bool                   needBalancing, 
+                                                       uint32_t               splitThreshold) 
     {                                    
     HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> pGraphTileStore;
     bool isSingleFile = true;
@@ -708,7 +709,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
         
         pDataIndex = new MeshIndexType(dataStore, 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         
-                                       10000,
+                                       splitThreshold,
                                        pFilter,
                                        needBalancing, false, false, true,
                                        pMesher2_5d,
@@ -738,7 +739,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
 
         pDataIndex = new MeshIndexType(dataStore,
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
-                                       10000,
+                                       splitThreshold,
                                        pFilter,
                                        needBalancing, false, false, true,
                                        pMesher2_5d,

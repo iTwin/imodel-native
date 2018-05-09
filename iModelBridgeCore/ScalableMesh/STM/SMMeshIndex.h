@@ -308,6 +308,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void                TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
     void                TextureFromRasterRecursive(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 
+    void                CutTile(uint32_t splitThreshold, Transform unitTransform = Transform::FromIdentity());
+    void                CutTileRecursive(uint32_t splitThreshold, Transform unitTransform = Transform::FromIdentity());
+
     BENTLEY_SM_EXPORT void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types);
 
     BENTLEY_SM_EXPORT size_t                AddFeatureDefinitionSingleNode(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
@@ -985,6 +988,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
 
         BENTLEY_SM_EXPORT void                TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
+
+        BENTLEY_SM_EXPORT void                CutTiles(uint32_t splitThreshold, Transform unitTransform = Transform::FromIdentity());
 
         int                 RemoveWithin(ClipVectorCP boundariesToRemoveWithin, const bvector<IScalableMeshNodePtr>& priorityNodes);
 #ifdef ACTIVATE_TEXTURE_DUMP

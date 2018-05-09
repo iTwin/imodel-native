@@ -65,6 +65,14 @@ enum ScalableMeshMesherType
     SCM_MESHER_QTY,
     };
 
+enum ScalableMeshSourceCreationMethod
+    {
+    SCM_SOURCE_CREATION_ONE_SPLIT = 0,     //Old method indexing the data with the final split threshold (e.g. : 10000)
+    SCM_SOURCE_CREATION_BIG_SPLIT_CUT = 1, //New method which uses bigger split during the indexing phase
+    SCM_SOURCE_CREATION_QTY,
+    };
+
+
 enum ScalableMeshSaveType
     {
     SCM_SAVE_STMFILE = 0,

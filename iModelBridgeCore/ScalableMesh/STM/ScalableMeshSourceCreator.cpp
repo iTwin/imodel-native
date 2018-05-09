@@ -75,6 +75,9 @@ size_t nGraphPins =0;
 size_t nGraphReleases = 0;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+#define SM_ONE_SPLIT_THRESHOLD 10000
+#define SM_BIG_SPLIT_THRESHOLD 5000000
+
 
 bool canCreateFile(const WChar* fileName)
 {
@@ -277,6 +280,11 @@ void IScalableMeshSourceCreator::SetSourceImportPolygon(const DPoint3d* polygon,
         dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_filterPolygon.assign(polygon, polygon + nPts);
     }
 
+void IScalableMeshSourceCreator::SetCreationMethod(ScalableMeshSourceCreationMethod creationType)
+    {
+    assert(creationType >= 0 && creationType < SCM_SOURCE_CREATION_QTY);
+    dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_sourceCreationType = creationType;
+    }
 
 void IScalableMeshSourceCreator::SetSourcesDirty()
     {
@@ -548,7 +556,19 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment myMemMgr(100, 2000 * sizeof(PointType));
 
-    CreateDataIndex(pDataIndex, true);
+    uint32_t splitThreshold;    
+
+    if (m_sourceCreationType == SCM_SOURCE_CREATION_BIG_SPLIT_CUT)
+        {
+        splitThreshold = SM_BIG_SPLIT_THRESHOLD;
+        }
+    else
+        {
+        assert(m_sourceCreationType == SCM_SOURCE_CREATION_ONE_SPLIT);
+        splitThreshold = 10000;
+        }
+    
+    CreateDataIndex(pDataIndex, true, splitThreshold);
 
     m_dataIndex = pDataIndex;
 
@@ -703,10 +723,11 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #ifdef SCALABLE_MESH_ATP
         assert(pDataIndex->m_nbInputPoints == 0);
 #endif
-
         return BSISUCCESS;
         }
-    if (!restrictLevelForPropagation)
+
+
+    if (!restrictLevelForPropagation && (m_sourceCreationType == SCM_SOURCE_CREATION_ONE_SPLIT))
         {
         // Balance data             
         if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth))
@@ -738,11 +759,22 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         // Mesh data             
         if (BSISUCCESS != IScalableMeshCreator::Impl::Mesh<MeshIndexType>(*pDataIndex))
             return BSIERROR;
-        }
+        }    
 
     GetProgress()->Progress() = 1.0;
 	GetProgress()->UpdateListeners();
     if (GetProgress()->IsCanceled()) return BSISUCCESS;
+
+    if (m_sourceCreationType == SCM_SOURCE_CREATION_BIG_SPLIT_CUT)
+        {        
+        pDataIndex->CutTiles(SM_ONE_SPLIT_THRESHOLD);
+
+        // Balance data             
+/*
+        if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth))
+            return BSIERROR;
+*/
+        }
 
 #ifdef SCALABLE_MESH_ATP
     s_getLastMeshingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
