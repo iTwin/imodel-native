@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/JSValue/JSValue.cpp $
+|     $Source: src/JS/Value.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,23 +9,25 @@
 #include <Bentley/bset.h>
 #include <Bentley/bmap.h>
 #include <queue>
-#include <JSValue/JSValue.h>
+#include <JS/Value.h>
 
 BEGIN_BENTLEY_NAMESPACE
+namespace JS 
+{
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-struct JSValueHandle__ final
+struct ValueHandle__ final
     {
     struct CompareI
         {
-        bool operator ()(JSValueHandle__* lhs, JSValueHandle__* rhs) const
+        bool operator ()(ValueHandle__* lhs, ValueHandle__* rhs) const
             {
-            BeAssert(lhs->m_type == JSValueType::String && rhs->m_type == JSValueType::String);
+            BeAssert(lhs->m_type == ValueType::String && rhs->m_type == ValueType::String);
             return lhs->m_val.str->CompareToI(*rhs->m_val.str) < 0;
             }
         };
-    typedef bmap<JSValueHandle__*, JSValueHandle__*, JSValueHandle__::CompareI> Map;
+    typedef bmap<ValueHandle__*, ValueHandle__*, ValueHandle__::CompareI> Map;
     union
         {
         int32_t i32;
@@ -36,49 +38,48 @@ struct JSValueHandle__ final
         double d;
         Utf8StringP str;
         Map* map;
-        bvector<JSValueHandle__*>* vect;
+        bvector<ValueHandle__*>* vect;
         } m_val;
 
-    JSValueType m_type;
+    ValueType m_type;
     uint32_t m_count;
     };
-END_BENTLEY_NAMESPACE
-USING_NAMESPACE_BENTLEY
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSFactory& JSValue::Factory() const { BeAssert(m_jFactory != nullptr); return *m_jFactory; }
-JSValueHandle JSValue::Handle() const { return m_value; }
-bool JSValue::IsEmpty() const { return m_value == nullptr; }
-bool JSValue::IsNull() const { return Type() == JSValueType::Null; }
-bool JSValue::IsInt32() const { return Type() == JSValueType::Int32; }
-bool JSValue::IsUInt32() const { return Type() == JSValueType::UInt32; }
-bool JSValue::IsInt64() const { return Type() == JSValueType::Int64; }
-bool JSValue::IsUInt64() const { return Type() == JSValueType::UInt64; }
-bool JSValue::IsDouble() const { return Type() == JSValueType::Double; }
-bool JSValue::IsObject() const { return Type() == JSValueType::Object; }
-bool JSValue::IsArray() const { return Type() == JSValueType::Array; }
-bool JSValue::IsString() const { return Type() == JSValueType::String; }
-bool JSValue::IsBoolean() const { return Type() == JSValueType::Boolean; }
-bool JSValue::IsNumber() const 
+IFactory& Value::Factory() const { BeAssert(m_factory != nullptr); return *m_factory; }
+ValueHandle Value::Handle() const { return m_value; }
+bool Value::IsEmpty() const { return m_value == nullptr; }
+bool Value::IsNull() const { return Type() == ValueType::Null; }
+bool Value::IsInt32() const { return Type() == ValueType::Int32; }
+bool Value::IsUInt32() const { return Type() == ValueType::UInt32; }
+bool Value::IsInt64() const { return Type() == ValueType::Int64; }
+bool Value::IsUInt64() const { return Type() == ValueType::UInt64; }
+bool Value::IsDouble() const { return Type() == ValueType::Double; }
+bool Value::IsObject() const { return Type() == ValueType::Object; }
+bool Value::IsArray() const { return Type() == ValueType::Array; }
+bool Value::IsString() const { return Type() == ValueType::String; }
+bool Value::IsBoolean() const { return Type() == ValueType::Boolean; }
+bool Value::IsNumber() const 
     { 
-        const JSValueType valueType = Type();
+        const ValueType valueType = Type();
         return 
-            valueType == JSValueType::Int32 ||
-            valueType == JSValueType::UInt32 ||
-            valueType == JSValueType::Int64 ||
-            valueType == JSValueType::UInt64 ||
-            valueType == JSValueType::Double;
+            valueType == ValueType::Int32 ||
+            valueType == ValueType::UInt32 ||
+            valueType == ValueType::Int64 ||
+            valueType == ValueType::UInt64 ||
+            valueType == ValueType::Double;
     }
-JSValue::operator JSValueHandle () { return m_value; }
-bool JSValue::ReferenceEquals(JSValue rhs) const { return m_value == rhs.m_value; }
+Value::operator ValueHandle () { return m_value; }
+bool Value::ReferenceEquals(Value rhs) const { return m_value == rhs.m_value; }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-bool JSBoolean::Value() const
+bool Boolean::BoolValue() const
     {
     bool d;
-    if (Factory().GetBoolean(d, Handle()) != JSStatus::Success)
+    if (Factory().GetBoolean(d, Handle()) != Status::Success)
         {
         BeAssert(false && "Fail to get value");
         }
@@ -89,121 +90,121 @@ bool JSBoolean::Value() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSBoolean JSBoolean::New(JSFactory& provider, bool b)
+Boolean Boolean::New(IFactory& factory, bool b)
     {
-    JSValueHandle val;
-    if (provider.CreateBoolean(val, b) != JSStatus::Success)
+    ValueHandle val;
+    if (factory.CreateBoolean(val, b) != Status::Success)
         {
         BeAssert(false && "Fail to create value");
-        return JSBoolean(provider, provider.GetNull());
+        return Boolean(factory, factory.GetNull());
         }
 
-    return JSBoolean(provider, val);
+    return Boolean(factory, val);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSValue::JSValue()
-    :m_value(nullptr), m_jFactory(nullptr)
+Value::Value()
+    :m_value(nullptr), m_factory(nullptr)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSValue::JSValue(JSValue const& rhs)
-    : m_value(rhs.m_value), m_jFactory(rhs.m_jFactory)
+Value::Value(Value const& rhs)
+    : m_value(rhs.m_value), m_factory(rhs.m_factory)
     {
     if (!IsEmpty())
         {
-        if (m_value && m_jFactory->NotifyScopeChanges())
-            m_jFactory->BeginScope(m_value);
+        if (m_value && m_factory->NotifyScopeChanges())
+            m_factory->BeginScope(m_value);
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSValue::JSValue(JSFactory& prv, JSValueHandle v)
-    :m_value(v), m_jFactory(&prv)
+Value::Value(IFactory& prv, ValueHandle v)
+    :m_value(v), m_factory(&prv)
     {
     if (!m_value)
         {
         BeAssert(m_value != nullptr);
-        m_jFactory = nullptr;
+        m_factory = nullptr;
         }
     else
         {
-        if (m_jFactory->NotifyScopeChanges())
-            m_jFactory->BeginScope(m_value);
+        if (m_factory->NotifyScopeChanges())
+            m_factory->BeginScope(m_value);
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSValue::~JSValue()
+Value::~Value()
     {
     if (!IsEmpty())
         {
-        if (m_jFactory->NotifyScopeChanges())
-            m_jFactory->EndScope(m_value);
+        if (m_factory->NotifyScopeChanges())
+            m_factory->EndScope(m_value);
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSNumber JSValue::AsNumber() const
+Number Value::AsNumber() const
     {
     BeAssert(IsNumber());
-    return JSNumber(Factory(), Handle());
+    return Number(Factory(), Handle());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSString JSValue::AsString() const
+String Value::AsString() const
     {
     BeAssert(IsString());
-    return JSString(Factory(), Handle());
+    return String(Factory(), Handle());
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSBoolean JSValue::AsBoolean() const
+Boolean Value::AsBoolean() const
     {
     BeAssert(IsBoolean());
-    return JSBoolean(Factory(), Handle());
+    return Boolean(Factory(), Handle());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSObject JSValue::AsObject() const
+Object Value::AsObject() const
     {
     BeAssert(IsObject());
-    return JSObject(Factory(), Handle());
+    return Object(Factory(), Handle());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSArray JSValue::AsArray() const
+Array Value::AsArray() const
     {
     BeAssert(IsArray());
-    return JSArray(Factory(), Handle());
+    return Array(Factory(), Handle());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSValueType JSValue::Type() const
+ValueType Value::Type() const
     {
-    JSValueType type;
-    if (Factory().GetType(type, m_value) != JSStatus::Success)
+    ValueType type;
+    if (Factory().GetType(type, m_value) != Status::Success)
         {
         BeAssert(false);
         }
@@ -214,10 +215,10 @@ JSValueType JSValue::Type() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-int32_t JSNumber::Int32Value() const
+int32_t Number::Int32Value() const
     {
     int32_t i32;
-    if (Factory().GetInt32(i32, Handle()) != JSStatus::Success)
+    if (Factory().GetInt32(i32, Handle()) != Status::Success)
         {
         BeAssert(false && "Fail to get value");
         }
@@ -228,10 +229,10 @@ int32_t JSNumber::Int32Value() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-uint32_t JSNumber::UInt32Value() const
+uint32_t Number::UInt32Value() const
     {
     uint32_t i32;
-    if (Factory().GetUInt32(i32, Handle()) != JSStatus::Success)
+    if (Factory().GetUInt32(i32, Handle()) != Status::Success)
         {
         BeAssert(false && "Fail to get value");
         }
@@ -242,10 +243,10 @@ uint32_t JSNumber::UInt32Value() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-int64_t JSNumber::Int64Value() const
+int64_t Number::Int64Value() const
     {
     int64_t i64;
-    if (Factory().GetInt64(i64, Handle()) != JSStatus::Success)
+    if (Factory().GetInt64(i64, Handle()) != Status::Success)
         {
         BeAssert(false && "Fail to get value");
         }
@@ -256,10 +257,10 @@ int64_t JSNumber::Int64Value() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-uint64_t JSNumber::UInt64Value() const
+uint64_t Number::UInt64Value() const
     {
     uint64_t i64;
-    if (Factory().GetUInt64(i64, Handle()) != JSStatus::Success)
+    if (Factory().GetUInt64(i64, Handle()) != Status::Success)
         {
         BeAssert(false && "Fail to get value");
         }
@@ -270,10 +271,10 @@ uint64_t JSNumber::UInt64Value() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-double JSNumber::DoubleValue() const
+double Number::DoubleValue() const
     {
     double d;
-    if (Factory().GetDouble(d, Handle()) != JSStatus::Success)
+    if (Factory().GetDouble(d, Handle()) != Status::Success)
         {
         BeAssert(false && "Fail to get value");
         }
@@ -284,85 +285,85 @@ double JSNumber::DoubleValue() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSNumber JSNumber::New(JSFactory& provider, int32_t i32)
+Number Number::New(IFactory& factory, int32_t i32)
     {
-    JSValueHandle val;
-    if (provider.CreateInt32(val, i32) != JSStatus::Success)
+    ValueHandle val;
+    if (factory.CreateInt32(val, i32) != Status::Success)
         {
         BeAssert(false && "Fail to create value");
-        return JSNumber(provider, provider.GetNull());
+        return Number(factory, factory.GetNull());
         }
 
-    return JSNumber(provider, val);
+    return Number(factory, val);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSNumber JSNumber::New(JSFactory& provider, uint32_t i32)
+Number Number::New(IFactory& factory, uint32_t i32)
     {
-    JSValueHandle val;
-    if (provider.CreateUInt32(val, i32) != JSStatus::Success)
+    ValueHandle val;
+    if (factory.CreateUInt32(val, i32) != Status::Success)
         {
         BeAssert(false && "Fail to create value");
-        return JSNumber(provider, provider.GetNull());
+        return Number(factory, factory.GetNull());
         }
 
-    return JSNumber(provider, val);
+    return Number(factory, val);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSNumber JSNumber::New(JSFactory& provider, int64_t i64)
+Number Number::New(IFactory& factory, int64_t i64)
     {
-    JSValueHandle val;
-    if (provider.CreateInt64(val, i64) != JSStatus::Success)
+    ValueHandle val;
+    if (factory.CreateInt64(val, i64) != Status::Success)
         {
         BeAssert(false && "Fail to create value");
-        return JSNumber(provider, provider.GetNull());
+        return Number(factory, factory.GetNull());
         }
 
-    return JSNumber(provider, val);
+    return Number(factory, val);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSNumber JSNumber::New(JSFactory& provider, uint64_t i64)
+Number Number::New(IFactory& factory, uint64_t i64)
     {
-    JSValueHandle val;
-    if (provider.CreateUInt64(val, i64) != JSStatus::Success)
+    ValueHandle val;
+    if (factory.CreateUInt64(val, i64) != Status::Success)
         {
         BeAssert(false && "Fail to create value");
-        return JSNumber(provider, provider.GetNull());
+        return Number(factory, factory.GetNull());
         }
 
-    return JSNumber(provider, val);
+    return Number(factory, val);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSNumber JSNumber::New(JSFactory& provider, double d)
+Number Number::New(IFactory& factory, double d)
     {
-    JSValueHandle val;
-    if (provider.CreateDouble(val, d) != JSStatus::Success)
+    ValueHandle val;
+    if (factory.CreateDouble(val, d) != Status::Success)
         {
         BeAssert(false && "Fail to create value");
-        return JSNumber(provider, provider.GetNull());
+        return Number(factory, factory.GetNull());
         }
 
-    return JSNumber(provider, val);
+    return Number(factory, val);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String JSString::Value() const
+Utf8String String::StringValue() const
     {
     Utf8String str;
-    if (Factory().GetString(str, Handle()) != JSStatus::Success)
+    if (Factory().GetString(str, Handle()) != Status::Success)
         {
         BeAssert(false);
         }
@@ -373,80 +374,80 @@ Utf8String JSString::Value() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSString JSString::New(JSFactory& provider, Utf8CP str)
+String String::New(IFactory& factory, Utf8CP str)
     {
-    JSValueHandle val;
-    if (provider.CreateString(val, str) != JSStatus::Success)
+    ValueHandle val;
+    if (factory.CreateString(val, str) != Status::Success)
         {
         BeAssert(false && "Fail to create value");
-        return JSString(provider, provider.GetNull());
+        return String(factory, factory.GetNull());
         }
 
-    return JSString(provider, val);
+    return String(factory, val);
     }
 
-JSObject::LValue::operator JSValue() const { return JSObject(m_jFactory, m_obj).Get(m_key); }
-JSObject::LValue::operator JSNumber() const { return JSObject(m_jFactory, m_obj).Get(m_key).AsNumber(); }
-JSObject::LValue::operator JSString() const { return JSObject(m_jFactory, m_obj).Get(m_key).AsString(); }
-JSObject::LValue::operator JSArray() const { return JSObject(m_jFactory, m_obj).Get(m_key).AsArray(); }
-JSObject::LValue::operator JSObject() const { return JSObject(m_jFactory, m_obj).Get(m_key).AsObject(); }
-JSObject::LValue::operator JSBoolean() const { return JSObject(m_jFactory, m_obj).Get(m_key).AsBoolean(); }
+Object::LValue::operator Value() const { return Object(m_factory, m_obj).Get(m_key); }
+Object::LValue::operator Number() const { return Object(m_factory, m_obj).Get(m_key).AsNumber(); }
+Object::LValue::operator String() const { return Object(m_factory, m_obj).Get(m_key).AsString(); }
+Object::LValue::operator Array() const { return Object(m_factory, m_obj).Get(m_key).AsArray(); }
+Object::LValue::operator Object() const { return Object(m_factory, m_obj).Get(m_key).AsObject(); }
+Object::LValue::operator Boolean() const { return Object(m_factory, m_obj).Get(m_key).AsBoolean(); }
 
-JSObject::LValue& JSObject::LValue::operator = (JSValue value) { JSObject(m_jFactory, m_obj).Set(m_key, value);  return *this; }
-JSObject::LValue JSObject::operator [](Utf8CP key) { return LValue(Factory(), Handle(), key); }
-JSObject::LValue JSObject::operator [](Utf8StringCR key) { return LValue(Factory(), Handle(), key); }
-JSObject::LValue JSObject::operator [](JSString key) { return LValue(Factory(), Handle(), key.Value()); }
+Object::LValue& Object::LValue::operator = (Value value) { Object(m_factory, m_obj).Set(m_key, value);  return *this; }
+Object::LValue Object::operator [](Utf8CP key) { return LValue(Factory(), Handle(), key); }
+Object::LValue Object::operator [](Utf8StringCR key) { return LValue(Factory(), Handle(), key); }
+Object::LValue Object::operator [](String key) { return LValue(Factory(), Handle(), key.StringValue()); }
 
 
-JSArray::LValue::operator JSValue() const { return JSArray(m_jFactory, m_obj).Get(m_key); }
-JSArray::LValue::operator JSNumber() const { return JSArray(m_jFactory, m_obj).Get(m_key).AsNumber(); }
-JSArray::LValue::operator JSString() const { return JSArray(m_jFactory, m_obj).Get(m_key).AsString(); }
-JSArray::LValue::operator JSArray() const { return JSArray(m_jFactory, m_obj).Get(m_key).AsArray(); }
-JSArray::LValue::operator JSObject() const { return JSArray(m_jFactory, m_obj).Get(m_key).AsObject(); }
-JSArray::LValue::operator JSBoolean() const { return JSArray(m_jFactory, m_obj).Get(m_key).AsBoolean(); }
+Array::LValue::operator Value() const { return Array(m_factory, m_obj).Get(m_key); }
+Array::LValue::operator Number() const { return Array(m_factory, m_obj).Get(m_key).AsNumber(); }
+Array::LValue::operator String() const { return Array(m_factory, m_obj).Get(m_key).AsString(); }
+Array::LValue::operator Array() const { return Array(m_factory, m_obj).Get(m_key).AsArray(); }
+Array::LValue::operator Object() const { return Array(m_factory, m_obj).Get(m_key).AsObject(); }
+Array::LValue::operator Boolean() const { return Array(m_factory, m_obj).Get(m_key).AsBoolean(); }
 
-JSArray::LValue& JSArray::LValue::operator = (JSValue value) { JSArray(m_jFactory, m_obj).Set(m_key, value);  return *this; }
-JSArray::LValue JSArray::operator [](uint32_t index) { return LValue(Factory(), Handle(), index); }
-JSArray::LValue JSArray::operator [](JSNumber index) { return LValue(Factory(), Handle(), index.UInt32Value()); }
+Array::LValue& Array::LValue::operator = (Value value) { Array(m_factory, m_obj).Set(m_key, value);  return *this; }
+Array::LValue Array::operator [](uint32_t index) { return LValue(Factory(), Handle(), index); }
+Array::LValue Array::operator [](Number index) { return LValue(Factory(), Handle(), index.UInt32Value()); }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSArray JSArray::New(JSFactory& provider, uint32_t size)
+Array Array::New(IFactory& factory, uint32_t size)
     {
-    JSValueHandle val;
-    if (provider.CreateArray(val, size) != JSStatus::Success)
+    ValueHandle val;
+    if (factory.CreateArray(val, size) != Status::Success)
         {
         BeAssert(false && "Fail to create value");
-        return JSArray(provider, provider.GetNull());
+        return Array(factory, factory.GetNull());
         }
 
-    return JSArray(provider, val);
+    return Array(factory, val);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSObject JSObject::New(JSFactory& provider)
+Object Object::New(IFactory& factory)
     {
-    JSValueHandle val;
-    if (provider.CreateObject(val) != JSStatus::Success)
+    ValueHandle val;
+    if (factory.CreateObject(val) != Status::Success)
         {
         BeAssert(false && "Fail to create value");
-        return JSObject(provider, provider.GetNull());
+        return Object(factory, factory.GetNull());
         }
 
-    return JSObject(provider, val);
+    return Object(factory, val);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-uint32_t JSArray::Length() const
+uint32_t Array::Length() const
     {
     uint32_t sz;
-    if (Factory().GetSize(sz, Handle()) != JSStatus::Success)
+    if (Factory().GetSize(sz, Handle()) != Status::Success)
         {
         BeAssert(false && "Fail to size");
         return 0;
@@ -458,10 +459,10 @@ uint32_t JSArray::Length() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-uint32_t JSObject::Count() const
+uint32_t Object::Count() const
     {
     uint32_t sz;
-    if (Factory().GetSize(sz, Handle()) != JSStatus::Success)
+    if (Factory().GetSize(sz, Handle()) != Status::Success)
         {
         BeAssert(false && "Fail to size");
         return 0;
@@ -473,10 +474,32 @@ uint32_t JSObject::Count() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-uint32_t JSString::Length() const
+void Object::RemoveMember(Utf8CP key)
+    {
+    if (Factory().RemoveMember(Handle(), key) != Status::Success)
+        {
+        BeAssert(false && "Fail to RemoveMember");
+        }   
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void Object::RemoveMember(String key)
+    {
+    if (Factory().RemoveMember(Handle(), key.Handle()) != Status::Success)
+        {
+        BeAssert(false && "Fail to RemoveMember");
+        }           
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+uint32_t String::Length() const
     {
     uint32_t sz;
-    if (Factory().GetSize(sz, Handle()) != JSStatus::Success)
+    if (Factory().GetSize(sz, Handle()) != Status::Success)
         {
         BeAssert(false && "Fail to size");
         return 0;
@@ -488,24 +511,24 @@ uint32_t JSString::Length() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSValue JSArray::Get(uint32_t index) const
+Value Array::Get(uint32_t index) const
     {
-    JSValueHandle v;
-    if (Factory().GetMember(v, Handle(), index) != JSStatus::Success)
+    ValueHandle v;
+    if (Factory().GetMember(v, Handle(), index) != Status::Success)
         {
         BeAssert(false && "Fail to size");
-        return JSValue(Factory(), Factory().GetNull());
+        return Value(Factory(), Factory().GetNull());
         }
 
-    return JSValue(Factory(), v);
+    return Value(Factory(), v);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-void JSArray::Set(uint32_t index, JSValue value)
+void Array::Set(uint32_t index, Value value)
     {
-    if (Factory().SetMember(Handle(), index, value) != JSStatus::Success)
+    if (Factory().SetMember(Handle(), index, value) != Status::Success)
         {
         BeAssert(false && "Fail to size");
         }
@@ -514,22 +537,22 @@ void JSArray::Set(uint32_t index, JSValue value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSValue JSObject::Get(Utf8CP key) const
+Value Object::Get(Utf8CP key) const
     {
-    JSValueHandle v;
-    if (Factory().GetMember(v, Handle(), key) != JSStatus::Success)
+    ValueHandle v;
+    if (Factory().GetMember(v, Handle(), key) != Status::Success)
         {
         BeAssert(false && "Fail to size");
-        return JSValue(Factory(), Factory().GetNull());
+        return Value(Factory(), Factory().GetNull());
         }
 
-    return JSValue(Factory(), v);
+    return Value(Factory(), v);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSValue JSObject::Get(Utf8StringCR key) const
+Value Object::Get(Utf8StringCR key) const
     {
     return Get(key.c_str());
     }
@@ -537,9 +560,9 @@ JSValue JSObject::Get(Utf8StringCR key) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-void JSObject::Set(Utf8CP key, JSValue value)
+void Object::Set(Utf8CP key, Value value)
     {
-    if (Factory().SetMember(Handle(), key, value) != JSStatus::Success)
+    if (Factory().SetMember(Handle(), key, value) != Status::Success)
         {
         BeAssert(false && "Fail to size");
         }
@@ -548,7 +571,7 @@ void JSObject::Set(Utf8CP key, JSValue value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-void JSObject::Set(Utf8StringCR key, JSValue value)
+void Object::Set(Utf8StringCR key, Value value)
     {
     Set(key.c_str(), value);
     }
@@ -556,10 +579,10 @@ void JSObject::Set(Utf8StringCR key, JSValue value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-bool JSObject::HasMember(Utf8CP key) const
+bool Object::HasMember(Utf8CP key) const
     {
     bool foundIt;
-    if (Factory().HasMember(foundIt, Handle(), key) != JSStatus::Success)
+    if (Factory().HasMember(foundIt, Handle(), key) != Status::Success)
         {
         BeAssert(false);
         return false;
@@ -571,7 +594,7 @@ bool JSObject::HasMember(Utf8CP key) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-bool JSObject::HasMember(Utf8StringCR key) const
+bool Object::HasMember(Utf8StringCR key) const
     {
     return HasMember(key.c_str());
     }
@@ -579,23 +602,23 @@ bool JSObject::HasMember(Utf8StringCR key) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSArray JSObject::GetMemberNames() const
+Array Object::GetMemberNames() const
     {
-    JSValueHandle val;
-    if (Factory().GetMemberNames(val, Handle()) != JSStatus::Success)
+    ValueHandle val;
+    if (Factory().GetMemberNames(val, Handle()) != Status::Success)
         {
         BeAssert(false);
-        return JSArray(Factory(), Factory().GetNull());
+        return Array(Factory(), Factory().GetNull());
         }
 
-    return JSArray(Factory(), val);
+    return Array(Factory(), val);
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-struct GCJValueFactoryImpl : public RefCounted<JSFactory>
+struct GCValueFactoryImpl : public RefCounted<IFactory>
     {
     private:
         enum class CachedObjectType
@@ -606,12 +629,12 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
             Map,
             };
 
-        mutable bmap<CachedObjectType, bset<JSValueHandle__*>> m_cacheUsed;
-        mutable bmap<CachedObjectType, std::queue<JSValueHandle__*>> m_cacheUnused;
-        mutable bmap<JSValueType, CachedObjectType> m_cacheType;
+        mutable bmap<CachedObjectType, bset<ValueHandle__*>> m_cacheUsed;
+        mutable bmap<CachedObjectType, std::queue<ValueHandle__*>> m_cacheUnused;
+        mutable bmap<ValueType, CachedObjectType> m_cacheType;
         mutable bmap<CachedObjectType, int> m_cacheMaxSize;
-        JSValueHandle__* m_null;
-        JSStatus TrimUnusedItemCache(CachedObjectType type, float extraTrim = 0)
+        ValueHandle__* m_null;
+        Status TrimUnusedItemCache(CachedObjectType type, float extraTrim = 0)
             {
             auto& q = m_cacheUnused.find(type)->second;
             const int maxUnusedItems = m_cacheMaxSize.find(type)->second;
@@ -624,18 +647,18 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
                 q.pop();
                 }
 
-            return JSStatus::Success;
+            return Status::Success;
             }
 
-        JSStatus TrimUnusedItemCache(float extraTrim = 0)
+        Status TrimUnusedItemCache(float extraTrim = 0)
             {
-            JSStatus status = JSStatus::Success;
+            Status status = Status::Success;
             for (auto itor : m_cacheMaxSize)
                 {
                 if (m_cacheUnused[itor.first].size() > m_cacheMaxSize[itor.first])
                     {
                     status = TrimUnusedItemCache(itor.first, extraTrim);
-                    if (status != JSStatus::Success)
+                    if (status != Status::Success)
                         return status;
                     }
                 }
@@ -643,11 +666,11 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
             return status;
             }
 
-        JSStatus CreateInstance(JSValueHandle& v, JSValueType type, uint32_t sz = 0)
+        Status CreateInstance(ValueHandle& v, ValueType type, uint32_t sz = 0)
             {
             v = nullptr;
             const CachedObjectType cacheType = m_cacheType[type];
-            std::queue<JSValueHandle__*>& q = m_cacheUnused[cacheType];
+            std::queue<ValueHandle__*>& q = m_cacheUnused[cacheType];
             if (!q.empty())
                 {
                 v = q.front();
@@ -656,7 +679,7 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
 
             if (v)
                 {
-                if (type == JSValueType::Object)
+                if (type == ValueType::Object)
                     {
                     auto& map = *(v->m_val.map);
                     for (auto& pv : map)
@@ -667,7 +690,7 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
 
                     map.clear();
                     }
-                else if (type == JSValueType::Array)
+                else if (type == ValueType::Array)
                     {
                     for (auto pv : *(v->m_val.vect))
                         EndScope(pv);
@@ -675,35 +698,35 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
                     v->m_val.vect->resize(sz, m_null);
 
                     }
-                else if (type == JSValueType::String)
+                else if (type == ValueType::String)
                     {
                     v->m_val.str->clear();
                     }
                 else
                     {
-                    memset(v, 0, sizeof(JSValueHandle__));
+                    memset(v, 0, sizeof(ValueHandle__));
                     v->m_type = type;
                     }
                 }
             else
                 {
-                v = new JSValueHandle__();
-                memset(v, 0, sizeof(JSValueHandle__));
+                v = new ValueHandle__();
+                memset(v, 0, sizeof(ValueHandle__));
                 v->m_type = type;
-                if (type == JSValueType::String)
+                if (type == ValueType::String)
                     v->m_val.str = new Utf8String();
-                else if (type == JSValueType::Object)
-                    v->m_val.map = new JSValueHandle__::Map();
-                else if (type == JSValueType::Array)
+                else if (type == ValueType::Object)
+                    v->m_val.map = new ValueHandle__::Map();
+                else if (type == ValueType::Array)
                     {
-                    v->m_val.vect = new bvector<JSValueHandle__*>();
+                    v->m_val.vect = new bvector<ValueHandle__*>();
                     v->m_val.vect->resize(sz, m_null);
                     }
                 }
 
             v->m_count = 0;
             m_cacheUsed[cacheType].insert(v);
-            return JSStatus::Success;
+            return Status::Success;
             }
 
         void ClearCache()
@@ -723,31 +746,31 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
             m_cacheUnused.clear();
             }
 
-        void Free(JSValueHandle& v)
+        void Free(ValueHandle& v)
             {
-            if (v->m_type == JSValueType::String)
+            if (v->m_type == ValueType::String)
                 delete v->m_val.str;
-            else if (v->m_type == JSValueType::Object)
+            else if (v->m_type == ValueType::Object)
                 delete  v->m_val.map;
-            else if (v->m_type == JSValueType::Array)
+            else if (v->m_type == ValueType::Array)
                 delete  v->m_val.vect;
 
             free(v);
             }
 
-        bool IsPrimitve(JSValueType t) const
+        bool IsPrimitve(ValueType t) const
             {
-            return !(t == JSValueType::Array || t == JSValueType::Object || t == JSValueType::String);
+            return !(t == ValueType::Array || t == ValueType::Object || t == ValueType::String);
             }
 
-        JSStatus EndScopeForValue(JSValueHandle v) const
+        Status EndScopeForValue(ValueHandle v) const
             {
             BeAssert(v->m_count > 0);
             v->m_count = v->m_count - 1;
 
             if (v->m_count <= 0)
                 {
-                if (v->m_type == JSValueType::Object)
+                if (v->m_type == ValueType::Object)
                     {
                     auto& map = *(v->m_val.map);
                     for (auto& pv : map)
@@ -758,7 +781,7 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
 
                     map.clear();
                     }
-                else if (v->m_type == JSValueType::Array)
+                else if (v->m_type == ValueType::Array)
                     {
                     auto& vect = *(v->m_val.vect);
                     for (auto pv : vect)
@@ -766,7 +789,7 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
 
                     vect.clear();
                     }
-                else if (v->m_type == JSValueType::String)
+                else if (v->m_type == ValueType::String)
                     {
                     v->m_val.str->clear();
                     }
@@ -776,226 +799,226 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
                 m_cacheUnused[cacheType].push(v);
                 }
 
-            return JSStatus::Success;
+            return Status::Success;
             }
     public:
 
-        GCJValueFactoryImpl(uint32_t maxStrings, uint32_t maxArray, uint32_t maxObj, uint32_t maxPri)
+        GCValueFactoryImpl(uint32_t maxStrings, uint32_t maxArray, uint32_t maxObj, uint32_t maxPri)
             {
-            m_cacheType[JSValueType::Int32] = CachedObjectType::Primitive;
-            m_cacheType[JSValueType::UInt32] = CachedObjectType::Primitive;
-            m_cacheType[JSValueType::Int64] = CachedObjectType::Primitive;
-            m_cacheType[JSValueType::UInt64] = CachedObjectType::Primitive;
-            m_cacheType[JSValueType::Boolean] = CachedObjectType::Primitive;
-            m_cacheType[JSValueType::Double] = CachedObjectType::Primitive;
-            m_cacheType[JSValueType::Null] = CachedObjectType::Primitive;
-            m_cacheType[JSValueType::Array] = CachedObjectType::Vector;
-            m_cacheType[JSValueType::Object] = CachedObjectType::Map;
-            m_cacheType[JSValueType::String] = CachedObjectType::String;
+            m_cacheType[ValueType::Int32] = CachedObjectType::Primitive;
+            m_cacheType[ValueType::UInt32] = CachedObjectType::Primitive;
+            m_cacheType[ValueType::Int64] = CachedObjectType::Primitive;
+            m_cacheType[ValueType::UInt64] = CachedObjectType::Primitive;
+            m_cacheType[ValueType::Boolean] = CachedObjectType::Primitive;
+            m_cacheType[ValueType::Double] = CachedObjectType::Primitive;
+            m_cacheType[ValueType::Null] = CachedObjectType::Primitive;
+            m_cacheType[ValueType::Array] = CachedObjectType::Vector;
+            m_cacheType[ValueType::Object] = CachedObjectType::Map;
+            m_cacheType[ValueType::String] = CachedObjectType::String;
             m_cacheMaxSize[CachedObjectType::String] = maxStrings < 10 ? 10 : maxStrings;
             m_cacheMaxSize[CachedObjectType::Vector] = maxArray < 10 ? 10 : maxArray;
             m_cacheMaxSize[CachedObjectType::Map] = maxObj < 10 ? 10 : maxObj;
             m_cacheMaxSize[CachedObjectType::Primitive] = maxPri < 10 ? 10 : maxPri;
-            CreateInstance(m_null, JSValueType::Null);
+            CreateInstance(m_null, ValueType::Null);
             }
 
-        ~GCJValueFactoryImpl()
+        ~GCValueFactoryImpl()
             {
             ClearCache();
             }
 
         /////////////////
-        JSStatus CreateBoolean(JSValueHandle& val, bool b) override
+        Status CreateBoolean(ValueHandle& val, bool b) override
             {
-            JSStatus status = CreateInstance(val, JSValueType::Boolean);
-            if (status != JSStatus::Success)
+            Status status = CreateInstance(val, ValueType::Boolean);
+            if (status != Status::Success)
                 return status;
 
             val->m_val.b = b;
-            return JSStatus::Success;
+            return Status::Success;
             }
-        JSStatus CreateString(JSValueHandle& val, Utf8CP str) override
+        Status CreateString(ValueHandle& val, Utf8CP str) override
             {
-            JSStatus status = CreateInstance(val, JSValueType::String);
-            if (status != JSStatus::Success)
+            Status status = CreateInstance(val, ValueType::String);
+            if (status != Status::Success)
                 return status;
 
             val->m_val.str->AssignOrClear(str);
-            return JSStatus::Success;
+            return Status::Success;
             }
-        JSStatus CreateInt32(JSValueHandle& val, int32_t i32) override
+        Status CreateInt32(ValueHandle& val, int32_t i32) override
             {
-            JSStatus status = CreateInstance(val, JSValueType::Int32);
-            if (status != JSStatus::Success)
+            Status status = CreateInstance(val, ValueType::Int32);
+            if (status != Status::Success)
                 return status;
 
             val->m_val.i32 = i32;
-            return JSStatus::Success;
+            return Status::Success;
             }
-        JSStatus CreateUInt32(JSValueHandle& val, uint32_t i32) override
+        Status CreateUInt32(ValueHandle& val, uint32_t i32) override
             {
-            JSStatus status = CreateInstance(val, JSValueType::Int32);
-            if (status != JSStatus::Success)
+            Status status = CreateInstance(val, ValueType::Int32);
+            if (status != Status::Success)
                 return status;
 
             val->m_val.ui32 = i32;
-            return JSStatus::Success;
+            return Status::Success;
             }
 
-        JSStatus CreateUInt64(JSValueHandle& val, uint64_t i64) override
+        Status CreateUInt64(ValueHandle& val, uint64_t i64) override
             {
-            JSStatus status = CreateInstance(val, JSValueType::UInt64);
-            if (status != JSStatus::Success)
+            Status status = CreateInstance(val, ValueType::UInt64);
+            if (status != Status::Success)
                 return status;
 
             val->m_val.ui64 = i64;
-            return JSStatus::Success;
+            return Status::Success;
             }
 
-        JSStatus CreateInt64(JSValueHandle& val, int64_t i64) override
+        Status CreateInt64(ValueHandle& val, int64_t i64) override
             {
-            JSStatus status = CreateInstance(val, JSValueType::Int64);
-            if (status != JSStatus::Success)
+            Status status = CreateInstance(val, ValueType::Int64);
+            if (status != Status::Success)
                 return status;
 
             val->m_val.i64 = i64;
-            return JSStatus::Success;
+            return Status::Success;
             }
 
-        JSStatus CreateDouble(JSValueHandle& val, double d) override
+        Status CreateDouble(ValueHandle& val, double d) override
             {
-            JSStatus status = CreateInstance(val, JSValueType::Double);
-            if (status != JSStatus::Success)
+            Status status = CreateInstance(val, ValueType::Double);
+            if (status != Status::Success)
                 return status;
 
             val->m_val.d = d;
-            return JSStatus::Success;
+            return Status::Success;
             }
-        JSStatus CreateObject(JSValueHandle& val) override
+        Status CreateObject(ValueHandle& val) override
             {
-            JSStatus status = CreateInstance(val, JSValueType::Object);
-            if (status != JSStatus::Success)
+            Status status = CreateInstance(val, ValueType::Object);
+            if (status != Status::Success)
                 return status;
 
-            return JSStatus::Success;
+            return Status::Success;
             }
 
-        JSStatus CreateArray(JSValueHandle& val, uint32_t size) override
+        Status CreateArray(ValueHandle& val, uint32_t size) override
             {
-            JSStatus status = CreateInstance(val, JSValueType::Array, size);
-            if (status != JSStatus::Success)
+            Status status = CreateInstance(val, ValueType::Array, size);
+            if (status != Status::Success)
                 return status;
 
-            return JSStatus::Success;
+            return Status::Success;
             }
 
-        JSStatus GetBoolean(bool& b, JSValueHandle val) const override
+        Status GetBoolean(bool& b, ValueHandle val) const override
             {
             if (!IsPrimitve(val->m_type))
                 {
                 b = false;
-                return JSStatus::IncorrectType;
+                return Status::IncorrectType;
                 }
 
             b = val->m_val.b;
-            return JSStatus::Success;
+            return Status::Success;
             }
-        JSStatus GetString(Utf8String& s, JSValueHandle val) const override
+        Status GetString(Utf8String& s, ValueHandle val) const override
             {
-            if (val->m_type != JSValueType::String)
-                return JSStatus::IncorrectType;
+            if (val->m_type != ValueType::String)
+                return Status::IncorrectType;
 
             s = *(val->m_val.str);
-            return JSStatus::Success;
+            return Status::Success;
             }
-        JSStatus GetInt32(int32_t& i32, JSValueHandle val) const override
+        Status GetInt32(int32_t& i32, ValueHandle val) const override
             {
             if (!IsPrimitve(val->m_type))
                 {
                 i32 = 0;
-                return JSStatus::IncorrectType;
+                return Status::IncorrectType;
                 }
 
             i32 = val->m_val.i32;
-            return JSStatus::Success;
+            return Status::Success;
             }
-        JSStatus GetUInt32(uint32_t& i32, JSValueHandle val) const override
+        Status GetUInt32(uint32_t& i32, ValueHandle val) const override
             {
             if (!IsPrimitve(val->m_type))
                 {
                 i32 = 0;
-                return JSStatus::IncorrectType;
+                return Status::IncorrectType;
                 }
 
             i32 = val->m_val.ui32;
-            return JSStatus::Success;
+            return Status::Success;
             }
-        JSStatus GetInt64(int64_t& i64, JSValueHandle val) const override
+        Status GetInt64(int64_t& i64, ValueHandle val) const override
             {
             if (!IsPrimitve(val->m_type))
                 {
                 i64 = 0;
-                return JSStatus::IncorrectType;
+                return Status::IncorrectType;
                 }
 
             i64 = val->m_val.i64;
-            return JSStatus::Success;
+            return Status::Success;
             }
-        JSStatus GetUInt64(uint64_t& i64, JSValueHandle val) const override
+        Status GetUInt64(uint64_t& i64, ValueHandle val) const override
             {
             if (!IsPrimitve(val->m_type))
                 {
                 i64 = 0;
-                return JSStatus::IncorrectType;
+                return Status::IncorrectType;
                 }
 
             i64 = val->m_val.ui64;
-            return JSStatus::Success;
+            return Status::Success;
             }
-        JSStatus GetDouble(double& d, JSValueHandle val) const override
+        Status GetDouble(double& d, ValueHandle val) const override
             {
             if (!IsPrimitve(val->m_type))
                 {
                 d = 0;
-                return JSStatus::IncorrectType;
+                return Status::IncorrectType;
                 }
 
             d = val->m_val.d;
-            return JSStatus::Success;
+            return Status::Success;
             }
 
-        JSStatus GetMemberNames(JSValueHandle& members, JSValueHandle val) const override
+        Status GetMemberNames(ValueHandle& members, ValueHandle val) const override
             {
-            if (val->m_type != JSValueType::Object)
+            if (val->m_type != ValueType::Object)
                 {
                 members = m_null;
-                return JSStatus::IncorrectType;
+                return Status::IncorrectType;
                 }
 
             uint32_t sz;
-            JSStatus status = GetSize(sz, val);
-            if (status != JSStatus::Success)
+            Status status = GetSize(sz, val);
+            if (status != Status::Success)
                 return status;
 
-            status = const_cast<GCJValueFactoryImpl*>(this)->CreateArray(members, sz);
-            if (status != JSStatus::Success)
+            status = const_cast<GCValueFactoryImpl*>(this)->CreateArray(members, sz);
+            if (status != Status::Success)
                 return status;
 
             uint32_t idx = 0;
             for (auto itor = val->m_val.map->begin(); itor != val->m_val.map->end(); ++itor)
                 (*members->m_val.vect)[idx++] = itor->first;
 
-            return JSStatus::Success;
+            return Status::Success;
             }
 
-        JSStatus HasMember(bool& found, JSValueHandle val, Utf8CP key) const override
+        Status HasMember(bool& found, ValueHandle val, Utf8CP key) const override
             {
-            if (val->m_type != JSValueType::Object)
-                return JSStatus::IncorrectType;
+            if (val->m_type != ValueType::Object)
+                return Status::IncorrectType;
 
-            JSValueHandle vt;
-            JSStatus status = const_cast<GCJValueFactoryImpl*>(this)->CreateString(vt, key);
-            if (status != JSStatus::Success)
+            ValueHandle vt;
+            Status status = const_cast<GCValueFactoryImpl*>(this)->CreateString(vt, key);
+            if (status != Status::Success)
                 return status;
 
             BeginScope(vt);
@@ -1003,84 +1026,116 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
             return EndScope(vt);
             }
 
-        JSStatus GetMember(JSValueHandle& rt, JSValueHandle obj, Utf8CP key) const override
+        Status GetMember(ValueHandle& rt, ValueHandle obj, Utf8CP key) const override
             {
-            JSValueHandle vt;
-            JSStatus status = const_cast<GCJValueFactoryImpl*>(this)->CreateString(vt, key);
-            if (status != JSStatus::Success)
+            ValueHandle vt;
+            Status status = const_cast<GCValueFactoryImpl*>(this)->CreateString(vt, key);
+            if (status != Status::Success)
                 return status;
 
-            const_cast<GCJValueFactoryImpl*>(this)->BeginScope(vt);
+            const_cast<GCValueFactoryImpl*>(this)->BeginScope(vt);
             status = GetMember(rt, obj, vt);
-            const_cast<GCJValueFactoryImpl*>(this)->EndScope(vt);
+            const_cast<GCValueFactoryImpl*>(this)->EndScope(vt);
             return status;
             }
 
-        JSStatus GetMember(JSValueHandle& rt, JSValueHandle obj, uint32_t index) const override
+        Status GetMember(ValueHandle& rt, ValueHandle obj, uint32_t index) const override
             {
-            JSValueHandle vt;
-            JSStatus status = const_cast<GCJValueFactoryImpl*>(this)->CreateUInt32(vt, index);
-            if (status != JSStatus::Success)
+            ValueHandle vt;
+            Status status = const_cast<GCValueFactoryImpl*>(this)->CreateUInt32(vt, index);
+            if (status != Status::Success)
                 return status;
 
-            const_cast<GCJValueFactoryImpl*>(this)->BeginScope(vt);
+            const_cast<GCValueFactoryImpl*>(this)->BeginScope(vt);
             status = GetMember(rt, obj, vt);
-            const_cast<GCJValueFactoryImpl*>(this)->EndScope(vt);
+            const_cast<GCValueFactoryImpl*>(this)->EndScope(vt);
             return status;
             }
 
-        JSStatus GetMember(JSValueHandle& rt, JSValueHandle obj, JSValueHandle index) const override
+        Status GetMember(ValueHandle& rt, ValueHandle obj, ValueHandle index) const override
             {
             rt = m_null;
-            if (obj->m_type == JSValueType::Object)
+            if (obj->m_type == ValueType::Object)
                 {
                 auto itor = obj->m_val.map->find(index);
                 if (itor != obj->m_val.map->end())
                     rt = itor->second;
 
-                return JSStatus::Success;
+                return Status::Success;
                 }
 
-            if (obj->m_type == JSValueType::Array)
+            if (obj->m_type == ValueType::Array)
                 {
                 uint32_t idx;
-                JSStatus status = GetUInt32(idx, index);
-                if (status != JSStatus::Success)
+                Status status = GetUInt32(idx, index);
+                if (status != Status::Success)
                     return status;
 
                 rt = obj->m_val.vect->at(idx);
-                return JSStatus::Success;
+                return Status::Success;
                 }
 
-            return JSStatus::IncorrectType;
+            return Status::IncorrectType;
             }
 
-        JSStatus GetSize(uint32_t& n, JSValueHandle val) const override
+        Status GetSize(uint32_t& n, ValueHandle val) const override
             {
             n = 0;
-            if (val->m_type == JSValueType::Object)
+            if (val->m_type == ValueType::Object)
                 {
                 n = (uint32_t) val->m_val.map->size();
-                return JSStatus::Success;
+                return Status::Success;
                 }
 
-            if (val->m_type == JSValueType::Array)
+            if (val->m_type == ValueType::Array)
                 {
                 n = (uint32_t) val->m_val.vect->size();
-                return JSStatus::Success;
+                return Status::Success;
                 }
 
-            return JSStatus::IncorrectType;
+            return Status::IncorrectType;
             }
 
-        JSStatus SetMember(JSValueHandle obj, Utf8CP key, JSValueHandle val) override
+        Status RemoveMember(ValueHandle obj, ValueHandle key) override
             {
-            if (obj->m_type != JSValueType::Object)
-                return JSStatus::IncorrectType;
+            if (obj->m_type != ValueType::Object)
+                   return Status::IncorrectType;
 
-            JSValueHandle str;
-            JSStatus status = CreateString(str, key);
-            if (status != JSStatus::Success)
+            auto& map = *(obj->m_val.map);
+            auto itor = map.find(key);
+            if (itor == map.end())
+                return Status::MemberNotFound;
+
+            EndScope(itor->first);
+            EndScope(itor->second);
+            map.erase(itor);
+            return Status::Success;
+            }
+
+        Status RemoveMember(ValueHandle obj, Utf8CP key) override
+            {
+            if (obj->m_type != ValueType::Object)
+                return Status::IncorrectType;
+            
+            ValueHandle str;
+            Status status = CreateString(str, key);
+            if (status != Status::Success)
+                return status;
+
+            BeginScope(str);
+            status = RemoveMember(obj, str);
+            EndScope(str);
+            return status;
+            }
+
+        Status SetMember(ValueHandle obj, Utf8CP key, ValueHandle val) override
+            {
+            if (obj->m_type != ValueType::Object)
+                return Status::IncorrectType;
+
+            ValueHandle str;
+            Status status = CreateString(str, key);
+            if (status != Status::Success)
                 return status;
 
             BeginScope(str);
@@ -1088,14 +1143,14 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
             EndScope(str);
             return status;
             }
-        JSStatus SetMember(JSValueHandle obj, uint32_t index, JSValueHandle val) override
+        Status SetMember(ValueHandle obj, uint32_t index, ValueHandle val) override
             {
-            if (obj->m_type != JSValueType::Array)
-                return JSStatus::IncorrectType;
+            if (obj->m_type != ValueType::Array)
+                return Status::IncorrectType;
 
-            JSValueHandle str;
-            JSStatus status = CreateUInt32(str, index);
-            if (status != JSStatus::Success)
+            ValueHandle str;
+            Status status = CreateUInt32(str, index);
+            if (status != Status::Success)
                 return status;
 
             BeginScope(str);
@@ -1103,9 +1158,9 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
             EndScope(str);
             return status;
             }
-        JSStatus SetMember(JSValueHandle obj, JSValueHandle index, JSValueHandle val) override
+        Status SetMember(ValueHandle obj, ValueHandle index, ValueHandle val) override
             {
-            if (obj->m_type == JSValueType::Object)
+            if (obj->m_type == ValueType::Object)
                 {
                 auto& map = *(obj->m_val.map);
                 auto itor = map.find(index);
@@ -1121,59 +1176,59 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
                     EndScope(itor->second);
                     itor->second = val;
                     }
-                return JSStatus::Success;
+                return Status::Success;
                 }
-            else if (obj->m_type == JSValueType::Array)
+            else if (obj->m_type == ValueType::Array)
                 {
                 auto& vect = *(obj->m_val.vect);
                 uint32_t idx;
-                JSStatus status = GetUInt32(idx, index);
-                if (status != JSStatus::Success)
+                Status status = GetUInt32(idx, index);
+                if (status != Status::Success)
                     return status;
 
                 if (idx >= vect.size())
-                    return JSStatus::IndexOutOfRange;
+                    return Status::IndexOutOfRange;
 
                 auto itor = vect.begin() + idx;
                 EndScope(*itor);
                 BeginScope(val);
                 *itor = val;
-                return JSStatus::Success;
+                return Status::Success;
                 }
 
-            return JSStatus::IncorrectType;
+            return Status::IncorrectType;
             }
-        JSStatus GetType(JSValueType& t, JSValueHandle val) const override
+        Status GetType(ValueType& t, ValueHandle val) const override
             {
             if (val == nullptr)
-                return JSStatus::NullArgument;
+                return Status::NullArgument;
 
             t = val->m_type;
-            return JSStatus::Success;
+            return Status::Success;
             }
-        JSValueHandle GetNull() const override { return m_null; }
-        JSStatus BeginScope(JSValueHandle val) const  override
+        ValueHandle GetNull() const override { return m_null; }
+        Status BeginScope(ValueHandle val) const  override
             {
             //This protect variable from deletion.
             //It shoudl stay above 1 to be not garbage collected
             val->m_count++;
-            return JSStatus::Success;
+            return Status::Success;
             }
 
-        JSStatus EndScope(JSValueHandle val) const override
+        Status EndScope(ValueHandle val) const override
             {
             if (val == m_null)
-                return JSStatus::Success;
+                return Status::Success;
 
-            if (EndScopeForValue(val) != JSStatus::Success)
-                return JSStatus::Error;
+            if (EndScopeForValue(val) != Status::Success)
+                return Status::Error;
 
             if (val->m_count <= 0)
                 {
-                const_cast<GCJValueFactoryImpl*>(this)->TrimUnusedItemCache(10.0f);
+                const_cast<GCValueFactoryImpl*>(this)->TrimUnusedItemCache(10.0f);
                 }
 
-            return JSStatus::Success;
+            return Status::Success;
             }
 
         bool NotifyScopeChanges() const override { return true; }
@@ -1182,9 +1237,9 @@ struct GCJValueFactoryImpl : public RefCounted<JSFactory>
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-RefCountedPtr<JSFactory> GCJValueFactory::CreateInstance(Options const& opt)
+RefCountedPtr<IFactory> GCValueFactory::CreateInstance(Options const& opt)
     {
-    return new GCJValueFactoryImpl(opt.m_maxStringValueCache,
+    return new GCValueFactoryImpl(opt.m_maxStringValueCache,
                                    opt.m_maxArrayValueCache,
                                    opt.m_maxObjectValueCache,
                                    opt.m_maxPrimitiveValueCache);
@@ -1194,12 +1249,12 @@ RefCountedPtr<JSFactory> GCJValueFactory::CreateInstance(Options const& opt)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------    
-Json::Value JSValue::ToJson() const
+Json::Value Value::ToJson() const
     {        
     Json::Value v;
-    if (_ToJson(v) != JSStatus::Success)
+    if (_ToJson(v) != Status::Success)
         {
-        BeAssert(false && "Fail to convert JSValue to Json::Value");
+        BeAssert(false && "Fail to convert Value to Json::Value");
         return Json::Value(Json::ValueType::nullValue);
         }
 
@@ -1209,105 +1264,105 @@ Json::Value JSValue::ToJson() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------    
- JSStatus JSValue::_ToJson(Json::Value& v) const
+ Status Value::_ToJson(Json::Value& v) const
     {        
     v = Json::Value(Json::ValueType::nullValue);;        
-    JSValueType valueType = Type();
-    if (IsEmpty() || valueType != JSValueType::Null)
+    ValueType valueType = Type();
+    if (IsEmpty() || valueType != ValueType::Null)
         {
-        BeAssert(false && "Fail to convert JSValue to Json::Value");
-        return JSStatus::IncorrectType;
+        BeAssert(false && "Fail to convert Value to Json::Value");
+        return Status::IncorrectType;
         }
     
-    return JSStatus::Success;
+    return Status::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------    
- JSStatus JSBoolean::_ToJson(Json::Value& v) const
+ Status Boolean::_ToJson(Json::Value& v) const
     {        
-    const JSValueType valueType = Type();
-    if (IsEmpty() || valueType != JSValueType::Boolean)
+    const ValueType valueType = Type();
+    if (IsEmpty() || valueType != ValueType::Boolean)
         {
-        BeAssert(false && "Fail to convert JSBoolean to Json::Value");
+        BeAssert(false && "Fail to convert Boolean to Json::Value");
         v = Json::Value(Json::ValueType::nullValue);
-        return JSStatus::IncorrectType;
+        return Status::IncorrectType;
         }
     
-    if (valueType == JSValueType::Null)
+    if (valueType == ValueType::Null)
         v = Json::Value(Json::ValueType::nullValue);
     else
         v = Json::Value(Value());
 
-    return JSStatus::Success;
+    return Status::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------    
- JSStatus JSString::_ToJson(Json::Value& v) const
+ Status String::_ToJson(Json::Value& v) const
     {        
-    const JSValueType valueType = Type();
-    if (IsEmpty() || valueType != JSValueType::String)
+    const ValueType valueType = Type();
+    if (IsEmpty() || valueType != ValueType::String)
         {
-        BeAssert(false && "Fail to convert JSString to Json::Value");
+        BeAssert(false && "Fail to convert String to Json::Value");
         v = Json::Value(Json::ValueType::nullValue);
-        return JSStatus::IncorrectType;
+        return Status::IncorrectType;
         }
 
-    if (valueType == JSValueType::Null)
+    if (valueType == ValueType::Null)
         v = Json::Value(Json::ValueType::nullValue);
     else
         v = Json::Value(Value());
 
-    return JSStatus::Success;
+    return Status::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------    
- JSStatus JSNumber::_ToJson(Json::Value& v) const
+ Status Number::_ToJson(Json::Value& v) const
     {    
     if (IsEmpty() || IsNumber())
         {
-        BeAssert(false && "Fail to convert JSNumber to Json::Value");
+        BeAssert(false && "Fail to convert Number to Json::Value");
         v = Json::Value(Json::ValueType::nullValue);
-        return JSStatus::IncorrectType;
+        return Status::IncorrectType;
         }
 
-    const JSValueType valueType = Type();
-    if(valueType == JSValueType::Int32)
+    const ValueType valueType = Type();
+    if(valueType == ValueType::Int32)
         v = Json::Value(Int32Value());
-    else if(valueType == JSValueType::UInt32)
+    else if(valueType == ValueType::UInt32)
         v = Json::Value(UInt32Value());
-    else if(valueType == JSValueType::UInt64)
+    else if(valueType == ValueType::UInt64)
         v = Json::Value(Int64Value());
-    else if(valueType == JSValueType::Int64)
+    else if(valueType == ValueType::Int64)
         v = Json::Value(UInt64Value());
-    else if(valueType == JSValueType::Double)
+    else if(valueType == ValueType::Double)
         v = Json::Value(DoubleValue());
     else
         v = Json::Value(Json::ValueType::nullValue);
 
-    return JSStatus::Success;
+    return Status::Success;
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------    
- JSStatus JSArray::_ToJson(Json::Value& v) const
+ Status Array::_ToJson(Json::Value& v) const
     {        
-    const JSValueType valueType = Type();
-    if (IsEmpty() || valueType != JSValueType::Array)
+    const ValueType valueType = Type();
+    if (IsEmpty() || valueType != ValueType::Array)
         {
-        BeAssert(false && "Fail to convert JSArray to Json::Value");
+        BeAssert(false && "Fail to convert Array to Json::Value");
         v = Json::Value(Json::ValueType::nullValue);
-        return JSStatus::IncorrectType;
+        return Status::IncorrectType;
         }
 
-    if (valueType == JSValueType::Null)
+    if (valueType == ValueType::Null)
         v = Json::Value(Json::ValueType::nullValue);
     else
         {        
@@ -1316,60 +1371,60 @@ Json::Value JSValue::ToJson() const
         for(uint32_t i = 0; i < n; ++i)
             v[i] = Get(i).ToJson();
         }
-    return JSStatus::Success;
+    return Status::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------    
- JSStatus JSObject::_ToJson(Json::Value& v) const
+ Status Object::_ToJson(Json::Value& v) const
     {    
-    const JSValueType valueType = Type();           
-    if (IsEmpty() || valueType != JSValueType::Object)
+    const ValueType valueType = Type();           
+    if (IsEmpty() || valueType != ValueType::Object)
         {
-        BeAssert(false && "Fail to convert JSArray to Json::Value");
+        BeAssert(false && "Fail to convert Array to Json::Value");
         v = Json::Value(Json::ValueType::nullValue);
-        return JSStatus::IncorrectType;
+        return Status::IncorrectType;
         }
 
-    if (valueType == JSValueType::Null)
+    if (valueType == ValueType::Null)
         v = Json::Value(Json::ValueType::nullValue);
     else
         {        
         v = Json::Value(Json::ValueType::objectValue);
-        JSArray members = GetMemberNames();
+        Array members = GetMemberNames();
         const uint32_t n = members.Length();
         for(uint32_t i = 0; i < n; ++i)
-            v[i] = Get(members.Get(i).AsString().Value()).ToJson();
+            v[i] = Get((Utf8String)members.Get(i).AsString()).ToJson();
         }
 
-    return JSStatus::Success;
+    return Status::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------    
-JSValue JSValue::Null(JSFactory& factory)
+Value Value::Null(IFactory& factory)
     {
-    return JSValue(factory, factory.GetNull());  
+    return Value(factory, factory.GetNull());  
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-JSValue JSValue::FromJson(JSFactory& factory, Json::Value const& v)
+Value Value::FromJson(IFactory& factory, Json::Value const& v)
     {
     if (v.type() == Json::ValueType::nullValue)
-        return JSValue::Null(factory);
+        return Value::Null(factory);
     else if (v.type() == Json::ValueType::intValue)
-        return JSNumber::New(factory, v.asInt());
+        return Number::New(factory, v.asInt());
     else if (v.type() == Json::ValueType::uintValue)
-        return JSNumber::New(factory, v.asUInt());
+        return Number::New(factory, v.asUInt());
     else if (v.type() == Json::ValueType::realValue)
-        return JSNumber::New(factory, v.asDouble());
+        return Number::New(factory, v.asDouble());
     else if (v.type() == Json::ValueType::arrayValue)
         {
-        JSArray jsArray = JSArray::New(factory, (uint32_t)v.size());
+        Array jsArray = Array::New(factory, (uint32_t)v.size());
         for (auto itor = v.begin(); itor != v.end(); ++itor)
             jsArray.Set((uint32_t)itor.index(), FromJson(factory, (*itor)));
 
@@ -1377,7 +1432,7 @@ JSValue JSValue::FromJson(JSFactory& factory, Json::Value const& v)
         }
     else if (v.type() == Json::ValueType::objectValue)
         {
-        JSObject jsObject = JSObject::New(factory);
+        Object jsObject = Object::New(factory);
         for (auto itor = v.begin(); itor != v.end(); ++itor)
             jsObject.Set(itor.memberName(), FromJson(factory, (*itor)));
 
@@ -1385,5 +1440,7 @@ JSValue JSValue::FromJson(JSFactory& factory, Json::Value const& v)
         }
 
     BeAssert(false && "Unknown type");
-    return JSValue::Null(factory);        
+    return Value::Null(factory);        
     }
+}
+END_BENTLEY_NAMESPACE

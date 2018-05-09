@@ -10,7 +10,7 @@
         <Bindings>
             <PublicAPI Domain="BeJsonCpp" />
             <PublicAPI Domain="json" />
-			<PublicAPI Domain="JSValue" />
+			<PublicAPI Domain="JS" />
         </Bindings>
     </Part>
 

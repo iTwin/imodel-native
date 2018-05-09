@@ -10,7 +10,7 @@
 baseDir             = $(_MakeFilePath)
 JsonCppInclude      = $(baseDir)include/json/
 BeJsonCppInclude    = $(baseDir)PublicAPI/BeJsonCpp/
-JSValueInclude      = $(baseDir)PublicAPI/JSValue/
+JSInclude           = $(baseDir)PublicAPI/JS/
 
 #--------------------------------------------------------------------------------------
 # The JsonCpp API is defined in the json/* headers
@@ -18,4 +18,4 @@ JSValueInclude      = $(baseDir)PublicAPI/JSValue/
 always:
     ~linkdir "$(BuildContext)PublicAPI/json=${JsonCppInclude}"
     ~linkdir "$(BuildContext)PublicAPI/BeJsonCpp=${BeJsonCppInclude}"
-	~linkdir "$(BuildContext)PublicAPI/JSValue=${JSValueInclude}"
+	~linkdir "$(BuildContext)PublicAPI/JS=${JSInclude}"
