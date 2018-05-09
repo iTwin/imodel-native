@@ -369,6 +369,57 @@ DgnCode ElementReader::CreateCodeFromJson(Json::Value& element)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ElementAspectReader::_Read(Json::Value& aspect)
+    {
+    DgnElementId instanceId = ECJsonUtilities::JsonToId<DgnElementId>(aspect[ECJsonSystemNames::Id()]);
+    if (!instanceId.IsValid())
+        return ERROR;
+
+    DgnElementId elementId = GetMappedElementId(aspect, "Element");
+    if (!elementId.IsValid())
+        return ERROR;
+
+    aspect.removeMember("Element");
+
+    IECInstancePtr ecInstance = _CreateInstance(aspect);
+    if (!ecInstance.IsValid())
+        {
+        GetLogger().errorv("Failed to create IECInstance for elementaspect\n");
+        return ERROR;
+        }
+
+    DgnDbStatus stat;
+    DgnElementPtr element = GetDgnDb()->Elements().GetForEdit<DgnElement>(elementId);
+
+    if (!element.IsValid())
+        {
+        GetLogger().errorv("Unable to get associated Element for ElementAspect.");
+        return ERROR;
+        }
+    stat = DgnElement::GenericMultiAspect::AddAspect(*element, *ecInstance);
+    if (DgnDbStatus::Success != stat)
+        {
+        GetLogger().errorv("Failed to add ElementAspect to Element");
+        return ERROR;
+        }
+
+    element->Update(&stat);
+    if (DgnDbStatus::Success != stat)
+        {
+        GetLogger().errorv("Failed to update Element when adding ElementAspect");
+        return ERROR;
+        }
+
+    // need to record which element class each aspect is associated with.
+    ElementClassToAspectClassMapping::Insert(*GetDgnDb(), element->GetElementClassId(), element->GetElementClass()->GetSchema().GetName().c_str(), element->GetElementClass()->GetName().c_str(),
+                                             ecInstance->GetClass().GetId(), ecInstance->GetClass().GetSchema().GetName().c_str(), ecInstance->GetClass().GetName().c_str());
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus Reader::RemapPropertyElementId(ECN::IECInstanceR properties, Utf8CP propertyName)

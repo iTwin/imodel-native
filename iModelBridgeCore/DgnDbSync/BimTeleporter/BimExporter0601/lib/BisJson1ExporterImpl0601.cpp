@@ -462,6 +462,11 @@ bool BisJson1ExporterImpl::ExportDgnDb()
     LogPerformanceMessage(timer, "Export Elements");
 
     timer.Start();
+    if (SUCCESS != (stat = ExportElementAspects()))
+        return false;
+    LogPerformanceMessage(timer, "Export ElementAspects");
+
+    timer.Start();
     if (SUCCESS != (stat = ExportNamedGroups()))
         return false;
     LogPerformanceMessage(timer, "Export Named Groups");
@@ -1943,6 +1948,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElementAspects(ECClassId classId, ECIn
         }
     JsonECSqlSelectAdapter jsonAdapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
     jsonAdapter.SetStructArrayAsString(true);
+    jsonAdapter.SetPreferNativeDgnTypes(true);
 
     while (BE_SQLITE_ROW == statement->Step())
         {
@@ -1966,6 +1972,9 @@ BentleyStatus BisJson1ExporterImpl::ExportElementAspects(ECClassId classId, ECIn
             obj.removeMember("PlanId");
             obj[JSON_TYPE_KEY] = JSON_TYPE_Baseline;
             }
+
+        MakeNavigationProperty(obj, "Element", IdToString(obj["ElementId"].asCString()).c_str());
+        obj.removeMember("ElementId");
 
         obj.removeMember("$ECClassKey");
         obj.removeMember("$ECClassId");
