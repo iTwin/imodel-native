@@ -2969,7 +2969,7 @@ BentleyStatus   DwgImporter::ImportEntity (ElementImportResults& results, Elemen
 
     DwgDbBlockReferenceP    insert = DwgDbBlockReference::Cast (entity);
     if (nullptr != insert && insert->IsXAttachment())
-        return  this->_ImportXReference (*insert, inputs);
+        return  this->_ImportXReference (results, inputs);
     else if (nullptr != insert)
         return  this->_ImportBlockReference (results, inputs);
 

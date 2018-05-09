@@ -1083,6 +1083,8 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
             // Units of paperspace models are from plot settings.
             Transform   layoutTransform = Transform::FromIdentity ();
             this->ScaleModelTransformBy (layoutTransform, *block.get());
+            // WIP - when/if Sheet::Border supports location in the future, switching code to set the origin, instead of moving geometry:
+            this->AlignSheetToPaperOrigin (layoutTransform, block->GetLayoutId());
 
             modelMap= this->GetOrCreateModelFromBlock (*block.get(), layoutTransform);
             if (!modelMap.IsValid() || modelMap.GetModel() == nullptr)
@@ -1150,7 +1152,10 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
                     if (isParentPaperspace)
                         {
                         // get or create the paperspace model if not already created:
+                        xtrans = Transform::FromIdentity ();
                         this->ScaleModelTransformBy (xtrans, *parentBlock.get());
+                        // WIP - when/if Sheet::Border supports location in the future, switching code to set the origin, instead of moving geometry:
+                        this->AlignSheetToPaperOrigin (xtrans, parentBlock->GetLayoutId());
 
                         modelMap = this->GetOrCreateModelFromBlock (*parentBlock.get(), xtrans);
                         if (!modelMap.IsValid() || (parentModel = modelMap.GetModel()) == nullptr)
@@ -1634,7 +1639,9 @@ DwgImporter::ImportJobCreateStatus   DwgImporter::InitializeJob (Utf8CP comments
     if (!newSubject.IsValid())
         return ImportJobCreateStatus::FailedInsertFailure;
 
-    JobSubjectUtils::InitializeProperties(*newSubject, this->GetOptions().GetBridgeRegSubKeyUtf8(), comments);
+    Json::Value jobProp(Json::objectValue);
+    jobProp["DwgImporterVersion"] = DwgHelper::GetDwgImporterVersion ();
+    JobSubjectUtils::InitializeProperties(*newSubject, this->GetOptions().GetBridgeRegSubKeyUtf8(), comments, &jobProp);
 
     SubjectCPtr jobSubject = newSubject->InsertT<Subject>();
     if (!jobSubject.IsValid())
@@ -1804,11 +1811,9 @@ void            DwgImporter::_FinishImport ()
         }
     changeDetector._Cleanup (*this);
 
+    // that deleted views are deleted, now update survived views and generate thumbnails as needed:
     _PostProcessViewports ();
     ValidateJob ();
-
-    // WIP - thumbnails
-    // GenerateThumbnails ();
 
     if (WasAborted())
         {
