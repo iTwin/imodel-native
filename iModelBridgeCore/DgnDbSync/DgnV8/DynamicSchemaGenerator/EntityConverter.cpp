@@ -1524,6 +1524,17 @@ bool BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(E
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(Utf8StringCR schemaName)
+    {
+    return ECN::ECSchema::IsStandardSchema(schemaName) ||
+        schemaName.EqualsI(DGNDBSYNCV8_ECSCHEMA_NAME) || schemaName.EqualsI(BIS_ECSCHEMA_NAME) ||
+        schemaName.EqualsIAscii("Generic") || schemaName.EqualsIAscii("Functional") ||
+        schemaName.StartsWithI("ecdb") || schemaName.EqualsIAscii("ECv3ConversionAttributes");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     02/2015
 //---------------------------------------------------------------------------------------
 void BisClassConverter::SchemaConversionContext::ReportIssue(Converter::IssueSeverity severity, Utf8CP fmt, ...) const

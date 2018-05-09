@@ -6,23 +6,6 @@ DataValidation_Tests.*
 DataValidationTests.*
 
 
-
-#----------------------------------------------------------------------------------------
-#   Tests that need attention
-#----------------------------------------------------------------------------------------
-
-ECConversionTests.RelationshipInstance       # WIP UmarH
-
-#----------------------------------------------------------------------------------------
-#   Tests that are failing only on tiles branch
-#----------------------------------------------------------------------------------------
-ECSchemaTests.RemapSerializedInstance
-ECSchemaTests.RemapReservedPropertyNames
-
-#-----
-ECConversionTests.UpdateWithNewElementAndNoPreviousECData
-ECConversionTests.UpdateExistingWithNewInstance
-
 ConverterTests.UpdateWithDeletedParent
 
     # TFS#812546
