@@ -29,6 +29,34 @@ typedef enum
 */
 static int s_maxLines = 20000;
 
+/*---------------------------------------------------------------------------------**//**
+*
+* @param pDest      <=> array of doubles
+* @param pNumOut    <=> number of doubles in destination
+* @param maxOut     => maximum allowed in destination
+* @param a          => value to append
+* @return false if array overflow.
+* @bsimethod                                                    EarlinLutz      01/99
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool appendDouble
+
+(
+double *pDest,
+int     *pNumOut,
+int     maxOut,
+double  a
+)
+    {
+    int k = *pNumOut;
+    if (k < maxOut)
+        {
+        pDest[k++] = a;
+        *pNumOut = k;
+        return true;
+        }
+    return false;
+    }
+
 static int jmdlGPA_roundUpInt
 (
 double value
@@ -1222,10 +1250,10 @@ DEllipse3dCR ellipse
             /* HACK .. a little confused on signs here. Only one of these
                 angles matters, but really cheap to test both. */
             if (ellipse.IsAngleInSweep (theta))
-                bsiDoubleArray_append (clippedSortDist, &numClippedSort, MAX_CLIPPED_SORT_DIST, a);
+                appendDouble (clippedSortDist, &numClippedSort, MAX_CLIPPED_SORT_DIST, a);
             theta += msGeomConst_pi;
             if (ellipse.IsAngleInSweep (theta))
-                bsiDoubleArray_append (clippedSortDist, &numClippedSort, MAX_CLIPPED_SORT_DIST, a);
+                appendDouble (clippedSortDist, &numClippedSort, MAX_CLIPPED_SORT_DIST, a);
             }
         DPoint3d point0, point1;
         ellipse.EvaluateEndPoints (point0, point1);
@@ -1236,7 +1264,7 @@ DEllipse3dCR ellipse
 //                            bsiDPoint4d_dotProduct (&H1, pStartPoint),
                             0.0))
             {
-            bsiDoubleArray_append (clippedSortDist, &numClippedSort, MAX_CLIPPED_SORT_DIST, a);
+            appendDouble (clippedSortDist, &numClippedSort, MAX_CLIPPED_SORT_DIST, a);
             }
 
         if (bsiTrig_safeDivide (&a,
@@ -1246,7 +1274,7 @@ DEllipse3dCR ellipse
 //                            bsiDPoint4d_dotProduct (&H1, pEndPoint),
                             0.0))
             {
-            bsiDoubleArray_append (clippedSortDist, &numClippedSort, MAX_CLIPPED_SORT_DIST, a);
+            appendDouble (clippedSortDist, &numClippedSort, MAX_CLIPPED_SORT_DIST, a);
             }
 
         if (numClippedSort >= 1)
