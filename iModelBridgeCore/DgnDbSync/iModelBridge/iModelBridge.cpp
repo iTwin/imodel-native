@@ -797,3 +797,34 @@ Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR 
 
     return jobTrans;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      iModelBridge::ComputeJobSubjectName(DgnDbCR db, Params const& params, Utf8StringCR bridgeSpecificSuffix)
+    {
+    // Use the document GUID, if available, to ensure a unique Job subject name.
+    Utf8String docIdStr;
+    auto docGuid = params.QueryDocumentGuid(params.GetInputFileName());
+    if (docGuid.IsValid())
+        docIdStr = docGuid.ToString();
+    else
+        docIdStr = Utf8String(params.GetInputFileName());
+
+    Utf8String jobName(params.GetBridgeRegSubKey());
+    jobName.append(":");
+    jobName.append(docIdStr.c_str());
+    jobName.append(", ");
+    jobName.append(bridgeSpecificSuffix);
+
+    DgnCode code = Subject::CreateCode(*db.Elements().GetRootSubject(), jobName.c_str());
+    int i = 0;
+    while (db.Elements().QueryElementIdByCode(code).IsValid())
+        {
+        Utf8String uniqueJobName(jobName);
+        uniqueJobName.append(Utf8PrintfString("%d", ++i).c_str());
+        code = Subject::CreateCode(*db.Elements().GetRootSubject(), uniqueJobName.c_str());
+        }
+    jobName = code.GetValueUtf8();
+    return jobName;
+    }

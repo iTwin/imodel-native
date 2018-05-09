@@ -625,29 +625,7 @@ void SpatialConverterBase::ComputeDefaultImportJobName()
         return;
         }
 
-    // Use the document GUID, if available, to ensure a unique Job subject name.
-    Utf8String docIdStr;
-    auto docGuid = _GetParams().QueryDocumentGuid(_GetParams().GetInputFileName());
-    if (docGuid.IsValid())
-        docIdStr = docGuid.ToString();
-    else
-        docIdStr = Utf8String(_GetParams().GetInputFileName());
-
-    Utf8String jobName(_GetParams().GetBridgeRegSubKey());
-    jobName.append(":");
-    jobName.append(docIdStr.c_str());
-    jobName.append(", ");
-    jobName.append(Utf8String(GetRootModelP()->GetModelName()));
-
-    DgnCode code = Subject::CreateCode(*GetDgnDb().Elements().GetRootSubject(), jobName.c_str());
-    int i = 0;
-    while (GetDgnDb().Elements().QueryElementIdByCode(code).IsValid())
-        {
-        Utf8String uniqueJobName(jobName);
-        uniqueJobName.append(Utf8PrintfString("%d", ++i).c_str());
-        code = Subject::CreateCode(*GetDgnDb().Elements().GetRootSubject(), uniqueJobName.c_str());
-        }
-
+    Utf8String jobName = iModelBridge::ComputeJobSubjectName(GetDgnDb(), _GetParams(), Utf8String(GetRootModelP()->GetModelName()));
     _GetParamsR().SetBridgeJobName(jobName);
     }
 

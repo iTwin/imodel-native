@@ -15,6 +15,7 @@
 #include <DgnPlatform/DgnDb.h>
 #include <DgnView/DgnViewLib.h>
 #include <iModelBridge/iModelBridgeFwkTypes.h>
+#include <WebServices/Client/ClientInfo.h>
 
 #ifdef __IMODEL_BRIDGE_BUILD__
     #define IMODEL_BRIDGE_EXPORT EXPORT_ATTRIBUTE
@@ -483,6 +484,7 @@ struct iModelBridge
         BeFileName m_reportFileName;
         Utf8String m_converterJobName;
         DgnPlatformLib::Host::RepositoryAdmin* m_repoAdmin;
+        WebServices::ClientInfoPtr m_clientInfo;
         BeDuration m_thumbnailTimeout = BeDuration::Seconds(30);
         IDocumentPropertiesAccessor* m_documentPropertiesAccessor = nullptr;
         WString m_thisBridgeRegSubKey;
@@ -595,6 +597,11 @@ struct iModelBridge
 	    //! @param localFileName    The filename of the source file.
 	    //! @return the document GUID, if available.
 	    IMODEL_BRIDGE_EXPORT BeSQLite::BeGuid QueryDocumentGuid(BeFileNameCR localFileName) const;
+
+        //!Get/Set the client info when talking to iModelHub or other services. 
+        //!Individual bridges are supposed to set it up in its constructor so that when briefcase creation is called, appropriate ids are passed along.
+        WebServices::ClientInfoPtr GetClientInfo() const { return m_clientInfo; };
+        void        SetClientInfo(WebServices::ClientInfoPtr info) { m_clientInfo = info;}
         };
 
     private:
@@ -861,6 +868,12 @@ public:
     //! Compute the filename of the "issues" file.
     IMODEL_BRIDGE_EXPORT static BeFileName ComputeReportFileName(BeFileNameCR bcName);
 
+    //! Default implementation to create a bridge job name. The function uses details from params. The resulting string will be unique within an iModel.
+    //! @param bridgeSpecificSuffix A suffix specfic to a bridge that can be used to store additional information.
+    //! @param db The iModel to test for subject name uniqueness
+    //! @param params The bridge parameters structure
+    IMODEL_BRIDGE_EXPORT static Utf8String ComputeJobSubjectName(DgnDbCR db, Params const& params, Utf8StringCR bridgeSpecificSuffix);
+
     //! @}
 
     //! @name Post-processing Callbacks
@@ -908,6 +921,7 @@ public:
 
     //! Return the job's spatial data transform
     Transform GetSpatialDataTransform() {return iModelBridge::GetSpatialDataTransform(*GetJobSubject());}
+
     };
 
 END_BENTLEY_DGN_NAMESPACE
