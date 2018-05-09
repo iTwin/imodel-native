@@ -337,7 +337,7 @@ RevisionStatus JsInterop::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-RevisionStatus JsInterop::ApplySchemaChangeSets(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption, BeFileNameCR dbFileName)
+RevisionStatus JsInterop::ApplySchemaChangeSets(BeFileNameCR dbFileName, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption)
     {
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(revisions, applyOption));
     DbResult result;
@@ -355,24 +355,6 @@ RevisionStatus JsInterop::ApplyDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionC
     {
     PRECONDITION(dgndb.IsDbOpen() && "Expected briefcase to be open when applying only data changes", RevisionStatus::ApplyError);
     return dgndb.Revisions().ProcessRevisions(revisions, applyOption);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 01/18
-//---------------------------------------------------------------------------------------
-RevisionStatus JsInterop::ApplyChangeSets(DgnDbR dgndb, JsonValueCR changeSetTokens, RevisionProcessOption applyOption, Utf8StringCR dbGuid, BeFileNameCR dbFileName)
-    {
-    bvector<DgnRevisionPtr> revisionPtrs;
-    bool containsSchemaChanges;
-    RevisionStatus status = ReadChangeSets(revisionPtrs, containsSchemaChanges, dbGuid, changeSetTokens);
-    if (RevisionStatus::Success != status)
-        return status;
-
-    bvector<DgnRevisionCP> revisions;
-    for (uint32_t ii = 0; ii < revisionPtrs.size(); ii++)
-        revisions.push_back(revisionPtrs[ii].get());
-
-    return containsSchemaChanges ? ApplySchemaChangeSets(revisions, applyOption, dbFileName) : ApplyDataChangeSets(dgndb, revisions, applyOption);
     }
 
 //---------------------------------------------------------------------------------------

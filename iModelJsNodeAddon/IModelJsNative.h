@@ -45,11 +45,7 @@ struct JsInterop
     BE_JSON_NAME(value)
 
 private:
-    static RevisionStatus ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens);
     static RevisionStatus ReadChangeSet(DgnRevisionPtr& revisionPtr, Utf8StringCR dbGuid, JsonValueCR changeSetToken);
-    static RevisionStatus ApplySchemaChangeSets(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption, BeFileNameCR dbFileName);
-    static RevisionStatus ApplyDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption);
-
     static void GetRowAsJson(Json::Value &json, BeSQLite::EC::ECSqlStatement &);
 
 public:
@@ -87,7 +83,9 @@ public:
     static Utf8StringCR GetLastECDbIssue();
     static BeSQLite::DbResult GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath);
     
-    static RevisionStatus ApplyChangeSets(DgnDbR dgndb, JsonValueCR jsonChangeSetTokens, RevisionProcessOption applyOption, Utf8StringCR dbGuid, BeFileNameCR dbFileName);
+    static RevisionStatus ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens);
+    static RevisionStatus ApplySchemaChangeSets(BeFileNameCR dbFileName, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption);
+    static RevisionStatus ApplyDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption applyOption);
     static RevisionStatus StartCreateChangeSet(JsonValueR changeSetInfo, DgnDbR dgndb);
     static RevisionStatus FinishCreateChangeSet(DgnDbR dgndb);
     static void AbandonCreateChangeSet(DgnDbR dgndb);

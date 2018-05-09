@@ -793,27 +793,44 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         {
         REQUIRE_ARGUMENT_STRING(0, changeSetTokens, Env().Undefined());
         REQUIRE_ARGUMENT_INTEGER(1, applyOption, Env().Undefined());
-        REQUIRE_ARGUMENT_BOOL(2, containsSchemaChanges, Env().Undefined());
+        
+        bvector<DgnRevisionPtr> revisionPtrs;
+        bool containsSchemaChanges;
+        Utf8String dbGuid = m_dgndb->GetDbGuid().ToString();
         Json::Value jsonChangeSetTokens = Json::Value::From(changeSetTokens);
+        RevisionStatus status = JsInterop::ReadChangeSets(revisionPtrs, containsSchemaChanges, dbGuid, jsonChangeSetTokens);
+        if (RevisionStatus::Success != status)
+            return Napi::Number::New(Env(), (int)status);
 
-        bool isReadonly = m_dgndb->IsReadonly();
-        Utf8String dbGuid = m_dgndb->GetDbGuid().ToString();;
-        BeFileName dbFileName(m_dgndb->GetDbFileName(), true);
-        if (containsSchemaChanges)
-            CloseDgnDb();
+        bvector<DgnRevisionCP> revisions;
+        for (uint32_t ii = 0; ii < revisionPtrs.size(); ii++)
+            revisions.push_back(revisionPtrs[ii].get());
 
-        RevisionStatus status = JsInterop::ApplyChangeSets(*m_dgndb, jsonChangeSetTokens, (RevisionProcessOption)applyOption, dbGuid, dbFileName);
-        if (RevisionStatus::Success == status && containsSchemaChanges)
+        /* Process change sets containing only data changes */
+        if (!containsSchemaChanges)
             {
-            DgnDbPtr db;
-            DbResult result = JsInterop::OpenDgnDb(db, dbFileName, isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite);
-            if (BE_SQLITE_OK == result)
-                OnDgnDbOpened(db.get());
-            else
-                status = RevisionStatus::ApplyError;
+            status = JsInterop::ApplyDataChangeSets(*m_dgndb, revisions, (RevisionProcessOption) applyOption);
+            return Napi::Number::New(Env(), (int)status);
             }
 
-        return Napi::Number::New(Env(), (int) status);
+        /* Process change sets containing schema changes */
+        BeFileName dbFileName(m_dgndb->GetDbFileName(), true);
+        bool isReadonly = m_dgndb->IsReadonly();
+
+        CloseDgnDb();
+
+        status = JsInterop::ApplySchemaChangeSets(dbFileName, revisions, (RevisionProcessOption)applyOption);
+        if (RevisionStatus::Success != status)
+            return Napi::Number::New(Env(), (int)status);
+
+        DgnDbPtr db;
+        DbResult result = JsInterop::OpenDgnDb(db, dbFileName, isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite);
+        if (BE_SQLITE_OK == result)
+            OnDgnDbOpened(db.get());
+        else
+            status = RevisionStatus::ApplyError;
+
+        return Napi::Number::New(Env(), (int)status);
         }
 
     static TxnManager::TxnId TxnIdFromString(Utf8StringCR str)

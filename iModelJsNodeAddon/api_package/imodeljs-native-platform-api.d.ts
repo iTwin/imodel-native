@@ -116,7 +116,7 @@ declare class NativeDgnDb {
      * Apply change sets
      * @param cachePath Path to the root of the disk cache
      */
-    applyChangeSets(changeSets: string, processOptions: ChangeSetApplyOption, containsSchemaChanges: boolean): ChangeSetStatus;
+    applyChangeSets(changeSets: string, processOptions: ChangeSetApplyOption): ChangeSetStatus;
 
     /**
      * Start creating a new change set with local changes
