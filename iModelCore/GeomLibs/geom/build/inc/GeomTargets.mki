@@ -38,7 +38,7 @@ $(OUT_DIR)dmatrix4d$(OUT_EXT)       : $(geomSrcStructs)dmatrix4d.cpp        $(OT
 
 $(OUT_DIR)dpoint2d$(OUT_EXT)        : $(geomSrcStructs)dpoint2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dvec2d$(OUT_EXT)          : $(geomSrcStructs)dvec2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dvec2d$(OUT_EXT)          : $(geomSrcStructs)dvec2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)dpoint3d$(OUT_EXT)        : $(geomSrcStructs)dpoint3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -249,7 +249,7 @@ $(OUT_DIR)refdray3d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdray3d.c
 
 #$(OUT_DIR)barycentric$(OUT_EXT)     : $(geomSrcFuncs)barycentric.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)complex$(OUT_EXT)         : $(geomSrcFuncs)complex.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)complex$(OUT_EXT)         : $(geomSrcFuncs)complex.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)ccctangent$(OUT_EXT)      : $(geomSrcFuncs)ccctangent.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -259,7 +259,7 @@ $(OUT_DIR)biarc$(OUT_EXT)           : $(geomSrcStructsCpp)refmethods/biarc.cpp  
 
 $(OUT_DIR)linalg$(OUT_EXT)          : $(geomSrcFuncs)linalg.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)polysolv$(OUT_EXT)        : $(geomSrcFuncs)polysolv.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)polysolv$(OUT_EXT)        : $(geomSrcFuncs)polysolv.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)quadeqn$(OUT_EXT)         : $(geomSrcFuncs)quadeqn.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -283,7 +283,7 @@ $(OUT_DIR)standardViews$(OUT_EXT)          : $(geomSrcFuncs)standardViews.cpp   
 
 #$(OUT_DIR)rename$(OUT_EXT)          : $(geomSrcFuncs)rename.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)doublefuncs$(OUT_EXT)     : $(geomSrcFuncs)doublefuncs.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)doublefuncs$(OUT_EXT)     : $(geomSrcFuncs)doublefuncs.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)rotations$(OUT_EXT)       : $(geomSrcFuncs)rotations.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 

@@ -2,22 +2,13 @@
 |
 |     $Source: geom/src/funcs/doublefuncs.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include        <stdlib.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
-bool DoubleOps::Normalize (bvector<double> &data, double a0, double a1)
-    {
-    double b;
-    if (!DoubleOps::SafeDivide (b, 1.0, a1 - a0, 0.0))
-        return false;
-    for (size_t i = 0; i < data.size (); i++)
-        data[i] = (data[i] - a0) * b;
-    return true;
-    }
 /*---------------------------------------------------------------------------------**//**
 *
 * @param pDest      <=> array of doubles
@@ -70,70 +61,6 @@ int     n
 
 
 
-/*----------------------------------------------------------------------+
-|                                                                       |
-| name          util_ascendDoubles                                      |
-|                                                                       |
-| author        RBB                                     2/90            |
-|                                                                       |
-+----------------------------------------------------------------------*/
-static int     util_ascendDoubles
-
-(
-const double *num1,         /* => Doubles to compare */
-const double *num2
-)
-    {
-    if (*num1 < *num2)
-        return (-1);
-    else if (*num1 > *num2)
-        return (1);
-    else
-        return (0);
-    }
-
-
-/*----------------------------------------------------------------------+
-|                                                                       |
-| name          util_descendDoubles                                     |
-|                                                                       |
-| author        RBB                                     2/90            |
-|                                                                       |
-+----------------------------------------------------------------------*/
-static int     util_descendDoubles
-
-(
-const double    *num1,      /* => Doubles to compare */
-const double    *num2
-)
-    {
-    if (*num1 > *num2)
-        return (-1);
-    else if (*num1 < *num2)
-        return (1);
-    else
-        return (0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-*
-* @param pDest      <=> array of doubles
-* @param num    => number of doubles
-* @bsimethod                                                    EarlinLutz      01/99
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void    bsiDoubleArray_sort
-
-(
-double *doubles,        /* <=> array of Doubles to be sorted (in place) */
-int    numDoubles,      /* => number of Doubles to sort */
-int    ascend           /* => true for ascending order */
-)
-    {
-    qsort (doubles, numDoubles, sizeof(double),
-                        ascend
-                            ? (int (*)(const void *,const void *))util_ascendDoubles
-                            : (int (*)(const void *,const void *))util_descendDoubles);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 *

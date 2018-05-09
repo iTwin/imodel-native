@@ -258,7 +258,7 @@ TEST(FastCutFill,SinusoidPlane)
     {
     double z0 = 0.5;
     double z1 = 0.5;
-    for (size_t numX = 2, numY = 2; numX < 8; numX++, numY++)
+    for (size_t numX = 2, numY = 2; numX < 25; numX = 2 * numX + 1, numY = 2 * numY + 2)
         {
         SaveAndRestoreCheckTransform shifter (50.0, 0, 0);
         auto bsurf = SurfaceWithSinusoidalControlPolygon (2, 2, numX, numY, 0.0, 0.3, 0.0, 0.5);
@@ -280,6 +280,7 @@ TEST(FastCutFill,SinusoidPlane)
             };
         DPoint3dOps::Append (&road->Point (), &roadPoints);
         road->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
+        ExerciseCutFill (dtm, road, "CutFill with single touch");
 #ifdef TestIntersectionSegments
         bvector<DSegment3dSizeSize> segments;
         PolyfaceQuery::SearchIntersectionSegments (*dtm, *road, segments);
