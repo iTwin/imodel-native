@@ -1497,6 +1497,7 @@ BentleyApi::BentleyStatus RootModelConverter::RecreateElementRefersToElementsInd
                 Utf8String error;
                 error.Sprintf("Failed to recreate index '%s' for BisCore:ElementRefersToElements class hierarchy: %s", index.second.c_str(), GetDgnDb().GetLastError().c_str());
                 ReportIssue(IssueSeverity::Fatal, IssueCategory::Sync(), Issue::Message(), error.c_str());
+                OnFatalError(Converter::IssueCategory::CorruptData());
                 return BentleyApi::ERROR;
                 }
             }
@@ -1587,6 +1588,9 @@ void RootModelConverter::_BeginConversion()
 void RootModelConverter::_FinishConversion()
     {
     ConvertNamedGroupsAndECRelationships();   // Now that we know all elements, work on the relationships between elements.
+    if (WasAborted())
+        return;
+
     if (IsUpdating())
         UpdateCalculatedProperties();
     _RemoveUnusedMaterials();
