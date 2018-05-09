@@ -469,6 +469,8 @@ void iModelBridgeFwk::Briefcase_Shutdown()
         delete m_clientUtils;       // This relases the DgnDbBriefcase
         
     m_clientUtils = nullptr;
+
+    Http::HttpClient::Uninitialize();
     }
 
 /*---------------------------------------------------------------------------------**//**
