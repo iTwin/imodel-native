@@ -93,15 +93,14 @@
     </Part>
 
 
-    <Part Name="ScalableMeshCreator" BMakeFile="ScalableMeshCreator.mke">
+    <Part Name="ScalableMeshCreator" BMakeFile="ScalableMeshCreator.mke" ApiNumber="B02">
         <SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModelDgnDb" Repository="TerrainModel"/>
         <SubPart PartName="ThreeMxReaderLegacy" PartFile="RealityModeling" Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="Cgal" PartFile="Libsrc-Nugets" Repository="bsicommon"/>                
         <SubPart PartName="ScalableMeshCore"/>
         <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMeshCreator$(libext)</Libs>
-            <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMeshCreator$(shlibext)</Assemblies>
-            <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMeshCreator$(shlibext)</Assemblies>
+            <Assemblies>delivery/$(shlibprefix)ScalableMeshCreator$(ApiNumber)$(shlibext)</Assemblies>            
             <PublicAPI Domain="ScalableMesh" />
         </Bindings>
     </Part>
@@ -321,8 +320,8 @@
         <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="Dlls"/>         
         <ProductDirectory Name="BentleyDesktopClientApi" Path="Dlls"/>
         <ProductDirectory Name="BentleyClientSharedAssemblies" Path="Dlls"/>         
-        <ProductDirectory Name="Assets" Path="Dlls"/>         
-    </ProductDirectoryList>
+        <ProductDirectory Name="Assets" Path="Dlls/Assets"/>      
+  </ProductDirectoryList>
 
 <ProductDirectoryList ListName="ScalableMeshLumenSdk">
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>

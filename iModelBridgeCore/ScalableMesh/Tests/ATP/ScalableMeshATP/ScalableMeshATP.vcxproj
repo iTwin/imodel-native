@@ -149,7 +149,7 @@
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;_DEBUG;SCALABLE_MESH_ATP;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeReBuildCommandLine>bb -ax64 -p ScalableMeshATPexe -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe -c 
 bb -ax64 -p ScalableMeshATPexe -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATP -ax64 -c</NMakeCleanCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 -p ScalableMeshATPexe -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI\scalablemesh</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>
     </NMakeForcedIncludes>
