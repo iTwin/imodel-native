@@ -237,6 +237,7 @@ struct BisClassConverter
                 bmap<ECN::ECClassCP, ECN::ECClassP> const& GetMixinAppliesToMapping() const { return m_mixinAppliesToMap; }
                 MixinContext* GetMixinContext(ECN::ECSchemaCR schema);
                 static bool ExcludeSchemaFromBisification(ECN::ECSchemaCR);
+                static bool ExcludeSchemaFromBisification(BentleyApi::Utf8StringCR schemaName);
 
                 void ReportIssue(Converter::IssueSeverity severity, BentleyApi::Utf8CP message, ...) const;
             };
