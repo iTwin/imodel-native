@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/pf_fastCutFill.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -710,13 +710,17 @@ IPolyfaceVisitorFilter *roadFilter  //!< [in] optional filter for road  //!< [in
     {
     messages.clear ();
     SingleSheetCutFillContext context (messages);
-    // unused - auto dtmArea = context.LoadDTM (dtm, dtmFilter);
-    // unused - auto roadArea = context.LoadRoad (road, roadFilter);
+    auto dtmArea = context.LoadDTM (dtm, dtmFilter);
+    auto roadArea = context.LoadRoad (road, roadFilter);
     context.Merge ();
     CutFillFacetSplitter faceProcessor (handler, messages);
     context.Scan (faceProcessor);
     if (s_cutFillNoisy > 0)
+        {
+        printf (" dtmArea %g\n", dtmArea.Value ());  // THESE PRINTS ARE "JUST" TO MAKE dtmArea, roadArea live
+        printf (" roadArea %g\n", roadArea.Value ());
         faceProcessor.PrintAreaSummary ();
+        }
     }
 
 

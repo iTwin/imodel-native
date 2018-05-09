@@ -38,7 +38,7 @@ $(OUT_DIR)dmatrix4d$(OUT_EXT)       : $(geomSrcStructs)dmatrix4d.cpp        $(OT
 
 $(OUT_DIR)dpoint2d$(OUT_EXT)        : $(geomSrcStructs)dpoint2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dvec2d$(OUT_EXT)          : $(geomSrcStructs)dvec2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dvec2d$(OUT_EXT)          : $(geomSrcStructs)dvec2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)dpoint3d$(OUT_EXT)        : $(geomSrcStructs)dpoint3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 

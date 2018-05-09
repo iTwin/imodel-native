@@ -280,6 +280,7 @@ TEST(FastCutFill,SinusoidPlane)
             };
         DPoint3dOps::Append (&road->Point (), &roadPoints);
         road->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
+        ExerciseCutFill (dtm, road, "CutFill with single touch");
 #ifdef TestIntersectionSegments
         bvector<DSegment3dSizeSize> segments;
         PolyfaceQuery::SearchIntersectionSegments (*dtm, *road, segments);
