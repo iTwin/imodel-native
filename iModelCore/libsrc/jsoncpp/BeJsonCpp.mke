@@ -2,7 +2,7 @@
 #
 #     $Source: BeJsonCpp.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 # Export/make visible all functions in JsonCpp
@@ -23,6 +23,8 @@ JsonCppSrc          = $(baseDir)src/lib_json/
 JsonCppInclude      = $(baseDir)include/json/
 BeJsonCppSrc        = $(baseDir)
 BeJsonCppInclude    = $(baseDir)PublicAPI/BeJsonCpp/
+JSValueInclude      = $(baseDir)PublicAPI/JSValue/
+JSValueSrc          = $(baseDir)src/JSValue/
 appName             = BeJsonCpp
 o                   = $(OutputRootDir)build/$(appName)/
 
@@ -35,6 +37,7 @@ always:
 always:
     ~linkdir "$(BuildContext)PublicAPI/json=$(baseDir)include/json"
     ~linkdir "$(BuildContext)PublicAPI/BeJsonCpp=${BeJsonCppInclude}"
+    ~linkdir "$(BuildContext)PublicAPI/JSValue=${JSValueInclude}"
 
 #--------------------------------------------------------------------------------------
 #   Compile source
@@ -45,6 +48,7 @@ JsonCppDepends              = $(_MakeFileSpec)            \
                               $(JsonCppInclude)json.h     \
                               $(JsonCppInclude)value.h    \
                               $(JsonCppInclude)writer.h   \
+                              $(JSValueInclude)jsvalue.h  \
                               $(JsonCppSrc)json_tool.h
 
 $(o)json_reader$(oext)      : $(JsonCppSrc)json_reader.cpp $(JsonCppDepends)
@@ -52,6 +56,8 @@ $(o)json_reader$(oext)      : $(JsonCppSrc)json_reader.cpp $(JsonCppDepends)
 $(o)json_value$(oext)       : $(JsonCppSrc)json_value.cpp $(JsonCppDepends)
 
 $(o)json_writer$(oext)      : $(JsonCppSrc)json_writer.cpp $(JsonCppDepends)
+
+$(o)JSValue$(oext)          : $(JSValueSrc)JSValue.cpp $(JsonCppDepends)
 
 $(o)BeJsonUtilities$(oext)  : $(BeJsonCppSrc)BeJsonUtilities.cpp $(JsonCppDepends) $(BeJsonCppInclude)BeJsonUtilities.h
 
@@ -61,6 +67,7 @@ $(o)BeJsonUtilities$(oext)  : $(BeJsonCppSrc)BeJsonUtilities.cpp $(JsonCppDepend
 BeJsonCppObjs               = $(o)json_reader$(oext)    \
                               $(o)json_value$(oext)     \
                               $(o)json_writer$(oext)    \
+                              $(o)JSValue$(oext)        \
                               $(o)BeJsonUtilities$(oext)
 
 #--------------------------------------------------------------------------------------
