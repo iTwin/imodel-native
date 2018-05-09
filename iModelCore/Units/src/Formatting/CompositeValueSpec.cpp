@@ -390,8 +390,8 @@ bool CompositeValueSpec::ToJson(Json::Value& out, bool verbose, bool excludeUnit
     if (valid)
         {
         out[json_includeZero()] = IsIncludeZero();
-        // since FormatConstant::DefaultSpacer() is a single blank character, the only way to not have a 
-        // spacer is to set the spacer to "", so we must preserved that in the json.
+        // since FormatConstant::DefaultSpacer() is a single blank character, the only way to not have a spacer is to set 
+        // the spacer to "", so we must preserved that in the json. This means we have to save m_space even if it is empty.
         out[json_spacer()] = m_spacer.c_str();
         }
 
