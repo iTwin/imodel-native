@@ -1870,5 +1870,50 @@ TEST_F(SchemaValidatorTests, PropertiesMayNotHaveTheSameDisplayLabelAndCategory)
     ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with the same display label but different categories so validation should succeed";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, EntityClassMayNotSubclassPhysicalModel)
+    {
+    // Class may not subclass bis:PhysicalModel
+    Utf8String bisSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='BisCore' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>" +
+        R"xml(<ECEntityClass typeName="Element" modifier="Abstract" description="Element description"/>
+            <ECEntityClass typeName="PhysicalModel" displayLabel="Physical Model" description="PhysicalModel Description" />
+         </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, bisSchemaXml.c_str(), *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema)) << "BisCore succeeds validation";
+
+    Utf8String goodBisElementXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='GoodSchema' alias='bis' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='GoodClass' modifier='Abstract' description='GoodClass Description'>"
+        "        <BaseClass>bis:Element</BaseClass>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    ECSchemaPtr schema2;
+    ECSchema::ReadFromXmlString(schema2, goodBisElementXml.c_str(), *context);
+    ASSERT_TRUE(schema2.IsValid());
+    ASSERT_TRUE(validator.Validate(*schema2)) << "Schema does not implement PhysicalModel so validation should succeed.";
+
+    Utf8String badBisElementXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
+        "<ECSchema schemaName='BadSchema' alias='bis' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
+        "    <ECSchemaReference name='BisCore' version='1.0.0' alias='bis'/>"
+        "    <ECEntityClass typeName='BadClass' modifier='Abstract' description='BadClass Description'>"
+        "        <BaseClass>bis:PhysicalModel</BaseClass>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    ECSchemaPtr schema3;
+    ECSchema::ReadFromXmlString(schema3, badBisElementXml.c_str(), *context);
+    ASSERT_TRUE(schema3.IsValid());
+    ASSERT_FALSE(validator.Validate(*schema3)) << "Schema subclasses PhysicalModel so validation should fail.";
+
+    }
+
+
 
 END_BENTLEY_ECN_TEST_NAMESPACE

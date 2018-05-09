@@ -387,6 +387,16 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
         status = ECObjectsStatus::Error;
         }
 
+    // RULE: Class may not subclass bis:PhysicalModel
+    for (ECClassCP baseClass : entity.GetBaseClasses())
+        {
+        if (baseClass->Is("BisCore", "PhysicalModel"))
+            {
+            LOG.errorv("Entity class '%s' may not subclass bis:PhysicalModel.", entity.GetFullName());
+            status = ECObjectsStatus::Error;
+            }
+        }
+
     // RULE: Root entity classes must derive from the bis hierarchy.
     auto const isBisCoreClass = [](ECClassCP entity) -> bool {return entity->GetSchema().GetName().Equals("BisCore");};
     std::function<bool(ECClassCP entity)> derivesFromBisHierarchy = [&derivesFromBisHierarchy, &isBisCoreClass](ECClassCP entity) -> bool
