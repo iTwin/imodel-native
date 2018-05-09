@@ -1080,6 +1080,18 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
             return ECObjectsStatus::Error;
             }
         comp = nfp->GetCompositeSpecP();
+
+        if (1 == input.size())
+            {
+            // If we override a numeric spec then set spacer to match UomSeparator. If we don't there will always be a space
+            // between the value and its unit label since the default spacer is a blank character.
+            if (!comp->HasSpacer())
+                {
+                Formatting::NumericFormatSpecCP nsP = parent.GetNumericSpec();
+                if (nsP && nsP->GetUomSeparator())
+                    comp->SetSpacer(nsP->GetUomSeparator());
+                }
+            }
         }
 
     switch (input.size())
