@@ -280,10 +280,10 @@ void IScalableMeshSourceCreator::SetSourceImportPolygon(const DPoint3d* polygon,
         dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_filterPolygon.assign(polygon, polygon + nPts);
     }
 
-void IScalableMeshSourceCreator::SetCreationMethod(ScalableMeshSourceCreationMethod creationType)
+void IScalableMeshSourceCreator::SetCreationMethod(ScalableMeshSourceCreationMethod creationMethod)
     {
-    assert(creationType >= 0 && creationType < SCM_SOURCE_CREATION_QTY);
-    dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_sourceCreationType = creationType;
+    assert(creationMethod >= 0 && creationMethod < SCM_SOURCE_CREATION_QTY);
+    dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_sourceCreationMethod = creationMethod;
     }
 
 void IScalableMeshSourceCreator::SetSourcesDirty()
@@ -558,13 +558,13 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     uint32_t splitThreshold;    
 
-    if (m_sourceCreationType == SCM_SOURCE_CREATION_BIG_SPLIT_CUT)
+    if (m_sourceCreationMethod == SCM_SOURCE_CREATION_BIG_SPLIT_CUT)
         {
         splitThreshold = SM_BIG_SPLIT_THRESHOLD;
         }
     else
         {
-        assert(m_sourceCreationType == SCM_SOURCE_CREATION_ONE_SPLIT);
+        assert(m_sourceCreationMethod == SCM_SOURCE_CREATION_ONE_SPLIT);
         splitThreshold = 10000;
         }
     
@@ -727,7 +727,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 
 
-    if (!restrictLevelForPropagation && (m_sourceCreationType == SCM_SOURCE_CREATION_ONE_SPLIT))
+    if (!restrictLevelForPropagation && (m_sourceCreationMethod == SCM_SOURCE_CREATION_ONE_SPLIT))
         {
         // Balance data             
         if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth))
@@ -765,7 +765,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 	GetProgress()->UpdateListeners();
     if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
-    if (m_sourceCreationType == SCM_SOURCE_CREATION_BIG_SPLIT_CUT)
+    if (m_sourceCreationMethod == SCM_SOURCE_CREATION_BIG_SPLIT_CUT)
         {        
         pDataIndex->CutTiles(SM_ONE_SPLIT_THRESHOLD);
 
