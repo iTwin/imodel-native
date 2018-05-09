@@ -1312,15 +1312,11 @@ ClipVectorPtr   DwgHelper::CreateClipperFromEntity (DwgDbObjectId entityId, doub
     if (curve.IsNull())
         return  nullptr;
 
-    GPArraySmartP   gpa;
-    if (BSISUCCESS != gpa->Add(*curve, false))
-        return  nullptr;
-
-    // the clipper constructor expects GPA in model/world coordinate system:
+    // the clipper constructor expects CurveVector in model/world coordinate system:
     if (nullptr != clipperToModel)
-        gpa->Transform (clipperToModel);
+        curve->TransformInPlace (*clipperToModel);
 
-    return ClipVector::CreateFromGPA (*gpa, 0.001, 0.1, frontClip, backClip, clipperToModel);
+    return  ClipVector::CreateFromCurveVector(*curve, 0.001, 0.1, frontClip, backClip);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1549,3 +1545,17 @@ bool    DwgHelper::CanOpenForWrite (BeFileNameCR path)
 #endif
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t    DwgHelper::GetDwgImporterVersion ()
+    {
+    uint32_t    toolkitVersion = 0, importerVersion = 0;
+#ifdef DLM_API_NUMBER
+    // parse the DLL suffix "####b#"
+    BeAssert (::sscanf(DLM_API_NUMBER, "%db%d", &toolkitVersion, &importerVersion) == 2);
+#else
+    BeAssert (false && "DLM_API_NUMBER should be passed through the makefile!");
+#endif
+    return  importerVersion;
+    }

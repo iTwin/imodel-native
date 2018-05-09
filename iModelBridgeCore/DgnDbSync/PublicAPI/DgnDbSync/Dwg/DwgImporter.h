@@ -246,6 +246,8 @@ struct DwgImporter
     friend struct AttributeFactory;
     friend struct MaterialFactory;
     friend struct LineStyleFactory;
+    friend struct LayoutFactory;
+    friend struct LayoutXrefFactory;
     friend class DwgProtocalExtension;
     friend class DwgRasterImageExt;
     friend class DwgPointCloudExExt;
@@ -881,6 +883,7 @@ public:
         L10N_STRING(BlockAttrdefDescription)           // =="Attribute definition created from DWG block %ls"==
         L10N_STRING(ModelView)                         // =="Model View"==
         L10N_STRING(LayoutView)                        // =="Layout View"==
+        L10N_STRING(XrefView)                          // =="XReference View"==
         L10N_STRING(CategorySelector)                  // =="Categories"==
         L10N_STRING(ModelSelector)                     // =="Models"==
         L10N_STRING(DisplayStyle)                      // =="Display Style"==
@@ -992,6 +995,7 @@ private:
     DgnElementId            CreateModelElement (DwgDbBlockTableRecordCR block, Utf8StringCR modelName, DgnClassId modelId);
     BentleyStatus           CreateElement (ElementImportResults& results, GeometryBuilderInfo& builderInfo, DgnElement::CreateParams& elemParams, DgnCodeCR parentCode, ElementHandlerP handler);
     void                    ScaleModelTransformBy (TransformR trans, DwgDbBlockTableRecordCR block);
+    void                    AlignSheetToPaperOrigin (TransformR trans, DwgDbObjectIdCR layoutId);
     void                    CompoundModelTransformBy (TransformR trans, DwgDbBlockReferenceCR insert);
     UnitDefinition          GetModelUnitsFromBlock (double& unitScale, DwgDbBlockTableRecordCR block);
     BentleyStatus           SetModelProperties (DgnModelP model, DPoint2dCR snaps);
@@ -1130,7 +1134,7 @@ protected:
     //! Import a database-resident entity
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportEntity (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a block reference entity
-    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportXReference (DwgDbBlockReferenceCR xref, ElementImportInputs& inputs);
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportXReference (ElementImportResults& results, ElementImportInputs& inputs);
     //! Import a normal block reference entity
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportBlockReference (ElementImportResults& results, ElementImportInputs& inputs);
     //! this method is called to setup ElementCreatParams for each entity to be imported by default:
@@ -1327,6 +1331,8 @@ private:
     bset<DwgSyncInfo::DwgModelSyncInfoId>   m_newlyDiscoveredModels;
     bset<DgnViewId>                         m_viewsSeen;
     uint32_t                                m_elementsDiscarded;
+
+    bool    IsUpdateRequired (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR obj) const;
 
 public:
     UpdaterChangeDetector () : m_byIdIter(nullptr), m_byHashIter(nullptr) {}
