@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/lineargeom.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -95,7 +95,7 @@ DPoint2dCP pEnd
 
     {
     double dot1, dot2;
-    DVec2d vec0, pVec1;
+    DVec2d vec0, vec1;
 
     static double bigParam = 1.0e14;
     bool    result = false;
@@ -103,11 +103,11 @@ DPoint2dCP pEnd
     vec0.x = pEnd->x - pStart->x;
     vec0.y = pEnd->y - pStart->y;
 
-    pVec1.x = pPoint->x - pStart->x;
-    pVec1.y = pPoint->y - pStart->y;
+    vec1.x = pPoint->x - pStart->x;
+    vec1.y = pPoint->y - pStart->y;
 
-    dot1 = bsiDVec2d_dotProduct (&vec0, &pVec1);
-    dot2 = bsiDVec2d_dotProduct (&vec0, &vec0);
+    dot1 = vec0.DotProduct (vec1);
+    dot2 = vec0.DotProduct (vec1);
 
     if (dot1 < bigParam * dot2)
         {

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/test/PolylineOpsTest/VuSpineContext.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -287,7 +287,7 @@ int AddPerpendicularsToBoundaries (double minSplitRadians, double minCandidateRa
             vu_getDPoint2dDXY (&vectorAB, pA);
             vu_getDPoint2dDXY (&vectorBC, pB);
             vu_getDPoint2dDXY (&vectorCA, pC);
-            double candidateRadians = msGeomConst_pi - bsiDVec2d_angleBetweenVectors (&vectorCA, &vectorAB);
+            double candidateRadians = msGeomConst_pi - vectorCA.AngleTo (vectorAB);
             //double candidateDot     = bsiDPoint2d_dotProduct (&vectorCA, &vectorAB);
             if (candidateRadians > minCandidateRadians)//bsiDPoint2d_dotProduct (&vectorCA, &vectorAB) > 0.0)
                 {

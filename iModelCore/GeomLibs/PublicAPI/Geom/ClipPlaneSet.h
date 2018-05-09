@@ -125,7 +125,9 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
     GEOMDLLIMPEXP static ConvexClipPlaneSet  FromXYBox (double x0, double y0, double x1, double y1);
 
     //! Create clip plane set for regiosn to one side of a polyline.
-    //! If hiddenEdge is an empty array, all clips are marked as regular clippers
+    //! If hiddenEdge is an empty array, all clips are marked as regular clippers.
+    //! The hiddenEdge array must contain a boolean (usual false) for each point of the points array.  If (true), clip output from that
+    //! intersections with that edge may be made invisible by some later methods.
     GEOMDLLIMPEXP static ConvexClipPlaneSet  FromXYPolyLine
     (
     bvector<DPoint3d> const &points,

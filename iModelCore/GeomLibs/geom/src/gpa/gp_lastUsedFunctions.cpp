@@ -1643,5 +1643,85 @@ DRange2dCP pRange
      return max;
 
     }
+/*-----------------------------------------------------------------*//**
+*
+* Compute the intersection of a range cube and a ray.
+*
+* If there is not a finite intersection, both params are set to 0 and
+* and both points to pPoint0.
+*
+* @param pParam0 <= ray parameter where cube is entered
+* @param pParam1 <= ray parameter where cube is left
+* @param pPoint0 <= entry point
+* @param pPoint1 <= exit point
+* @param pStart => start point of ray
+* @param pDirection => direction of ray
+* @return true if non-empty intersection.
+* @see
+* @indexVerb intersect
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        bsiDRange2d_intersectRay
+
+(
+DRange2dCP pRange,
+double      *pParam0,
+double      *pParam1,
+DPoint2dP pPoint0,
+DPoint2dP pPoint1,
+DPoint2dCP pStart,
+DPoint2dCP pDirection
+)
+    {
+    double s0, s1;      /* parameters of 'in' segment */
+    int     contents = -1;
+    bool    boolStat;
+    /* save points in case of duplicate pointers by caller */
+    DPoint2d start;
+    DPoint2d direction;
+
+    start = *pStart;
+    direction = *pDirection;
+
+    bsiRange1d_intersectLine
+                (
+                &s0, &s1, &contents,
+                pStart->x, pDirection->x,
+                pRange->low.x, pRange->high.x
+                );
+    bsiRange1d_intersectLine
+                (
+                &s0, &s1, &contents,
+                pStart->y, pDirection->y,
+                pRange->low.y, pRange->high.y
+                );
+
+    if (contents > 0)
+        {
+        boolStat = true;
+        }
+    else
+        {
+        s0 = 0.0;
+        s1 = 0.0;
+        boolStat = false;
+        }
+
+    /* Copy to outputs (all optional) */
+    if (pParam0)
+        *pParam0 = s0;
+
+    if (pParam1)
+        *pParam1 = s1;
+
+    if (pPoint0)
+        pPoint0->SumOf (start, direction, s0);
+
+    if (pPoint1)
+        pPoint1->SumOf (start, direction, s1);
+
+    return  boolStat;
+    }
+
 
 END_BENTLEY_GEOMETRY_NAMESPACE

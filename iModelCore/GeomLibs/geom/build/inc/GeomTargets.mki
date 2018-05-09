@@ -342,7 +342,7 @@ $(OUT_DIR)MSBsplineSurface$(OUT_EXT)    : $(geomSrcBspline)MSBsplineSurface.cpp 
 $(OUT_DIR)MSBsplineSurface_AddSurfaces$(OUT_EXT)    : $(geomSrcBspline)MSBsplineSurface_AddSurfaces.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 
-#$(OUT_DIR)MSBsplineSurfaceLofting$(OUT_EXT)    : $(geomSrcBspline)MSBsplineSurfaceLofting.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+$(OUT_DIR)MSBsplineSurfaceLofting$(OUT_EXT)    : $(geomSrcBspline)MSBsplineSurfaceLofting.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 
 $(OUT_DIR)BsplineCurveFit$(OUT_EXT)    : $(geomSrcBspline)BsplineCurveFit.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
