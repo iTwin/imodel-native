@@ -2,20 +2,25 @@
 |
 |     $Source: Core/cppwrappers/TMEditor.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 //#define CHECKDTM
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
-#include "BcDTMEdit.h"
-#include "TerrainModel\Core\TMTransformHelper.h"
-#include "TerrainModel\Core\TMEditor.h"
+#include "../PrivateAPI/bcdtmEdit.h"
+#include "TerrainModel/Core/TMTransformHelper.h"
+#include "TerrainModel/Core/TMEditor.h"
 #include <stack>
 using namespace std;
 
+#if _WIN32
+#define ABSTRACT_KEYWORD abstract
+#else
+#define ABSTRACT_KEYWORD
+#endif
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -203,8 +208,8 @@ private:
     // May need to store the XYZ
     struct dynamicMod
         {
-        virtual StatusInt Revert (RefCountedPtr<BcDTM> dtm) abstract;
-        virtual StatusInt DrawDynamics (BcDTMEdit* edit, RefCountedPtr<BcDTM> dtm, DrawUserP* drawInfo) abstract;
+        virtual StatusInt Revert (RefCountedPtr<BcDTM> dtm) ABSTRACT_KEYWORD;
+        virtual StatusInt DrawDynamics (BcDTMEdit* edit, RefCountedPtr<BcDTM> dtm, DrawUserP* drawInfo) ABSTRACT_KEYWORD;
         struct AddVertex;
         struct DelTriangle;
         struct MoveVertex;
@@ -267,11 +272,11 @@ private:
         }
 
 protected:
-    virtual bool _CanDeleteInternalTriangles()
+    virtual bool _CanDeleteInternalTriangles() override
         {
         return m_canDeleteInternalTriangles;
         }
-    virtual void _SetCanDeleteInternalTriangles (bool value)
+    virtual void _SetCanDeleteInternalTriangles (bool value) override
         {
         m_canDeleteInternalTriangles = value;
         }
@@ -353,7 +358,7 @@ protected:
     virtual StatusInt _SelectLine (const DPoint3d& pt) override;
     virtual StatusInt _SelectTriangle (DPoint3dCR pt) override;
     virtual StatusInt _SelectFeature (const DPoint3d& pt, bool first) override;
-    virtual DTMFeatureType BcDTMEdit::_GetSelectedFeatureType () override;
+    virtual DTMFeatureType _GetSelectedFeatureType () override;
     virtual StatusInt _SelectTrianglesByLine (const DPoint3d pts[], int numPts, bool stopAtFeatures) override;
 
     virtual SelectionState _GetSelectionState() override
@@ -376,12 +381,12 @@ protected:
         return DTM_ERROR;
         }
 
-    virtual bool _CanDeleteVertex ()
+    virtual bool _CanDeleteVertex () override
         {
         return true;
         }
 
-    virtual bool _CanDeleteLine ()
+    virtual bool _CanDeleteLine () override
         {
         if (m_selectionState != Line)
             return false;
@@ -418,7 +423,7 @@ protected:
         return true;
         }
 
-    virtual bool _CanDeleteTrianglesByLine()
+    virtual bool _CanDeleteTrianglesByLine() override
         {
         if (m_selectionState != TrianglesByLine)
             return false;
@@ -437,7 +442,7 @@ protected:
         return ret;
         }
 
-    virtual bool _CanDeleteTriangle ()
+    virtual bool _CanDeleteTriangle () override
         {
         if (m_selectionState != Triangle)
             return false;
@@ -503,7 +508,7 @@ protected:
         return true;
         }
 
-    virtual bool _CanSwapLine ()
+    virtual bool _CanSwapLine () override
         {
         if (m_selectionState != Line)
             return false;

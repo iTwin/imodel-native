@@ -8,7 +8,7 @@
 #pragma once
 #include <Bentley/NonCopyableClass.h>
 #include "DiscreetHistogram.h"
-#include <TerrainModel\AutomaticGroundDetection\IGroundDetectionServices.h>
+#include <TerrainModel/AutomaticGroundDetection/IGroundDetectionServices.h>
 
 BEGIN_GROUND_DETECTION_NAMESPACE
 

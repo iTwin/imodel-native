@@ -2,12 +2,12 @@
 |
 |     $Source: ElementHandler/handlerNET/DTMElementManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 
-#include <TerrainModel\ElementHandler\DTMDataRef.h>
+#include <TerrainModel/ElementHandler/DTMDataRef.h>
 #include <TerrainModel/ElementHandler/DTMElementHandler.h>
 #include <TerrainModel/ElementHandler/DTMElementSubHandler.h>
 #include "DTMElement.h"

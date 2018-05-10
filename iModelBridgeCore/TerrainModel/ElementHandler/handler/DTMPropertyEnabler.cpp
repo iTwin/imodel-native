@@ -2,13 +2,13 @@
 |
 |     $Source: ElementHandler/handler/DTMPropertyEnabler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 #include "MrDTMDataRef.h"
 #include <ScalableTerrainModel/IMrDTM.h>
-#include <DgnPlatform\DgnECTypeAdapters.h>
+#include <DgnPlatform/DgnECTypeAdapters.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNPLATFORM

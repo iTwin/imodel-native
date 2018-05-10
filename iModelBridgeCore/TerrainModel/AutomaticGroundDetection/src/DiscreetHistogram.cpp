@@ -2,12 +2,12 @@
 |
 |     $Source: AutomaticGroundDetection/src/DiscreetHistogram.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <TerrainModel/AutomaticGroundDetection/GroundDetectionMacros.h>
 #include "DiscreetHistogram.h"
 
 BEGIN_GROUND_DETECTION_NAMESPACE

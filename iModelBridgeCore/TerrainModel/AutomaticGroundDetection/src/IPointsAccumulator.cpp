@@ -2,13 +2,13 @@
 |
 |     $Source: AutomaticGroundDetection/src/IPointsAccumulator.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
-#include <TerrainModel\AutomaticGroundDetection\IPointsAccumulator.h>
+#include <TerrainModel/AutomaticGroundDetection/GroundDetectionMacros.h>
+#include <TerrainModel/AutomaticGroundDetection/IPointsAccumulator.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL 

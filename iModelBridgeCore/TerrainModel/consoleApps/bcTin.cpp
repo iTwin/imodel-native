@@ -2,7 +2,7 @@
 |
 |     $Source: consoleApps/bcTin.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Formats/terrainimporter.h"
@@ -10,7 +10,7 @@
 #include "bcDTMBaseDef.h"
 #include "dtmdefs.h"
 #include "dtm2dfns.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include <ppl.h>
 //#include <TerrainModel\Core\DTMEnumerators.h>
 

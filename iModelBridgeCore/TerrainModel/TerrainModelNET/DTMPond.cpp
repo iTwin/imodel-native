@@ -2,18 +2,18 @@
 |
 |     $Source: TerrainModelNET/DTMPond.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 #include <vcclr.h >
 #using <mscorlib.dll>
-#include ".\DTMHelpers.h"
-#include ".\Bentley.Civil.DTM.h"
-#include ".\dtm.h"
-#include ".\dtmexception.h"
-#include "TerrainModel\TerrainModel.h"
-#include "TerrainModel\Drainage\drainage.h"
+#include "./DTMHelpers.h"
+#include "./Bentley.Civil.DTM.h"
+#include "./dtm.h"
+#include "./dtmexception.h"
+#include "TerrainModel/TerrainModel.h"
+#include "TerrainModel/Drainage/drainage.h"
 #include "DTMPond.h"
 
 #if defined(Public)

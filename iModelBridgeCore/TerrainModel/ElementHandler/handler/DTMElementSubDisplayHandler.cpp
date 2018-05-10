@@ -2,14 +2,14 @@
 |
 |     $Source: ElementHandler/handler/DTMElementSubDisplayHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h" 
 
 #include "MrDTMDataRef.h"
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>
-#include <DgnPlatform\TerrainModel\TMElementSubHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementSubHandler.h>
 
 
 BEGIN_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE

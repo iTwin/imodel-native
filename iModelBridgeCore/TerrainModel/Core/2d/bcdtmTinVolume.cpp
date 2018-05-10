@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmTinVolume.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
 thread_local static long numVolTriangles=0 ;
 thread_local static double totTrgArea=0.0 ;
@@ -517,7 +517,7 @@ double          &fillAreaP
             bcdtmList_extractHullDtmObject (clipDtmP, &hullPtsP, &numHullPts);
             if (loadFunctionP != NULL)
                 {
-                if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Calling Load Function = %p", loadFunctionP);
+                //if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Calling Load Function = %p", loadFunctionP);
                 if (loadFunctionP (DTMFeatureType::Polygon, dtmP->nullUserTag, dtmP->nullFeatureId, hullPtsP, numHullPts, userP) != DTM_SUCCESS) goto errexit;
                 }
             }
@@ -526,7 +526,7 @@ double          &fillAreaP
             if (bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon (polyP, (long)(pListP - polyP->polyListP), &hullPtsP, &numHullPts)) goto errexit;
             if (loadFunctionP != NULL)
                 {
-                if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Calling Load Function = %p", loadFunctionP);
+                //if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Calling Load Function = %p", loadFunctionP);
                 if (loadFunctionP (DTMFeatureType::Polygon, dtmP->nullUserTag, dtmP->nullFeatureId, hullPtsP, numHullPts, userP) != DTM_SUCCESS) goto errexit;
                 }
             if (bcdtmClip_cloneAndClipToPolygonDtmObject (dtmP, &clipDtmP, hullPtsP, numHullPts, DTMClipOption::External)) goto errexit;
@@ -2550,7 +2550,7 @@ BENTLEYDTM_Public int bcdtmTinVolume_calculateVolumeSurfaceToSurfaceDtmObjects
 */
    if( loadFunctionP != NULL )
       {
-       if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ;
+      // if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ;
        if( loadFunctionP(DTMFeatureType::Polygon,toDtmP->nullUserTag,toDtmP->nullFeatureId,polyPtsP,numPolyPts,userP) != DTM_SUCCESS ) goto errexit ;
       }
 /*

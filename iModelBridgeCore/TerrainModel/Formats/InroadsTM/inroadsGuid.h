@@ -3,7 +3,7 @@
 typedef BENTLEY_NAMESPACE_NAME::BeSQLite::BeGuid InroadsGuid;
 #else
 
-#include <Bentley\stg\guid.h>
+#include <Bentley/stg/guid.h>
 struct InroadsGuid
 {
     union BeGuid { struct _GUID g; UInt64 u[2]; UInt32 i[4]; char b[16]; };

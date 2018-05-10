@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmBtree.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 
 #ifdef DTM_MEMORY_DEBUG
 #undef malloc

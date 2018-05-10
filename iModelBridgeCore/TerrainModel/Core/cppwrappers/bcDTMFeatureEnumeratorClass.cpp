@@ -2,11 +2,13 @@
 |
 |     $Source: Core/cppwrappers/bcDTMFeatureEnumeratorClass.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
+#if _WIN32
 #pragma warning(disable: 4018)
+#endif
 
 /*----------------------------------------------------------------------+
 | Include standard library header files                                 |
@@ -15,7 +17,7 @@
 
 #include <TerrainModel/TerrainModel.h>
 #include <bcDTMBaseDef.h>
-#include <dtmevars.h>
+#include <DTMEvars.h>
 #include <algorithm>
 
 /*----------------------------------------------------------------------+
@@ -29,7 +31,7 @@
 +------------------------------------------------------------------*/
 #include "bcMem.h"
 #include "bcDTMImpl.h"
-#include <TerrainModel\Core\TMTransformHelper.h>
+#include <TerrainModel/Core/TMTransformHelper.h>
 
 /*------------------------------------------------------------------+
 | Local defintions                                                  |

@@ -2,13 +2,13 @@
 |
 |     $Source: ElementHandler/handler/DTMDisplayHandlers.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <stdafx.h>
 #include <RmgrTools/Tools/RscFileManager.h>
 #include "DTMBinaryData.h"
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementHandler.h>
 #include "DTMDataRefXAttribute.h"
 
 USING_NAMESPACE_RASTER

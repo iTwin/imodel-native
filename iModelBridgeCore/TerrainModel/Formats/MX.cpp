@@ -2,14 +2,14 @@
 |
 |     $Source: Formats/MX.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/TerrainModel.h>
 #include "TerrainModel/Formats/Formats.h"
 #include "MXModelFile.h"
 #include "mxtriangle.h"
-#include "TerrainModel\Formats\mx.h"
+#include "TerrainModel/Formats/mx.h"
 
 #define asLong(a) *((long*)a)
 

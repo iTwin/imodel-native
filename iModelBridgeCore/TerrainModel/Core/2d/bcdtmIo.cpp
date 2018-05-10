@@ -2,13 +2,17 @@
 |
 |     $Source: Core/2d/bcdtmIo.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
 #include "bcDTMStream.h"
+
+#if TERRAINMODEL_LINUX
+#include <errno.h>
+#endif
 
 BENTLEYDTM_EXPORT bool sOutputToConsole = false;
 /*-------------------------------------------------------------------+
@@ -31,7 +35,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_message(long MessageType,long MessageLevel,long
 **
 */
 {
- static long MessageFlag=1 ;
+ //static long MessageFlag=1 ;
  char Dstr[50],Tstr[50],Message[2000] ;
  va_list arg_ptr ;
 /*
@@ -884,7 +888,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,BENTL
  if( dbg ) bcdtmWrite_message(0,0,0,"headerSize = %8ld",headerSize) ;
  #ifndef _M_IX86
  headerSize = headerSize - 8 ;
- #endif ;
+ #endif
 /*
 ** Read Dtm Header
 */
@@ -1299,7 +1303,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,BENTL
  headerSize = DTMIOHeaderSize_VER200 ;
  #ifndef _M_IX86
  headerSize = headerSize - 20 ;
- #endif ;
+ #endif 
 /*
 ** Read Dtm Header
 */
@@ -3280,7 +3284,7 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
  headerSize = sizeof(DTM_TIN_OBJ) ;
  #ifndef _M_IX86
  headerSize = headerSize - 40 ;
- #endif ;
+ #endif 
  if( dbg ) bcdtmWrite_message(0,0,0,"Writing Dtm Header         ** Size = %9ld",headerSize) ;
  if( bcdtmStream_fwrite(&geopakTin,headerSize,1,dtmStreamP) != 1 )
    {
@@ -3513,14 +3517,22 @@ BENTLEYDTM_EXPORT int bcdtmWrite_checkDtmFeatureFile
 ** Scan DTM Feature File And Count Points And DTM Features
 */
   featureFileOffset = dtmHeader.featureFileOffset ;
+#if _WIN32
   _fseeki64(dtmFP,featureFileOffset,SEEK_SET) ;
+#else
+fseeko64(dtmFP,featureFileOffset,SEEK_SET) ;
+#endif
   while( fread( &dtmFeature,sizeof(BC_DTM_FEATURE_RECORD),1,dtmFP) == 1 )
     {
      if( dbg == 2 ) bcdtmWrite_message(0,0,0,"dtmFeatureType = %4ld numFeaturePts = %8ld",dtmFeature.dtmFeatureType,dtmFeature.numFeaturePoints) ;
      ++numFeatures ;
      numPoints = numPoints + dtmFeature.numFeaturePoints ;
      featureFileOffset = featureFileOffset + sizeof(BC_DTM_FEATURE_RECORD) + dtmFeature.numFeaturePoints * sizeof(DPoint3d) ;
+#if _WIN32
      _fseeki64(dtmFP,featureFileOffset,SEEK_SET) ;
+#else
+    fseeko64(dtmFP,featureFileOffset,SEEK_SET) ;
+#endif
     }
 /*
 ** Write Stats
@@ -3699,7 +3711,11 @@ BENTLEYDTM_Private int bcdtmWrite_xyzASCIIFileToDtmFeatureFile
 /*
 **  set Feature File offset
 */
+#if _WIN32
  dtmHeader.featureFileOffset = _ftelli64(dtmFP) ;
+#else
+dtmHeader.featureFileOffset = ftello64(dtmFP) ;
+#endif
 /*
 ** Create DTm Object
 */
@@ -3799,7 +3815,11 @@ BENTLEYDTM_Private int bcdtmWrite_xyzASCIIFileToDtmFeatureFile
 /*
 ** Rewite Header
 */
+#if _WIN32
  _fseeki64(dtmFP,0,SEEK_SET) ;
+#else
+ fseeko64(dtmFP,0,SEEK_SET) ;
+#endif
  if( fwrite(&dtmHeader,sizeof(BC_DTM_FEATURE_HEADER),1,dtmFP) != 1 )
    {
     bcdtmWrite_message(1,0,0,"Error Writing DTM Feature File") ;
@@ -3902,7 +3922,11 @@ BENTLEYDTM_Private int bcdtmWrite_xyzBinaryFileToDtmFeatureFile
 /*
 **  set Feature File offset
 */
+#if _WIN32
  dtmHeader.featureFileOffset = _ftelli64(dtmFP) ;
+#else
+dtmHeader.featureFileOffset = ftello64(dtmFP) ;
+#endif
 /*
 ** Create DTm Object
 */
@@ -3991,7 +4015,11 @@ BENTLEYDTM_Private int bcdtmWrite_xyzBinaryFileToDtmFeatureFile
 /*
 ** Rewite Header
 */
+#if _WIN32
  _fseeki64(dtmFP,0,SEEK_SET) ;
+#else
+ fseeko64(dtmFP,0,SEEK_SET) ;
+#endif
  if( fwrite(&dtmHeader,sizeof(BC_DTM_FEATURE_HEADER),1,dtmFP) != 1 )
    {
     bcdtmWrite_message(1,0,0,"Error Writing DTM Feature File") ;
@@ -4246,7 +4274,11 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
 /*
 **  set Feature File offset
 */
+#if _WIN32
     dtmHeader.featureFileOffset = _ftelli64(dtmFP) ;
+#else
+dtmHeader.featureFileOffset = ftello64(dtmFP) ;
+#endif
    }
 /*
 ** Open Existing Dtm Feature File
@@ -4307,7 +4339,11 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
 /*
 **  Go To End Of DTM Feature File
 */
+#if _WIN32
     _fseeki64(dtmFP,0,SEEK_END) ;
+#else
+    fseeko64(dtmFP,0,SEEK_END) ;
+#endif
    }
 /*
 ** Set Up Scan Structure
@@ -4357,7 +4393,11 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
 /*
 ** Rewite Header
 */
+#if _WIN32
  _fseeki64(dtmFP,0,SEEK_SET) ;
+#else
+ fseeko64(dtmFP,0,SEEK_SET) ;
+#endif
  if( fwrite(&dtmHeader,sizeof(BC_DTM_FEATURE_HEADER),1,dtmFP) != 1 )
    {
     bcdtmWrite_message(1,0,0,"Error Writing DTM Feature File") ;
@@ -4517,7 +4557,11 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
 /*
 **  set Feature File offset
 */
+#if _WIN32
     dtmHeader.featureFileOffset = _ftelli64(dtmFP) ;
+#else
+dtmHeader.featureFileOffset = ftello64(dtmFP) ;
+#endif
    }
 /*
 ** Open Existing Dtm Feature File
@@ -4578,7 +4622,11 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
 /*
 **  Go To End Of DTM Feature File
 */
+#if _WIN32
     _fseeki64(dtmFP,0,SEEK_END) ;
+#else
+    fseeko64(dtmFP,0,SEEK_END) ;
+#endif
    }
 /*
 ** Set Up Scan Structure
@@ -4629,7 +4677,11 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
 /*
 ** Rewite Header
 */
+#if _WIN32
  _fseeki64(dtmFP,0,SEEK_SET) ;
+#else
+ fseeko64(dtmFP,0,SEEK_SET) ;
+#endif
  if( fwrite(&dtmHeader,sizeof(BC_DTM_FEATURE_HEADER),1,dtmFP) != 1 )
    {
     bcdtmWrite_message(1,0,0,"Error Writing DTM Feature File") ;
@@ -4802,6 +4854,12 @@ BENTLEYDTM_EXPORT size_t bcdtmFread
     */
     return(numRecs) ;
 }
+
+#if _WIN32
+#else
+#include <codecvt>
+#include <locale>
+#endif
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                								                     |
@@ -4824,10 +4882,24 @@ BENTLEYDTM_EXPORT FILE* bcdtmFile_open(WCharCP fileNameP, WCharCP openTypeP)
     }
     else
         wcscpy(dmsFileName, fileNameP);
+#if _WIN32
     fileFP = _wfopen(dmsFileName, openTypeP) ;
 #else
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8Conv;
+    std::wstring dmsFileNameStr(dmsFileName);
+std::wstring oTypeStr(openTypeP);
+    fileFP = fopen(utf8Conv.to_bytes(dmsFileNameStr).c_str(), utf8Conv.to_bytes(oTypeStr).c_str()) ;
+#endif
+#else
     FILE  *fileFP = NULL;
+#if _WIN32
     fileFP = _wfopen(fileNameP, openTypeP) ;
+#else
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8Conv;
+    std::wstring fileNameStr(fileNameP);
+std::wstring oTypeStr(openTypeP);
+    fileFP = fopen(utf8Conv.to_bytes(fileNameStr).c_str(), utf8Conv.to_bytes(oTypeStr).c_str()) ;
+#endif
 #endif
     return(fileFP);
 }

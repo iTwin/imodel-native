@@ -1,13 +1,19 @@
 #pragma once
-#include <TerrainModel/Drainage/Drainage.h>
+#include <TerrainModel/Drainage/drainage.h>
 #include <TerrainModel/TerrainModel.h>
-#include <TerrainModel/Core/bcdtmInlines.h>
-#include "Bentley\bvector.h"
-#include "Bentley\bmap.h"
+#include <TerrainModel/Core/bcdtminlines.h>
+#include "Bentley/bvector.h"
+#include "Bentley/bmap.h"
 
 //#define ADDDRAINAGETYPES(t) BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE struct t; END_BENTLEY_TERRAINMODEL_NAMESPACE ADD_BENTLEY_TYPEDEFS1(BENTLEYTERRAINMODEL_NAMESPACE_NAME ,t, t, struct); typedef RefCountedPtr<BENTLEYTERRAINMODEL_NAMESPACE_NAME::t> t ## Ptr;
 
+#if _WIN32
 #define ADDDRAINAGETYPES(t)  TERRAINMODEL_TYPEDEFS(t); typedef RefCountedPtr<BENTLEY_NAMESPACE_NAME::TerrainModel::##t> t ## Ptr;
+#define ABSTRACT_KEYWORD abstract
+#else
+#define ADDDRAINAGETYPES(t)  TERRAINMODEL_TYPEDEFS(t); typedef RefCountedPtr<BENTLEY_NAMESPACE_NAME::TerrainModel::t> t ## Ptr;
+#define ABSTRACT_KEYWORD
+#endif
 
 ADDDRAINAGETYPES(WaterAnalysis);
 ADDDRAINAGETYPES(TraceFeature);
@@ -73,11 +79,11 @@ struct WaterAnalysisResult : RefCountedBase, bvector<WaterAnalysisResultItemPtr>
             Exit
             };
     protected:
-        virtual void _AddPoint(DPoint3dCR point, PointType type, double volume) abstract;
-        virtual void _AddStream(CurveVector& geometry, double volume) abstract;
-        virtual void _AddStream(const bvector<DPoint3d>& points, double volume) abstract;
-        virtual void _AddPond(CurveVector& geometry, bool isFull, double volume, double depth) abstract;
-        virtual bool _IsWaterVolumeResult() const abstract;
+        virtual void _AddPoint(DPoint3dCR point, PointType type, double volume) ABSTRACT_KEYWORD;
+        virtual void _AddStream(CurveVector& geometry, double volume) ABSTRACT_KEYWORD;
+        virtual void _AddStream(const bvector<DPoint3d>& points, double volume) ABSTRACT_KEYWORD;
+        virtual void _AddPond(CurveVector& geometry, bool isFull, double volume, double depth) ABSTRACT_KEYWORD;
+        virtual bool _IsWaterVolumeResult() const ABSTRACT_KEYWORD;
     public:
         BENTLEYDTMDRAINAGE_EXPORT void AddPoint(DPoint3dCR point, PointType type, double volume);
         BENTLEYDTMDRAINAGE_EXPORT void AddStream(CurveVector& geometry, double volume);
@@ -273,9 +279,9 @@ struct TraceFeature : RefCountedBase
             return m_isEnclosed;
             }
 
-        virtual void Process(bvector<TraceFeaturePtr>& newFeatures) abstract;
-        virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) abstract;
-        virtual void AddResult(WaterAnalysisResultR result) const abstract;
+        virtual void Process(bvector<TraceFeaturePtr>& newFeatures) ABSTRACT_KEYWORD;
+        virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) ABSTRACT_KEYWORD;
+        virtual void AddResult(WaterAnalysisResultR result) const ABSTRACT_KEYWORD;
 
         void ClearIsHidden()
             {
@@ -332,7 +338,7 @@ struct TraceFeature : RefCountedBase
                 }
             }
 
-        virtual TraceFeaturePtr Clone(WaterAnalysisR tracer) const abstract;
+        virtual TraceFeaturePtr Clone(WaterAnalysisR tracer) const ABSTRACT_KEYWORD;
 
         virtual bvector<TraceFeatureP> GetReferences() const
             {
@@ -458,7 +464,7 @@ struct TraceOnEdge: public TraceFeature
         void ProcessZSlopeTriangle(bvector<TraceFeaturePtr>& newFeatures);
         void ProcessZSlopeLine(bvector<TraceFeaturePtr>& newFeatures);
         virtual void Process(bvector<TraceFeaturePtr>& newFeatures) override;
-        virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args);
+        virtual void DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args) override;
         virtual void AddResult(WaterAnalysisResultR result) const override;
 
         static TraceOnEdgePtr Create(WaterAnalysis& tracer, TraceFeature& parent, long P1, long P2, long P3, DPoint3dCR startPt, double lastAngle = -99)
@@ -553,7 +559,7 @@ struct TracePond : public TraceFeature
             { }
         TracePond(TracePondCR from, WaterAnalysis& newTracer);
 
-        virtual void GetExitInfo(bvector<PondExitInfo>& exits) abstract;
+        virtual void GetExitInfo(bvector<PondExitInfo>& exits) ABSTRACT_KEYWORD;
         double GetVolumeAtElevation(double z);
         void ProcessPondExits(bvector<TraceFeaturePtr>& newFeatures, bool ignorePondDepth = false);
 
@@ -881,13 +887,13 @@ struct TracePondFromPondExit: public TracePond
             }
         virtual bvector<TraceFeatureP> GetReferences() const override
             {
-            auto ret = __super::GetReferences();
+            auto ret = TracePond::GetReferences();
             ret.push_back(m_pondExit);
             return ret;
             }
         virtual void RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable) override
             {
-            __super::RemapFeatures(featureRemapTable);
+            TracePond::RemapFeatures(featureRemapTable);
             m_pondExit = dynamic_cast<TracePondExitP>(featureRemapTable[m_pondExit]);
             }
 
@@ -983,7 +989,7 @@ struct WaterAnalysis : RefCounted<IRefCounted>
         TracePond* FindPondLowPt(long pointNum);
 
     public:
-        BENTLEYDTMDRAINAGE_EXPORT WaterAnalysisPtr WaterAnalysis::Clone();
+        BENTLEYDTMDRAINAGE_EXPORT WaterAnalysisPtr Clone();
         BENTLEYDTMDRAINAGE_EXPORT static WaterAnalysisPtr Create(BcDTMR dtm);
         
     };

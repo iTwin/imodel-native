@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmLatticeVolume.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -116,7 +116,7 @@ BENTLEYDTM_EXPORT int bcdtmLatticeVolume_surfaceToElevationDtmObject
     bcdtmWrite_message(0,0,0,"polygonPtsP    = %p",polygonPtsP) ;
     bcdtmWrite_message(0,0,0,"numPolygonPts  = %8ld",numPolygonPts) ;
     bcdtmWrite_message(0,0,0,"elevation      = %8.2lf",elevation) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP  = %p",loadFunctionP) ;
+   // bcdtmWrite_message(0,0,0,"loadFunctionP  = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"userP          = %p",userP) ;
     if( dbg == 2 )
       {
@@ -222,7 +222,7 @@ BENTLEYDTM_Private int bcdtmLatticeVolume_calculateVolumeSurfaceToElevationDtmOb
  double          &cellAreaP
 ) 
 {
- int        ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
+ int        ret=DTM_SUCCESS;
  long       i,j,nr,numPolygonPts,numLatPts ;
  float      z1,z2,z3,z4,*mp1,*mp2,*mp3,*mp4 ;
  double     ar,vol,height,hmin,hmax,hn,hm,zh,totalPolyArea ;
@@ -255,7 +255,7 @@ BENTLEYDTM_Private int bcdtmLatticeVolume_calculateVolumeSurfaceToElevationDtmOb
         bcdtmList_extractHullDtmObject(clipDtmP,&polygonPtsP,&numPolygonPts) ;
         if( loadFunctionP != NULL )
           {
-           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ; 
+         //  if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ; 
            if( loadFunctionP(DTMFeatureType::Polygon,dtmP->nullUserTag,dtmP->nullFeatureId,polygonPtsP,numPolygonPts,userP) != DTM_SUCCESS ) goto errexit ;
           }
        } 
@@ -264,7 +264,7 @@ BENTLEYDTM_Private int bcdtmLatticeVolume_calculateVolumeSurfaceToElevationDtmOb
         if( bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(polyP,(long)(plistPistP-polyP->polyListP),&polygonPtsP,&numPolygonPts)) goto errexit ;
         if( loadFunctionP != NULL )
           {
-           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ; 
+       //    if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ; 
            if( loadFunctionP(DTMFeatureType::Polygon,dtmP->nullUserTag,dtmP->nullFeatureId,polygonPtsP,numPolygonPts,userP) != DTM_SUCCESS ) goto errexit ;
           }
         if( clipDtmP != NULL ) bcdtmObject_destroyDtmObject(&clipDtmP) ; 
@@ -471,7 +471,7 @@ BENTLEYDTM_EXPORT int bcdtmLatticeVolume_surfaceToSurfaceDtmObjects
     bcdtmWrite_message(0,0,0,"numRanges      = %8ld",numRanges) ;
     bcdtmWrite_message(0,0,0,"polygonPtsP    = %p",polygonPtsP) ;
     bcdtmWrite_message(0,0,0,"numPolygonPts  = %8ld",numPolygonPts) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP  = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"loadFunctionP  = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"userP          = %p",userP) ;
     if( dbg == 2 )
       {
@@ -617,7 +617,7 @@ BENTLEYDTM_Private int bcdtmLatticeVolume_calculateVolumeSurfaceToSurfaceDtmObje
         bcdtmList_extractHullDtmObject(toDtmP,&polygonPtsP,&numPolygonPts) ;
         if( loadFunctionP != NULL )
           {
-           if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ; 
+       //    if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ; 
            if( loadFunctionP(DTMFeatureType::Polygon,toDtmP->nullUserTag,toDtmP->nullFeatureId,polygonPtsP,numPolygonPts,userP) != DTM_SUCCESS ) goto errexit ;
           }
        } 
@@ -626,7 +626,7 @@ BENTLEYDTM_Private int bcdtmLatticeVolume_calculateVolumeSurfaceToSurfaceDtmObje
         if( bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(polyP,(long)(plistP-polyP->polyListP),&polygonPtsP,&numPolygonPts))  goto errexit ;
         if( loadFunctionP != NULL )
           {
-           if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ; 
+      //     if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Calling Load Function = %p",loadFunctionP ) ; 
            if( loadFunctionP(DTMFeatureType::Polygon,toDtmP->nullUserTag,toDtmP->nullFeatureId,polygonPtsP,numPolygonPts,userP) != DTM_SUCCESS ) goto errexit ;
           }
         if( dbg ) bcdtmWrite_message(0,0,0,"Cloning And Clipping Dtm Object") ;

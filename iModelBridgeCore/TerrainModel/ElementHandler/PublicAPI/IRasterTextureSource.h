@@ -6,7 +6,7 @@
 |       $Date: 2012/01/20 23:30:17 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
@@ -14,7 +14,7 @@
 
 //BEIJING_WIP_DCARTES; I think this should be move in Descartes sources if possible!
 
-#include <RasterCore\DgnRaster.h>
+#include <RasterCore/DgnRaster.h>
 #include <DgnGeoCoord/DgnGeoCoord.h>
 
 

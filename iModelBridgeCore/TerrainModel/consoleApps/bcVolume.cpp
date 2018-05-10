@@ -1,6 +1,6 @@
 
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtmInlines.h"
 #include "bcDtmClass.h"
 

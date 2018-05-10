@@ -6,7 +6,7 @@
 |       $Date: 2012/02/08 18:22:46 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -19,10 +19,10 @@
 /*
 #include <bentley.h>
 #include <mstypes.h>
-#include <GeoCoord\BaseGeoCoord.h>
+#include <GeoCoord/BaseGeoCoord.h>
 #include <RasterlibExport.h>
 */
-#include <TerrainModel\ElementHandler\IMultiResolutionGridMaterialManager.h>
+#include <TerrainModel/ElementHandler/IMultiResolutionGridMaterialManager.h>
 
 //DTM Shared Part
 #include <ScalableTerrainModel/IMrDTM.h>

@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/PublicAPI/TerrainModelElementHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,9 +30,9 @@
   #define DTMELEMENT_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-#include <TerrainModel\TerrainModel.h>
+#include <TerrainModel/TerrainModel.h>
 
 //__PUBLISH_SECTION_END__
 #define REFERENCE_FILE_CLASS
-#include <DgnPlatform\DgnPlatformAPI.h>
-#include <DgnPlatform\TerrainModel\TMPersistentAppIDs.h>
+#include <DgnPlatform/DgnPlatformAPI.h>
+#include <DgnPlatform/TerrainModel/TMPersistentAppIDs.h>

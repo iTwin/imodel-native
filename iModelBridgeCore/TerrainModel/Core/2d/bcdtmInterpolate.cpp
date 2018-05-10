@@ -2,13 +2,15 @@
 |
 |     $Source: Core/2d/bcdtmInterpolate.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
+#if _WIN32
 #pragma float_control(precise, on, push)
+#endif
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |

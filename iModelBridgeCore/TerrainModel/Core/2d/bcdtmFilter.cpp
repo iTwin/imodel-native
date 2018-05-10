@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmFilter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -3204,7 +3204,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinDecimateRandomSpotsDtmObject
     bcdtmWrite_message(0,0,0,"filterOption      = %8ld",filterOption) ;
     bcdtmWrite_message(0,0,0,"boundaryOption    = %8ld",boundaryOption) ;
     bcdtmWrite_message(0,0,0,"numFilteredPtsP   = %8ld",*numFilteredPtsP) ;
-    bcdtmWrite_message(0,0,0,"filteredPtsP      = %p",*filteredPtsP) ;
+    bcdtmWrite_message(0,0,0,"filteredPtsP      = %p",filteredPtsP) ;
    }
 /*
 ** Initialise
@@ -4226,7 +4226,7 @@ BENTLEYDTM_EXPORT int bcdtmFilter_tinZToleranceFilterRandomSpotsDtmObject
     bcdtmWrite_message(0,0,0,"boundaryOption    = %8ld",boundaryOption) ;
     bcdtmWrite_message(0,0,0,"filterTolerance   = %8.3lf",filterTolerance) ;
     bcdtmWrite_message(0,0,0,"numFilteredPtsP   = %8ld",*numFilteredPtsP) ;
-    bcdtmWrite_message(0,0,0,"filteredPtsP      = %p",*filteredPtsP) ;
+    bcdtmWrite_message(0,0,0,"filteredPtsP      = %p",filteredPtsP) ;
    }
 /*
 ** Initialise

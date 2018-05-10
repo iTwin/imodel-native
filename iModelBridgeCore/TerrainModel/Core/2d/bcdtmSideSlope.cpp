@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmSideSlope.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
 #include "bcdtmSideSlope.h"
 
@@ -55,9 +55,8 @@ int bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject
  DTM_SIDE_SLOPE_TABLE *radial ;
  BC_DTM_OBJ *tempObjP=nullptr ;
  long    start ;
- static long numSideSlopes=0,numSideSlopeElements=0 ;
+ static long numSideSlopes=0;
  DPoint3d   *pointP ;
- DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
  // FILE *xyzFP=nullptr ;
 /*
 ** Set Static Debug Contol For Catching A Particular Side Slope OccurrenceIn A Sequence
@@ -4473,7 +4472,6 @@ int bcdtmSideSlope_intersectSurfaceDtmObject(BC_DTM_OBJ *Tin,double Sx,double Sy
 */
  process = 1 ;
  px = Sx ; py = Sy ; pzs = Sz ;  pzt = z  ;
- Ex = Ex ; Ey = Ey ; Ez = Ez  ;
  while ( process )
    {
     if( bcdtmSideSlope_getNextInterceptDtmObject(Tin,px,py,&Ptype,Ex,Ey,&P1,&P2,&P3,&nx,&ny,&nzt)) return(1) ;
@@ -5069,7 +5067,6 @@ int bcdtmSideSlope_writeRadialsToBinaryDTMFile
  DPoint3d  radialPts[2],*elemPtsP=nullptr ;
  DTM_SIDE_SLOPE_TABLE  *radialP ;
  BC_DTM_OBJ *dataP=nullptr ;
- DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
 /*
 ** Create Data Object
 */
@@ -5135,7 +5132,6 @@ int bcdtmSideSlope_writeElementToBinaryDTMFile
  long numElemPts=0 ;
  DPoint3d  *elemPtsP=nullptr ;
  BC_DTM_OBJ *dataP=nullptr ;
- DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
  /*
 ** Create DTM Object
 */
@@ -14448,7 +14444,6 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
  DPoint3d             pnt,p3dPts[2],*p3dP,*p3dLastP,*slopeToePtsP=nullptr ;
  long            numSlopeToePts,numKnotPts,direction ;
  DTM_STR_INT_PTS *knotPtsP=nullptr ;
- DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
 
 /*
 ** Write Entry Message
@@ -15574,7 +15569,6 @@ int bcdtmSideSlope_removeLimitDanglingBreaksDtmObject(BC_DTM_OBJ *tinP)
  int   ret=DTM_SUCCESS,dbg=0 ;
  long  p1,p2,listPtr,numDangles;
  bool process ;
- static long seqdbg=0 ;
 /*
 ** Remove Dangling Break Lines
 */

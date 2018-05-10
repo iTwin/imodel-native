@@ -7,11 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Bentley\Bentley.h>
-#include <Bentley\RefCounted.h>
+#include <Bentley/Bentley.h>
+#include <Bentley/RefCounted.h>
 #include <Geom/GeomApi.h>
 //__PUBLISH_SECTION_START__
-#include <TerrainModel\TerrainModel.h>
+#include <TerrainModel/TerrainModel.h>
 
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
@@ -52,7 +52,7 @@ typedef bvector<DPoint3d> DTMPointArray;
 * Interface implemented by DTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IDTMDrapedLinePoint abstract : IRefCounted
+struct IDTMDrapedLinePoint : IRefCounted
 {
 /*__PUBLISH_SECTION_END__*/
 /*__OPUBLISH_CLASS_VIRTUAL__*/
@@ -79,7 +79,7 @@ public:
 * Interface implemented by DTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IDTMDrapedLine abstract : IRefCounted
+struct IDTMDrapedLine : IRefCounted
 {
 /*__PUBLISH_SECTION_END__*/
 /*__OPUBLISH_CLASS_VIRTUAL__*/
@@ -128,7 +128,7 @@ struct DTMIntersectionCompare {
 * Interface implemented by DTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IDTMDraping abstract
+struct IDTMDraping
 {
 /*__PUBLISH_SECTION_END__*/
 /*__OPUBLISH_CLASS_VIRTUAL__*/
@@ -199,7 +199,7 @@ BENTLEYDTM_EXPORT bool DrapeAlongVector(DPoint3d* endPt, double *slope, double *
 * Interface implemented by DTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IDTMDrainageFeature abstract : IRefCounted
+struct IDTMDrainageFeature : IRefCounted
 {
 /*__PUBLISH_SECTION_END__*/
 /*__OPUBLISH_CLASS_VIRTUAL__*/
@@ -231,7 +231,7 @@ BENTLEYDTM_EXPORT DTMStatusInt GetPoints (DTMPointArray& ret, int index);
 * Interface implemented by DTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
- struct IDTMDrainage abstract
+ struct IDTMDrainage
  {
  /*__PUBLISH_SECTION_END__*/
  /*__OPUBLISH_CLASS_VIRTUAL__*/
@@ -266,7 +266,7 @@ BENTLEYDTM_EXPORT DTMStatusInt TraceCatchmentForPoint (DTMDrainageFeaturePtr& re
 * Interface implemented by DTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IDTMContouring abstract
+struct IDTMContouring
 {
 /*__PUBLISH_SECTION_END__*/
 /*__OPUBLISH_CLASS_VIRTUAL__*/
@@ -302,7 +302,7 @@ BENTLEYDTM_EXPORT DTMStatusInt ContourAtPoint (DTMPointArray& ret, DPoint3dCR pt
 * Interface implemented by DTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IDTMVolume abstract
+struct IDTMVolume
 {
 /*__PUBLISH_SECTION_END__*/
 /*__OPUBLISH_CLASS_VIRTUAL__*/
@@ -348,7 +348,7 @@ BENTLEYDTM_EXPORT void RemoveAllRestrictions();
 
 typedef std::function<void(DTMStatusInt status,double flatArea, double slopeArea)> DTMAreaValuesCallback;
 typedef std::function<bool()> DTMCancelProcessCallback;
-struct IDTM abstract : IRefCounted
+struct IDTM : IRefCounted
 {
 //__PUBLISH_SECTION_END__
 

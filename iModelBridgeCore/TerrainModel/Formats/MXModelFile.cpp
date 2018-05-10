@@ -6,13 +6,13 @@
 |       $Date: 2012/08/16 16:17:17 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*
 * TR        DH  10/03/02 Fixed archiving of text strings.
 */
-#include <Bentley\BeTimeUtilities.h>
+#include <Bentley/BeTimeUtilities.h>
 #include "MXModelFile.h"
 #include "mxtriangle.h"
 

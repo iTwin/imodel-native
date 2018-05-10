@@ -2,13 +2,13 @@
 |
 |     $Source: AutomaticGroundDetection/src/GroundDetectionManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionManager.h>
+#include <TerrainModel/AutomaticGroundDetection/GroundDetectionMacros.h>
+#include <TerrainModel/AutomaticGroundDetection/GroundDetectionManager.h>
 #include "GroundDetectionManagerDc.h"
 
 BEGIN_GROUND_DETECTION_NAMESPACE

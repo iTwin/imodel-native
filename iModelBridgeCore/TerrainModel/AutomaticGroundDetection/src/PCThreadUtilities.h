@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/PCThreadUtilities.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 | Notice: This file is an adaptation of <DgnPlatform\RealityDataCache.h> which I was not sure we can use directly.
 |         see original file as a reference...
@@ -14,7 +14,7 @@
 #include <Bentley/DateTime.h>
 
 #include "PCThreadUtilities.h"
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <TerrainModel/AutomaticGroundDetection/GroundDetectionMacros.h>
 
 //__PUBLISH_SECTION_END__
 GROUND_DETECTION_TYPEDEF(PointCloudThread)

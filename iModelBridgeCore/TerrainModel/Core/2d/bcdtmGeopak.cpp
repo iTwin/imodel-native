@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmGeopak.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
 
 /*-------------------------------------------------------------------+
@@ -101,7 +101,7 @@ BENTLEYDTM_Public int bcdtmObject_initialiseDataObject(DTM_DAT_OBJ *dataP)
 #ifdef _WIN32_WCE
  dataP->creationTime = 0 ;
 #else
- _time32(&dataP->creationTime) ;
+ time(&dataP->creationTime) ;
 #endif
  dataP->modifiedTime = 0 ;
  dataP->userTime     = 0 ;
@@ -294,7 +294,7 @@ BENTLEYDTM_Public int bcdtmObject_initialiseTinObject(DTM_TIN_OBJ *tinP )
  tinP->incMemFeatureList  = DTM_INC_MEM_FEATURES_LIST ;
  tinP->iniMemFeatureMap   = DTM_INI_MEM_FEATURES_TABLE ;
  tinP->incMemFeatureMap   = DTM_INC_MEM_FEATURES_TABLE ;
- _time32(&tinP->creationTime) ;
+ time(&tinP->creationTime) ;
  tinP->modifiedTime = 0 ;
  tinP->userTime     = 0 ;
  tinP->refCount     = 0 ;
@@ -2086,7 +2086,7 @@ BENTLEYDTM_Private int bcdtmGeopak_browseCrossingFeatures
     bcdtmWrite_message(0,0,0,"geopakReport.dtmP          = %p",userP->dtmP) ;
     bcdtmWrite_message(0,0,0,"geopakReport.fileP         = %p",userP->fileP) ;
     bcdtmWrite_message(0,0,0,"geopakReport.numErrors     = %8ld",userP->numErrors) ;
-    bcdtmWrite_message(0,0,0,"geopakReport.loadFunctionP = %p",userP->loadFunctionP) ;
+    //bcdtmWrite_message(0,0,0,"geopakReport.loadFunctionP = %p",userP->loadFunctionP) ;
    } 
 /*
 ** Write Errors To Report File

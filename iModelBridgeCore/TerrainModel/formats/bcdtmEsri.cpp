@@ -2,14 +2,14 @@
 |
 |     $Source: formats/bcdtmEsri.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Formats/Formats.h"
 #include "TerrainModel/Core/bcDTMBaseDef.h"
 #include "TerrainModel/Core/dtmdefs.h"
 #include "TerrainModel/Formats/Esri.h"
-//#include "dtmevars.h"
+//#include "DTMEvars.h"
 #include <TerrainModel/Core/bcdtmInlines.h>
 
 #include <io.h>

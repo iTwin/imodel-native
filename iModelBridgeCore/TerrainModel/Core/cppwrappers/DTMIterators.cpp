@@ -2,13 +2,13 @@
 |
 |   $Source: Core/cppwrappers/DTMIterators.cpp $
 |
-| $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+| $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/IDTM.h>
 #include <bcDTMBaseDef.h>
-#include <dtmevars.h>
+#include <DTMEvars.h>
 
 #include "bcDTMImpl.h"
 
@@ -48,7 +48,7 @@ void DTMFeatureInfo::GetFeaturePoints(bvector<DPoint3d>& points) const
         points.resize (numFeaturePts);
         if (m_dtm->GetTransformHelper ())
             m_dtm->GetTransformHelper ()->convertPointsFromDTM (featurePts, numFeaturePts);
-        memcpy (&points[0], featurePts, sizeof DPoint3d * numFeaturePts);
+        memcpy (&points[0], featurePts, sizeof(DPoint3d) * numFeaturePts);
         free (featurePts);
         }
     else
@@ -421,7 +421,6 @@ DTMMeshEnumerator::~DTMMeshEnumerator()
 //---------------------------------------------------------------------------------------
 DTMStatusInt DTMMeshEnumerator::Initialize() const
     {
-    DTMStatusInt ret = DTM_SUCCESS;
     long dbg = DTM_TRACE_VALUE (0), tdbg = DTM_TIME_VALUE (0);
     long numTriangles;
     long startTime;
@@ -430,7 +429,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize() const
     DTMFenceOption fenceOption = m_fence.fenceOption;
     DPoint3dCP fencePtsP = m_fence.points;
     DPoint3dCP pntP;
-    long  pointMarkOffset = 0, numMarked = 0;
+    long  numMarked = 0;
     long c1 = 0, c2 = 0;
     BeAssert (!m_initialized);
     if (m_initialized)
@@ -677,7 +676,7 @@ void DTMMeshEnumerator::ScanAndMarkRegion(long featureIndex, long& minPnt, long&
         long* maxPntP = &maxPnt;
         long* numMarkedP = &numMarked;
         int regionOption = 2; // Needs to be added, Add areas inside internal Regions.
-        long ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE (0);
+        long dbg = DTM_TRACE_VALUE (0);
         long priorPnt, scanPnt, nextPnt, antPnt, clPnt, clPtr, firstPnt, lastPnt;
         /*
         ** Initialise
@@ -832,8 +831,6 @@ void DTMMeshEnumerator::Reset ()
         {
         if (m_initialized)
             {
-            long dbg = DTM_TRACE_VALUE (0);
-            DTMFenceType fenceType = m_fence.fenceType;
             bool useFence = m_useFence;
 
             m_initialized = false;
@@ -844,7 +841,6 @@ void DTMMeshEnumerator::Reset ()
 
 int DTMMeshEnumerator::bcdtmList_isPtInsideFeature(BC_DTM_OBJ *dtmP, long P1, long testPnt, long featureNum) const
     {
-    int numFound = 0;
     enum
         {
         unknown, inside, outside
@@ -1086,13 +1082,12 @@ bool DTMMeshEnumerator::MoveNext(long& pnt1, long& pnt2) const
         {
         if (!m_initialized) Initialize ();
 
-        long dbg = DTM_TRACE_VALUE (0), tdbg = DTM_TIME_VALUE (0);
+        long dbg = DTM_TRACE_VALUE (0);
         long  pnt3, clPtr, numTriangles = 0;
         bool voidTriangle;
         int* faceP;
         DTM_CIR_LIST  *clistP;
         DTM_TIN_NODE  *node1P, *node2P, *node3P;
-        DTMFenceType fenceType = m_fence.fenceType;
         bool usePnt2 = pnt1 != -1;
         bool useFence = m_useFence;
 
@@ -1236,12 +1231,12 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     DPoint3dP p3dP;
     DVec3dP normP;
     DPoint3dCP pntP;
-    long meshVectorsSize = 0;
     long node;
     double dz;
     long numMeshPts, minTptrPnt, maxTptrPnt;
     BC_DTM_OBJ* m_dtmP = m_p_vec->m_dtm->GetTinHandle ();
     long nullPnt = m_dtmP->nullPnt;
+
     /*
     ** Mark Mesh Points
     */
@@ -1353,7 +1348,6 @@ DRange3d DTMMeshEnumerator::iterator::GetRange () const
     if (!m_p_vec->m_polyfaceHeader->PointIndex().empty ())
         {
         BC_DTM_OBJ* m_dtmP = m_p_vec->m_dtm->GetTinHandle ();
-        long nullPnt = m_dtmP->nullPnt;
         /*
         ** Mark Mesh Points
         */

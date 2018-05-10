@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmPatch.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -234,7 +234,7 @@ BENTLEYDTM_EXPORT int  bcdtmPatch_surfaceToSurfaceIsoPatchDtmFiles
     bcdtmWrite_message(0,0,0,"Creating Surface To Surface Iso Patch DTM Files") ; 
     bcdtmWrite_message(0,0,0,"dtmFile1P     = %s",dtmFile1P) ;
     bcdtmWrite_message(0,0,0,"dtmFile2P     = %s",dtmFile2P) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
+    //bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"loadOption    = %8ld",loadOption) ;
     bcdtmWrite_message(0,0,0,"patchOption   = %8ld",patchOption) ;
     bcdtmWrite_message(0,0,0,"polygonPtsP   = %p",polygonPtsP) ;
@@ -332,7 +332,7 @@ BENTLEYDTM_EXPORT int  bcdtmPatch_surfaceToSurfaceIsoPatchDtmObjects
     bcdtmWrite_message(0,0,0,"Creating Surface To Surface Iso Patch DTM Objects") ; 
     bcdtmWrite_message(0,0,0,"fromDtmP      = %p",fromDtmP) ;
     bcdtmWrite_message(0,0,0,"toDtmP        = %p",toDtmP) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
+    //bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"loadOption    = %8ld",loadOption) ;
     bcdtmWrite_message(0,0,0,"patchOption   = %8ld",patchOption) ;
     bcdtmWrite_message(0,0,0,"xinc          = %8.3lf",xinc) ;

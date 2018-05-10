@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/PublicAPI/IPointsProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -10,7 +10,7 @@
 #include <Bentley/NonCopyableClass.h>
 #include <Bentley/BeFileName.h>
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <TerrainModel/AutomaticGroundDetection/GroundDetectionMacros.h>
 
 GROUND_DETECTION_TYPEDEF(IPointsProvider)
 GROUND_DETECTION_TYPEDEF(IPointsProviderCreator)

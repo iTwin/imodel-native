@@ -2,7 +2,7 @@
 |
 |     $Source: Core/cppwrappers/bcDTMFeatureClass.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <math.h>
@@ -27,7 +27,7 @@
 | Include COGO definitions                                          |
 +------------------------------------------------------------------*/
 #include <bcDTMBaseDef.h> 
-#include <TerrainModel\Core\TMTransformHelper.h>
+#include <TerrainModel/Core/TMTransformHelper.h>
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 /*==================================================================*/

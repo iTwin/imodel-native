@@ -2,16 +2,18 @@
 |
 |     $Source: Drainage/bcdtmDrainageTables.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
-#include <TerrainModel/Core/bcdtmInlines.h>
+#include <TerrainModel/Core/bcdtminlines.h>
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
+#if _WIN32
 #pragma warning (disable: 4101)
 #pragma warning (disable: 4102)
+#endif
 // Global Variables
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -915,7 +917,7 @@ bool DTMDrainageTables::CheckForDtmChange
  int numLines,                  // ==> Number Of DTM Lines
  int numTriangles,              // ==> Number Of DTM Triangles
  int numFeatures,               // ==> Number Of DTM Features 
- __time32_t modifiedTime        // ==> Modified Time
+ time_t modifiedTime        // ==> Modified Time
  ) 
  {
    if     ( m_numPoints    != numPoints    ) return(true) ;
@@ -941,7 +943,7 @@ int DTMLowPointPondTable::StoreLowPointPond
 //  Note - Prior And Next Point Are Only Required To Trace Pond Boundary
 
   {
-   int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
+   int  ret=DTM_SUCCESS;
    DTM_LOW_POINT_POND_TABLE lowPointTable ;
    
    lowPointTable.lowPoint   = lowPoint   ;
@@ -1149,7 +1151,7 @@ int DTMSumpLinePondTable::StoreZeroSlopeLinePond
 //  Note - Prior And Next Point Are Only Required To Trace Pond Boundary
 
   {
-   int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
+   int  ret=DTM_SUCCESS;
    int  point ;
    DTM_SUMP_LINE_POND_TABLE zeroSumpLineTable ;
    

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
-#include <TerrainModel/Core/bcdtmInlines.h>
+#include <TerrainModel/Core/bcdtminlines.h>
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 

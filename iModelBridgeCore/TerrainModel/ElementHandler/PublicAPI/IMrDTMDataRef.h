@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/PublicAPI/IMrDTMDataRef.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -12,8 +12,8 @@
 
 #include <DgnPlatform/DgnDocumentManager.h>
 
-#include <TerrainModel\ElementHandler\IRasterTextureSource.h>
-#include <TerrainModel\ElementHandler\IMultiResolutionGridMaterialManager.h>
+#include <TerrainModel/ElementHandler/IRasterTextureSource.h>
+#include <TerrainModel/ElementHandler/IMultiResolutionGridMaterialManager.h>
 
 #include <DgnPlatform/XAttributeHandler.h>
 
@@ -36,7 +36,7 @@
 //#include "MrDTMXAttributeHandler.h"
 
 //#include "DTMDisplayUtils.h"
-#include <TerrainModel\ElementHandler\IMrDTMProgressiveDisplay.h>
+#include <TerrainModel/ElementHandler/IMrDTMProgressiveDisplay.h>
 
 
 USING_NAMESPACE_RASTER

@@ -2,13 +2,13 @@
 |
 |     $Source: TerrainModelNET/DTMTinEditor.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include ".\Bentley.Civil.DTM.h"
-#include ".\DTMFeature.h"
-#include ".\DTMHelpers.h"
+#include "./Bentley.Civil.DTM.h"
+#include "./DTMFeature.h"
+#include "./DTMHelpers.h"
 
 BEGIN_BENTLEY_TERRAINMODELNET_NAMESPACE
 

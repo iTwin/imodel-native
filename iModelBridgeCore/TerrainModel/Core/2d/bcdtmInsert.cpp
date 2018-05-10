@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
 
 #ifndef PUSH_MSVC_IGNORE
@@ -14,7 +14,9 @@
 #define POP_MSVC_IGNORE
 #endif
 
+#if _WIN32
 #pragma float_control(precise, on, push)
+#endif
 thread_local long numPrecisionError = 0, numSnapFix = 0; // These are only used in Debug code.
 thread_local bool justForDelta = false;
 /*-------------------------------------------------------------------+

@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmEditDraw.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -220,7 +220,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP,D
    {
     bcdtmWrite_message(0,0,0,"Drawing Triangle Features") ;
     bcdtmWrite_message(0,0,0,"dtmP            = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
+    //bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"drawMode        = %8ld",drawMode) ;
     bcdtmWrite_message(0,0,0,"P1              = %8ld",P1) ;
     bcdtmWrite_message(0,0,0,"P2              = %8ld",P3) ;
@@ -656,7 +656,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_drawTriangleBaseLinesForPointDtmObject(BC_DTM_OB
    {
     bcdtmWrite_message(0,0,0,"Drawing Triangle Base Lines For Point") ;
     bcdtmWrite_message(0,0,0,"dtmP          = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
+    //bcdtmWrite_message(0,0,0,"loadFunctionP = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"drawMode      = %8ld",drawMode) ;
     bcdtmWrite_message(0,0,0,"P1            = %8ld",P1) ;
     bcdtmWrite_message(0,0,0,"userP         = %p",userP) ;

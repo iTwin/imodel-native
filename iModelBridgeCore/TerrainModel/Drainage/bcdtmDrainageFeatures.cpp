@@ -2,11 +2,11 @@
 |
 |     $Source: Drainage/bcdtmDrainageFeatures.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
-#include <TerrainModel/Core/bcdtmInlines.h>
+#include <TerrainModel/Core/bcdtminlines.h>
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
@@ -246,7 +246,7 @@ int&               numLowPts              // <== Number Of Low Points Found
         {
         bcdtmWrite_message (0, 0, 0, "Returning low Points");
         bcdtmWrite_message (0, 0, 0, "dtmP           = %p", dtmP);
-        bcdtmWrite_message (0, 0, 0, "loadFunctionP  = %p", loadFunctionP);
+     //   bcdtmWrite_message (0, 0, 0, "loadFunctionP  = %p", loadFunctionP);
         bcdtmWrite_message (0, 0, 0, "useFence       = %8d", useFence);
         bcdtmWrite_message (0, 0, 0, "fenceType      = %8d", fenceType);
         bcdtmWrite_message (0, 0, 0, "fenceOption    = %8d", fenceOption);
@@ -494,7 +494,7 @@ int&               numHighPts             // <== Number Of High Points Found
         {
         bcdtmWrite_message (0, 0, 0, "Returning High Points");
         bcdtmWrite_message (0, 0, 0, "dtmP           = %p", dtmP);
-        bcdtmWrite_message (0, 0, 0, "loadFunctionP  = %p", loadFunctionP);
+  //      bcdtmWrite_message (0, 0, 0, "loadFunctionP  = %p", loadFunctionP);
         bcdtmWrite_message (0, 0, 0, "useFence       = %8d", useFence);
         bcdtmWrite_message (0, 0, 0, "fenceType      = %8d", fenceType);
         bcdtmWrite_message (0, 0, 0, "fenceOption    = %8d", fenceOption);
@@ -721,7 +721,7 @@ int bcdtmDrainage_returnRidgeOrSumpLinesDtmObject
         {
         bcdtmWrite_message(0, 0, 0, "Returning Ridge Lines");
         bcdtmWrite_message(0, 0, 0, "dtmP              = %p", dtmP);
-        bcdtmWrite_message(0, 0, 0, "loadFunctionP     = %p", loadFunctionP);
+    //    bcdtmWrite_message(0, 0, 0, "loadFunctionP     = %p", loadFunctionP);
         bcdtmWrite_message(0, 0, 0, "useFence          = %8ld", useFence);
         bcdtmWrite_message(0, 0, 0, "fenceOption       = %8ld", fenceOption);
         bcdtmWrite_message(0, 0, 0, "fencePtsP         = %p", fencePtsP);
@@ -1053,7 +1053,7 @@ int bcdtmDrainage_returnZeroSlopePolygonsDtmObject
    {
     bcdtmWrite_message(0,0,0,"Returning Zero Slope Polygons") ; 
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence          = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceOption       = %8ld",fenceOption) ;
     bcdtmWrite_message(0,0,0,"fencePtsP         = %p",fencePtsP) ;

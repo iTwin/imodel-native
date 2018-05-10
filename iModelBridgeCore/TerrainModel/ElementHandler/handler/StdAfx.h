@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/StdAfx.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,25 +10,25 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
     
-#include <GeoCoord\BaseGeoCoord.h>
-#include <DgnPlatform\DgnPlatformAPI.h>
-#include <DgnView\IViewManager.h>
-#include <DgnView\IRedraw.h>
-#include <DgnView\AccuSnap.h>
-#include <DgnView\DgnViewLib.h>
+#include <GeoCoord/BaseGeoCoord.h>
+#include <DgnPlatform/DgnPlatformAPI.h>
+#include <DgnView/IViewManager.h>
+#include <DgnView/IRedraw.h>
+#include <DgnView/AccuSnap.h>
+#include <DgnView/DgnViewLib.h>
 
-#include <DgnPlatform\DgnECProviderBase.h>
-#include <DgnPlatform\ElementProperties.h>
+#include <DgnPlatform/DgnECProviderBase.h>
+#include <DgnPlatform/ElementProperties.h>
 
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>
-#include <DgnPlatform\TerrainModel\TMElementSubHandler.h>
-#include <TerrainModel\ElementHandler\TerrainModelElementHandler.h>
-#include <DgnPlatform\TerrainModel\TMSymbologyOverrideManager.h>
-#include <TerrainModel\ElementHandler\TMHandlersResources.h>
-#include <TerrainModel\ElementHandler\TMHandlersResources.r.h>
-#include <TerrainModel\Core\bcDTMClass.h>
-#include <TerrainModel\Core\IDTM.h>
-#include <TerrainModel\Core\bcDTMElement.h>
+#include <DgnPlatform/TerrainModel/TMElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementSubHandler.h>
+#include <TerrainModel/ElementHandler/TerrainModelElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMSymbologyOverrideManager.h>
+#include <TerrainModel/ElementHandler/TMHandlersResources.h>
+#include <TerrainModel/ElementHandler/TMHandlersResources.r.h>
+#include <TerrainModel/Core/bcDTMClass.h>
+#include <TerrainModel/Core/IDTM.h>
+#include <TerrainModel/Core/bcDTMElement.h>
 
 
 //Number of power platform views
@@ -85,9 +85,9 @@
 #   define TRACE __noop
 #endif
 
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>
-#include <DgnPlatform\TerrainModel\TMPersistentAppIDs.h>   
-#include <DgnPlatform\TerrainModel\TMReferenceXAttributeHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMPersistentAppIDs.h>   
+#include <DgnPlatform/TerrainModel/TMReferenceXAttributeHandler.h>
 
 #include "DTMDrawingInfo.h"
 #include "DTMDataRefCachingManager.h"
@@ -97,7 +97,7 @@
 #include "DTMPointDrawer.h"
 #include "DTMDisplayHandlers.h"
 #include "DTMBinaryData.h"
-#include <TerrainModel\ElementHandler\DTMElementHandlerManager.h>
+#include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNPLATFORM

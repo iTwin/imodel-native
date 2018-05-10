@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmLoadTriangles.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
 /*==============================================================================*//**
 * @memo   Load Triangles From A DTM File
@@ -54,7 +54,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_trianglesFromDtmFile
    {
     bcdtmWrite_message(0,0,0,"Interrupy Loading Triangles From Dtm File") ;
     bcdtmWrite_message(0,0,0,"dtmFile           = %s",dtmFileP) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence          = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceOption       = %8ld",fenceOption) ;
     bcdtmWrite_message(0,0,0,"fencePtsP         = %p",fencePtsP) ;
@@ -120,7 +120,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_trianglesFromDtmObject
    {
     bcdtmWrite_message(0,0,0,"Interrupt Loading Triangles From Dtm Object") ;
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence          = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceType         = %8ld",fenceType) ;
     bcdtmWrite_message(0,0,0,"fenceOption       = %8ld",fenceOption) ;
@@ -1726,7 +1726,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleMeshFromDtmObject
     bcdtmWrite_message(0,0,0,"Interrupt Loading Triangle Mesh") ;
     bcdtmWrite_message(0,0,0,"Dtm Object       = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"maxTriangles     = %8ld",maxTriangles) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP    = %p",loadFunctionP) ;
+ //   bcdtmWrite_message(0,0,0,"loadFunctionP    = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence         = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceType        = %8ld",fenceType) ;
     bcdtmWrite_message(0,0,0,"fenceOption      = %8ld",fenceOption) ;
@@ -3171,7 +3171,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleShadeMeshFromDtmObject
     bcdtmWrite_message(0,0,0,"maxTriangles   = %8ld",maxTriangles) ;
     bcdtmWrite_message(0,0,0,"vectorOption   = %8ld",vectorOption) ;
     bcdtmWrite_message(0,0,0,"zAxisFactor    = %8ld",zAxisFactor) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP  = %p",loadFunctionP) ;
+ //   bcdtmWrite_message(0,0,0,"loadFunctionP  = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence       = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceType      = %8ld",fenceType) ;
     bcdtmWrite_message(0,0,0,"fenceOption    = %8ld",fenceOption) ;
@@ -3783,7 +3783,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleShadeMeshForQVCacheFromDtmObjec
     bcdtmWrite_message(0,0,0,"maxTriangles   = %8ld",maxTriangles) ;
     bcdtmWrite_message(0,0,0,"vectorOption   = %8ld",vectorOption) ;
     bcdtmWrite_message(0,0,0,"zAxisFactor    = %8ld",zAxisFactor) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP  = %p",loadFunctionP) ;
+ //   bcdtmWrite_message(0,0,0,"loadFunctionP  = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence       = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceType      = %8ld",fenceType) ;
     bcdtmWrite_message(0,0,0,"fenceOption    = %8ld",fenceOption) ;
@@ -4486,7 +4486,7 @@ BENTLEYDTM_EXPORT int bcdtmInterruptLoad_triangleHillShadeMeshFromDtmObject
     bcdtmWrite_message(0,0,0,"altitudeDegrees = %8.3lf",altitudeDegrees) ;
     bcdtmWrite_message(0,0,0,"azimuthDegrees  = %8.3lf",azimuthDegrees) ;
     bcdtmWrite_message(0,0,0,"zAxisFactor     = %8.3lf",zAxisFactor) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
+  //  bcdtmWrite_message(0,0,0,"loadFunctionP   = %p",loadFunctionP) ;
     bcdtmWrite_message(0,0,0,"useFence        = %8ld",useFence) ;
     bcdtmWrite_message(0,0,0,"fenceType       = %8ld",fenceType) ;
     bcdtmWrite_message(0,0,0,"fenceOption     = %8ld",fenceOption) ;

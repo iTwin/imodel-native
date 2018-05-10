@@ -2,19 +2,19 @@
 |
 |     $Source: ElementHandler/PublicAPI/TMElementDisplayHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 //__PUBLISH_SECTION_START__
 
-#include <DgnPlatform\TerrainModel\TMElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementHandler.h>
 //__PUBLISH_SECTION_END__
 
-#include <DgnPlatform\TerrainModel\TMElementSubHandler.h>
-#include <TerrainModel\TerrainModel.h>
-#include <TerrainModel\ElementHandler\TerrainModelElementHandler.h>
+#include <DgnPlatform/TerrainModel/TMElementSubHandler.h>
+#include <TerrainModel/TerrainModel.h>
+#include <TerrainModel/ElementHandler/TerrainModelElementHandler.h>
 
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE

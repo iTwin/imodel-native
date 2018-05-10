@@ -2,12 +2,14 @@
 |
 |     $Source: Core/2d/bcdtmInitialise.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
+#if _WIN32
 #include <direct.h>
 #include <tchar.h>
+#endif
 #include <thread>
 
 #include "dtmvars.h"

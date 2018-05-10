@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmEdit.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
 #include "bcdtmEdit.h"
 /*
@@ -2606,7 +2606,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_removeInsertedVoidsOnTinHullDtmObject(BC_DTM_OBJ
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long spnt,fsp1,lsp1,fsp2,lsp2,fPtr,coinFlag,voidFeature,numIslands  ;
- long *pntListP=NULL;
+ //long *pntListP=NULL;
  DTMTinPointFeatures *islandsP=NULL ;
  BC_DTM_FEATURE *voidFeatureP ;
 /*

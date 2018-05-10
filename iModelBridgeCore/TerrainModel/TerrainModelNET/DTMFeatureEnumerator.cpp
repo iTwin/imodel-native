@@ -2,11 +2,11 @@
 |
 |     $Source: TerrainModelNET/DTMFeatureEnumerator.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
-#include ".\dtmfeatureenumerator.h"
+#include "./dtmfeatureenumerator.h"
 #using <mscorlib.dll>
 
 BEGIN_BENTLEY_TERRAINMODELNET_NAMESPACE

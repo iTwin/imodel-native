@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmJoin.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
 
 /*==============================================================================*//**
@@ -319,7 +319,7 @@ BENTLEYDTM_EXPORT int bcdtmJoin_dtmFeatureTypeWithRollbackDtmObject
 **  Update Modified Time
  */
  if (*numBeforeJoinP != *numAfterJoinP)
-   _time32(&dataP->modifiedTime) ;
+   time_t(&dataP->modifiedTime) ;
 /*
 ** Clean Up
 */

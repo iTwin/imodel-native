@@ -2,13 +2,13 @@
 |
 |     $Source: AutomaticGroundDetection/src/GroundDetectionManagerDc.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 //#include "GroundDetectionManager.h"
-#include <TerrainModel\AutomaticGroundDetection\IGroundDetectionServices.h>
+#include <TerrainModel/AutomaticGroundDetection/IGroundDetectionServices.h>
 
 GROUND_DETECTION_TYPEDEF(PCGroundTIN)
 

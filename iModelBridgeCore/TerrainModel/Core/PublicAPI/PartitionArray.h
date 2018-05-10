@@ -2,29 +2,30 @@
 |
 |     $Source: Core/PublicAPI/PartitionArray.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
 
 #pragma once
-#include "dtmdefs.h"
 
+#if _WIN32
 #pragma inline_depth(255)
 #pragma inline_recursion(on)
+#endif
 
 class MAllocAllocator
     {
     public:
-        static __forceinline void* AllocMemory(size_t size)
+        static inline void* AllocMemory(size_t size)
             {
             return malloc(size);
             }
-        static __forceinline void* ResizeMemory(void* ptr, size_t curSize, size_t newSize)
+        static inline void* ResizeMemory(void* ptr, size_t curSize, size_t newSize)
             {
             return realloc(ptr, newSize);
             }
-        static __forceinline void DeleteMemory(void* ptr)
+        static inline void DeleteMemory(void* ptr)
             {
             free(ptr);
             }
@@ -35,13 +36,13 @@ template <class TYPE, int shift, class allocator = MAllocAllocator> class Partit
 typedef PartitionArray<TYPE, shift, allocator> _Mybase;
 
     public:
-        template <class TYPE> class _iterator : public std::iterator<std::random_access_iterator_tag, TYPE, int, const TYPE*, const TYPE&>
+        template <class TYPE2> class _iterator : public std::iterator<std::random_access_iterator_tag, TYPE2, int, const TYPE2*, const TYPE2&>
             {
-            typedef _iterator<TYPE> _Iterator;
+            typedef _iterator<TYPE2> _Iterator;
             private:
-                mutable TYPE* m_curPtr;
-                mutable TYPE* m_startPtr;
-                mutable TYPE* m_endPtr;
+                mutable TYPE2* m_curPtr;
+                mutable TYPE2* m_startPtr;
+                mutable TYPE2* m_endPtr;
                 _Mybase* m_array;
                 mutable long m_curPartition;
 
@@ -64,8 +65,8 @@ typedef PartitionArray<TYPE, shift, allocator> _Mybase;
                         }
                     }
             public:
-                __forceinline _iterator(){m_curPtr = 0;};
-                __forceinline _iterator(_Mybase* theArray, long partition, long subIndex)
+                inline _iterator(){m_curPtr = 0;};
+                inline _iterator(_Mybase* theArray, long partition, long subIndex)
                     {
                     m_array = theArray;
                     m_curPartition = partition;
@@ -73,96 +74,96 @@ typedef PartitionArray<TYPE, shift, allocator> _Mybase;
                     m_curPtr = m_startPtr + subIndex;
                     }
 
-                __forceinline TYPE& operator*()
+                inline TYPE2& operator*()
                     {
                     return *m_curPtr;
                     }
-                __forceinline TYPE& operator*() const
+                inline TYPE2& operator*() const
                     {
                     return *m_curPtr;
                     }
-                __forceinline TYPE& operator[](size_t i)                               // The [] operator function. Returns the TYPE at pos i.
+                inline TYPE2& operator[](size_t i)                               // The [] operator function. Returns the TYPE at pos i.
                     {
                     _Iterator newI = *this + i;
                     return *newI;
                     }
-                __forceinline TYPE& operator[](size_t i) const                        // The [] operator function. Returns the TYPE at pos i.
+                inline TYPE2& operator[](size_t i) const                        // The [] operator function. Returns the TYPE at pos i.
                     {
                     _Iterator newI = *this;
                     newI += i;
                     return *newI;
                     }
-                __forceinline TYPE* operator->()
+                inline TYPE2* operator->()
                     {
                     return m_curPtr;
                     }
-                __forceinline TYPE* operator->() const
+                inline TYPE2* operator->() const
                     {
                     return m_curPtr;
                     }
-                __forceinline bool operator!=(TYPE* l) const
+                inline bool operator!=(TYPE2* l) const
                     {
                     return m_curPtr != l;
                     }
 
-                __forceinline bool operator==(TYPE* l) const
+                inline bool operator==(TYPE2* l) const
                     {
                     return m_curPtr == l;
                     }
 
-                __forceinline bool operator<(TYPE* l) const
+                inline bool operator<(TYPE2* l) const
                     {
                     return m_curPtr < l;
                     }
-                __forceinline bool operator<=(TYPE* l) const
+                inline bool operator<=(TYPE2* l) const
                     {
                     return m_curPtr <= l;
                     }
-                __forceinline bool operator>(TYPE* l) const
+                inline bool operator>(TYPE2* l) const
                     {
                     return m_curPtr > l;
                     }
-                __forceinline bool operator>=(TYPE* l) const
+                inline bool operator>=(TYPE2* l) const
                     {
                     return m_curPtr >= l;
                     }
 
-                __forceinline bool operator!=(const _Iterator& l) const
+                inline bool operator!=(const _Iterator& l) const
                     {
                     return m_curPtr != l.m_curPtr;
                     }
 
-                __forceinline bool operator==(const _Iterator& l) const
+                inline bool operator==(const _Iterator& l) const
                     {
                     return m_curPtr == l.m_curPtr;
                     }
 
-                __forceinline bool operator<(const _Iterator& l) const
+                inline bool operator<(const _Iterator& l) const
                     {
                     if(m_curPartition != l.m_curPartition)
                         return m_curPartition < l.m_curPartition;
                     return m_curPtr < l.m_curPtr;
                     }
-                __forceinline bool operator<=(const _Iterator& l) const
+                inline bool operator<=(const _Iterator& l) const
                     {
                     if(m_curPartition != l.m_curPartition)
                         return m_curPartition < l.m_curPartition;
                     return m_curPtr <= l.m_curPtr;
                     }
-                __forceinline bool operator>(const _Iterator& l) const
+                inline bool operator>(const _Iterator& l) const
                     {
                     if(m_curPartition != l.m_curPartition)
                         return m_curPartition > l.m_curPartition;
                     return m_curPtr > l.m_curPtr;
                     }
-                __forceinline bool operator>=(const _Iterator& l) const
+                inline bool operator>=(const _Iterator& l) const
                     {
                     if(m_curPartition != l.m_curPartition)
                         return m_curPartition >= l.m_curPartition;
                     return m_curPtr >= l.m_curPtr;
                     }
 
-                __forceinline _Iterator& operator++()
+                inline _Iterator& operator++()
                     {	// preincrement
 
                     if(m_curPtr < m_endPtr)
@@ -179,14 +180,14 @@ typedef PartitionArray<TYPE, shift, allocator> _Mybase;
                     return (*this);
                     }
 
-                __forceinline _Iterator operator++(int)
+                inline _Iterator operator++(int)
                     {	// postincrement
                     _Iterator _Tmp = *this;
                     ++*this;
                     return (_Tmp);
                     }
 
-                __forceinline _Iterator& operator--()
+                inline _Iterator& operator--()
                     {	// predecrement
                     if(m_curPtr > m_startPtr)
                         m_curPtr--;
@@ -199,38 +200,38 @@ typedef PartitionArray<TYPE, shift, allocator> _Mybase;
                     return (*this);
                     }
 
-                __forceinline _Iterator operator--(int)
+                inline _Iterator operator--(int)
                     {	// postdecrement
                     _Iterator _Tmp = *this;
                     --*this;
                     return (_Tmp);
                     }
 
-                __forceinline _Iterator& operator+=(size_t _Off)
+                inline _Iterator& operator+=(size_t _Off)
                     {	// increment by integer
                     MoveOn((int)_Off);
                     return (*this);
                     }
 
-                __forceinline _Iterator operator+(size_t _Off) const
+                inline _Iterator operator+(size_t _Off) const
                     {	// return this + integer
                     _Iterator _Tmp = *this;
                     return (_Tmp += _Off);
                     }
 
-                __forceinline _Iterator& operator-=(size_t _Off)
+                inline _Iterator& operator-=(size_t _Off)
                     {	// decrement by integer
                     MoveOn(-(int)_Off);
                     return (*this);
                     }
 
-                __forceinline _Iterator operator-(size_t _Off) const
+                inline _Iterator operator-(size_t _Off) const
                     {	// return this - integer
                     _Iterator _Tmp = *this;
                     return (_Tmp -= _Off);
                     }
 
-                __forceinline __int64 operator-(const _Iterator& _to) const
+                inline int64_t operator-(const _Iterator& _to) const
                     {	// return this - integer
                     long id = (m_curPartition - _to.m_curPartition) * m_array->m_partitionSize + (long)(m_curPtr - m_startPtr) - (long)(_to.m_curPtr - _to.m_startPtr);
                     //long index = (m_curPartition << m_array->m_shift) | (m_curPtr - m_startPtr);
@@ -241,10 +242,10 @@ typedef PartitionArray<TYPE, shift, allocator> _Mybase;
                     return id;
                     }
 
-                __forceinline TYPE* getPtr() { return m_curPtr; }
+                inline TYPE2* getPtr() { return m_curPtr; }
 
             private:
-                __forceinline void MoveOn(int offset) const
+                inline void MoveOn(int offset) const
                     {
                     int index = (m_curPartition << m_array->m_shift) | (int)(m_curPtr - m_startPtr);
                     index += offset;
@@ -273,27 +274,27 @@ typedef PartitionArray<TYPE, shift, allocator> _Mybase;
     public:
         typedef _iterator<TYPE> iterator;
 
-        __forceinline TYPE& operator[](int i)                                // The [] operator function. Returns the TYPE at pos i.
+        inline TYPE& operator[](int i)                                // The [] operator function. Returns the TYPE at pos i.
             {
             return( m_tablePP[i >> shift ] [i & m_bitmask] ) ;
             }
 
-        __forceinline TYPE* operator+(int i)
+        inline TYPE* operator+(int i)
             {
             return( m_tablePP[i >> shift ] + (i & m_bitmask) ) ;
             }
 
-        __forceinline iterator start()
+        inline iterator start()
             {
             return iterator(this, 0, 0);
             }
 
-        __forceinline iterator begin()
+        inline iterator begin()
             {
             return iterator(this, 0, 0);
             }
 
-        __forceinline iterator end()
+        inline iterator end()
             {
             long lastIndex = m_size;
             return iterator(this, lastIndex >> shift, lastIndex & m_bitmask);
@@ -335,11 +336,11 @@ typedef PartitionArray<TYPE, shift, allocator> _Mybase;
             return newArray;
             }
 
-        __forceinline long getSize()
+        inline long getSize()
             {
             return m_size;
             }
-        __forceinline long size()
+        inline long size()
             {
             return m_size;
             }
@@ -510,20 +511,20 @@ class LongArray
             return 0;
             }
 
-        __forceinline long* start()
+        inline long* start()
             {
             return m_ptr;
             }
-        __forceinline long* end()
+        inline long* end()
             {
             return m_ptr + m_size - 1;
             }
-        __forceinline long& operator[](int i)
+        inline long& operator[](int i)
             {
             return m_ptr[i];
             }
 
-        __forceinline long* operator+(int i)
+        inline long* operator+(int i)
             {
             return &m_ptr[i];
             }
@@ -1270,7 +1271,7 @@ template <class TYPE, class arrayType> class ArraySort
             /*
             **     Place In Sort Order
             */
-            arrayType::iterator p1P = m_array->start();
+            typename arrayType::iterator p1P = m_array->start();
             TYPE *p2P, dtmPoint ;
 
             for( sP = sortPstart, ofs = 0 ; ofs < size; ++sP , ++ofs, ++p1P)
@@ -1333,7 +1334,7 @@ template <class TYPE, class arrayType> class XYPointArraySort : public ArraySort
         class CompareClass
             {
             public:
-                static __forceinline int Compare(TYPE* p1P, TYPE* p2P)
+                static inline int Compare(TYPE* p1P, TYPE* p2P)
                     {
                     if( p1P->x > p2P->x ||
                         ( p1P->y > p2P->y &&
@@ -1344,13 +1345,13 @@ template <class TYPE, class arrayType> class XYPointArraySort : public ArraySort
                         return 0;
                     return -1;
                     }
-                static __forceinline bool LessThan(TYPE* p1P, TYPE* p2P)
+                static inline bool LessThan(TYPE* p1P, TYPE* p2P)
                     {
                     return ( p1P->x < p2P->x ||
                         ( p1P->x == p2P->x &&
                         p1P->y <= p2P->y));
                     }
-                static __forceinline bool GreaterThan(TYPE* p1P, TYPE* p2P)
+                static inline bool GreaterThan(TYPE* p1P, TYPE* p2P)
                     {
                     return( p1P->x > p2P->x ||
                         ( p1P->x == p2P->x &&
@@ -1363,18 +1364,18 @@ template <class TYPE, class arrayType> class XYPointArraySort : public ArraySort
             {
             CompareClass compareClass;
 #ifdef _WIN32_WCE
-            return ArraySort<TYPE, arrayType>::DoSort(theArray, &compareClass, 0, theArray.getSize());
+            return ArraySort<TYPE, arrayType>::template DoSort(theArray, &compareClass, 0, theArray.getSize());
 #else
-            return ArraySort<TYPE, arrayType>::DoSort<CompareClass>(theArray, &compareClass, 0, theArray.getSize());
+            return ArraySort<TYPE, arrayType>::template DoSort<CompareClass>(theArray, &compareClass, 0, theArray.getSize());
 #endif
             }
         int DoResort(arrayType& theArray, int start, int length)
             {
             CompareClass compareClass;
 #ifdef _WIN32_WCE
-            return ArraySort<TYPE, arrayType>::DoSort(theArray, &compareClass, start, length);
+            return ArraySort<TYPE, arrayType>::template DoSort(theArray, &compareClass, start, length);
 #else
-            return ArraySort<TYPE, arrayType>::DoSort<CompareClass>(theArray, &compareClass, start, length);
+            return ArraySort<TYPE, arrayType>::template DoSort<CompareClass>(theArray, &compareClass, start, length);
 #endif
             }
     };
@@ -1393,15 +1394,15 @@ template <class TYPE, class arrayType> class XYPointArraySort : public ArraySort
                         {
                         m_func = func;
                         }
-                    __forceinline int Compare(const TYPE* p1P, const TYPE* p2P)
+                    inline int Compare(const TYPE* p1P, const TYPE* p2P)
                         {
                         return m_func(p1P, p2P);
                         }
-                    __forceinline bool LessThan(const TYPE* p1P, const TYPE* p2P)
+                    inline bool LessThan(const TYPE* p1P, const TYPE* p2P)
                         {
                         return Compare(p1P, p2P) < 0;
                         }
-                    __forceinline bool GreaterThan(const TYPE* p1P, const TYPE* p2P)
+                    inline bool GreaterThan(const TYPE* p1P, const TYPE* p2P)
                         {
                         return Compare(p1P, p2P) > 0;
                         }
@@ -1409,10 +1410,10 @@ template <class TYPE, class arrayType> class XYPointArraySort : public ArraySort
         public:
             int DoSort(arrayType& theArray, CompareFunc func)
                 {
-                return ArraySort<TYPE, arrayType>::DoSort<CompareClass>(theArray, &CompareClass(func), 0, theArray.getSize());
+                return ArraySort<TYPE, arrayType>::template DoSort<CompareClass>(theArray, &CompareClass(func), 0, theArray.getSize());
                 }
             int DoResort(arrayType& theArray, CompareFunc func, long start, long length)
                 {
-                return ArraySort<TYPE, arrayType>::DoSort<CompareClass>(theArray, &CompareClass(func), start, length);
+                return ArraySort<TYPE, arrayType>::template DoSort<CompareClass>(theArray, &CompareClass(func), start, length);
                 }
         };

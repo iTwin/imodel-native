@@ -2,14 +2,14 @@
 |
 |     $Source: ElementHandler/handler/MrDTMDataRef.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 
 // It is important that this is the first file included
 #include <TerrainModel/ElementHandler/TerrainModelElementHandler.h>
-#include <DgnPlatform\Material.h>
+#include <DgnPlatform/Material.h>
 
 #include <io.h>
 #include "time.h"
@@ -22,7 +22,7 @@
 
 #include <RmgrTools/Tools/DataExternalizer.h>
 
-#include <TerrainModel\ElementHandler\IRasterTextureSourceManager.h>
+#include <TerrainModel/ElementHandler/IRasterTextureSourceManager.h>
       
 using namespace Bentley::GeoCoordinates;
 

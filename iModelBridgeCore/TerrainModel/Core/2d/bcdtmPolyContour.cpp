@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmPolyContour.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h"
 //#pragma optimize("2x",on)
 /*
@@ -282,7 +282,7 @@ BENTLEYDTM_EXPORT int bcdtmPolyContour_plotContoursFromDtmObject
     bcdtmWrite_message(0,0,0,"Contour Registration  =  %10.4lf",contourRegistration) ;
     bcdtmWrite_message(0,0,0,"Contour Minimum       =  %10.4lf",contourMinimum) ;
     bcdtmWrite_message(0,0,0,"Contour Maximum       =  %10.4lf",contourMaximum) ;
-    bcdtmWrite_message(0,0,0,"callBackFunctionP     =  %p",callBackFunctionP) ;
+    //bcdtmWrite_message(0,0,0,"callBackFunctionP     =  %p",callBackFunctionP) ;
     bcdtmWrite_message(0,0,0,"userP                 =  %p",userP) ;
     bcdtmWrite_message(0,0,0,"Number Contour Values =  %5ld",numContourValues) ;
     if( numContourValues > 0 ) { for( i = 0 ; i < numContourValues ; ++i ) bcdtmWrite_message(0,0,0,"Contour Value = %10.4lf",contourValues[i]) ; }
@@ -2732,7 +2732,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_getStartScanTriangleAtTinPointDtmObject(
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   clc,P1,P2 ;
- double F1,F2,ang1,ang2,X1,Y1,X2,Y2,z ;
+ double F1=0,F2=0,ang1,ang2,X1,Y1,X2,Y2,z ;
 /*
 ** Write Status Message
 */

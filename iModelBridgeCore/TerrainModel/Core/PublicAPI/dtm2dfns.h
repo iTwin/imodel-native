@@ -13,7 +13,7 @@
 #define __DTM2DFNS_H_
 
 #include <TerrainModel/TerrainModel.h>
-#include <TerrainModel\Core\bcDTM.h>
+#include <TerrainModel/Core/bcDTM.h>
 
 BENTLEYDTM_EXPORT                     long bcdtmClock (void);
 BENTLEYDTM_EXPORT                   size_t bcdtmFread (void *fromP, size_t numBytes, size_t numRecs, FILE *fileP);

@@ -6,7 +6,7 @@
 |       $Date: 2012/07/25 14:13:37 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,8 +24,8 @@ using namespace std;
 
 
 /*
-#include <Bentley\Bentley.h>
-#include <Bentley\Bentley.r.h>
+#include <Bentley/Bentley.h>
+#include <Bentley/Bentley.r.h>
 
 
 /*----------------------------------------------------------------------+
@@ -35,6 +35,6 @@ using namespace std;
 #include <TerrainModel/Core/bcDTMBaseDef.h>
 #include <TerrainModel/Core/bcDTMClass.h>
 #include <TerrainModel/Core/bcdtminlines.h>
-#include <TerrainModel\Formats\InroadsImporter.h>
+#include <TerrainModel/Formats/InroadsImporter.h>
 
 

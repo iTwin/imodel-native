@@ -2,12 +2,12 @@
 |
 |     $Source: ElementHandler/handler/DTMBinaryData.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 #include "DTMBinaryData.h"
-#include <DgnPlatform\TerrainModel\TMPersistentAppIDs.h>
+#include <DgnPlatform/TerrainModel/TMPersistentAppIDs.h>
 //#include <interface/IXAttributeHandler.h>
 //#include <interface/ITxnManager.h>
 

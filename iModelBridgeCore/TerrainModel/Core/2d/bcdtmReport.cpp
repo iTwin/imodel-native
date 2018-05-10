@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmReport.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -38,7 +38,7 @@ BENTLEYDTM_EXPORT int bcdtmReport_duplicatePointErrorsDtmObject
    {
     bcdtmWrite_message(0,0,0,"Reporting Duplicate Point Errors") ;
     bcdtmWrite_message(0,0,0,"dtmP            = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"browseFunctionP = %p",browseFunctionP) ;
+   // bcdtmWrite_message(0,0,0,"browseFunctionP = %p",browseFunctionP) ;
     bcdtmWrite_message(0,0,0,"userP           = %p",userP) ;
     bcdtmWrite_message(0,0,0,"dtmP->numPoints = %8ld",dtmP->numPoints) ;
    } 
@@ -322,7 +322,7 @@ BENTLEYDTM_EXPORT int bcdtmReport_crossingFeaturesDtmObject
     bcdtmWrite_message(0,0,0,"dtmP            = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"featureListP    = %p",featureListP) ;
     bcdtmWrite_message(0,0,0,"numFeatureList  = %8ld",numFeatureList) ;
-    bcdtmWrite_message(0,0,0,"browseFunctionP = %p",browseFunctionP) ;
+   // bcdtmWrite_message(0,0,0,"browseFunctionP = %p",browseFunctionP) ;
     if( dbg == 2 )
       {
        for( n = 0 ; n < numFeatureList ; ++n )
@@ -499,7 +499,7 @@ BENTLEYDTM_Private int bcdtmReport_intersectCrossingFeaturesDtmObject
     bcdtmWrite_message(0,0,0,"dtmP            = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"featureListP    = %p",featureListP) ;
     bcdtmWrite_message(0,0,0,"numFeatureList  = %8ld",numFeatureList) ;
-    bcdtmWrite_message(0,0,0,"browseFunctionP = %p",browseFunctionP) ;
+    //bcdtmWrite_message(0,0,0,"browseFunctionP = %p",browseFunctionP) ;
     if( dbg == 2 )
       {
        for( n = 0 ; n < numFeatureList ; ++n )

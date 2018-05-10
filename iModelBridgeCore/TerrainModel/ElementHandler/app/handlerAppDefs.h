@@ -2,13 +2,13 @@
 |
 |     $Source: ElementHandler/app/handlerAppDefs.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Mstn\MdlApi\rtypes.r.h>
-#include <Mstn\MdlApi\rscdefs.r.h>
+#include <Mstn/MdlApi/rtypes.r.h>
+#include <Mstn/MdlApi/rscdefs.r.h>
 
 enum TerrainModelAppMessageLists
     {

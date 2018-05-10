@@ -2,13 +2,13 @@
 |
 |     $Source: Core/2d/bcdtmcleanup.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <TerrainModel\Core\bcDTMBaseDef.h>
-#include <TerrainModel\Core\dtmevars.h>
-#include <TerrainModel\Core\bcdtminlines.h>
-#include <TerrainModel\Core\partitionarray.h>
+#include <TerrainModel/Core/bcDTMBaseDef.h>
+#include <TerrainModel/Core/DTMEvars.h>
+#include <TerrainModel/Core/bcdtminlines.h>
+#include <TerrainModel/Core/PartitionArray.h>
 
 /*-------------------------------------------------------------------+
 |                                                                    |

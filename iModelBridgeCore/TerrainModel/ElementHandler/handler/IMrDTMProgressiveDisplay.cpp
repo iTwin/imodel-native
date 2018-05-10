@@ -2,15 +2,15 @@
 |
 |     $Source: ElementHandler/handler/IMrDTMProgressiveDisplay.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 
 //#include <interface\IMrDTMProgressiveDisplay.h>
 
-#include <TerrainModel\ElementHandler\IMrDTMProgressiveDisplay.h>
-#include <TerrainModel\ElementHandler\IMrDTMDataRef.h>
+#include <TerrainModel/ElementHandler/IMrDTMProgressiveDisplay.h>
+#include <TerrainModel/ElementHandler/IMrDTMDataRef.h>
 
 BEGIN_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE
 

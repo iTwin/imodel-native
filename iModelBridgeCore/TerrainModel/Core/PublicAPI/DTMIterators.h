@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/DTMIterators.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -264,7 +264,7 @@ struct DTMMeshEnumerator : RefCountedBase
     public: BENTLEYDTM_EXPORT void Reset ();
     public: BENTLEYDTM_EXPORT iterator begin () const;
     public: BENTLEYDTM_EXPORT iterator end () const;
-    public: BENTLEYDTM_EXPORT DRange3d DTMMeshEnumerator::GetRange () const;
+    public: BENTLEYDTM_EXPORT DRange3d GetRange () const;
 
 
     public: void SetUsePolyfaceHeader(bool value)

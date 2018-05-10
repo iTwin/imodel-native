@@ -2,13 +2,13 @@
 |
 |     $Source: TerrainModelNET/DTMSideSlopeInputPoint.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
 #include <vcclr.h >
 #using <mscorlib.dll>
-#include ".\DTMSideSlopeInputPoint.h"
+#include "./DTMSideSlopeInputPoint.h"
 
 BEGIN_BENTLEY_TERRAINMODELNET_NAMESPACE
 

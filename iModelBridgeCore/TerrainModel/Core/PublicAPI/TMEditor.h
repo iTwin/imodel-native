@@ -2,13 +2,13 @@
 |
 |     $Source: Core/PublicAPI/TMEditor.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
-#include <TerrainModel\TerrainModel.h>
+#include <TerrainModel/TerrainModel.h>
 
 TERRAINMODEL_TYPEDEFS (ITMEditor)
 TERRAINMODEL_TYPEDEFS (ITMEditorDyanmics)

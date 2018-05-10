@@ -2,11 +2,11 @@
 |
 |     $Source: Core/2d/bcdtmLattice.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 #include "bcdtminlines.h" 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -3324,9 +3324,9 @@ BENTLEYDTM_EXPORT int bcdtmWrite_latticeObject(DTM_LAT_OBJ *Lattice,WCharCP latt
 */
 
 #ifdef BIG_ENDIAN
-    bcdtmCnv_swapByteArray((char*) &Lattice->dtmFileType,104) ;
-    bcdtmCnv_swapWordArray((short*)&Lattice->dtmFileType, 52) ;
-    bcdtmCnv_swapLongArray((long*) &Lattice->DX,    19) ;
+//    bcdtmCnv_swapByteArray((char*) &Lattice->dtmFileType,104) ;
+//    bcdtmCnv_swapWordArray((short*)&Lattice->dtmFileType, 52) ;
+//   bcdtmCnv_swapLongArray((long*) &Lattice->DX,    19) ;
 #endif
 
  if( bcdtmFwrite(Lattice,sizeof(DTM_LAT_OBJ),1,fpLAT) != 1 )
@@ -3337,9 +3337,9 @@ BENTLEYDTM_EXPORT int bcdtmWrite_latticeObject(DTM_LAT_OBJ *Lattice,WCharCP latt
    }
 
 #ifdef BIG_ENDIAN
-    bcdtmCnv_swapByteArray((char*) &Lattice->dtmFileType,104) ;
-    bcdtmCnv_swapWordArray((short*)&Lattice->dtmFileType, 52) ;
-    bcdtmCnv_swapLongArray((long*) &Lattice->DX,    19) ;
+//    bcdtmCnv_swapByteArray((char*) &Lattice->dtmFileType,104) ;
+//    bcdtmCnv_swapWordArray((short*)&Lattice->dtmFileType, 52) ;
+//    bcdtmCnv_swapLongArray((long*) &Lattice->DX,    19) ;
 #endif
 
 /*
@@ -3347,8 +3347,8 @@ BENTLEYDTM_EXPORT int bcdtmWrite_latticeObject(DTM_LAT_OBJ *Lattice,WCharCP latt
 */
 
 #ifdef BIG_ENDIAN
-    bcdtmCnv_swapByteArray((char*) Lattice->LAT,Lattice->NXL*Lattice->NYL * 2) ;
-    bcdtmCnv_swapWordArray((short*)Lattice->LAT,Lattice->NXL*Lattice->NYL) ;
+//    bcdtmCnv_swapByteArray((char*) Lattice->LAT,Lattice->NXL*Lattice->NYL * 2) ;
+//    bcdtmCnv_swapWordArray((short*)Lattice->LAT,Lattice->NXL*Lattice->NYL) ;
 #endif
 
  if( bcdtmFwrite(Lattice->LAT,sizeof(float)*Lattice->NOLATPTS,1,fpLAT) != 1 )
@@ -3359,8 +3359,8 @@ BENTLEYDTM_EXPORT int bcdtmWrite_latticeObject(DTM_LAT_OBJ *Lattice,WCharCP latt
    }
 
 #ifdef BIG_ENDIAN
-    bcdtmCnv_swapByteArray((char*) Lattice->LAT,Lattice->NXL*Lattice->NYL * 2) ;
-    bcdtmCnv_swapWordArray((short*)Lattice->LAT,Lattice->NXL*Lattice->NYL) ;
+//   bcdtmCnv_swapByteArray((char*) Lattice->LAT,Lattice->NXL*Lattice->NYL * 2) ;
+//   bcdtmCnv_swapWordArray((short*)Lattice->LAT,Lattice->NXL*Lattice->NYL) ;
 #endif
 /*
 ** Close Lattice File

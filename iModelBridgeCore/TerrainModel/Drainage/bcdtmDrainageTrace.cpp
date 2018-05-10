@@ -2,11 +2,11 @@
 |
 |     $Source: Drainage/bcdtmDrainageTrace.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
-#include <TerrainModel/Core/bcdtmInlines.h>
+#include <TerrainModel/Core/bcdtminlines.h>
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
@@ -393,7 +393,7 @@ int bcdtmDrainage_traceMaximumDescentDtmObjectOld
         bcdtmWrite_message(0, 0, 0, "dtmP            = %p", dtmP);
         bcdtmWrite_message(0, 0, 0, "dtmP->numPoints = %8ld", dtmP->numPoints);
         bcdtmWrite_message(0, 0, 0, "drainageTablesP = %p", drainageTablesP);
-        bcdtmWrite_message(0, 0, 0, "loadFunctionP   = %p", loadFunctionP);
+      //  bcdtmWrite_message(0, 0, 0, "loadFunctionP   = %p", loadFunctionP);
         bcdtmWrite_message(0, 0, 0, "falseLowDepth   = %10.4lf", falseLowDepth);
         bcdtmWrite_message(0, 0, 0, "startX          = %12.5lf", startX);
         bcdtmWrite_message(0, 0, 0, "startY          = %12.5lf", startY);
@@ -1477,8 +1477,7 @@ int bcdtmDrainage_traceToLowPointDtmObject
     bool   trace = true;
     DTM_SUMP_LINES   *sumpLinesP = nullptr;
     DTM_POLYGON_OBJ  *polygonP = nullptr;
-    DTMUserTag nullUserTag = DTM_NULL_USER_TAG;
-    DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
+
     DTMDrainageTracePoints  tracePoints;
     DTMPointCache           streamPoints;
     /*
@@ -1490,7 +1489,7 @@ int bcdtmDrainage_traceToLowPointDtmObject
         bcdtmWrite_message(0, 0, 0, "Tracing To Low Point");
         bcdtmWrite_message(0, 0, 0, "Dtm Object         = %p", dtmP);
         bcdtmWrite_message(0, 0, 0, "drainageTablesP    = %p", drainageTablesP);
-        bcdtmWrite_message(0, 0, 0, "loadFunctionP      = %p", loadFunctionP);
+    //    bcdtmWrite_message(0, 0, 0, "loadFunctionP      = %p", loadFunctionP);
         bcdtmWrite_message(0, 0, 0, "falseLowDepth      = %10.4lf", falseLowDepth);
         bcdtmWrite_message(0, 0, 0, "zeroSlopeOption    = %8d", zeroSlopeOption);
         bcdtmWrite_message(0, 0, 0, "loadFlag           = %8ld", loadFlag);
@@ -1876,7 +1875,7 @@ int bcdtmDrainage_traceMaximumDescentFromTriangleEdgeDtmObject
     bool zeroSlopeTriangle;
     DTM_SUMP_LINES *sumpLinesP = nullptr;
     DTM_POLYGON_OBJ *polygonP = nullptr;
-    bool trgFound = false, voidTriangle = false;
+    bool voidTriangle = false;
     DTMFeatureCallback callBackP = nullptr;
     /*
     ** Write Entry Message
@@ -2189,7 +2188,7 @@ int bcdtmDrainage_traceMaximumDescentFromTrianglePointDtmObject
     double area, descentAngle, descentSlope;
     DTM_SUMP_LINES   *sumpLinesP = nullptr;
     DTM_POLYGON_OBJ *polygonP = nullptr;
-    static long loop = 0;
+
     DTMFeatureCallback callBackP = nullptr;
     /*
     ** Write Entry Message
@@ -2499,7 +2498,7 @@ int  bcdtmDrainage_rangeScanPointForMaximumDescentTriangleDtmObject
         */
         {
         int    ret=DTM_SUCCESS,dbg=0 ;
-        long   antPnt, clkPnt, trgNum = 0;
+        long   antPnt, clkPnt;
         bool voidTriangle;
         double a1,a2,a3,angleAntPnt,angleClkPnt,slope,ascentAngle,descentAngle  ;
         /*
@@ -3248,7 +3247,7 @@ int bcdtmDrainage_traceMaximumAscentDtmObject
         bcdtmWrite_message(0, 0, 0, "Tracing Maximum Ascent");
         bcdtmWrite_message(0, 0, 0, "dtmP               = %p", dtmP);
         bcdtmWrite_message(0, 0, 0, "drainageTablesP    = %p", drainageTablesP);
-        bcdtmWrite_message(0, 0, 0, "loadFunctionP      = %p", loadFunctionP);
+   //     bcdtmWrite_message(0, 0, 0, "loadFunctionP      = %p", loadFunctionP);
         bcdtmWrite_message(0, 0, 0, "falseHighElevation = %12.5lf", falseHighElevation);
         bcdtmWrite_message(0, 0, 0, "startX             = %12.5lf", startX);
         bcdtmWrite_message(0, 0, 0, "startY             = %12.5lf", startY);
@@ -3430,7 +3429,7 @@ int bcdtmDrainage_traceToHighPointDtmObject
         bcdtmWrite_message(0, 0, 0, "Tracing To High Point");
         bcdtmWrite_message(0, 0, 0, "dtmP                        = %p", dtmP);
         bcdtmWrite_message(0, 0, 0, "drainageTablesP             = %p", drainageTablesP);
-        bcdtmWrite_message(0, 0, 0, "loadFunctionP               = %p", loadFunctionP);
+    //    bcdtmWrite_message(0, 0, 0, "loadFunctionP               = %p", loadFunctionP);
         bcdtmWrite_message(0, 0, 0, "falseHighElevation          = %8.4lf", falseHighElevation);
         bcdtmWrite_message(0, 0, 0, "traceOverZeroSlope          = %8ld", traceOverZeroSlope);
         bcdtmWrite_message(0, 0, 0, "loadFlag                    = %8ld", loadFlag);

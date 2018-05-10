@@ -2,13 +2,13 @@
 |
 |     $Source: Core/PrivateAPI/base/bcConversion.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
-#include <dtmevars.h>
+#include <DTMEvars.h>
 #define dc_180overpi (180.0 / DTM_PYE)
 #define dc_piover2 DTM_PYE
 #define dc_2pi DTM_2PYE

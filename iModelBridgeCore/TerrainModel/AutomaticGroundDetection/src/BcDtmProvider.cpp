@@ -2,12 +2,12 @@
 |
 |     $Source: AutomaticGroundDetection/src/BcDtmProvider.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 
-#include <TerrainModel\AutomaticGroundDetection\GroundDetectionMacros.h>
+#include <TerrainModel/AutomaticGroundDetection/GroundDetectionMacros.h>
 #include "BcDtmProvider.h"
 #include <TerrainModel/Formats/TerrainImporter.h>
 

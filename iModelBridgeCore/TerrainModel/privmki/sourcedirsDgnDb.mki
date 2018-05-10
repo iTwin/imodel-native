@@ -16,11 +16,11 @@ __SourceDirs_MKI__=1
 #   Top level directories
 #----------------------------------------------------------
 SrcTerrainModel               =       $(SrcRoot)TerrainModel/
-TerrainModelCoreDir           =       $(SrcTerrainModel)core/
-TerrainModelFormatsDir        =       $(SrcTerrainModel)formats/
-TerrainModelDrainageDir       =       $(SrcTerrainModel)drainage/
-TerrainModelSTMDir            =       $(SrcTerrainModel)stm/
-TerrainModelElementHandlerDir =       $(SrcTerrainModel)elementHandler/
+TerrainModelCoreDir           =       $(SrcTerrainModel)Core/
+TerrainModelFormatsDir        =       $(SrcTerrainModel)Formats/
+TerrainModelDrainageDir       =       $(SrcTerrainModel)Drainage/
+TerrainModelSTMDir            =       $(SrcTerrainModel)ScalableTerrainModel/
+TerrainModelElementHandlerDir =       $(SrcTerrainModel)ElementHandler/
 TerrainModelGroundDetectDir   =       $(SrcTerrainModel)AutomaticGroundDetection/
 privmki                       =       $(SrcDgnPlatform)privmki/
 

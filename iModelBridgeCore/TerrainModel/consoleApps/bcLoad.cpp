@@ -2,13 +2,13 @@
 |
 |     $Source: consoleApps/bcLoad.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <stdio.h>
 #include <tchar.h>
 #include "bcDTMBaseDef.h"
-#include "dtmevars.h"
+#include "DTMEvars.h"
 
 //XM-- static DTM_DAT_OBJ *glbDataP=NULL ;
 static long  numDtmFeatures=0 ;

@@ -2,12 +2,12 @@
 |
 |     $Source: TerrainModelNET/DTMMesh.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include ".\Bentley.Civil.DTM.h"
+#include "./Bentley.Civil.DTM.h"
 using namespace System;
 
 BEGIN_BENTLEY_TERRAINMODELNET_NAMESPACE
