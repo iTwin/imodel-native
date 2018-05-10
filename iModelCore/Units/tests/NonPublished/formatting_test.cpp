@@ -65,7 +65,7 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::SetUpL10N();
     LOG.infov("================  Formatting Log ===========================");
 
-	FormattingTestFixture::TestTimeFormat(2018, 3, 21, 7, 23, 35);
+    FormattingTestFixture::TestTimeFormat(2018, 3, 21, 7, 23, 35);
 
     // Empirical evidence suggests that Windows wants hyphens, and Unix'ish system want underscores. It's not clear there's an industry standard...
     FormattingTestFixture::SetLocale("en-US");
@@ -146,32 +146,32 @@ TEST(FormattingTest, Preliminary)
     //    LOG.infov("NumAcc %d %s  (%s)", nacc.GetByteCount(), nacc.ToText().c_str());
 
 
-	FormattingTestFixture::ShowQuantity(135.191736, "ARC_DEG", "ARC_DEG", "dms8", "");
-	FormattingTestFixture::ShowQuantity(-135.191736, "ARC_DEG", "ARC_DEG", "dms8", "");
-	FormattingTestFixture::ShowQuantity(0.256, "ARC_DEG", "ARC_DEG", "dms8", "");
-	FormattingTestFixture::ShowQuantity(-0.256, "ARC_DEG", "ARC_DEG", "dms8", "");
+    FormattingTestFixture::ShowQuantity(135.191736, "ARC_DEG", "ARC_DEG", "dms8", "");
+    FormattingTestFixture::ShowQuantity(-135.191736, "ARC_DEG", "ARC_DEG", "dms8", "");
+    FormattingTestFixture::ShowQuantity(0.256, "ARC_DEG", "ARC_DEG", "dms8", "");
+    FormattingTestFixture::ShowQuantity(-0.256, "ARC_DEG", "ARC_DEG", "dms8", "");
 
     FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi8", " ");
-	FormattingTestFixture::ShowQuantity(-10.0, "M", "FT", "fi8", " ");
+    FormattingTestFixture::ShowQuantity(-10.0, "M", "FT", "fi8", " ");
     FormattingTestFixture::ShowQuantity(10.0, "M", "FT", "fi16", "");
-	FormattingTestFixture::ShowQuantity(-10.0, "M", "FT", "fi16", "");
+    FormattingTestFixture::ShowQuantity(-10.0, "M", "FT", "fi16", "");
     FormattingTestFixture::ShowQuantity(20.0, "M", "FT", "fi8", nullptr);
 
-	LOG.info("Gauges:");
-	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract16", nullptr);
-	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract32", nullptr);
-	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract64", nullptr);
-	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract128", nullptr);
-	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract16u", nullptr);
-	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract32u", nullptr);
-	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract64u", nullptr);
-	FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract128u", nullptr);
+    LOG.info("Gauges:");
+    FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract16", nullptr);
+    FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract32", nullptr);
+    FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract64", nullptr);
+    FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract128", nullptr);
+    FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract16u", nullptr);
+    FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract32u", nullptr);
+    FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract64u", nullptr);
+    FormattingTestFixture::ShowQuantity(1.7859375, "MM", "IN", "fract128u", nullptr);
 
-	FormattingTestFixture::ShowQuantity(419.1, "MM", "FT", "fract8", nullptr);
-	FormattingTestFixture::ShowQuantity(419.1, "MM", "FT", "fract16", nullptr);
-	FormattingTestFixture::ShowQuantity(3.042, "FT", "FT", "fract16", nullptr);
-	FormattingTestFixture::ShowQuantity(3.042, "FT", "FT", "fract32", nullptr);
-	LOG.info("End Of Gauges:");
+    FormattingTestFixture::ShowQuantity(419.1, "MM", "FT", "fract8", nullptr);
+    FormattingTestFixture::ShowQuantity(419.1, "MM", "FT", "fract16", nullptr);
+    FormattingTestFixture::ShowQuantity(3.042, "FT", "FT", "fract16", nullptr);
+    FormattingTestFixture::ShowQuantity(3.042, "FT", "FT", "fract32", nullptr);
+    LOG.info("End Of Gauges:");
 
     FormattingTestFixture::TestFUSQuantity(20.0, "M", "FT(real4)", nullptr);
     FormattingTestFixture::TestFUSQuantity(20.0, "M", "FT(real4u)", nullptr);
@@ -320,10 +320,10 @@ TEST(FormattingTest, TestFUS)
     FormattingTestFixture::ShowQuantifiedValue("3 1/3'", "realu", "M");
     FormattingTestFixture::ShowQuantifiedValue("3 1/3'", "realu", "MM");
 
-	FormattingTestFixture::RegisterFUS("MM", "DefaultMM");
+    FormattingTestFixture::RegisterFUS("MM", "DefaultMM");
 
-	NamedQuantity nmq = NamedQuantity("PipeLength", 12.45, "FT");
-	LOG.infov("Named Qty: %s", nmq.ToText(3).c_str());
+    NamedQuantity nmq = NamedQuantity("PipeLength", 12.45, "FT");
+    LOG.infov("Named Qty: %s", nmq.ToText(3).c_str());
 
    LOG.infov("Named Qty: %s", NumericFormatSpec::StdFormatQuantity("fi32", *nmq.GetQuantity()).c_str());
    
@@ -490,7 +490,7 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::ParseToQuantity("2/3_FT", 0, "IN");
     FormattingTestFixture::ParseToQuantity("3_FT 1/2IN", 0, "IN");
     FormattingTestFixture::ParseToQuantity(u8"135°11'30 1/4\" ", 0, "ARC_DEG");
-	FormattingTestFixture::ParseToQuantity(u8"-135°11'30 1/4\" ", 0, "ARC_DEG");
+    FormattingTestFixture::ParseToQuantity(u8"-135°11'30 1/4\" ", 0, "ARC_DEG");
     FormattingTestFixture::ParseToQuantity(u8"135°11'30 1/4\" ", 0, "RAD");
     FormattingTestFixture::ParseToQuantity("5' 0\"", 0, "FT");
     FormattingTestFixture::ParseToQuantity("0' 3\"", 0, "FT");
@@ -895,29 +895,29 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("12,727.9000", fmtP.FormatDouble(9.0*testV, 4, 0.05).c_str());
     EXPECT_STREQ ("2,828.450", fmtP.FormatDouble(2.0*testV, 3, 0.05).c_str());
 
-	LOG.info("\n=============== Testing European ==================");
-	fmtP.ImbueLocaleProperties(LocaleProperties::DefaultEuropean());
+    LOG.info("\n=============== Testing European ==================");
+    fmtP.ImbueLocaleProperties(LocaleProperties::DefaultEuropean());
 
-	EXPECT_STREQ("1.414,20000000", fmtP.FormatDouble(testV, 8, 0.05).c_str());
-	EXPECT_STREQ("7.071,0500000", fmtP.FormatDouble(5.0*testV, 7, 0.05).c_str());
-	EXPECT_STREQ("4.242,650000", fmtP.FormatDouble(3.0*testV, 6, 0.05).c_str());
-	EXPECT_STREQ("9.899,50000", fmtP.FormatDouble(7.0*testV, 5, 0.05).c_str());
-	EXPECT_STREQ("12.727,9000", fmtP.FormatDouble(9.0*testV, 4, 0.05).c_str());
-	EXPECT_STREQ("2.828,450", fmtP.FormatDouble(2.0*testV, 3, 0.05).c_str());
+    EXPECT_STREQ("1.414,20000000", fmtP.FormatDouble(testV, 8, 0.05).c_str());
+    EXPECT_STREQ("7.071,0500000", fmtP.FormatDouble(5.0*testV, 7, 0.05).c_str());
+    EXPECT_STREQ("4.242,650000", fmtP.FormatDouble(3.0*testV, 6, 0.05).c_str());
+    EXPECT_STREQ("9.899,50000", fmtP.FormatDouble(7.0*testV, 5, 0.05).c_str());
+    EXPECT_STREQ("12.727,9000", fmtP.FormatDouble(9.0*testV, 4, 0.05).c_str());
+    EXPECT_STREQ("2.828,450", fmtP.FormatDouble(2.0*testV, 3, 0.05).c_str());
 
-	LOG.info("\n=============== Testing German ==================");
-	fmtP.ImbueLocaleProperties(LocaleProperties::DefaultEuropean(true));
+    LOG.info("\n=============== Testing German ==================");
+    fmtP.ImbueLocaleProperties(LocaleProperties::DefaultEuropean(true));
 
-	EXPECT_STREQ("1 414,20000000", fmtP.FormatDouble(testV, 8, 0.05).c_str());
-	EXPECT_STREQ("7 071,0500000", fmtP.FormatDouble(5.0*testV, 7, 0.05).c_str());
-	EXPECT_STREQ("4 242,650000", fmtP.FormatDouble(3.0*testV, 6, 0.05).c_str());
-	EXPECT_STREQ("9 899,50000", fmtP.FormatDouble(7.0*testV, 5, 0.05).c_str());
-	EXPECT_STREQ("12 727,9000", fmtP.FormatDouble(9.0*testV, 4, 0.05).c_str());
-	EXPECT_STREQ("2 828,450", fmtP.FormatDouble(2.0*testV, 3, 0.05).c_str());
+    EXPECT_STREQ("1 414,20000000", fmtP.FormatDouble(testV, 8, 0.05).c_str());
+    EXPECT_STREQ("7 071,0500000", fmtP.FormatDouble(5.0*testV, 7, 0.05).c_str());
+    EXPECT_STREQ("4 242,650000", fmtP.FormatDouble(3.0*testV, 6, 0.05).c_str());
+    EXPECT_STREQ("9 899,50000", fmtP.FormatDouble(7.0*testV, 5, 0.05).c_str());
+    EXPECT_STREQ("12 727,9000", fmtP.FormatDouble(9.0*testV, 4, 0.05).c_str());
+    EXPECT_STREQ("2 828,450", fmtP.FormatDouble(2.0*testV, 3, 0.05).c_str());
 
-	LOG.info("\n=============== Switching back to American ==================\n");
+    LOG.info("\n=============== Switching back to American ==================\n");
 
-	fmtP.ImbueLocaleProperties(LocaleProperties::DefaultAmerican());
+    fmtP.ImbueLocaleProperties(LocaleProperties::DefaultAmerican());
 
 
     fmtP.SetKeepTrailingZeroes(false);
@@ -1207,47 +1207,47 @@ TEST(FormattingTest, DictionaryValidation)
 TEST(FormattingTest, LocaleTest)
 {
 
-	LOG.infov("\n================  Locale Test ===========================");
-	
-	LocaleProperties lop = LocaleProperties::DefaultAmerican();
-	Json::Value jval = lop.ToJson();
-	LOG.infov("American Default %s", jval.ToString().c_str());
-	LocaleProperties lop1 = LocaleProperties(jval);
-	LOG.infov("American Default origin %s", lop.ToText().c_str());
-	LOG.infov("American Default restor %s", lop1.ToText().c_str());
+    LOG.infov("\n================  Locale Test ===========================");
+    
+    LocaleProperties lop = LocaleProperties::DefaultAmerican();
+    Json::Value jval = lop.ToJson();
+    LOG.infov("American Default %s", jval.ToString().c_str());
+    LocaleProperties lop1 = LocaleProperties(jval);
+    LOG.infov("American Default origin %s", lop.ToText().c_str());
+    LOG.infov("American Default restor %s", lop1.ToText().c_str());
 
 
-	lop = LocaleProperties::DefaultEuropean();
-	jval = lop.ToJson();
-	LOG.infov("European Default %s", jval.ToString().c_str());
-	lop1 = LocaleProperties(jval);
-	LOG.infov("European Default origin %s", lop.ToText().c_str());
-	LOG.infov("European Default restor %s", lop1.ToText().c_str());
+    lop = LocaleProperties::DefaultEuropean();
+    jval = lop.ToJson();
+    LOG.infov("European Default %s", jval.ToString().c_str());
+    lop1 = LocaleProperties(jval);
+    LOG.infov("European Default origin %s", lop.ToText().c_str());
+    LOG.infov("European Default restor %s", lop1.ToText().c_str());
 
-	lop = LocaleProperties::DefaultEuropean(true);
-	jval = lop.ToJson();
-	LOG.infov("European1 Default %s", jval.ToString().c_str());
-	lop1 = LocaleProperties(jval);
-	LOG.infov("European1 Default origin %s", lop.ToText().c_str());
-	LOG.infov("European1 Default restor %s", lop1.ToText().c_str());
+    lop = LocaleProperties::DefaultEuropean(true);
+    jval = lop.ToJson();
+    LOG.infov("European1 Default %s", jval.ToString().c_str());
+    lop1 = LocaleProperties(jval);
+    LOG.infov("European1 Default origin %s", lop.ToText().c_str());
+    LOG.infov("European1 Default restor %s", lop1.ToText().c_str());
 
-	LOG.infov("================  Locale Test (end) ===========================\n");
-
-
-	LOG.infov("\n================  String Decomposition ===========================");
+    LOG.infov("================  Locale Test (end) ===========================\n");
 
 
-	FormattingTestFixture::DecomposeString("-3.1415926 FT", false);
-	FormattingTestFixture::DecomposeString("-3,141,592.6 FT", false);
-	FormattingTestFixture::DecomposeString("-3.141.592,6 FT", false);
-	FormattingTestFixture::DecomposeString("-3.141.592 2/3 FT", false);
+    LOG.infov("\n================  String Decomposition ===========================");
 
-	LOG.infov("================  End of String Decomposition ===========================\n");
-	//FormattingTestFixture::TestTime("", "", "%c %a (%A) ");
-	//FormattingTestFixture::TestTime("en-US", "US time", "%c %a (%A) day %d of %b (%B)");
-	//FormattingTestFixture::TestTime("de-DE", "German time", "%c %a (%A) day %d of %b (%B)");
-	//FormattingTestFixture::TestTime("fr", "French time", "%c %a (%A) day %d of %b (%B)");
-	//FormattingTestFixture::TestTime("ru", "Russian time", u8"%c %a (%A) день %d месяца %b (%B)");
+
+    FormattingTestFixture::DecomposeString("-3.1415926 FT", false);
+    FormattingTestFixture::DecomposeString("-3,141,592.6 FT", false);
+    FormattingTestFixture::DecomposeString("-3.141.592,6 FT", false);
+    FormattingTestFixture::DecomposeString("-3.141.592 2/3 FT", false);
+
+    LOG.infov("================  End of String Decomposition ===========================\n");
+    //FormattingTestFixture::TestTime("", "", "%c %a (%A) ");
+    //FormattingTestFixture::TestTime("en-US", "US time", "%c %a (%A) day %d of %b (%B)");
+    //FormattingTestFixture::TestTime("de-DE", "German time", "%c %a (%A) day %d of %b (%B)");
+    //FormattingTestFixture::TestTime("fr", "French time", "%c %a (%A) day %d of %b (%B)");
+    //FormattingTestFixture::TestTime("ru", "Russian time", u8"%c %a (%A) день %d месяца %b (%B)");
 }
 
 
@@ -1265,7 +1265,7 @@ TEST(FormattingTest, PhenomenaTest)
     FormattingTestFixture::ShowSynonyms();
     LOG.infov("================  Synonyms Test (end) ===========================\n");
 
-	LOG.infov("================  Formatting Log (completed) ===========================\n\n\n");
+    LOG.infov("================  Formatting Log (completed) ===========================\n\n\n");
     }
 
 //--------------------------------------------------------------------------------------
