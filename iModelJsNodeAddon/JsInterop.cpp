@@ -167,6 +167,15 @@ void JsInterop::Initialize(BeFileNameCR addonDllDir, T_AssertHandler assertHandl
     s_addonDllDir = addonDllDir;
     s_assertHandler = assertHandler;
 
+#if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
+    // Include this location for delay load of pskernel...
+    WString newPath;
+    newPath = L"PATH=" + addonDllDir + L";";
+
+    newPath.append(::_wgetenv(L"PATH"));
+    _wputenv(newPath.c_str());
+#endif
+
     static std::once_flag s_initFlag;
     std::call_once(s_initFlag, []() 
         {
