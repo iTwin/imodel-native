@@ -470,7 +470,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "AppBundleRoot=\"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\"\n\n# iModelJsNative Assets folder\nrm -rf $AppBundleRoot/iModelJsNative\nmkdir $AppBundleRoot/iModelJsNative\ncp -L -R $OutRoot$BuildArchitecture/Product/iModelJs-Tests/Assets $AppBundleRoot/iModelJsNative\ncp $AssetRoot/backend/assets/test.bim $AppBundleRoot/iModelJsNative/Assets/\n\n# FrontEnd Assets folder\nrm -rf $AppBundleRoot/FrontEnd\nmkdir $AppBundleRoot/FrontEnd\ncp $AssetRoot/index.html $AppBundleRoot/FrontEnd/\ncp $AssetRoot/MyAppUi.js $AppBundleRoot/FrontEnd/\ncp $AssetRoot/MyAppUi.js.map $AppBundleRoot/FrontEnd/\n\n# BackEnd Assets folder\nrm -rf $AppBundleRoot/BackEnd\nmkdir $AppBundleRoot/BackEnd\ncp $AssetRoot/backend/MyAppMobileBackend.js $AppBundleRoot/BackEnd/\ncp -L -R $AssetRoot/backend/assets $AppBundleRoot/BackEnd/\n\n";
+			shellScript = "AppBundleRoot=\"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\"\n\n# iModelJsNative Assets folder\nrm -rf $AppBundleRoot/iModelJsNative\nmkdir $AppBundleRoot/iModelJsNative\ncp -L -R $OutRoot$BuildArchitecture/Product/iModelJs-Tests/Assets $AppBundleRoot/iModelJsNative\ncp $AssetRoot/backend/assets/test.bim $AppBundleRoot/iModelJsNative/Assets/\n\n# Copy FrontEnd and BackEnd assets\nrm -rf $AppBundleRoot/Assets\nmkdir $AppBundleRoot/Assets\ncp -L -R $AssetRoot/ $AppBundleRoot/Assets/\n\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

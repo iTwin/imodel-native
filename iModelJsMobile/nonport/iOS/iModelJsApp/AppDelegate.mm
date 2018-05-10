@@ -35,7 +35,7 @@ extern void imodeljs_addon_setMobileResourcesDir(Utf8CP d);
         {
         auto& runtime = ServicesTier::Host::GetInstance().GetJsRuntime();
         
-        NSString* backendJsPath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"BackEnd/MyAppMobileBackend.js"];
+        NSString* backendJsPath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"Assets/backend/MyAppMobileBackend.js"];
         NSString* backendJs = [NSString stringWithContentsOfFile:backendJsPath encoding:NSUTF8StringEncoding error:NULL];
         auto evaluated = runtime.EvaluateScript (backendJs.UTF8String,
                         [NSURL fileURLWithPath:backendJsPath].absoluteString.UTF8String);
