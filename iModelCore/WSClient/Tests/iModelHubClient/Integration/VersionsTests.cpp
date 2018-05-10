@@ -399,7 +399,7 @@ TEST_F(VersionsTests, GetVersionsWithThumbnails)
         thumbnailsIds = thumbnailsManager.GetAllThumbnailsIds(Thumbnail::Size::Large)->GetResult().GetValue();
         if (versions.size() + 1 == thumbnailsIds.size() || i == retryCount)
             break;
-        BeThreadUtilities::BeSleep(10000);
+        BeThreadUtilities::BeSleep(15000);
         }
     // If only this test runs then 4 thumbnails are rendered. More thumbnails are rendered when all tests runs.
     EXPECT_LE(versions.size() + 1, thumbnailsIds.size());
