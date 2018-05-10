@@ -855,6 +855,9 @@ void ElementClassToAspectClassMapping::CreatePresentationRules(DgnDbR db)
         {
         CachedStatementPtr stmt2 = nullptr;
         auto stat = db.GetCachedStatement(stmt2, "SELECT DISTINCT ElementSchemaName FROM " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " WHERE AspectSchemaName = ?");
+        if (stat != BE_SQLITE_OK)
+            {
+            }
         stmt2->BindText(1, aspectSchemaName, Statement::MakeCopy::No);
         targets.push_back(Utf8String(aspectSchemaName));
         while (stmt2->Step() == BE_SQLITE_ROW)
@@ -868,6 +871,9 @@ void ElementClassToAspectClassMapping::CreatePresentationRules(DgnDbR db)
         {
         CachedStatementPtr stmt3 = nullptr;
         auto stat = db.GetCachedStatement(stmt3, "SELECT DISTINCT ElementSchemaName, ElementClassName FROM " SYNCINFO_ATTACH(ELEMENT_TO_ASPECT_MAPPING_TABLE) " WHERE AspectSchemaName = ?");
+        if (stat != BE_SQLITE_OK)
+            {
+            }
         stmt3->BindText(1, aspectSchemaName, Statement::MakeCopy::No);
         while (stmt3->Step() == BE_SQLITE_ROW)
             {
