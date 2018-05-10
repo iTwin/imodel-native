@@ -92,7 +92,7 @@ DesignSpeedElement::DesignSpeedElement(CreateParams const& params):
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DesignSpeedElement::DesignSpeedElement(CreateParams const& params, CreateFromToParams const& fromToParams):
-    T_Super(params), IPathwayPortionSingleFromTo(fromToParams)
+    T_Super(params), ICorridorPortionSingleFromTo(fromToParams)
     {
     }
 
@@ -131,9 +131,9 @@ DesignSpeedPtr DesignSpeed::Create(CreateFromToParams const& linearParams)
     if (!ValidateParams(linearParams)) 
         return nullptr; 
 
-    auto& dgnDbR = linearParams.m_pathwayCPtr->GetDgnDb();
-    CreateParams params(dgnDbR, linearParams.m_pathwayCPtr->GetModelId(), QueryClassId(dgnDbR));
-    params.SetParentId(linearParams.m_pathwayCPtr->GetElementId(),
+    auto& dgnDbR = linearParams.m_corridorPortionCPtr->GetDgnDb();
+    CreateParams params(dgnDbR, linearParams.m_corridorPortionCPtr->GetModelId(), QueryClassId(dgnDbR));
+    params.SetParentId(linearParams.m_corridorPortionCPtr->GetElementId(),
         DgnClassId(dgnDbR.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayOwnsLinearlyLocatedAttribution)));
     
     auto retVal = new DesignSpeed(params, linearParams);
@@ -166,9 +166,9 @@ DesignSpeedTransitionPtr DesignSpeedTransition::Create(CreateFromToParams const&
     if (!ValidateParams(linearParams)) 
         return nullptr; 
 
-    auto& dgnDbR = linearParams.m_pathwayCPtr->GetDgnDb();
-    CreateParams params(dgnDbR, linearParams.m_pathwayCPtr->GetModelId(), QueryClassId(dgnDbR));
-    params.SetParentId(linearParams.m_pathwayCPtr->GetElementId(),
+    auto& dgnDbR = linearParams.m_corridorPortionCPtr->GetDgnDb();
+    CreateParams params(dgnDbR, linearParams.m_corridorPortionCPtr->GetModelId(), QueryClassId(dgnDbR));
+    params.SetParentId(linearParams.m_corridorPortionCPtr->GetElementId(),
         DgnClassId(dgnDbR.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayOwnsLinearlyLocatedAttribution)));
     
     auto retVal = new DesignSpeedTransition(params, linearParams);

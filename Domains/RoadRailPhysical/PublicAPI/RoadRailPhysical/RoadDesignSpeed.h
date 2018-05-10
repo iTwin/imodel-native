@@ -120,7 +120,7 @@ public:
 //! Linearly-located attribution on a Pathway whose value is its design-speed.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DesignSpeedElement : Dgn::InformationRecordElement, LinearReferencing::ILinearlyLocatedAttribution, IPathwayPortionSingleFromTo
+struct EXPORT_VTABLE_ATTRIBUTE DesignSpeedElement : Dgn::InformationRecordElement, LinearReferencing::ILinearlyLocatedAttribution, ICorridorPortionSingleFromTo
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_DesignSpeedElement, Dgn::InformationRecordElement);
     friend struct DesignSpeedElementHandler;
@@ -149,9 +149,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DesignSpeed : DesignSpeedElement
     friend struct DesignSpeedHandler;
 
 public:
-    struct CreateFromToParams : IPathwayPortionSingleFromTo::CreateFromToParams
+    struct CreateFromToParams : ICorridorPortionSingleFromTo::CreateFromToParams
     {
-    DEFINE_T_SUPER(IPathwayPortionSingleFromTo::CreateFromToParams)
+    DEFINE_T_SUPER(ICorridorPortionSingleFromTo::CreateFromToParams)
 
     DesignSpeedDefinitionCPtr m_designSpeedDefCPtr;
 

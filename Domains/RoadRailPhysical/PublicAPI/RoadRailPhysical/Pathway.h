@@ -231,7 +231,7 @@ public:
 //! Interface providing access to pathway segments.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct IPathwayPortionSingleFromTo : LinearReferencing::ILinearlyLocatedSingleFromTo
+struct ICorridorPortionSingleFromTo : LinearReferencing::ILinearlyLocatedSingleFromTo
 {
     DEFINE_T_SUPER(LinearReferencing::ILinearlyLocatedSingleFromTo)
 
@@ -240,26 +240,26 @@ public:
     {
         DEFINE_T_SUPER(LinearReferencing::ILinearlyLocatedSingleFromTo::CreateFromToParams)
 
-        PathwayElementCPtr m_pathwayCPtr;
+        CorridorPortionElementCPtr m_corridorPortionCPtr;
 
-        CreateFromToParams(PathwayElementCR pathway, 
+        CreateFromToParams(CorridorPortionElementCR corridorPortion, 
             double fromDistanceFromStart, double toDistanceFromStart):
-            m_pathwayCPtr(&pathway), 
+            m_corridorPortionCPtr(&corridorPortion),
             T_Super(*dynamic_cast<LinearReferencing::ILinearElementCP>(
-                pathway.GetMainLinearElementAs<Dgn::DgnElement>().get()), 
+                corridorPortion.GetMainLinearElementAs<Dgn::DgnElement>().get()),
                 fromDistanceFromStart, toDistanceFromStart) {}
     }; // CreateFromToParams
 
-    Dgn::DgnElementId GetPathwayId() const { return dynamic_cast<Dgn::DgnElementCP>(this)->GetParentId(); }
+    Dgn::DgnElementId GetCorridorPortionId() const { return dynamic_cast<Dgn::DgnElementCP>(this)->GetParentId(); }
 
 protected:
-    IPathwayPortionSingleFromTo() {}
-    IPathwayPortionSingleFromTo(CreateFromToParams const& params) : T_Super(params) {}
+    ICorridorPortionSingleFromTo() {}
+    ICorridorPortionSingleFromTo(CreateFromToParams const& params) : T_Super(params) {}
 
     static bool ValidateParams(CreateFromToParams const& params) 
-        { if (!T_Super::ValidateParams(params)) return false; return params.m_pathwayCPtr.IsValid() && params.m_pathwayCPtr->GetElementId().IsValid(); }
+        { if (!T_Super::ValidateParams(params)) return false; return params.m_corridorPortionCPtr.IsValid() && params.m_corridorPortionCPtr->GetElementId().IsValid(); }
     virtual void _OnCreate(CreateFromToParams const& params) { _SetLinearElement(params.m_linearElementCPtr->GetElementId()); }
-}; // IPathwayPortionSingleFromTo
+}; // ICorridorPortionSingleFromTo
 
 
 //__PUBLISH_SECTION_END__
