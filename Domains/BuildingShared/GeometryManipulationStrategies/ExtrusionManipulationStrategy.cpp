@@ -209,14 +209,14 @@ void ExtrusionManipulationStrategy::_AppendKeyPoint
         return;
         }
 
-    if (!m_heightSet)
+    if (!IsHeightSet())
         {
         m_height = CalculateHeight(newKeyPoint);
         m_heightSet = true;
         return;
         }
 
-    if (!m_sweepDirectionSet)
+    if (!IsSweepDirectionSet())
         {
         m_sweepDirection = CalculateSweepDirection(newKeyPoint);
         m_sweepDirectionSet = true;
@@ -310,7 +310,7 @@ bool ExtrusionManipulationStrategy::_IsComplete() const
 //---------------+---------------+---------------+---------------+---------------+------
 bool ExtrusionManipulationStrategy::_CanAcceptMorePoints() const
     {
-    return m_baseShapeManipulationStrategy->CanAcceptMorePoints() && !m_baseComplete && !m_heightSet && !m_sweepDirectionSet;
+    return m_baseShapeManipulationStrategy->CanAcceptMorePoints() && !m_baseComplete || !IsHeightSet() || !IsSweepDirectionSet();
     }
 
 //--------------------------------------------------------------------------------------

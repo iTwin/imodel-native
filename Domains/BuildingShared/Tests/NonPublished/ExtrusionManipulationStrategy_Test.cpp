@@ -177,3 +177,118 @@ TEST_F(ExtrusionManipulationStrategyTestFixture, FixedSweep)
     ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*extrusion.m_baseCurve, *expectedBase));
     ASSERT_TRUE(extrusion.m_extrusionVector.AlmostEqual(expectedSweep));
     }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Vytautas.Kaniusonis             05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ExtrusionManipulationStrategyTestFixture, CanAcceptMorePoints)
+    {
+    ExtrusionManipulationStrategyPtr sut = ExtrusionManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+    //set base
+    sut->AppendKeyPoint({ 0,0,0 });
+    sut->AppendKeyPoint({ 10,0,0 });
+    sut->AppendKeyPoint({ 10,10,0 });
+    sut->AppendKeyPoint({ 0,10,0 });
+
+    ASSERT_FALSE(sut->IsComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet());
+
+    ASSERT_FALSE(sut->IsBaseComplete());
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_BaseComplete(), true);
+    ASSERT_TRUE(sut->IsBaseComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
+
+    //set height
+    sut->AppendKeyPoint({ 0,10,10 });
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
+
+    //set sweep direction
+    sut->AppendKeyPoint({ 0,15,10 });
+    ASSERT_FALSE(sut->CanAcceptMorePoints());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Vytautas.Kaniusonis             05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ExtrusionManipulationStrategyTestFixture, CanAcceptMorePointsFixedHeight)
+    {
+    ExtrusionManipulationStrategyPtr sut = ExtrusionManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_UseFixedHeight(), true);
+    //set base
+    sut->AppendKeyPoint({ 0,0,0 });
+    sut->AppendKeyPoint({ 10,0,0 });
+    sut->AppendKeyPoint({ 10,10,0 });
+    sut->AppendKeyPoint({ 0,10,0 });
+
+    ASSERT_FALSE(sut->IsComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet());
+
+    ASSERT_FALSE(sut->IsBaseComplete());
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_BaseComplete(), true);
+    ASSERT_TRUE(sut->IsBaseComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
+
+    //set sweep direction
+    sut->AppendKeyPoint({ 0,15,10 });
+    ASSERT_FALSE(sut->CanAcceptMorePoints());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Vytautas.Kaniusonis             05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ExtrusionManipulationStrategyTestFixture, CanAcceptMorePointsFixedSweep)
+    {
+    ExtrusionManipulationStrategyPtr sut = ExtrusionManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_UseFixedSweepDirection(), true);
+    //set base
+    sut->AppendKeyPoint({ 0,0,0 });
+    sut->AppendKeyPoint({ 10,0,0 });
+    sut->AppendKeyPoint({ 10,10,0 });
+    sut->AppendKeyPoint({ 0,10,0 });
+
+    ASSERT_FALSE(sut->IsComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet());
+
+    ASSERT_FALSE(sut->IsBaseComplete());
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_BaseComplete(), true);
+    ASSERT_TRUE(sut->IsBaseComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
+
+    //set height
+    sut->AppendKeyPoint({ 0,10,10 });
+    ASSERT_FALSE(sut->CanAcceptMorePoints());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Vytautas.Kaniusonis             05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ExtrusionManipulationStrategyTestFixture, CanAcceptMorePointsFixedHeightAndSweep)
+    {
+    ExtrusionManipulationStrategyPtr sut = ExtrusionManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_UseFixedSweepDirection(), true);
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_UseFixedHeight(), true);
+    //set base
+    sut->AppendKeyPoint({ 0,0,0 });
+    sut->AppendKeyPoint({ 10,0,0 });
+    sut->AppendKeyPoint({ 10,10,0 });
+    sut->AppendKeyPoint({ 0,10,0 });
+
+    ASSERT_TRUE(sut->IsComplete());
+    ASSERT_TRUE(sut->CanAcceptMorePoints());
+    ASSERT_FALSE(sut->IsDynamicKeyPointSet());
+
+    ASSERT_FALSE(sut->IsBaseComplete());
+    sut->SetProperty(ExtrusionManipulationStrategy::prop_BaseComplete(), true);
+    ASSERT_TRUE(sut->IsBaseComplete());
+    ASSERT_FALSE(sut->CanAcceptMorePoints());
+    }
