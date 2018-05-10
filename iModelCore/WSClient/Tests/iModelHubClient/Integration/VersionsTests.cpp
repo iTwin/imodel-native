@@ -43,6 +43,30 @@ struct VersionsTests : public iModelTestsBase
         {
         iModelTestsBase::TearDownTestCase();
         }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Andrius.Zonys                   04/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void ValidateThumbnailSelection(bvector<VersionInfoPtr> versions, Thumbnail::Size expectedSizes)
+        {
+        for each (VersionInfoPtr version in versions)
+            {
+            if (version->GetId() != s_version5->GetId() &&
+                version->GetId() != s_version10->GetId() &&
+                version->GetId() != s_version15->GetId())
+                continue;
+
+            if (expectedSizes & Thumbnail::Size::Small)
+                EXPECT_NE("", version->GetSmallThumbnailId());
+            else
+                EXPECT_EQ("", version->GetSmallThumbnailId());
+
+            if (expectedSizes & Thumbnail::Size::Large)
+                EXPECT_NE("", version->GetLargeThumbnailId());
+            else
+                EXPECT_EQ("", version->GetLargeThumbnailId());
+            }
+        }
     };
 VersionInfoPtr VersionsTests::s_version5 = nullptr;
 VersionInfoPtr VersionsTests::s_version10 = nullptr;
@@ -365,25 +389,6 @@ TEST_F(VersionsTests, GetChangeSetsBetweenVersionAndChangeSetEmptyChangeSetIdSuc
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Andrius.Zonys                   04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ValidateThumbnailSelection(bvector<VersionInfoPtr> versions, Thumbnail::Size expectedSizes)
-    {
-    for each (VersionInfoPtr version in versions)
-        {
-        if (expectedSizes & Thumbnail::Size::Small)
-            EXPECT_NE("", version->GetSmallThumbnailId());
-        else
-            EXPECT_EQ("", version->GetSmallThumbnailId());
-
-        if (expectedSizes & Thumbnail::Size::Large)
-            EXPECT_NE("", version->GetLargeThumbnailId());
-        else
-            EXPECT_EQ("", version->GetLargeThumbnailId());
-        }
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                    Andrius.Zonys                   04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(VersionsTests, GetVersionsWithThumbnails)
     {
     VersionsManagerCR versionManager = s_connection->GetVersionsManager();
@@ -393,16 +398,16 @@ TEST_F(VersionsTests, GetVersionsWithThumbnails)
     // Wait until all Thumbnails will be rendered.
     ThumbnailsManagerCR thumbnailsManager = s_connection->GetThumbnailsManager();
     bvector<Utf8String> thumbnailsIds;
-    int retryCount = 10;
+    int retryCount = 5;
     for (int i = 0; i <= retryCount; i++)
         {
         thumbnailsIds = thumbnailsManager.GetAllThumbnailsIds(Thumbnail::Size::Large)->GetResult().GetValue();
-        if (versions.size() + 1 == thumbnailsIds.size() || i == retryCount)
+        if (thumbnailsIds.size() >= 4 || i == retryCount)
             break;
         BeThreadUtilities::BeSleep(10000);
         }
     // If only this test runs then 4 thumbnails are rendered. More thumbnails are rendered when all tests runs.
-    EXPECT_LE(versions.size() + 1, thumbnailsIds.size());
+    EXPECT_TRUE(thumbnailsIds.size() >= 4);
 
     versions = versionManager.GetAllVersions(nullptr, Thumbnail::Size::Small)->GetResult().GetValue();
     ValidateThumbnailSelection(versions, Thumbnail::Size::Small);
