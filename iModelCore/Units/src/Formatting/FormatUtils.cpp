@@ -22,7 +22,7 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  11/2017
 //---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableDecimalPercisions()
+UIList UIUtils::GetAvailableDecimalPercisions(DecimalPrecision& defaultVal)
     {
     UIList decPercisionList;
 
@@ -40,13 +40,15 @@ UIList UIUtils::GetAvailableDecimalPercisions()
     decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision11, UNITSL10N_GETSTRING(DecimalPrecision_11).c_str()));
     decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision12, UNITSL10N_GETSTRING(DecimalPrecision_12).c_str()));
 
+    defaultVal = FormatConstant::DefaultDecimalPrecision();
+
     return decPercisionList;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  11/2017
 //---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableFractionalPercisions()
+UIList UIUtils::GetAvailableFractionalPercisions(FractionalPrecision& defaultVal)
     {
     UIList fracPercisionList;
 
@@ -59,26 +61,30 @@ UIList UIUtils::GetAvailableFractionalPercisions()
     fracPercisionList.AddListEntry(UIListEntry(64,   UNITSL10N_GETSTRING(FractionalPrecision_Over_64).c_str()));
     fracPercisionList.AddListEntry(UIListEntry(128,  UNITSL10N_GETSTRING(FractionalPrecision_Over_128).c_str()));
     fracPercisionList.AddListEntry(UIListEntry(256,  UNITSL10N_GETSTRING(FractionalPrecision_Over_256).c_str()));
+
+    defaultVal = FormatConstant::DefaultFractionalPrecision();
     return fracPercisionList;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  11/2017
 //---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableSignOption()
+UIList UIUtils::GetAvailableSignOption(SignOption& defaultVal)
     {
     UIList signOptions;
     signOptions.AddListEntry(UIListEntry((int)SignOption::NoSign,              UNITSL10N_GETSTRING(ShowSignOption_NoSign).c_str(), FormatConstant::FPN_NoSign().c_str()));
     signOptions.AddListEntry(UIListEntry((int)SignOption::OnlyNegative,        UNITSL10N_GETSTRING(ShowSignOption_OnlyNegative).c_str(), FormatConstant::FPN_OnlyNegative().c_str()));
     signOptions.AddListEntry(UIListEntry((int)SignOption::SignAlways,          UNITSL10N_GETSTRING(ShowSignOption_SignAlways).c_str(), FormatConstant::FPN_SignAlways().c_str()));
     signOptions.AddListEntry(UIListEntry((int)SignOption::NegativeParentheses, UNITSL10N_GETSTRING(ShowSignOption_NegativeParentheses).c_str(), FormatConstant::FPN_NegativeParenths().c_str()));
+
+    defaultVal = FormatConstant::DefaultSignOption();
     return signOptions;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailablePresentationTypes()
+UIList UIUtils::GetAvailablePresentationTypes(PresentationType& defaultVal)
     {
     UIList presentationTypes;
 
@@ -87,52 +93,56 @@ UIList UIUtils::GetAvailablePresentationTypes()
     presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Scientific, UNITSL10N_GETSTRING(PresentationType_Scientific).c_str(), Utils::GetPresentationTypeString(PresentationType::Scientific).c_str()));
     presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Station, UNITSL10N_GETSTRING(PresentationType_Station).c_str(), Utils::GetPresentationTypeString(PresentationType::Station).c_str()));
 
+    defaultVal = FormatConstant::DefaultPresentaitonType();
     return presentationTypes;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableDecimalSeparators()
+UIList UIUtils::GetAvailableDecimalSeparators(Utf8StringR defaultVal)
     {
     UIList decimalSeparators;
 
     decimalSeparators.AddListEntry(UIListEntry(0, UNITSL10N_GETSTRING(DecimalSeparator_Comma).c_str(), ","));
     decimalSeparators.AddListEntry(UIListEntry(1, UNITSL10N_GETSTRING(DecimalSeparator_Point).c_str(), "."));
 
+    defaultVal = Utf8String(1, FormatConstant::DefaultDecimalSeparator());
     return decimalSeparators;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableThousandSeparators()
+UIList UIUtils::GetAvailableThousandSeparators(Utf8StringR defaultVal)
     {
     UIList thousandSeparators;
 
     thousandSeparators.AddListEntry(UIListEntry(0, UNITSL10N_GETSTRING(ThousandSeparator_Comma).c_str(), ","));
     thousandSeparators.AddListEntry(UIListEntry(1, UNITSL10N_GETSTRING(ThousandSeparator_Point).c_str(), "."));
 
+    defaultVal = Utf8String(1, FormatConstant::DefaultThousandSeparator());
     return thousandSeparators;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableUnitLabelSeparators()
+UIList UIUtils::GetAvailableUnitLabelSeparators(Utf8StringR defaultVal)
     {
     UIList unitLabelSeparators;
 
     unitLabelSeparators.AddListEntry(UIListEntry(0, UNITSL10N_GETSTRING(UnitLabelSeparator_None).c_str(), ""));
     unitLabelSeparators.AddListEntry(UIListEntry(1, UNITSL10N_GETSTRING(UnitLabelSeparator_Space).c_str(), " "));
 
+    defaultVal = FormatConstant::DefaultUomSeparator();
     return unitLabelSeparators;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableTraits()
+UIList UIUtils::GetAvailableTraits(FormatTraits& defaultVal)
     {
     UIList traits;
 
@@ -154,9 +164,8 @@ UIList UIUtils::GetAvailableTraits()
 //        ret += FormatConstant::FPN_PrependUnitLabel() + "|";
 //    if (GetTraitBit(FormatTraits::ExponenentOnlyNegative))
 //        ret += FormatConstant::FPN_ExponentOnlyNegative() + "|";
-//    if ('|' == *(ret.end() - 1))
-//        ret = ret.substr(0, ret.size() - 1);
 
+    defaultVal = FormatConstant::DefaultFormatTraits();
     return traits;
     }
 

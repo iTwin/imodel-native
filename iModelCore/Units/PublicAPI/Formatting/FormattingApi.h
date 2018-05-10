@@ -135,14 +135,14 @@ public:
 //=======================================================================================
 struct UIUtils
 {
-    UNITS_EXPORT static UIList GetAvailableDecimalPercisions();
-    UNITS_EXPORT static UIList GetAvailableFractionalPercisions();
-    UNITS_EXPORT static UIList GetAvailableSignOption();
-    UNITS_EXPORT static UIList GetAvailablePresentationTypes();
-    UNITS_EXPORT static UIList GetAvailableDecimalSeparators();
-    UNITS_EXPORT static UIList GetAvailableThousandSeparators();
-    UNITS_EXPORT static UIList GetAvailableUnitLabelSeparators();
-    UNITS_EXPORT static UIList GetAvailableTraits();
+    UNITS_EXPORT static UIList GetAvailableDecimalPercisions(DecimalPrecision& defaultVal);
+    UNITS_EXPORT static UIList GetAvailableFractionalPercisions(FractionalPrecision& defaultVal);
+    UNITS_EXPORT static UIList GetAvailableSignOption(SignOption& defaultVal);
+    UNITS_EXPORT static UIList GetAvailablePresentationTypes(PresentationType& defaultVal);
+    UNITS_EXPORT static UIList GetAvailableDecimalSeparators(Utf8StringR defaultVal);
+    UNITS_EXPORT static UIList GetAvailableThousandSeparators(Utf8StringR defaultVal);
+    UNITS_EXPORT static UIList GetAvailableUnitLabelSeparators(Utf8StringR defaultVal);
+    UNITS_EXPORT static UIList GetAvailableTraits(FormatTraits& defaultVal);
 };
 
 //=======================================================================================
