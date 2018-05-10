@@ -2,13 +2,49 @@
 |
 |     $Source: geom/src/SolidPrimitive/sp_CurveIntersection.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include "BoxFaces.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
+/*-----------------------------------------------------------------*//**
+@description Return the (weighted) control points of quadratic beziers which
+   combine to represent the full conic section.
+
+ @param pEllipse => ellipse to query
+ @param pPoleArray <= array of poles of composite quadratic Bezier curve.  Array count depends on the angular extent.
+ @param pCirclePoleArray <= array of corresponding poles which
+            map the bezier polynomials back to the unit circle points (x,y,w)
+            where x^2 + y^2 = w^2, but beware that w is not identically 1!  (Use this to map from bezier parameter back to angles.)
+ @param pNumPole <= number of poles returned
+ @param pNumSpan <= number of spans returned.  The pole indices for the first span are (always) 0,1,2; for the second span (if present),
+                    2,3,4, and so on.
+ @param maxPole => maximum number of poles desired.  maxPole must be at least
+                5.  The circle is split into (maxPole - 1) / 2 spans.
+                Beware that for 5 poles the circle is split into at most
+                two spans, and there may be zero weights.   For 7 or more poles
+                all weights can be positive.  The function may return fewer
+                poles.
+ @group "DEllipse3d Queries"
+ @bsimethod                                                     EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+void     DEllipse3d_getQuadricBezierPoles
+
+(
+DEllipse3dCP pEllipse,
+DPoint4dP pPoleArray,
+DPoint3dP pCirclePoleArray,
+int       *pNumPole,
+int       *pNumSpan,
+int       maxPole
+)
+    {
+    DConic4d conic;
+    bsiDConic4d_initFromDEllipse3d (&conic, pEllipse);
+    bsiDConic4d_getQuadricBezierPoles (&conic, pPoleArray, pCirclePoleArray, pNumPole, pNumSpan, maxPole);
+    }
 
 
 /*--------------------------------------------------------------------------------**//**
@@ -73,7 +109,7 @@ QuadraticArc (DEllipse3dCR arc, double x0, double y0, double z0)
     m_arc.center.x -= x0;
     m_arc.center.y -= y0;
     m_arc.center.z -= z0;
-    bsiDEllipse3d_getQuadricBezierPoles (&m_arc, m_arcBezCoffs, m_unitCircleCoffs, &m_numPoles, &m_numSpan, 5);
+    m_arc.QuadricBezierPoles (m_arcBezCoffs, m_unitCircleCoffs, &m_numPoles, &m_numSpan, 5);
     }
 
 // Form quartic as weighted inner product (x*x*diagonals.x + ...)

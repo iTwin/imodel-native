@@ -26,7 +26,7 @@ $(OUT_DIR)embeddeddpoint3darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint3
 
 $(OUT_DIR)embeddedarraycachemanager$(OUT_EXT)      : $(geomSrcMemory)embeddedarraycachemanager.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dellipse3d$(OUT_EXT)      : $(geomSrcStructs)dellipse3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dellipse3d$(OUT_EXT)      : $(geomSrcStructs)dellipse3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)dellipse3dDMatrix3d$(OUT_EXT)  : $(geomSrcStructs)dellipse3dDMatrix3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -383,7 +383,7 @@ $(OUT_DIR)bspsurfacetrim$(OUT_EXT)    : $(geomSrcBspline)bspsurfacetrim.cpp $(OT
 
 $(OUT_DIR)bspproc$(OUT_EXT)    : $(geomSrcBspline)bspproc.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-$(OUT_DIR)bspbound$(OUT_EXT)    : $(geomSrcBspline)bspbound.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+#$(OUT_DIR)bspbound$(OUT_EXT)    : $(geomSrcBspline)bspbound.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 #$(OUT_DIR)bspstrok$(OUT_EXT)    : $(geomSrcBspline)bspstrok.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 

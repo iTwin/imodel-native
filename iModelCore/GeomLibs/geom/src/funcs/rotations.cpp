@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/rotations.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -329,13 +329,13 @@ RotMatrixP pBinverse
 )
     {
     if (pB)
-        bsiRotMatrix_initFromRowValues (pB,
+        pB->InitFromRowValues (
                  0,1,0,
                 -1,0,1,
                  1,0,1
                 );
     if (pBinverse)
-        bsiRotMatrix_initFromRowValues (pBinverse,
+        pBinverse->InitFromRowValues (
                 0, -0.5, 0.5,
                 1,    0,   0,
                 0,  0.5, 0.5
@@ -358,13 +358,13 @@ RotMatrixP pBinverse
 )
     {
     if (pB)
-        bsiRotMatrix_initFromRowValues (pB,
+        pB->InitFromRowValues (
                 0, 1,1,
                 0,-1,1,
                 1, 0,0
                 );
     if (pBinverse)
-        bsiRotMatrix_initFromRowValues (pBinverse,
+        pBinverse->InitFromRowValues (
                  0.0, -0.0,  1,
                  0.5, -0.5,  0,
                  0.5,  0.5,  0
@@ -415,13 +415,13 @@ double      w1
         *pw = 1.0;
 
     if (pB)
-        bsiRotMatrix_initIdentity (pB);
+        pB->InitIdentity ();
 
     if (pC)
-        bsiRotMatrix_initIdentity (pC);
+        pC->InitIdentity ();
 
     if (pQ)
-        bsiRotMatrix_initIdentity (pQ);
+        pQ->InitIdentity ();
 
     if (pCurveType)
         *pCurveType = 1;
@@ -440,7 +440,7 @@ double      w1
                 double rw = 1.0 / w1;
                 *pw = w1;
                 if (pB)
-                    bsiRotMatrix_initFromScaleFactors (pB, rw, rw, rw);
+                    pB->InitFromScaleFactors (rw, rw, rw);
                 }
             }
         else
@@ -451,9 +451,9 @@ double      w1
             bsiTrig_constructGivensWeights (&cosine, &sine, wc, ws);
 
             if (pB)
-                bsiRotMatrix_givensColumnOp (pB, pB, cosine, sine, 0, 1);
+                pB->GivensColumnOp (cosine, sine, 0, 1);
             if (pQ)
-                bsiRotMatrix_givensRowOp (pQ, cosine, -sine, 0, 1, pQ);
+                pQ->GivensRowOp (cosine, -sine, 0, 1);
 
             bsiTrig_applyGivensWeights (&wc, &ws, wc, ws, cosine, sine);
 
@@ -476,7 +476,7 @@ double      w1
                 if (pw)
                     *pw = WT.z;
                 if (pB)
-                    bsiRotMatrix_scaleColumns (pB, pB, rw, rw, rw);
+                    pB->ScaleColumns (rw, rw, rw);
 
                 boolStat = true;
                 }
@@ -494,7 +494,7 @@ double      w1
                 if (pw)
                     *pw = w1;
                 if (pB)
-                    bsiRotMatrix_scaleColumns (pB, pB, rw, rw, rw);
+                    pB->ScaleColumns (rw, rw, rw);
 
                 /* Leave C as the identity */
                 *pCurveType = 1;
@@ -519,7 +519,7 @@ double      w1
                 if (pw)
                     *pw = wc;
                 if (pB)
-                    bsiRotMatrix_scaleColumns (pB, pB, rw, rw, rw);
+                    pB->ScaleColumns (rw, rw, rw);
                 *pCurveType = -1;
 
                 boolStat = true;
@@ -532,7 +532,7 @@ double      w1
     RotMatrix Sigma;
     RotMatrix BT;
     double d;
-    bsiRotMatrix_initFromScaleFactors (&Sigma, 1.0, 1.0, -1.0);
+    Sigma.InitFromScaleFactors (1.0, 1.0, -1.0);
     bsiRotMatrix_transpose (&BT, pB);
     bsiRotMatrix_multiplyRotMatrixRotMatrix (&BTSigmaB, &BT, &Sigma);
     bsiRotMatrix_multiplyRotMatrixRotMatrix (&BTSigmaB, &BTSigmaB, pB);
@@ -547,7 +547,7 @@ double      w1
     RotMatrix MT;
     double d;
     bsiRotMatrix_invert (&M, pB);
-    bsiRotMatrix_initFromScaleFactors (&Sigma, 1.0, 1.0, -1.0);
+    Sigma.InitFromScaleFactors (1.0, 1.0, -1.0);
     bsiRotMatrix_transpose (&MT, &M);
     bsiRotMatrix_multiplyRotMatrixRotMatrix (&MTSigmaM, &MT, &Sigma);
     bsiRotMatrix_multiplyRotMatrixRotMatrix (&MTSigmaM, &MTSigmaM, &M);

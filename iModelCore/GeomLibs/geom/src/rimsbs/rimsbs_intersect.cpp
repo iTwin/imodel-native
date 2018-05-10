@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/rimsbs/rimsbs_intersect.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -311,7 +311,7 @@ DEllipse3d          *pEllipse               /* => ellipse geometry from second c
     lineNode = jmdlRGEdge_getNodeId (pEdgeData0, 0);
     ellipseNode = jmdlRGEdge_getNodeId (pEdgeData1, 0);
 
-    bsiDEllipse3d_evaluateEndPoints (pEllipse, &ellipsePoint[0], &ellipsePoint[1]);
+    pEllipse->EvaluateEndPoints (ellipsePoint[0], ellipsePoint[1]);
 
     numClose = jmdlRIMSBS_computeSquaredXYDistancesExt (endDist2, isClose, linePoint, true, ellipsePoint, false, tol2);
 
@@ -417,22 +417,19 @@ DEllipse3d          *pEllipse1              /* => ellipse geometry from second c
                         );
 
 
-    numIntersection = bsiDEllipse3d_intersectXYDEllipse3dBounded (
-                            pEllipse0,
+    numIntersection = pEllipse0->IntersectXYDEllipse3dBounded (
                             intersectionPoint,
                             ellipse0Coffs,
                             ellipse0Angle,
                             ellipse1Coffs,
                             ellipse1Angle,
-                            pEllipse1
+                            *pEllipse1
                             );
 
     for (i = 0; i < numIntersection; i++)
         {
-        f0 = bsiDEllipse3d_angleToFraction
-                                (pEllipse0, ellipse0Angle[i]);
-        f1 = bsiDEllipse3d_angleToFraction
-                                (pEllipse1, ellipse1Angle[i]);
+        f0 = pEllipse0->AngleToFraction (ellipse0Angle[i]);
+        f1 = pEllipse1->AngleToFraction (ellipse1Angle[i]);
 
         jmdlRIMSBS_declareInteriorIntersections
                             (
@@ -828,9 +825,9 @@ MSBsplineCurve      *pCurve1                /* => optional curve rep of ellipse.
                 double s, theta, dot, cross;
                 for (s = 0.0; s <= 1.000001; s += 0.5)
                     {
-                    theta = bsiDEllipse3d_fractionToAngle (pEllipse1, s);
-                    bsiDEllipse3d_evaluateDerivatives
-                            (pEllipse1, &ellipsePoint, &ellipseTangent, NULL, theta);
+                    theta = pEllipse1->FractionToAngle, s);
+                    pEllipse1->EvaluateDerivatives
+                            (&ellipsePoint, &ellipseTangent, NULL, theta);
                     bspcurv_evaluateCurvePoint (
                                     &curvePoint, &curveTangent, pCurve1, s);
                     bsiDPoint3d_subtractDPoint3dDPoint3d (&dX, &ellipsePoint, &curvePoint);
@@ -869,7 +866,7 @@ MSBsplineCurve      *pCurve1                /* => optional curve rep of ellipse.
                             &pIntersectionPoint[i],
                             1);
             theta1 = bsiTrig_atan2 (ellipseCoffs.y, ellipseCoffs.x);
-            f1 = bsiDEllipse3d_angleToFraction (pEllipse1, theta1);
+            f1 = pEllipse1->AngleToFraction (theta1);
 
             jmdlRIMSBS_declareInteriorIntersections
                                 (

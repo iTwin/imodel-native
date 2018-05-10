@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/rimsbs/rimsbs_intersect1.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -232,9 +232,7 @@ double                  radius              /* => circle radius */
 
     bsiRotMatrix_initFromScaleFactors (&z0Matrix, 1.0, 1.0, 0.0);
 
-    bsiDEllipse3d_init
-                    (
-                    &circle,
+    circle.Init (
                     pCenter->x, pCenter->y, pCenter->z,
                     radius, 0.0, 0.0,
                     0.0, radius, 0.0,
@@ -303,9 +301,7 @@ double                  radius              /* => circle radius */
     if (pPointArray)
         jmdlEmbeddedDPoint3dArray_empty (pPointArray);
 
-    bsiDEllipse3d_init
-                    (
-                    &circle,
+    circle.Init (
                     pCenter->x, pCenter->y, pCenter->z,
                     radius, 0.0, 0.0,
                     0.0, radius, 0.0,
@@ -313,39 +309,36 @@ double                  radius              /* => circle radius */
                     );
 
 #ifdef oldOrder
-    numIntersection = bsiDEllipse3d_intersectXYDEllipse3dBounded
+    numIntersection = pEllipse->IntersectXYDEllipse3dBounded
                     (
-                    pEllipse,
                     NULL,
                     trigPoint,
                     ellipseAngle,
                     NULL,
                     NULL,
-                    &circle
+                    circle
                     );
 #else
-    numIntersection = bsiDEllipse3d_intersectXYDEllipse3dBounded
+    numIntersection = circle.IntersectXYDEllipse3dBounded
                     (
-                    &circle,
                     NULL,
                     NULL,
                     NULL,
                     trigPoint,
                     ellipseAngle,
-                    pEllipse
+                    *pEllipse
                     );
 #endif
     for (i = 0; i < numIntersection; i++)
         {
         if (pParameterArray)
             {
-            fraction = bsiDEllipse3d_angleToFraction (pEllipse, ellipseAngle[i]);
+            fraction = pEllipse->AngleToFraction (ellipseAngle[i]);
             jmdlEmbeddedDoubleArray_addDouble (pParameterArray, fraction);
             }
         if (pPointArray)
             {
-            bsiDEllipse3d_evaluateTrigPairs
-                    (pEllipse, &point, (DPoint2d *)&trigPoint[i], 1);
+            pEllipse->EvaluateTrigPairs (&point, (DPoint2d *)&trigPoint[i], 1);
             jmdlEmbeddedDPoint3dArray_addDPoint3d (pPointArray, &point);
             }
         }

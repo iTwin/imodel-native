@@ -2291,7 +2291,6 @@ int                 *numSurfPts
     DVec3d          norm;
     BsurfBoundary   bound, *tmpBound;
     Evaluator       eval;
-    BoundBox        box;
 
     if (tolerance < fc_epsilon)
         return ERROR;
@@ -2319,8 +2318,9 @@ int                 *numSurfPts
     if (direction)
         bsiDVec3d_normalize (&norm, direction);
 
-    bound_boxFromSurface (&box, surface);
-    uvTol = tolerance / (10.0 * bsiDPoint3d_magnitude (&box.extent));
+    DRange3d surfaceRange;
+    surface->GetPoleRange (surfaceRange);
+    uvTol = tolerance / (10.0 * surfaceRange.low.Distance (surfaceRange.high));
 
     KnotData knotData;
     knotData.LoadCurveKnots (*curve);

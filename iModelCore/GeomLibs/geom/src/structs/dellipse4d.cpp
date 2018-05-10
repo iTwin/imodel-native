@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/dellipse4d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1913,7 +1913,7 @@ double          a
     if (jmdlDEllipse4d_sortEllipticEigensystem (&Q, lambdaA))
         {
         lambda. Init (lambdaA[0], lambdaA[1], lambdaA[2]);
-        bsiRotMatrix_scaleColumns (&B, &Q,
+        B.ScaleColumns (Q,
                             1.0 / sqrt (fabs (lambda.x)),
                             1.0 / sqrt (fabs (lambda.y)),
                             1.0 / sqrt (fabs (lambda.z)));

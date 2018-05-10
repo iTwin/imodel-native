@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/transform.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2878,7 +2878,7 @@ DPoint3dCP pMax
         diag.z = 1.0;
     if (pNpcToGlobal)
         {
-        bsiRotMatrix_initFromScaleFactors (&matrix, diag.x, diag.y, diag.z);
+        matrix.InitFromScaleFactors (diag.x, diag.y, diag.z);
         bsiTransform_initFromMatrixAndTranslation (pNpcToGlobal, &matrix, pMin);
 
         }
@@ -2891,7 +2891,7 @@ DPoint3dCP pMax
         origin.y = - pMin->y / diag.y;
         origin.z = - pMin->z / diag.z;
 
-        bsiRotMatrix_initFromScaleFactors (&matrix, 1.0 / diag.x, 1.0 / diag.y, 1.0 /diag.z);
+        matrix.InitFromScaleFactors (1.0 / diag.x, 1.0 / diag.y, 1.0 /diag.z);
         bsiTransform_initFromMatrixAndTranslation (pGlobalToNpc, &matrix, &origin);
         }
     }
@@ -2954,7 +2954,7 @@ DPoint3dCP pMax2
         translate.y = pMin2->y - diag.y * pMin1->y;
         translate.z = pMin2->z - diag.z * pMin1->z;
 
-        bsiRotMatrix_initFromScaleFactors (&matrix, diag.x, diag.y, diag.z);
+        matrix.InitFromScaleFactors (diag.x, diag.y, diag.z);
         bsiTransform_initFromMatrixAndTranslation (pTransform12, &matrix, &translate);
         }
 
@@ -2967,7 +2967,7 @@ DPoint3dCP pMax2
         translate.x = pMin1->x - diag.x * pMin2->x;
         translate.y = pMin1->y - diag.y * pMin2->y;
         translate.z = pMin1->z - diag.z * pMin2->z;
-        bsiRotMatrix_initFromScaleFactors (&matrix, diag.x, diag.y, diag.z);
+        matrix.InitFromScaleFactors (diag.x, diag.y, diag.z);
         bsiTransform_initFromMatrixAndTranslation (pTransform21, &matrix, &translate);
         }
     }
@@ -3571,7 +3571,7 @@ int             secondaryAxis
                     ))
         {
         scale = bsiRotMatrix_getComponentByRowAndColumn (&skewPart, primaryAxis, primaryAxis);
-        bsiRotMatrix_scaleColumns (&rotationPart, &rotationPart, scale, scale, scale);
+        rotationPart.ScaleColumns (rotationPart, scale, scale, scale);
         boolstat = true;
         }
     else
@@ -4063,7 +4063,7 @@ DPoint3dP pPlaneNormal
     double det;
 
     bsiTransform_getMatrix (pTransform, &matrix);
-    det = bsiRotMatrix_determinant (&matrix);
+    det = matrix.Determinant ();
 
     if (det >= 0.0)
         {

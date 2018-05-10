@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/polysolv.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -352,7 +352,7 @@ RotMatrixCP pMatrix
               pMatrix->form3d[0][0] * pMatrix->form3d[1][1] -
               pMatrix->form3d[0][0] * pMatrix->form3d[2][2] -
               pMatrix->form3d[1][1] * pMatrix->form3d[2][2];
-    co[0].x = bsiRotMatrix_determinant (pMatrix);
+    co[0].x = pMatrix->Determinant ();
     co[0].y = co[1].y = co[2].y = co[3].y = 0.0;
 
     /* call the solver */

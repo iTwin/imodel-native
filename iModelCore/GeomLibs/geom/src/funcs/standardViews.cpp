@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/standardViews.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -66,7 +66,7 @@ int          selector
     int index = selector - 1;
     if (index < 0 || index >= 8)
         {
-        bsiRotMatrix_initIdentity (pInstance);
+        pInstance->InitIdentity ();
         return  false;
         }
     *pInstance = s_standardViewMatrix [index];
@@ -302,7 +302,7 @@ double *pRadiansOut
     mZ  = pivotRow;  // Becomes both row and column pivot.
     mX = bsiGeom_cyclic3dAxis (mZ + 1);
     mY = bsiGeom_cyclic3dAxis (mZ + 2);
-    bsiRotMatrix_initFromRowValues (&matrixRXY,
+    matrixRXY.InitFromRowValues(
                 matrixR.form3d[mX][mX], matrixR.form3d[mX][mY], matrixR.form3d[mX][mZ],
                 matrixR.form3d[mY][mX], matrixR.form3d[mY][mY], matrixR.form3d[mY][mZ],
                 matrixR.form3d[mZ][mX],  matrixR.form3d[mZ][mY],  matrixR.form3d[mZ][mZ]
@@ -402,7 +402,7 @@ int viewIndex
         bsiRotMatrix_multiplyRotMatrixRotMatrix (pMatrix, &matrixR, &matrixV);
         return true;
         }
-    bsiRotMatrix_initIdentity (pMatrix);
+    pMatrix->InitIdentity ();
     return false;
     }
 

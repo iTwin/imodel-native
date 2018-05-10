@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspconv.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -330,8 +330,8 @@ bool        bClosed
 )
     {
 #define MAX_OFFSET_POINT 257
-    double theta0 = bsiDEllipse3d_fractionToAngle (pEllipse, f0);
-    double theta1 = bsiDEllipse3d_fractionToAngle (pEllipse, f1);
+    double theta0 = pEllipse->FractionToAngle (f0);
+    double theta1 = pEllipse->FractionToAngle (f1);
     //double adtheta = fabs (theta1 - theta0);
     static double sMaxStep = 0.5;
     static double sMinStep = 0.01;
@@ -403,7 +403,7 @@ double       offsetDistance     /* => SIGNED offset. Positive is outward. */
     double a, b;
     double thetaStar;
     bool    bClosed = false;
-    bsiDEllipse3d_initWithPerpendicularAxes (&majorMinorEllipse, pEllipse);
+    majorMinorEllipse.InitWithPerpendicularAxes (*pEllipse);
     a = bsiDVec3d_magnitude (&majorMinorEllipse.vector0);
     b = bsiDVec3d_magnitude (&majorMinorEllipse.vector90);
     cutFraction[0] = 0.0;
@@ -419,13 +419,13 @@ double       offsetDistance     /* => SIGNED offset. Positive is outward. */
         cutAngle[3] = - cutAngle[2];
         for (i = 0; i < 4; i++)
             {
-            if (bsiDEllipse3d_angleInSweep (&majorMinorEllipse,cutAngle[i]))
-                cutFraction[numCut++] = bsiDEllipse3d_angleToFraction (pEllipse, cutAngle[i]);
+            if (majorMinorEllipse.IsAngleInSweep (cutAngle[i]))
+                cutFraction[numCut++] = pEllipse->AngleToFraction (cutAngle[i]);
             }
         }
     else
         {
-        if (bsiDEllipse3d_isFullEllipse (pEllipse))
+        if (pEllipse->IsFullEllipse ())
             bClosed = true;
         }
     bsiDoubleArray_sort (cutFraction, numCut, true);
@@ -1089,7 +1089,7 @@ DEllipse3dP     ellipseP,
             {
             bsiDVec3d_scaleInPlace (&vector0, rad0);
             bsiDVec3d_scaleInPlace (&vector1, rad1);
-            bsiDEllipse3d_initFrom3dVectors (ellipseP, &center, &vector0, &vector1, s0, ds);
+            ellipseP->InitFromVectors (center, vector0, vector1, s0, ds);
             }
         }
     else

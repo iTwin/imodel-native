@@ -119,7 +119,7 @@ double          s1
                 TryGetArc (curveId, arc);
                 DEllipse3d partialEllipse = arc;
                 jmdlRIMSBS_initPartialEllipse (&partialEllipse, &arc, s0, s1);
-                bsiDEllipse3d_getRange (&partialEllipse, &range);
+                partialEllipse.GetRange (range);
                 myResult = true;
                 break;
                 }
@@ -293,12 +293,10 @@ double          s1
                 TryGetArc (curveId, arc);
                 double scale = ds * arc.sweep;
                 s = s0 + param * ds;
-                bsiDEllipse3d_evaluateDerivativeArray
-                        (
-                        &arc,
+                arc.Evaluate (
                         pXYZ,
                         numDerivatives,
-                        bsiDEllipse3d_fractionToAngle (&arc, s)
+                        arc.FractionToAngle (s)
                         );
 
                 jmdlRIMSBS_applyScalePowers (pXYZ, numDerivatives, scale);
@@ -393,12 +391,11 @@ RG_CurveId      curveId
                 DEllipse3d arc;
                 TryGetArc (curveId, arc);
 
-                bsiDEllipse3d_evaluateDerivativeArray
+                arc.Evaluate
                         (
-                        &arc,
                         pXYZ,
                         numDerivatives,
-                        bsiDEllipse3d_fractionToAngle (&arc, param)
+                        arc.FractionToAngle (param)
                         );
                 jmdlRIMSBS_applyScalePowers (pXYZ, numDerivatives, arc.sweep);
                 myResult = true;
@@ -473,7 +470,9 @@ double          s1
     {
     double ds = s1 - s0;
     double s;
-
+    DPoint3d xyzA;
+    DVec3d vectorA1;
+    DVec3d vectorA2;
     bool    myResult = false;
     if (IsValidCurveIndex (curveId))
         {
@@ -488,13 +487,12 @@ double          s1
                 for (int i = 0; i < nParam; i++)
                     {
                     s = s0 + pParam[i] * ds;
-                    bsiDEllipse3d_evaluateDerivatives
+                    arc.Evaluate
                             (
-                            &arc,
-                            pXYZ ? &pXYZ[i] : NULL,
-                            pTangent ? &pTangent[i] : NULL,
-                            NULL,
-                            bsiDEllipse3d_fractionToAngle (&arc, s)
+                            pXYZ ? pXYZ[i] : xyzA,
+                            pTangent ? ((DVec3d*)pTangent)[i] : vectorA1,
+                            vectorA2,
+                            arc.FractionToAngle (s)
                             );
                     }
                 if (pTangent)
@@ -593,6 +591,8 @@ RG_CurveId      curveId
 )
     {
     bool    myResult = false;
+    DPoint3d pointA;
+    DVec3d vectorA1, vectorA2;
     if (IsValidCurveIndex (curveId))
         {
         RIMSBS_ElementHeader &desc = GetElementR (curveId);
@@ -604,13 +604,11 @@ RG_CurveId      curveId
                 TryGetArc (curveId, arc);
                 for (int i = 0; i < nParam; i++)
                     {
-                    bsiDEllipse3d_evaluateDerivatives
-                            (
-                            &arc,
-                            pXYZ ? &pXYZ[i] : NULL,
-                            pTangent ? &pTangent[i] : NULL,
-                            NULL,
-                            bsiDEllipse3d_fractionToAngle (&arc, pParam[i])
+                    arc.Evaluate (
+                            pXYZ ? pXYZ[i] : pointA,
+                            pTangent ? ((DVec3d*)pTangent)[i] : vectorA1,
+                            vectorA2,
+                            arc.FractionToAngle (pParam[i])
                             );
                     }
                 myResult = true;
@@ -767,9 +765,9 @@ bool            reversed
                     }
                 else if (TryGetResolvedArc (arc, pInterval->parentId, false))
                     {
-                    double theta0 = bsiDEllipse3d_fractionToAngle (&arc, pInterval->s0);
-                    double theta1 = bsiDEllipse3d_fractionToAngle (&arc, pInterval->s1);
-                    bsiDEllipse3d_setLimits (&arc, theta0, theta1);
+                    double theta0 = arc.FractionToAngle (pInterval->s0);
+                    double theta1 = arc.FractionToAngle (pInterval->s1);
+                    arc.SetLimits (theta0, theta1);
                     myResult = true;
                     }
                 break;
@@ -1480,6 +1478,8 @@ double    s1                /* => end param for active interval */
     if (IsValidCurveIndex (curveId))
         {
         RIMSBS_ElementHeader &desc = GetElementR (curveId);
+        DPoint3d pointA;
+        DVec3d vectorA2;
         switch  (desc.type)
             {
             case RIMSBS_DEllipse3d:
@@ -1502,9 +1502,9 @@ double    s1                /* => end param for active interval */
                         *pMinParam = param;
                     if (pMinTangent)
                         {
-                        DPoint3d angularTangent;
-                        bsiDEllipse3d_evaluateDerivatives (&partialEllipse,
-                                            NULL, &angularTangent, NULL, theta);
+                        DVec3d angularTangent;
+                        partialEllipse.Evaluate (
+                                            pointA, angularTangent, vectorA2, theta);
                         bsiDPoint3d_scale (pMinTangent, &angularTangent, partialEllipse.sweep);
                         }
                     myResult = true;
@@ -1593,6 +1593,9 @@ RG_CurveId  curveId         /* => curve identifier */
 
     {
     bool    myResult = false;
+    DPoint3d xyzA;
+    DVec3d vectorA2;
+
     if (IsValidCurveIndex (curveId))
         {
         RIMSBS_ElementHeader &desc = GetElementR (curveId);
@@ -1616,9 +1619,8 @@ RG_CurveId  curveId         /* => curve identifier */
 
                     if (pMinTangent)
                         {
-                        DPoint3d angularTangent;
-                        bsiDEllipse3d_evaluateDerivatives (&arc,
-                                            NULL, &angularTangent, NULL, theta);
+                        DVec3d angularTangent;
+                        arc.Evaluate (xyzA, angularTangent, vectorA2, theta);
                         bsiDPoint3d_scale (pMinTangent, &angularTangent, arc.sweep);
                         }
                     }
@@ -1688,7 +1690,6 @@ void RIMSBS_Context::AppendAllCurveSamplePoints (bvector<DPoint3d> &xyzArray)
     RIMSBS_ElementHeader desc;
     static int s_numPerEllipse = 4;
     DPoint3d point;
-
     for (auto &desc : m_geometry)
         {
         switch  (desc.type)
@@ -1703,9 +1704,7 @@ void RIMSBS_Context::AppendAllCurveSamplePoints (bvector<DPoint3d> &xyzArray)
                     for (int i = 0; i < s_numPerEllipse; i++)
                         {
                         f = df * i;
-                        bsiDEllipse3d_evaluateDerivatives (&arc,
-                                            &point, NULL, NULL,
-                                            bsiDEllipse3d_fractionToAngle (&arc, f));
+                        arc.Evaluate (point, arc.FractionToAngle (f));
                         xyzArray.push_back (point);
                         }
                     }

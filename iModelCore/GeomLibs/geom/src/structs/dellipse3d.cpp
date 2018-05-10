@@ -120,55 +120,6 @@ double          sweep
     pEllipse->sweep        = sweep;
     }
 
-
-
-/*-----------------------------------------------------------------*//**
-@description Convert a homogeneous ellipse to a Cartesian ellipse.
-@remarks Callers should beware of the following significant points:
-<UL>
-<LI>A homogeneous "ellipse" may appear as a hyperbola or parabola in xyz space.
-   Hence the conversion can fail.
-<LI>When the conversion succeeds, it is still a Very Bad Thing To Do numerically
-   because a homogeneous ellipse with "nice" numbers can have very large center and axis
-   coordinates.   It is always preferable to do calculations directly on the homogeneous
-   ellipse if possible.
-<LI>When the conversion succeeds, the axis may be non-perpendicular.  A subsequent call
-   may be made to initWithPerpendicularAxes to correct this.
-</UL>
- @param pEllipse <= initialized ellipse
- @param pSource => homogeneous ellipse
- @return false if the conic weights are zero anywhere, creating hyperbola or parabola which
-    cannot be reduced to an ellipse.
- @group "DEllipse3d Initialization"
- @bsimethod                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool     bsiDEllipse3d_initFromDConic4d
-
-(
-DEllipse3dP pEllipse,
-DConic4dCP pSource
-)
-    {
-    DConic4d  normalizedSource;
-    bool        funcStat = false;
-
-    /* Try to eliminate the weights on the vectors of the source ellipse */
-    normalizedSource = *pSource;
-    if (   bsiDConic4d_isUnitWeighted (&normalizedSource)
-        /* NEEDS WORK */
-        /* || bsiDConic4d_initWithNormalizedWeights (&normalizedSource, pSource) */
-       )
-        {
-        funcStat = true;
-        bsiDPoint3d_getXYZ (&pEllipse->center,   &normalizedSource.center  );
-        bsiDPoint3d_getXYZ (&pEllipse->vector0,  &normalizedSource.vector0 );
-        bsiDPoint3d_getXYZ (&pEllipse->vector90, &normalizedSource.vector90);
-        pEllipse->start = normalizedSource.start;
-        pEllipse->sweep = normalizedSource.sweep;
-        }
-    return funcStat;
-    }
-
 /*-----------------------------------------------------------------*//**
 @description Project the source ellipse to a plane.
 @instance pSourceEllipse IN known ellipse.
@@ -663,8 +614,8 @@ double              theta0,
 double              sweep
 )
     {
-    DVec3d vectorU, vectorV;
-    bsiRotMatrix_getColumns (pMatrix, &vectorU, &vectorV, NULL);
+    DVec3d vectorU, vectorV, vectorW;
+    pMatrix->GetColumns (vectorU, vectorV, vectorW);
 
     bsiDPoint3d_scale (&vectorU, &vectorU, r0);
     bsiDPoint3d_scale (&vectorV, &vectorV, r1);

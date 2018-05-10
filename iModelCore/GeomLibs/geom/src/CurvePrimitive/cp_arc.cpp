@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/cp_arc.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -123,7 +123,8 @@ bool CurvePrimitiveArc::_FractionToPoint(double fraction, DPoint3dR point) const
 +--------------------------------------------------------------------------------------*/
 bool CurvePrimitiveArc::_FractionToPoint(double fraction, DPoint3dR point, DVec3dR vector) const
     {
-    bsiDEllipse3d_fractionParameterToDerivatives (&m_ellipse, &point, &vector, NULL, fraction);
+    DVec3d vector2;
+    m_ellipse.FractionParameterToDerivatives (point, vector, vector2, fraction);
     return true;
     }
 
@@ -133,7 +134,7 @@ bool CurvePrimitiveArc::_FractionToPoint(double fraction, DPoint3dR point, DVec3
 +--------------------------------------------------------------------------------------*/
 bool CurvePrimitiveArc::_FractionToPoint(double fraction, DPoint3dR point, DVec3dR vector, DVec3dR derivative2) const
     {
-    bsiDEllipse3d_fractionParameterToDerivatives (&m_ellipse, &point, &vector, &derivative2, fraction);
+    m_ellipse.FractionParameterToDerivatives (point, vector, derivative2, fraction);
     return true;
     }
 
@@ -143,7 +144,7 @@ bool CurvePrimitiveArc::_FractionToPoint(double fraction, DPoint3dR point, DVec3
 +--------------------------------------------------------------------------------------*/
 bool CurvePrimitiveArc::_FractionToPoint(double fraction, DPoint3dR point, DVec3dR vector, DVec3dR derivative2, DVec3dR derivative3) const
     {
-    bsiDEllipse3d_fractionParameterToDerivatives (&m_ellipse, &point, &vector, &derivative2, fraction);
+    m_ellipse.FractionParameterToDerivatives (point, vector, derivative2, fraction);
     derivative3.Zero ();
     return true;
     }

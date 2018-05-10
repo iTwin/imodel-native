@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/eigensys3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -194,37 +194,6 @@ int numPoint
         }
     }
  #endif
-#ifdef GivensQR
-static void jmdlRotMatrix_givensQR
-
-(
-RotMatrixCP pA,
-RotMatrixP pQ,
-RotMatrixP pR
-)
-    {
-    double cc, ss;
-    RotMatrix RR = *pA;
-    RotMatrix QQ;
-    bsiRotMatrix_initIdentity (&QQ);
-    bsiTrig_constructGivensWeights (&cc, &ss, RR.column[0].x, RR.column[0].y);
-    bsiRotMatrix_givensColumnOp (&QQ, &QQ, cc, ss, 0, 1);
-    bsiRotMatrix_givensRowOp    (&RR, cc, -ss, 0, 1, &RR);
-
-    bsiTrig_constructGivensWeights (&cc, &ss, RR.column[0].x, RR.column[0].z);
-    bsiRotMatrix_givensColumnOp (&QQ, &QQ, cc, ss, 0, 2);
-    bsiRotMatrix_givensRowOp    (&RR, cc, -ss, 0, 2, &RR);
-
-    bsiTrig_constructGivensWeights (&cc, &ss, RR.column[1].y, RR.column[1].z);
-    bsiRotMatrix_givensColumnOp (&QQ, &QQ, cc, ss, 1, 2);
-    bsiRotMatrix_givensRowOp    (&RR, cc, -ss, 1, 2, &RR);
-    if (pQ)
-        *pQ = QQ;
-    if (pR)
-        *pR = RR;
-    }
-#endif
-
 
 static double rotate
 (

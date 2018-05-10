@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/dconic4d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -32,6 +32,52 @@ static double s_lineUnitCircleIntersectionTolerance = 1.0e-8;
 #define FIX_MIN(value, min)          if (value < min) min = value
 #define FIX_MAX(value, max)          if (value > max) max = value
 
+/*-----------------------------------------------------------------*//**
+@description Convert a homogeneous ellipse to a Cartesian ellipse.
+@remarks Callers should beware of the following significant points:
+<UL>
+<LI>A homogeneous "ellipse" may appear as a hyperbola or parabola in xyz space.
+   Hence the conversion can fail.
+<LI>When the conversion succeeds, it is still a Very Bad Thing To Do numerically
+   because a homogeneous ellipse with "nice" numbers can have very large center and axis
+   coordinates.   It is always preferable to do calculations directly on the homogeneous
+   ellipse if possible.
+<LI>When the conversion succeeds, the axis may be non-perpendicular.  A subsequent call
+   may be made to initWithPerpendicularAxes to correct this.
+</UL>
+ @param pEllipse <= initialized ellipse
+ @param pSource => homogeneous ellipse
+ @return false if the conic weights are zero anywhere, creating hyperbola or parabola which
+    cannot be reduced to an ellipse.
+ @group "DEllipse3d Initialization"
+ @bsimethod                                                     EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+static bool     DEllipse3d_initFromDConic4d
+
+(
+DEllipse3dP pEllipse,
+DConic4dCP pSource
+)
+    {
+    DConic4d  normalizedSource;
+    bool        funcStat = false;
+
+    /* Try to eliminate the weights on the vectors of the source ellipse */
+    normalizedSource = *pSource;
+    if (   bsiDConic4d_isUnitWeighted (&normalizedSource)
+        /* NEEDS WORK */
+        /* || bsiDConic4d_initWithNormalizedWeights (&normalizedSource, pSource) */
+       )
+        {
+        funcStat = true;
+        bsiDPoint3d_getXYZ (&pEllipse->center,   &normalizedSource.center  );
+        bsiDPoint3d_getXYZ (&pEllipse->vector0,  &normalizedSource.vector0 );
+        bsiDPoint3d_getXYZ (&pEllipse->vector90, &normalizedSource.vector90);
+        pEllipse->start = normalizedSource.start;
+        pEllipse->sweep = normalizedSource.sweep;
+        }
+    return funcStat;
+    }
 /*-----------------------------------------------------------------*//**
 * @class DConic4d
 * The DConic4d structure can represent an ellipse, parabola or hyperbola in 4d homogeneous space
@@ -946,8 +992,8 @@ DMatrix4dP pInverse
         bsiDMatrix4d_subtractDMatrix4d (&Diff, &QR, &A);
         maxDiff0 = bsiDMatrix4d_maxAbs (&Diff);
         bsiDMatrix4d_multiply (&QQT, &Q, &QT);
-        isIdentity = bsiDMatrix4d_isIdentity (&QQT);
-        isIdentity = bsiDMatrix4d_isIdentity (&QQT);
+        isIdentity = QQT.IsIdentity ();
+        isIdentity = QQT.IsIdentity ();
         }
 #endif
 
@@ -1009,8 +1055,8 @@ DMatrix4dP pInverse
         DMatrix4d AAI;
         bool    isIdentity;
         bsiDMatrix4d_multiply (&AAI, &A, &AI);
-        isIdentity = bsiDMatrix4d_isIdentity (&AAI);
-        isIdentity = bsiDMatrix4d_isIdentity (&AAI);
+        isIdentity = AAI.IsIdentity ();
+        isIdentity = AAI.IsIdentity ();
         }
 #endif
 
@@ -1180,7 +1226,7 @@ RotMatrixP pMatrix
         {
         RotMatrix product;
         bsiRotMatrix_multiplyRotMatrixRotMatrix (&product, &translate, &inverseTranslate);
-        assert (bsiRotMatrix_isIdentity (&product));
+        assert (product.IsIdentity ());
         }
 #endif
 #undef CHECK_INVERSE
@@ -2662,8 +2708,8 @@ DConic4dCP pConic1
     //   In obvious cases look for the smaller ellipse to implicitize...
     DEllipse3d ellipse0, ellipse1;
     if (condition0 > 0.25 && condition1 > 0.25
-        && bsiDEllipse3d_initFromDConic4d (&ellipse0, pConic)
-        && bsiDEllipse3d_initFromDConic4d (&ellipse1, pConic1))
+        && DEllipse3d_initFromDConic4d (&ellipse0, pConic)
+        && DEllipse3d_initFromDConic4d (&ellipse1, pConic1))
         {
         // Choose smaller ellipse as circle frame ...
         double size0 = ellipse0.vector0.Magnitude ()
@@ -3997,7 +4043,7 @@ int  *pCurveType
                     NULL,
                     &vector0,  -s,
                     &vector90, c);
-            bsiRotMatrix_givensRowOp (&D, c, s, 0, 1, &D);
+            D.GivensRowOp (c, s, 0, 1);
             theta = bsiTrig_atan2 (s,c);
             axes.start -= theta;
             double a = Angle::TwoPi ();
@@ -4166,14 +4212,14 @@ double aww
         }
 
     bsiRotMatrix_transpose (&matrixQT, &matrixQ);
-    bsiRotMatrix_scaleColumns (&matrixB, &matrixQ, gamma[0], gamma[1], gamma[2]);
+    matrixB.ScaleColumns (matrixQ, gamma[0], gamma[1], gamma[2]);
 
 #ifdef CHECK_EIGENSYSTEM
         {
         RotMatrix QLambda, QLambdaQT;
-        bsiRotMatrix_scaleColumns (&QLambda, &matrixQ, lambda.x, lambda.y, lambda.z);
+        QLambda.ScaleColumns (matrixQ, lambda.x, lambda.y, lambda.z);
         bsiRotMatrix_multiplyRotMatrixRotMatrix (&QLambdaQT, &QLambda, &matrixQT);
-        bsiRotMatrix_isIdentity (&QLambdaQT);
+        QLambdaQT.IsIdentity ();
         }
 #endif
 
