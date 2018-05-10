@@ -1362,6 +1362,8 @@ public:
     void CreateProxyGraphics (ResolvedModelMapping const& target, DgnV8ModelRefR v8Model, ViewportR viewport, bmap<DgnAttachmentCP, ResolvedModelMapping>& toBeMerged, TransformCR transformToParent);
     void MergeDrawingGraphics(ResolvedModelMapping const& v8mm, ViewportR viewport, bmap<DgnAttachmentCP, ResolvedModelMapping>const& toBeMerged);
     void DrawingsConvertModelAndViews2(ResolvedModelMapping const& v8mm);
+    DgnDbStatus CreateDrawingElement(DgnModelR model, DgnCategoryId categoryId, GeometryBuilder& builder);
+
     DGNDBSYNC_EXPORT bool _UseProxyGraphicsFor2(DgnAttachmentCR ref);
 
     //! @}
