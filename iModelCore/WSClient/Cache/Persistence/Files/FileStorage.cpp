@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Files/FileStorage.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -502,7 +502,8 @@ BentleyStatus FileStorage::RenameCachedFile(FileInfoR info, Utf8String newFileNa
     if (oldPath == newPath)
         return SUCCESS;
 
-    if (BeFileNameStatus::Success != BeFileName::BeMoveFile(oldPath, newPath))
+    auto status = BeFileName::BeMoveFile(oldPath, newPath);
+    if (BeFileNameStatus::Success != status)
         return ERROR;
 
     return SUCCESS;
