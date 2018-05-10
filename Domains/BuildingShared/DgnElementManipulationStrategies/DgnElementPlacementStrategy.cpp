@@ -20,6 +20,13 @@ FUSProperty::FUSProperty
     {
     }
 
+FUSProperty::FUSProperty
+(
+)
+    : m_fus(Formatting::FormatUnitSet("M(Meters4u)"))
+    {
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                05/2018
 //---------------+---------------+---------------+---------------+---------------+------
