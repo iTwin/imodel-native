@@ -24,8 +24,14 @@ struct DgnElementManipulationStrategy : ElementManipulationStrategy
     {
     DEFINE_T_SUPER(ElementManipulationStrategy)
     
+    private:
+        Dgn::DgnDbR m_db;
+
     protected:
-        using T_Super::T_Super;
+        DgnElementManipulationStrategy(Dgn::DgnDbR db)
+            : T_Super()
+            , m_db(db)
+            {}
 
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) = 0;
         virtual Dgn::DgnElementPtr _FinishElement() = 0;
@@ -45,6 +51,8 @@ struct DgnElementManipulationStrategy : ElementManipulationStrategy
         DGNELEM_PROPERTY(Dgn::ColorDef)
         using T_Super::SetProperty;
         using T_Super::TryGetProperty;
+
+        Dgn::DgnDbR GetDgnDb() const { return m_db; }
     };
 
 END_BUILDING_SHARED_NAMESPACE

@@ -89,6 +89,7 @@
     <Part Name="DgnElementManipulationStrategies" BentleyBuildMakeFile="DgnElementManipulationStrategies/DgnElementManipulationStrategies.mke">
         <SubPart PartName="GeometryManipulationStrategies"/>
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="UnitsNative" PartFile="Units" Repository="Units" />
         <Bindings>
             <Libs>Delivery/$(libprefix)DgnElementManipulationStrategies$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)DgnElementManipulationStrategies$(shlibext)</Assemblies>
@@ -155,6 +156,7 @@
     <SubPart PartName="PrewireForUnitTests"/>
     <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
     <SubPart PartName="BuildingSharedBundle"/>
+      <SubPart PartName="DgnElementManipulationStrategies"/>
     <Bindings>
       <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="BuildingShared/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
     </Bindings>

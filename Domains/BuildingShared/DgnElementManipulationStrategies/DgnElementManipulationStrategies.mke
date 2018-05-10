@@ -43,6 +43,7 @@ DLM_OBJECT_DEST = $(o)
 DLM_OBJECT_FILES = $(objs)
 
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)Units$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)GeometryManipulationStrategies$(libext)
 
 %include $(sharedMki)linkLibrary.mki
