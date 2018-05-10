@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/LocalizationHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,17 +15,6 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define RULESENGINE_LOCALIZEDSTRING(str)            PRESENTATION_LOCALIZEDSTRING(RulesEngineL10N::GetNameSpace().m_namespace, str)
 #define RULESENGINE_LOCALIZEDSTRING_NotSpecified    RULESENGINE_LOCALIZEDSTRING(RulesEngineL10N::LABEL_General_NotSpecified().m_str)
 #define RULESENGINE_LOCALIZEDSTRING_Other           RULESENGINE_LOCALIZEDSTRING(RulesEngineL10N::LABEL_General_Other().m_str)
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                08/2015
-+===============+===============+===============+===============+===============+======*/
-struct EXPORT_VTABLE_ATTRIBUTE SQLangLocalizationProvider : ILocalizationProvider
-{
-private:
-    static StatusInt ParseKey(Utf8StringR ns, Utf8StringR id, Utf8StringCR key);
-protected:
-    ECPRESENTATION_EXPORT bool _GetString(Utf8StringCR key, Utf8StringR localizedValue) const override;
-};
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                08/2015

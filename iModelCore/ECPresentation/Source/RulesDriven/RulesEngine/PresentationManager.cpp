@@ -796,16 +796,6 @@ void RulesDrivenECPresentationManager::NotifyCategoriesChanged()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ILocalizationProvider const& RulesDrivenECPresentationManager::GetLocalizationProvider() const {return m_impl->GetLocalizationProvider();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::SetLocalizationProvider(ILocalizationProvider const* provider) {m_impl->SetLocalizationProvider(provider);}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManager::RegisterECInstanceChangeHandler(IECInstanceChangeHandler& handler)
