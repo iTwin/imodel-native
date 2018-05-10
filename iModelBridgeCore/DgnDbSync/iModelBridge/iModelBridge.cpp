@@ -814,8 +814,11 @@ Utf8String      iModelBridge::ComputeJobSubjectName(DgnDbCR db, Params const& pa
     Utf8String jobName(params.GetBridgeRegSubKey());
     jobName.append(":");
     jobName.append(docIdStr.c_str());
-    jobName.append(", ");
-    jobName.append(bridgeSpecificSuffix);
+    if (!bridgeSpecificSuffix.empty())
+        {
+        jobName.append(", ");
+        jobName.append(bridgeSpecificSuffix);
+        }
 
     DgnCode code = Subject::CreateCode(*db.Elements().GetRootSubject(), jobName.c_str());
     int i = 0;
