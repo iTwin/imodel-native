@@ -1470,13 +1470,36 @@ BentleyApi::BentleyStatus RootModelConverter::RecreateElementRefersToElementsInd
         StopWatch timer(true);
         for (auto const& index : indexDdlList)
             {
-            if (BE_SQLITE_OK != GetDgnDb().TryExecuteSql(index.second.c_str()))
+            DbResult result = GetDgnDb().TryExecuteSql(index.second.c_str());
+            if (BE_SQLITE_OK != result)
                 {
-                Utf8String error;
-                error.Sprintf("Failed to recreate index '%s' for BisCore:ElementRefersToElements class hierarchy: %s", index.second.c_str(), GetDgnDb().GetLastError().c_str());
-                ReportIssue(IssueSeverity::Fatal, IssueCategory::Sync(), Issue::Message(), error.c_str());
-                OnFatalError(Converter::IssueCategory::CorruptData());
-                return BentleyApi::ERROR;
+                // If we have a constraint violation, try to delete all of the duplicate rows and then try re-applying the index
+                if (BE_SQLITE_CONSTRAINT_UNIQUE == result)
+                    {
+                    bvector<Utf8String> tokens;
+                    BeStringUtilities::Split(index.second.c_str(), "=", tokens);
+                    if (tokens.size() == 2)
+                        {
+                        uint64_t classId;
+                        BeStringUtilities::ParseUInt64(classId, tokens[1].c_str());
+                        if (classId != 0)
+                            {
+                            Utf8PrintfString sql("delete from bis_ElementRefersToElements where rowid not in (select min(rowid) from bis_ElementRefersToElements where ECClassId=% " PRIu64 " group by SourceId, TargetId) and ECClassId=% " PRIu64, classId, classId);
+                            result = GetDgnDb().TryExecuteSql(sql.c_str());
+                            if (BE_SQLITE_OK == result)
+                                result = GetDgnDb().TryExecuteSql(index.second.c_str());
+                            }
+                        }
+                    }
+                // If we didn't succeed, fatally end as we can't make schema changes at this point in the process
+                if (BE_SQLITE_OK != result)
+                    {
+                    Utf8String error;
+                    error.Sprintf("Failed to recreate index '%s' for BisCore:ElementRefersToElements class hierarchy: %s", index.second.c_str(), GetDgnDb().GetLastError().c_str());
+                    ReportIssue(IssueSeverity::Fatal, IssueCategory::Sync(), Issue::Message(), error.c_str());
+                	OnFatalError(Converter::IssueCategory::CorruptData());
+                    return BentleyApi::ERROR;
+                    }
                 }
             }
 
