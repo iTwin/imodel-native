@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/dellipse3d.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,9 +24,6 @@ DVec3d   vector0;   //!< Vector from center to parametric 0-degree point.
 DVec3d   vector90;  //!< Vector from center to parametric 90-degree point.
 double start;       //!< Start angle in parameterization
 double sweep;       //!< Sweep angle in parameterization
-
-#ifdef __cplusplus
-
 
 /*__PUBLISH_SECTION_END__*/
 //BEGIN_REFMETHODS
@@ -1838,7 +1835,16 @@ DEllipse3dR arcA,           //!< [out] departure arc
 DSegment3dR tangentSegment, //!< [out] joining segment, tangent at both ends
 DEllipse3dR arcB            //!< [out] arrival arc
 );
-#endif
 
+//! Construct an ellipse that is retains one end point, the tangent at that end, and the sweep angle
+//! of an existing ellipse, but mvoes the other end by a vector.
+static ValidatedDEllipse3d FromEndPointTranslation
+(
+DEllipse3dCR source,    //!< [in] existing arc
+DVec3dCR translation,   //!< [in] translation to apply to one end
+int movingEndIndex      //!< [in] 0 to move start, 1 to move end
+);
 };
+
+
 END_BENTLEY_GEOMETRY_NAMESPACE

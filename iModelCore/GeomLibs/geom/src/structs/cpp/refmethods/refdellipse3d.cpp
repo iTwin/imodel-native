@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdellipse3d.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -5875,5 +5875,53 @@ DEllipse3dR arcB
             }
         }
     return false;
+    }
+
+// Modify an ellipse so that
+//  1) one endpoint and its tangent are preserved.
+//  2) sweep angle is preserved
+//  3) the other endpoint moves a specified vector distance.
+// @param [out] result transformed ellipse
+// @param [in] source original ellipse
+// @param [in] translation translation vector to apply.
+// @param [in] movingEndIndex 0 to move startpoint, 1 to move endpoint
+ValidatedDEllipse3d DEllipse3d::FromEndPointTranslation(DEllipse3dCR source, DVec3dCR translation, int movingEndIndex)
+    {
+    DEllipse3d result = source;
+    DVec3d vectorU0, vectorV0, vectorW0;
+    DVec3d vectorU1, vectorV1, vectorW1;
+    DPoint3d fixedPoint, movingPoint;
+    double theta0 = source.start;
+    double theta1 = source.start + source.sweep;
+    DVec3d vector;
+    if (movingEndIndex == 0)
+        {
+        source.Evaluate (fixedPoint, vectorU0, vector, theta1);
+        source.Evaluate (movingPoint, vector, vector, theta0);
+        }
+    else
+        {
+        source.Evaluate (fixedPoint, vectorU0, vector, theta0);
+        source.Evaluate (movingPoint, vector, vector, theta1);
+        }
+    vectorV0.DifferenceOf (movingPoint, fixedPoint);
+    vectorW0.GeometricMeanCrossProduct (vectorU0, vectorV0);
+
+    vectorU1 = vectorU0;
+    vectorV1.SumOf (vectorV0, translation);
+    vectorW1.GeometricMeanCrossProduct (vectorU1, vectorV1);
+
+    Transform frame0, frame1;
+    frame0.InitFromOriginAndVectors (fixedPoint, vectorU0, vectorV0, vectorW0);
+    frame1.InitFromOriginAndVectors (fixedPoint, vectorU1, vectorV1, vectorW1);
+    Transform inverse0;
+    if (inverse0.InverseOf(frame0))
+        {
+        Transform product;
+        product.InitProduct (frame1, inverse0);
+        product.Multiply (result, source);
+        return ValidatedDEllipse3d (result, true);
+        }
+    return ValidatedDEllipse3d (result, false);
     }
 END_BENTLEY_GEOMETRY_NAMESPACE
