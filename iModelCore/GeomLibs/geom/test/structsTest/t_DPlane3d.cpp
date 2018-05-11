@@ -418,8 +418,6 @@ TEST(DPlane3d, Init)
             DPoint3d::From (1,2,7),
             DPoint3d::From (-3,2,1)})
             {
-            DPoint4d hPoint = DPoint4d::From (xyz, 1.0);
-
             Check::Near (planeFromDPoint4d.Evaluate (xyz), planeFromScalars.Evaluate (xyz));
             }
         }
