@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/CachingDataSource.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -226,6 +226,7 @@ struct CachingDataSource :
         //! DEPRECATED, use GetServerInfo()
         WSCACHE_EXPORT WSInfo GetServerInfo(CacheTransactionCR txn) override;
         WSCACHE_EXPORT WSInfo GetServerInfo() override;
+        WSCACHE_EXPORT WSRepository GetRepositoryInfo() override;
 
         WSCACHE_EXPORT void SetClassesToAlwaysCacheChildren(const bset<Utf8String>& classesToAlwaysCacheChildren) override;
 

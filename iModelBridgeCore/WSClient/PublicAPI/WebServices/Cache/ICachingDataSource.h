@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/ICachingDataSource.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -149,6 +149,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
 
         //! Get latest cached server info. WSInfo is refreshed for each new session.
         virtual WSInfo GetServerInfo() = 0;
+
+        //! Get latest cached reposiroty info. WSRepository is refreshed for each new session.
+        virtual WSRepository GetRepositoryInfo() = 0;
 
         //! Included class instances will always get their children cached when calling CacheNavigation
         virtual void SetClassesToAlwaysCacheChildren(const bset<Utf8String>& classesToAlwaysCacheChildren) = 0;
