@@ -303,10 +303,11 @@ void RuleSetLocater::OnRulesetCreated(PresentationRuleSetR ruleset) const
     BeMutexHolder lock(GetMutex());
     if (nullptr != m_rulesetCallbacksHandler)
         {
-        IConnectionCP connection = GetDesignatedConnection();
-        Utf8CP connectionId = nullptr;
-        if (connection != nullptr)
-            Utf8StringCP connectionId = &connection->GetId();
+        // unused
+        // IConnectionCP connection = GetDesignatedConnection();
+        // Utf8CP connectionId = nullptr;
+        // if (connection != nullptr)
+        //     Utf8StringCP connectionId = &connection->GetId();
         m_rulesetCallbacksHandler->_OnRulesetCreated(*this, ruleset);
         }
     else
