@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/MockWSClient.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,6 +31,8 @@ struct MockWSClient : public IWSClient
 
             ON_CALL(*client, RegisterServerInfoListener(_)).WillByDefault(Return());
             ON_CALL(*client, UnregisterServerInfoListener(_)).WillByDefault(Return());
+
+            ON_CALL(*client, GetServerUrl()).WillByDefault(Return("TestServerUrl"));
 
             return client;
             };
