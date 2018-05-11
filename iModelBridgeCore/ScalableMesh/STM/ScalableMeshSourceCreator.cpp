@@ -727,7 +727,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 
 
-    if (!restrictLevelForPropagation && (m_sourceCreationMethod == SCM_SOURCE_CREATION_ONE_SPLIT))
+    if (!restrictLevelForPropagation)
         {
         // Balance data             
         if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth))
@@ -758,7 +758,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         {
         // Mesh data             
         if (BSISUCCESS != IScalableMeshCreator::Impl::Mesh<MeshIndexType>(*pDataIndex))
-            return BSIERROR;
+            return BSIERROR;        
         }    
 
     GetProgress()->Progress() = 1.0;
@@ -767,13 +767,16 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     if (m_sourceCreationMethod == SCM_SOURCE_CREATION_BIG_SPLIT_CUT)
         {        
+        int depth = (int)pDataIndex->GetDepth();
+
+        if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, depth, false))
+            return BSIERROR;
+
         pDataIndex->CutTiles(SM_ONE_SPLIT_THRESHOLD);
 
         // Balance data             
-/*
-        if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth))
+        if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth, true))
             return BSIERROR;
-*/
         }
 
 #ifdef SCALABLE_MESH_ATP
@@ -786,15 +789,21 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         s_getLastFilteringDuration = 0;
 #endif
 
-        size_t depth = pDataIndex->GetDepth();
+        int depth = (int)pDataIndex->GetDepth();
+
+        if (m_sourceCreationMethod == SCM_SOURCE_CREATION_BIG_SPLIT_CUT)
+            {
+            depth -= 1;
+            }
+
         GetProgress()->ProgressStep() = ScalableMeshStep::STEP_GENERATE_LOD;
         GetProgress()->ProgressStepIndex() = 4;
         GetProgress()->Progress() = 0.0;
 		GetProgress()->UpdateListeners();
 
         CachedDataEventTracer::GetInstance()->start();
-
-        for (int level = (int)depth; level >= 0; level--)
+   
+        for (int level = depth; level >= 0; level--)
             {
 
 #ifdef SCALABLE_MESH_ATP    

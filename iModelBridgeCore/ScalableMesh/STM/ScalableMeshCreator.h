@@ -170,7 +170,8 @@ struct IScalableMeshCreator::Impl
 
         template <typename PointIndex>
          StatusInt                    BalanceDown(PointIndex& pointIndex,
-                                                 size_t      depthBeforePartialUpdate);
+                                                  size_t      depthBeforePartialUpdate, 
+                                                  bool        meshBalancing = false);
 
         template <typename PointIndex>
           StatusInt                    Mesh(PointIndex&                             pointIndex);
@@ -242,9 +243,9 @@ StatusInt IScalableMeshCreator::Impl::Filter  (PointIndex&     pointIndex,
 * @bsimethod                                                  Mathieu.St-Pierre   08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename PointIndex>
-StatusInt IScalableMeshCreator::Impl::BalanceDown  (PointIndex& pointIndex, size_t depthBeforePartialUpdate)
+StatusInt IScalableMeshCreator::Impl::BalanceDown  (PointIndex& pointIndex, size_t depthBeforePartialUpdate, bool meshBalancing)
     {
-    pointIndex.BalanceDown(depthBeforePartialUpdate);
+    pointIndex.BalanceDown(depthBeforePartialUpdate, meshBalancing);
     return BSISUCCESS;
     }
 

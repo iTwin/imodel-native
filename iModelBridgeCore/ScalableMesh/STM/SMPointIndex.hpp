@@ -8025,9 +8025,8 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::ValidateIs
  Balance
  Balance the data.
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDown(size_t depthBeforePartialUpdate, bool keepUnbalanced)
+template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDown(size_t depthBeforePartialUpdate, bool keepUnbalanced, bool meshBalancing)
     {    
-
     m_pRootNode->PropagateDataDownImmediately (true);
 //#ifndef WIP_MESH_IMPORT    
     //size_t depth = m_pRootNode->GetDepth();    

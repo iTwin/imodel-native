@@ -4001,11 +4001,20 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::CutTil
         m_nodeHeader.m_SplitTreshold = splitThreshold;
       
         if (IsLeaf() && (GetNbPoints() > splitThreshold))
+            {
             SplitNodeBasedOnImageRes();
 
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndicePtr = GetPtsIndicePtr();
+            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr = GetPointsPtr();
 
+            ptsIndicePtr->clear();
+            ptsPtr->clear();
+            m_nodeHeader.m_nbFaceIndexes = 0;
+            m_nodeHeader.m_nodeCount = 0;
 
-
+            SetDirty(true);
+            }
+        
 /*
 
         if (contentExtent.XLength() / pixSize.x > textureWidthInPixels || contentExtent.YLength() / pixSize.y > textureHeightInPixels)
@@ -4072,9 +4081,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::CutTil
             uvIndexes->clear();
             PushUVsIndices(0, &indicesOfTexturedRegion[0], indicesOfTexturedRegion.size());
         }
-#endif
-
-        SetDirty(true);
+#endif                
 
     }
 
@@ -5381,10 +5388,9 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::CutTiles(
 
    // WaitForThreadStop();
     //for (auto& task : m_textureWorkerTasks) task.get();
-/*
+
     m_indexHeader.m_depth = (size_t)-1;
     m_indexHeader.m_depth = GetDepth();
-*/
     }
 
 

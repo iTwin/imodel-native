@@ -1330,7 +1330,7 @@ public:
      Push the data in leaf and balance the octree
     -----------------------------------------------------------------------------*/
     //NEEDS_WORK_SM : Maybe should be virtual.
-    BENTLEY_SM_EXPORT void BalanceDown(size_t depthBeforePartialUpdate, bool keepUnbalanced = false);
+    BENTLEY_SM_EXPORT void BalanceDown(size_t depthBeforePartialUpdate, bool keepUnbalanced = false, bool meshBalancing = false);
 
     /**----------------------------------------------------------------------------
      Remove useless root
