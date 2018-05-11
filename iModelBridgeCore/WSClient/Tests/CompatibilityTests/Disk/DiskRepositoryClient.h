@@ -96,6 +96,15 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             FBC_NOT_IMPLEMENTED(WSVoidResult);
             };
 
+        virtual void RegisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) override {};
+
+        virtual void UnregisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) override {};
+
+        virtual AsyncTaskPtr<WSRepositoryResult> GetInfo(ICancellationTokenPtr ct) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSRepositoryResult);
+            };
+
         virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
             ObjectIdCR objectId,

@@ -126,6 +126,8 @@ HttpResponse StubWSInfoHttpResponseWebApi25();
 HttpResponse StubWSInfoHttpResponseWebApi27();
 HttpResponse StubWSInfoHttpResponseWebApi(BeVersion webApiVersion);
 
+WSRepository StubWSRepository(Utf8StringCR url = "testUrl", Utf8StringCR id = "testId");
+
 void WriteStringToHttpBody(Utf8StringCR string, HttpBodyPtr body);
 Utf8String ReadHttpBody(HttpBodyPtr body);
 

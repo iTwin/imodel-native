@@ -26,6 +26,12 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
         Utf8String m_id;
 
     public:
+        MockWSRepositoryClient()
+            {
+            ON_CALL(*this, GetInfo(_)).WillByDefault(
+                Return(CreateCompletedAsyncTask(WSRepositoryResult::Success(StubWSRepository()))));
+            }
+
         static std::shared_ptr<NiceMock<MockWSRepositoryClient>> Create(Utf8StringCR id = "test")
             {
             DefaultValue<AsyncTaskPtr<WSObjectsResult>>::Set(CreateCompletedAsyncTask(WSObjectsResult()));
@@ -58,6 +64,11 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             }
 
         MOCK_METHOD2(SetCredentials, void(Credentials, IWSRepositoryClient::AuthenticationType));
+
+        MOCK_METHOD1(RegisterRepositoryInfoListener, void(std::weak_ptr<IRepositoryInfoListener>));
+        MOCK_METHOD1(UnregisterRepositoryInfoListener, void(std::weak_ptr<IRepositoryInfoListener>));
+
+        MOCK_CONST_METHOD1(GetInfo, AsyncTaskPtr<WSRepositoryResult>(ICancellationTokenPtr));
 
         MOCK_CONST_METHOD1(VerifyAccess, AsyncTaskPtr<WSVoidResult>
             (
