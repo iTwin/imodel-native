@@ -97,6 +97,9 @@ bool ContentSpecification::ReadJson(JsonValueCR json)
         (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_CALCULATEDPROPERTIESSPECIFICATION], m_calculatedPropertiesSpecification);
     CommonTools::LoadSpecificationsFromJson<PropertyEditorsSpecification, PropertyEditorsSpecificationList>
         (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYEDITORSSPECIFICATION], m_propertyEditorsSpecification);
+    CommonTools::LoadSpecificationsFromJson<RelatedInstanceSpecification, RelatedInstanceSpecificationList>
+        (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCESSPECIFICATION], m_relatedInstances);
+
 
     return _ReadJson(json);
     }
