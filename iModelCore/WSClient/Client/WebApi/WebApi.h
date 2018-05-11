@@ -31,6 +31,8 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
         WebApi(std::shared_ptr<const ClientConfiguration> configuration);
         virtual ~WebApi();
 
+        virtual AsyncTaskPtr<WSRepositoryResult> SendGetRepositoryRequest(ICancellationTokenPtr ct = nullptr) const = 0;
+
         virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
             const bvector<Utf8String>& types,

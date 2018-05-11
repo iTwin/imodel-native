@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSRepository.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -51,6 +51,14 @@ void WSRepository::SetLocation(Utf8String location)
 Utf8StringCR WSRepository::GetLabel() const
     {
     return m_label;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BeVersionCR WSRepository::GetPluginVersion() const
+    {
+    return m_pluginVersion;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -107,6 +115,14 @@ Utf8StringCR WSRepository::GetServerUrl() const
 void WSRepository::SetServerUrl(Utf8String url)
     {
     m_serverUrl = url;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSRepository::SetPluginVersion(BeVersion version)
+    {
+    m_pluginVersion = version;
     }
 
 /*--------------------------------------------------------------------------------------+

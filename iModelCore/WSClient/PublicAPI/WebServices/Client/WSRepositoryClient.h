@@ -39,6 +39,7 @@ typedef AsyncResult<HttpBodyPtr, WSError>               WSChangesetResult;
 typedef AsyncResult<WSUploadResponse, WSError>          WSUpdateObjectResult;
 typedef AsyncResult<WSUploadResponse, WSError>          WSUpdateFileResult;
 typedef AsyncResult<void, WSError>                      WSDeleteObjectResult;
+typedef AsyncResult<WSRepository, WSError>              WSRepositoryResult;
 typedef AsyncResult<void, WSError>                      WSVoidResult;
 
 #define WSQuery_CustomParameter_NavigationParentId      "navigationParentId"
@@ -58,6 +59,13 @@ struct IWSRepositoryClient
             {
             Basic = 0,
             Windows
+            };
+
+    public:
+        struct IRepositoryInfoListener
+            {
+            virtual ~IRepositoryInfoListener() {};
+            virtual void OnInfoReceived(WSRepositoryCR info) = 0;
             };
 
     public:
@@ -94,6 +102,14 @@ struct IWSRepositoryClient
         //! @param[in] ct
         //! @return success if credentials are valid for given repository, else error that occurred
         virtual AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const = 0;
+
+        //! Register for ServerInfo received events
+        virtual void RegisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) = 0;
+        //! Unregister from ServerInfo received events
+        virtual void UnregisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) = 0;
+
+        //! Returns repository or queries server if needs updating
+        virtual AsyncTaskPtr<WSRepositoryResult> GetInfo(ICancellationTokenPtr ct = nullptr) const = 0;
 
         virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
@@ -417,6 +433,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
         std::shared_ptr<struct ClientConnection> m_connection;
         IWSClientPtr m_serverClient;
         mutable LimitingTaskQueue<WSFileResult> m_fileDownloadQueue;
+        std::shared_ptr<struct RepositoryInfoProvider> m_infoProvider;
 
     private:
         WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection);
@@ -457,6 +474,11 @@ struct WSRepositoryClient : public IWSRepositoryClient
 
         //! Check if user can access repository
         WSCLIENT_EXPORT AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const override;
+
+        WSCLIENT_EXPORT void RegisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) override;
+        WSCLIENT_EXPORT void UnregisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) override;
+
+        WSCLIENT_EXPORT AsyncTaskPtr<WSRepositoryResult> GetInfo(ICancellationTokenPtr ct = nullptr) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (

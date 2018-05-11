@@ -48,6 +48,7 @@ struct WebApiV2 : public WebApi
         WSUpdateObjectResult ResolveUpdateObjectResponse(HttpResponse& response) const;
         WSUploadResponse ResolveUploadResponse(HttpResponse& response) const;
         WSObjectsResult ResolveObjectsResponse(HttpResponse& response, bool requestHadSkipToken = false, const ObjectId* objectId = nullptr) const;
+        BeVersion GetRepositoryPluginVersion(HttpResponseCR response, Utf8StringCR pluginId) const;
 
         HttpRequest CreateFileDownloadRequest
             (
@@ -73,6 +74,8 @@ struct WebApiV2 : public WebApi
         virtual ~WebApiV2();
 
         static bool IsSupported(WSInfoCR info);
+
+        virtual AsyncTaskPtr<WSRepositoryResult> SendGetRepositoryRequest(ICancellationTokenPtr ct = nullptr) const override;
 
         virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (

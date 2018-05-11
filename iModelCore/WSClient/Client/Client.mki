@@ -33,6 +33,7 @@ ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                        
                     $(ClientMkiSourceDir)ClientConfiguration.h                  \
                     $(ClientMkiSourceDir)ClientConnection.h                     \
                     $(ClientMkiSourceDir)ClientInternal.h                       \
+                    $(ClientMkiSourceDir)RepositoryInfoProvider.h               \
                     $(ClientMkiSourceDir)ServerInfoProvider.h                   \
                     $(ClientMkiSourceDir)Utils.h                                \
                     $(ClientMkiSourceDir)WebApi/WebApi.h                        \
@@ -81,6 +82,8 @@ $(o)ClientInfo$(oext)                       : $(ClientMkiSourceDir)ClientInfo.cp
 $(o)ObjectId$(oext)                         : $(ClientMkiSourceDir)ObjectId.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)RequestOptions$(oext)                   : $(ClientMkiSourceDir)RequestOptions.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)RepositoryInfoProvider$(oext)           : $(ClientMkiSourceDir)RepositoryInfoProvider.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ServerInfoProvider$(oext)               : $(ClientMkiSourceDir)ServerInfoProvider.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

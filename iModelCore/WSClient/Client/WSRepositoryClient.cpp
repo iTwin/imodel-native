@@ -44,7 +44,8 @@ IWSRepositoryClient::~IWSRepositoryClient()
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSRepositoryClient::WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection) :
 m_connection(connection),
-m_serverClient(WSClient::Create(m_connection))
+m_serverClient(WSClient::Create(m_connection)),
+m_infoProvider(std::make_shared<RepositoryInfoProvider>(m_connection))
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -98,6 +99,30 @@ void WSRepositoryClient::SetCredentials(Credentials credentials, AuthenticationT
     m_connection->GetConfiguration().GetHttpClient().SetCredentials(std::move(credentials));
     if (AuthenticationType::Windows == type)
         m_connection->GetConfiguration().GetDefaultHeaders().SetValue(HEADER_MasConnectionInfo, "CredentialType=Windows");
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             julius.cepukenas   5/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSRepositoryClient::RegisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener)
+    {
+    m_infoProvider->RegisterInfoListener(listener);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             julius.cepukenas   5/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSRepositoryClient::UnregisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener)
+    {
+    m_infoProvider->UnregisterInfoListener(listener);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             julius.cepukenas   5/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSRepositoryResult> WSRepositoryClient::GetInfo(ICancellationTokenPtr ct) const
+    {
+    return m_infoProvider->GetInfo(ct);
     }
 
 /*--------------------------------------------------------------------------------------+

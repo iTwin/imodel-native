@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientInternal.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __CLIENTINTERNAL_H__
@@ -26,6 +26,7 @@
 #include "ClientConfiguration.h"
 #include "ClientConnection.h"
 #include "Logging.h"
+#include "RepositoryInfoProvider.h"
 #include "ServerInfoProvider.h"
 #include "Utils.h"
 
