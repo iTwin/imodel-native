@@ -1538,18 +1538,21 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships()
     if (m_skipECContent)
         return BentleyApi::SUCCESS;
 
+    bvector<DgnV8ModelP> visitedModels;
     for (auto& modelMapping : m_v8ModelMappings)
         {
         ConvertECRelationshipsInModel(modelMapping.GetV8Model());
         if (WasAborted())
             return BentleyApi::ERROR;
+        visitedModels.push_back(&modelMapping.GetV8Model());
         }
 
     //analyze named groups in dictionary models
     for (DgnV8FileP v8File : m_v8Files)
         {
         DgnV8ModelR dictionaryModel = v8File->GetDictionaryModel();
-        ConvertECRelationshipsInModel(dictionaryModel);
+        if (std::find(visitedModels.begin(), visitedModels.end(), &dictionaryModel) == visitedModels.end())
+            ConvertECRelationshipsInModel(dictionaryModel);
         if (WasAborted())
             return BentleyApi::ERROR;
         }
