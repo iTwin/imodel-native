@@ -1190,14 +1190,15 @@ ECObjectsStatus ECSchema::CreateKindOfQuantity(KindOfQuantityP& kindOfQuantity, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::AddPropertyCategory(PropertyCategoryP propCategoryToAdd)
+ECObjectsStatus ECSchema::AddPropertyCategory(PropertyCategoryP propCategoryToAdd, bool logError)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     if(NamedElementExists(propCategoryToAdd->GetName().c_str()))
         {
-        LOG.errorv("Cannot create property category '%s' because a named element the same identifier already exists in the schema",
-                    propCategoryToAdd->GetName().c_str());
+        if (logError)
+            LOG.errorv("Cannot create property category '%s' because a named element the same identifier already exists in the schema",
+                        propCategoryToAdd->GetName().c_str());
 
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
@@ -1219,14 +1220,14 @@ ECObjectsStatus ECSchema::AddPropertyCategory(PropertyCategoryP propCategoryToAd
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CreatePropertyCategory(PropertyCategoryP& propertyCategory, Utf8CP name)
+ECObjectsStatus ECSchema::CreatePropertyCategory(PropertyCategoryP& propertyCategory, Utf8CP name, bool logError)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     propertyCategory = new PropertyCategory(*this);
     propertyCategory->SetName(name);
 
-    auto status = AddPropertyCategory(propertyCategory);
+    auto status = AddPropertyCategory(propertyCategory, logError);
     if (ECObjectsStatus::Success != status)
         {
         delete propertyCategory;

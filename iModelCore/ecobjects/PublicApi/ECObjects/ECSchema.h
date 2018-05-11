@@ -3283,7 +3283,7 @@ private:
     ECObjectsStatus AddClass(ECClassP pClass, bool resolveConflicts = false);
     ECObjectsStatus AddEnumeration(ECEnumerationP pEnumeration);
     ECObjectsStatus AddKindOfQuantity(KindOfQuantityP valueToAdd);
-    ECObjectsStatus AddPropertyCategory(PropertyCategoryP propertyCategoryToAdd);
+    ECObjectsStatus AddPropertyCategory(PropertyCategoryP propertyCategoryToAdd, bool logError = true);
     ECObjectsStatus SetVersionFromString(Utf8CP versionString);
     ECObjectsStatus CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
     ECObjectsStatus SetECVersion(ECVersion ecVersion);
@@ -3495,7 +3495,7 @@ public:
     //! @param[out] propertyCategory If successful, will contain a new PropertyCategory object
     //! @param[in] name              Name of the propertyCategory to create
     //! @return A status code indicating whether or not the property category was successfully created and added to the schema
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePropertyCategory(PropertyCategoryP& propertyCategory, Utf8CP name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePropertyCategory(PropertyCategoryP& propertyCategory, Utf8CP name, bool logError = true);
 
     //! Get a schema by alias within the context of this schema and its referenced schemas.
     //! @param[in]  alias   The alias of the schema to lookup in the context of this schema and it's references.
