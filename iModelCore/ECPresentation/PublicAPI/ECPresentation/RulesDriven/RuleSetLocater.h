@@ -12,6 +12,9 @@
 #include <ECPresentation/Connection.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
+ECPRESENTATION_TYPEDEFS(RuleSetLocater)
+ECPRESENTATION_REFCOUNTED_PTR(RuleSetLocater)
+
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -28,12 +31,14 @@ struct IRulesetCallbacksHandler
     virtual ~IRulesetCallbacksHandler() {}
 
     //! Called when a ruleset is created.
+    //! @param[in] locater Locater that created the ruleset.
     //! @param[in] ruleset The ruleset that was created.
-    virtual void _OnRulesetCreated(PresentationRuleSetCR ruleset) {}
+    virtual void _OnRulesetCreated(RuleSetLocaterCR locater, PresentationRuleSetR ruleset) {}
 
     //! Called when a ruleset is about to be disposed.
-    //! @param[in] ruleset The ruleset that will be disposed.
-    virtual void _OnRulesetDispose(PresentationRuleSetCR ruleset) {}
+    //! @param[in] locater Locater that disposed the ruleset.
+    //! @param[in] ruleset The ruleset that was created.
+    virtual void _OnRulesetDispose(RuleSetLocaterCR locater, PresentationRuleSetCR ruleset) {}
     };
 
 //=======================================================================================
@@ -46,7 +51,7 @@ struct RuleSetLocater : IRefCounted
 {
 private:
     IRulesetCallbacksHandler* m_rulesetCallbacksHandler;
-    mutable bvector<PresentationRuleSetCPtr> m_createdRulesets;
+    mutable bvector<PresentationRuleSetPtr> m_createdRulesets;
     mutable BeMutex m_mutex;
 
 protected:
@@ -72,11 +77,11 @@ protected:
 
     //! Implementations should call this function before they dispose a ruleset.
     //! @note This method is protected with a mutex.
-    ECPRESENTATION_EXPORT void OnRulesetDisposed(PresentationRuleSetCR ruleset) const;
+    ECPRESENTATION_EXPORT void OnRulesetDisposed(PresentationRuleSetR ruleset) const;
 
     //! Implementations should call this function when they create a new ruleset instance.
     //! @note This method is protected with a mutex.
-    ECPRESENTATION_EXPORT void OnRulesetCreated(PresentationRuleSetCR ruleset) const;
+    ECPRESENTATION_EXPORT void OnRulesetCreated(PresentationRuleSetR ruleset) const;
 
     //! A mutex that can be used to implement thread safety.
     BeMutex& GetMutex() const {return m_mutex;}
@@ -110,9 +115,6 @@ public:
     //! Get connection for which this locater is designated. Returns nullptr if locater is designated for all connections.
     IConnectionCP GetDesignatedConnection() const {return _GetDesignatedConnection();}
 };
-
-typedef RefCountedPtr<RuleSetLocater> RuleSetLocaterPtr;
-typedef RefCountedPtr<RuleSetLocater const> RuleSetLocaterCPtr;
 
 //=======================================================================================
 //! Ruleset locater that finds rulesets in the specified directories.
@@ -321,12 +323,21 @@ struct EXPORT_VTABLE_ATTRIBUTE RuleSetLocaterManager : IRulesetLocaterManager, I
             }
         };
 
+    struct CacheValue
+        {
+        int m_locaterPriority;
+        PresentationRuleSetPtr m_ruleset;
+        CacheValue() {}
+        CacheValue(PresentationRuleSetPtr ruleset, int locaterPriority) : m_locaterPriority(locaterPriority), m_ruleset(ruleset) {}
+        };
+
 private:
+    mutable bool m_cacheRulesetsOnCreated;
     bvector<RuleSetLocaterPtr> m_locaters;
-    mutable bmap<CacheKey, bvector<PresentationRuleSetPtr>> m_rulesetsCache;
+    mutable bmap<CacheKey, bvector<CacheValue>> m_rulesetsCache;
     IConnectionManagerCR m_connections;
     mutable BeMutex m_mutex;
-    
+
 private:
     void _OnConnectionEvent(ConnectionEvent const&) override;
 
@@ -339,12 +350,12 @@ protected:
     ECPRESENTATION_EXPORT bvector<Utf8String> _GetRuleSetIds() const override;
 
     // IRulesetCallbacksHandler
-    ECPRESENTATION_EXPORT void _OnRulesetDispose(PresentationRuleSetCR ruleset) override;
-    ECPRESENTATION_EXPORT void _OnRulesetCreated(PresentationRuleSetCR ruleset) override;
+    ECPRESENTATION_EXPORT void _OnRulesetDispose(RuleSetLocaterCR locater, PresentationRuleSetCR ruleset) override;
+    ECPRESENTATION_EXPORT void _OnRulesetCreated(RuleSetLocaterCR locater, PresentationRuleSetR ruleset) override;
 
 public:
     ECPRESENTATION_EXPORT RuleSetLocaterManager(IConnectionManagerCR connections);
     ECPRESENTATION_EXPORT ~RuleSetLocaterManager();
-};
+    };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

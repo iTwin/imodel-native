@@ -329,24 +329,24 @@ protected:
     bvector<Utf8String> _GetRuleSetIds() const override {return m_wrapped.GetRuleSetIds();}
 
     // IRulesetCallbacksHandler
-    void _OnRulesetDispose(PresentationRuleSetCR ruleset) override
+    void _OnRulesetDispose(RuleSetLocaterCR locater, PresentationRuleSetCR ruleset) override
         {
         m_manager.m_cancelableTasks->CancelByRulesetId(ruleset.GetRuleSetId());
         folly::via(&m_manager.GetExecutor(), [&, ruleset = PresentationRuleSetCPtr(&ruleset)]()
             {
             if (nullptr != GetRulesetCallbacksHandler())
-                GetRulesetCallbacksHandler()->_OnRulesetDispose(*ruleset);
+                GetRulesetCallbacksHandler()->_OnRulesetDispose(locater, *ruleset);
             });
         }
-    void _OnRulesetCreated(PresentationRuleSetCR ruleset) override
+    void _OnRulesetCreated(RuleSetLocaterCR locater, PresentationRuleSetR ruleset) override
         {
         // note this callback is blocking because we need to initialize some stuff
         // like user settings and expect it to be accessible immediately after
         // ruleset is created
-        folly::via(&m_manager.GetExecutor(), [&, ruleset = PresentationRuleSetCPtr(&ruleset)]()
+        folly::via(&m_manager.GetExecutor(), [&, ruleset = PresentationRuleSetPtr(&ruleset)]()
             {
             if (nullptr != GetRulesetCallbacksHandler())
-                GetRulesetCallbacksHandler()->_OnRulesetCreated(*ruleset);
+                GetRulesetCallbacksHandler()->_OnRulesetCreated(locater, *ruleset);
             }).wait();
         }
 
