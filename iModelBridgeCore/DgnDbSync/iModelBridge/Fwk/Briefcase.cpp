@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/Briefcase.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeFwk.h>
@@ -469,6 +469,8 @@ void iModelBridgeFwk::Briefcase_Shutdown()
         delete m_clientUtils;       // This relases the DgnDbBriefcase
         
     m_clientUtils = nullptr;
+
+    Http::HttpClient::Uninitialize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -496,7 +498,11 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
 
     Http::HttpClient::Initialize(assetsDir);
     BeAssert(nullptr == m_clientUtils);
-    m_clientUtils = s_iModelHubFXForTesting? s_iModelHubFXForTesting: new DgnDbServerClientUtils(m_serverArgs.m_environment, m_serverArgs.m_maxRetryCount);
+    WebServices::ClientInfoPtr clientInfo = nullptr;
+    if (NULL != m_bridge)
+        clientInfo = m_bridge->GetParamsCR().GetClientInfo();
+
+    m_clientUtils = s_iModelHubFXForTesting? s_iModelHubFXForTesting: new DgnDbServerClientUtils(m_serverArgs.m_environment, m_serverArgs.m_maxRetryCount, clientInfo);
     Tasks::AsyncError serror;
     if (BSISUCCESS != m_clientUtils->SignIn(&serror, m_serverArgs.m_credentials))
         {
