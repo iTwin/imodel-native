@@ -371,7 +371,7 @@ DgnCode ElementReader::CreateCodeFromJson(Json::Value& element)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ElementAspectReader::_Read(Json::Value& aspect)
+BentleyStatus GenericElementAspectReader::_Read(Json::Value& aspect)
     {
     DgnElementId instanceId = ECJsonUtilities::JsonToId<DgnElementId>(aspect[ECJsonSystemNames::Id()]);
     if (!instanceId.IsValid())

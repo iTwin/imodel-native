@@ -236,8 +236,8 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
         reader = new BaselineReader(this);
     else if (objectType.Equals(JSON_TYPE_PropertyData))
         reader = new PropertyDataReader(this);
-    else if (objectType.Equals(JSON_TYPE_ElementAspect))
-        reader = new ElementAspectReader(this);
+    else if (objectType.Equals(JSON_TYPE_GenericElementAspect))
+        reader = new GenericElementAspectReader(this);
 
     if (nullptr == reader)
         return ERROR;
