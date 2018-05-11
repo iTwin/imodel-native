@@ -57,12 +57,24 @@ template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamin
                     {
                     // Reset url
                     url = config.isMember("url") ? WString(config["url"].asCString()) : L"";
+                    if (!BeFileName::IsUrl(url.c_str()))
+                        {
+                        m_isValid = false;
+                        return;
+                        }
+                    m_isStubFile = true;
                     }
+                }
+            else
+                {
+                m_isValid = false;
+                BeAssert(!"Problem opening stub file");
+                return;
                 }
             }
         else
             {
-            // Local 3dtiles
+            // Local 3dtiles. No need to parse, just copy the url
             this->m_url = Utf8String(url.c_str());
             return;
             }
@@ -73,15 +85,7 @@ template<class EXTENT> SMStreamingStore<EXTENT>::SMStreamingSettings::SMStreamin
 template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::ParseUrl(const WString url)
     {
     Utf8String projectID;
-#ifndef VANCOUVER_API
-    if (url.ContainsI("realitydataservices") && url.ContainsI("S3MXECPlugin"))
-#else
-    Utf8String lowerPath(url.c_str());
-    lowerPath.ToLower();
-    auto position1 = lowerPath.find("realitydataservices");
-    auto position2 = lowerPath.find("s3mxecplugin");
-    if (position1 != Utf8String::npos && position2 != Utf8String::npos)
-#endif
+    if (url.ContainsI(L"realitydataservices") && url.ContainsI(L"S3MXECPlugin"))
         { // RDS
         this->m_location = ServerLocation::RDS;
         this->m_commMethod = CommMethod::CURL;
@@ -97,11 +101,15 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
         auto projectIDEndPos = url.find_first_of(L"/", projectIDStartPos);
         this->m_projectID = Utf8String(url.substr(projectIDStartPos, projectIDEndPos - projectIDStartPos));
         }
-    else
+    else if (url.ContainsI(L"blob.core.windows.net"))
         { // Direct link to Azure
+
+        // NEEDS_WORK_SM_STREAMING : Handle invalid/unsupported Azure urls (e.g. Azure urls which are not from RDS i.e. does not have a project associated)
+
+        // The following assumes url has the form https://<storage-account>.blob.core.windows.net/<guid>/<root-document>?<azure-token>
         this->m_location = ServerLocation::RDS;
         this->m_commMethod = CommMethod::CURL;
-        assert(url.substr(0, 8) == L"https://");
+        BeAssert(url.substr(0, 8) == L"https://");
         auto firstSeparatorPos = url.find(L".");
         this->m_serverID = Utf8String(url.substr(8, firstSeparatorPos - 8));
 
@@ -110,8 +118,8 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
         auto guidLength = url.find(L"/", guidPos) - guidPos;
         auto rootTilesetPathPos = guidPos + guidLength + 1;
         auto azureTokenPos = url.find(L"?", rootTilesetPathPos);
-        auto rootTilesetPathLength = azureTokenPos - rootTilesetPathPos;
-        auto azureTokenLength = url.size() - azureTokenPos;
+        auto rootTilesetPathLength = azureTokenPos == Utf8String::npos ? url.size() : azureTokenPos - rootTilesetPathPos;
+        auto azureTokenLength = azureTokenPos == Utf8String::npos ? 0 : url.size() - azureTokenPos;
 
         // guid
         this->m_guid = Utf8String(url.substr(guidPos, guidLength));
@@ -119,16 +127,23 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
         // root file
         auto rootTilesetPath = Utf8String(url.substr(rootTilesetPathPos, rootTilesetPathLength));
 
-        // azure token
-        auto azureToken = Utf8String(url.substr(azureTokenPos + 1, azureTokenLength));
-
-        // NEEDS_WORK_SM_STREAMING : handle Azure token properly
-
         this->m_url = rootTilesetPath.c_str();
+
+        // azure token (does not need to be present, handled by RDS through projectID
+        if (azureTokenLength > 0)
+            {
+            auto azureToken = Utf8String(url.substr(azureTokenPos + 1, azureTokenLength));
+            // NEEDS_WORK_SM_STREAMING : handle Azure token properly
+            }
 
         this->m_projectID = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProjectID();
         }
-    // NEEDS_WORK_SM_STREAMING : Handle invalid/unsupported urls (e.g. Azure urls which are not from RDS i.e. does not have a project associated)
+    else
+        {
+        // NEEDS_WORK_SM_STREAMING : handle other network 3dtiles
+        m_isValid = false;
+        BeAssert(!"Unsupported/invalid url for streaming");
+        }
     }
 
 template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(const WString& path, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path, FormatType formatType)
@@ -1839,7 +1854,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtD
     auto nodeGroup = this->GetGroup(nodeHeader->m_id);
     // NEEDS_WORK_SM_STREAMING: validate node group if node headers are grouped
     //assert(nodeGroup.IsValid());
-        dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(GetDataSourceAccount(), GetDataSourceSessionName(), dataType, nodeHeader, m_settings->IsPublishing(), nodeGroup);
+        dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(GetDataSourceAccount(), GetDataSourceSessionName(), m_settings->GetURL(), dataType, nodeHeader, m_settings->IsPublishing(), nodeGroup);
     
     return true;    
     }
@@ -1889,7 +1904,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMInt32
     {                
     assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices);
         
-    dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, GetDataSourceSessionName(), dataType, nodeHeader);
+    dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, GetDataSourceSessionName(), m_settings->GetURL(), dataType, nodeHeader);
                     
     return true;    
     }
@@ -1903,7 +1918,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTextu
     assert(false);
 #endif
 
-    dataStore = new StreamingNodeTextureStore<Byte, EXTENT>(m_dataSourceAccount, GetDataSourceSessionName(), nodeHeader);
+    dataStore = new StreamingNodeTextureStore<Byte, EXTENT>(m_dataSourceAccount, GetDataSourceSessionName(), m_settings->GetURL(), nodeHeader);
     
     return true;    
     }
@@ -1911,7 +1926,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTextu
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {
     assert(dataType == SMStoreDataType::UvCoords);
-    dataStore = new SMStreamingNodeDataStore<DPoint2d, EXTENT>(m_dataSourceAccount, GetDataSourceSessionName(), dataType, nodeHeader);
+    dataStore = new SMStreamingNodeDataStore<DPoint2d, EXTENT>(m_dataSourceAccount, GetDataSourceSessionName(), m_settings->GetURL(), dataType, nodeHeader);
 
     return true;    
     }
@@ -1929,7 +1944,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPoint
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
-    dataStore = new SMStreamingNodeDataStore<bvector<Byte>, EXTENT>(this->GetDataSourceAccount(), GetDataSourceSessionName(), SMStoreDataType::Cesium3DTiles, nodeHeader, m_settings->IsPublishing());
+    dataStore = new SMStreamingNodeDataStore<bvector<Byte>, EXTENT>(this->GetDataSourceAccount(), GetDataSourceSessionName(), m_settings->GetURL(), SMStoreDataType::Cesium3DTiles, nodeHeader, m_settings->IsPublishing());
     return true;
     }
 
@@ -1937,7 +1952,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMCesiu
     {
     assert(m_nodeHeaderCache.count(nodeHeader->m_id.m_integerID) == 1);
     auto group = m_CesiumGroup->GetCache()->GetGroupForNodeIDFromCache(nodeHeader->m_id.m_integerID);
-    dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), GetDataSourceSessionName(), SMStoreDataType::Cesium3DTiles, nodeHeader, *m_nodeHeaderCache[nodeHeader->m_id.m_integerID], m_transform, group, m_settings->IsPublishing());
+    dataStore = new SMStreamingNodeDataStore<Cesium3DTilesBase, EXTENT>(this->GetDataSourceAccount(), GetDataSourceSessionName(), m_settings->GetURL(), SMStoreDataType::Cesium3DTiles, nodeHeader, *m_nodeHeaderCache[nodeHeader->m_id.m_integerID], m_transform, group, m_settings->IsPublishing());
     return true;
     }
 
@@ -1985,13 +2000,15 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataFormatType(FormatT
 
 
 //------------------SMStreamingNodeDataStore--------------------------------------------
-template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing, SMNodeGroupPtr nodeGroup, bool compress = true)
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing, SMNodeGroupPtr nodeGroup, bool compress = true)
     : m_dataSourceAccount(dataSourceAccount),
       m_dataSourceSessionName(session),
+      m_dataSourceURL(url.c_str()),
       m_nodeHeader(nodeHeader),
       m_nodeGroup(nodeGroup),
       m_dataType(type)
     {
+#if 0
     switch (m_dataType)
         {
         case SMStoreDataType::Points: 
@@ -2015,10 +2032,11 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
         default:
             assert(!"Unkown data type for streaming");
         }
+#endif
 
     m_dataSourceURL.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
     }
-template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup, bool isPublishing, bool compress)
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup, bool isPublishing, bool compress)
     : m_dataSourceAccount(dataSourceAccount),
     m_dataSourceSessionName(session),
     m_nodeHeader(nodeHeader),
@@ -2027,6 +2045,7 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
     m_transform(transform),
     m_nodeGroup(nodeGroup)
     {
+#if 0
     switch (m_dataType)
         {
         case SMStoreDataType::Points:
@@ -2051,6 +2070,7 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
         default:
             assert(!"Unkown data type for streaming");
         }
+#endif
     if (isPublishing)
         {
         auto dataPath = m_dataSourceAccount->getPrefixPath() + L"\\" + m_dataSourceURL;
@@ -2851,8 +2871,8 @@ template <class DATATYPE, class EXTENT> StreamingTextureBlock& StreamingNodeText
     }
 
 
-template <class DATATYPE, class EXTENT> StreamingNodeTextureStore<DATATYPE, EXTENT>::StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, SMIndexNodeHeader<EXTENT>* nodeHeader)
-    : Super(dataSourceAccount, session, SMStoreDataType::Texture, nodeHeader)
+template <class DATATYPE, class EXTENT> StreamingNodeTextureStore<DATATYPE, EXTENT>::StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    : Super(dataSourceAccount, session, url, SMStoreDataType::Texture, nodeHeader)
     {
     }
 

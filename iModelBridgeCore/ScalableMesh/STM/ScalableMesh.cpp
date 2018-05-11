@@ -177,6 +177,11 @@ bool IScalableMesh::IsCesium3DTiles()
     return _IsCesium3DTiles();
     }
 
+bool IScalableMesh::IsStubFile()
+    {
+    return _IsStubFile();
+    }
+
 Utf8String IScalableMesh::GetProjectWiseContextShareLink()
     {
     return _GetProjectWiseContextShareLink();
@@ -890,6 +895,7 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
     m_areDataCompressed(false),
     m_computeTileBoundary(false),
     m_isCesium3DTiles(false),
+    m_isFromStubFile(false),
     m_minScreenPixelsPerPoint(MEAN_SCREEN_PIXELS_PER_POINT),
     m_reprojectionTransform(Transform::FromIdentity()),
     m_isInvertingClips(false)
@@ -1059,13 +1065,13 @@ IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr&  smSQLiteFile,
         {
         bool isFromPWCS = false;
         WString newFilePath = filePath;
-        if (scmPtr->IsCesium3DTiles())
+        if (scmPtr->IsCesium3DTiles() && !scmPtr->IsStubFile())
             {
             auto pwcsLink = scmPtr->GetProjectWiseContextShareLink();
             if (isFromPWCS = !pwcsLink.empty())
                 newFilePath = WString(pwcsLink.c_str(), true);
             }
-        status = ScalableMeshLib::GetHost().RegisterScalableMesh(newFilePath, scmP);
+        ScalableMeshLib::GetHost().RegisterScalableMesh(newFilePath, scmP);
         }
     return (BSISUCCESS == status ? scmP : 0);
 }
@@ -1092,9 +1098,12 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             {
             SMStreamingStore<Extent3dType>::SMStreamingSettingsPtr stream_settings = new SMStreamingStore<Extent3dType>::SMStreamingSettings(m_path);
 
+            if (!stream_settings->IsValid())
+                return ERROR;
             if (stream_settings->IsDataFromRDS())
                 m_smRDSProvider = IScalableMeshRDSProvider::Create(stream_settings->GetUtf8ProjectID(), stream_settings->GetUtf8GUID());
             m_isCesium3DTiles = stream_settings->IsCesium3DTiles();
+            m_isFromStubFile = stream_settings->IsStubFile();
 
 #ifndef VANCOUVER_API                                       
             dataStore = new SMStreamingStore<Extent3dType>(stream_settings, m_smRDSProvider);
@@ -1255,7 +1264,7 @@ template <class POINT> int ScalableMesh<POINT>::Close
 )
     {
     WString path = m_path;
-    if (this->IsCesium3DTiles())
+    if (this->IsCesium3DTiles() && !this->IsStubFile())
         {
         auto pwcsLink = this->GetProjectWiseContextShareLink();
         if (!pwcsLink.empty())
@@ -1858,10 +1867,15 @@ template <class POINT> bool ScalableMesh<POINT>::_IsCesium3DTiles()
     return m_isCesium3DTiles;
     }
 
+template <class POINT> bool ScalableMesh<POINT>::_IsStubFile()
+    {
+    return m_isFromStubFile;
+    }
+
 template <class POINT> Utf8String ScalableMesh<POINT>::_GetProjectWiseContextShareLink()
     {
-    if (!m_smRDSProvider.IsValid()) return Utf8String();
-    return m_smRDSProvider->GetRDSURLAddress();
+    if (m_smRDSProvider.IsValid()) return m_smRDSProvider->GetRDSURLAddress();
+    return Utf8String();
     }
 
 template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(ITextureProviderPtr provider)

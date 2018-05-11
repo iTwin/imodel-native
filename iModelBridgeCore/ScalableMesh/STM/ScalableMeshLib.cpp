@@ -528,11 +528,10 @@ void             ScalableMeshLib::Host::RemoveRegisteredScalableMesh(const WStri
     m_smPaths->erase(path);
     }
 
-StatusInt ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref)
+void ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref)
     {
-    if (m_smPaths->insert(make_bpair(path, ref.get())).second)
-        return SUCCESS;
-    return ERROR;
+    if (!m_smPaths->insert(make_bpair(path, ref.get())).second)
+        BeAssert(!"Path already exists");
     }
 
 /*======================================================================+

@@ -57,6 +57,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
                       m_dataType(settings.m_dataType),
                       m_public(settings.m_public),
                       m_isPublishing(settings.m_isPublishing),
+                      m_isStubFile(settings.m_isStubFile),
+                      m_isValid(settings.m_isValid),
                       m_guid(settings.m_guid),
                       m_projectID(settings.m_projectID),
                       m_serverID(settings.m_serverID),
@@ -72,6 +74,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             bool IsDataFromAzure()    const   { return m_location == AZURE; }
             bool IsPublishing()       const   { return m_isPublishing; }
             bool IsCesium3DTiles()    const   { return m_dataType == CESIUM3DTILES; }
+            bool IsStubFile()         const   { return m_isStubFile; }
+            bool IsValid()            const   { return m_isValid; }
             bool IsSMCesium3DTiles()  const   { return m_dataType == SMCESIUM3DTILES; }
             bool IsGCSStringSet()     const   { return m_isGCSSet; }
 
@@ -128,7 +132,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             DataType m_dataType = CESIUM3DTILES;
             bool m_public = false;
             bool m_isPublishing = false;
+            bool m_isStubFile = false;
             bool m_isGCSSet = false;
+            bool m_isValid = true;
             uint64_t   m_smID;
             Utf8String m_guid;
             Utf8String m_projectID;
@@ -386,9 +392,9 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
     public:
 
-        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroupPtr nodeGroup = nullptr, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroupPtr nodeGroup = nullptr, bool compress = true);
 
-        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup = nullptr, bool isPublishing = false, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup = nullptr, bool isPublishing = false, bool compress = true);
         
         virtual ~SMStreamingNodeDataStore();
 
@@ -471,7 +477,7 @@ template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public
 
         StreamingTextureBlock& GetTexture(HPMBlockID blockID) const;
             
-        StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, SMIndexNodeHeader<EXTENT>* nodeHeader);
+        StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMIndexNodeHeader<EXTENT>* nodeHeader);
 
         virtual bool DestroyBlock(HPMBlockID blockID) override;            
                         
