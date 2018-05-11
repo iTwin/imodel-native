@@ -31,6 +31,8 @@ $(o)IECPresentationSerializer$(oext): $(SourceDirectory)IECPresentationSerialize
 
 $(o)DefaultECPresentationSerializer$(oext) : $(SourceDirectory)DefaultECPresentationSerializer.cpp $(ECPresentationDependencies)
 
+$(o)Localization$(oext)             : $(SourceDirectory)Localization.cpp $(ECPresentationDependencies)
+
 %include MultiCppCompileGo.mki
 
 ECPresentationObjs =

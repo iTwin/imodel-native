@@ -505,7 +505,7 @@ public:
 
         if (nullptr == m_descriptor->GetDisplayLabelField())
             {
-            Utf8String displayLabel = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel());
+            Utf8String displayLabel = IECPresentationManager::GetLocalizationProvider().GetString(bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_General_DisplayLabel()});
             if (displayLabel.empty())
                 {
                 BeAssert(false);

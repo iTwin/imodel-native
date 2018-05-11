@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/LocalizationHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -10,14 +10,13 @@
 #include "LocalizationHelper.h"
 #include "RulesPreprocessor.h"
 #include <regex>
-#include <BeSQLite/L10N.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool LocalizationHelper::LocalizeString(Utf8StringR str) const
     {
-    std::regex expression("(@[\\w\\d_\\-:]+?@)", std::regex_constants::ECMAScript);
+    std::regex expression("(@[\\w\\d\\-_]+:[\\w\\d\\-\\._]+?@)", std::regex_constants::ECMAScript);
     std::cmatch matches;
     std::regex_search(str.c_str(), matches, expression);
 
@@ -57,36 +56,4 @@ bool LocalizationHelper::LocalizeString(Utf8StringR str) const
         }
 
     return didLocalize;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ILocalizationProvider::GetString(Utf8StringCR key, Utf8StringR localizedValue) const {return _GetString(key, localizedValue);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SQLangLocalizationProvider::ParseKey(Utf8StringR ns, Utf8StringR id, Utf8StringCR key)
-    {
-    size_t pos;
-    if (Utf8String::npos == (pos = key.GetNextToken(ns, ":", 0)))
-        return ERROR;
-
-    key.GetNextToken(id, ":", pos);
-    return (!ns.empty() && !id.empty()) ? SUCCESS : ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SQLangLocalizationProvider::_GetString(Utf8StringCR key, Utf8StringR localizedValue) const
-    {
-    Utf8String ns, id;
-    if (SUCCESS != ParseKey(ns, id, key))
-        return false;
-
-    bool hasString = false;
-    localizedValue = L10N::GetString(BeSQLite::L10N::NameSpace(ns.c_str()), BeSQLite::L10N::StringId(id.c_str()), &hasString);
-    return hasString;
     }

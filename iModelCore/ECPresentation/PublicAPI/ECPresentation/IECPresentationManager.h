@@ -15,6 +15,7 @@
 #include <ECPresentation/KeySet.h>
 #include <ECPresentation/Connection.h>
 #include <ECPresentation/IECPresentationSerializer.h>
+#include <ECPresentation/Localization.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -35,6 +36,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECPresentationManager : public NonCopyableClass
 private:
     static IECPresentationManager* s_instance;
     static IECPresentationSerializer const* s_serializer;
+    static ILocalizationProvider const* s_localizationProvider;
     
 private:
     folly::Future<NodesPathElement> FindNode(ECDbCR, NavNodeCP, ECInstanceKeyCR, JsonValueCR);
@@ -124,9 +126,6 @@ public:
     //! Get the presentation manager.
     //! @warning @ref IsActive() can be used to verify if a manager is registered.
     ECPRESENTATION_EXPORT static IECPresentationManagerR GetManager();
-
-    //! Set EC presentation serializer
-    ECPRESENTATION_EXPORT static void SetSerializer(IECPresentationSerializer const*);
     
     //! Constructor.
     IECPresentationManager(IConnectionManagerR connections) : m_connections(connections) {}
@@ -138,8 +137,17 @@ public:
     IConnectionManagerCR GetConnections() const {return m_connections;}
     IConnectionManagerR Connections() { return m_connections; }
 
-    //! Get EC presentation serializer
+    //! Set ECPresentation objects serializer
+    ECPRESENTATION_EXPORT static void SetSerializer(IECPresentationSerializer const*);
+
+    //! Get ECPresentation objects serializer
     static IECPresentationSerializer const& GetSerializer();
+    
+    //! Set ECPresentation objects serializer
+    ECPRESENTATION_EXPORT static void SetLocalizationProvider(ILocalizationProvider const*);
+
+    //! Get ECPresentation objects serializer
+    static ILocalizationProvider const& GetLocalizationProvider();
 /** @} */
 
 /** @name Navigation  

@@ -20,4 +20,5 @@ bool BeAssertIgnoreContext::s_value = true;
 void ECPresentationTest::SetUp()
     {
     IECPresentationManager::SetSerializer(new DefaultECPresentationSerializer());
+    IECPresentationManager::SetLocalizationProvider(new SQLangLocalizationProvider());
     }

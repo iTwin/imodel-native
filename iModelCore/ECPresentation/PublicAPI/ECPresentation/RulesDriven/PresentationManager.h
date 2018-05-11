@@ -205,12 +205,6 @@ public:
     //! Set the local state to use for storing user settings.
     ECPRESENTATION_EXPORT void SetLocalState(IJsonLocalState*);
 
-    //! Set custom localization provider. By default BeSQLite::L10N is used.
-    ECPRESENTATION_EXPORT void SetLocalizationProvider(ILocalizationProvider const*);
-
-    //! Get localization provider used by this presentation manager.
-    ECPRESENTATION_EXPORT ILocalizationProvider const& GetLocalizationProvider() const;
-
 /** @name Property Formatting */
 /** @{ */
     //! Set the property formatter.
