@@ -69,9 +69,17 @@ public:
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToRealityDataExtended(Utf8CP data, bvector<RealityDataExtendedPtr>* outData);
 
     //! To retreive EnterpriseStat from a JSON fragment 
+    REALITYDATAPLATFORM_EXPORT static StatusInt JsonToDataLocation(Utf8CP data, RealityDataLocation& dataLocationObject);
+    REALITYDATAPLATFORM_EXPORT static StatusInt JsonToDataLocation(Json::Value properties, RealityDataLocation& datLocationObject);
+
+    //! To retreive many EnterpriseStat from a JSON fragment 
+    REALITYDATAPLATFORM_EXPORT static StatusInt JsonToDataLocations(Utf8CP data, bvector<RealityDataLocation>& dataLocationObjects);
+
+
+    //! To retreive EnterpriseStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToEnterpriseStat(Utf8CP data, RealityDataEnterpriseStat& statObject);
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToEnterpriseStat(Json::Value properties, RealityDataEnterpriseStat& statObject);
-	
+
     //! To retreive many EnterpriseStat from a JSON fragment 
     REALITYDATAPLATFORM_EXPORT static StatusInt JsonToEnterpriseStats(Utf8CP data, bvector<RealityDataEnterpriseStat>& statObjects);
 

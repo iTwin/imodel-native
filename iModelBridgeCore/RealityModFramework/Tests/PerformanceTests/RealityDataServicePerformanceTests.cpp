@@ -196,6 +196,8 @@ void RealityDataServicePerformanceTests::Run(Utf8String serverName, int numberOf
                 // This test must be called if creation was sucessful
                 DeleteRealityDataTest(currentTimeStats);
     
+                DataLocationStatTest(currentTimeStats);
+
                 EnterpriseStatTest(currentTimeStats);
 
                 ServiceStatTest(currentTimeStats);
@@ -229,6 +231,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
         int64_t mean_modifyRealityData;
         int64_t mean_deleteRelationship;
         int64_t mean_deleteRealityData;
+        int64_t mean_dataLocationStats;
         int64_t mean_enterpriseStats;
         int64_t mean_serviceStats;
         int64_t mean_userStats;
@@ -245,6 +248,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
         int64_t total_modifyRealityData = 0;
         int64_t total_deleteRelationship = 0;
         int64_t total_deleteRealityData = 0;
+        int64_t total_dataLocationStats = 0;
         int64_t total_enterpriseStats = 0;
         int64_t total_serviceStats = 0;
         int64_t total_userStats = 0;
@@ -263,6 +267,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
         int64_t min_modifyRealityData       = m_listOfStats[0].m_modifyRealityData;
         int64_t min_deleteRelationship      = m_listOfStats[0].m_deleteRelationship;
         int64_t min_deleteRealityData       = m_listOfStats[0].m_deleteRealityData;
+        int64_t min_dataLocationStats       = m_listOfStats[0].m_dataLocationStats;
         int64_t min_enterpriseStats         = m_listOfStats[0].m_enterpriseStats;
         int64_t min_serviceStats            = m_listOfStats[0].m_serviceStats;
         int64_t min_userStats               = m_listOfStats[0].m_userStats;
@@ -279,6 +284,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
         int64_t max_modifyRealityData       = m_listOfStats[0].m_modifyRealityData;
         int64_t max_deleteRelationship      = m_listOfStats[0].m_deleteRelationship;
         int64_t max_deleteRealityData       = m_listOfStats[0].m_deleteRealityData;
+        int64_t max_dataLocationStats       = m_listOfStats[0].m_dataLocationStats;
         int64_t max_enterpriseStats         = m_listOfStats[0].m_enterpriseStats;
         int64_t max_serviceStats            = m_listOfStats[0].m_serviceStats;
         int64_t max_userStats               = m_listOfStats[0].m_userStats;
@@ -353,6 +359,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
         mean_modifyRealityData   = total_modifyRealityData   / m_listOfStats.size();
         mean_deleteRelationship  = total_deleteRelationship  / m_listOfStats.size();      
         mean_deleteRealityData   = total_deleteRealityData   / m_listOfStats.size();
+        mean_dataLocationStats   = total_dataLocationStats   / m_listOfStats.size();
         mean_enterpriseStats     = total_enterpriseStats     / m_listOfStats.size();
         mean_serviceStats        = total_serviceStats        / m_listOfStats.size();
         mean_userStats           = total_userStats           / m_listOfStats.size();
@@ -370,6 +377,7 @@ void RealityDataServicePerformanceTests::ComputeAndPrintStats()
         std::cout << "Modify RealityData                       : " << mean_modifyRealityData   << ",         " << min_modifyRealityData     << ",           " << max_modifyRealityData   << std::endl;
         std::cout << "Delete Relationship                      : " << mean_deleteRelationship  << ",         " << min_deleteRelationship    << ",           " << max_deleteRelationship  << std::endl;
         std::cout << "Delete Reality Data                      : " << mean_deleteRealityData   << ",         " << min_deleteRealityData     << ",           " << max_deleteRealityData   << std::endl;
+        std::cout << "Data Locations                           : " << mean_dataLocationStats   << ",         " << min_dataLocationStats     << ",           " << max_dataLocationStats   << std::endl;
         std::cout << "Enterprise stats                         : " << mean_enterpriseStats     << ",         " << min_enterpriseStats       << ",           " << max_enterpriseStats     << std::endl;
         std::cout << "Service stats                            : " << mean_serviceStats        << ",         " << min_serviceStats          << ",           " << max_serviceStats        << std::endl;
         std::cout << "User stats                               : " << mean_userStats           << ",         " << min_userStats             << ",           " << max_userStats           << std::endl;
@@ -1082,6 +1090,39 @@ StatusInt RealityDataServicePerformanceTests::DeleteDocumentTest(timeStats& theT
         std::cout << "DeleteDocument Test: Failure no: " << response.status << std::endl;
     else
         std::cout << "DeleteDocument Test: " << (endTime - startTime) << std::endl;
+
+
+    return (StatusInt)response.status;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            03/2017
+//-------------------------------------------------------------------------------------
+StatusInt RealityDataServicePerformanceTests::DataLocationStatTest(timeStats& theTimeStats)
+    {
+    RawServerResponse response;
+    AllRealityDataLocationsRequest ptt;
+    bvector<RealityDataLocation> locations;
+
+    int64_t startTime;
+    int64_t endTime;
+
+    // Start time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
+
+    // Perform operation
+    locations = RealityDataService::Request(ptt, response);
+    
+    // End time
+    DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
+
+    // Report
+    if (SUCCESS != response.status)
+        std::cout << "Get Enterprise stats Test: Failure no: " << response.status << std::endl;
+    else
+        std::cout << "Get Enterprise stats Test: " << (endTime - startTime) << std::endl;
+
+    theTimeStats.m_dataLocationStats = (endTime - startTime);
 
 
     return (StatusInt)response.status;

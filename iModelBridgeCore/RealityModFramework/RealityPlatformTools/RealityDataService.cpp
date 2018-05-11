@@ -264,6 +264,25 @@ void RealityDataUrl::_PrepareHttpRequestStringAndPayload() const
     }
 
 //=====================================================================================
+//! @bsimethod                                   Alain.Robert              05/2018
+//=====================================================================================
+void RealityDataLocationRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    RealityDataUrl::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/DataLocations/");
+    m_httpRequestString.append(m_encodedId.c_str());
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              05/2018
+//=====================================================================================
+void AllRealityDataLocationsRequest::_PrepareHttpRequestStringAndPayload() const
+    {
+    RealityDataUrl::_PrepareHttpRequestStringAndPayload();
+    m_httpRequestString.append("/DataLocations/");
+    }
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 void RealityDataEnterpriseStatRequest::_PrepareHttpRequestStringAndPayload() const
@@ -818,8 +837,18 @@ void RealityDataListByUltimateIdPagedRequest::_PrepareHttpRequestStringAndPayloa
         const char* charstring = decodedToken.c_str();
         Utf8String keyword = "ultimateid";
         const char* attributePosition = strstr(charstring, keyword.c_str());
+        if (__nullptr == attributePosition)
+            {
+            BeAssert(!"Token does not contain ultimateid");
+            return; // Something undefined went wrong
+            }
         keyword = "<saml:AttributeValue>";
         const char* valuePosition = strstr(attributePosition, keyword.c_str());
+        if (__nullptr == valuePosition)
+            {
+            BeAssert(!"Token does not contain <saml:AttributeValue> in ultimateid");
+            return; // Something undefined went wrong
+            }
         valuePosition += keyword.length();
         Utf8String idString = Utf8String(valuePosition);
 
@@ -1955,6 +1984,51 @@ bvector<RealityDataPtr> RealityDataService::Request(const RealityDataPagedReques
 
     return entities;
     }
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              05/2018
+//=====================================================================================
+void RealityDataService::Request(const RealityDataLocationRequest& request, RealityDataLocation& locationObject, RawServerResponse& rawResponse)
+    {
+    if (!RealityDataService::AreParametersSet())
+        {
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
+        return;
+        }
+
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request));
+
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("RealityDataLocationRequest failed with response", rawResponse);
+
+    RealityConversionTools::JsonToDataLocation(rawResponse.body.c_str(), locationObject);
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
+bvector<RealityDataLocation>  RealityDataService::Request(const AllRealityDataLocationsRequest& request, RawServerResponse& rawResponse)
+    {
+
+    bvector<RealityDataLocation> entities;
+    if(!RealityDataService::AreParametersSet())
+        {
+        rawResponse.status = RequestStatus::PARAMSNOTSET;
+        return entities;
+        }
+
+    rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request));
+
+    if (rawResponse.status != RequestStatus::OK)
+        s_errorCallback("AllRealityDataLocationsRequest failed with response", rawResponse);
+    else
+        {
+        RealityConversionTools::JsonToDataLocations(rawResponse.body.c_str(), entities);
+        }
+
+    return entities;
+    }
+    
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017

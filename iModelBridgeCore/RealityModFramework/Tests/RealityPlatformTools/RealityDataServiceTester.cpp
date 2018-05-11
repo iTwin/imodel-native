@@ -565,6 +565,24 @@ TEST_F(RealityDataServiceFixture, RealityDataDeleteBadRequest)
     EXPECT_EQ(rawResponse.status, ::BADREQ);
     
     }
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataLocationRequestBadRequest)
+    {
+    EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataLocationRequest failed with response"), _)).Times(1);
+    ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        response.status = ::BADREQ;
+        }));
+
+    RealityDataLocationRequest requestUT("BadID");
+    RawServerResponse rawResponse{};
+
+    RealityDataLocation location;
+    s_realityDataService->Request(requestUT, location, rawResponse);
+    EXPECT_EQ(rawResponse.status, ::BADREQ);
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Remi.Charbonneau              06/2017
@@ -926,6 +944,35 @@ TEST_F(RealityDataServiceFixture, RealityDataPagedRequestGoodRequestNotLastPage)
     EXPECT_EQ(rawResponse.status, RequestStatus::OK);
     EXPECT_EQ(resultVector.size(), 1);
     EXPECT_EQ(resultVector[0]->GetName(), "Helsinki2");
+    
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+TEST_F(RealityDataServiceFixture, RealityDataLocationRequestGoodRequest)
+    {
+    EXPECT_CALL(*s_errorClass, errorCallBack(Eq("RealityDataLocationRequest failed with response"), _)).Times(0);
+    ON_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).WillByDefault(Invoke([] (const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        EXPECT_STREQ(wsgRequest.GetHttpRequestString().c_str(), "https://myserver.com/v9.9/Repositories/myRepo/mySchema/DataLocations/c07c%2D465d%2Da1fe%2D2f2dfac950a4");
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\DataLocation.json");
+        }));
+
+
+    RealityDataLocationRequest requestUT("c07c-465d-a1fe-2f2dfac950a4");
+
+    EXPECT_STREQ(requestUT.GetId().c_str(), "c07c-465d-a1fe-2f2dfac950a4");
+
+    RawServerResponse rawResponse{};
+    RealityDataLocation location;
+
+    s_realityDataService->Request(requestUT, location, rawResponse);
+    EXPECT_EQ(rawResponse.status, RequestStatus::OK);
+    EXPECT_EQ(location.GetLocation(), "Japan East");
     
     }
 
@@ -1610,6 +1657,20 @@ TEST_F(RealityDataServiceBadComponentsFixture, RealityDataDeleteBadComponents)
     RawServerResponse rawResponse{};
 
     s_realityDataService->Request(requestUT, rawResponse);
+    EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
+    }
+
+
+//=====================================================================================
+//! @bsimethod                                   Alain.Robert              05/2018
+//=====================================================================================
+TEST_F(RealityDataServiceBadComponentsFixture, RealityDataLocationRequestBadComponents)
+    {
+    RealityDataLocationRequest requestUT("Nowhere");
+    RawServerResponse rawResponse;
+
+    RealityDataLocation location;
+    s_realityDataService->Request(requestUT, location, rawResponse);
     EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
     }
 

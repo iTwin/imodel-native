@@ -565,6 +565,51 @@ protected:
     Utf8String  m_assignPermissionOverride;
     };
 
+//! The DataLocation identifier represents locations where data can be stored.
+//! The data location presently represents Microsoft Azure Blob Storages yet 
+//! The structure of the class allows for additional storage types given the keys are
+//! registered and custom service is applied.
+struct RealityDataLocation
+    {
+public:
+    //! Create invalid data.
+    REALITYDATAPLATFORM_EXPORT RealityDataLocation();
+
+    //! Copy constructor and assignement operator.
+    REALITYDATAPLATFORM_EXPORT RealityDataLocation(const RealityDataLocation& object);
+    REALITYDATAPLATFORM_EXPORT RealityDataLocation& operator=(const RealityDataLocation& object);
+
+    //! Provider: The name of the provider (ex: Microsoft, Amazon,...)
+    //! Currently known key is Microsoft that implies the data location is located
+    //! in the Azure cloud blob storage.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetIdentifier() const;
+    REALITYDATAPLATFORM_EXPORT void SetIdentifier(Utf8CP identifier);
+
+    //! Provider: The name of the provider (ex: Microsoft, Amazon,...)
+    //! Currently known key is Microsoft that implies the data location is located
+    //! in the Azure cloud blob storage.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProvider() const;
+    REALITYDATAPLATFORM_EXPORT void SetProvider(Utf8CP provider);
+
+    //! Location: Geograpical Location of Data Location (ex: East Japan)
+    //! This is a human readable text that may be used as a seed for translation
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetLocation() const;
+    REALITYDATAPLATFORM_EXPORT void SetLocation(Utf8CP location);
+
+    //! Parent/DataLocationGuid: This identifier to the CONNECT Data Locations registry.
+    //! This is the GUID of the data location in the data location registry that 
+    //! uniquely identifies a data center. This id enables to extract the original infoarmation from which
+    //! Provider and Location were extracted. 
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDataLocationGuid() const;
+    REALITYDATAPLATFORM_EXPORT void SetDataLocationGuid(Utf8CP dataLocationGuid);
+
+protected:
+    Utf8String m_identifier;
+    Utf8String m_provider;
+    Utf8String m_location;
+    Utf8String m_dataLocationGuid;
+    };
+
 struct RealityDataEnterpriseStat
     {
 public:

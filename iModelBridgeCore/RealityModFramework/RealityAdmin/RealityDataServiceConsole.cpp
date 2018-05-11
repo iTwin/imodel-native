@@ -70,6 +70,8 @@ void RealityDataConsole::InterpretCommand(bool emptyDisplayMessage)
         m_lastCommand = Command::List;
     else if (args[0].EqualsI("help"))
         m_lastCommand = Command::Help;
+    else if (args[0].EqualsI("datalocations"))
+        m_lastCommand = Command::DataLocations;
     else if (args[0].EqualsI("stat"))
         m_lastCommand = Command::Stat;
     else if (args[0].EqualsI("allstats"))
@@ -81,7 +83,13 @@ void RealityDataConsole::InterpretCommand(bool emptyDisplayMessage)
     else if (args[0].EqualsI("alluserstats"))
         m_lastCommand = Command::AllUserStats;
     else if (args[0].EqualsI("alluserstatsjson"))
-        m_lastCommand = Command::AllUserStatsJson;	
+        m_lastCommand = Command::AllUserStatsJson;    
+    else if (args[0].EqualsI("servicestat"))
+        m_lastCommand = Command::ServiceStat;
+    else if (args[0].EqualsI("allservicestats"))
+        m_lastCommand = Command::AllServiceStats;
+    else if (args[0].EqualsI("allservicestatsjson"))
+        m_lastCommand = Command::AllServiceStatsJson;
     else if (args[0].EqualsI("cancel"))
         m_lastCommand = Command::Cancel;
     else if (args[0].EqualsI("details"))
@@ -152,15 +160,19 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::List, &RealityDataConsole::List);
     m_functionMap.Insert(Command::ListAll, &RealityDataConsole::ListAll);
     m_functionMap.Insert(Command::ChangeDir, &RealityDataConsole::ChangeDir);
+    m_functionMap.Insert(Command::DataLocations, &RealityDataConsole::DataLocations);
     m_functionMap.Insert(Command::Stat, &RealityDataConsole::EnterpriseStat);
     m_functionMap.Insert(Command::AllStats, &RealityDataConsole::AllEnterpriseStats);
-    m_functionMap.Insert(Command::AllStatsJson, &RealityDataConsole::AllEnterpriseStatsJson);	
+    m_functionMap.Insert(Command::AllStatsJson, &RealityDataConsole::AllEnterpriseStatsJson);
     m_functionMap.Insert(Command::Stat, &RealityDataConsole::ServiceStat);
     m_functionMap.Insert(Command::AllStats, &RealityDataConsole::AllServiceStats);
-    m_functionMap.Insert(Command::AllStatsJson, &RealityDataConsole::AllServiceStatsJson);		
+    m_functionMap.Insert(Command::AllStatsJson, &RealityDataConsole::AllServiceStatsJson);
     m_functionMap.Insert(Command::UserStat, &RealityDataConsole::UserStat);
     m_functionMap.Insert(Command::AllUserStats, &RealityDataConsole::AllUserStats);	
     m_functionMap.Insert(Command::AllUserStatsJson, &RealityDataConsole::AllUserStatsJson);
+    m_functionMap.Insert(Command::ServiceStat, &RealityDataConsole::ServiceStat);
+    m_functionMap.Insert(Command::AllServiceStats, &RealityDataConsole::AllServiceStats);
+    m_functionMap.Insert(Command::AllServiceStatsJson, &RealityDataConsole::AllServiceStatsJson);
     m_functionMap.Insert(Command::Details, &RealityDataConsole::Details);
     m_functionMap.Insert(Command::Download, &RealityDataConsole::Download);
     m_functionMap.Insert(Command::Upload, &RealityDataConsole::Upload);
@@ -377,6 +389,7 @@ void RealityDataConsole::Usage()
     DisplayInfo("  cd ..               go up one level\n");
     DisplayInfo("  ListAll             List every file beneath the current location (paged)\n");
     DisplayInfo("  Details             show the details for the location\n");
+    DisplayInfo("  DataLocations       show available data locations for new reality data\n");
     DisplayInfo("  Stat                show enterprise statistics\n");
     DisplayInfo("  AllStats            show statistics for all enterprises , for a given date (requires priviledge access)\n");
     DisplayInfo("  AllStatsJson        show statistics for all enterprises in raw JSON format , for a given date (requires priviledge access)\n");
@@ -952,6 +965,34 @@ void RealityDataConsole::ChangeDir()
     else
         DisplayInfo(Utf8PrintfString("Invalid Selection, selected index not between 1 and %lu\n", m_serverNodes.size()), DisplayOption::Error);
     }
+
+void RealityDataConsole::DisplayDataLocations(const bvector<RealityDataLocation>& locations)
+    {
+    DisplayInfo(Utf8PrintfString("DataLocations \n"));
+    DisplayInfo("======================================================\n");
+    for (auto currentLocation : locations)
+        {
+        DisplayInfo(Utf8PrintfString("   Provider: %s\n", currentLocation.GetProvider().c_str()));
+        DisplayInfo(Utf8PrintfString("   Location: %s\n", currentLocation.GetLocation().c_str()));
+        DisplayInfo(Utf8PrintfString("   Parent  : %s\n", currentLocation.GetDataLocationGuid().c_str()));
+        DisplayInfo("======================================================\n");
+        }
+    }
+
+
+void RealityDataConsole::DataLocations()
+    {
+
+
+    RawServerResponse rawResponse;
+    AllRealityDataLocationsRequest ptt;
+
+    bvector<RealityDataLocation> locations;
+    locations = RealityDataService::Request(ptt, rawResponse);
+    DisplayDataLocations(locations);
+
+    }
+
 
 void RealityDataConsole::EnterpriseStat()
     {

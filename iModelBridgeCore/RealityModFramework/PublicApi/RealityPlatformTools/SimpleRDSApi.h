@@ -32,6 +32,34 @@ private:
     };
 
 //=====================================================================================
+//! @bsiclass                                   Alain.Robert              05/2018
+//! ConnectedRealityDataLocation
+//! Extends DataLocation, directly integrating requests to get stats 
+//! from the server
+//=====================================================================================
+struct ConnectedRealityDataLocation : public RealityDataLocation
+    {
+public:
+
+
+    //! Server request
+    //! Will retrieve all reality data entities for a given ultimateId
+    //! If no ultimateId is provided, your ultimateId will be extracted from your token
+    REALITYDATAPLATFORM_EXPORT static ConnectedResponse RetrieveAllDataLocations(bvector<ConnectedRealityDataLocation>& dataLocations);
+
+
+    //! Gets stats for the user's enterprise
+    REALITYDATAPLATFORM_EXPORT ConnectedResponse GetDataLocation();
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataLocation(Utf8String guid);
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataLocation(const ConnectedRealityDataLocation& location);
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataLocation(const RealityDataLocation& location);
+private:
+    REALITYDATAPLATFORM_EXPORT void Clone(const RealityDataLocation& location);
+    REALITYDATAPLATFORM_EXPORT ConnectedRealityDataLocation() : RealityDataLocation(){}
+
+    };
+
+//=====================================================================================
 //! @bsiclass                                   Spencer.Mason              10/2017
 //! ConnectedRealityDataEnterpriseStat
 //! Extends RealityDataEnterpriseStat, directly integrating requests to get stats 

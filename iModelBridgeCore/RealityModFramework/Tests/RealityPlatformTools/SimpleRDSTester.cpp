@@ -105,6 +105,25 @@ TEST_F(SimpleRDSFixture, ConnectedNavNodeTest)
     EXPECT_STREQ(originNode.GetRootId().c_str(), cNode.GetRootId().c_str());
     }
 
+
+//=====================================================================================
+//! @bsimethod                                  Alain.Robert                  05/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataLocationTest)
+    {
+    EXPECT_CALL(*s_mockWSGInstance, PerformRequest(_, _, _, _, _)).Times(1).WillOnce(Invoke([](const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry)
+        {
+        response.status = ::OK;
+        response.responseCode = 200;
+        response.toolCode = CURLE_OK;
+        response.body = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatformTools\\DataLocation.json");
+        }));
+
+    ConnectedRealityDataLocation location("54494b32-149a-4177-a849-189877553854");
+    
+    EXPECT_EQ(location.GetProvider(), "Microsoft");
+    }
+
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  10/2017
 //=====================================================================================
@@ -184,7 +203,23 @@ TEST_F(SimpleRDSFixture, ConnectedRealityDataUserStatTest)
     EXPECT_TRUE(response.simpleSuccess);
     EXPECT_EQ(stats[0].GetUltimateId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
     }*/
+//=====================================================================================
+//! @bsimethod                                  Alain.Robert                 05/2018
+//=====================================================================================
+TEST_F(SimpleRDSFixture, ConnectedRealityDataLocationCloneTest)
+    {
+    RealityDataLocation location;
 
+    location.SetProvider("MyProvider");
+    location.SetLocation("Mordor");
+    location.SetDataLocationGuid("Dad");
+
+    ConnectedRealityDataLocation cLocation(location);
+
+    EXPECT_EQ(location.GetProvider(), cLocation.GetProvider());
+    EXPECT_EQ(location.GetLocation(), cLocation.GetLocation());
+    EXPECT_EQ(location.GetDataLocationGuid(), cLocation.GetDataLocationGuid());
+    }
 //=====================================================================================
 //! @bsimethod                                  Spencer.Mason                  10/2017
 //=====================================================================================

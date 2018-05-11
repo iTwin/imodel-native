@@ -29,6 +29,72 @@ StatusInt RealityConversionTools::JsonToObjectBase(Utf8CP data, Json::Value& jso
     }
 
 /*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Alain.Robert                       05/2018
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToDataLocations(Utf8CP data, bvector<RealityDataLocation>& outData)
+    {
+    Json::Value root(Json::objectValue);
+    if (JsonToObjectBase(data, root) == ERROR)
+        return ERROR;
+
+    // Loop through all data and get required informations.
+    for (const auto& instance : root["instances"])
+        {
+        if (!instance.isMember("properties"))
+            break;
+
+        const Json::Value properties = instance["properties"];
+
+        RealityDataLocation location;
+        if (SUCCESS != JsonToDataLocation(properties, location))
+            return ERROR;
+
+        outData.push_back(location);
+        }
+    return SUCCESS;
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Alain.Robert                       05/2018
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToDataLocation(Json::Value properties, RealityDataLocation& locationObject)
+    {
+    if (properties.isMember("Provider") && !properties["Provider"].isNull())
+        locationObject.SetProvider(properties["Provider"].asString().c_str());
+
+    if (properties.isMember("Location") && !properties["Location"].isNull())
+        locationObject.SetLocation(properties["Location"].asString().c_str());
+
+    if (properties.isMember("Parent") && !properties["Parent"].isNull())
+        locationObject.SetDataLocationGuid(properties["Parent"].asString().c_str());
+
+    return SUCCESS;    
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Alain.Robert                       05/2018
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToDataLocation(Utf8CP data, RealityDataLocation& locationObject)
+    {
+    Json::Value root(Json::objectValue);
+    if(JsonToObjectBase(data, root) == ERROR)
+        return ERROR;
+
+    // Loop through all data and get required informations.
+    const Json::Value instance = root["instances"][0];
+
+    const Json::Value identifier = instance["instanceId"];
+    locationObject.SetIdentifier(identifier.asString().c_str());
+
+    if (!instance.isMember("properties"))
+        return ERROR;
+
+    const Json::Value properties = instance["properties"];
+
+    return RealityConversionTools::JsonToDataLocation(properties, locationObject);
+    }
+
+/*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
 StatusInt RealityConversionTools::JsonToEnterpriseStats(Utf8CP data, bvector<RealityDataEnterpriseStat>& outData)

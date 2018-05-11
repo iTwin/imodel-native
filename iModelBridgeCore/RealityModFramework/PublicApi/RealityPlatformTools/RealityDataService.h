@@ -51,6 +51,43 @@ protected:
     };
 
 //=====================================================================================
+//! @bsiclass                                         Alain.Robert         05/2018
+//! RealityDataLocationRequest
+//! This class returns the description of specified data location
+//=====================================================================================
+struct RealityDataLocationRequest : public RealityDataUrl
+    {
+public:
+    // Only identifier is required to retreive RealityData
+    REALITYDATAPLATFORM_EXPORT RealityDataLocationRequest(Utf8StringCR dataLocationId) { m_validRequestString = false; m_id = dataLocationId;}
+
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    RealityDataLocationRequest() {}
+    };
+
+//=====================================================================================
+//! @bsiclass                                         Alain.Robert         05/2018
+//! AllDataLocationsRequest
+//! Request for all available data locations
+//=====================================================================================
+struct AllRealityDataLocationsRequest : public RealityDataUrl
+    {
+public:
+    // Only identifier is required to retreive RealityData
+    REALITYDATAPLATFORM_EXPORT AllRealityDataLocationsRequest() { m_validRequestString = false; }
+
+protected:
+    REALITYDATAPLATFORM_EXPORT virtual void _PrepareHttpRequestStringAndPayload() const override;
+
+private:
+    };
+
+
+
+//=====================================================================================
 //! @bsiclass                                         Donald.Morissette         03/2017
 //! RealityDataEnterpriseStat
 //! This class returns the size in KB currently used.
@@ -1129,6 +1166,12 @@ public:
     //! Since this request is a paged request it will advance to next page automatically
     //! and return on last page with appropriate status.
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataPtr> Request(const RealityDataPagedRequest& request, RawServerResponse& rawResponse);
+
+    //! Returns the specified Data Location.
+    REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataLocationRequest& request, RealityDataLocation& dataLocationObject, RawServerResponse& rawResponse);
+
+    //! Returns the available Data Locations for the enterprise of the user.
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataLocation>  RealityDataService::Request(const AllRealityDataLocationsRequest& request,  RawServerResponse& rawResponse);
 
     //! Returns the size in KB for the specify Enterprise, or the default one.
     REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request, RealityDataEnterpriseStat& statObject, RawServerResponse& rawResponse);

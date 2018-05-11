@@ -71,6 +71,84 @@ ConnectedResponse ConnectedNavNode::GetChildNodes(bvector<ConnectedNavNode>& nod
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason                10/2017
 //-------------------------------------------------------------------------------------
+ConnectedRealityDataLocation::ConnectedRealityDataLocation(Utf8String guid)
+    {
+    m_identifier = guid;
+    GetDataLocation();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ConnectedRealityDataLocation::ConnectedRealityDataLocation(const ConnectedRealityDataLocation& object)
+: RealityDataLocation(object)
+    {
+    }
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ConnectedRealityDataLocation::ConnectedRealityDataLocation(const RealityDataLocation& object)
+: RealityDataLocation(object)
+    {
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+void ConnectedRealityDataLocation::Clone(const RealityDataLocation& location)
+    {
+    m_identifier       = location.GetIdentifier();
+    m_provider         = location.GetProvider();
+    m_location         = location.GetLocation();
+    m_dataLocationGuid = location.GetDataLocationGuid();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityDataLocation::GetDataLocation()
+    {
+    ConnectedResponse response = ConnectedResponse();
+    RealityDataLocationRequest ptt(m_identifier);
+
+    RawServerResponse rawResponse;
+    RealityDataLocation location;
+    RealityDataService::Request(ptt, location, rawResponse);
+    Clone(location);
+
+    response.Clone(rawResponse);
+
+    return response;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
+ConnectedResponse ConnectedRealityDataLocation::RetrieveAllDataLocations(bvector<ConnectedRealityDataLocation>& dataLocations)
+    {
+    ConnectedResponse response;
+
+    AllRealityDataLocationsRequest dataLocationRequest;
+
+    RawServerResponse ultimateResponse;
+    ultimateResponse.status = RequestStatus::OK;
+    bvector<RealityDataLocation> tempDataLocations;
+
+    tempDataLocations = RealityDataService::Request(dataLocationRequest, ultimateResponse);
+    for (RealityDataLocation currentLocation : tempDataLocations)
+        {
+        ConnectedRealityDataLocation temp(currentLocation);
+        dataLocations.push_back(temp);
+        }
+
+    response.Clone(ultimateResponse);
+
+    return response;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason                10/2017
+//-------------------------------------------------------------------------------------
 ConnectedResponse ConnectedRealityDataEnterpriseStat::GetEnterpriseStats()
     {
     ConnectedResponse response = ConnectedResponse();

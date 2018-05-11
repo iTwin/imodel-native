@@ -818,9 +818,48 @@ Utf8StringCR RealityDataExtended::GetAssignPermissionOverride() const { return m
 void RealityDataExtended::SetAssignPermissionOverride(Utf8CP assignPermissionOverride) { m_assignPermissionOverride = assignPermissionOverride; }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                Alain.Robert         	         04/2018
+//-------------------------------------------------------------------------------------
+RealityDataLocation::RealityDataLocation(){}
+
+RealityDataLocation::RealityDataLocation(const RealityDataLocation& object)
+    {
+    if (this != &object)
+        {
+        m_identifier       = object.m_identifier;
+        m_provider         = object.m_provider;
+        m_location         = object.m_location;
+        m_dataLocationGuid = object.m_dataLocationGuid;
+        }
+    }
+
+RealityDataLocation& RealityDataLocation::operator=(const RealityDataLocation& object)
+    {
+    m_identifier       = object.m_identifier;
+    m_provider         = object.m_provider;
+    m_location         = object.m_location;
+    m_dataLocationGuid = object.m_dataLocationGuid;
+
+    return *this;
+    }
+Utf8StringCR RealityDataLocation::GetIdentifier() const { return m_identifier; }
+void RealityDataLocation::SetIdentifier(Utf8CP identifier) { m_identifier = identifier; }
+
+Utf8StringCR RealityDataLocation::GetProvider() const { return m_provider; }
+void RealityDataLocation::SetProvider(Utf8CP provider) { m_provider = provider; }
+
+Utf8StringCR RealityDataLocation::GetLocation() const { return m_location; }
+void RealityDataLocation::SetLocation(Utf8CP location) { m_location = location; }
+
+Utf8StringCR RealityDataLocation::GetDataLocationGuid() const { return m_dataLocationGuid; }
+void RealityDataLocation::SetDataLocationGuid(Utf8CP dataLocationGuid) { m_dataLocationGuid = dataLocationGuid; }
+
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                Spencer.Mason         	         12/2017
 //-------------------------------------------------------------------------------------
 RealityDataExtended::RealityDataExtended() : RealityData() {}
+
 
 RealityDataEnterpriseStat::RealityDataEnterpriseStat(): m_totalSizeKB(0), m_nbRealityData(0){}
 

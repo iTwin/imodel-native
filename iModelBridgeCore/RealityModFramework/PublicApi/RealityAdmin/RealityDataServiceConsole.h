@@ -46,6 +46,7 @@ enum class Command
     ListAll,
     Details,
     ChangeDir,
+    DataLocations,
     Stat,
     AllStats,
     AllStatsJson,
@@ -100,6 +101,7 @@ private:
     void EnterpriseStat();
     void UserStat();
     void ServiceStat();
+    void DataLocations();
     void AllEnterpriseStats();
     void AllEnterpriseStatsGen(bool displayAsJson);
     void AllEnterpriseStatsJson();
@@ -128,6 +130,7 @@ private:
     void ForceMassUnlink();
     Utf8String MakeBuddiCall(int region = 0);
 
+    void DisplayDataLocations(const bvector<RealityDataLocation>& locations);
     void DisplayEnterpriseStats(const bvector<RealityDataEnterpriseStat>& stats, const DateTime& curInfoDate);
     void DisplayServiceStats(const bvector<RealityDataServiceStat>& stats, const DateTime& curInfoDate);
     void DisplayUserStats(const bvector<RealityDataUserStat>& stats, const DateTime& curInfoDate);
