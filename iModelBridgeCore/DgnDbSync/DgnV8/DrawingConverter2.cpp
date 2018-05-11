@@ -77,14 +77,11 @@ virtual Bentley::BentleyStatus _ProcessTextString(Bentley::TextStringCR v8Text)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::StatusInt _ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isFilled) override
+bool InitGeometryParams(Render::GeometryParams& params)
     {
-    InitCurrentModel();
     DgnV8Api::ProxyDisplayHitInfo const*    proxyInfo = nullptr;
     DgnCategoryId                           categoryId;
     DgnSubCategoryId                        subCategoryId;
-    auto                                    currentModelRef = m_context->GetCurrentModel();
-
     if (nullptr != m_context->GetDisplayStyleHandler() &&
         nullptr != (proxyInfo = m_converter.GetProxyDisplayHitInfo(*m_context)))
         {
@@ -92,7 +89,7 @@ Bentley::StatusInt _ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isF
         if (!m_currentModelRefInfo.m_hasChanged || m_currentModelRefInfo.m_failed)
             {
             m_attachmentsUnchanged.insert(m_currentModelRefInfo.m_attachElementMapping);
-            return Bentley::SUCCESS;
+            return false;
             }
 
         categoryId = m_currentModelRefInfo.m_categoryId;
@@ -118,11 +115,35 @@ Bentley::StatusInt _ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isF
             }
         }
 
+    params.SetCategoryId(categoryId);
+    params.SetSubCategoryId(subCategoryId);
+    m_converter.InitGeometryParams(params, *m_context->GetCurrentDisplayParams(), *m_context, false, m_parentModelMapping.GetV8ModelSource());
+
+    if (m_processingText)
+        {
+        params.SetFillDisplay(FillDisplay::Always);
+        params.SetFillColor(params.GetLineColor());
+        }
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Bentley::StatusInt _ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isFilled) override
+    {
     m_converter.ShowProgress();
+
+    InitCurrentModel();
+    Render::GeometryParams geometryParams;
+
+    if (!InitGeometryParams(geometryParams))
+        return Bentley::SUCCESS;
+
+    auto                                    currentModelRef = m_context->GetCurrentModel();
 
     Bentley::Transform  currentTransform = (nullptr == m_context->GetCurrLocalToFrustumTransformCP()) ? Bentley::Transform::FromIdentity() : *m_context->GetCurrLocalToFrustumTransformCP();
 
-    //  Convert the CurveVector itself
     CurveVectorPtr bimcurves;
     Converter::ConvertCurveVector(bimcurves, v8curves, &m_parentModelMapping.GetTransform());   
 
@@ -156,28 +177,19 @@ Bentley::StatusInt _ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isF
     // Convert to meters
     bimcurves->TransformInPlace(m_parentModelMapping.GetTransform());
 
-    Render::GeometryParams params;
 
-    m_converter.InitGeometryParams(params, *m_context->GetCurrentDisplayParams(), *m_context, false, m_parentModelMapping.GetV8ModelSource());
-    params.SetCategoryId(categoryId);
-    params.SetSubCategoryId(subCategoryId);
-
-    if (m_processingText)
-        params.SetFillDisplay(FillDisplay::Always);
-
-    auto& byattachment = m_builders[currentModelRef];
-    auto  elementRef = m_context->GetCurrDisplayPath()->GetHeadElem();
-
-    bmap<DgnCategoryId, GeometryBuilderPtr>& byelement = byattachment[nullptr == elementRef ? 0 : elementRef->GetElementId()];
-    GeometryBuilderPtr& builder = byelement[categoryId];
+    auto&               byattachment = m_builders[currentModelRef];
+    auto                elementRef = m_context->GetCurrDisplayPath()->GetHeadElem();
+    auto&               byelement = byattachment[nullptr == elementRef ? 0 : elementRef->GetElementId()];
+    GeometryBuilderPtr& builder = byelement[geometryParams.GetCategoryId()];
     if (!builder.IsValid())
         {
-        builder = GeometryBuilder::Create(m_parentModelMapping.GetDgnModel(), categoryId, DPoint2d::FromZero());
+        builder = GeometryBuilder::Create(m_parentModelMapping.GetDgnModel(), geometryParams.GetCategoryId(), DPoint2d::FromZero());
         if (!builder.IsValid())
             return Bentley::SUCCESS;
         }
 
-    builder->Append(params);
+    builder->Append(geometryParams);
     builder->Append(*GeometricPrimitive::Create(bimcurves), GeometryBuilder::CoordSystem::World);
     return Bentley::BSISUCCESS;
     }
