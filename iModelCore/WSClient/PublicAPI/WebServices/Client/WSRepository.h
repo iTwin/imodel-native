@@ -29,6 +29,7 @@ struct WSRepository
 
     public:
         WSCLIENT_EXPORT WSRepository();
+        WSCLIENT_EXPORT WSRepository(Utf8StringCR serialized);
 
         WSCLIENT_EXPORT Utf8StringCR GetId() const;
         WSCLIENT_EXPORT Utf8StringCR GetLocation() const;
@@ -48,6 +49,7 @@ struct WSRepository
 
         //! Check if WSRepository contains minimum information required - server URL and repository ID
         WSCLIENT_EXPORT bool IsValid() const;
+        WSCLIENT_EXPORT Utf8String ToString() const;
     };
 
 typedef const WSRepository& WSRepositoryCR;

@@ -130,6 +130,7 @@
     <ClCompile Include="Client\WSRepositoryClient.cpp" />
     <ClCompile Include="Client\WebApi\WebApiV2Utils\JobApi.cpp" />
     <ClCompile Include="Client\WSJob.cpp" />
+    <ClCompile Include="Client\RepositoryInfoProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache\CacheNavigationTask.h" />
@@ -296,6 +297,7 @@
     <ClInclude Include="PublicAPI\WebServices\WebServices.h" />
     <ClInclude Include="Client\WebApi\WebApiV2Utils\JobApi.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSJob.h" />
+    <ClInclude Include="Client\RepositoryInfoProvider.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Cache\Persistence\ECSchemas\DataSourceSpecification.01.00.ecschema.xml" />

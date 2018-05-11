@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/StubRepositoryInfoStore.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -21,6 +21,7 @@ struct StubRepositoryInfoStore : public IRepositoryInfoStore
     {
     private:
         WSInfo m_info;
+        WSRepository m_repository;
 
     public:
         StubRepositoryInfoStore(WSInfo info = WSInfo()) : m_info(info)
@@ -32,7 +33,13 @@ struct StubRepositoryInfoStore : public IRepositoryInfoStore
             return SUCCESS;
             };
 
-        BentleyStatus PrepareServerInfo(IDataSourceCache& cache) override
+        BentleyStatus CacheRepositoryInfo(IDataSourceCache& cache, WSRepositoryCR info) override
+            {
+            m_repository = info;
+            return SUCCESS;
+            };
+
+        BentleyStatus PrepareInfo(IDataSourceCache& cache) override
             {
             return SUCCESS;
             };
@@ -41,6 +48,11 @@ struct StubRepositoryInfoStore : public IRepositoryInfoStore
             {
             return m_info;
             };
+
+        WSRepository GetRepositoryInfo() override
+            {
+            return m_repository;
+            }
 
         BentleyStatus SetCacheInitialized(IDataSourceCache& cache) override
             {

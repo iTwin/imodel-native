@@ -651,6 +651,43 @@ TEST_F(CachingDataSourceTests, GetServerInfo_CreatedCache_ReturnsInfoReturnedFor
             })->Wait();
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               julius.cepukenas    05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CachingDataSourceTests, GetRepositoryInfo_CreatedCacheAndCalledWithTransaction_ReturnsInfoReturnedForListener)
+    {
+    // Arrange
+    auto client = MockWSRepositoryClient::Create();
+
+    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+        .WillRepeatedly(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
+
+    EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(StubInstances().ToWSObjectsResponse()))));
+
+    std::weak_ptr<IWSRepositoryClient::IRepositoryInfoListener> listenerWeakPtr;
+    EXPECT_CALL(*client, RegisterRepositoryInfoListener(_))
+        .WillOnce(Invoke([&] (std::weak_ptr<IWSRepositoryClient::IRepositoryInfoListener> providedListener)
+        {
+        listenerWeakPtr = providedListener;
+        }));
+
+    // Act
+    auto ds = CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->GetResult().GetValue();
+
+    listenerWeakPtr.lock()->OnInfoReceived(StubWSRepository("testServer", "repositoryId"));
+    ds->GetCacheAccessThread()->ExecuteAsync([=]
+        {
+        EXPECT_STREQ("repositoryId", ds->GetRepositoryInfo().GetId().c_str());
+        })->Wait();
+
+        listenerWeakPtr.lock()->OnInfoReceived(StubWSRepository("testServer", "repositoryId2"));
+        ds->GetCacheAccessThread()->ExecuteAsync([=]
+            {
+            EXPECT_STREQ("repositoryId2", ds->GetRepositoryInfo().GetId().c_str());
+            })->Wait();
+    }
+
 TEST_F(CachingDataSourceTests, GetFile_InstanceIsNotCached_ErrorStatus)
     {
     auto ds = GetTestDataSourceV1();

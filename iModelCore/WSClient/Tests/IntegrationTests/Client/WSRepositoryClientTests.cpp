@@ -137,6 +137,20 @@ TEST_F(WSRepositoryClientTests, CrudObjectViaRequests_CreateObjectsWithFileUsing
 
     ASSERT_TRUE(client->SendDeleteObjectRequestWithOptions(objectId, options)->GetResult().IsSuccess());
     }
+//
+//TEST_F(WSRepositoryClientTests, CrudObjectViaRequests_CreateObjectsWithFileUsingJobApi_CrudSucceeds)
+//    {
+//    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+//
+//    Utf8String serverUrl = "https://bsw-wsg.bentley.com/ws26";
+//    Utf8String repositoryId = "BentleyCONNECT.SampleAzureSqlDb--Main";
+//    Credentials credentials("admin", "admin");
+//
+//    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
+//    client->SetCredentials(credentials);
+//
+//    client->
+//    }
 
 TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithConnectSignInManager_Succeeds)
     {
