@@ -868,6 +868,11 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
             if (constraintsToRemove.size() > 0)
                 {
                 BECN::ECObjectsStatus status = baseConstraint.AddClass(*defaultConstraintClass);
+                if (ECN::ECObjectsStatus::RelationshipConstraintsNotCompatible == status)
+                    {
+                    if (ECN::ECObjectsStatus::Success == baseConstraint.SetAbstractConstraint(*defaultConstraintClass))
+                        status = baseConstraint.AddClass(*defaultConstraintClass);
+                    }
                 if (BECN::ECObjectsStatus::Success != status)
                     return;
 

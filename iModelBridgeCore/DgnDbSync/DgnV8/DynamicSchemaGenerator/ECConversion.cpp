@@ -2483,6 +2483,29 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
 
         if (!schema->Validate(true) || !schema->IsECVersion(ECN::ECVersion::V3_1))
             {
+#define EXPORT_FAILEDECSCHEMAS 1
+#ifdef EXPORT_FAILEDECSCHEMAS
+                    {
+                    BeFileName bimFileName = GetDgnDb().GetFileName();
+                    BeFileName outFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_failed").c_str());
+
+                    if (!outFolder.DoesPathExist())
+                        BeFileName::CreateNewDirectory(outFolder.GetName());
+
+                    WString fileName;
+                    fileName.AssignUtf8(schema->GetFullSchemaName().c_str());
+                    fileName.append(L".ecschema.xml");
+
+                    BeFileName outPath(outFolder);
+                    outPath.AppendToPath(fileName.c_str());
+
+                    if (outPath.DoesPathExist())
+                        outPath.BeDeleteFile();
+
+                    schema->WriteToXmlFile(outPath.GetName(), schema->GetECVersion());
+                    }
+#endif
+
             Utf8String errorMsg;
             errorMsg.Sprintf("Failed to validate ECSchema %s as an EC3.1 ECSchema.", schema->GetFullSchemaName().c_str());
             ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
