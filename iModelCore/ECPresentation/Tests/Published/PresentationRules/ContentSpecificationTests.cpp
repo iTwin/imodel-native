@@ -64,6 +64,13 @@ TEST_F(ContentSpecificationsTests, LoadsFromJson)
                 "propertyName": "property names",
                 "editorName": "editor"
             }
+        ],
+        "relatedInstancesSpecification": [
+           { 
+                "relationshipName":"TestRelName",
+                "className":"TestClassName",
+                "alias":"TestAlias"
+           }
         ]
     })";
     Json::Value json = Json::Reader::DoParse(jsonString);
@@ -76,7 +83,8 @@ TEST_F(ContentSpecificationsTests, LoadsFromJson)
     EXPECT_EQ(2, spec.GetCalculatedProperties().size());
     EXPECT_EQ(2, spec.GetPropertiesDisplaySpecifications().size());
     EXPECT_EQ(1, spec.GetRelatedProperties().size());
-    EXPECT_EQ(1, spec.GetPropertyEditors().size());    
+    EXPECT_EQ(1, spec.GetPropertyEditors().size());   
+    EXPECT_EQ(1, spec.GetRelatedInstances().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
