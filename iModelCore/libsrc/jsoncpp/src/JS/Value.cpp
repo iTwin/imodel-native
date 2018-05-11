@@ -61,6 +61,7 @@ bool Value::IsObject() const { return Type() == ValueType::Object; }
 bool Value::IsArray() const { return Type() == ValueType::Array; }
 bool Value::IsString() const { return Type() == ValueType::String; }
 bool Value::IsBoolean() const { return Type() == ValueType::Boolean; }
+bool Value::IsUndefined() const { return Type() == ValueType::Undefined; }
 bool Value::IsNumber() const 
     { 
         const ValueType valueType = Type();
@@ -92,14 +93,7 @@ bool Boolean::BoolValue() const
 //+---------------+---------------+---------------+---------------+---------------+------
 Boolean Boolean::New(IFactory& factory, bool b)
     {
-    ValueHandle val;
-    if (factory.CreateBoolean(val, b) != Status::Success)
-        {
-        BeAssert(false && "Fail to create value");
-        return Boolean(factory, factory.GetNull());
-        }
-
-    return Boolean(factory, val);
+    return Boolean(factory, factory.GetBoolean(b));
     }
 
 //---------------------------------------------------------------------------------------
@@ -116,7 +110,7 @@ Value::Value(Value const& rhs)
     : m_value(rhs.m_value), m_factory(rhs.m_factory)
     {
     if (!IsEmpty())
-        {
+        {                    
         if (m_value && m_factory->NotifyScopeChanges())
             m_factory->BeginScope(m_value);
         }
@@ -158,6 +152,9 @@ Value::~Value()
 Number Value::AsNumber() const
     {
     BeAssert(IsNumber());
+    if (!IsNumber())
+        return Number(Factory(), Factory().GetNull());
+
     return Number(Factory(), Handle());
     }
 
@@ -167,6 +164,9 @@ Number Value::AsNumber() const
 String Value::AsString() const
     {
     BeAssert(IsString());
+    if (!IsString())
+        return String(Factory(), Factory().GetNull());
+
     return String(Factory(), Handle());
     }
 
@@ -177,6 +177,9 @@ String Value::AsString() const
 Boolean Value::AsBoolean() const
     {
     BeAssert(IsBoolean());
+    if (!IsBoolean())
+        return Boolean(Factory(), Factory().GetNull());
+
     return Boolean(Factory(), Handle());
     }
 
@@ -186,6 +189,9 @@ Boolean Value::AsBoolean() const
 Object Value::AsObject() const
     {
     BeAssert(IsObject());
+    if (!IsObject())
+        return Object(Factory(), Factory().GetNull());
+
     return Object(Factory(), Handle());
     }
 
@@ -195,6 +201,9 @@ Object Value::AsObject() const
 Array Value::AsArray() const
     {
     BeAssert(IsArray());
+    if (!IsArray())
+        return Array(Factory(), Factory().GetNull());
+    
     return Array(Factory(), Handle());
     }
 
@@ -384,6 +393,14 @@ String String::New(IFactory& factory, Utf8CP str)
         }
 
     return String(factory, val);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+String String::New(IFactory& factory, Utf8StringCR str)
+    {
+    return New(factory, str.c_str()); 
     }
 
 Object::LValue::operator Value() const { return Object(m_factory, m_obj).Get(m_key); }
@@ -634,6 +651,9 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
         mutable bmap<ValueType, CachedObjectType> m_cacheType;
         mutable bmap<CachedObjectType, int> m_cacheMaxSize;
         ValueHandle__* m_null;
+        ValueHandle__* m_true;
+        ValueHandle__* m_false;
+        ValueHandle__* m_undefined;
         Status TrimUnusedItemCache(CachedObjectType type, float extraTrim = 0)
             {
             auto& q = m_cacheUnused.find(type)->second;
@@ -819,7 +839,14 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
             m_cacheMaxSize[CachedObjectType::Vector] = maxArray < 10 ? 10 : maxArray;
             m_cacheMaxSize[CachedObjectType::Map] = maxObj < 10 ? 10 : maxObj;
             m_cacheMaxSize[CachedObjectType::Primitive] = maxPri < 10 ? 10 : maxPri;
+            
+            //Create global variables
             CreateInstance(m_null, ValueType::Null);
+            CreateInstance(m_true, ValueType::Boolean);
+            m_true->m_val.b = true;
+            CreateInstance(m_false, ValueType::Boolean);
+            m_true->m_val.b = false;
+            CreateInstance(m_undefined, ValueType::Undefined);            
             }
 
         ~GCValueFactoryImpl()
@@ -828,15 +855,6 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
             }
 
         /////////////////
-        Status CreateBoolean(ValueHandle& val, bool b) override
-            {
-            Status status = CreateInstance(val, ValueType::Boolean);
-            if (status != Status::Success)
-                return status;
-
-            val->m_val.b = b;
-            return Status::Success;
-            }
         Status CreateString(ValueHandle& val, Utf8CP str) override
             {
             Status status = CreateInstance(val, ValueType::String);
@@ -1207,6 +1225,11 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
             return Status::Success;
             }
         ValueHandle GetNull() const override { return m_null; }
+
+        ValueHandle GetBoolean(bool b) const override { return b? m_true : m_false; }
+        
+        ValueHandle GetUndefined() const override { return m_undefined; }
+        
         Status BeginScope(ValueHandle val) const  override
             {
             //This protect variable from deletion.
@@ -1217,7 +1240,7 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
 
         Status EndScope(ValueHandle val) const override
             {
-            if (val == m_null)
+            if (val == m_null || val == m_undefined || val == m_true  || val == m_false )
                 return Status::Success;
 
             if (EndScopeForValue(val) != Status::Success)
@@ -1407,6 +1430,14 @@ Json::Value Value::ToJson() const
 Value Value::Null(IFactory& factory)
     {
     return Value(factory, factory.GetNull());  
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------    
+Value Value::Undefined(IFactory& factory)
+    {
+    return Value(factory, factory.GetUndefined());  
     }
 
 //---------------------------------------------------------------------------------------

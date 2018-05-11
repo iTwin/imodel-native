@@ -37,7 +37,8 @@ enum class ValueType : Byte
     Double,
     Object,
     Array,
-    Null
+    Null,
+    Undefined
     };
 
 //=======================================================================================
@@ -92,6 +93,7 @@ struct Value
         bool IsString() const;
         bool IsNumber() const;
         bool IsBoolean() const;
+        bool IsUndefined() const;
         operator ValueHandle ();
         Number AsNumber() const;
         String AsString() const;
@@ -102,6 +104,8 @@ struct Value
         Json::Value ToJson() const;
         static Value FromJson(IFactory& factory, Json::Value const& json);
         static Value Null(IFactory& factory);
+        static Value Undefined(IFactory& factory);
+        
     };
 
 //=======================================================================================
@@ -113,6 +117,7 @@ struct Number final: Value
     private:
         Status _ToJson(Json::Value& v) const override;
     public:
+        Number() : Value() {}
         Number(Number const& rhs) : Value(rhs.Factory(), rhs.Handle()) {}
         Number(IFactory& factory, ValueHandle v) :Value(factory, v) {}
         int32_t Int32Value() const;
@@ -142,8 +147,9 @@ struct Boolean final: Value
         Status _ToJson(Json::Value& v) const override;
         
     public:
+        Boolean() : Value() {}
         Boolean(Boolean const& rhs) : Value(rhs.Factory(), rhs.Handle()) {}
-        Boolean(IFactory& factory, ValueHandle v) : Value(factory, v) {}
+        Boolean(IFactory& factory, ValueHandle v) : Value(factory, v){}
         bool BoolValue() const;
         operator bool() const { return BoolValue(); }
         static Boolean New(IFactory& factory, bool b);
@@ -159,12 +165,15 @@ struct String final : Value
         Status _ToJson(Json::Value& v) const override;
         
     public:
-        String(String const& rhs) : Value(rhs.Factory(), rhs.Handle()) {}
+        String() : Value() {}
+        String(String const& rhs) : Value(rhs.Factory(), rhs.Handle()){}
         String(IFactory& factory, ValueHandle v) :Value(factory, v) {}
         Utf8String StringValue() const;
         uint32_t Length() const;
+        
         operator Utf8String  () { return StringValue(); }
         static String New(IFactory& factory, Utf8CP str);
+        static String New(IFactory& factory, Utf8StringCR str);
     };
 //
 //=======================================================================================
@@ -199,7 +208,7 @@ struct  Object final: Value
                 LValue& operator = (Value value);
             };
 
-
+        Object() : Value() {}
         Object(Object const& rhs) : Value(rhs.Factory(), rhs.Handle()) {}
         Object(IFactory& factory, ValueHandle v) :Value(factory, v) {}
         Value Get(Utf8CP key) const;
@@ -249,6 +258,7 @@ struct Array final: Value
             LValue& operator = (Value value);
         };
     public:
+        Array() : Value() {}
         Array(Array const& rhs) : Value(rhs.Factory(), rhs.Handle()) {}
         Array(IFactory& factory, ValueHandle v) :Value(factory, v) {}
         Value Get(uint32_t index) const;
@@ -268,7 +278,17 @@ struct IFactory : RefCountedBase
     public:
         IFactory() {};
         virtual ~IFactory() {};
-        virtual Status CreateBoolean(ValueHandle& val, bool b) = 0;
+        /*
+        virtual Status ToBoolean(ValueHandle& toVal, ValueHandle fromVal) = 0;
+        virtual Status ToString(ValueHandle& toVal, ValueHandle fromVal) = 0;
+        virtual Status ToInt32(ValueHandle& toVal, ValueHandle fromVal) = 0;
+        virtual Status ToUInt32(ValueHandle& toVal, ValueHandle fromVal) = 0;
+        virtual Status ToInt64(ValueHandle& toVal, ValueHandle fromVal) = 0;
+        virtual Status ToUInt64(ValueHandle& toVal, ValueHandle fromVal) = 0;
+        virtual Status ToDouble(ValueHandle& toVal, ValueHandle fromVal) = 0;
+        virtual Status ToArray(ValueHandle& toVal, ValueHandle fromVal) = 0;
+        virtual Status ToObject(ValueHandle& toVal, ValueHandle fromVal) = 0;
+        */
         virtual Status CreateString(ValueHandle& val, Utf8CP s) = 0;
         virtual Status CreateUInt32(ValueHandle& val, uint32_t i32) = 0;
         virtual Status CreateInt32(ValueHandle& val, int32_t i32) = 0;
@@ -299,6 +319,8 @@ struct IFactory : RefCountedBase
         virtual Status BeginScope(ValueHandle val) const = 0;
         virtual Status EndScope(ValueHandle val) const = 0;
         virtual ValueHandle GetNull() const = 0;        
+        virtual ValueHandle GetBoolean(bool b) const = 0;
+        virtual ValueHandle GetUndefined() const = 0;
         virtual bool NotifyScopeChanges() const = 0;
     };
 
