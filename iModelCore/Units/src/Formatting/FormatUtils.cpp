@@ -126,6 +126,7 @@ UIList UIUtils::GetAvailableThousandSeparators(Utf8StringR defaultVal)
     }
 
 //---------------------------------------------------------------------------------------
+// Define list of standard UOM label separators to be presented in UI
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
 UIList UIUtils::GetAvailableUnitLabelSeparators(Utf8StringR defaultVal)
@@ -134,6 +135,7 @@ UIList UIUtils::GetAvailableUnitLabelSeparators(Utf8StringR defaultVal)
 
     unitLabelSeparators.AddListEntry(UIListEntry(0, UNITSL10N_GETSTRING(UnitLabelSeparator_None).c_str(), ""));
     unitLabelSeparators.AddListEntry(UIListEntry(1, UNITSL10N_GETSTRING(UnitLabelSeparator_Space).c_str(), " "));
+    unitLabelSeparators.AddListEntry(UIListEntry(2, UNITSL10N_GETSTRING(UnitLabelSeparator_Dash).c_str(), "-"));
 
     defaultVal = FormatConstant::DefaultUomSeparator();
     return unitLabelSeparators;
@@ -149,21 +151,15 @@ UIList UIUtils::GetAvailableTraits(FormatTraits& defaultVal)
     traits.AddListEntry(UIListEntry((int) FormatTraits::ShowUnitLabel, UNITSL10N_GETSTRING(FormatTraits_ShowUnitLabel).c_str(), FormatConstant::FPN_ShowUnitLabel().c_str()));
     traits.AddListEntry(UIListEntry((int)FormatTraits::Use1000Separator, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), FormatConstant::FPN_Use1000Separator().c_str()));
     traits.AddListEntry(UIListEntry((int) FormatTraits::TrailingZeroes, UNITSL10N_GETSTRING(FormatTraits_TrailingZeroes).c_str(), FormatConstant::FPN_TrailZeroes().c_str()));
-
-//    if (GetTraitBit(FormatTraits::KeepSingleZero))
-//        ret += FormatConstant::FPN_KeepSingleZero() + "|";
-//    if (GetTraitBit(FormatTraits::ZeroEmpty))
-//        ret += FormatConstant::FPN_ZeroEmpty() + "|";
-//    if (GetTraitBit(FormatTraits::KeepDecimalPoint))
-//        ret += FormatConstant::FPN_KeepDecimalPoint() + "|";
-//    if (GetTraitBit(FormatTraits::ApplyRounding))
-//        ret += FormatConstant::FPN_ApplyRounding() + "|";
-//    if (GetTraitBit(FormatTraits::FractionDash))
-//        ret += FormatConstant::FPN_FractionDash() + "|";
-//    if (GetTraitBit(FormatTraits::PrependUnitLabel))
-//        ret += FormatConstant::FPN_PrependUnitLabel() + "|";
-//    if (GetTraitBit(FormatTraits::ExponenentOnlyNegative))
-//        ret += FormatConstant::FPN_ExponentOnlyNegative() + "|";
+    traits.AddListEntry(UIListEntry((int) FormatTraits::PrependUnitLabel, UNITSL10N_GETSTRING(FormatTraits_PrependUnitLabel).c_str(), FormatConstant::FPN_PrependUnitLabel().c_str()));
+    
+    // may not want to expose following
+    traits.AddListEntry(UIListEntry((int) FormatTraits::KeepSingleZero, UNITSL10N_GETSTRING(FormatTraits_KeepSingleZero).c_str(), FormatConstant::FPN_KeepSingleZero().c_str()));
+    traits.AddListEntry(UIListEntry((int) FormatTraits::ZeroEmpty, UNITSL10N_GETSTRING(FormatTraits_ZeroEmpty).c_str(), FormatConstant::FPN_ZeroEmpty().c_str()));
+    traits.AddListEntry(UIListEntry((int) FormatTraits::KeepDecimalPoint, UNITSL10N_GETSTRING(FormatTraits_KeepDecimalPoint).c_str(), FormatConstant::FPN_KeepDecimalPoint().c_str()));
+    traits.AddListEntry(UIListEntry((int) FormatTraits::ApplyRounding, UNITSL10N_GETSTRING(FormatTraits_ApplyRounding).c_str(), FormatConstant::FPN_ApplyRounding().c_str()));
+    traits.AddListEntry(UIListEntry((int) FormatTraits::FractionDash, UNITSL10N_GETSTRING(FormatTraits_FractionDash).c_str(), FormatConstant::FPN_FractionDash().c_str()));
+    traits.AddListEntry(UIListEntry((int) FormatTraits::ExponenentOnlyNegative, UNITSL10N_GETSTRING(FormatTraits_ExponenentOnlyNegative).c_str(), FormatConstant::FPN_ExponentOnlyNegative().c_str()));
 
     defaultVal = FormatConstant::DefaultFormatTraits();
     return traits;

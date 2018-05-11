@@ -143,12 +143,20 @@ BENTLEY_TRANSLATABLE_STRINGS_START(UnitsL10N,units_msg)
 
     L10N_STRING(UnitLabelSeparator_None)                                // =="None"==
     L10N_STRING(UnitLabelSeparator_Space)                               // =="Space"==
+    L10N_STRING(UnitLabelSeparator_Dash)                                // =="Dash"==
 
     L10N_STRING(FormatTraits_Use1000Separator)                          // =="Use Thousands Separator"==
-    L10N_STRING(FormatTraits_ShowUnitLabel)                              // =="Append Unit Label"==
+    L10N_STRING(FormatTraits_ShowUnitLabel)                             // =="Append Unit Label"==
     L10N_STRING(FormatTraits_LeadingZeroes)                             // =="Show Leading Zeroes"==
     L10N_STRING(FormatTraits_TrailingZeroes)                            // =="Show Trailing Zeroes"==
     L10N_STRING(FormatTraits_KeepDecimalPoint)                          // =="Keep Decimal Point"==
+    L10N_STRING(FormatTraits_PrependUnitLabel)                          // =="Prepend Unit Label"==
+    L10N_STRING(FormatTraits_KeepSingleZero)                            // =="Keep Single Zero"==
+    L10N_STRING(FormatTraits_ZeroEmpty)                                 // =="Zero Empty"==
+    L10N_STRING(FormatTraits_ApplyRounding)                             // =="Apply Rounding"==
+    L10N_STRING(FormatTraits_FractionDash)                              // =="Fraction Dash"==
+    L10N_STRING(FormatTraits_ExponenentOnlyNegative)                    // =="Exponenent Only Negative"==
+
 BENTLEY_TRANSLATABLE_STRINGS_END
 
 #define UNITSL10N_GETSTRING(K)  BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), UnitsL10N::K())
