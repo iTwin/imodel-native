@@ -2483,7 +2483,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
 
         if (!schema->Validate(true) || !schema->IsECVersion(ECN::ECVersion::V3_1))
             {
-#define EXPORT_FAILEDECSCHEMAS 1
+//#define EXPORT_FAILEDECSCHEMAS 1
 #ifdef EXPORT_FAILEDECSCHEMAS
                     {
                     BeFileName bimFileName = GetDgnDb().GetFileName();

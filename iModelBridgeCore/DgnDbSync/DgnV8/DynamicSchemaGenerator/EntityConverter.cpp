@@ -125,6 +125,24 @@ BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(Schem
                 if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, BisConversionRule::TransformedUnbisifiedAndIgnoreInstances))
                     return BSIERROR;
                 }
+            else if (isBaseClassCheck && BisConversionRule::ToGroup == childRule && (BisConversionRule::ToPhysicalElement == existingRule || BisConversionRule::ToDrawingGraphic == existingRule))
+                {
+                BisConversionRule tempRule;
+                BECN::ECClassId incomingV8ClassId;
+                ECClassName incomingV8ClassName(*childClass);
+                if (V8ECClassInfo::TryFind(incomingV8ClassId, tempRule, context.GetDgnDb(), incomingV8ClassName, hasSecondary))
+                    {
+                    if (BSISUCCESS != V8ECClassInfo::Update(converter, incomingV8ClassId, existingRule))
+                        return BSIERROR;
+                    childRule = existingRule;
+                    }
+                }
+            else if (isBaseClassCheck && BisConversionRule::ToGroup == existingRule && (BisConversionRule::ToPhysicalElement == childRule || BisConversionRule::ToDrawingGraphic == childRule))
+                {
+                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, childRule))
+                    return BSIERROR;
+
+                }
             }
         else if (BSISUCCESS != V8ECClassInfo::Insert(converter, v8ClassName, childRule))
             return BSIERROR;
