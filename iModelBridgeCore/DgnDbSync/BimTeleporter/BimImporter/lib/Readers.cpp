@@ -1841,6 +1841,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
         "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals", "Electrical_RCM", "pid_ansi"};
 
     bset<ECClassP> rootClasses;
+    SchemaFlattener flattener(m_importer->m_schemaReadContext);
     for (ECN::SchemaKey key : keysToImport)
         {
         ECN::ECSchemaP ecSchema = m_importer->m_schemaReadContext->GetCache().GetSchema(key, SchemaMatchType::Latest);
@@ -1851,7 +1852,6 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
         bool isSP3d = false;
         if (found || ecSchema->GetName().StartsWithI("ECXA_"))
             {
-            SchemaFlattener flattener(m_importer->m_schemaReadContext);
             flattener.FlattenSchemas(ecSchema);
             }
         else if (ecSchema->GetName().StartsWithIAscii("SP3D"))
@@ -1878,10 +1878,10 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
             }
         }
 
-    SchemaFlattener flattener(m_importer->m_schemaReadContext);
+    SchemaFlattener flattener2(m_importer->m_schemaReadContext);
     for (ECClassP rootClass : rootClasses)
         {
-        flattener.CheckForMixinConversion(*rootClass);
+        flattener2.CheckForMixinConversion(*rootClass);
         }
 
     bvector<SchemaKey> schemasToDrop;
