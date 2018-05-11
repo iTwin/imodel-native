@@ -2335,9 +2335,7 @@ template<class POINT, class EXTENT>  size_t SMMeshIndexNode<POINT, EXTENT>::Coun
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::OnPushNodeDown()
     {
     PropagateFeaturesToChildren();
-#ifdef WIP_MESH_IMPORT
     PropagateMeshToChildren();
-#endif
     }
 
 //=======================================================================================
@@ -2350,10 +2348,50 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::OnProp
     PropagateMeshToChildren();
 #endif
     }
+   
 
-#ifdef WIP_MESH_IMPORT
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::PropagateMeshToChildren()
     {
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  indicesPtr = GetPtsIndicePtr();
+    if (indicesPtr->size() == 0) return;
+
+#ifndef WIP_MESH_IMPORT
+    if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
+        {
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> subNodePtsIndicesPtr(static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->GetPtsIndicePtr());
+        subNodePtsIndicesPtr->reserve(indicesPtr->size());
+        subNodePtsIndicesPtr->push_back(&(*indicesPtr)[0], indicesPtr->size());        
+        indicesPtr->clear();
+
+        RefCountedPtr<SMMemoryPoolBlobItem<uint8_t>>  texPtr = GetTexturePtr();
+
+        if (texPtr.IsValid() && texPtr->GetSize() > 0)
+            {            
+            //RefCountedPtr<SMMemoryPoolVectorItem<uint8_t>> subNodeTexPtr(static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->GetTexturePtr());
+            static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->PushTexture(texPtr->GetData(), texPtr->GetSize());
+            }
+
+        RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvPtr = GetUVCoordsPtr();
+
+        if (uvPtr.IsValid() && uvPtr->size() > 0)
+            {
+            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> subNodeUVPtr(static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->GetUVCoordsPtr());
+            subNodeUVPtr->reserve(uvPtr->size());
+            subNodeUVPtr->push_back(&(*uvPtr)[0], uvPtr->size());
+            uvPtr->clear();
+            }
+        
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicesPtr = GetUVsIndicesPtr();        
+
+        if (uvIndicesPtr.IsValid() && uvIndicesPtr->size() > 0)
+            {
+            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> subNodeUvIndicesPtr(static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->GetUVsIndicesPtr());
+            subNodeUvIndicesPtr->reserve(uvIndicesPtr->size());
+            subNodeUvIndicesPtr->push_back(&(*uvIndicesPtr)[0], uvIndicesPtr->size());
+            uvIndicesPtr->clear();
+            }
+        }
+#else //Prototype version for the design mesh handling by ScalableMesh for Hololens prototype. 
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  indicesPtr = GetPtsIndicePtr();
     if (indicesPtr->size() == 0) return;
     DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
@@ -2399,8 +2437,9 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
     SetDirty(true);
     m_meshParts.clear();
     m_meshMetadata.clear();    
-    }
 #endif
+    }
+
 
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 08/15
@@ -3178,9 +3217,11 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
         this->AdviseSubNodeIDChanged(m_apSubNodes[i]);
         }
 
-    //Doesn't work with multithread optimization, deactivated since currently not needed after the generation
-	//SetupNeighborNodesAfterSplit();
+    static bool s_applyNeighbor = false;
 
+    //Doesn't work with multithread optimization, deactivated since currently not needed after the generation
+    if (s_applyNeighbor)
+	    SetupNeighborNodesAfterSplit();
 
     for (auto& node : m_apSubNodes) 
         this->AdviseSubNodeIDChanged(node);
@@ -3998,7 +4039,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::CutTil
         if (GetPointsPtr()->size() == 0 || m_nodeHeader.m_nbFaceIndexes == 0) return;
 */
 
+        m_nodeHeader.m_balanced = false;
+        m_wasBalanced = false;
         m_nodeHeader.m_SplitTreshold = splitThreshold;
+
       
         if (IsLeaf() && (GetNbPoints() > splitThreshold))
             {

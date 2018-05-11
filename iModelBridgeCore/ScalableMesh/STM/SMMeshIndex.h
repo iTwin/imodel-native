@@ -266,7 +266,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     /**----------------------------------------------------------------------------
     Initiates the meshing of the node.
     -----------------------------------------------------------------------------*/
-    virtual void Mesh();
+    virtual void Mesh();    
 
     void                SetClipRegistry(HFCPtr<ClipRegistry>& registry)
         {
@@ -383,9 +383,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void PropagateFeaturesToChildren();
 
-#ifdef WIP_MESH_IMPORT
     void PropagateMeshToChildren();
-#endif
 
     virtual bool        SaveGroupedNodeHeaders(SMNodeGroupPtr pi_pGroup, IScalableMeshProgressPtr progress) override;
 

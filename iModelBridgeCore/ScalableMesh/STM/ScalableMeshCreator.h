@@ -245,7 +245,7 @@ StatusInt IScalableMeshCreator::Impl::Filter  (PointIndex&     pointIndex,
 template <typename PointIndex>
 StatusInt IScalableMeshCreator::Impl::BalanceDown  (PointIndex& pointIndex, size_t depthBeforePartialUpdate, bool meshBalancing)
     {
-    pointIndex.BalanceDown(depthBeforePartialUpdate, meshBalancing);
+    pointIndex.BalanceDown(depthBeforePartialUpdate, false, meshBalancing);
     return BSISUCCESS;
     }
 
