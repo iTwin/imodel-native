@@ -42,13 +42,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
         ECPRESENTATION_EXPORT ChildNodeSpecification(ChildNodeSpecificationCR);
 
         //! Returns XmlElement name that is used to read/save this rule information.
-        ECPRESENTATION_EXPORT virtual CharCP               _GetXmlElementName () const = 0;
+        virtual CharCP _GetXmlElementName () const = 0;
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
-        ECPRESENTATION_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode) = 0;
+        virtual bool _ReadXml (BeXmlNodeP xmlNode) = 0;
+
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        virtual bool _ReadJson(JsonValueCR json) = 0;
 
         //! Writes rule information to given XmlNode.
-        ECPRESENTATION_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const = 0;
+        virtual void _WriteXml (BeXmlNodeP xmlNode) const = 0;
         
         //! Clones this specification.
         virtual ChildNodeSpecification* _Clone() const = 0;
@@ -62,6 +65,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification : PresentationRuleSpecific
 
         //! Reads specification from XML.
         ECPRESENTATION_EXPORT bool                         ReadXml (BeXmlNodeP xmlNode);
+
+        //! Reads specification from Json.
+        ECPRESENTATION_EXPORT bool                         ReadJson(JsonValueCR json);
 
         //! Writes specification to xml node.
         ECPRESENTATION_EXPORT void                         WriteXml (BeXmlNodeP parentXmlNode) const;

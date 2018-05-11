@@ -50,6 +50,9 @@ struct SubCondition : HashableBase
         //! Reads SubCondition from xml node.
         ECPRESENTATION_EXPORT bool                           ReadXml (BeXmlNodeP xmlNode);
 
+        //! Reads SubCondition from json.
+        ECPRESENTATION_EXPORT bool                           ReadJson(JsonValueCR json);
+
         //! Writes SubCondition to xml node.
         ECPRESENTATION_EXPORT void                           WriteXml (BeXmlNodeP parentXmlNode) const;
 
@@ -88,6 +91,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public ConditionalPresentationRul
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT virtual bool                   _ReadXml (BeXmlNodeP xmlNode) override;
+
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT virtual bool                   _ReadJson(JsonValueCR json) override;
 
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) const override;
@@ -155,6 +161,9 @@ struct EXPORT_VTABLE_ATTRIBUTE RootNodeRule : public ChildNodeRule
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT virtual bool                   _ReadXml (BeXmlNodeP xmlNode) override;
+
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT virtual bool                   _ReadJson(JsonValueCR json) override;
 
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void                   _WriteXml (BeXmlNodeP xmlNode) const override;

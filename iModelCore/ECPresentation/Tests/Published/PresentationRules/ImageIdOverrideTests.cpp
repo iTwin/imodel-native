@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/ImageIdOverrideTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -17,6 +17,36 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct ImageIdOverrideTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ImageIdOverrideTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+	    "imageIdExpression": "imgId"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    ImageIdOverride override;
+    EXPECT_TRUE(override.ReadJson(json));
+    EXPECT_STREQ("imgId", override.GetImageId().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ImageIdOverrideTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString ="{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ImageIdOverride override;
+    EXPECT_TRUE(override.ReadJson(json));
+    EXPECT_STREQ("", override.GetImageId().c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017

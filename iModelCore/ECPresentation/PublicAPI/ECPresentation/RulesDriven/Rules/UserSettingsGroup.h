@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/UserSettingsGroup.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -31,6 +31,9 @@ struct UserSettingsGroup : public PresentationKey
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT virtual bool    _ReadXml (BeXmlNodeP xmlNode) override;
+
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT virtual bool    _ReadJson(JsonValueCR json) override;
 
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void    _WriteXml (BeXmlNodeP xmlNode) const override;
@@ -96,6 +99,9 @@ struct UserSettingsItem : HashableBase
 
         //! Writes specification to xml node.
         ECPRESENTATION_EXPORT void            WriteXml (BeXmlNodeP parentXmlNode) const;
+
+        //! Reads specification from json.
+        ECPRESENTATION_EXPORT bool            ReadJson(JsonValueCR json);
 
         //! Id of the user setting that will be used to save and access settings value.
         ECPRESENTATION_EXPORT Utf8StringCR    GetId (void) const;

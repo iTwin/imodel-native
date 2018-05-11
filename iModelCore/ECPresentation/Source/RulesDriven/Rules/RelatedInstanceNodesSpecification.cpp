@@ -2,11 +2,12 @@
 |
 |     $Source: Source/RulesDriven/Rules/RelatedInstanceNodesSpecification.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/CommonTools.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
@@ -101,6 +102,25 @@ bool RelatedInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
         requiredDirectionString = "";
     else
         m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString.c_str ());
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RelatedInstanceNodesSpecification::_ReadJson(JsonValueCR json)
+    {
+    m_groupByClass = json[COMMON_JSON_ATTRIBUTE_GROUPBYCLASS].asBool(true);
+    m_groupByRelationship = json[COMMON_JSON_ATTRIBUTE_GROUPBYRELATIONSHIP].asBool(false);
+    m_groupByLabel = json[COMMON_JSON_ATTRIBUTE_GROUPBYLABEL].asBool(true);
+    m_showEmptyGroups = json[COMMON_JSON_ATTRIBUTE_SHOWEMPTYGROUPS].asBool(false);
+    m_skipRelatedLevel = json[COMMON_JSON_ATTRIBUTE_SKIPRELATEDLEVEL].asInt(0);
+    m_instanceFilter = json[COMMON_JSON_ATTRIBUTE_INSTANCEFILTER].asCString("");
+    m_supportedSchemas = json[COMMON_JSON_ATTRIBUTE_SUPPORTEDSCHEMAS].asCString("");
+    m_relationshipClassNames = json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPCLASSNAMES].asCString("");
+    m_relatedClassNames = json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSNAMES].asCString("");
+    m_requiredDirection = CommonTools::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
 
     return true;
     }

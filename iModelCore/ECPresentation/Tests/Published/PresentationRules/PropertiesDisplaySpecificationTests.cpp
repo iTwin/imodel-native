@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/PropertiesDisplaySpecificationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -17,6 +17,57 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct PropertiesDisplaySpecificationsTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertiesDisplaySpecificationsTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "propertyNames":"Properties",
+        "priority":1,
+        "isDisplayed":false
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    PropertiesDisplaySpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("Properties", spec.GetPropertyNames().c_str());
+    EXPECT_FALSE(spec.IsDisplayed());
+    EXPECT_EQ(1,spec.GetPriority());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertiesDisplaySpecificationsTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = R"({
+        "propertyNames":"Properties"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    PropertiesDisplaySpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("Properties", spec.GetPropertyNames().c_str());
+    EXPECT_TRUE(spec.IsDisplayed());
+    EXPECT_EQ(1000, spec.GetPriority());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertiesDisplaySpecificationsTests, LoadFromJsonFailsIfPropertyNamesNotSpecified)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    PropertiesDisplaySpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017

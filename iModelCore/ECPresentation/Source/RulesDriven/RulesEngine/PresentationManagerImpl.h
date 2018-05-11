@@ -203,8 +203,8 @@ private:
         
 protected:
     // IRulesetCallbacksHandler
-    ECPRESENTATION_EXPORT void _OnRulesetDispose(PresentationRuleSetCR) override;
-    ECPRESENTATION_EXPORT void _OnRulesetCreated(PresentationRuleSetCR) override;
+    ECPRESENTATION_EXPORT void _OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetCR) override;
+    ECPRESENTATION_EXPORT void _OnRulesetCreated(RuleSetLocaterCR, PresentationRuleSetR) override;
 
     // IUserSettingsChangeListener
     ECPRESENTATION_EXPORT void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;

@@ -19,6 +19,64 @@ struct InstanceLabelOverrideTests : PresentationRulesTests
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceLabelOverrideTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "className": "TestClass",
+        "properties": [ "prop1", "prop2" ]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    InstanceLabelOverride override;
+
+    EXPECT_TRUE(override.ReadJson(json));
+    EXPECT_STREQ("TestClass", override.GetClassName().c_str());
+    ASSERT_EQ(2, override.GetPropertyNames().size());
+    EXPECT_STREQ("prop1", override.GetPropertyNames()[0].c_str());
+    EXPECT_STREQ("prop2", override.GetPropertyNames()[1].c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceLabelOverrideTests, LoadsFromJson_TrimsEmptySpacesAroundPropertyNames)
+    {
+    static Utf8CP jsonString = R"({
+	    "className": "TestClass",
+	    "properties": [" prop1   ", "   prop2  "]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    InstanceLabelOverride override;
+
+    EXPECT_TRUE(override.ReadJson(json));
+    EXPECT_STREQ("TestClass", override.GetClassName().c_str());
+    ASSERT_EQ(2, override.GetPropertyNames().size());
+    EXPECT_STREQ("prop1", override.GetPropertyNames()[0].c_str());
+    EXPECT_STREQ("prop2", override.GetPropertyNames()[1].c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(InstanceLabelOverrideTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    InstanceLabelOverride override;
+    
+    EXPECT_TRUE(override.ReadJson(json));
+    EXPECT_STREQ("", override.GetClassName().c_str());
+    EXPECT_TRUE(override.GetPropertyNames().empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(InstanceLabelOverrideTests, LoadsFromXml)

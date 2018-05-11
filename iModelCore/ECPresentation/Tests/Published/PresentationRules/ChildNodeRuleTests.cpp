@@ -15,8 +15,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ChildNodeRuleTests : PresentationRulesTests
-    {
-    };
+    {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
@@ -45,6 +44,66 @@ TEST_F(ChildNodeRuleTests, SubCondition_CopyConstructorCopiesSpecifications)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChildNodeRuleTests, SubCondition_LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "condition": "condition",
+        "subConditions": [
+            {
+                "condition": "nestedSubCondition"
+            }
+        ],
+        "specifications": [
+            {
+                "type": "AllInstanceNodes"
+            },
+            {
+                "type": "AllRelatedInstanceNodes"
+            },
+            {
+                "type": "CustomNode"
+            },
+            {
+                "type": "InstanceNodesOfSpecificClasses",
+                "classNames": "TestSchema:TestClass"
+            },
+            {
+                "type": "RelatedInstanceNodes"
+            },
+            {
+                "type": "SearchResultInstanceNodes"
+            }
+        ]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    SubCondition rule;
+    EXPECT_TRUE(rule.ReadJson(json));
+    EXPECT_STREQ("condition", rule.GetCondition().c_str());
+    EXPECT_EQ(6, rule.GetSpecifications().size());
+    EXPECT_EQ(1, rule.GetSubConditions().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChildNodeRuleTests, SubCondition_LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    SubCondition rule;
+    EXPECT_TRUE(rule.ReadJson(json));
+    EXPECT_STREQ("", rule.GetCondition().c_str());
+    EXPECT_EQ(0, rule.GetSpecifications().size());
+    EXPECT_EQ(0, rule.GetSubConditions().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ChildNodeRuleTests, SubCondition_LoadsFromXml)
@@ -63,7 +122,7 @@ TEST_F(ChildNodeRuleTests, SubCondition_LoadsFromXml)
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
     ASSERT_EQ(BEXML_Success, xmlStatus);
-    
+
     SubCondition rule;
     EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
     EXPECT_STREQ("condition", rule.GetCondition().c_str());
@@ -80,12 +139,78 @@ TEST_F(ChildNodeRuleTests, SubCondition_LoadsFromXmlWithDefaultValues)
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
     ASSERT_EQ(BEXML_Success, xmlStatus);
-    
+
     SubCondition rule;
     EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
     EXPECT_STREQ("", rule.GetCondition().c_str());
     EXPECT_EQ(0, rule.GetSpecifications().size());
     EXPECT_EQ(0, rule.GetSubConditions().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChildNodeRuleTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "stopFurtherProcessing": true,
+        "subConditions": [
+            { },
+            { }
+        ],
+        "specifications": [
+            {
+                "type": "AllInstanceNodes"
+            },
+            {
+                "type": "AllRelatedInstanceNodes"
+            },
+            {
+                "type": "CustomNode"
+            },
+            {
+                "type": "InstanceNodesOfSpecificClasses",
+                "classNames": "TestSchema:TestClass"
+            },
+            {
+                "type": "RelatedInstanceNodes"
+            },
+            {
+                "type": "SearchResultInstanceNodes"
+            }
+        ],
+        "customizationRules": [
+            {
+                "type": "Grouping",
+                "schemaName": "schema",
+                "className": "ClassName"
+            },
+            {
+                "type": "CheckBox"
+            },
+            {
+                "type": "Style"
+            },
+            {
+                "type": "Label"
+            },
+            {
+                "type": "Sorting"
+            },
+            {
+                "type": "ImageId"
+            }
+        ]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ChildNodeRule rule;
+    EXPECT_TRUE(rule.ReadJson(json));
+    EXPECT_TRUE(rule.GetStopFurtherProcessing());
+    EXPECT_EQ(6, rule.GetSpecifications().size());
+    EXPECT_EQ(2, rule.GetSubConditions().size());
+    EXPECT_EQ(6, rule.GetCustomizationRules().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -114,7 +239,7 @@ TEST_F(ChildNodeRuleTests, LoadsFromXml)
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
     ASSERT_EQ(BEXML_Success, xmlStatus);
-    
+
     ChildNodeRule rule;
     EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
     EXPECT_EQ(RuleTargetTree::TargetTree_SelectionTree, rule.GetTargetTree());
@@ -135,7 +260,7 @@ TEST_F(ChildNodeRuleTests, TargetTreeParsedCorrectlyAsMainTree)
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
     ASSERT_EQ(BEXML_Success, xmlStatus);
-    
+
     ChildNodeRule rule;
     EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
     EXPECT_EQ(RuleTargetTree::TargetTree_MainTree, rule.GetTargetTree());
@@ -152,7 +277,7 @@ TEST_F(ChildNodeRuleTests, TargetTreeParsedCorrectlyAsBoth)
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
     ASSERT_EQ(BEXML_Success, xmlStatus);
-    
+
     ChildNodeRule rule;
     EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
     EXPECT_EQ(RuleTargetTree::TargetTree_Both, rule.GetTargetTree());
@@ -169,10 +294,27 @@ TEST_F(ChildNodeRuleTests, TargetTreeParsesByDefaultAsMainTree)
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
     ASSERT_EQ(BEXML_Success, xmlStatus);
-    
+
     ChildNodeRule rule;
     EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
     EXPECT_EQ(RuleTargetTree::TargetTree_MainTree, rule.GetTargetTree());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ChildNodeRuleTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ChildNodeRule rule;
+    EXPECT_TRUE(rule.ReadJson(json));
+    EXPECT_FALSE(rule.GetStopFurtherProcessing());
+    EXPECT_EQ(0, rule.GetSpecifications().size());
+    EXPECT_EQ(0, rule.GetSubConditions().size());
+    EXPECT_EQ(0, rule.GetCustomizationRules().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -184,7 +326,7 @@ TEST_F(ChildNodeRuleTests, LoadsFromXmlWithDefaultValues)
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
     ASSERT_EQ(BEXML_Success, xmlStatus);
-    
+
     ChildNodeRule rule;
     EXPECT_TRUE(rule.ReadXml(xml->GetRootElement()));
     EXPECT_EQ(RuleTargetTree::TargetTree_MainTree, rule.GetTargetTree());
@@ -210,10 +352,10 @@ TEST_F(ChildNodeRuleTests, SubCondition_WriteToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<SubCondition Condition="condition">)"
-                R"(<SubCondition Condition="nestedCondition"/>)"
-                R"(<AllInstances Priority="1000" AlwaysReturnsChildren="true" HideNodesInHierarchy="true" HideIfNoChildren="true" ExtendedData="" DoNotSort="false" GroupByClass="true" GroupByLabel="true" SupportedSchemas="SupportedSchema"/>)"
-            R"(</SubCondition>)"
+        R"(<SubCondition Condition="condition">)"
+        R"(<SubCondition Condition="nestedCondition"/>)"
+        R"(<AllInstances Priority="1000" AlwaysReturnsChildren="true" HideNodesInHierarchy="true" HideIfNoChildren="true" ExtendedData="" DoNotSort="false" GroupByClass="true" GroupByLabel="true" SupportedSchemas="SupportedSchema"/>)"
+        R"(</SubCondition>)"
         "</Root>";
 
     EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
@@ -236,11 +378,11 @@ TEST_F(ChildNodeRuleTests, WriteToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<ChildNodeRule Priority="1000" TargetTree="Both" StopFurtherProcessing="false" Condition="condition" OnlyIfNotHandled="true">)"
-                R"(<SubCondition Condition="nestedCondition"/>)"
-                R"(<AllInstances Priority="1000" AlwaysReturnsChildren="true" HideNodesInHierarchy="true" HideIfNoChildren="true" ExtendedData="" DoNotSort="false" GroupByClass="true" GroupByLabel="true" SupportedSchemas="SupportedSchema"/>)"
-                R"(<RenameNodeRule Priority="1000" Condition="" OnlyIfNotHandled="false"/>)"
-            R"(</ChildNodeRule>)"
+        R"(<ChildNodeRule Priority="1000" TargetTree="Both" StopFurtherProcessing="false" Condition="condition" OnlyIfNotHandled="true">)"
+        R"(<SubCondition Condition="nestedCondition"/>)"
+        R"(<AllInstances Priority="1000" AlwaysReturnsChildren="true" HideNodesInHierarchy="true" HideIfNoChildren="true" ExtendedData="" DoNotSort="false" GroupByClass="true" GroupByLabel="true" SupportedSchemas="SupportedSchema"/>)"
+        R"(<RenameNodeRule Priority="1000" Condition="" OnlyIfNotHandled="false"/>)"
+        R"(</ChildNodeRule>)"
         "</Root>";
     EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
     }
@@ -259,7 +401,7 @@ TEST_F(ChildNodeRuleTests, RootNodeRule_WriteToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<RootNodeRule Priority="1000" AutoExpand="false" TargetTree="MainTree" StopFurtherProcessing="false" Condition="" OnlyIfNotHandled="false"/>)"
+        R"(<RootNodeRule Priority="1000" AutoExpand="false" TargetTree="MainTree" StopFurtherProcessing="false" Condition="" OnlyIfNotHandled="false"/>)"
         "</Root>";
     EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
     }

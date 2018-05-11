@@ -18,6 +18,51 @@ struct RelatedInstanceSpecificationTests : PresentationRulesTests
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedInstanceSpecificationTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+	    "relationshipName": "ClassAHasClassB",
+	    "className": "ClassA",
+	    "alias": "TestAlias",
+	    "isRequired": true,
+	    "requiredDirection": "Forward"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    RelatedInstanceSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("ClassAHasClassB", spec.GetRelationshipName().c_str());
+    EXPECT_STREQ("ClassA", spec.GetClassName().c_str());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Forward, spec.GetRelationshipDirection());
+    EXPECT_STREQ("TestAlias", spec.GetAlias().c_str());
+    EXPECT_TRUE(spec.IsRequired());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedInstanceSpecificationTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = R"({
+	    "relationshipName": "ClassAHasClassB",
+	    "className": "ClassA",
+	    "alias": "TestAlias"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    RelatedInstanceSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("ClassAHasClassB", spec.GetRelationshipName().c_str());
+    EXPECT_STREQ("ClassA", spec.GetClassName().c_str());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRelationshipDirection());
+    EXPECT_STREQ("TestAlias", spec.GetAlias().c_str());
+    EXPECT_FALSE(spec.IsRequired());
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Aidas.Vaiksnoras                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelatedInstanceSpecificationTests, LoadsFromXml)
@@ -57,6 +102,60 @@ TEST_F(RelatedInstanceSpecificationTests, LoadsFromXmlWithIsRequiredAttributeSet
     EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRelationshipDirection());
     EXPECT_STREQ("TestAlias", spec.GetAlias().c_str());
     EXPECT_EQ(true, spec.IsRequired());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedInstanceSpecificationTests, LoadFromJsonFailsWhenRelationshipAttributeIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+	    "className": "ClassA",
+	    "alias": "TestAlias",
+	    "isRequired": true,
+	    "direction": "Forward"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    RelatedInstanceSpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedInstanceSpecificationTests, LoadFromJsonFailsWhenClassNameAttributeIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+	    "relationshipName": "ClassAHasClassB",
+	    "alias": "TestAlias",
+	    "isRequired": true,
+	    "direction": "Forward"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    RelatedInstanceSpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedInstanceSpecificationTests, LoadFromJsonFailsWhenAliasAttributeIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+	    "relationshipName": "ClassAHasClassB",
+	    "className": "ClassA",
+	    "isRequired": true,
+	    "direction": "Forward"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    RelatedInstanceSpecification spec;
+    EXPECT_FALSE(spec.ReadJson(json));
     }
 
 /*---------------------------------------------------------------------------------**//**

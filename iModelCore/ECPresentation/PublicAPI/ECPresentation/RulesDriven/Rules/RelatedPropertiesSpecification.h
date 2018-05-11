@@ -65,6 +65,9 @@ struct RelatedPropertiesSpecification : HashableBase
         //! Reads specification from XML.
         ECPRESENTATION_EXPORT bool                         ReadXml (BeXmlNodeP xmlNode);
 
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT bool                         ReadJson(JsonValueCR json);
+
         //! Writes related properties to xml node.
         ECPRESENTATION_EXPORT void                         WriteXml (BeXmlNodeP parentXmlNode) const;
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/SearchResultInstanceNodesSpecification.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -45,6 +45,7 @@ protected:
     virtual void _Accept(QuerySpecificationVisitor& visitor) const = 0;
     virtual Utf8CP _GetXmlElementName() const = 0;
     ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode);
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json);
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const;
     virtual QuerySpecification* _Clone() const = 0;
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash(Utf8CP parentHash) const override;
@@ -60,6 +61,9 @@ public:
 
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
     bool ReadXml(BeXmlNodeP xmlNode) {return _ReadXml(xmlNode);}
+
+    //! Reads rule information from Json, returns true if it can read it successfully.
+    bool ReadJson(JsonValueCR json) { return _ReadJson(json); }
 
     //! Writes rule information to given XmlNode.
     void WriteXml(BeXmlNodeP xmlNode) const {_WriteXml(xmlNode);}
@@ -93,6 +97,7 @@ protected:
     virtual void _Accept(QuerySpecificationVisitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT virtual Utf8CP _GetXmlElementName() const override;
     ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
     QuerySpecification* _Clone() const override {return new StringQuerySpecification(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
@@ -125,6 +130,7 @@ protected:
     virtual void _Accept(QuerySpecificationVisitor& visitor) const override {visitor._Visit(*this);}
     ECPRESENTATION_EXPORT virtual Utf8CP _GetXmlElementName() const override;
     ECPRESENTATION_EXPORT virtual bool _ReadXml(BeXmlNodeP xmlNode) override;
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(JsonValueCR json) override;
     ECPRESENTATION_EXPORT virtual void _WriteXml(BeXmlNodeP xmlNode) const override;
     QuerySpecification* _Clone() const override{return new ECPropertyValueQuerySpecification(*this);}
     ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
@@ -167,9 +173,12 @@ struct EXPORT_VTABLE_ATTRIBUTE SearchResultInstanceNodesSpecification : public C
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECPRESENTATION_EXPORT virtual bool                 _ReadXml (BeXmlNodeP xmlNode) override;
 
+        //! Reads rule information from Json, returns true if it can read it successfully.
+        ECPRESENTATION_EXPORT virtual bool                 _ReadJson(JsonValueCR json) override;
+
         //! Writes rule information to given XmlNode.
         ECPRESENTATION_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const override;
-        
+
         //! Clones this specification.
         virtual ChildNodeSpecification* _Clone() const override {return new SearchResultInstanceNodesSpecification(*this);}
 

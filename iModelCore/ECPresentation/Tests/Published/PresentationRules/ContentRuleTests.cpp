@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/ContentRuleTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -17,6 +17,47 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct ContentRuleTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentRuleTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "specifications": [
+            {
+                "classNames": "TestSchema:ClassA",
+                "type": "ContentInstancesOfSpecificClasses"
+            },
+            {
+                "type": "ContentRelatedInstances"
+            },
+            {
+                "type": "SelectedNodeInstances"
+            }
+        ]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    ContentRule rule;
+    EXPECT_TRUE(rule.ReadJson(json));
+    EXPECT_EQ(3, rule.GetSpecifications().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentRuleTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    ContentRule rule;
+    EXPECT_TRUE(rule.ReadJson(json));
+    EXPECT_EQ(0, rule.GetSpecifications().size());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017

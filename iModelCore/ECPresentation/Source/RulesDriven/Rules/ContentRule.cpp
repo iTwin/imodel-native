@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/CommonTools.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
@@ -72,6 +73,22 @@ bool ContentRule::_ReadXml (BeXmlNodeP xmlNode)
         }
 
     return ConditionalPresentationRule::_ReadXml (xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentRule::_ReadJson(JsonValueCR json)
+    {
+    JsonValueCR specificationsJson = json[CONTENT_RULE_JSON_ATTRIBUTE_SPECIFICATIONS];
+    CommonTools::LoadRulesFromJson<ContentInstancesOfSpecificClassesSpecification, ContentSpecificationList>
+        (specificationsJson, m_specifications, CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<ContentRelatedInstancesSpecification, ContentSpecificationList>
+        (specificationsJson, m_specifications, CONTENT_RELATED_INSTANCES_SPECIFICATION_JSON_TYPE);
+    CommonTools::LoadRulesFromJson<SelectedNodeInstancesSpecification, ContentSpecificationList>
+        (specificationsJson, m_specifications, SELECTED_NODE_INSTANCES_SPECIFICATION_JSON_TYPE);
+
+    return ConditionalPresentationRule::_ReadJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**

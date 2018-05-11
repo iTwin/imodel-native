@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
@@ -64,6 +65,18 @@ void StyleOverride::_WriteXml (BeXmlNodeP xmlNode) const
     xmlNode->AddAttributeStringValue (STYLE_OVERRIDE_XML_ATTRIBUTE_FONTSTYLE, m_fontStyle.c_str ());
 
     ConditionalCustomizationRule::_WriteXml (xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool StyleOverride::_ReadJson(JsonValueCR json)
+    {
+    m_foreColor = json[STYLE_OVERRIDE_JSON_ATTRIBUTE_FORECOLOR].asCString("");
+    m_backColor = json[STYLE_OVERRIDE_JSON_ATTRIBUTE_BACKCOLOR].asCString("");
+    m_fontStyle = json[STYLE_OVERRIDE_JSON_ATTRIBUTE_FONTSTYLE].asCString("");
+
+    return ConditionalCustomizationRule::_ReadJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
@@ -101,6 +102,15 @@ void PresentationKey::WriteXml (BeXmlNodeP parentXmlNode) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PresentationKey::ReadJson (JsonValueCR json)
+    {
+    m_priority = json[COMMON_JSON_ATTRIBUTE_PRIORITY].asInt(1000);
+    return _ReadJson (json);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 int PresentationKey::GetPriority (void) const { return m_priority; }
@@ -147,6 +157,15 @@ bool PresentationRule::_ReadXml (BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PresentationRule::_ReadJson (JsonValueCR json)
+    {
+    m_onlyIfNotHandled = json[COMMON_JSON_ATTRIBUTE_ONLYIFNOTHANDLED].asBool(false);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PresentationRule::_WriteXml (BeXmlNodeP xmlNode) const
@@ -188,6 +207,16 @@ bool ConditionalPresentationRule::_ReadXml(BeXmlNodeP xmlNode)
         m_condition = "";
 
     return PresentationRule::_ReadXml(xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConditionalPresentationRule::_ReadJson(JsonValueCR json)
+    {
+    m_condition = json[PRESENTATION_RULE_JSON_ATTRIBUTE_CONDITION].asCString("");
+
+    return PresentationRule::_ReadJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**

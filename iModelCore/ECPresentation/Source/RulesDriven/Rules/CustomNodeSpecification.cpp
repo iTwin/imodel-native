@@ -2,11 +2,12 @@
 |
 |     $Source: Source/RulesDriven/Rules/CustomNodeSpecification.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 #include <ECPresentation/RulesDriven/Rules/SpecificationVisitor.h>
@@ -60,6 +61,19 @@ bool CustomNodeSpecification::_ReadXml (BeXmlNodeP xmlNode)
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_imageId, CUSTOM_NODE_SPECIFICATION_XML_ATTRIBUTE_IMAGEID))
         m_imageId = "";
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CustomNodeSpecification::_ReadJson(JsonValueCR json)
+    {
+    m_type = json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_TYPE].asCString("");
+    m_label = json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_LABEL].asCString("");
+    m_description = json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_DESCRIPTION].asCString("");
+    m_imageId = json[CUSTOM_NODE_SPECIFICATION_JSON_ATTRIBUTE_IMAGEID].asCString("");
 
     return true;
     }

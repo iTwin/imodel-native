@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/AllInstanceNodesSpecificationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -17,6 +17,42 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct AllInstanceNodesSpecificationTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AllInstanceNodesSpecificationTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "groupByClass": false,
+        "groupByLabel": false,
+        "supportedSchemas": "TestSchema"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    AllInstanceNodesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_FALSE(spec.GetGroupByClass());
+    EXPECT_FALSE(spec.GetGroupByLabel());
+    EXPECT_STREQ("TestSchema", spec.GetSupportedSchemas().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(AllInstanceNodesSpecificationTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    AllInstanceNodesSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_TRUE(spec.GetGroupByClass());
+    EXPECT_TRUE(spec.GetGroupByLabel());
+    EXPECT_STREQ("", spec.GetSupportedSchemas().c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017

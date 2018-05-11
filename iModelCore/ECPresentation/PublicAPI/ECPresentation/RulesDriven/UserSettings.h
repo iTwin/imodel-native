@@ -200,7 +200,7 @@ protected:
     void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
 
     // IRulesetCallbacksHandler
-    void _OnRulesetDispose(PresentationRuleSetCR ruleset) override;
+    void _OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetCR ruleset) override;
 
 public:
     //! Constructor.

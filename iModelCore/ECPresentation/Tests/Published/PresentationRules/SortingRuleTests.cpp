@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/SortingRuleTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -17,6 +17,51 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct SortingRuleTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SortingRuleTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+	    "schemaName": "TestSchema",
+	    "className": "TestClass",
+	    "propertyName": "TestProperty",
+	    "sortAscending": false,
+	    "doNotSort": true,
+	    "isPolymorphic": true
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    SortingRule rule;
+    EXPECT_TRUE(rule.ReadJson(json));
+    EXPECT_STREQ("TestSchema", rule.GetSchemaName().c_str());
+    EXPECT_STREQ("TestClass", rule.GetClassName().c_str());
+    EXPECT_STREQ("TestProperty", rule.GetPropertyName().c_str());
+    EXPECT_FALSE(rule.GetSortAscending());
+    EXPECT_TRUE(rule.GetDoNotSort());
+    EXPECT_TRUE(rule.GetIsPolymorphic());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SortingRuleTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    SortingRule rule;
+    EXPECT_TRUE(rule.ReadJson(json));
+    EXPECT_STREQ("", rule.GetSchemaName().c_str());
+    EXPECT_STREQ("", rule.GetClassName().c_str());
+    EXPECT_STREQ("", rule.GetPropertyName().c_str());
+    EXPECT_TRUE(rule.GetSortAscending());
+    EXPECT_FALSE(rule.GetDoNotSort());
+    EXPECT_FALSE(rule.GetIsPolymorphic());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017

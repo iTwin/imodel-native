@@ -63,10 +63,13 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
             );
 
         //Reads PresentationRuleSet from XML. Returns false if it is not able to load it.
-        bool                                            ReadXml (BeXmlDomR xmlDom);
+        bool ReadXml (BeXmlDomR xmlDom);
+
+        //Reads PresentationRuleSet from Json. Returns false if it is not able to load it.
+        bool ReadJson(JsonValueCR json);
 
         //Writes PresentationRuleSet to XML.
-        void                                            WriteXml (BeXmlDomR xmlDom);
+        void WriteXml (BeXmlDomR xmlDom);
 
     protected:
         //! Computes rules set hash.
@@ -124,6 +127,12 @@ struct PresentationRuleSet : public RefCountedBase, HashableBase
 
         //! Reads PresentationRuleSet from XmlFile.
         ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromXmlFile (WCharCP xmlFilePath);
+        
+        //! Reads PresentationRuleSet from Json::Value.
+        ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromJsonValue(JsonValueCR json);
+
+        //! Reads PresentationRuleSet from JsonString.
+        ECPRESENTATION_EXPORT static PresentationRuleSetPtr  ReadFromJsonString(Utf8StringCR jsonString);
 
         //! Writes PresentationRuleSet to XmlString.
         ECPRESENTATION_EXPORT Utf8String                     WriteToXmlString ();

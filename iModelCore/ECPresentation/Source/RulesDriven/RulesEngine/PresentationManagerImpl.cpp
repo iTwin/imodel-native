@@ -564,7 +564,7 @@ RulesDrivenECPresentationManagerImpl::~RulesDrivenECPresentationManagerImpl()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerImpl::_OnRulesetCreated(PresentationRuleSetCR ruleset)
+void RulesDrivenECPresentationManagerImpl::_OnRulesetCreated(RuleSetLocaterCR, PresentationRuleSetR ruleset)
     {
     IUserSettings& settings = GetUserSettings(ruleset.GetRuleSetId().c_str());
     settings.InitFrom(ruleset.GetUserSettings());
@@ -574,7 +574,7 @@ void RulesDrivenECPresentationManagerImpl::_OnRulesetCreated(PresentationRuleSet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerImpl::_OnRulesetDispose(PresentationRuleSetCR ruleset)
+void RulesDrivenECPresentationManagerImpl::_OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetCR ruleset)
     {
     m_rulesetECExpressionsCache->Clear(ruleset.GetRuleSetId().c_str());
     m_updateHandler->NotifyRulesetDisposed(ruleset);

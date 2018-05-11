@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
@@ -48,6 +49,17 @@ bool LabelOverride::_ReadXml (BeXmlNodeP xmlNode)
         m_description = "";
 
     return ConditionalCustomizationRule::_ReadXml (xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LabelOverride::_ReadJson(JsonValueCR json)
+    {
+    m_label = json[LABEL_OVERRIDE_JSON_ATTRIBUTE_LABEL].asCString("");
+    m_description = json[LABEL_OVERRIDE_JSON_ATTRIBUTE_DESCRIPTION].asCString("");
+
+    return ConditionalCustomizationRule::_ReadJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
