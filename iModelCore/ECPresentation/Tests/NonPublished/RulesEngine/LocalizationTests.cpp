@@ -53,7 +53,7 @@ TEST_F(LocalizationHelperTests, LocalizeString_PassesValidKeyToLocalizationProvi
 TEST_F(LocalizationHelperTests, LocalizeString_JustLocalizedPart)
     {
     m_l10nProvider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
-    Utf8String str = "@test@";
+    Utf8String str = "@Namespace:Id@";
     ASSERT_TRUE(m_helper.LocalizeString(str));
     ASSERT_STREQ("localized", str.c_str());
     }
@@ -64,7 +64,7 @@ TEST_F(LocalizationHelperTests, LocalizeString_JustLocalizedPart)
 TEST_F(LocalizationHelperTests, LocalizeString_MultipleLocalizedParts)
     {
     m_l10nProvider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
-    Utf8String str = "@test@@test@";
+    Utf8String str = "@Namespace:Id@@Namespace:Id@";
     ASSERT_TRUE(m_helper.LocalizeString(str));
     ASSERT_STREQ("localizedlocalized", str.c_str());
     }
@@ -75,9 +75,9 @@ TEST_F(LocalizationHelperTests, LocalizeString_MultipleLocalizedParts)
 TEST_F(LocalizationHelperTests, LocalizeString_MultipleLocalizedPartsWithOtherText)
     {
     m_l10nProvider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
-    Utf8String str = "123@test@ @test@ @test";
+    Utf8String str = "123@Namespace:Id@ @Namespace:Id@ @Namespace:Id";
     ASSERT_TRUE(m_helper.LocalizeString(str));
-    ASSERT_STREQ("123localized localized @test", str.c_str());
+    ASSERT_STREQ("123localized localized @Namespace:Id", str.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -86,9 +86,9 @@ TEST_F(LocalizationHelperTests, LocalizeString_MultipleLocalizedPartsWithOtherTe
 TEST_F(LocalizationHelperTests, LocalizeString_NoLocalizedParts)
     {
     m_l10nProvider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
-    Utf8String str = "@test";
+    Utf8String str = "@Namespace:Id";
     ASSERT_TRUE(m_helper.LocalizeString(str));
-    ASSERT_STREQ("@test", str.c_str());
+    ASSERT_STREQ("@Namespace:Id", str.c_str());
     }
 
 /*=================================================================================**//**
@@ -202,7 +202,7 @@ TEST_F(CustomNodesProviderLocalizationTests, NodesLabelAndDescriptionAreLocalize
     m_context->SetLocalizationContext(localizationProvider);
 
     JsonNavNodePtr node;
-    CustomNodeSpecification spec(1, false, "type", "@test@", "@other@", "imageId");
+    CustomNodeSpecification spec(1, false, "type", "@Namespace:label@", "@Namespace:description@", "imageId");
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, spec);
     EXPECT_TRUE(provider->GetNode(node, 0));
     EXPECT_TRUE(node.IsValid());
@@ -219,7 +219,7 @@ TEST_F(CustomNodesProviderLocalizationTests, NodesOverridenLabelIsLocalized)
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
     m_context->SetLocalizationContext(localizationProvider);
 
-    m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "\"@test@\"", ""));
+    m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "\"@Namespace:label@\"", ""));
 
     RootNodeRule* rule = new RootNodeRule("", 1000, false, TargetTree_Both, false);
     m_ruleset->AddPresentationRule(*rule);    
@@ -250,10 +250,10 @@ TEST_F(CustomNodesProviderLocalizationTests, NodesLabelIsLocalizedWithLocalizati
         });
     m_context->SetLocalizationContext(localizationProvider);
     
-    m_ruleset->AddPresentationRule(*new LocalizationResourceKeyDefinition(1, "label", "from_definition", "default_value"));
+    m_ruleset->AddPresentationRule(*new LocalizationResourceKeyDefinition(1, "Namespace:Id", "from_definition", "default_value"));
     
     JsonNavNodePtr node;
-    CustomNodeSpecification spec(1, false, "type", "@label@", "", "imageId");
+    CustomNodeSpecification spec(1, false, "type", "@Namespace:Id@", "", "imageId");
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, spec);
     EXPECT_TRUE(provider->GetNode(node, 0));
     EXPECT_TRUE(node.IsValid());
@@ -272,10 +272,10 @@ TEST_F(CustomNodesProviderLocalizationTests, NodesLabelIsLocalizedWithLocalizati
     localizationProvider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue){return false;});
     m_context->SetLocalizationContext(localizationProvider);
     
-    m_ruleset->AddPresentationRule(*new LocalizationResourceKeyDefinition(1, "label", "from_definition", "default_value"));
+    m_ruleset->AddPresentationRule(*new LocalizationResourceKeyDefinition(1, "Namespace:Id", "from_definition", "default_value"));
     
     JsonNavNodePtr node;
-    CustomNodeSpecification spec(1, false, "type", "@label@", "", "imageId");
+    CustomNodeSpecification spec(1, false, "type", "@Namespace:Id@", "", "imageId");
     NavNodesProviderPtr provider = CustomNodesProvider::Create(*m_context, spec);
     EXPECT_TRUE(provider->GetNode(node, 0));
     EXPECT_TRUE(node.IsValid());
@@ -298,7 +298,7 @@ TEST_F(QueryExecutorLocalizationTests, ECInstanceNodesLabelIsLocalized)
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
 
     RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@test@"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@Namespace:Id@"));});
 
     NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
@@ -329,7 +329,7 @@ TEST_F(QueryExecutorLocalizationTests, ECInstanceNodesLabelIsLocalized)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryExecutorLocalizationTests, ECClassGroupingNodesLabelIsLocalized)
     {
-    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsClassGroupingNode", 1, "\"@test@\"", ""));
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsClassGroupingNode", 1, "\"@Namespace:Id@\"", ""));
 
     TestLocalizationProvider localizationProvider;
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
@@ -364,7 +364,7 @@ TEST_F(QueryExecutorLocalizationTests, ECClassGroupingNodesLabelIsLocalized)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QueryExecutorLocalizationTests, ECPropertyGroupingNodesLabelIsLocalized)
     {
-    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsPropertyGroupingNode", 1, "\"@test@\"", ""));
+    m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.IsPropertyGroupingNode", 1, "\"@Namespace:Id@\"", ""));
 
     TestLocalizationProvider localizationProvider;
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
@@ -404,8 +404,8 @@ TEST_F(QueryExecutorLocalizationTests, DisplayLabelGroupingNodesLabelIsLocalized
     localizationProvider.SetHandler([](Utf8StringCR, Utf8StringR localizedValue){localizedValue = "localized"; return true;});
 
     RulesEngineTestHelpers::DeleteInstances(s_project->GetECDb(), *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@test1@"));});
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@test2@"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@Namespace:Id@"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("@Namespace:Id@"));});
     
     NavigationQueryContractPtr contract = DisplayLabelGroupingNodesQueryContract::Create(m_widgetClass);
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();

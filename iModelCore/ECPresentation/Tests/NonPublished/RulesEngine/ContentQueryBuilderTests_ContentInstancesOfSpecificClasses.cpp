@@ -74,14 +74,14 @@ TEST_F(ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryWi
     {
     m_localizationProvider.SetHandler([](Utf8StringCR key, Utf8StringR localized)
         {
-        EXPECT_TRUE(key.Equals("LocalizationId"));
+        EXPECT_TRUE(key.Equals("Namespace:Id"));
         localized = "Test";
         return true;
         });
 
     ContentInstancesOfSpecificClassesSpecification spec(1, "", "Basic2:Class2", true);
-    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label@LocalizationId@_1", 1200, "\"Value\" & 1"));
-    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label@LocalizationId@_2", 1500, "this.Name & \"Test\""));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label@Namespace:Id@_1", 1200, "\"Value\" & 1"));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label@Namespace:Id@_2", 1500, "this.Name & \"Test\""));
     
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());

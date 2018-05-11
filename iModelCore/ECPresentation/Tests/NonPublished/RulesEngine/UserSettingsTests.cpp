@@ -364,12 +364,12 @@ TEST_F(UserSettingsTests, LocalizesLabels)
     TestLocalizationProvider localizationProvider;
     localizationProvider.SetHandler([](Utf8StringCR id, Utf8StringR str)
         {
-        if (id.Equals("GroupLabelId"))
+        if (id.Equals("Group:LabelId"))
             {
             str = "LocalizedGroupLabel";
             return true;
             }
-        if (id.Equals("ItemLabelId"))
+        if (id.Equals("Item:LabelId"))
             {
             str = "LocalizedItemLabel";
             return true;
@@ -379,8 +379,8 @@ TEST_F(UserSettingsTests, LocalizesLabels)
     GetSettings().SetLocalizationProvider(&localizationProvider);
 
     UserSettingsGroupList rules;
-    UserSettingsGroupP group = new UserSettingsGroup("@GroupLabelId@");
-    group->AddSettingsItem(*new UserSettingsItem("ItemId", "@ItemLabelId@", "", ""));
+    UserSettingsGroupP group = new UserSettingsGroup("@Group:LabelId@");
+    group->AddSettingsItem(*new UserSettingsItem("ItemId", "@Item:LabelId@", "", ""));
     rules.push_back(group);
     
     GetSettings().InitFrom(rules);
