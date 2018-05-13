@@ -20,7 +20,7 @@ $(OUT_DIR)embeddeddoublearray$(OUT_EXT)      : $(geomSrcMemory)embeddeddoublearr
 
 $(OUT_DIR)embeddedintarray$(OUT_EXT)      : $(geomSrcMemory)embeddedintarray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)embeddeddpoint2darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint2darray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)embeddeddpoint2darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint2darray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)embeddeddpoint3darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint3darray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -36,7 +36,7 @@ $(OUT_DIR)dmap4d$(OUT_EXT)          : $(geomSrcStructs)dmap4d.cpp           $(OT
 
 $(OUT_DIR)dmatrix4d$(OUT_EXT)       : $(geomSrcStructs)dmatrix4d.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dpoint2d$(OUT_EXT)        : $(geomSrcStructs)dpoint2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dpoint2d$(OUT_EXT)        : $(geomSrcStructs)dpoint2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)dvec2d$(OUT_EXT)          : $(geomSrcStructs)dvec2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -273,7 +273,7 @@ $(OUT_DIR)Angle$(OUT_EXT)           : $(geomSrcFuncs)Angle.cpp          $(OTHER_
 
 $(OUT_DIR)YawPitchRollAnglesInDegrees$(OUT_EXT)    : $(geomSrcFuncs)YawPitchRollAnglesInDegrees.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)lineargeom$(OUT_EXT)      : $(geomSrcFuncs)lineargeom.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)lineargeom$(OUT_EXT)      : $(geomSrcFuncs)lineargeom.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)quadraticgeom$(OUT_EXT)   : $(geomSrcFuncs)quadraticgeom.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -289,7 +289,7 @@ $(OUT_DIR)rotations$(OUT_EXT)       : $(geomSrcFuncs)rotations.cpp      $(OTHER_
 
 $(OUT_DIR)polygon3d$(OUT_EXT)       : $(geomSrcFuncs)polygon3d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)polygon2d$(OUT_EXT)       : $(geomSrcFuncs)polygon2d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)polygon2d$(OUT_EXT)       : $(geomSrcFuncs)polygon2d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)polyline3d$(OUT_EXT)      : $(geomSrcFuncs)polyline3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -299,7 +299,7 @@ $(OUT_DIR)polyline3d$(OUT_EXT)      : $(geomSrcFuncs)polyline3d.cpp     $(OTHER_
 
 $(OUT_DIR)dpoint3darray$(OUT_EXT)   : $(geomSrcFuncs)dpoint3darray.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dpoint2darray$(OUT_EXT)   : $(geomSrcFuncs)dpoint2darray.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)dpoint2darray$(OUT_EXT)   : $(geomSrcFuncs)dpoint2darray.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)simpson$(OUT_EXT)         : $(geomSrcFuncs)simpson.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -437,7 +437,7 @@ $(OUT_DIR)bsp_offset$(OUT_EXT)    : $(geomSrcBspline)bsp_offset.cpp $(OTHER_DEPE
 
 $(OUT_DIR)bsprsurf$(OUT_EXT)    : $(geomSrcBspline)bsprsurf.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-$(OUT_DIR)bspPolysolve$(OUT_EXT)    : $(geomSrcBspline)bspPolysolve.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+#$(OUT_DIR)bspPolysolve$(OUT_EXT)    : $(geomSrcBspline)bspPolysolve.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 # (end funcs_sources_pubinc.mki)
 # (begin funcs_sources_bsiinc.mki)
@@ -990,6 +990,7 @@ $(OUT_DIR)rg_geom$(OUT_EXT)      : $(geomSrcRegions)rg_geom.cpp         $(OTHER_
 
 $(OUT_DIR)rg_loops$(OUT_EXT)      : $(geomSrcRegions)rg_loops.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+# EDL May 2018 This is not called within geomlibs.  But it is the key extraction methods for RegionUtil.
 $(OUT_DIR)rg_extractCurveVector$(OUT_EXT)      : $(geomSrcRegions)rg_extractCurveVector.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)rg_windingNumber$(OUT_EXT)      : $(geomSrcRegions)rg_windingNumber.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}

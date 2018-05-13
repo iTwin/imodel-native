@@ -456,3 +456,24 @@ double zScale = 1.0
         transform.ScaleMatrixColumns (xScale, yScale, zScale);
     return transform;
     }
+
+//! Create numX * numY points on an integer grid mapped to a plane, packed in a 1D array.
+void UnitGridPoints (
+bvector<DPoint3d> &points,
+int numX,
+int numY,
+double x0,
+double y0,
+double dx,
+double dy
+)
+    {
+    points.clear ();
+    for (int j = 0; j < numY; j++)
+        {
+        for (int i = 0; i < numX; i++)
+            {
+            points.push_back (DPoint3d::From (x0 + i * dx, y0 + j * dy));
+            }
+        }
+    }

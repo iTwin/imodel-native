@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/bspApi.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -252,7 +252,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include <Geom/bsp/bspsurf.fdf>
 #include <Geom/bsp/bspproc.fdf>
 #include <Geom/bsp/bsp_curvature.fdf>
-#include <Geom/bsp/bspbound.fdf>
 #include <Geom/bsp/bspsurfacetrim.fdf>
 #include <Geom/bsputil.fdf>
 #include <Geom/bsp/bsprsurf.fdf>

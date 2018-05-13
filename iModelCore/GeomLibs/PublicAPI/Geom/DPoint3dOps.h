@@ -1520,6 +1520,21 @@ public: static GEOMDLLIMPEXP double Area (bvector<DPoint2d> const &xy);
 //! Disconnects are allowed.   Areas of each loop are added without test for containment or xy orientation.
 //! Enter holes with opposite orientation from their containing loop.
 public: static GEOMDLLIMPEXP double Area (DPoint2dCP pXY, size_t numXY);
+//! Return true if the xy parts of point xyz project into the xy parts of a triangle with vertices point0, point1, point2.
+public: static GEOMDLLIMPEXP bool IsPointInOrOnXYTriangle (DPoint3dCR xyz, DPoint3dCR point0, DPoint3dCR point1, DPoint3dCR point2);
+//! Return true if the xy parts of point xyz project into the xy parts of a convex polygon
+public: static GEOMDLLIMPEXP bool IsPointInConvexPolygon (DPoint2dCR xy, DPoint2dCP points, int numPoint, int sense = 0);
+//! Classify a point with respect to a polygon.
+//! @param point => point to test
+//! @param polygonPoints => polygon points.  Last point does not need to be duplicated.
+//! @param tol => tolerance for "on" detection. May be zero.
+//! @return 1 if point is "in" by parity, 0 if "on", -1 if "out", -2 if nothing worked.
+public: static GEOMDLLIMPEXP int PointPolygonParity
+(
+DPoint2dCR point,
+bvector<DPoint2d> const &polygonPoints,
+double      tol
+);
 
 //! Return the 3D polygon centroid, normal and area.
 //! Disconnects are allowed.   Areas of each loop are added without test for containment or xy orientation.

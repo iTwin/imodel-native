@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/DTriangle3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -196,6 +196,22 @@ double DTriangle3d::AspectRatio () const
     double c;
     DoubleOps::SafeDivideParameter (c, a, b, 0.0);
     return c;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     03/15
++--------------------------------------------------------------------------------------*/
+bool DTriangle3d::IsPointInOrOnXY (DPoint3dCR xyz) const
+    {
+    return PolygonOps::IsPointInOrOnXYTriangle (xyz, point[0], point[1], point[2]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     03/15
++--------------------------------------------------------------------------------------*/
+bool DTriangle3d::IsBarycentricInteriorUV (double u, double v)
+    {
+    return u >= 0.0 && v >= 0.0 && u + v <= 1.0;
     }
 
 bool DTriangle3d::TransverseIntersection

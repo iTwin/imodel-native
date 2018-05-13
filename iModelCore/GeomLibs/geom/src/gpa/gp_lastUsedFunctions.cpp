@@ -1723,5 +1723,158 @@ DPoint2dCP pDirection
     return  boolStat;
     }
 
+/*-----------------------------------------------------------------*//**
+* Given a space point spacePontP, finds the closest point on the plane
+* containing the 3 points in pPlanePoint.  Stores the closest point
+* coordinates in pClosePoint, and the s and t coordinates (as defined
+* in bsiGeom_evaluateSkewedPlane) in sP and tP.
+*
+* @param pClosePoint <= point on plane.  May be null pointer
+* @param sP <= parametric coordinate on s axis
+* @param tP <= parametric coordinate on t axis
+* @param pPlanePoint => origin, s=1, and t=1 points
+* @param pSpacePoint => point to be projected
+* @return true unless the plane points are collinear
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     bsiGeom_closestPointOnSkewedPlane
+
+(
+DPoint3dP pClosePoint,
+double          *sP,
+double          *tP,
+DPoint3dCP pPlanePoint,
+DPoint3dCP pSpacePoint
+)
+    {
+    double          s,t;
+    double          dotUU, dotUV, dotVV, dotUQ, dotVQ;
+    bool            result = true;
+    DPoint3d        vectorU, vectorV, vectorQ;
+
+    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorU, &pPlanePoint[1], &pPlanePoint[0]);
+    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorV, &pPlanePoint[2], &pPlanePoint[0]);
+    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorQ, pSpacePoint, &pPlanePoint[0]);
+
+    dotUU = bsiDPoint3d_dotProduct (&vectorU, &vectorU);
+    dotVV = bsiDPoint3d_dotProduct (&vectorV, &vectorV);
+    dotUV = bsiDPoint3d_dotProduct (&vectorU, &vectorV);
+    dotUQ = bsiDPoint3d_dotProduct (&vectorU, &vectorQ);
+    dotVQ = bsiDPoint3d_dotProduct (&vectorV, &vectorQ);
+
+    if (!bsiSVD_solve2x2 (&s, &t, dotUU, dotUV, dotUV, dotVV, dotUQ, dotVQ))
+        {
+        result = false;
+        }
+
+    else
+
+        {
+        if (sP)
+            *sP = s;
+        if (tP)
+            *tP = t;
+
+        if (pClosePoint)
+            bsiDPoint3d_add2ScaledDPoint3d (pClosePoint, &pPlanePoint[0],
+                                                &vectorU, s,
+                                                &vectorV, t
+                                        );
+        }
+
+    return  result;
+    }
+
+/*-----------------------------------------------------------------*//**
+* Project a point to a plane defined by origin and (not necessarily unit)
+* normal vector.
+*
+* @param pOutPoint <= projected point (or NULL)
+* @param pInPoint  => point to project to plane
+* @param pNormal   => plane normal
+* @param pOrigin   => plane origin
+* @return signed distance from point to plane.  If the plane normal has zero length,
+*           distance to plane origin.
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double bsiDPoint3d_distancePointToPlane
+
+(
+DPoint3dP pOutPoint,
+DPoint3dCP pInPoint,
+DPoint3dCP pNormal,
+DPoint3dCP pOrigin
+)
+    {
+    double      dist, mag;
+    DPoint3d    diff;
+    DPoint3d    unitNorm;
+
+    mag = bsiDPoint3d_normalize (&unitNorm, pNormal);
+    if (mag == 0.0)
+        {
+        if (pOutPoint)
+            *pOutPoint = *pOrigin;
+        return bsiDPoint3d_distance (pInPoint, pOrigin);
+        }
+
+    bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, pOrigin, pInPoint);
+    dist = bsiDPoint3d_dotProduct (&diff, &unitNorm);
+
+    if (pOutPoint)
+        bsiDPoint3d_addScaledDPoint3d (pOutPoint, pInPoint, &unitNorm, dist);
+
+    return  dist;
+    }
+/*-----------------------------------------------------------------*//**
+* @description Compute the intersection point of a line and a plane.
+*
+* @param pParam <= intersection parameter within line
+* @param pPoint <= intersection point
+* @param pLineStart => point on line at parameter 0.0
+* @param pLineEnd => point on line at parameter 1.0
+* @param pOrigin => any point on plane
+* @param pNormal => normal vector for plane
+* @return true unless the line is parallel to the plane.
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    bsiGeom_linePlaneIntersection
+
+(
+double      *pParam,
+DPoint3dP pPoint,
+DPoint3dCP pLineStart,
+DPoint3dCP pLineEnd,
+DPoint3dCP pOrigin,
+DPoint3dCP pNormal
+)
+    {
+    bool    result;
+    double dot1, dot2, param;
+    static double maxFactor = 1.0e14;
+
+    dot2 = bsiDPoint3d_dotDifference (pLineEnd, pLineStart, (DVec3d const*) pNormal);
+    dot1 = bsiDPoint3d_dotDifference (pOrigin,  pLineStart, (DVec3d const*) pNormal);
+
+    if (fabs(dot1) < maxFactor * fabs(dot2))
+        {
+        param = dot1 / dot2;
+        result = true;
+        }
+    else
+
+        {
+        param = 0.0;
+        result = false;
+        }
+
+    if (pParam)
+        *pParam = param;
+    if (pPoint)
+        bsiDPoint3d_interpolate (pPoint, pLineStart, param, pLineEnd);
+    return  result;
+    }
+
+
 
 END_BENTLEY_GEOMETRY_NAMESPACE

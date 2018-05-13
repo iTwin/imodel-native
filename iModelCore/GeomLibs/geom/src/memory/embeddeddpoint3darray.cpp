@@ -678,7 +678,7 @@ const   EmbeddedDPoint3dArray   *pHeader,
 *
 *********************************************************************/
 
-
+#ifdef Compile_addDPoint2d
 /*---------------------------------------------------------------------------------**//**
 * @description Append a DPoint2d to the end of the array.  The array count is increased
 *       by one.
@@ -726,7 +726,6 @@ const   DPoint2d                *pPointArray,
         }
     return true;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @description Insert at a specified position, shifting others to higher
@@ -868,6 +867,7 @@ int                     index
     bsiDPoint3d_initFromDPoint2d (&fPoint, pInPoint);
     return jmdlEmbeddedDPoint3dArray_setDPoint3d (pHeader, &fPoint, index);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @description Return the range of the points in the array.

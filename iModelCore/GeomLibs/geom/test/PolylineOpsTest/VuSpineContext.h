@@ -8,7 +8,6 @@
 
 
 
-#
 static double sSpineRelTol = 1.0e-8;
 static double sSpineGraphAbsTol  = 0.0;
 static double sSpineGraphRelTol = 1.0e-10;
@@ -291,8 +290,8 @@ int AddPerpendicularsToBoundaries (double minSplitRadians, double minCandidateRa
             //double candidateDot     = bsiDPoint2d_dotProduct (&vectorCA, &vectorAB);
             if (candidateRadians > minCandidateRadians)//bsiDPoint2d_dotProduct (&vectorCA, &vectorAB) > 0.0)
                 {
-                double bb = bsiDPoint2d_dotProduct (&vectorBC, &vectorBC);
-                double ba = - bsiDPoint2d_dotProduct (&vectorBC, &vectorAB);
+                double bb = vectorBC.DotProduct (vectorBC);
+                double ba = -vectorBC.DotProduct (vectorAB);
                 double s;
                 if (DoubleOps::SafeDivide (s, ba, bb, 0.0)
                     && s > 0.0 && s < 1.0)

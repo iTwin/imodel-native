@@ -664,6 +664,84 @@ TEST(Mathieu,TestB)
 
     }
 
+// Create a blob with:
+// a horizontal line x direction
+// a non-monotone bspline returning to origin
+CurveVectorPtr CreateBlob (TransformCR placement, bool rational = false)
+    {
+    double x4 = 10.0;
+    double x3 = 9.0;
+    double x2 = 4.0;
+    double x1 = 1.0;
+    double x0 = 0.0;
+
+    double y0 = 0.0;
+    double y1 = 1.0;
+    double y2 = 4.0;
+    double y3 = 10.0;
+    auto loop = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    loop->Add (ICurvePrimitive::CreateLine (DSegment3d::From (x0,y0,0, x3, y0, 0)));
+    bvector<DPoint3d> poles {
+        DPoint3d::From (x3, y0),
+        DPoint3d::From (x4, y1),
+        DPoint3d::From (x4, y3),
+        DPoint3d::From (x4, y3),
+        DPoint3d::From (x2, y3),
+        DPoint3d::From (x1, y2),
+        DPoint3d::From (x3, y2),
+        DPoint3d::From (x3, y1),
+        DPoint3d::From (x2, y1),
+        DPoint3d::From (x1, y2),
+        DPoint3d::From (x0, y2),
+        DPoint3d::From (x0, y0)
+        };
+    if (rational)
+        {
+        bvector <double> weights;
+        for (size_t i = 0; i < poles.size (); i++)
+            weights.push_back (1.0);
+        // make some of the poles attract their curves:
+        double w2 = 1.2;
+        for (size_t i : {2,5,7})
+            {
+            weights[i] = w2;
+            poles[i].Scale (w2);
+            }
+        loop->Add (ICurvePrimitive::CreateBsplineCurve (
+            MSBsplineCurve::CreateFromPolesAndOrder (poles, &weights, NULL, 3, false, false)));
+        }
+    else
+        {
+        loop->Add (ICurvePrimitive::CreateBsplineCurve (
+            MSBsplineCurve::CreateFromPolesAndOrder (poles, NULL, NULL, 3, false, false)));
+        }
+    loop->TransformInPlace (placement);
+    return loop;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Regions,Blob1)
+    {
+    for (bool rational: bvector<bool> { false, true })
+        {
+        SaveAndRestoreCheckTransform shifter (20,0,0);
+        auto blob1 = CreateBlob (Transform::FromIdentity (), rational);
+        auto blob2 = CreateBlob (
+            Transform::FromRowValues (
+                2, -1, 0, -1,
+                1, 3, 0, -2,
+                0, 0, 1, 0),
+                rational);
+        Check::SaveTransformed (*blob1);
+        Check::SaveTransformed (*blob2);
+        CurveVectorPtr boolB = CurveVector::AreaUnion (*blob1, *blob2);
+        Check::SaveTransformed (*boolB);
+        }
+    Check::ClearGeometry ("Regions.Blob1");
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/

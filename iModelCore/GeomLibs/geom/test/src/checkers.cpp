@@ -1471,6 +1471,12 @@ void Check::SaveTransformed(MSBsplineSurfacePtr const &data)
     {
     SaveTransformed(IGeometry::Create (data->Clone ()));}
 
+void Check::SaveTransformed(MSBsplineCurvePtr const &data)
+    {
+    SaveTransformed(IGeometry::Create (
+        ICurvePrimitive::CreateBsplineCurve (data->CreateCopy ())));
+    }
+
 void Check::SaveTransformed (bvector<DPoint3d> const &data, bool addClosure)
     {
     auto cv = ICurvePrimitive::CreateLineString (data);

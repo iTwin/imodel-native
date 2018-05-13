@@ -148,3 +148,93 @@ TEST(PolygonOps,Extend01Test)
         }
 
     }
+// ASSUME xy0, xy1 are points "on" the convex polygon ...
+bool TestPointsOnConvexLine (bvector<DPoint2d> &points, DPoint2dCR xy0, DPoint2dCR xy1)
+    {
+    for (double f : {-1.0, -0.5, 0.1, 0.6, 1.1, 2.0})
+        {
+        DPoint2d xy = DPoint2d::FromInterpolate (xy0, f, xy1);
+        bool expected = fabs (f - 0.5) <= 0.5;
+        if (expected != PolygonOps::IsPointInConvexPolygon (xy, points.data (), (int)points.size (), 0))
+            return false;
+        }
+    return true;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PolygonOps,FastConvexInuOut)
+    {
+    for (size_t n : {4,5,6,12,22})
+        {
+        bvector<DPoint2d> points;
+        SampleGeometryCreator::StrokeUnitCircle (points, n);
+        for (size_t i = 1; i + 2 < n; i++)
+            {
+            DPoint2d xy = DPoint2d::FromInterpolate(points[i], 0.5, points[i+1]);
+            if (!Check::True (TestPointsOnConvexLine (points, points[0], xy)))
+                break;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  5/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PolygonOps,InOutXYTriangle)
+    {
+    DTriangle3d triangle1 (
+        DPoint3d::From (1,2,4),
+        DPoint3d::From (4,3,5),
+        DPoint3d::From (-1, 7,2));
+
+    DTriangle3d triangle2 = triangle1;
+    std::swap (triangle2.point[1], triangle2.point[2]);
+    bvector<DPoint3d> points;
+    size_t numError = 0;
+    // these point coordinates avoid exact edge hits ..
+    UnitGridPoints (points, 12, 12, -0.09, -0.09, 0.10, 0.10);
+    for (auto &triangle : {triangle1, triangle2})
+        for (auto uv : points)
+            {
+            DPoint3d xyz = triangle.Evaluate (uv.x, uv.y);
+            if (DTriangle3d::IsBarycentricInteriorUV (uv.x, uv.y)
+                != PolygonOps::IsPointInOrOnXYTriangle (xyz, 
+                            triangle.point[0], triangle.point[1], triangle.point[2]))
+                numError ++;
+            }
+    Check::Size (0, numError, "InOutXYTriangle");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  5/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PolygonOps,InOutXYPolygon)
+    {
+    bvector<DPoint2d> polygon;
+    bvector<DPoint3d> points;
+    auto transform = Transform::From (
+                RotMatrix::FromAxisAndRotationAngle (2, 0.1),
+                DPoint3d::From (0,0,0));
+
+    for (int numTooth : {1,3})
+        {
+        SquareWavePolygon (polygon, numTooth, 0, 1, 1, 0, 1, true, -1 );
+        bvector<DPoint2d> skewPolygon;
+        transform.Multiply (skewPolygon, polygon);
+        // the polygon and point coordinates will have exact integer hits and alignment with edges
+        UnitGridPoints (points, 6 * numTooth + 1, 7, -0.5, -1.5, 0.5, 0.5);
+        double tol = 1.0e-10;
+        size_t numError = 0;
+        for (auto uv : points)
+            {
+            DPoint3d skewPoint = transform * uv;
+            auto parity = PolygonOps::PointPolygonParity (DPoint2d::From (uv), polygon, tol);
+            auto parity1 = PolygonOps::PointPolygonParity (DPoint2d::From (skewPoint), skewPolygon, tol);
+            if (parity != parity1)
+                numError++;
+            }
+        Check::Size (0, numError, "points in polygon versus rotated");
+        }
+    }
+

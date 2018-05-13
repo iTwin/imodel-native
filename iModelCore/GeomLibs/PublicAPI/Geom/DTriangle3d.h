@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/DTriangle3d.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -90,7 +90,12 @@ DPoint3dR    xyzIntersection,
 DPoint3dR    uvwIntersection,
 double       &rayParameter
 ) const;
+//! Return true if the point is within the triangle's xy.
+//! This is valid regardless of whether the triangle points are CW or CCW.
+bool IsPointInOrOnXY (DPoint3dCR xyz) const;
 
+//! Test if (u,v) is within the first quadrant unit triangle. (u >= 0, v >= 0, u + v <= 1.0)
+static bool IsBarycentricInteriorUV (double u, double v);
 };
 
 

@@ -1282,4 +1282,335 @@ bool PolygonOps::ReverseForPreferedNormal (bvector<DPoint3d> &xyz, DVec3dCR posi
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Test if a point is within a convex region.  (FINAL POINT NOT DUPLICATED, OR EXACT DUPLICATE.   EPSILON IS BAD)
+*
+* @param    pPoint      => point to test
+* @param    pPointArray => boundary points
+* @param    numPoint    => number of points
+* @param    sense       =>   0 if sense not known, should be determined internally
+*                                   by area calculation.
+*                            1 if known to be counterclockwise
+*                           -1 if known to be clockwise
+* @return true if the point is in the region
+* @bsimethod                                                    EarlinLutz      06/98
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PolygonOps::IsPointInConvexPolygon
+(
+DPoint2dCR point,
+DPoint2dCP pPointArray,
+int             numPoint,
+int             sense
+)
+
+    {
+    double areaFactor = (double)sense;
+    double dot;
+    int i1, i0;
+    if (numPoint < 3)
+        return  false;
+    if (pPointArray[numPoint - 1].IsEqual (pPointArray[0]))
+        numPoint--;
+    if (numPoint < 3)
+        return  false;
+
+    if (sense == 0)
+        areaFactor = PolygonOps::Area (pPointArray, numPoint);
+
+    for (i0 = numPoint - 1, i1 = 0; i1 < numPoint; i0 = i1++)
+        {
+        dot = point.CrossProductToPoints (pPointArray[i0], pPointArray[i1]);
+        if (dot * areaFactor < 0.0)
+            return false;
+        }
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     03/15
++--------------------------------------------------------------------------------------*/
+bool PolygonOps::IsPointInOrOnXYTriangle (DPoint3dCR xyz, DPoint3dCR point0, DPoint3dCR point1, DPoint3dCR point2)
+    {
+    double a01 = xyz.CrossProductToPointsXY (point0, point1);
+    double a12 = xyz.CrossProductToPointsXY (point1, point2);
+    // All three must be same sign (with any subset of zeros allowed)
+    // Any strict negative product is clear OUT
+    if (a01 * a12 < 0.0)
+        return false;
+    double a20 = xyz.CrossProductToPointsXY (point2, point0);
+    if (a12 * a20 < 0.0)
+        return false;
+    if (a20 * a01 < 0.0)
+        return false;
+    return true;
+    }
+
+
+// polygon parity -- used by ClipPrimitive in dgnplatform.
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bsiDPoint2d_PolygonParity_yTest                 |
+|                                                                       |
+| author        EarlinLutz                              04/97           |
+|                                                                       |
+| Classify a point with respect to a polygon defined by the xy          |
+| parts of the points, using only the y coordinate for the tests.       |
+| Return false (failure, could not determine answer) if any polygon     |
+| point has the same y coordinate as the test point.  Goal of code      |
+| is to execute the simplest cases as fast as possible, and fail        |
+| promptly for others.                                                  |
++----------------------------------------------------------------------*/
+static bool    bsiDPoint2d_PolygonParity_yTest
+
+(
+int         *pParity,       /* <= parity result, if successful */
+DPoint2dCP pPoint,          /* => point to test */
+DPoint2dCP pPointArray,   /* => polygon points */
+int       numPoint,         /* number of planes */
+double      tol             /* tolerance for ON case detection */
+)
+    {
+    /* Var names h, crossing to allow closest code correspondence between x,y code */
+    double crossing0 = pPoint->x;
+    double h = pPoint->y;
+    double h0 = h - pPointArray[numPoint - 1].y;
+    double h1;
+    double crossing;
+    double s;
+    int numLeft = 0, numRight = 0;
+
+    int i, i0;
+    if (fabs (h0) <= tol)
+        return false;
+    for (i = 0; i < numPoint; i++, h0 = h1)
+        {
+        h1 = h - pPointArray[i].y;
+        if (fabs (h1) <= tol)
+            return  false;
+        if (h0 * h1 < 0.0)
+            {
+            s = -h0 / (h1 - h0);
+            i0 = i - 1;
+            if (i0 < 0)
+                i0 = numPoint - 1;
+            crossing = pPointArray[i0].x + s * (pPointArray[i].x - pPointArray[i0].x);
+            if (fabs (crossing - crossing0) <= tol)
+                {
+                *pParity = 0;
+                return  true;
+                }
+            else if ( crossing < crossing0 )
+                {
+                numLeft++;
+                }
+            else
+                {
+                numRight++;
+                }
+            }
+        }
+
+    *pParity = (numLeft & 0x01) ? 1 : -1;
+    return  true;
+    }
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bsiDPoint2d_PolygonParity_xTest                 |
+|                                                                       |
+| author        EarlinLutz                              04/97           |
+|                                                                       |
+| Classify a point with respect to a polygon defined by the xy          |
+| parts of the points, using only the x coordinate for the tests.       |
+| Return false (failure, could not determine answer) if any polygon     |
+| point has the same x coordinate as the test point.  Goal of code      |
+| is to execute the simplest cases as fast as possible, and fail        |
+| promptly for others.                                                  |
++----------------------------------------------------------------------*/
+static bool    bsiDPoint2d_PolygonParity_xTest
+
+(
+int         *pParity,       /* <= parity result, if successful */
+DPoint2dCP pPoint,          /* => point to test */
+DPoint2dCP pPointArray,   /* => polygon points */
+int       numPoint,         /* number of planes */
+double      tol             /* tolerance for ON case detection */
+)
+    {
+    /* Var names h, crossing to allow closest code correspondence between x,y code */
+    double crossing0 = pPoint->y;
+    double h = pPoint->x;
+    double h0 = h - pPointArray[numPoint - 1].x;
+    double h1;
+    double crossing;
+    double s;
+    int numLeft = 0, numRight = 0;
+
+    int i, i0;
+    if (fabs (h0) <= tol)
+        return false;
+    for (i = 0; i < numPoint; i++, h0 = h1)
+        {
+        h1 = h - pPointArray[i].x;
+        if (fabs (h1) <= tol)
+            return  false;
+        if (h0 * h1 < 0.0)
+            {
+            s = -h0 / (h1 - h0);
+            i0 = i - 1;
+            if (i0 < 0)
+                i0 = numPoint - 1;
+            crossing = pPointArray[i0].y + s * (pPointArray[i].y - pPointArray[i0].y);
+            if (fabs (crossing - crossing0) <= tol)
+                {
+                *pParity = 0;
+                return  true;
+                }
+            else if ( crossing < crossing0 )
+                {
+                numLeft++;
+                }
+            else
+                {
+                numRight++;
+                }
+            }
+        }
+
+    *pParity = (numLeft & 0x01) ? 1 : -1;
+    return  true;
+    }
+
+static double bsiDPoint2d_dotProductToPoint
+
+(
+DPoint2dCP pVector,
+DPoint2dCP pBasePoint,
+DPoint2dCP pTargetPoint
+)
+    {
+    return    pVector->x * (pTargetPoint->x - pBasePoint->x)
+            + pVector->y * (pTargetPoint->y - pBasePoint->y);
+    }
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          bsiDPoint2d_PolygonParity_xTest                 |
+|                                                                       |
+| author        EarlinLutz                              04/97           |
+|                                                                       |
+| Classify a point with respect to a polygon defined by the xy          |
+| parts of the points, using a given ray cast direction.                |
+| Return false (failure, could not determine answer) if any polygon     |
+| point is on the ray.                                                  |
++----------------------------------------------------------------------*/
+static bool    bsiDPoint2d_PolygonParity_vectorTest
+
+(
+int         *pParity,       /* <= parity result, if successful */
+DPoint2dCP pPoint,          /* => point to test */
+double      theta,          /* => angle for ray cast */
+DPoint2dCP pPointArray,     /* => polygon points */
+int       numPoint,         /* number of planes */
+double      tol             /* tolerance for ON case detection */
+)
+    {
+    DPoint2d tangent, normal;
+    double v0, v1;
+    double u0, u1;
+    double u;
+    double s;
+    int numLeft = 0, numRight = 0;
+
+    int i, i0;
+
+    tangent.x = cos (theta);
+    tangent.y = sin (theta);
+    normal.x = - tangent.y;
+    normal.y =   tangent.x;
+
+    v0 = bsiDPoint2d_dotProductToPoint (&normal, pPoint, &pPointArray[numPoint - 1]);
+
+    if (fabs (v0) <= tol)
+        return false;
+    for (i = 0; i < numPoint; i++, v0 = v1)
+        {
+        v1 = bsiDPoint2d_dotProductToPoint (&normal, pPoint, &pPointArray[i]);
+        if (fabs (v1) <= tol)
+            return  false;
+        if (v0 * v1 < 0.0)
+            {
+            s = -v0 / (v1 - v0);
+            i0 = i - 1;
+            if (i0 < 0)
+                i0 = numPoint - 1;
+            u0 = bsiDPoint2d_dotProductToPoint (&tangent, pPoint, &pPointArray[i0]);
+            u1 = bsiDPoint2d_dotProductToPoint (&tangent, pPoint, &pPointArray[i]);
+            u = u0 + s * (u1 - u0);
+            if (fabs (u) <= tol)
+                {
+                *pParity = 0;
+                return  true;
+                }
+            else if ( u < 0.0 )
+                {
+                numLeft++;
+                }
+            else
+                {
+                numRight++;
+                }
+            }
+        }
+
+    *pParity = (numLeft & 0x01) ? 1 : -1;
+    return  true;
+    }
+
+/* METHOD(Geom,getPolygonParity,none) */
+/*---------------------------------------------------------------------------------**//**
+* Classify a point with respect to a polygon.
+* @param pPoint => point to test
+* @param pPointArray => polygon points.  Last point does not need to be duplicated.
+* @param numPoint => number of points.
+* @param tol => tolerance for "on" detection. May be zero.
+* @return 1 if point is "in" by parity, 0 if "on", -1 if "out", -2 if nothing worked.
+* @bsimethod                                                    EarlinLutz      03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+int PolygonOps::PointPolygonParity
+(
+DPoint2dCR point,
+bvector<DPoint2d> const &points,
+double      tol
+)
+    {
+    int i, parity;
+    double x = point.x, y = point.y, theta, dTheta, maxTheta;
+    if (points.size () == 0)
+        return -2;
+    int numPoint = (int)points.size ();
+    if (numPoint == 1)
+        return (fabs (x - points[0].x) <= tol && fabs (y - points[0].y) <= tol) ? 0 : -1;
+
+    /* Try really easy ways first ... */
+    if ( bsiDPoint2d_PolygonParity_yTest (&parity, &point, points.data (), numPoint, tol))
+        return  parity;
+    if ( bsiDPoint2d_PolygonParity_xTest (&parity, &point, points.data (), numPoint, tol))
+        return  parity;
+
+    // Is test point within tol of one of the polygon points in x and y?
+    for (i = 0; i < numPoint; i++)
+        if (fabs (x - points[i].x) <= tol && fabs (y - points[i].y) <= tol)
+            return 0;
+
+    /* Nothing easy worked. Try some ray casts */
+    maxTheta = 10.0;
+    theta = dTheta = 0.276234342921378;
+    while (theta < maxTheta)
+        {
+        if (bsiDPoint2d_PolygonParity_vectorTest (&parity, &point, theta, points.data (), numPoint, tol))
+            return parity;
+        theta += dTheta;
+        }
+    return -2;
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE

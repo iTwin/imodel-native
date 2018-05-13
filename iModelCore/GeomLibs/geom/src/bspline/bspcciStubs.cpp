@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspcciStubs.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -57,78 +57,6 @@ bool            useSubdivision
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BFP             12/90
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspcci_closeIntersect
-(
-DPoint3d        *intPt,                /* <= intersection closest to testPt */
-double          *param0,               /* <= param of xPt on curve0, or -1 */
-double          *param1,               /* <= param of xPt on curve0, or -1 */
-DPoint3d        *inTestPt,             /* => closest to this point */
-MSBsplineCurve  *curve0,
-MSBsplineCurve  *curve1,
-double          *tolerance,
-RotMatrix       *rotMatrix             /* => or NULL */
-)
-    {
-    double *pParam0, *pParam1;
-    DPoint3d *pPoint0;
-    int numPoints = 0;
-    if (NULL != param0)
-        *param0 = -1.0;
-    if (NULL != param1)
-        *param1 = -1.0;
-    if (SUCCESS == bspcci_allIntersectsBtwCurves (&pPoint0, &pParam0, &pParam1, &numPoints, curve0, curve1, tolerance, rotMatrix, false)
-        && numPoints > 0)
-        {
-        DPoint3d pointA = *inTestPt;
-        if (NULL != rotMatrix)
-            rotMatrix->Multiply (pointA);
-        double dMin = DBL_MAX;
-        for (int i = 0; i < numPoints; i++)
-            {
-            DPoint3d point0 = pPoint0[i];
-            if (NULL != rotMatrix)
-                rotMatrix->Multiply (point0);
-            double d = point0.DistanceXY (pointA);
-            if (d < dMin)
-                {
-                dMin = d;
-                if (NULL != param0)
-                    param0 [i] = pParam0[i];
-                if (NULL != param1)
-                    param1 [i] = pParam1[i];
-                if (NULL != intPt)
-                    *intPt = pPoint0[i];
-                }
-            }
-        BSIBaseGeom::Free (pPoint0);
-        BSIBaseGeom::Free (pParam0);
-        BSIBaseGeom::Free (pParam1);
-        return SUCCESS;
-        }
-    return ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BFP             12/90
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspcci_trueIntersectsBtwCurves
-(
-DPoint3d        **intPts,              /* <= intersection point(s) on curve */
-double          **param0,              /* <= param(s) of pts on curve0 */
-double          **param1,              /* <= param(s) of pts on curve1 */
-int             *numPoints,            /* <= number of intersections */
-MSBsplineCurve  *curve0,
-MSBsplineCurve  *curve1,
-double          *toleranceP,
-RotMatrix       *rotMatrixP,
-bool            useSubdivision
-)
-    {
-    return bspcci_allIntersectsBtwCurves (intPts, param0, param1, numPoints, curve0, curve1, toleranceP, rotMatrixP, false);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/97

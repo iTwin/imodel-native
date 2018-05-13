@@ -814,3 +814,35 @@ TEST(MSBsplineCurve,ClosedToOpen)
         }
     Check::ClearGeometry("MSBsplineCurve.ClosedToOpen");
     }
+
+TEST(BsplineCurve, CleanKnots)
+    {
+    bvector<DPoint3d> poles = bvector<DPoint3d> {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (0,6,0),
+        DPoint3d::From (4,11,0),
+        DPoint3d::From (5,16,0),
+        DPoint3d::From (6,10,0),
+        DPoint3d::From (8,0,0)
+        };
+    for (int order : {3,4})
+        {
+        SaveAndRestoreCheckTransform shifter (20,0, 0);
+        MSBsplineCurvePtr curveA = MSBsplineCurve::CreateFromPolesAndOrder (poles, nullptr, nullptr, order, false, false);
+        Check::SaveTransformed (curveA);
+        curveA->CleanKnots ();
+        Check::Shift (0,10,0);
+        Check::SaveTransformed (curveA);
+        MSBsplineCurve bezier;
+        curveA->MakeBezier (bezier);
+        auto curveB = bezier.CreateCapture ();
+        Check::Shift (0,10,0);
+        Check::SaveTransformed (curveB);
+        curveB->CleanKnots ();
+        Check::Shift (0,10,0);
+        Check::SaveTransformed (curveB);
+        }
+
+    Check::ClearGeometry ("BsplineCurve.CleanKnots");
+    }
+

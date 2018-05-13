@@ -70,7 +70,7 @@ DPoint3dCP pEnd1
 
 
 
-
+#ifdef Compile_bsiVector2d
 /*-----------------------------------------------------------------*//**
 * sets pProjection to the projection of pPoint on the line from pStart
 * to pEnd, and sP to the parametric coordinate of pProjection.
@@ -158,7 +158,7 @@ DPoint2dCP pTarget
 
     return  true;
     }
-
+#endif
 
 
 /*----------------------------------------------------------------------+

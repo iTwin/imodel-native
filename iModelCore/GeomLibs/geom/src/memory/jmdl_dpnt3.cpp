@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/memory/jmdl_dpnt3.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1135,7 +1135,7 @@ PointComparisonFunction cb_pointsClose
     const DPoint3d *pXYZBuffer = jmdlVArrayDPoint3d_getConstPtr (pXYZArray, 0);
     int numXYZ = jmdlVArrayDPoint3d_getCount (pXYZArray);
 
-    EmbeddedDPoint2dArray *pSortArray = jmdlEmbeddedDPoint2dArray_grab();
+    bvector<DPoint2d> sortArray;
     DPoint3d normalizedSortVector;
     DPoint2d *pSortBuffer;
     int *pCycleBuffer;
@@ -1165,15 +1165,15 @@ PointComparisonFunction cb_pointsClose
     epsilon = absTol + relTol * LargestCoordinate;
     bsiDPoint3d_normalize (&normalizedSortVector, pSortVector);
 
-    jmdlEmbeddedDPoint2dArray_ensureCapacity (pSortArray, numXYZ);
+    sortArray.reserve (numXYZ);
     /* Force data into the sort area.. */
     {
     DPoint2d zero;
     zero.Zero ();
     for (int i = 0; i < numXYZ; i++)
-        jmdlEmbeddedDPoint2dArray_addDPoint2d (pSortArray, &zero);
+        sortArray.push_back (zero);
     }
-    pSortBuffer = jmdlEmbeddedDPoint2dArray_getPtr (pSortArray, 0);
+    pSortBuffer = sortArray.data ();
 
     if (pBlockedIndexArray)
         {
@@ -1265,7 +1265,6 @@ PointComparisonFunction cb_pointsClose
                 IntArrayWrapper::add (pBlockedIndexArray, -1);
             }
         }
-    jmdlEmbeddedDPoint2dArray_drop (pSortArray);
     return numBlock;
     }
 

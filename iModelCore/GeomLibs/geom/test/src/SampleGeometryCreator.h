@@ -10,16 +10,20 @@
 
 struct SampleGeometryCreator
 {
-static void StrokeUnitCircle (bvector<DPoint3d> &points, size_t numPoints)
+template <typename T> 
+static void StrokeUnitCircle (bvector<T> &points, size_t numPoints)
     {
     double dTheta;
     DoubleOps::SafeDivide (dTheta, Angle::TwoPi (), (double)(numPoints - 1), 0.0);
     for (size_t i = 0; i < numPoints; i++)
         {
         double theta = i * dTheta;
-        points.push_back (DPoint3d::From (cos(theta), sin(theta), 0.0));
+        points.push_back (T::From (cos(theta), sin(theta)));
         }
+    // enforce exact closure
+    points.back () = points.front ();
     }
+
 
 static void AddArcs (bvector<IGeometryPtr> &data)
     {
@@ -1006,6 +1010,8 @@ double wInterior = 0.5
 
 
 PolyfaceHeaderPtr UnitGridPolyface (DPoint3dDVec3dDVec3dCR plane, int numXEdge, int numYEdge, bool triangulated = false, bool coordinateOnly = false);
+//! Create numX * numY points points on a square grid.
+void UnitGridPoints (bvector<DPoint3d> &points, int numX, int numY, double x0 = 0, double y0 = 0, double dx = 1, double dy = 1);
 
 //! Create a polygon with square wave upper side.
 //! Wave moves along x axis.
@@ -1014,7 +1020,7 @@ CurveVectorPtr SquareWavePolygon
 int numTooth,
 double x0 = 0.0,      //!< [in] initial x coordinate
 double dx0 = 1.0,     //!< [in] x length of parts (at y=y0)
-double dx1 = 1.0,     //!< [in] x length of parts (at y=y10)
+double dx1 = 1.0,     //!< [in] x length of parts (at y=y1)
 double y0 = 0.0,      //!< [in] y height for dx0 part of tooth
 double y1 = 1.0,      //!< [in] y height for dx1 part of tooth
 bool closed = true,     //!< [in] true to close with base line.
@@ -1049,3 +1055,40 @@ double xScaleFactor = 1.0,
 double yScaleFactor = 1.0,
 double zScaleFactor = 1.0
 );
+
+//! Create a polygon with square wave upper side.
+//! Wave moves along x axis.
+//! T must have T::From (x,y)
+template <typename T>
+void SquareWavePolygon
+(
+bvector<T> &points,
+int numTooth,
+double x0 = 0.0,      //!< [in] initial x coordinate
+double dx0 = 1.0,     //!< [in] x length of parts (at y=y0)
+double dx1 = 1.0,     //!< [in] x length of parts (at y=y10)
+double y0 = 0.0,      //!< [in] y height for dx0 part of tooth
+double y1 = 1.0,      //!< [in] y height for dx1 part of tooth
+bool closed = true,     //!< [in] true to drop to yBase, return to y axis and close to close with base line.
+double ybase = -1.0    //!< [in] y height for base line
+)
+    {
+    if (numTooth < 1)
+        numTooth = 1;
+    double x = x0;
+    for (int i = 0; i < numTooth; i++)
+        {
+        points.push_back (T::From (x, y0));
+        x += dx0;
+        points.push_back (T::From (x, y0));
+        points.push_back (T::From (x, y1));
+        x += dx1;
+        points.push_back (T::From (x, y1));
+        }
+    if (closed)
+        {
+        points.push_back (T::From (x, ybase));
+        points.push_back (T::From (x0, ybase));
+        points.push_back (T::From (x0,y0));
+        }
+    }
