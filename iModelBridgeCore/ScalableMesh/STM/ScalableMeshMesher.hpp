@@ -21,7 +21,7 @@
 //#include "MeshingFunctions.h"
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 #include <Mtg/MtgStructs.h>
-#include <Geom/bsp/bspbound.fdf>
+//#include <Geom/bsp/bspbound.fdf>
 #include "ScalableMesh\ScalableMeshGraph.h"
 #include <string>
 #include <queue>
