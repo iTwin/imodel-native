@@ -1359,7 +1359,7 @@ public:
                                                                    SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments);
 
     // WIP - Simplified drawing conversion.
-    void RecordAttachmentsAndCreateProxyGraphics (ResolvedModelMapping const& target, DgnModelRefR modelRef, ViewportR viewport, bmap<DgnAttachmentCP, ResolvedModelMapping>& toBeMerged, TransformCR transformToParent, bool inProxy);
+    void RecordAttachmentsAndCreateProxyGraphics (ResolvedModelMapping const& target, DgnModelRefR modelRef, ViewportR viewport, bmap<DgnAttachmentCP, ResolvedModelMapping>& toBeMerged, TransformCR transformToParent, bool inProxy, ResolvedModelMapping* mappingOverride = nullptr);
     void MergeDrawingGraphics(Bentley::DgnModelRefR baseModelRef, ResolvedModelMapping const& v8mm, ViewportR viewport, bmap<DgnAttachmentCP, ResolvedModelMapping>const& toBeMerged);
     void DrawingsConvertModelAndViews2(ResolvedModelMapping const& v8mm);
     void CreateSheetExtractionAttachments(ResolvedModelMapping const& v8SheetModelMapping, ProxyGraphicsDrawingFactory& drawingGenerator, Bentley::ViewInfoCP v8SheetView);

@@ -14,8 +14,6 @@
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 static BentleyApi::TransformCR DoInterop(Bentley::Transform const&source) { return (BentleyApi::TransformCR)source; }
-
-
 typedef  bmap<DgnAttachmentCP, ResolvedModelMapping> T_AttachmentMap;
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     05/2018
@@ -34,7 +32,6 @@ struct MergeProxyGraphicsDrawGeom : public DgnV8Api::SimplifyViewDrawGeom
         bool                                    m_hasChanged;
         bool                                    m_failed;
         SyncInfo::V8ElementMapping              m_attachElementMapping;
-        ResolvedModelMapping                    m_modelMapping;
 
         ModelRefInfo() : m_hasChanged(false), m_failed(false) {}
         };
@@ -45,6 +42,7 @@ struct MergeProxyGraphicsDrawGeom : public DgnV8Api::SimplifyViewDrawGeom
 
     T_BuilderMap                                m_builders;
     ResolvedModelMapping const&                 m_parentModelMapping;
+    Bentley::DgnModelRefP                       m_currentModelRef;
     ModelRefInfo                                m_currentModelRefInfo;
     Converter&                                  m_converter;
     SyncInfo::T_V8ElementSourceSet              m_attachmentsUnchanged;
@@ -82,6 +80,7 @@ bool InitGeometryParams(Render::GeometryParams& params)
     DgnV8Api::ProxyDisplayHitInfo const*    proxyInfo = nullptr;
     DgnCategoryId                           categoryId;
     DgnSubCategoryId                        subCategoryId;
+
     if (nullptr != m_context->GetDisplayStyleHandler() &&
         nullptr != (proxyInfo = m_converter.GetProxyDisplayHitInfo(*m_context)))
         {
@@ -102,16 +101,17 @@ bool InitGeometryParams(Render::GeometryParams& params)
         }
     else
         {
-        auto&   v8Model = m_currentModelRefInfo.m_modelMapping.GetV8Model();
-        auto    dgnFile  = v8Model.GetDgnFileP();
-        auto    levelId = m_context->GetCurrentDisplayParams()->GetLevel();
-
-        if (nullptr == dgnFile)
+        auto   v8Model = m_currentModelRef->GetDgnModelP();
+        if (nullptr == v8Model || nullptr == v8Model->GetDgnFileP())
+            {
             BeAssert(false);
+            }
         else
             {
-            categoryId =    m_converter.ConvertDrawingLevel(*dgnFile, levelId);
-            subCategoryId = m_converter.ConvertLevelToSubCategory(dgnFile->GetLevelCacheR().GetLevel(levelId), v8Model, categoryId);
+            auto    levelId = m_context->GetCurrentDisplayParams()->GetLevel();
+
+            categoryId =    m_converter.ConvertDrawingLevel(*v8Model->GetDgnFileP(), levelId);
+            subCategoryId = m_converter.ConvertLevelToSubCategory(v8Model->GetDgnFileP()->GetLevelCacheR().GetLevel(levelId), *v8Model, categoryId);
             }
         }
 
@@ -211,8 +211,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InitCurrentModel()
     {
-    auto  currentModelRef = m_context->GetCurrentModel();
-    auto  foundInfo = m_modelRefInfoMap.find(currentModelRef);
+    m_currentModelRef = m_context->GetCurrentModel();
+    auto  foundInfo = m_modelRefInfoMap.find(m_currentModelRef);
     
     if (foundInfo != m_modelRefInfoMap.end())
         {
@@ -220,13 +220,12 @@ void InitCurrentModel()
         return;
         }
 
-    auto    attachment = currentModelRef->AsDgnAttachmentCP();
+    auto    attachment = m_currentModelRef->AsDgnAttachmentCP();
     ModelRefInfo info;
 
     if (nullptr == attachment)
         {
-        info.m_modelMapping = m_parentModelMapping;
-        m_modelRefInfoMap[currentModelRef] = info;
+        m_modelRefInfoMap[m_currentModelRef] = info;
         m_currentModelRefInfo = info;
         return;
         }
@@ -238,10 +237,14 @@ void InitCurrentModel()
         return;
         }
     
-    info.m_modelMapping = found->second;
-
     if (m_processingProxy)
+        {
+        DgnV8Api::DgnAttachment const* parentAttachment;
+        while (nullptr != (parentAttachment = attachment->GetParentModelRefP()->AsDgnAttachmentCP()))
+            attachment = parentAttachment;
+
         info.m_categoryId = m_converter.GetExtractionCategoryId(*attachment);
+        }
 
     DgnV8Api::EditElementHandle         v8eh(attachment->GetElementId(), attachment->GetParent().GetDgnModelP());
     auto                                chooseDrawing = ElementFilters::GetDrawingElementFilter();
@@ -279,7 +282,7 @@ void InitCurrentModel()
         info.m_failed = true;
         }
 
-    m_modelRefInfoMap[currentModelRef] = info;
+    m_modelRefInfoMap[m_currentModelRef] = info;
     m_currentModelRefInfo = info;
     }
 
@@ -305,7 +308,7 @@ void CreateDrawingElements()
                 DgnDbStatus     status;
 
                 if (modelRefInfo.m_attachElementMapping.IsValid() && originalElementMapping.IsValid())
-                    status = m_converter._CreateAndInsertExtractionGraphic(modelRefInfo.m_modelMapping, modelRefInfo.m_attachElementMapping, originalElementMapping, bycategory.first, *bycategory.second);
+                    status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, modelRefInfo.m_attachElementMapping, originalElementMapping, bycategory.first, *bycategory.second);
                 else
                     status = m_converter.CreateDrawingElement(m_parentModelMapping.GetDgnModel(), bycategory.first, *bycategory.second);
 
@@ -505,9 +508,6 @@ static StatusInt generateCve (DgnAttachmentP refP, ViewportP viewport, CachedVis
     if (NULL != (currentCache = dynamic_cast <DgnV8Api::VisibleEdgeCache*> (refP->GetProxyCache())) && (NULL != viewport && currentCache->IsValidForViewport (*viewport)))
         return SUCCESS;
 
-    //UstnViewport*   mstnVP = dynamic_cast <UstnViewport*> (viewport);
-    //bool            doPreview = (NULL != mstnVP) && (NULL != mstnVP->GetWindow());
-
     BeAssert (refP->IsDisplayedInViewport (*viewport, true));
 
     DgnV8Api::CachedVisibleEdgeOptions    options;
@@ -566,34 +566,38 @@ bool Converter::_UseProxyGraphicsFor2(DgnAttachmentCR ref)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::RecordAttachmentsAndCreateProxyGraphics (ResolvedModelMapping const& target, DgnModelRefR modelRef, ViewportR viewport, T_AttachmentMap& attachmentMap, TransformCR transformToParent, bool inProxyAttachment)
+void Converter::RecordAttachmentsAndCreateProxyGraphics (ResolvedModelMapping const& target, DgnModelRefR modelRef, ViewportR viewport, T_AttachmentMap& attachmentMap, TransformCR transformToParent, bool inProxyAttachment, ResolvedModelMapping* modelMappingOverride)
     {
     auto attachedV8Model = modelRef.GetDgnModelP();
 
     if (attachedV8Model == nullptr)
-        {
-        BeAssert(false);
-        ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), "reference file not found");
         return;
-        }
 
     DgnAttachmentP      attachment = modelRef.AsDgnAttachmentP();
     if (nullptr  != attachment)
         {
-        ResolvedModelMapping mergedModelMapping = GetModelFromSyncInfo(*attachment, transformToParent);
-        if (!mergedModelMapping.IsValid() || mergedModelMapping.GetDgnModel().GetModelId() != target.GetDgnModel().GetModelId())
+        ResolvedModelMapping thisModelMapping;
+        if (nullptr != modelMappingOverride)
             {
-            SyncInfo::V8ModelMapping refSyncInfoMapping;
-
-            if (BSISUCCESS != GetSyncInfo().InsertModel(refSyncInfoMapping, target.GetDgnModel().GetModelId(), *attachedV8Model, transformToParent))
-                {
-                BeAssert(false);
-                LOG.infov("DrawingRegisterModelattachmentMap %s -> %s failed - duplicate attachments??", IssueReporter::FmtModel(*attachedV8Model).c_str(), IssueReporter::FmtModel(target.GetDgnModel()).c_str());
-                return;
-                }
-            mergedModelMapping = ResolvedModelMapping (target.GetDgnModel(), *attachedV8Model, refSyncInfoMapping, attachment);
+            thisModelMapping = *modelMappingOverride;
             }
-        attachmentMap.Insert(attachment, mergedModelMapping);
+        else
+            {
+            thisModelMapping = GetModelFromSyncInfo(*attachment, transformToParent);
+            if (!thisModelMapping.IsValid() || thisModelMapping.GetDgnModel().GetModelId() != target.GetDgnModel().GetModelId())
+                {
+                SyncInfo::V8ModelMapping refSyncInfoMapping;
+
+                if (BSISUCCESS != GetSyncInfo().InsertModel(refSyncInfoMapping, target.GetDgnModel().GetModelId(), *attachedV8Model, transformToParent))
+                    {
+                    BeAssert(false);
+                    LOG.infov("DrawingRegisterModelattachmentMap %s -> %s failed - duplicate attachments??", IssueReporter::FmtModel(*attachedV8Model).c_str(), IssueReporter::FmtModel(target.GetDgnModel()).c_str());
+                    return;
+                    }
+                thisModelMapping = ResolvedModelMapping (target.GetDgnModel(), *attachedV8Model, refSyncInfoMapping, attachment);
+                }
+            }
+        attachmentMap.Insert(attachment, thisModelMapping);
         if (!inProxyAttachment &&
             _UseProxyGraphicsFor2(*attachment) &&
             !HasProxyGraphicsCache(*attachment, &viewport))
@@ -803,8 +807,9 @@ void Converter::CreateSheetExtractionAttachments(ResolvedModelMapping const& v8S
             T_AttachmentMap     attachmentMap;
             auto                createdDrawing = drawingGenerator._CreateAndInsertDrawing(*attachment, v8SheetModelMapping, *this);
 
-            RecordAttachmentsAndCreateProxyGraphics(createdDrawing, *attachment, fakeVp, attachmentMap, createdDrawing.GetTransform(), false);
-            MergeDrawingGraphics(*attachment, v8SheetModelMapping, fakeVp, attachmentMap);
+            createdDrawing.SetTransform(v8SheetModelMapping.GetTransform());
+            RecordAttachmentsAndCreateProxyGraphics(createdDrawing, *attachment, fakeVp, attachmentMap, createdDrawing.GetTransform(), false, &createdDrawing);
+            MergeDrawingGraphics(*attachment, createdDrawing, fakeVp, attachmentMap);
             }
         }
     }
