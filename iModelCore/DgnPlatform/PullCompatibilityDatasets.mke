@@ -1,0 +1,22 @@
+#----------------------------------------------------------------------
+#
+#     $Source: PullCompatibilityDatasets.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------
+# Set up all the standard stuff.
+#----------------------------------------------------------
+%include  mdl.mki
+
+
+#TODO pull from rsync server instead of local symlink
+DATA_DIR = $(SrcRoot)/iModelCompatibility
+
+always:
+    ~mkdir $(DATA_DIR)
+    ~linkmultidirs $(DATA_DIR)/Compatibility="C:\\Users\\kyle.abramowitz\\OneDrive - Bentley Systems, Inc\\Desktop\\Compatibility"
+    ~mkdir $(OutBuildContexts)/DgnPlatform/iModelCompatibilityData/
+    ~linkdir $(OutBuildContexts)/DgnPlatform/iModelCompatibilityData/=$(DATA_DIR)/Compatibility
