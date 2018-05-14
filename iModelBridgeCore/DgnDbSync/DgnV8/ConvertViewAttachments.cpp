@@ -22,12 +22,11 @@ struct AttachedDrawingGenerator : Converter::ProxyGraphicsDrawingFactory
     ResolvedModelMapping const& m_sheetModelMapping;
     bmap<DgnV8Api::ElementId, ResolvedModelMappingWithElement> m_drawingsForAttachments;
 
-    bool _UseProxyGraphicsFor(DgnAttachmentCR att, Converter& cvt) override {return cvt._UseProxyGraphicsFor(att);}
+    bool _UseProxyGraphicsFor(DgnAttachmentCR att, Converter& cvt) override {return cvt._UseProxyGraphicsFor2(att);}
     ResolvedModelMappingWithElement _CreateAndInsertDrawing(DgnAttachmentCR, ResolvedModelMapping const&, Converter&) override;
     ResolvedModelMapping _GetDrawing(DgnV8Api::ElementId v8AttachmentId, ResolvedModelMapping const& parentModel, Converter& converter) override;
 
-    AttachedDrawingGenerator(Converter& sc, ResolvedModelMapping const& smm) 
-        : m_sheetConverter(sc), m_sheetModelMapping(smm) {}
+    AttachedDrawingGenerator(Converter& sc, ResolvedModelMapping const& smm) : m_sheetConverter(sc), m_sheetModelMapping(smm) {}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -474,11 +473,16 @@ void Converter::SheetsConvertViewAttachments(ResolvedModelMapping const& v8Sheet
     auto& sheetModel = *v8SheetModelMapping.GetDgnModel().ToSheetModelP();
     auto& v8SheetModel = v8SheetModelMapping.GetV8Model();
 
+    AttachedDrawingGenerator drawingGenerator(*this, v8SheetModelMapping);
+
+#ifdef SAMS_WAY
     // Each generated section, elevation, or plan that is attached *directly* to the sheet must be
     // converted to a separate drawing model that captures its proxy graphics. Do that now. 
     // Below, we will create views for the drawings and attach them to the sheet.
-    AttachedDrawingGenerator drawingGenerator(*this, v8SheetModelMapping);
     ConvertExtractionAttachments(v8SheetModelMapping, drawingGenerator, v8SheetView);
+#else
+    CreateSheetExtractionAttachments(v8SheetModelMapping, drawingGenerator, v8SheetView);
+#endif
 
     auto attachments = GetAttachments(v8SheetModel);
     if (nullptr == attachments)

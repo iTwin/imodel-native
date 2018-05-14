@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/SheetAttachmentViewHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -101,6 +101,53 @@ static void turnOnAllCategoriesUsedInModel(CategorySelectorR cats, DgnModel cons
         }
     }
 
+
+#ifndef DRAWING_IS_CREATED_BY_MERGE
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void turnOnAllClasses (DisplayStyleR displayStyle)
+    {
+    auto    viewFlags = displayStyle.GetViewFlags();
+
+    viewFlags.SetShowConstructions(true);
+    viewFlags.SetShowDimensions(true);
+    viewFlags.SetShowPatterns(true);
+
+    displayStyle.SetViewFlags(viewFlags);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawingViewDefinitionPtr DrawingViewHelper::CreateView()
+    {
+    DefinitionModelPtr definitionModel = m_converter.GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
+    auto dstyle = new DisplayStyle2d(*definitionModel, m_name.c_str());
+    auto catSel = new CategorySelector(*definitionModel, m_name.c_str());
+
+    DrawingViewDefinitionPtr view = new DrawingViewDefinition(*definitionModel, m_name.c_str(), m_drawingModel.GetModelId(), *catSel, *dstyle);
+
+    SetViewGeometry(*view);
+    SetCategories(*view, SyncInfo::Level::Type::Drawing);
+    SetViewFlags(view->GetDisplayStyle());
+
+    // We are creating drawing entirely from displayed geometry - so turn on
+    // all categories and display all viewflags.
+    turnOnAllCategoriesUsedInModel(view->GetCategorySelector(), m_drawingModel);
+    turnOnAllClasses(view->GetDisplayStyle());
+
+    view->SetIsPrivate(true);
+    view->GetDisplayStyle().SetIsPrivate(true);
+    view->GetCategorySelector().SetIsPrivate(true);
+    return view;
+    }
+
+#else
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -135,6 +182,7 @@ DrawingViewDefinitionPtr DrawingViewHelper::CreateView()
     view->GetCategorySelector().SetIsPrivate(true);
     return view;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
