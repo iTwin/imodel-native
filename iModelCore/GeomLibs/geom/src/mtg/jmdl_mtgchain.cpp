@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/mtg/jmdl_mtgchain.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -10,6 +10,7 @@
 #include <limits.h>
 #include "../memory/jmdl_dpnt3.fdf"
 #include "../memory/jmdl_iarray.fdf"
+#include "../DeprecatedFunctions.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
  typedef struct _sortKey
     {

@@ -10,7 +10,6 @@
 #include <Geom/GeomApi.h>
 #include <Vu/VuApi.h>
 #include <Geom/bspApi.h>
-#include <Mtg/GpaApi.h>
 #include <Mtg/MtgApi.h>
 #include <Mtg/mtgprint.fdf>
 #include <Regions/regionsAPI.h>

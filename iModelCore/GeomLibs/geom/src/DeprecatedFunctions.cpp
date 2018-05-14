@@ -21,7 +21,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 * @group "DPlane3d Initialization"
 * @bsihdr                                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void bsiDPlane3d_initFromOriginAndNormal
+Public  void bsiDPlane3d_initFromOriginAndNormal
 
 (
 DPlane3dP pPlane,
@@ -41,7 +41,7 @@ DVec3dCP pNormal
 * @group "DPlane3d Queries"
 * @bsihdr                                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void      bsiDPlane3d_getDPoint4d
+Public  void      bsiDPlane3d_getDPoint4d
 
 (
 DPlane3dCP pPlane,
@@ -73,7 +73,7 @@ DPoint4dP pHPlane
 * @group "DPlane3d Initialization"
 * @bsihdr                                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void bsiDPlane3d_getImplicitPlaneCoefficients
+Public  void bsiDPlane3d_getImplicitPlaneCoefficients
 
 (
 DPlane3dCP pPlane,
@@ -94,7 +94,7 @@ double      *pD
 * @indexVerb parameterRange
 * @bsihdr                                                       EarlinLutz      03/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void    bsiDDisk3d_getScalarNaturalParameterSweep
+Public  void    bsiDDisk3d_getScalarNaturalParameterSweep
 
 (
 DDisk3dCP pInstance,
@@ -122,7 +122,7 @@ double          *pAngleSweep
 * @group "DCone3d Initialization"
 * @bsihdr                                                       EarlinLutz      03/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void    bsiDCone3d_setFrameAndFraction
+Public  void    bsiDCone3d_setFrameAndFraction
 (
 DCone3dP pCone,
 TransformCP pFrame,
@@ -152,7 +152,7 @@ DRange2dCP pRange
 * @group "DCone3d Silhouette"
 * @bsihdr                                                       EarlinLutz      03/99
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bsiDCone3d_silhouetteAngles
+Public  int      bsiDCone3d_silhouetteAngles
 
 (
 DCone3dCP pCone,
@@ -218,7 +218,7 @@ DPoint4dCP pEyePoint
 * @group "DCone3d Rule Lines"
 * @bsihdr                                                       EarlinLutz      03/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool     bsiDCone3d_getRuleLine
+Public  bool     bsiDCone3d_getRuleLine
 
 (
 DCone3dCP pCone,
@@ -249,7 +249,7 @@ double          theta
 * @group "DCone3d Local Coordinates"
 * @bsihdr                                                       EarlinLutz      03/99
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double   bsiDCone3d_heightToRadius
+Public  double   bsiDCone3d_heightToRadius
 
 (
 DCone3dCP pCone,
@@ -269,7 +269,7 @@ double          z
 * @group "DCone3d Parameter Range"
 * @bsihdr                                                       EarlinLutz      03/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void    bsiDCone3d_getScalarNaturalParameterSweep
+Public  void    bsiDCone3d_getScalarNaturalParameterSweep
 
 (
 DCone3dCP pCone,
@@ -296,7 +296,7 @@ double          *pZSweep
 * @group "DCone3d Parameter Range"
 * @bsihdr                                                       EarlinLutz      03/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     bsiDCone3d_getScalarNaturalParameterRange
+Public  void     bsiDCone3d_getScalarNaturalParameterRange
 
 (
 DCone3dCP pCone,
@@ -316,7 +316,7 @@ double    *pParam2End
 * @indexVerb parameterRange
 * @bsihdr                                                       EarlinLutz      03/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void    bsiDEllipsoid3d_getScalarNaturalParameterSweep
+Public  void    bsiDEllipsoid3d_getScalarNaturalParameterSweep
 
 (
 DEllipsoid3dCP pInstance,
@@ -352,7 +352,7 @@ static const DRange2d s_defaultParameterRange =
 * @group "DCone3d Initialization"
 * @bsihdr                                                       EarlinLutz      03/99
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void    bsiDCone3d_set
+Public  void    bsiDCone3d_set
 
 (
 DCone3dP pCone,
@@ -389,7 +389,7 @@ DRange2dCP pRange
 * @return index of closest point
 * @bsihdr                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int bsiGeom_closestXYDPoint4d
+Public  int bsiGeom_closestXYDPoint4d
 
 
 (
@@ -512,7 +512,7 @@ DPoint2dCP pVector2
 * @return true if and only if the area of T is sufficiently large.
 * @bsihdr                                                                       DavidAssaf      10/98
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
+Public  bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
 
 (
 DPoint3dP pInstance,
@@ -550,7 +550,7 @@ DPoint2dCP pVertex2
 * @return true if and only if the area of T is sufficiently large.
 * @bsihdr                                                                       DavidAssaf      10/98
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
+Public  bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
 (
 DPoint3dR uvw,
 DPoint3dR dUVWdX,
@@ -605,7 +605,7 @@ DPoint2dCR vertex2
 * @return true unless the plane points are collinear
 * @bsihdr                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool     bsiGeom_closestPointOnSkewedPlane
+Public  bool     bsiGeom_closestPointOnSkewedPlane
 
 (
 DPoint3dP pClosePoint,
@@ -665,7 +665,7 @@ DPoint3dCP pSpacePoint
 * @group "DPoint3d Barycentric"
 * @bsihdr                                       EarlinLutz      10/04
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDPoint3d_minDistToTriangle
+Public  double bsiDPoint3d_minDistToTriangle
 
 (
 DPoint3dCP pSpacePoint,
@@ -827,7 +827,7 @@ DPoint3dCP pVector2
 * @group "DPoint3d Barycentric"
 * @bsihdr                                                                       DavidAssaf      10/98
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint3dTriangle
+Public  bool    bsiDPoint3d_barycentricFromDPoint3dTriangle
 
 (
 DPoint3dP pInstance,
@@ -877,7 +877,7 @@ DPoint3dCP pVertex2
 * @return true if and only if the area of T is sufficiently large.
 * @bsihdr                                      DavidAssaf      10/98
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
+Public  bool    bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
 
 (
 DPoint3dP pInstance,
@@ -903,7 +903,7 @@ DPoint2dCP pVector2
 * @group "DPoint2d Barycentric"
 * @bsihdr                                                               DavidAssaf      10/98
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
+Public  void bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
 
 (
 DPoint2dP pInstance,
@@ -931,7 +931,7 @@ DPoint2dCP pVertex2
 * @group "DPlane3d Projection"
 * @bsihdr                                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double  bsiDPlane3d_evaluate
+Public  double  bsiDPlane3d_evaluate
 
 (
 DPlane3dCP pPlane,
@@ -949,7 +949,7 @@ DPoint3dCP pPoint
 * @return true unless rubber array could not be extended.
 * @bsihdr                                       EarlinLutz      11/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool     jmdlGraphicsPointArray_addDPoint3d
+Public  bool     jmdlGraphicsPointArray_addDPoint3d
 (
 GraphicsPointArrayP pInstance,
 const DPoint3d              *pPoint
@@ -967,7 +967,7 @@ const DPoint3d              *pPoint
 * Mark the break between disconnected line segments.
 * @bsihdr                                       EarlinLutz      11/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void jmdlGraphicsPointArray_markBreak
+Public  void jmdlGraphicsPointArray_markBreak
 (
 GraphicsPointArrayP         pInstance
 )
@@ -989,7 +989,7 @@ GraphicsPointArrayP         pInstance
 * @indexVerb
 * @bsihdr                                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiDEllipse4d_getSector
+Public  bool    bsiDEllipse4d_getSector
 
 (
 DEllipse4dCP pEllipse,
@@ -1026,7 +1026,7 @@ int             i
 * @indexVerb
 * @bsihdr                                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiEllipse_angularTransferMatrix
+Public  bool    bsiEllipse_angularTransferMatrix
 
 (
 RotMatrixP pMatrix,
@@ -1097,7 +1097,7 @@ double          wCenter
 * @indexVerb
 * @bsihdr                                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDEllipse4d_transferAngle
+Public  double bsiDEllipse4d_transferAngle
 
 (
 double          theta,
@@ -1133,7 +1133,7 @@ double          beta
 * @indexVerb
 * @bsihdr                                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiDEllipse4d_transferAngles
+Public  bool    bsiDEllipse4d_transferAngles
 
 (
 DEllipse4dP pDest,
@@ -1198,7 +1198,7 @@ double          beta
 * @indexVerb
 * @bsihdr                                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiDEllipse4d_normalizeWeights
+Public  bool    bsiDEllipse4d_normalizeWeights
 
 (
 DEllipse4dP pNormalized,
@@ -1265,7 +1265,7 @@ DEllipse4dCP pWeighted
 * @return false iff the eyeponit is inside the ellipsoid.
 * @bsihdr                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiGeom_ellipsoidSilhouette
+Public  bool    bsiGeom_ellipsoidSilhouette
 
 (
 DEllipse4dP pHEllipse,
@@ -1378,7 +1378,7 @@ DPoint4dCP pEyePoint
  @group "DEllipse3d Initialization"
  @bsimethod                                                     EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool     bsiDEllipse3d_initFromDEllipse4d
+Public  bool     bsiDEllipse3d_initFromDEllipse4d
 
 (
 DEllipse3dP pEllipse,
@@ -1441,7 +1441,7 @@ int           sector
 *               else number of intersections.
 * @bsihdr                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int bsiMath_conicIntersectUnitCircle
+Public  int bsiMath_conicIntersectUnitCircle
 
 (
 double          *pCosValue,
@@ -1484,7 +1484,7 @@ double          vw
 * @see
 * @bsihdr                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void bsiQCoff_symmetrize
+Public  void bsiQCoff_symmetrize
 
 (
 RotMatrixP pA,
@@ -1520,7 +1520,7 @@ RotMatrixCP pB
 * @see
 * @bsihdr                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void bsiQCoff_HOperator
+Public  void bsiQCoff_HOperator
 
 (
 RotMatrixP   pA,
@@ -1553,7 +1553,7 @@ DPoint3dCP pVecB
 * @see
 * @bsihdr                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void bsiQCoff_projectToEllipse
+Public  void bsiQCoff_projectToEllipse
 
 (
 RotMatrixP pA,
@@ -1599,7 +1599,7 @@ DPoint3dCP pPoint
 * @return 0 if success, nonzero if error
 * @bsihdr                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP StatusInt bsiMath_implicitConicIntersectUnitCircle
+Public  StatusInt bsiMath_implicitConicIntersectUnitCircle
 
 (
 double          *pCosValue,
@@ -1624,7 +1624,7 @@ RotMatrixCP pCoefficientMatrix
 * @indexVerb init
 * @bsihdr                                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     bsiDRange2d_init
+Public  void     bsiDRange2d_init
 
 (
 DRange2dP pRange        /* <= range to be initialized */
@@ -1647,7 +1647,7 @@ DRange2dP pRange        /* <= range to be initialized */
 * @indexVerb init
 * @bsihdr                                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     bsiDRange2d_initFromArray
+Public  void     bsiDRange2d_initFromArray
 
 (
 DRange2dP pRange,
@@ -1682,7 +1682,7 @@ int             n
 * @indexVerb extrema
 * @bsihdr                                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDRange2d_getLargestCoordinate
+Public  double bsiDRange2d_getLargestCoordinate
 
 (
 DRange2dCP pRange
@@ -1723,7 +1723,7 @@ DRange2dCP pRange
 * @indexVerb intersect
 * @bsihdr                                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool        bsiDRange2d_intersectRay
+Public  bool        bsiDRange2d_intersectRay
 
 (
 DRange2dCP pRange,
@@ -1798,7 +1798,7 @@ DPoint2dCP pDirection
 *           distance to plane origin.
 * @bsihdr                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiDPoint3d_distancePointToPlane
+Public  double bsiDPoint3d_distancePointToPlane
 
 (
 DPoint3dP pOutPoint,
@@ -1839,7 +1839,7 @@ DPoint3dCP pOrigin
 * @return true unless the line is parallel to the plane.
 * @bsihdr                                       EarlinLutz      12/97
 +---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiGeom_linePlaneIntersection
+Public  bool    bsiGeom_linePlaneIntersection
 
 (
 double      *pParam,

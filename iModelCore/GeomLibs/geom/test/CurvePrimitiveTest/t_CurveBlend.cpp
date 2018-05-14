@@ -1,7 +1,6 @@
 //
 //
 #include "testHarness.h"
-#include <Mtg/GpaApi.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 

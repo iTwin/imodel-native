@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Mtg/MtgApi.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,7 +15,6 @@
 
 #include <Mtg/MtgStructs.h>
 
-#include "gp_developable.fdf"
 #include "facetout.fdf"
 
 #include "jmdl_facetmemory.fdf"

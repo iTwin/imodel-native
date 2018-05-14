@@ -856,42 +856,6 @@ $(OUT_DIR)cv_inout$(OUT_EXT)    : $(geomSrcCurvePrimitive)cv_inout.cpp         $
 
 $(OUT_DIR)cv_ops$(OUT_EXT)    : $(geomSrcCurvePrimitive)cv_ops.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-%ifdef buildGPA
-$(OUT_DIR)gpaCurvePrimitive$(OUT_EXT)    : $(geomSrcGpa)gpaCurvePrimitive.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-$(OUT_DIR)gp_beziersection$(OUT_EXT) : $(geomSrcGpa)gp_beziersection.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-#$(OUT_DIR)gp_bool$(OUT_EXT) : $(geomSrcGpa)gp_bool.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-$(OUT_DIR)gp_ellipse$(OUT_EXT) : $(geomSrcGpa)gp_ellipse.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-#$(OUT_DIR)gp_hatch$(OUT_EXT) : $(geomSrcGpa)gp_hatch.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-#$(OUT_DIR)gp_hatchblock$(OUT_EXT) : $(geomSrcGpa)gp_hatchblock.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-$(OUT_DIR)gp_inout$(OUT_EXT) : $(geomSrcGpa)gp_inout.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-#$(OUT_DIR)gp_intersectxy$(OUT_EXT) : $(geomSrcGpa)gp_intersectxy.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-#$(OUT_DIR)gp_offset$(OUT_EXT) : $(geomSrcGpa)gp_offset.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-$(OUT_DIR)gp_pairs$(OUT_EXT) : $(geomSrcGpa)gp_pairs.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-#$(OUT_DIR)gp_perptan$(OUT_EXT) : $(geomSrcGpa)gp_perptan.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-#$(OUT_DIR)gp_prop1$(OUT_EXT)         : $(geomSrcGpa)gp_prop1.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-#$(OUT_DIR)gp_silhouette$(OUT_EXT) : $(geomSrcGpa)gp_silhouette.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-
-$(OUT_DIR)gp_stroke$(OUT_EXT) : $(geomSrcGpa)gp_stroke.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-##$(OUT_DIR)gp_xymoments$(OUT_EXT) : $(geomSrcGpa)gp_xymoments.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-$(OUT_DIR)bspintersect$(OUT_EXT) : $(geomSrcGpa)bspintersect.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-%endif
-
 $(OUT_DIR)DeprecatedFunctions$(OUT_EXT) : $(geomSrc)DeprecatedFunctions.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)akima$(OUT_EXT) : $(geomSrcBspline)akima.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
@@ -956,8 +920,6 @@ $(OUT_DIR)jmdl_mtgswap$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgswap.cpp         $(OTHER
 $(OUT_DIR)mtgSmoothNormals$(OUT_EXT) : $(geomSrcMTG)mtgSmoothNormals.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 %endif
-
-#$(OUT_DIR)facetout$(OUT_EXT) : $(geomSrcMTG)facetout.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 #%ifdef CompileMtgPrint
 $(OUT_DIR)mtgprint$(OUT_EXT) : $(geomSrcMTG)mtgprint.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}

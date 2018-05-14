@@ -59,8 +59,7 @@ OUT_EXT = $(oExt)
 OTHER_DEPENDENCIES = \
     $(geomSrcPubGeom)msgeomstructs.hpp  \
     $(geomSrcPubGeom)msgeomstructs.h    \
-    $(geomSrcPubGeom)../Vu/VuApi.h      \
-    $(geomSrcPubGeom)../Mtg/GpaApi.h
+    $(geomSrcPubGeom)../Vu/VuApi.h
 
 FileTypeControl = $(FileTypeControlCPP)
 
