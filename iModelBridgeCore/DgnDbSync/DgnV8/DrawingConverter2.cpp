@@ -14,7 +14,6 @@
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
 static BentleyApi::TransformCR DoInterop(Bentley::Transform const&source) { return (BentleyApi::TransformCR)source; }
-typedef  bmap<DgnAttachmentCP, ResolvedModelMapping> T_AttachmentMap;
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     05/2018
 +===============+===============+===============+===============+===============+======*/
@@ -46,7 +45,6 @@ struct MergeProxyGraphicsDrawGeom : public DgnV8Api::SimplifyViewDrawGeom
     ModelRefInfo                                m_currentModelRefInfo;
     Converter&                                  m_converter;
     SyncInfo::T_V8ElementSourceSet              m_attachmentsUnchanged;
-    T_AttachmentMap const&                      m_attachmentMap;
     T_ModelRefInfoMap                           m_modelRefInfoMap;
     bool                                        m_doClip = true;
     bool                                        m_processingProxy = false;
@@ -67,9 +65,9 @@ protected:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Bentley::BentleyStatus _ProcessTextString(Bentley::TextStringCR v8Text)
+Transform   GetCurrentTransform()
     {
-    return Bentley::ERROR; // Is there any reason we shouldn't always drop symbol text?
+    return (nullptr == m_context->GetCurrLocalToFrustumTransformCP()) ? Transform::FromIdentity() : DoInterop(*m_context->GetCurrLocalToFrustumTransformCP());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -130,6 +128,49 @@ bool InitGeometryParams(Render::GeometryParams& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+void _DrawTextString (Bentley::TextStringCR v8Text, double* zDepth)  override
+    {
+    AutoRestore<bool>     saveProcessingText(&m_processingText, true);
+    InitCurrentModel();
+
+    DgnAttachmentCP     currentAttachment = m_currentModelRef->AsDgnAttachmentCP();
+    Transform           currentTransform = GetCurrentTransform();
+
+    if (nullptr != currentAttachment && currentAttachment->IsCameraOn())
+        return T_Super::_DrawTextString(v8Text, zDepth);
+
+    Bentley::DVec3d         zVector, zAxis = Bentley::DVec3d::From(0.0, 0.0, 1.0);
+    v8Text.GetRotMatrix().GetColumn(zVector, 2);
+    currentTransform.MultiplyMatrixOnly(*((DPoint3dP) &zVector));
+
+    if (!zVector.IsParallelTo(zAxis))
+        return T_Super::_DrawTextString(v8Text, zDepth);
+
+    m_converter.ShowProgress();
+
+    Render::GeometryParams geometryParams;
+
+    if (!InitGeometryParams(geometryParams) || nullptr == m_currentModelRef->GetDgnFileP())
+        return T_Super::_DrawTextString(v8Text, zDepth);
+
+    TextStringPtr textString;
+    Converter::ConvertTextString(textString, v8Text, *m_currentModelRef->GetDgnFileP(), m_converter);
+    
+    // Flatten 3D -> 2D
+    Transform   flattenTrans;
+    flattenTrans.InitIdentity();
+    flattenTrans.form3d[2][2] = 0.0;
+
+    textString->ApplyTransform(Transform::FromProduct(flattenTrans, m_parentModelMapping.GetTransform(), currentTransform));
+
+    auto primitive = GeometricPrimitive::Create(*textString);
+    AddToBuilder(primitive, geometryParams);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 Bentley::StatusInt _ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isFilled) override
     {
     m_converter.ShowProgress();
@@ -140,15 +181,13 @@ Bentley::StatusInt _ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isF
     if (!InitGeometryParams(geometryParams))
         return Bentley::SUCCESS;
 
-    auto                                    currentModelRef = m_context->GetCurrentModel();
-
     Bentley::Transform  currentTransform = (nullptr == m_context->GetCurrLocalToFrustumTransformCP()) ? Bentley::Transform::FromIdentity() : *m_context->GetCurrLocalToFrustumTransformCP();
 
     CurveVectorPtr bimcurves;
     Converter::ConvertCurveVector(bimcurves, v8curves, &m_parentModelMapping.GetTransform());   
 
     // Graphics are defined in 3-D coordinates. The ViewContext's "current transform" gets them into the parent V8 drawing or sheet model's coordinates.
-    DgnAttachmentCP     currentAttachment = currentModelRef->AsDgnAttachmentCP();
+    DgnAttachmentCP     currentAttachment = m_currentModelRef->AsDgnAttachmentCP();
 
     if (nullptr != currentAttachment && currentAttachment->IsCameraOn())
         {
@@ -172,13 +211,21 @@ Bentley::StatusInt _ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isF
     Transform   flattenTrans;
     flattenTrans.InitIdentity();
     flattenTrans.form3d[2][2] = 0.0;
-    bimcurves->TransformInPlace(flattenTrans);
+    bimcurves->TransformInPlace(Transform::FromProduct(flattenTrans, m_parentModelMapping.GetTransform())); 
 
-    // Convert to meters
-    bimcurves->TransformInPlace(m_parentModelMapping.GetTransform());
+    auto    primitive = GeometricPrimitive::Create(bimcurves);
+    return AddToBuilder(primitive, geometryParams);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Bentley::StatusInt  AddToBuilder(GeometricPrimitivePtr& primitive, Render::GeometryParams& geometryParams)
+    {
+    if (!primitive.IsValid())
+        return Bentley::BSIERROR;
 
-    auto&               byattachment = m_builders[currentModelRef];
+    auto&               byattachment = m_builders[m_currentModelRef];
     auto                elementRef = m_context->GetCurrDisplayPath()->GetHeadElem();
     auto&               byelement = byattachment[nullptr == elementRef ? 0 : elementRef->GetElementId()];
     GeometryBuilderPtr& builder = byelement[geometryParams.GetCategoryId()];
@@ -190,7 +237,7 @@ Bentley::StatusInt _ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isF
         }
 
     builder->Append(geometryParams);
-    builder->Append(*GeometricPrimitive::Create(bimcurves), GeometryBuilder::CoordSystem::World);
+    builder->Append(*primitive, GeometryBuilder::CoordSystem::World);
     return Bentley::BSISUCCESS;
     }
 
@@ -227,13 +274,6 @@ void InitCurrentModel()
         {
         m_modelRefInfoMap[m_currentModelRef] = info;
         m_currentModelRefInfo = info;
-        return;
-        }
-
-    auto     found = m_attachmentMap.find(attachment);
-    if (found == m_attachmentMap.end())
-        {
-        BeAssert(false);
         return;
         }
     
@@ -333,8 +373,8 @@ void CreateDrawingElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-MergeProxyGraphicsDrawGeom(Converter& converter, ResolvedModelMapping const& parentModelMapping, T_AttachmentMap const& attachmentMap) 
-                           : m_converter(converter), m_parentModelMapping(parentModelMapping), m_attachmentMap(attachmentMap)
+MergeProxyGraphicsDrawGeom(Converter& converter, ResolvedModelMapping const& parentModelMapping)
+                           : m_converter(converter), m_parentModelMapping(parentModelMapping)
     { 
     }
 
@@ -566,7 +606,7 @@ bool Converter::_UseProxyGraphicsFor2(DgnAttachmentCR ref)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::RecordAttachmentsAndCreateProxyGraphics (ResolvedModelMapping const& target, DgnModelRefR modelRef, ViewportR viewport, T_AttachmentMap& attachmentMap, TransformCR transformToParent, bool inProxyAttachment, ResolvedModelMapping* modelMappingOverride)
+void Converter::CreateProxyGraphics (DgnModelRefR modelRef, ViewportR viewport)
     {
     auto attachedV8Model = modelRef.GetDgnModelP();
 
@@ -576,31 +616,8 @@ void Converter::RecordAttachmentsAndCreateProxyGraphics (ResolvedModelMapping co
     DgnAttachmentP      attachment = modelRef.AsDgnAttachmentP();
     if (nullptr  != attachment)
         {
-        ResolvedModelMapping thisModelMapping;
-        if (nullptr != modelMappingOverride)
-            {
-            thisModelMapping = *modelMappingOverride;
-            }
-        else
-            {
-            thisModelMapping = GetModelFromSyncInfo(*attachment, transformToParent);
-            if (!thisModelMapping.IsValid() || thisModelMapping.GetDgnModel().GetModelId() != target.GetDgnModel().GetModelId())
-                {
-                SyncInfo::V8ModelMapping refSyncInfoMapping;
-
-                if (BSISUCCESS != GetSyncInfo().InsertModel(refSyncInfoMapping, target.GetDgnModel().GetModelId(), *attachedV8Model, transformToParent))
-                    {
-                    BeAssert(false);
-                    LOG.infov("DrawingRegisterModelattachmentMap %s -> %s failed - duplicate attachments??", IssueReporter::FmtModel(*attachedV8Model).c_str(), IssueReporter::FmtModel(target.GetDgnModel()).c_str());
-                    return;
-                    }
-                thisModelMapping = ResolvedModelMapping (target.GetDgnModel(), *attachedV8Model, refSyncInfoMapping, attachment);
-                }
-            }
-        attachmentMap.Insert(attachment, thisModelMapping);
-        if (!inProxyAttachment &&
-            _UseProxyGraphicsFor2(*attachment) &&
-            !HasProxyGraphicsCache(*attachment, &viewport))
+        if(_UseProxyGraphicsFor2(*attachment) &&
+           !HasProxyGraphicsCache(*attachment, &viewport))
             {
             CreateCveMeter meter(*this);
 
@@ -609,23 +626,24 @@ void Converter::RecordAttachmentsAndCreateProxyGraphics (ResolvedModelMapping co
                 {
                 attachment->SetProxyCachingOption(DgnV8Api::ProxyCachingOption::Cached);
                 attachment->Rewrite(true, true);
-                inProxyAttachment = true;
                 }
             }
+        else
+            {
+            DgnAttachmentArrayP childAttachments = GetAttachments(modelRef);
+            if (nullptr != childAttachments)
+                for (auto& childAttachment : *childAttachments)
+                    CreateProxyGraphics (*childAttachment, viewport);
+            }
         }
-
-    DgnAttachmentArrayP childAttachments = GetAttachments(modelRef);
-    if (nullptr != childAttachments)
-        for (auto& childAttachment : *childAttachments)
-            RecordAttachmentsAndCreateProxyGraphics (target, *childAttachment, viewport, attachmentMap, ComputeAttachmentTransform(transformToParent, *childAttachment), inProxyAttachment);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::MergeDrawingGraphics(Bentley::DgnModelRefR baseModelRef, ResolvedModelMapping const& v8mm, ViewportR viewport, T_AttachmentMap const& attachmentMap)
+void Converter::MergeDrawingGraphics(Bentley::DgnModelRefR baseModelRef, ResolvedModelMapping const& v8mm, ViewportR viewport)
     {
-    MergeProxyGraphicsDrawGeom      drawGeom(*this, v8mm, attachmentMap);
+    MergeProxyGraphicsDrawGeom      drawGeom(*this, v8mm);
     MergeDrawingContext             mergeDrawingContext(drawGeom, *this);
 
     drawGeom.SetViewContext(&mergeDrawingContext);
@@ -773,9 +791,8 @@ void Converter::DrawingsConvertModelAndViews2(ResolvedModelMapping const& v8mm)
 
     // TBD - Needs work -- Need to handle "rendered" (renderMode > HiddenLine) seperately if this drawing is attached to a sheet. Ick, 
 
-    T_AttachmentMap attachmentMap;
-    RecordAttachmentsAndCreateProxyGraphics(v8mm, v8ParentModel, fakeVp, attachmentMap, v8mm.GetTransform(), false);
-    MergeDrawingGraphics(v8ParentModel, v8mm, fakeVp, attachmentMap);
+    CreateProxyGraphics(v8ParentModel, fakeVp);
+    MergeDrawingGraphics(v8ParentModel, v8mm, fakeVp);
 
     //  Convert all views of this model
     for (DgnV8Api::ViewGroupPtr const& vg : v8ParentModel.GetDgnFileP()->GetViewGroups())
@@ -804,12 +821,11 @@ void Converter::CreateSheetExtractionAttachments(ResolvedModelMapping const& v8S
         {
         if (_UseProxyGraphicsFor2(*attachment))
             {
-            T_AttachmentMap     attachmentMap;
             auto                createdDrawing = drawingGenerator._CreateAndInsertDrawing(*attachment, v8SheetModelMapping, *this);
 
             createdDrawing.SetTransform(v8SheetModelMapping.GetTransform());
-            RecordAttachmentsAndCreateProxyGraphics(createdDrawing, *attachment, fakeVp, attachmentMap, createdDrawing.GetTransform(), false, &createdDrawing);
-            MergeDrawingGraphics(*attachment, createdDrawing, fakeVp, attachmentMap);
+            CreateProxyGraphics(*attachment, fakeVp);
+            MergeDrawingGraphics(*attachment, createdDrawing, fakeVp);
             }
         }
     }

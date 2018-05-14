@@ -406,7 +406,7 @@ void SheetAttachmentViewHelper::SetViewFlags(DisplayStyleR dstyle)
     else
         {
         memset(&flags, 0, sizeof(flags));
-        flags.text_nodes = flags.fast_text = flags.on_off = flags.dimens = flags.fill = flags.transparency = 
+        /* flags.text_nodes = */ flags.fast_text = flags.on_off = flags.dimens = flags.fill = flags.transparency = 
             flags.line_wghts = flags.textureMaps = flags.patterns = true;
         flags.SetRenderMode (DgnV8Api::MSRenderMode::Wireframe);
         }
