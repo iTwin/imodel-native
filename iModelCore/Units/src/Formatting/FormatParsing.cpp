@@ -598,7 +598,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void FormatParsingSegment::Init(size_t start)
+    void FormatParsingSegment::Init(size_t start)
     {
     m_start = start;
     m_vect.clear();
@@ -629,7 +629,7 @@ FormatParsingSegment::FormatParsingSegment(NumberGrabberCR ng)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t s, BEU::UnitCP refUnit)
+FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t s, BEU::UnitCP refUnit, FormatCP format)
     {
     Init(s);
     size_t bufL = vect.size() * 4 + 2;
@@ -656,9 +656,57 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
         if(nullptr != refUnit)  // before looking into the registry we can try to find Unit in the Phenomenon
             {
             BEU::PhenomenonCP ph = refUnit->GetPhenomenon();
+
+            // special case to treat ^ as degree symbol
+            if (ph->IsAngle() && m_name.Equals("^"))
+                m_name.AssignOrClear("ARC_DEG");
+
             auto const& units = ph->GetUnits();
-            m_unit = *std::find_if(units.begin(), units.end(), 
-                [&](BEU::UnitCP unit) {return ((unit->GetName() == m_name) || (unit->GetLabel() == m_name));});
+            auto matchingUnit = std::find_if(units.begin(), units.end(), 
+                [&](BEU::UnitCP unit) {return ((unit->GetName().EqualsI(m_name)) || (unit->GetLabel() == m_name));});
+            if (matchingUnit != units.end())
+                m_unit = *matchingUnit;
+            else
+                {
+                if (nullptr != format && format->HasComposite())
+                    {
+                    CompositeValueSpecCP comp = format->GetCompositeSpec();
+                    if (comp->HasMajorLabel())
+                        {
+                        if (comp->GetMajorLabel().EqualsI(m_name))
+                            {
+                            m_unit = comp->GetMajorUnit();
+                            return;
+                            }
+                        if (comp->HasMiddleLabel())
+                            {
+                            if (comp->GetMajorLabel().EqualsI(m_name))
+                                {
+                                m_unit = comp->GetMiddleUnit();
+                                return;
+                                }
+
+                            if (comp->HasMinorLabel())
+                                {
+                                if (comp->GetMinorLabel().EqualsI(m_name))
+                                    {
+                                    m_unit = comp->GetMinorUnit();
+                                    return;
+                                    }
+
+                                if (comp->HasSubLabel())
+                                    {
+                                    if (comp->GetSubLabel().EqualsI(m_name))
+                                        {
+                                        m_unit = comp->GetSubUnit();
+                                        return;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
          }
     }
@@ -670,8 +718,9 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit)
+void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, FormatCP format)
     {
+    m_format = format;
     m_input = input;
     m_unit = unit;
     m_problem.Reset();
@@ -694,7 +743,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit)
             {
             if (m_symbs.size() > 0)
                 {
-                fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+                fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format);
                 m_segs.push_back(fps);
                 m_symbs.clear();
                 }
@@ -713,7 +762,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit)
                 {
                 if (m_symbs.size() > 0)
                     {
-                    fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+                    fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format);
                     m_segs.push_back(fps);
                     m_symbs.clear();
                     ind = csp.GetIndex();
@@ -732,7 +781,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit)
 
     if (m_symbs.size() > 0)
         {
-        fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+        fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format);
         m_segs.push_back(fps);
         }
     }
@@ -740,9 +789,9 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 07/17
 //----------------------------------------------------------------------------------------
-FormatParsingSet::FormatParsingSet(Utf8CP input, BEU::UnitCP unit)
+FormatParsingSet::FormatParsingSet(Utf8CP input, BEU::UnitCP unit, FormatCP format)
     {
-    Init(input, 0, unit);
+    Init(input, 0, unit, format);
     }
 
 //----------------------------------------------------------------------------------------

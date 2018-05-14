@@ -518,7 +518,7 @@ bool CompositeValueSpec::UnitProxy::FromJson(Json::Value const& jval, BEU::IUnit
 Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist, BEU::UnitCP outputUnit, FormatCR inputFormat, FormatProblemCode* problemCode)
     {
     *problemCode = Formatting::FormatProblemCode::NoProblems;
-    BEU::Quantity qty = Formatting::FormatParsingSet(input, inputFormat.GetCompositeMajorUnit()).GetQuantity(problemCode, &inputFormat);
+    BEU::Quantity qty = Formatting::FormatParsingSet(input, inputFormat.GetCompositeMajorUnit(), &inputFormat).GetQuantity(problemCode, &inputFormat);
     if (*problemCode == Formatting::FormatProblemCode::NoProblems)
         {
         if (nullptr != persist)
