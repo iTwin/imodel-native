@@ -54,7 +54,7 @@ static Utf8CP const JSON_TYPE_WorkBreakdown = "WorkBreakdown";
 static Utf8CP const JSON_TYPE_Activity = "Activity";
 static Utf8CP const JSON_TYPE_Baseline = "Baseline";
 static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
-static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
+// unused - static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
 
 static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec="CodeSpec";
 static Utf8CP const  BIS_ELEMENT_PROP_CodeScope="CodeScope";
