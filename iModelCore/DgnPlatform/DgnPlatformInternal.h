@@ -18,7 +18,6 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeDebugLog.h>
-#include <Mtg/GpaApi.h>
 #include <Geom/GeoPoint.h>
 #include <valarray>
 #include <math.h>
