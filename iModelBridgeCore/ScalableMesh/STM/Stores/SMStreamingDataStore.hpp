@@ -199,10 +199,9 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
             }
         else
             {
-            m_masterFileName = BEFILENAME(GetFileNameAndExtension, url);
-            url = BeFileName(BEFILENAME(GetDirectoryName, url).c_str());
+            m_masterFileName = url;
             }
-        account_prefix = DataSourceURL((L"file:///" + url).c_str());
+        account_prefix = DataSourceURL(L"file:///" );
         }
     else if (settings->IsLocal())
         {
@@ -261,7 +260,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     if ((account = service->getOrCreateAccount(account_name, account_identifier, account_key)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
-    account->setCachingEnabled(s_stream_enable_caching);    // NEEDS_WORK_SM : Get this from a configuration system
+    account->setCachingEnabled(s_stream_enable_caching && !settings->IsLocal());    // NEEDS_WORK_SM : Get this from a configuration system
     
     ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
 

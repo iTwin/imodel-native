@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/PODImporter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -326,7 +326,7 @@ class PODFileSourceCreator : public LocalFileSourceCreatorBase
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual ExtensionFilter         _GetExtensions                         () const override
         {
-        return L"*.pod";
+        return L"*.pod";    
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -963,6 +963,28 @@ void RegisterPODImportPlugin()
         static const TypeConversionFilterRegistry::AutoRegister<Point3d64f_R16G16B16_I16_C8ToPoint3d64fConverterCreator> s_RegisterConverter;
         }       
     } 
+
+
+
+#if !defined(__BENTLEYSTM_BUILD__) && defined(__BENTLEYSTMIMPORT_BUILD__)     
+
+struct RegisterPODFunctionSetter
+{
+    RegisterPODFunctionSetter()
+    {
+        ScalableMeshLib::SetPodRegister(&RegisterPODImportPlugin);
+    }
+
+
+    ~RegisterPODFunctionSetter()
+    {
+        ScalableMeshLib::SetPodRegister(nullptr);
+    }
+};
+
+RegisterPODFunctionSetter s_registerPODFunctionSetter;
+
+#endif
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 
