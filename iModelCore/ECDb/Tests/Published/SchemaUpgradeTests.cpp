@@ -9759,6 +9759,44 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
                  JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decimalSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
                  JsonValue(R"json({"spacer":"=", "includeZero":false, "units": [{"name":"MyMeter", "label":"meterle"}, {"name":"MM", "label":"millimeterle"}]})json"));
 
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                <ECSchema schemaName="Schema" alias="ts" version="2.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                    <Unit typeName="MyMeter" displayLabel="My Metre" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+                                    <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                                            precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
+                                        <Composite spacer="=" includeZero="False">
+                                            <Unit label="meterle">u:M</Unit>
+                                            <Unit label="millimeterle">u:MM</Unit>
+                                        </Composite>
+                                    </Format>
+                                </ECSchema>)xml"))) << "Modifying Composite Unit is not supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                <ECSchema schemaName="Schema" alias="ts" version="2.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                    <Unit typeName="MyMeter" displayLabel="My Metre" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+                                    <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                                            precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
+                                        <Composite spacer="=" includeZero="False">
+                                            <Unit label="meterle">MyMeter</Unit>
+                                        </Composite>
+                                    </Format>
+                                </ECSchema>)xml"))) << "Deleting a Composite Unit is not supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                <ECSchema schemaName="Schema" alias="ts" version="2.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                    <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+                                    <Unit typeName="MyMeter" displayLabel="My Metre" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+                                    <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
+                                            precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
+                                        <Composite spacer="=" includeZero="False">
+                                            <Unit label="meterle">MyMeter</Unit>
+                                            <Unit label="millimeterle">u:MM</Unit>
+                                            <Unit label="kilometerle">u:KM</Unit>
+                                        </Composite>
+                                    </Format>
+                                </ECSchema>)xml"))) << "Adding a Composite Unit is not supported";
     }
 
 //---------------------------------------------------------------------------------------
