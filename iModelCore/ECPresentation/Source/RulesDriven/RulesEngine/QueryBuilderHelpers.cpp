@@ -319,8 +319,11 @@ public:
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
-void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query, InstanceFilteringParams const& params)
+void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query, InstanceFilteringParams const& params, RelatedClassPath relatedClassPath)
     {
+    if (!relatedClassPath.empty())
+        relatedClassPath.front().SetTargetClassAlias("this"); // Changed in order instance filtering to work using this keyword
+
     if (nullptr != params.GetInput())
         {
         if (params.GetSelectInfo().GetPathToPrimaryClass().empty())
@@ -345,7 +348,7 @@ void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query
             else
                 {
                 BeAssert(!params.GetSelectInfo().GetPathToPrimaryClass().empty());
-                query.Join(params.GetSelectInfo().GetPathToPrimaryClass(), false);
+                relatedClassPath.insert(relatedClassPath.end(), params.GetSelectInfo().GetPathToPrimaryClass().begin(), params.GetSelectInfo().GetPathToPrimaryClass().end());
                 bvector<ECInstanceId> const& ids = params.GetInput()->GetInstanceIds(*params.GetSelectInfo().GetPrimaryClass());
                 IdsFilteringHelper<bvector<ECInstanceId>> filteringHelper(ids);
                 query.Where(filteringHelper.CreateWhereClause("[related].[ECInstanceId]").c_str(), filteringHelper.CreateBoundValues());
@@ -353,11 +356,14 @@ void QueryBuilderHelpers::ApplyInstanceFilter(ComplexPresentationQuery<T>& query
             }
         }
     
+    if (!relatedClassPath.empty())
+        query.Join(relatedClassPath, false);
+
     if (params.GetInstanceFilter() && 0 != *params.GetInstanceFilter())
         query.Where(ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(params.GetInstanceFilter()).c_str(), BoundQueryValuesList());
     }
-template void QueryBuilderHelpers::ApplyInstanceFilter<ContentQuery>(ComplexContentQuery&, InstanceFilteringParams const&);
-template void QueryBuilderHelpers::ApplyInstanceFilter<GenericQuery>(ComplexGenericQuery&, InstanceFilteringParams const&);
+template void QueryBuilderHelpers::ApplyInstanceFilter<ContentQuery>(ComplexContentQuery&, InstanceFilteringParams const&, RelatedClassPath);
+template void QueryBuilderHelpers::ApplyInstanceFilter<GenericQuery>(ComplexGenericQuery&, InstanceFilteringParams const&, RelatedClassPath);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016

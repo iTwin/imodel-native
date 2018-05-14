@@ -163,7 +163,7 @@ bvector<RelatedClassPath> ContentSpecificationsHandler::AppendRelatedProperties(
         {
         bvector<RelatedClassPath> polymorphicallyRelatedClasses = GetContext().GetSchemaHelper().GetPolymorphicallyRelatedClassesWithInstances(params.GetRelatedClass(),
             params.GetRelatedPropertySpec().GetRelationshipClassNames(), (ECRelatedInstanceDirection)GetRelationshipDirection(params.GetRelatedPropertySpec()),
-            params.GetRelatedPropertySpec().GetRelatedClassNames(), &params.GetInstanceFilteringParams());
+            params.GetRelatedPropertySpec().GetRelatedClassNames(), params.GetRelatedClassPath(), &params.GetInstanceFilteringParams());
         if (polymorphicallyRelatedClasses.empty())
             return bvector<RelatedClassPath>();
         relatedClassNames = CreateRelatedClassNamesList(polymorphicallyRelatedClasses);

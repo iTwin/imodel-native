@@ -10423,6 +10423,94 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
     }
 
 /*---------------------------------------------------------------------------------**//**
+* make concrete element properties are included into the content when requesting it
+* backward with a ContentInstancesOfSpecificClassesSpecification
+* @bsitest                                      Mantas.Kontrimas                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsPolymorphicallyBackwardRelatedPropertiesForInstancesOfSpecificClasses, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="ElementUniqueAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="MyElement">
+        <BaseClass>Element</BaseClass>
+        <ECProperty propertyName="ElementName" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyAspect">
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="AspectName" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyBackwardRelatedPropertiesForInstancesOfSpecificClasses)
+    {
+    // set up data set
+    ECClassCP baseElementClass = GetClass("Element");
+    ECClassCP elementClass = GetClass("MyElement");
+    ECClassCP baseAspectClass = GetClass("ElementUniqueAspect");
+    ECClassCP aspectClass = GetClass("MyAspect");
+    ECRelationshipClassCP elementOwnsUniqueAspectRelationship = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("my element"));});
+    IECInstancePtr aspect = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass, [](IECInstanceR instance){instance.SetValue("AspectName", ECValue("my aspect"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element, *aspect);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", baseAspectClass->GetFullName(), true));
+
+    ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), baseAspectClass->GetName());
+    rules->AddPresentationRule(*modifier);
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Backward, elementOwnsUniqueAspectRelationship->GetFullName(),
+        baseElementClass->GetFullName(), "", RelationshipMeaning::SameInstance, true));
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size()); // rel_ElementUniqueAspect_MyElement_ElementName
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // expect 1 content set item
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "rel_ElementUniqueAspect_MyElement_ElementName": "my element"
+        })");
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * make sure we don't include aspects into the content if they're not actually related
 * with the instances we're asking content for
 * @bsitest                                      Grigas.Petraitis                02/2018
@@ -11137,6 +11225,601 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
     }
 
 /*---------------------------------------------------------------------------------**//**
+* TFS#882817
+* @bsitest                                      Mantas.Kontrimas                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsNestedPolymorphicallyRelatedPropertiesForInstancesOfSpecificClassesMatchingInstanceFilter, R"*(
+    <ECEntityClass typeName="Model">
+        <ECProperty propertyName="ModelName" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ElementName" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="ElementUniqueAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="MyAspectA">
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Aspect_A_Name" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyAspectB">
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Aspect_B_Name" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyRelatedPropertiesForInstancesOfSpecificClassesMatchingInstanceFilter)
+    {
+    // set up data set
+    ECClassCP modelClass = GetClass("Model");
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP baseAspectClass = GetClass("ElementUniqueAspect");
+    ECClassCP aspectAClass = GetClass("MyAspectA");
+    ECClassCP aspectBClass = GetClass("MyAspectB");
+    ECRelationshipClassCP modelContainsElementsRelationship = GetClass("ModelContainsElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP elementOwnsUniqueAspectRelationship = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
+    IECInstancePtr model1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass, [](IECInstanceR instance){instance.SetValue("ModelName", ECValue("my model 1"));});
+    IECInstancePtr model2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass, [](IECInstanceR instance){instance.SetValue("ModelName", ECValue("my model 2"));});
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("my element 1"));});
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("my element 2"));});
+    IECInstancePtr aspect1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectAClass, [](IECInstanceR instance){instance.SetValue("Aspect_A_Name", ECValue("my aspect a"));});
+    IECInstancePtr aspect2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectBClass, [](IECInstanceR instance){instance.SetValue("Aspect_B_Name", ECValue("my aspect b"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelContainsElementsRelationship, *model1, *element1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelContainsElementsRelationship, *model2, *element2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element1, *aspect1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element2, *aspect2);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "this.ModelName = \"my model 1\"", 
+        modelClass->GetFullName(), true));
+
+    ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), modelClass->GetName());
+    rules->AddPresentationRule(*modifier);
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, modelContainsElementsRelationship->GetFullName(), elementClass->GetFullName(), "_none_", RelationshipMeaning::RelatedInstance));
+    modifier->GetRelatedProperties().back()->AddNestedRelatedProperty(
+        *new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, elementOwnsUniqueAspectRelationship->GetFullName(), baseAspectClass->GetFullName(), "", RelationshipMeaning::RelatedInstance, true));
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // Model_ModelName, Model_Element_MyAspectA
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // expect 1 content set item
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "Model_ModelName": "my model 1",
+        "Model_Element_MyAspectA": [{
+            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+            "Values": {
+                "MyAspectA_Aspect_A_Name": "my aspect a"
+                },
+            "DisplayValues": {
+                "MyAspectA_Aspect_A_Name": "my aspect a"
+                },
+            "MergedFieldNames": []
+            }]
+        })");
+    expectedValues["Model_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
+    expectedValues["Model_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* TFS#882817
+* @bsitest                                      Mantas.Kontrimas                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsNestedPolymorphicallyRelatedPropertiesForSelectedNodeInstances, R"*(
+    <ECEntityClass typeName="Model">
+        <ECProperty propertyName="ModelName" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ElementName" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="ElementUniqueAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="MyAspectA">
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Aspect_A_Name" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyAspectB">
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Aspect_B_Name" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyRelatedPropertiesForSelectedNodeInstances)
+    {
+    // set up data set
+    ECClassCP modelClass = GetClass("Model");
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP baseAspectClass = GetClass("ElementUniqueAspect");
+    ECClassCP aspectAClass = GetClass("MyAspectA");
+    ECClassCP aspectBClass = GetClass("MyAspectB");
+    ECRelationshipClassCP modelContainsElementsRelationship = GetClass("ModelContainsElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP elementOwnsUniqueAspectRelationship = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
+    IECInstancePtr model1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass, [](IECInstanceR instance){instance.SetValue("ModelName", ECValue("my model 1"));});
+    IECInstancePtr model2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass, [](IECInstanceR instance){instance.SetValue("ModelName", ECValue("my model 2"));});
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("my element 1"));});
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("my element 2"));});
+    IECInstancePtr aspect1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectAClass, [](IECInstanceR instance){instance.SetValue("Aspect_A_Name", ECValue("my aspect a"));});
+    IECInstancePtr aspect2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectBClass, [](IECInstanceR instance){instance.SetValue("Aspect_B_Name", ECValue("my aspect b"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelContainsElementsRelationship, *model1, *element1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelContainsElementsRelationship, *model2, *element2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element1, *aspect1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element2, *aspect2);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
+
+    ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), modelClass->GetName());
+    rules->AddPresentationRule(*modifier);
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, modelContainsElementsRelationship->GetFullName(), elementClass->GetFullName(), "_none_", RelationshipMeaning::RelatedInstance));
+    modifier->GetRelatedProperties().back()->AddNestedRelatedProperty(
+        *new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, elementOwnsUniqueAspectRelationship->GetFullName(), baseAspectClass->GetFullName(), "", RelationshipMeaning::RelatedInstance, true));
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    KeySetPtr input = KeySet::Create(*model1);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // Model_ModelName, Model_Element_MyAspectA
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // expect 1 content set item
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "Model_ModelName": "my model 1",
+        "Model_Element_MyAspectA": [{
+            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+            "Values": {
+                "MyAspectA_Aspect_A_Name": "my aspect a"
+                },
+            "DisplayValues": {
+                "MyAspectA_Aspect_A_Name": "my aspect a"
+                },
+            "MergedFieldNames": []
+            }]
+        })");
+    expectedValues["Model_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
+    expectedValues["Model_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* TFS#882817
+* @bsitest                                      Mantas.Kontrimas                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsNestedPolymorphicallyRelatedPropertiesForRelatedNodeInstances, R"*(
+    <ECEntityClass typeName="Model">
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ModelContainsCategories" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Category" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Category">
+        <ECProperty propertyName="CategoryName" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CategoryContainsElements" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Category"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ElementName" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="ElementUniqueAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="MyAspectA">
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Aspect_A_Name" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyAspectB">
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Aspect_B_Name" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyRelatedPropertiesForRelatedNodeInstances)
+    {
+    // set up data set
+    ECClassCP modelClass = GetClass("Model");
+    ECClassCP categoryClass = GetClass("Category");
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP baseAspectClass = GetClass("ElementUniqueAspect");
+    ECClassCP aspectAClass = GetClass("MyAspectA");
+    ECClassCP aspectBClass = GetClass("MyAspectB");
+    ECRelationshipClassCP modelContainsCategoriesRelationship = GetClass("ModelContainsCategories")->GetRelationshipClassCP();
+    ECRelationshipClassCP categoryContainsElementsRelationship = GetClass("CategoryContainsElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP elementOwnsUniqueAspectRelationship = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
+    IECInstancePtr model1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    IECInstancePtr model2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass);
+    IECInstancePtr category1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *categoryClass, [](IECInstanceR instance){instance.SetValue("CategoryName", ECValue("my category 1"));});
+    IECInstancePtr category2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *categoryClass, [](IECInstanceR instance){instance.SetValue("CategoryName", ECValue("my category 1"));});
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("my element 1"));});
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("my element 2"));});
+    IECInstancePtr aspect1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectAClass, [](IECInstanceR instance){instance.SetValue("Aspect_A_Name", ECValue("my aspect a"));});
+    IECInstancePtr aspect2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectBClass, [](IECInstanceR instance){instance.SetValue("Aspect_B_Name", ECValue("my aspect b"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelContainsCategoriesRelationship, *model1, *category1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelContainsCategoriesRelationship, *model2, *category2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *categoryContainsElementsRelationship, *category1, *element1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *categoryContainsElementsRelationship, *category2, *element2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element1, *aspect1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element2, *aspect2);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward,
+        modelContainsCategoriesRelationship->GetFullName(), categoryClass->GetFullName()));
+
+    ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), categoryClass->GetName());
+    rules->AddPresentationRule(*modifier);
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, categoryContainsElementsRelationship->GetFullName(), elementClass->GetFullName(), "_none_", RelationshipMeaning::RelatedInstance));
+    modifier->GetRelatedProperties().back()->AddNestedRelatedProperty(
+        *new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, elementOwnsUniqueAspectRelationship->GetFullName(), baseAspectClass->GetFullName(), "", RelationshipMeaning::RelatedInstance, true));
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    KeySetPtr input = KeySet::Create(*model1);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size()); // Category_CategoryName, Category_Element_MyAspectA
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // expect 1 content set item
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "Category_CategoryName": "my category 1",
+        "Category_Element_MyAspectA": [{
+            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+            "Values": {
+                "MyAspectA_Aspect_A_Name": "my aspect a"
+                },
+            "DisplayValues": {
+                "MyAspectA_Aspect_A_Name": "my aspect a"
+                },
+            "MergedFieldNames": []
+            }]
+        })");
+    expectedValues["Category_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
+    expectedValues["Category_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* TFS#882817
+* @bsitest                                      Mantas.Kontrimas                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsNestedPolymorphicallyRelatedPropertiesForRecursivelyRelatedNodeInstances, R"*(
+    <ECEntityClass typeName="Model">
+        <ECProperty propertyName="ModelName" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ModelOwnsSubModel" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(0..1)" roleLabel="owns sub" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+            <Class class="Model"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ElementName" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="ElementUniqueAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="MyAspectA">
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Aspect_A_Name" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyAspectB">
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Aspect_B_Name" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyAspectC">
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Aspect_C_Name" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="MyAspectD">
+        <BaseClass>ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="Aspect_D_Name" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyRelatedPropertiesForRecursivelyRelatedNodeInstances)
+    {
+    // set up data set
+    ECClassCP modelClass = GetClass("Model");
+    ECClassCP elementClass = GetClass("Element");
+    ECClassCP baseAspectClass = GetClass("ElementUniqueAspect");
+    ECClassCP aspectAClass = GetClass("MyAspectA");
+    ECClassCP aspectBClass = GetClass("MyAspectB");
+    ECClassCP aspectCClass = GetClass("MyAspectC");
+    ECClassCP aspectDClass = GetClass("MyAspectD");
+    ECRelationshipClassCP modelOwnsSubModelRelationship = GetClass("ModelOwnsSubModel")->GetRelationshipClassCP();
+    ECRelationshipClassCP modelContainsElementsRelationship = GetClass("ModelContainsElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP elementOwnsUniqueAspectRelationship = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
+    IECInstancePtr model1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass, [](IECInstanceR instance){instance.SetValue("ModelName", ECValue("my model 1"));});
+    IECInstancePtr model2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass, [](IECInstanceR instance){instance.SetValue("ModelName", ECValue("my model 2"));});
+    IECInstancePtr model3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass, [](IECInstanceR instance){instance.SetValue("ModelName", ECValue("my model 3"));});
+    IECInstancePtr model4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass, [](IECInstanceR instance){instance.SetValue("ModelName", ECValue("my model 4"));});
+    IECInstancePtr model5 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass, [](IECInstanceR instance){instance.SetValue("ModelName", ECValue("my model 5"));});
+    IECInstancePtr model6 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelClass, [](IECInstanceR instance){instance.SetValue("ModelName", ECValue("my model 6"));});
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("my element 1"));});
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("my element 2"));});
+    IECInstancePtr element3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("my element 3"));});
+    IECInstancePtr element4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance){instance.SetValue("ElementName", ECValue("my element 4"));});
+    IECInstancePtr aspect2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectAClass, [](IECInstanceR instance){instance.SetValue("Aspect_A_Name", ECValue("my aspect a"));});
+    IECInstancePtr aspect3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectBClass, [](IECInstanceR instance){instance.SetValue("Aspect_B_Name", ECValue("my aspect b"));});
+    IECInstancePtr aspect4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectCClass, [](IECInstanceR instance){instance.SetValue("Aspect_C_Name", ECValue("my aspect c"));});
+    IECInstancePtr aspect6 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectDClass, [](IECInstanceR instance){instance.SetValue("Aspect_D_Name", ECValue("my aspect d"));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelOwnsSubModelRelationship, *model1, *model2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelOwnsSubModelRelationship, *model2, *model3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelOwnsSubModelRelationship, *model1, *model4);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelOwnsSubModelRelationship, *model5, *model6);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelContainsElementsRelationship, *model2, *element1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelContainsElementsRelationship, *model3, *element2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelContainsElementsRelationship, *model4, *element3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelContainsElementsRelationship, *model6, *element4);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element1, *aspect2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element2, *aspect3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element3, *aspect4);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element4, *aspect6);
+
+    /* hierarchy:
+             m1          m5
+            / \          |
+           m2  m4        m6
+           |
+           m3
+    */
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, true, "", RequiredRelationDirection_Forward,
+        modelOwnsSubModelRelationship->GetFullName(), modelClass->GetFullName()));
+
+    ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), modelClass->GetName());
+    rules->AddPresentationRule(*modifier);
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, modelContainsElementsRelationship->GetFullName(), elementClass->GetFullName(), "_none_", RelationshipMeaning::RelatedInstance));
+    modifier->GetRelatedProperties().back()->AddNestedRelatedProperty(
+        *new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, elementOwnsUniqueAspectRelationship->GetFullName(), baseAspectClass->GetFullName(), "", RelationshipMeaning::RelatedInstance, true));
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    KeySetPtr input = KeySet::Create(*model1);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(4, descriptor->GetVisibleFields().size()); // Model_ModelName, Model_Element_MyAspectA, Model_Element_MyAspectB, Model_Element_MyAspectC
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*descriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // expect 1 content set item
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(3, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "Model_ModelName": "my model 2",
+        "Model_Element_MyAspectA": [{
+            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+            "Values": {
+                "MyAspectA_Aspect_A_Name": "my aspect a"
+                },
+            "DisplayValues": {
+                "MyAspectA_Aspect_A_Name": "my aspect a"
+                },
+            "MergedFieldNames": []
+            }],
+        "Model_Element_MyAspectB": [],
+        "Model_Element_MyAspectC": []
+        })");
+    expectedValues["Model_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectAClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
+    expectedValues["Model_Element_MyAspectA"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect2->GetInstanceId().c_str(), expectedValues.GetAllocator());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+
+    recordJson = contentSet.Get(1)->AsJson();
+    expectedValues.Parse(R"({
+        "Model_ModelName": "my model 3",
+        "Model_Element_MyAspectA": [],
+        "Model_Element_MyAspectB": [{
+            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+            "Values": {
+                "MyAspectB_Aspect_B_Name": "my aspect b"
+                },
+            "DisplayValues": {
+                "MyAspectB_Aspect_B_Name": "my aspect b"
+                },
+            "MergedFieldNames": []
+            }],
+        "Model_Element_MyAspectC": []
+        })");
+    expectedValues["Model_Element_MyAspectB"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectBClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
+    expectedValues["Model_Element_MyAspectB"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect3->GetInstanceId().c_str(), expectedValues.GetAllocator());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+
+    recordJson = contentSet.Get(2)->AsJson();
+    expectedValues.Parse(R"({
+        "Model_ModelName": "my model 4",
+        "Model_Element_MyAspectA": [],
+        "Model_Element_MyAspectB": [],
+        "Model_Element_MyAspectC": [{
+            "PrimaryKeys": [{"ECClassId": "", "ECInstanceId": ""}],
+            "Values": {
+                "MyAspectC_Aspect_C_Name": "my aspect c"
+                },
+            "DisplayValues": {
+                "MyAspectC_Aspect_C_Name": "my aspect c"
+                },
+            "MergedFieldNames": []
+            }]
+        })");
+    expectedValues["Model_Element_MyAspectC"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectCClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
+    expectedValues["Model_Element_MyAspectC"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect4->GetInstanceId().c_str(), expectedValues.GetAllocator());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Mantas.Kontrimas                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(LoadsRelatedPropertiesForMultipleInstancesOfSameClasses, R"*(
@@ -11383,6 +12066,174 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMu
     expectedValues["Element_ElementMultiAspect"][0]["PrimaryKeys"][1]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
     expectedValues["Element_ElementMultiAspect"][0]["PrimaryKeys"][1]["ECInstanceId"].SetString(aspect2->GetInstanceId().c_str(), expectedValues.GetAllocator());
     expectedValues["Element_ElementMultiAspect"][0]["DisplayValues"]["ElementMultiAspect_StringProperty"].SetString(varies_string.c_str(), expectedValues.GetAllocator());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Merges nested related properties into same field when nested ralationship ends
+* matches (Both hierarchies ends with same related class (ElementMultiAspect)).
+* @bsitest                                      Mantas.Kontrimas                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsNestedRelatedPropertiesForMultipleInstancesOfDifferentClasses, R"*(
+    <ECEntityClass typeName="Model">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ModelContainsElements" modifier="None" strength="embedding">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="Model"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
+            <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementMultiAspect">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.2.0">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsMultiAspects" modifier="None" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="ElementMultiAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="MyModelA">
+        <BaseClass>Model</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="MyModelB">
+        <BaseClass>Model</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="MyElementA">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="MyElementB">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedRelatedPropertiesForMultipleInstancesOfDifferentClasses)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
+
+    // set up data set
+    ECClassCP baseModelClass = GetClass("Model");
+    ECClassCP baseElementClass = GetClass("Element");
+    ECClassCP elementAClass = GetClass("MyElementA");
+    ECClassCP elementBClass = GetClass("MyElementB");
+    ECClassCP modelAClass = GetClass("MyModelA");
+    ECClassCP modelBClass = GetClass("MyModelB");
+    ECClassCP aspectClass = GetClass("ElementMultiAspect");
+    ECRelationshipClassCP modelContainsElementsRelationship = GetClass("ModelContainsElements")->GetRelationshipClassCP();
+    ECRelationshipClassCP elementOwnsMultipleAspectRelationship = GetClass("ElementOwnsMultiAspects")->GetRelationshipClassCP();
+    IECInstancePtr model1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelAClass);
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementAClass);
+    IECInstancePtr aspect1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("IntProperty", ECValue(123));
+        instance.SetValue("StringProperty", ECValue("abc"));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelContainsElementsRelationship, *model1, *element1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsMultipleAspectRelationship, *element1, *aspect1);
+    IECInstancePtr model2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *modelBClass);
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementBClass);
+    IECInstancePtr aspect2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("IntProperty", ECValue(123));
+        instance.SetValue("StringProperty", ECValue("def"));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *modelContainsElementsRelationship, *model2, *element2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsMultipleAspectRelationship, *element2, *aspect2);
+    
+    /* hierarchies:
+        model1(MyModelA) -> element1(MyElementA) -> aspect1(ElementMultiAspect)
+        model2(MyModelB) -> element2(MyElementB) -> aspect2(ElementMultiAspect)
+    */
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
+
+    ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), baseModelClass->GetName());
+    rules->AddPresentationRule(*modifier);
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, modelContainsElementsRelationship->GetFullName(), 
+        baseElementClass->GetFullName(), "", RelationshipMeaning::SameInstance, true));
+    modifier->GetRelatedProperties().back()->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, elementOwnsMultipleAspectRelationship->GetFullName(),
+        aspectClass->GetFullName(), "", RelationshipMeaning::SameInstance, true));
+
+    // options
+    RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{model1, model2});
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *input, nullptr, options.GetJson()).get();
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size()); // Model_Element_ElementMultiAspect
+
+    // set the "merge results" flag
+    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
+    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+
+    // request for content
+    ContentCPtr content = IECPresentationManager::GetManager().GetContent(*mergingDescriptor, PageOptions()).get();
+    ASSERT_TRUE(content.IsValid());
+
+    // expect 1 content set item
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(R"({
+        "Model_Element_ElementMultiAspect": [{
+            "PrimaryKeys": [
+                {
+                "ECClassId": "",
+                "ECInstanceId": ""
+                },
+                {
+                "ECClassId": "",
+                "ECInstanceId": ""
+                }],
+            "Values": {
+                "ElementMultiAspect_IntProperty": 123,
+                "ElementMultiAspect_StringProperty": null
+                },
+            "DisplayValues": {
+                "ElementMultiAspect_IntProperty": 123,
+                "ElementMultiAspect_StringProperty": ""
+                },
+            "MergedFieldNames": [
+                "ElementMultiAspect_StringProperty"
+                ]
+            }]
+        })");
+    expectedValues["Model_Element_ElementMultiAspect"][0]["PrimaryKeys"][0]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
+    expectedValues["Model_Element_ElementMultiAspect"][0]["PrimaryKeys"][0]["ECInstanceId"].SetString(aspect1->GetInstanceId().c_str(), expectedValues.GetAllocator());
+    expectedValues["Model_Element_ElementMultiAspect"][0]["PrimaryKeys"][1]["ECClassId"].SetString(aspectClass->GetId().ToString().c_str(), expectedValues.GetAllocator());
+    expectedValues["Model_Element_ElementMultiAspect"][0]["PrimaryKeys"][1]["ECInstanceId"].SetString(aspect2->GetInstanceId().c_str(), expectedValues.GetAllocator());
+    expectedValues["Model_Element_ElementMultiAspect"][0]["DisplayValues"]["ElementMultiAspect_StringProperty"].SetString(varies_string.c_str(), expectedValues.GetAllocator());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);

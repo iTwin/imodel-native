@@ -174,11 +174,22 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Mantas.Kontrimas                02/2018
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static bool StartsWithSameRelatedClass(RelatedClassPathCR path, RelatedClassPathCR fieldPath)
+    static bool EndsWithSameRelatedClass(RelatedClassPathCR path, RelatedClassPathCR fieldPath)
         {
-        return fieldPath[0].GetRelationship() == path[0].GetRelationship() &&
-            ((fieldPath[0].IsForwardRelationship() && fieldPath[0].GetTargetClass() == path[0].GetTargetClass()) ||
-             (!fieldPath[0].IsForwardRelationship() && fieldPath[0].GetSourceClass() == path[0].GetSourceClass()));
+        if (path.size() != fieldPath.size())
+            return false;
+
+        for (size_t i = 0; i < path.size(); ++i)
+            {
+            if (path[i].GetRelationship() != fieldPath[i].GetRelationship())
+                return false;
+            }
+
+        if ((fieldPath.back().IsForwardRelationship() && fieldPath.back().GetTargetClass() == path.back().GetTargetClass()) ||
+            (!fieldPath.back().IsForwardRelationship() && fieldPath.back().GetSourceClass() == path.back().GetSourceClass()))
+            return true;
+
+        return false;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -235,6 +246,38 @@ private:
         }
 
     /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Mantas.Kontrimas                05/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static RelatedClassPath GetCommonBaseRelatedClassPath(RelatedClassPathCR path, RelatedClassPathCR fieldPath)
+        {
+        RelatedClassPath baseRelatedClassPath (fieldPath);
+        for (size_t i = path.size(); i-- > 0; )
+            {
+            RelatedClass lhsRelated = path[i];
+            RelatedClass rhsRelated = baseRelatedClassPath[i];
+            ECRelationshipConstraintClassList constraintClasses = rhsRelated.IsForwardRelationship() ?
+                rhsRelated.GetRelationship()->GetTarget().GetConstraintClasses() :
+                rhsRelated.GetRelationship()->GetSource().GetConstraintClasses();
+            ECClassCP lhsClass = lhsRelated.IsForwardRelationship() ? lhsRelated.GetSourceClass() : lhsRelated.GetTargetClass();
+            ECClassCP rhsClass = rhsRelated.IsForwardRelationship() ? rhsRelated.GetSourceClass() : rhsRelated.GetTargetClass();
+
+            ECClassCP commonBaseClass = GetNearestCommonRelationshipEndClass(lhsClass, rhsClass, constraintClasses);
+            if (nullptr == commonBaseClass)
+                {
+                BeAssert(false);
+                return RelatedClassPath();
+                }
+
+            if (rhsRelated.IsForwardRelationship())
+                baseRelatedClassPath[i].SetSourceClass(*commonBaseClass);
+            else
+                baseRelatedClassPath[i].SetTargetClass(*commonBaseClass);
+            }
+        
+        return baseRelatedClassPath;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Grigas.Petraitis                07/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     ContentDescriptor::NestedContentField* GetXToManyNestedContentField(Utf8CP classAlias)
@@ -256,28 +299,10 @@ private:
                     relationshipPath = GetPathDifference(m_relatedClassPath, descriptorField->AsNestedContentField()->GetRelationshipPath());
                     break;
                     }
-                else if (StartsWithSameRelatedClass(m_relatedClassPath, descriptorField->AsNestedContentField()->GetRelationshipPath()))
+                else if (EndsWithSameRelatedClass(m_relatedClassPath, descriptorField->AsNestedContentField()->GetRelationshipPath()))
                     {
-                    RelatedClass lhsRelated = m_relatedClassPath[0];
-                    RelatedClass rhsRelated = descriptorField->AsNestedContentField()->GetRelationshipPath()[0];
-                    ECRelationshipConstraintClassList constraintClasses = rhsRelated.IsForwardRelationship() ?
-                        rhsRelated.GetRelationship()->GetTarget().GetConstraintClasses() :
-                        rhsRelated.GetRelationship()->GetSource().GetConstraintClasses();
-                    ECClassCP lhsClass = lhsRelated.IsForwardRelationship() ? lhsRelated.GetSourceClass() : lhsRelated.GetTargetClass();
-                    ECClassCP rhsClass = rhsRelated.IsForwardRelationship() ? rhsRelated.GetSourceClass() : rhsRelated.GetTargetClass();
-
-                    ECClassCP commonBaseClass = GetNearestCommonRelationshipEndClass(lhsClass, rhsClass, constraintClasses);
-                    if (nullptr == commonBaseClass)
-                        {
-                        BeAssert(false);
-                        continue;
-                        }
-
                     m_nestedContentField = descriptorField->AsNestedContentField();
-                    if (rhsRelated.IsForwardRelationship())
-                        m_nestedContentField->GetRelationshipPath()[0].SetSourceClass(*commonBaseClass);
-                    else
-                        m_nestedContentField->GetRelationshipPath()[0].SetTargetClass(*commonBaseClass);
+                    m_nestedContentField->SetRelationshipPath(GetCommonBaseRelatedClassPath(m_relatedClassPath, descriptorField->AsNestedContentField()->GetRelationshipPath()));
                     m_nestedContentField->SetName(CreateNestedContentFieldName(m_nestedContentField->GetRelationshipPath()));
                     return m_nestedContentField;
                     }

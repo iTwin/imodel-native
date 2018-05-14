@@ -69,7 +69,7 @@ public:
     template<typename T> static RefCountedPtr<T> CreateNestedQueryIfNecessary(T& query, bvector<Utf8CP> const& aliases);
     template<typename T> static RefCountedPtr<ComplexPresentationQuery<T>> CreateComplexNestedQueryIfNecessary(T& query, bvector<Utf8CP> const& aliases);
     
-    template<typename T> static void ApplyInstanceFilter(ComplexPresentationQuery<T>&, InstanceFilteringParams const&);
+    template<typename T> static void ApplyInstanceFilter(ComplexPresentationQuery<T>&, InstanceFilteringParams const&, RelatedClassPath);
     
     static void ApplyDescriptorOverrides(RefCountedPtr<ContentQuery>& query, ContentDescriptorCR ovr, ECExpressionsCache&);
     static void ApplyPagingOptions(RefCountedPtr<ContentQuery>& query, PageOptionsCR opts);

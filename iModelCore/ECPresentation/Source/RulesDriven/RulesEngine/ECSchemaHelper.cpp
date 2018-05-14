@@ -1258,8 +1258,8 @@ RelatedClass ECSchemaHelper::GetForeignKeyClass(ECPropertyCR prop) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithInstances(ECClassCR sourceClass, Utf8StringCR relationshipNames, 
-    ECRelatedInstanceDirection direction, Utf8StringCR baseClassNames, InstanceFilteringParams const* filteringParams) const
+bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithInstances(ECClassCR sourceClass, Utf8StringCR relationshipNames,
+    ECRelatedInstanceDirection direction, Utf8StringCR baseClassNames, RelatedClassPathCR relatedClassPath, InstanceFilteringParams const* filteringParams) const
     {
     SupportedEntityClassInfos baseClassInfos = GetECClassesFromClassList(baseClassNames, false);
     SupportedRelationshipClassInfos relationshipInfos = GetECRelationshipClasses(relationshipNames);
@@ -1315,11 +1315,12 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
         polymorphicallyRelatedClasses = &m_polymorphicallyRelatedClassesCache->Add(key, std::move(vec));
         }
     
+    bool isNested = !relatedClassPath.empty();
     ComplexGenericQueryPtr filteringQuery = ComplexGenericQuery::Create();
-    filteringQuery->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId")), "this");
-    filteringQuery->From(sourceClass, true, "this");
+    filteringQuery->SelectContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("ECInstanceId", "ECInstanceId")), isNested ? "nestedRel" : "this");
+    filteringQuery->From(sourceClass, true, isNested ? "nestedRel" : "this");
     if (nullptr != filteringParams)
-        QueryBuilderHelpers::ApplyInstanceFilter(*filteringQuery, *filteringParams);
+        QueryBuilderHelpers::ApplyInstanceFilter(*filteringQuery, *filteringParams, relatedClassPath);
     BoundQueryValuesList filterBindings = filteringQuery->GetBoundValues();
 
     bvector<RelatedClassPath> paths;
@@ -1330,17 +1331,17 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
             filterBindingsCopy.push_back(binding->Clone());
 
         RefCountedPtr<SimpleQueryContract> contract = SimpleQueryContract::Create();
-        contract->AddField(*PresentationQueryContractSimpleField::Create("RelatedClassId", "TargetECClassId"));
-        contract->AddField(*PresentationQueryContractSimpleField::Create("SourceInstanceId", "SourceECInstanceId"));
+        contract->AddField(*PresentationQueryContractSimpleField::Create("RelatedClassId", relatedClass.IsForwardRelationship() ? "TargetECClassId" : "SourceECClassId"));
+        contract->AddField(*PresentationQueryContractSimpleField::Create("RelatedInstanceId", relatedClass.IsForwardRelationship() ?  "SourceECInstanceId" : "TargetECInstanceId"));
         ComplexGenericQueryPtr nestedQuery = ComplexGenericQuery::Create();
         nestedQuery->SelectContract(*contract, "rel");
         nestedQuery->From(*relatedClass.GetRelationship(), true, "rel");
-        nestedQuery->Where("[rel].[TargetECClassId] = ?", {new BoundQueryId(relatedClass.GetTargetClass()->GetId())});
+        nestedQuery->Where(relatedClass.IsForwardRelationship() ? "[rel].[TargetECClassId] = ?" : "[rel].[SourceECClassId] = ?", {new BoundQueryId(relatedClass.GetTargetClass()->GetId())});
 
         ComplexGenericQueryPtr query = ComplexGenericQuery::Create();
         query->SelectAll();
         query->From(*nestedQuery);
-        query->Where(Utf8String("[SourceInstanceId] IN (").append(filteringQuery->ToString()).append(")").c_str(), filterBindingsCopy);
+        query->Where(Utf8String("[RelatedInstanceId] IN (").append(filteringQuery->ToString()).append(")").c_str(), filterBindingsCopy);
         query->GroupByContract(*SimpleQueryContract::Create(*PresentationQueryContractSimpleField::Create("RelatedClassId", "RelatedClassId")));
         
         CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_connection.GetECDb().Schemas(),
