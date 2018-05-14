@@ -21,7 +21,6 @@
 #include <Geom/internal/BezierTriangle.h>
 #include <Geom/internal/dvec3dtransform.fdf>
 #include <Geom/internal/rotmatrix_dep.fdf>
-#include <Geom/internal/complex.fdf>
 
 #include <Geom/internal/dsegment3d.fdf>
 #include <Geom/internal/dsegment4d.fdf>

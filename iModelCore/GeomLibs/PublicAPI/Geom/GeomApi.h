@@ -831,7 +831,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 //#include "XYRangeTree.h"
 //#include "XYZRangeTree.h"
 
-#include "barycentric.fdf"
 #include "ccctangent.fdf"
 
 //#include "internal/dcone3d.fdf"
@@ -842,8 +841,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "dmatrix4d.fdf"
 #include "doublefuncs.fdf"
 #include "dplane3d.fdf"
-#include "dpoint2d.fdf"
-#include "dpoint2darray.fdf"
 #include "dpoint3d.fdf"
 #include "dpoint3darray.fdf"
 #include "dpoint3dconvertedtodvec3d.fdf"
@@ -855,7 +852,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 
 //#include "internal/dtoroid3d.fdf"
 #include "dvec3d.fdf"
-#include "dvec2d.fdf"
 #include "dvec3drotmatrix.fdf"
 #include "ellipsefillet.fdf"
 #include "eigensys3d.fdf"
@@ -868,7 +864,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "linalg.fdf"
 #include "LinearAlgebra.h"
 #include "lineargeom.fdf"
-#include "polygon2d.fdf"
 #include "polygon3d.fdf"
 #include "polygondecomp.fdf"
 #include "polyline2d.fdf"

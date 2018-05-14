@@ -290,32 +290,7 @@ DPoint2dCP pVertex1,
 DPoint2dCP pVertex2
 );
 
-/*-----------------------------------------------------------------*//**
-* @description Sets this instance to the barycentric coordinates of pPoint
-* relative to the triangle (pVertex0, pVertex1, pVertex2) in the xy-plane.
-*
-* @instance pInstance   <= barycentric coordinates of pPoint relative to T
-* @param pPoint         => point in plane
-* @param pVertex0       => vertex 0 of triangle T
-* @param pVertex1       => vertex 1 of triangle T
-* @param pVertex2       => vertex 2 of triangle T
-* @see bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-* @see bsiDPoint2d_fromBarycentricAndDPoint2dTriangle
-* @group "DPoint3d Barycentric"
-* @return true if and only if the area of T is sufficiently large.
-* @bsihdr                                                                       DavidAssaf      10/98
-+---------------+---------------+---------------+---------------+------*/
-Public  bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
-(
-DPoint3dR uvw,
-DPoint3dR dUVWdX,
-DPoint3dR dUVWdY,
-double   &area,
-DPoint2dCR point,
-DPoint2dCR vertex0,
-DPoint2dCR vertex1,
-DPoint2dCR vertex2
-);
+
 
 /*-----------------------------------------------------------------*//**
 * Given a space point spacePontP, finds the closest point on the plane
