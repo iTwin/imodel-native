@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/MstnOnly/dellipse4d.fdf $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1057,3 +1057,30 @@ DEllipse4dP pOutEllipse,
 DEllipse4dCP pInEllipse
 );
 
+//!
+//! @nodoc DEllipse4d
+//! @description Convert a homogeneous ellipse to cartesian.  Callers should beware of the following
+//! significant points:
+//! <UL>
+//! <LI>A homogeneous "ellipse" may appear as a hyperbola or parabola in xyz space.
+//!   Hence the conversion can fail.
+//! <LI>When the conversion succeeds, it is still a Very Bad Thing To Do numerically
+//!   because a homogeneous ellipse with "nice" numbers can have very large center and axis
+//!   coordinates.   It is always preferable to do calculations directly on the homogeneous
+//!   ellipse if possible.
+//! <LI>When the conversion succeeds, the axis may be non-perpendicular.  A subsequent call
+//!   may be made to initWithPerpendicularAxes to correct this.
+//! </UL>
+//! @param pEllipse OUT     initialized ellipse
+//! @param pSource IN      homogeneous ellipse
+//! @param sector  IN      angular sector index.  If out of bounds, a full ellipse is created.
+//! @return true if homogeneous parts allow reduction to simple ellipse. (false if the homogeneous
+//!    parts are a parabola or hyperbola.)
+//! @group "DEllipse3d Initialization"
+//!
+Public GEOMDLLIMPEXP bool     bsiDEllipse3d_initFromDEllipse4d
+(
+DEllipse3dP pEllipse,
+DEllipse4dCP pSource,
+int           sector
+);

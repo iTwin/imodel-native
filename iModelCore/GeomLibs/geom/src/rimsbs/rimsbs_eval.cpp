@@ -936,7 +936,12 @@ double          s1
                 TryGetArc (curveId, arc);
                 DEllipse3d partialEllipse = arc;
                 jmdlRIMSBS_initPartialEllipse (&partialEllipse, &arc, s0, s1);
-                bsiDEllipse3d_xySweepProperties (&partialEllipse, pArea, pAngle, pPoint);
+                double area1, angle1;
+                DPoint3d point1;
+                partialEllipse.XySweepProperties (
+                        pArea ? *pArea : area1,
+                        pAngle ? *pAngle : angle1,
+                        pPoint ? *pPoint : point1);
                 myResult = true;
                 break;
                 }
@@ -1029,7 +1034,12 @@ const DPoint3d  *pPoint
                 {
                 DEllipse3d arc;
                 TryGetArc (curveId, arc);
-                bsiDEllipse3d_xySweepProperties (&arc, pArea, pAngle, pPoint);
+                double area1, angle1;
+                DPoint3d point1;
+                arc.XySweepProperties (
+                        pArea ? *pArea : area1,
+                        pAngle ? *pAngle : angle1,
+                        pPoint ? *pPoint : point1);
                 myResult = true;
                 break;
                 }
@@ -1490,8 +1500,13 @@ double    s1                /* => end param for active interval */
                 double theta;
                 partialEllipse.start = arc.start + arc.sweep * s0;
                 partialEllipse.sweep = (s1 - s0) * arc.sweep;
-                if (bsiDEllipse3d_closestPointXYBounded (&partialEllipse,
-                                        &theta, pMinDistSquared, pMinPoint, pPoint)
+                double minSquaredA;
+                DPoint3d minPointA;
+                if (partialEllipse.ClosestPointXYBounded (
+                                        theta,
+                                        pMinDistSquared ? *pMinDistSquared : minSquaredA,
+                                        pMinPoint ? *pMinPoint : minPointA,
+                                        *pPoint)
                     )
                     {
                     double param = bsiTrig_normalizeAngleToSweep (
@@ -1606,8 +1621,13 @@ RG_CurveId  curveId         /* => curve identifier */
                 DEllipse3d arc;
                 TryGetArc (curveId, arc);
                 double theta, param;
-                if (bsiDEllipse3d_closestPointXYBounded (&arc,
-                                        &theta, pMinDistSquared, pMinPoint, pPoint)
+                double minSquaredA;
+                DPoint3d minPointA;
+                if (arc.ClosestPointXYBounded (
+                                        theta,
+                                        pMinDistSquared ? *pMinDistSquared : minSquaredA,
+                                        pMinPoint ? *pMinPoint : minPointA,
+                                        *pPoint)
                     )
                     {
                     param = bsiTrig_normalizeAngleToSweep (

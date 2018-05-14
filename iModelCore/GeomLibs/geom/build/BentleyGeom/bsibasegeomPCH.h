@@ -2,7 +2,7 @@
 |
 |     $Source: geom/build/BentleyGeom/bsibasegeomPCH.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BentleyPortable.h>
@@ -25,7 +25,6 @@
 #include <Geom/internal/dmatrix3d.fdf>
 #include <Geom/internal/dmatrix3d_dep.fdf>
 #include <Geom/internal/dtransform3d.fdf>
-#include <Geom/internal/dvec3ddmatrix3d.fdf>
 #include <Geom/internal/dvec3dtransform.fdf>
 #include <Geom/internal/rotmatrix_dep.fdf>
 #include <Geom/internal/basegeom_2ms.fdf>

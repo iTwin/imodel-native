@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/CurveCurveProcessor.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -99,7 +99,7 @@ bool validArcAngle (double theta, DEllipse3d const &ellipse)
     {
     if (m_extend)
         return true;
-    if (bsiDEllipse3d_angleInSweep (&ellipse, theta))
+    if (ellipse.IsAngleInSweep (theta))
         return true;
     return false;
     }
