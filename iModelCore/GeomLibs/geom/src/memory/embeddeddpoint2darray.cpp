@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-#include "../gpa/ArrayWrapper.h"
+#include "ArrayWrapper.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 typedef VArrayWrapper<DPoint2d> DPoint2dArrayWrapper;
 #define NEED_SIGNATURES

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/dmatrix4d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1535,7 +1535,6 @@ DMatrix4dCP pA
         }
     else
         {
-        memset (pInstance, 0, sizeof (DMatrix3d));
         bsiDMatrix4d_initIdentity (pInstance);
         pInstance->coff[0][0] = sx;
         pInstance->coff[1][1] = sy;
@@ -1788,89 +1787,6 @@ DMatrix4dCP pDelta
 |</UL>                                                                  |
 +----------------------------------------------------------------------*/
 #define HDIM 4
-
-
-/*-----------------------------------------------------------------*//**
-*
-* Explode a 4x4 matrix into a 3x3 matrix, two 3D vectors, and a scalar, with
-* the scalar location defined by a pivot index along the diagonal.
-*
-* @param pMatrix <= 3x3 submatrix
-* @param pRow <= off-diagonals in row
-* @param pColumn <= off-diagonals in column
-* @param pPivot <= pivot entry
-* @param pHMat => Original matrix
-* @param pivot => pivot index
-* @see
-* @return true if pivot index is valid.
-* @indexVerb
-* @bsihdr                                                       EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiDMatrix4d_extractAroundPivot
-
-(
-DMatrix4dCP pHMat,
-DMatrix3dP pMatrix,
-DPoint3dP pRow,
-DPoint3dP pColumn,
-double        *pPivot,
-int           pivot
-)
-    {
-    int i, j;
-    bool    boolStat = false;
-    int index[3];
-    int i0, i1, i2, jj;
-    if (pivot >= 0 && pivot < HDIM)
-        {
-        if (pPivot)
-            *pPivot = pHMat->coff[pivot][pivot];
-
-        /* Get the index sequence for non-pivot rows and columns */
-        j = 0;
-        for (i = 0; i < HDIM;i++)
-            {
-            if (i != pivot)
-                index[j++] = i;
-            }
-
-        i0 = index[0];
-        i1 = index[1];
-        i2 = index[2];
-
-        if (pRow)
-            {
-            bsiDPoint3d_setXYZ (pRow,
-                        pHMat->coff[pivot][i0],
-                        pHMat->coff[pivot][i1],
-                        pHMat->coff[pivot][i2]);
-            }
-
-        if (pColumn)
-            {
-            bsiDPoint3d_setXYZ (pColumn,
-                        pHMat->coff[i0][pivot],
-                        pHMat->coff[i1][pivot],
-                        pHMat->coff[i2][pivot]);
-            }
-
-        if (pMatrix)
-            {
-            for (j = 0; j < 3; j++)
-                {
-                jj = index[j];
-                bsiDPoint3d_setXYZ (&pMatrix->column[j],
-                        pHMat->coff[i0][jj],
-                        pHMat->coff[i1][jj],
-                        pHMat->coff[i2][jj]
-                        );
-                }
-            }
-        boolStat = true;
-        }
-    return boolStat;
-    }
-
 
 
 /*-----------------------------------------------------------------*//**

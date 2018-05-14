@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/dmap4d.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -710,30 +710,6 @@ double          tz
 bool    initFromTaper (double taper);
 
 //!
-//! @param [in] pMatrix 3x3 matrix
-//! @param [in] invert true to treat this matrix as the inverse
-//!                                        of the mapping, false if forward.
-//! @return true if the DMatrix3d was invertible.
-//!
-bool    initFrom
-(
-DMatrix3dCP     pMatrix,
-bool            invert
-);
-
-//!
-//! @param [in] pTransform affine transformation 3x3 matrix
-//! @param [in] invert true to treat this matrix as the inverse
-//!                                        of the mapping, false if forward.
-//! @return true if the DTransfrom3d was invertible.
-//!
-bool    initFromDTransform3d
-(
-DTransform3dCP  pTransform,
-bool            invert
-);
-
-//!
 //! @param [in] pTransform affine transformation 3x4 matrix
 //! @param [in] invert true to treat this matrix as the inverse
 //!                                        of the mapping, false if forward.
@@ -900,21 +876,6 @@ bool    isAffine () const;
 //! @return true if the mapping contains perspective.
 //!
 bool    isPerspective () const;
-
-//!
-//! Copy various parts of the 4x4 matrix to separate data structures.
-//! @param [out] rotP rotation part
-//! @param [out] orgP origin part
-//! @param [out] perspetiveP perspective part
-//! @param [in] inverse false for forward part, true for inverse
-//!
-void explode
-(
-DMatrix3dP      rotP,
-DPoint3dP       orgP,
-DPoint4dP       perspectiveP,
-int             inverse
-);
 
 //!
 //!

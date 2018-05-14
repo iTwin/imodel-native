@@ -1846,5 +1846,20 @@ int movingEndIndex      //!< [in] 0 to move start, 1 to move end
 );
 };
 
+/*----------------------------------------------------------------------+
+|FUNC           bsiEllipse_componentRange       RK      06/96           |
+| Conditional update range of one component of an ellipse.              |
+|NORET                                                                  |
++----------------------------------------------------------------------*/
+Public GEOMDLLIMPEXP void    bsiEllipse_componentRange
+(
+double*         minP,           /* IN OUT  min coordiante of range box */
+double*         maxP,           /* IN OUT  max coordinate of range box */
+double          centComponent,  /* IN      center component */
+double          cosComponent,   /* IN      basis vector component multiplied by cos */
+double          sinComponent,   /* IN      basis vector component multiplied by sin */
+double          theta0,         /* IN      start angle */
+double          sweep           /* IN      sweep angle. */
+);
 
 END_BENTLEY_GEOMETRY_NAMESPACE

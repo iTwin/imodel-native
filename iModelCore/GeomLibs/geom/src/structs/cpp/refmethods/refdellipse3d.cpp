@@ -5924,4 +5924,6 @@ ValidatedDEllipse3d DEllipse3d::FromEndPointTranslation(DEllipse3dCR source, DVe
         }
     return ValidatedDEllipse3d (result, false);
     }
+
+
 END_BENTLEY_GEOMETRY_NAMESPACE

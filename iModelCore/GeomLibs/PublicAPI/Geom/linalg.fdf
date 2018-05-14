@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/linalg.fdf $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -443,17 +443,6 @@ int     rank
 );
 
 //!
-//! @param pNullVectors OUT     array of null vectors.
-//! @param pMatrix IN      matrix analyzed.
-//! @returnn the number of vector (columns) placed into pNullVectors.
-//!
-Public GEOMDLLIMPEXP int bsiDMatrix3d_nullSpace
-(
-DMatrix3dP pNullVectors,
-DMatrix3dP pMatrix
-);
-
-//!
 //! @param pNullVectors OUT  null vectors (as columns)
 //! @param pMatrix IN      matrix analyzed.
 //! @returnn the number of vector (columns) placed into pNullVectors.
@@ -462,35 +451,6 @@ Public GEOMDLLIMPEXP int bsiDMatrix4d_nullSpace
 (
 DMatrix4dP pNullVectors,
 DMatrix4dP pMatrix
-);
-
-//!
-//! Invert a 3x3 matrix using full swapping (rows and columns)
-//!
-//! @param pInverse OUT     inverse matrix.
-//! @param pCond    OUT     estimate of condition number.   Near zero is bad, near 1 is good.
-//! @param pMatrix  IN      matrix to invert.
-//! @return false if unable to invert
-//!
-Public GEOMDLLIMPEXP bool         bsiDMatrix3d_invertFullSwapCond
-(
-DMatrix3dP pInverse,
-double              *pCond,
-DMatrix3dCP pMatrix
-);
-
-//!
-//! Invert a 3x3 matrix using full swapping (rows and columns)
-//!
-//! @param pInverse OUT     inverse matrix.
-//! @param pCond    OUT     estimate of condition number.   Near zero is bad, near 1 is good.
-//! @param pMatrix  IN      matrix to invert.
-//! @return false if unable to invert
-//!
-Public GEOMDLLIMPEXP bool    bsiDMatrix3d_invertFullSwap
-(
-DMatrix3dP pInverse,
-DMatrix3dP pMatrix
 );
 
 //!

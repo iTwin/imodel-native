@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/eigensys3d.fdf $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -129,41 +129,6 @@ DPoint3dCP pLineCoff,
 RotMatrixCP pQCoff
 );
 
-//!
-//! Pre and postmultiply a matrix by a pure rotation so as to
-//! to zero out a particular offdiagonal entry.
-//! That is, replace A by Q'*A*Q.
-//! Replace QQ by Q * QQ, i.e. maintain QQ as the running product of the
-//! update sequence.
-//!
-//! @param pMatrixA IN OUT  Matrix to update
-//! @param pMatrixQQ IN OUT  running update product
-//! @param i IN      row selector.  Assumed 0,1, or 2 and not equal to j
-//! @param j IN      col selector.  Assumed 0,1, or 2 and not equal to i
-//!
-Public GEOMDLLIMPEXP void bsiDMatrix3d_symmetricJacobiStep
-(
-DMatrix3dP pMatrixA,
-DMatrix3dP pMatrixQQ,
-int         i,
-int         j
-);
-
-Public GEOMDLLIMPEXP void bsiQCoff_xyEllipseMatrix
-(
-DMatrix3dP pB,
-DEllipse4dCP pHEllipse
-);
-
-Public GEOMDLLIMPEXP void bsiQCoff_xyEllipseRotMatrix
-(
-RotMatrixP pB,
-DEllipse4dCP pHEllipse
-);
-
-
-
-
 
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -203,18 +168,6 @@ int     *nRot,
 double  a[3][3]
 );
 
-//!
-//! @param pEigenvectors OUT     matrix of eigenvectors.
-//! @param pEigenvalues  IN      eigenvalues corresponding to columns of the eigenvector matrix.
-//! @param pInstance      IN      matrix whose eigenvectors and eigenvalues are computed.
-//!
-Public GEOMDLLIMPEXP void bsiDMatrix3d_symmetricEigensystem
-(
-DMatrix3dP pEigenvectors,
-DPoint3dP pEigenvalues,
-DMatrix3dCP pInstance
-);
-
 Public GEOMDLLIMPEXP void bsiRotMatrix_symmetricEigensystem
 (
 RotMatrixP pEigenvectors,
@@ -231,14 +184,9 @@ RotMatrixCP pInstance
 //!           6   back
 //!           7   left iso
 //!           8   right iso
-//! WARNING: The DMatrix3d is probably tranposed from what you expect.
+//! WARNING: The matrix may be tranposed from what you expect.
 //! @return true if index is valid
 //!
-Public GEOMDLLIMPEXP bool    bsiDMatrix3d_getStandardRotation
-(
-DMatrix3dP pInstance,
-int          selector
-);
 
 //!
 //! @param selector = coordinate system identifier
@@ -259,24 +207,6 @@ int          selector
 );
 
 
-//!
-//! @description Factor matrix A as a product A = B * VT
-//!   where VT is orthogonal and B has orthonormal columns.
-//!   If A is singular, B will have a zero column.  If all columns
-//!   of B are nonzero, the inverse of A can be constructed accurately.
-//! @param pMatrixA IN      the matrix to factor
-//! @param pB OUT     the matrix with perpendicular but not normalized columns.
-//! @param pV OUT     the orthogonal matrix.
-//!
-//! @return true factorization completed.  Numerical authorities claim
-//!       the iteration will always succeed.
-//!
-Public GEOMDLLIMPEXP bool    bsiDMatrix3d_orthogonalizeColumns
-(
-DMatrix3dCP pMatrixA,
-DMatrix3dP pB,
-DMatrix3dP pV
-);
 
 //!
 //! @description Factor matrix A as a product A = B * VT
@@ -297,23 +227,6 @@ RotMatrixP pB,
 RotMatrixP pV
 );
 
-//!
-//! @description Invert a matrix by constructing orthogonal factorization.
-//!   This is more expensive than Cramer's rule or elimination, but provides
-//!   a more accurate estimate of condition.   This function considers
-//!   any nonzero condition to be nonsingular; caller may wish to
-//!   apply a stricter test to the condition.
-//! @param pMatrixA IN      matrix to invert.
-//! @param pAInv OUT     the computed inverse.
-//! @param pCondition IN      the smallest singular value divided by the largest.
-//! @return true if the matrix is invertible.
-//!
-Public GEOMDLLIMPEXP bool    bsiDMatrix3d_invertDMatrix3dByOrthogonalFactors
-(
-DMatrix3dCP pMatrixA,
-DMatrix3dP pMatrixAInv,
-double      *pCondition
-);
 
 //!
 //! @description Invert a matrix by constructing orthogonal factorization.
@@ -402,62 +315,6 @@ DPoint3dP pScalePoint,
 RotMatrixP pRotation2
 );
 
-//!
-//! @description Factor a matrix (linear transformation) as a product of
-//! two rotations and a (sandwiched) scale, i.e.
-//! <pre>
-//!                  matrix = Rotation1 * Scale * Rotation2
-//! </pre>
-//!
-//! <p> where Rotation1 and Rotation2 are pure rotation about the origin
-//!   and Scale is a principle axis scale.
-//! </p>
-//!
-//! <p>
-//! Once again:
-//! <ul>
-//! <li>R1 is a pure rotation matrix. It is orthogonal. Each column has magnitude 1.
-//!                    Its determinant is 1. It defines a right handed coordinate system.
-//! <li>Scale conatains x, y, and z scale factors.  If converted to a matrix, the scale factors
-//!                appear on the diagonal and the off-diagonals are zero.
-//!                The largest absolute value scale factor is the x scale, and the smallest
-//!                absolute value scale factor is the z scale.  The z scale (but no others)
-//!                may be negative, which means that the transformation performs reflection.
-//! <li>R2 is a pure rotation matrix. It is orthogonal. Each column has magnitude 1.
-//!                    Its determinant is 1.   It defines a right handed coordinate system.
-//! </p>
-//!
-//! <p> If the composite matrix is applied to a vector, the equational form is</p>
-//! <pre>
-//!                   matrix * vector = R1 * Scale * R2 * vector
-//! </pre>
-//! <p>
-//! If you read this from right to left, the interpretation is that the vector is rotated (by R1)
-//! around the global origin, scaled around the global origin, and rotated again (by R1).
-//! </p>
-//!
-//! <p>The rotations and scales are internally arranged so that the largest scale factors
-//! are first in the scale point.</p>
-//!
-//! <p>If you have perservered this far, you may recognize that the product Rotation1*Scale*Rotation2
-//!    is a singular value decomposition.  (With small caveat that in some definitions of the
-//!    singular values, all the scales are non-negative and the reflection effects make one
-//!    of the rotations into a reflection.)
-//! </p>
-//!
-//! @param pMatrix IN matrix being analyzed.
-//! @param pRotation1 OUT One of the rotation parts, as a DMatrix3d.
-//! @param pScalePoint OUT scale factors, as xyz parts of a DPoint3d.
-//! @param pRotation2 OUT The other rotation part, as a DMatrix3d.
-//!
-//!
-Public GEOMDLLIMPEXP bool    bsiDMatrix3d_factorRotateScaleRotate
-(
-DMatrix3dCP pMatrix,
-DMatrix3dP pRotation1,
-DPoint3dP pScalePoint,
-DMatrix3dP pRotation2
-);
 
 //!
 //! @description Factor an affine transformation as a product of
@@ -567,30 +424,6 @@ DPoint3dP pTranslationShift,
 double    relTol
 );
 
-//!
-//! @description Analyze the invariant space of a transform.
-//! @param pTransform IN transform to analyze
-//! @param pInvariantSpace OUT transform in which leading columns are vector basis
-//!           corresponding to degrees of freedom in the invariant space.
-//! @param pInvariantVectorCount OUT number of free vectors.  If the invariant space
-//!           is a single point, the vector count is zero and the translation
-//!           in the basis is the point.
-//! @param pTranslationShift OUT vector change which must be added to the translation
-//!           part of the transform to make it have an invariant space.
-//! @param relTol IN relative tolerance for identifying zeros in scale matrix.
-//! @return true if there is an invariant space.   Note that a pure translation transform
-//!           has no invariant space, so false returns are common.
-//!
-Public GEOMDLLIMPEXP bool     bsiDTransform3d_invariantSpaceBasis
-(
-DTransform3dCP pTransform,
-DTransform3dP pInvariantSpace,
-int       *pInvariantVectorCount,
-DMatrix3dP pVariantSpaceVectors,
-int       *pVariantVectorCount,
-DPoint3dP pTranslationShift,
-double    relTol
-);
 
 END_BENTLEY_GEOMETRY_NAMESPACE
 

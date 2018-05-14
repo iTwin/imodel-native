@@ -2,11 +2,11 @@
 |
 |     $Source: geom/src/memory/jmdl_iarray.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-#include "../gpa/ArrayWrapper.h"
+#include "./ArrayWrapper.h"
 #include "jmdl_dpnt3.fdf"
 #include "jmdl_iarray.fdf"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE

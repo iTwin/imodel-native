@@ -20,8 +20,6 @@ $(OUT_DIR)embeddeddoublearray$(OUT_EXT)      : $(geomSrcMemory)embeddeddoublearr
 
 $(OUT_DIR)embeddedintarray$(OUT_EXT)      : $(geomSrcMemory)embeddedintarray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-#$(OUT_DIR)embeddeddpoint2darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint2darray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
 $(OUT_DIR)embeddeddpoint3darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint3darray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)embeddedarraycachemanager$(OUT_EXT)      : $(geomSrcMemory)embeddedarraycachemanager.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
@@ -106,15 +104,7 @@ $(OUT_DIR)graphicspoint$(OUT_EXT)   : $(geomSrcStructs)graphicspoint.cpp    $(OT
 
 $(OUT_DIR)dray3d$(OUT_EXT)          : $(geomSrcStructs)dray3d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-#$(OUT_DIR)dellipsoid3d$(OUT_EXT)    : $(geomSrcStructs)dellipsoid3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)dcone3d$(OUT_EXT)         : $(geomSrcStructs)dcone3d.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)dtoroid3d$(OUT_EXT)       : $(geomSrcStructs)dtoroid3d.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
 $(OUT_DIR)dconic4d$(OUT_EXT)        : $(geomSrcStructs)dconic4d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)ddisk3d$(OUT_EXT)         : $(geomSrcStructs)ddisk3d.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)frange3d$(OUT_EXT)        : $(geomSrcStructs)frange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -270,8 +260,6 @@ $(OUT_DIR)Angle$(OUT_EXT)           : $(geomSrcFuncs)Angle.cpp          $(OTHER_
 $(OUT_DIR)YawPitchRollAnglesInDegrees$(OUT_EXT)    : $(geomSrcFuncs)YawPitchRollAnglesInDegrees.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)lineargeom$(OUT_EXT)      : $(geomSrcFuncs)lineargeom.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)quadraticgeom$(OUT_EXT)   : $(geomSrcFuncs)quadraticgeom.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)eigensys3d$(OUT_EXT)      : $(geomSrcFuncs)eigensys3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -486,7 +474,6 @@ $(OUT_DIR)dpoint3dconvertedtodvec3d$(OUT_EXT)   : $(geomSrcInterfac)dpoint3dconv
 
 $(OUT_DIR)rotmatrix_dep$(OUT_EXT)               : $(geomSrcInterfac)rotmatrix_dep.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-#$(OUT_DIR)dmatrix3d_dep$(OUT_EXT)               : $(geomSrcInterfac)dmatrix3d_dep.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 
 # (end interfac_sources_pubinc.mki)
@@ -905,7 +892,7 @@ $(OUT_DIR)bspintersect$(OUT_EXT) : $(geomSrcGpa)bspintersect.cpp         $(OTHER
 
 %endif
 
-$(OUT_DIR)gp_gp_lastUsedFunctions$(OUT_EXT) : $(geomSrcGpa)gp_lastUsedFunctions.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+$(OUT_DIR)DeprecatedFunctions$(OUT_EXT) : $(geomSrc)DeprecatedFunctions.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)akima$(OUT_EXT) : $(geomSrcBspline)akima.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 

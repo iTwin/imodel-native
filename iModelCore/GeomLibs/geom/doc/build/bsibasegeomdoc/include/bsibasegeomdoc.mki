@@ -15,7 +15,7 @@ GEOM_FILES+$(geomSrcPubGeom)complex.fdf
 GEOM_FILES+$(geomSrcPubGeom)dcone3d.fdf
 GEOM_FILES+$(geomSrcPubGeom)dconic4d.fdf
 #GEOM_FILES+$(geomSrcPubGeom)ddisk3d.fdf
-GEOM_FILES+$(geomSrcPubGeom)dellipse3d.fdf
+#GEOM_FILES+$(geomSrcPubGeom)dellipse3d.fdf
 #GEOM_FILES+$(geomSrcPubGeom)dellipsoid3d.fdf
 #GEOM_FILES+$(geomSrcPubGeom)dmap4d.fdf
 #GEOM_FILES+$(geomSrcPubGeom)dmatrix2d.fdf

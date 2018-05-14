@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 //#include "msvarray.fdf"
-#include "../gpa/ArrayWrapper.h"
+#include "ArrayWrapper.h"
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 

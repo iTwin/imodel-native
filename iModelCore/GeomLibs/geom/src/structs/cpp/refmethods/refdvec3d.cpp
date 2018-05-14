@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdvec3d.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -466,16 +466,6 @@ DVec3d DVec3d::FromStartEnd (TransformCR start, DPoint3dCR target)
         target.x - start.form3d[0][3],
         target.y - start.form3d[1][3],
         target.z - start.form3d[2][3]
-        );
-    }
-
-DVec3d DVec3d::FromStartEnd (DTransform3dCR start, DPoint3dCR target)
-    {
-    return DVec3d::From
-        (
-        target.x - start.translation.x,
-        target.y - start.translation.y,
-        target.z - start.translation.z
         );
     }
 

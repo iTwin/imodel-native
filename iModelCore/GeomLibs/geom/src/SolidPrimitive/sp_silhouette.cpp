@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include <Geom/MstnOnly/GeomPrivateApi.h>
+#include "../DeprecatedFunctions.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 static const DRange2d s_defaultParameterRange =
@@ -14,6 +15,66 @@ static const DRange2d s_defaultParameterRange =
                 {-msGeomConst_pi, -msGeomConst_pi},
                 { msGeomConst_pi,  msGeomConst_pi}
             };
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* Set the parameter range of the toroid.
+* @param pParameterRange => limits of longitude and latitude.
+* @indexVerb parameterRange
+* @bsihdr                                                       EarlinLutz      10/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public void               bsiDToroid3d_setNaturalParameterRange
+
+(
+DToroid3dP pInstance,
+DRange2dCP pParameterRange
+)
+    {
+    pInstance->parameterRange = pParameterRange ? *pParameterRange : s_defaultParameterRange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Get the parameter range as start/sweep pairs.
+* @indexVerb parameterRange
+* @bsihdr                                                       EarlinLutz      03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+Public void    bsiDToroid3d_getScalarNaturalParameterSweep
+
+(
+DToroid3dCP pInstance,
+double          *pTheta0,
+double          *pThetaSweep,
+double          *pPhi0,
+double          *pPhiSweep
+)
+    {
+    *pTheta0 = pInstance->parameterRange.low.x;
+    *pThetaSweep = pInstance->parameterRange.high.x - *pTheta0;
+
+    *pPhi0 = pInstance->parameterRange.low.y;
+    *pPhiSweep = pInstance->parameterRange.high.y - *pPhi0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Set the reference frame of the toroid.
+* @param pFrame => coordinate frame.  null indicates an identity transformation.
+* @indexVerb localCoordinates
+* @bsihdr                                                       EarlinLutz      10/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public void               bsiDToroid3d_setFrame
+
+(
+DToroid3dP pInstance,
+TransformCP pFrame
+)
+    {
+    if (pFrame)
+        pInstance->frame = *pFrame;
+    else
+        pInstance->frame.InitIdentity ();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * Initialize an toroid from full frame and range
 * @param pTransform         => coordinate frame.  If NULL, default is applied.
@@ -37,24 +98,6 @@ DRange2dCP pParameterRange
     pInstance->minorAxisRatio = minorRadiusRatio;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Set the reference frame of the toroid.
-* @param pFrame => coordinate frame.  null indicates an identity transformation.
-* @indexVerb localCoordinates
-* @bsihdr                                                       EarlinLutz      10/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public void               bsiDToroid3d_setFrame
-
-(
-DToroid3dP pInstance,
-TransformCP pFrame
-)
-    {
-    if (pFrame)
-        pInstance->frame = *pFrame;
-    else
-        pInstance->frame.InitIdentity ();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * Compute exact silhouette arcs.
@@ -120,44 +163,6 @@ Public bool bsiDToroid3d_addExactSilhouettes (DToroid3dCR instance, CurveVectorP
     return false;
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* Set the parameter range of the toroid.
-* @param pParameterRange => limits of longitude and latitude.
-* @indexVerb parameterRange
-* @bsihdr                                                       EarlinLutz      10/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public void               bsiDToroid3d_setNaturalParameterRange
-
-(
-DToroid3dP pInstance,
-DRange2dCP pParameterRange
-)
-    {
-    pInstance->parameterRange = pParameterRange ? *pParameterRange : s_defaultParameterRange;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Get the parameter range as start/sweep pairs.
-* @indexVerb parameterRange
-* @bsihdr                                                       EarlinLutz      03/99
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void    bsiDToroid3d_getScalarNaturalParameterSweep
-
-(
-DToroid3dCP pInstance,
-double          *pTheta0,
-double          *pThetaSweep,
-double          *pPhi0,
-double          *pPhiSweep
-)
-    {
-    *pTheta0 = pInstance->parameterRange.low.x;
-    *pThetaSweep = pInstance->parameterRange.high.x - *pTheta0;
-
-    *pPhi0 = pInstance->parameterRange.low.y;
-    *pPhiSweep = pInstance->parameterRange.high.y - *pPhi0;
-    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      11/2017

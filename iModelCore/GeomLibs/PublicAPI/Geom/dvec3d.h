@@ -190,15 +190,6 @@ static DVec3d From (FVec3dCR);
 //! @param [in] target   end point
 static DVec3d FromStartEnd (TransformCR start, DPoint3dCR target);
 
-/*__PUBLISH_SECTION_END__*/
-//! @description Returns the unnormalized (full length) DVec3d from the frame origin to the target point.
-//! @param [in] start start point
-//! @param [in] target   end point
-static DVec3d FromStartEnd (DTransform3dCR start, DPoint3dCR target);
-
-/*__PUBLISH_SECTION_START__*/
-
-
 //flex||  normalized vector || vector = DVec3d::FromStartEndNormalize (startPoint, endPoint)    || outVector.Normalize (vector) || inoutVector.Normalize () ||
 
 

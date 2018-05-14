@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/linalg.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -938,39 +938,6 @@ int     rank
 * @param pMatrix => matrix analyzed.
 * @returnn the number of vector (columns) placed into pNullVectors.
 +----------------------------------------------------------------------*/
-Public GEOMDLLIMPEXP int bsiDMatrix3d_nullSpace
-
-(
-DMatrix3dP pNullVectors,
-DMatrix3dP pMatrix
-)
-    {
-    DMatrix3d   workMatrix = *pMatrix;
-    DMatrix3d   nullVectors;
-    int         rowSwap[3];
-    int         colSwap[3];
-    int         rank;
-    rank = bsiLinAlg_LUFullPivot ((double*)&workMatrix, rowSwap, colSwap,
-                        1, 3, 3, 3);
-    memset (&nullVectors, 0, sizeof(DMatrix3d));
-    if (rank < 3)
-        {
-        bsiLinAlg_expandNullSpace ((double*)&nullVectors, 1, 3,
-                        (double*)&workMatrix, NULL, NULL,
-                        1, 3, 3, 3, rank);
-        bsiLinAlg_swapAll ((double*)&nullVectors, colSwap, rank,
-                                        1, 3, 3, true);
-        }
-    *pNullVectors = nullVectors;
-    return 3 - rank;
-    }
-
-
-/*------------------------------------------------------------------*//**
-* @param pNullVectors <= array of null vectors.
-* @param pMatrix => matrix analyzed.
-* @returnn the number of vector (columns) placed into pNullVectors.
-+----------------------------------------------------------------------*/
 Public GEOMDLLIMPEXP int bsiDMatrix4d_nullSpace
 (
 DMatrix4dP pNullVectors,
@@ -995,77 +962,6 @@ DMatrix4dP pMatrix
         }
     *pNullVectors = nullVectors;
     return 4 - rank;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* Invert a 3x3 matrix using full swapping (rows and columns)
-*
-* @param pInverse <= inverse matrix.
-* @param pCond    <= estimate of condition number.   Near zero is bad, near 1 is good.
-* @param pMatrix  => matrix to invert.
-* @return false if unable to invert
-* @bsimethod                                                    EarlinLutz      05/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool         bsiDMatrix3d_invertFullSwapCond
-
-(
-DMatrix3dP pInverse,
-double              *pCond,
-DMatrix3dCP pMatrix
-)
-    {
-    DMatrix3d   workMatrix;
-    DMatrix3d   BMatrix;
-    double      *pB = (double *)&BMatrix;
-    double      *pA = (double *)&workMatrix;
-    int         rowSwap[3];
-    int         colSwap[3];
-    int         rank;
-    workMatrix = *pMatrix;
-    rank = bsiLinAlg_LUFullPivot ((double*)&workMatrix, rowSwap, colSwap,
-                        1, 3, 3, 3);
-
-    *pCond = 0.0;
-
-    if (rank < 3)
-        return false;
-    memset (&BMatrix, 0, sizeof(DMatrix3d));
-
-    *pCond = fabs (workMatrix.column[2].z / workMatrix.column[0].x);
-
-    BMatrix.column[0].x = BMatrix.column[1].y = BMatrix.column[2].z = 1.0;
-
-    bsiLinAlg_applyLFactor (pB, 1, 3, 3,
-                             pA, rowSwap, colSwap,
-                                        1, 3, 3, 3, 2);
-    bsiLinAlg_backSub (pB, 1, 3, 3,
-                               pA, 1, 3, 3);
-
-    bsiLinAlg_swapAll (pB, colSwap, 3, 1, 3, 3, true);
-    *pInverse = BMatrix;
-    return true;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* Invert a 3x3 matrix using full swapping (rows and columns)
-*
-* @param pInverse <= inverse matrix.
-* @param pCond    <= estimate of condition number.   Near zero is bad, near 1 is good.
-* @param pMatrix  => matrix to invert.
-* @return false if unable to invert
-* @bsimethod                                                    EarlinLutz      05/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiDMatrix3d_invertFullSwap
-
-(
-DMatrix3dP pInverse,
-DMatrix3dP pMatrix
-)
-    {
-    double condition;
-    return bsiDMatrix3d_invertFullSwapCond (pInverse, &condition, pMatrix);
     }
 
 

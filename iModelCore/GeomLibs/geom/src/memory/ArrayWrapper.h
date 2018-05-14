@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: geom/src/gpa/ArrayWrapper.h $
+|     $Source: geom/src/memory/ArrayWrapper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // TEMPLATIZED class to emulate omdlVArray indexing in bvector<T>

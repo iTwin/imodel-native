@@ -744,8 +744,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "DTriangle3d.h"
 #include "GeometryNode.h"
 
-#include "internal/dmatrix3d.h"
-#include "internal/dtransform3d.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 
@@ -836,10 +834,10 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "barycentric.fdf"
 #include "ccctangent.fdf"
 
-#include "internal/dcone3d.fdf"
+//#include "internal/dcone3d.fdf"
 #include "dconic4d.fdf"
-#include "internal/ddisk3d.fdf"
-#include "internal/dellipsoid3d.fdf"
+//#include "internal/ddisk3d.fdf"
+//#include "internal/dellipsoid3d.fdf"
 #include "dmap4d.fdf"
 #include "dmatrix4d.fdf"
 #include "doublefuncs.fdf"
@@ -855,7 +853,7 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "drange3d.fdf"
 #include "dray3d.fdf"
 
-#include "internal/dtoroid3d.fdf"
+//#include "internal/dtoroid3d.fdf"
 #include "dvec3d.fdf"
 #include "dvec2d.fdf"
 #include "dvec3drotmatrix.fdf"
@@ -879,7 +877,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "polysolv.fdf"
 #include "proximitydata.fdf"
 #include "quadeqn.fdf"
-#include "quadraticgeom.fdf"
 #include "quadric.fdf"
 #include "rotations.fdf"
 #include "rotmatrix.fdf"

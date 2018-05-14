@@ -1,12 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: geom/src/gpa/gp_lastUsedFunctions.cpp $
+|     $Source: geom/src/DeprecatedFunctions.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include <Geom/MstnOnly/GeomPrivateApi.h>
+#include "DeprecatedFunctions.h"
 #define FIX_MIN(value, min)          if (value < min) min = value
 #define FIX_MAX(value, max)          if (value > max) max = value
 #define FIX_MINMAX(value, min, max)  FIX_MIN(value, min); FIX_MAX(value, max);
@@ -590,6 +591,67 @@ DPoint2dCR vertex2
     return false;
     }
 
+/*-----------------------------------------------------------------*//**
+* Given a space point spacePontP, finds the closest point on the plane
+* containing the 3 points in pPlanePoint.  Stores the closest point
+* coordinates in pClosePoint, and the s and t coordinates (as defined
+* in bsiGeom_evaluateSkewedPlane) in sP and tP.
+*
+* @param pClosePoint <= point on plane.  May be null pointer
+* @param sP <= parametric coordinate on s axis
+* @param tP <= parametric coordinate on t axis
+* @param pPlanePoint => origin, s=1, and t=1 points
+* @param pSpacePoint => point to be projected
+* @return true unless the plane points are collinear
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     bsiGeom_closestPointOnSkewedPlane
+
+(
+DPoint3dP pClosePoint,
+double          *sP,
+double          *tP,
+DPoint3dCP pPlanePoint,
+DPoint3dCP pSpacePoint
+)
+    {
+    double          s,t;
+    double          dotUU, dotUV, dotVV, dotUQ, dotVQ;
+    bool            result = true;
+    DPoint3d        vectorU, vectorV, vectorQ;
+
+    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorU, &pPlanePoint[1], &pPlanePoint[0]);
+    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorV, &pPlanePoint[2], &pPlanePoint[0]);
+    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorQ, pSpacePoint, &pPlanePoint[0]);
+
+    dotUU = bsiDPoint3d_dotProduct (&vectorU, &vectorU);
+    dotVV = bsiDPoint3d_dotProduct (&vectorV, &vectorV);
+    dotUV = bsiDPoint3d_dotProduct (&vectorU, &vectorV);
+    dotUQ = bsiDPoint3d_dotProduct (&vectorU, &vectorQ);
+    dotVQ = bsiDPoint3d_dotProduct (&vectorV, &vectorQ);
+
+    if (!bsiSVD_solve2x2 (&s, &t, dotUU, dotUV, dotUV, dotVV, dotUQ, dotVQ))
+        {
+        result = false;
+        }
+
+    else
+
+        {
+        if (sP)
+            *sP = s;
+        if (tP)
+            *tP = t;
+
+        if (pClosePoint)
+            bsiDPoint3d_add2ScaledDPoint3d (pClosePoint, &pPlanePoint[0],
+                                                &vectorU, s,
+                                                &vectorV, t
+                                        );
+        }
+
+    return  result;
+    }
 
 /*-----------------------------------------------------------------*//**
 * @description Compute the minimum distance from a point to a triangle.
@@ -1723,67 +1785,6 @@ DPoint2dCP pDirection
     return  boolStat;
     }
 
-/*-----------------------------------------------------------------*//**
-* Given a space point spacePontP, finds the closest point on the plane
-* containing the 3 points in pPlanePoint.  Stores the closest point
-* coordinates in pClosePoint, and the s and t coordinates (as defined
-* in bsiGeom_evaluateSkewedPlane) in sP and tP.
-*
-* @param pClosePoint <= point on plane.  May be null pointer
-* @param sP <= parametric coordinate on s axis
-* @param tP <= parametric coordinate on t axis
-* @param pPlanePoint => origin, s=1, and t=1 points
-* @param pSpacePoint => point to be projected
-* @return true unless the plane points are collinear
-* @bsihdr                                       EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool     bsiGeom_closestPointOnSkewedPlane
-
-(
-DPoint3dP pClosePoint,
-double          *sP,
-double          *tP,
-DPoint3dCP pPlanePoint,
-DPoint3dCP pSpacePoint
-)
-    {
-    double          s,t;
-    double          dotUU, dotUV, dotVV, dotUQ, dotVQ;
-    bool            result = true;
-    DPoint3d        vectorU, vectorV, vectorQ;
-
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorU, &pPlanePoint[1], &pPlanePoint[0]);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorV, &pPlanePoint[2], &pPlanePoint[0]);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorQ, pSpacePoint, &pPlanePoint[0]);
-
-    dotUU = bsiDPoint3d_dotProduct (&vectorU, &vectorU);
-    dotVV = bsiDPoint3d_dotProduct (&vectorV, &vectorV);
-    dotUV = bsiDPoint3d_dotProduct (&vectorU, &vectorV);
-    dotUQ = bsiDPoint3d_dotProduct (&vectorU, &vectorQ);
-    dotVQ = bsiDPoint3d_dotProduct (&vectorV, &vectorQ);
-
-    if (!bsiSVD_solve2x2 (&s, &t, dotUU, dotUV, dotUV, dotVV, dotUQ, dotVQ))
-        {
-        result = false;
-        }
-
-    else
-
-        {
-        if (sP)
-            *sP = s;
-        if (tP)
-            *tP = t;
-
-        if (pClosePoint)
-            bsiDPoint3d_add2ScaledDPoint3d (pClosePoint, &pPlanePoint[0],
-                                                &vectorU, s,
-                                                &vectorV, t
-                                        );
-        }
-
-    return  result;
-    }
 
 /*-----------------------------------------------------------------*//**
 * Project a point to a plane defined by origin and (not necessarily unit)

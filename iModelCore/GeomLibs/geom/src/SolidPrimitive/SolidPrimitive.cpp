@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include "BoxFaces.h"
+#include "../DeprecatedFunctions.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 // Macro to invoke m_data detail methods.
 // every detail type supports the methods for publication as simple (nonvirtual) methods

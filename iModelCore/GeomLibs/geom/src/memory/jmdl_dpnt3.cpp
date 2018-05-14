@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-#include "../gpa/ArrayWrapper.h"
+#include "ArrayWrapper.h"
 #include "jmdl_dpnt3.fdf"
 #include "jmdl_iarray.fdf"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
