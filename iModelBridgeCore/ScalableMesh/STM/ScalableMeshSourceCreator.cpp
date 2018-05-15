@@ -565,7 +565,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     else
         {
         assert(m_sourceCreationMethod == SCM_SOURCE_CREATION_ONE_SPLIT);
-        splitThreshold = 10000;
+        splitThreshold = SM_ONE_SPLIT_THRESHOLD;
         }
     
     CreateDataIndex(pDataIndex, true, splitThreshold);
@@ -790,12 +790,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #endif
 
         int depth = (int)pDataIndex->GetDepth();
-
-        if (m_sourceCreationMethod == SCM_SOURCE_CREATION_BIG_SPLIT_CUT)
-            {
-            depth -= 1;
-            }
-
+      
         GetProgress()->ProgressStep() = ScalableMeshStep::STEP_GENERATE_LOD;
         GetProgress()->ProgressStepIndex() = 4;
         GetProgress()->Progress() = 0.0;
@@ -818,8 +813,13 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             s_getLastFilteringDuration += clock() - startClock;
             startClock = clock();
 #endif
-            if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
-                return BSIERROR;
+
+            //The full resolution should already be stitched
+            if ((m_sourceCreationMethod != SCM_SOURCE_CREATION_BIG_SPLIT_CUT) || (level < depth))
+                {
+                if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
+                    return BSIERROR;                
+                }
 
             if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
