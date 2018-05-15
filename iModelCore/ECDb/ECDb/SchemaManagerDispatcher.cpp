@@ -380,9 +380,9 @@ PropertyCategoryCP SchemaManager::Dispatcher::GetPropertyCategory(Utf8StringCR s
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-void SchemaManager::Dispatcher::ClearCache(Utf8CP tableSpace) const
+void SchemaManager::Dispatcher::ClearCache() const
     {
-    Iterable iterable = GetIterable(tableSpace);
+    Iterable iterable = GetIterable(nullptr);
     if (!iterable.IsValid())
         return;
 
@@ -582,7 +582,6 @@ BentleyStatus MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& s
     const BentleyStatus stat = ImportSchemas(ctx, schemas, token);
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::ImportSchemas");
     m_ecdb.ClearECDbCache();
-    m_ecdb.FireAfterSchemaImportEvent();
     PERFLOG_FINISH("ECDb", "Schema import");
     return stat;
     }

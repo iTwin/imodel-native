@@ -102,7 +102,7 @@ BentleyStatus IECSqlPreparedStatement::AssertIsValid() const
     {
     if (m_preparationClearCacheCounter != m_ecdb.GetImpl().GetClearCacheCounter())
         {
-        LOG.errorv("The ECSqlStatement '%s' can no longer be used because an ECSchema import took place. ECSqlStatements are invalidated after an ECSchema import.",
+        LOG.errorv("The ECSqlStatement '%s' can no longer be used because the ECDb cache was cleared. ECSqlStatements need to be reprepared when the ECDb cache was cleared.",
                    m_ecsql.c_str());
         return ERROR;
         }

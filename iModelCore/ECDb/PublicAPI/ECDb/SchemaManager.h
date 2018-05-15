@@ -257,7 +257,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! <b>this method does not have to be called</b>. ECDb maintains the cache tables autonomously.
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus RepopulateCacheTables() const;
-        void ClearCache(Utf8CP tableSpace) const;
+        void ClearCache() const;
 
         ECN::ECDerivedClassesList const* GetDerivedClassesInternal(ECN::ECClassCR baseClass, Utf8CP tableSpace = nullptr) const;
         Dispatcher const& GetDispatcher() const;

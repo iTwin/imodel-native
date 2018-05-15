@@ -214,7 +214,11 @@ protected:
     ECDB_EXPORT SettingsManager const& GetECDbSettingsManager() const;
 #endif
 
-    virtual void _OnAfterSchemaImport() const {}
+    //! When ECDb::ClearECDbCache is called, this call back is called before the actual
+    //! caches are cleared.
+    //! This gives subclasses the opportunity to free anything that relies on the ECDb caches, e.g.
+    //! ECSqlStatements or ECObjects entities.
+    virtual void _OnBeforeClearECDbCache() const {}
 
 public:
     //! This method @b must be called once per process before any other ECDb method is called.
@@ -282,34 +286,34 @@ public:
     //! @name EC Changes
     //! @{
 
-    //! Determines whether the Changes cache file is attached to this %ECDb file or not.
-    //! @return true if the Changes cache file is attached and valid. false otherwise
+    //! Determines whether the Change Cache file is attached to this %ECDb file or not.
+    //! @return true if the Change Cache file is attached and valid. false otherwise
     //! @see @ref ECDbChange
     ECDB_EXPORT bool IsChangeCacheAttached() const;
 
-    //! Attaches the Changes cache file to this %ECDb file.
+    //! Attaches the Change cache file to this %ECDb file.
     //! If it does not exist, a new one is created and attached.
-    //! If a cache file is already attached, an error is returned.
+    //! If a Change Cache file is already attached, an error is returned.
     //! @note Attaching a file means that any open transactions are committed first (see BentleyApi::BeSQLite::Db::AttachDb).
-    //! @param[in] changeCachePath Path to the change cache file.
+    //! @param[in] changeCachePath Path to the Change Cache file.
     //! @return BE_SQLITE_OK in case of success, error codes otherwise
     //! @see @ref ECDbChange
     ECDB_EXPORT DbResult AttachChangeCache(BeFileNameCR changeCachePath) const;
 
-    //! Detaches the Changes cache file from this %ECDb file, if it was attached.
+    //! Detaches the Change Cache filefrom this %ECDb file, if it was attached.
     //! @note Detaching commits any open transactions first (see BentleyApi::BeSQLite::Db::DetachDb).
     //! @return BE_SQLITE_OK in case of success, error codes otherwise
     //! @see @ref ECDbChange
     ECDB_EXPORT DbResult DetachChangeCache() const;
 
-    //! Creates a new Changes cache file for this %ECDb file but does not attach it.
+    //! Creates a new Change Cache file for this %ECDb file but does not attach it.
     //! @remarks This method will return an error, if the cache file already exists.
     //!
-    //! This method can also be used if further set-up on the cache file is needed by the client.
-    //! For example, higher layer code can create the cache file using this method and import another schema.
+    //! This method can also be used if further set-up on the Change Cache file is needed by the client.
+    //! For example, higher layer code can create the Change Cache file using this method and import another schema.
     //! Note though that any of this is ignored by ECDb and must be maintained by the code that added it.
-    //! @param[out] changeCacheFile Created cache file which remains open
-    //! @param[in] changeCacheFilePath Path for the cache file. You can use ECDb::GetDefaultChangeCachePath
+    //! @param[out] changeCacheFile Created Change Cache file which remains open
+    //! @param[in] changeCacheFilePath Path for the Change Cache file. You can use ECDb::GetDefaultChangeCachePath
     //! to get the default path.
     //! @return BE_SQLITE_OK in case of success, error codes otherwise
     //! @see @ref ECDbChange
@@ -321,9 +325,9 @@ public:
     //! The method returns the ECInstanceKey of the generated ChangeSummary which serves as input to any query into the changes
     //! using the @b ECDbChange ECClasses or using the ECSQL function @b Changes.
     //!
-    //! @note The change summaries are persisted in a separate cache file. Before extracting you must make sure
-    //! the cache exists and is attached. Call ECDb::AttachChangeCache first. 
-    //! If the cache does not exist or is not attached, the method returns ERROR.
+    //! @note The change summaries are persisted in a separate Change Cache file. Before extracting you must make sure
+    //! the Change Cache file exists and is attached. Call ECDb::AttachChangeCache first. 
+    //! If the Change Cache file does not exist or is not attached, the method returns ERROR.
     //!
     //! @param[out] changeSummaryKey Key of the generated change summary (of the ECClass @b ECDbChange.ChangeSummary)
     //! @param[in] changeSetArg Change set and additional information about the change set to generate the summary from
@@ -338,13 +342,13 @@ public:
     //! The method returns the ECInstanceKey of the generated ChangeSummary which serves as input to any query into the changes
     //! using the @b ECDbChange ECClasses or using the ECSQL function @b Changes.
     //!
-    //! @note The change summaries are persisted in a separate cache file, specified by @p changeCacheFile.
-    //! Before extracting you must make sure the cache exists. Either call ECDb::CreateChangeCache or ECDb::AttachChangeCache first. 
-    //! The change cache file doesn't have to be attached though.
-    //! If the cache does not exist, the method returns ERROR.
+    //! @note The change summaries are persisted in a separate Change Cache file file, specified by @p changeCacheFile.
+    //! Before extracting you must make sure the Change Cache file exists. Either call ECDb::CreateChangeCache or ECDb::AttachChangeCache first. 
+    //! The Change Cache file doesn't have to be attached though.
+    //! If the Change Cache file does not exist, the method returns ERROR.
     //!
     //! @param[out] changeSummaryKey Key of the generated change summary (of the ECClass @b ECDbChange.ChangeSummary)
-    //! @param[in] changeCacheFile Open read-write connection to the Changes cache file
+    //! @param[in] changeCacheFile Open read-write connection to the Change Cache file
     //! @param[in] primaryFile Open connection to the primary ECDb file to which the changes refer (can be read-only)
     //! @param[in] changeSetArg Change set and additional information about the change set to generate the summary from
     //! @param[in] options Extraction options
@@ -352,10 +356,10 @@ public:
     //! @see @ref ECDbChange
     ECDB_EXPORT static BentleyStatus ExtractChangeSummary(ECInstanceKey& changeSummaryKey, ECDb& changeCacheFile, ECDb const& primaryFile, ChangeSetArg const& changeSetArg, ChangeSummaryExtractOptions const& options = ChangeSummaryExtractOptions());
 
-    //! Gets the default file path to the Change cache file for the specified %ECDb path.
+    //! Gets the default file path to the Change Cache file for the specified %ECDb path.
     //! The default file path is: @p ecdbPath + ".ecchanges"
-    //! @param[in] ecdbPath Path to %ECDb file for which Change cache path is returned
-    //! @return Default path to Changes cache file
+    //! @param[in] ecdbPath Path to %ECDb file for which Change Cache file path is returned
+    //! @return Default path to Change Cache file
     //! @see @ref ECDbChange
     ECDB_EXPORT static BeFileName GetDefaultChangeCachePath(Utf8CP ecdbPath);
 
@@ -423,11 +427,23 @@ public:
     ECDB_EXPORT BentleyStatus OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpace, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecInstanceId, bool writable, ECCrudWriteToken const* writeToken = nullptr) const;
 
     //! Clears the ECDb cache
-    ECDB_EXPORT void ClearECDbCache(Utf8CP tableSpace = nullptr) const;
+    //!
+    //! ECDb caches various things in memory once they have been loaded from the ECDb file from disk.
+    //! This includes publicly exposed objects like the ECSchema elements like ECClasses.
+    //! Once this method has been called, <b>the objects that were previously held by the cache must
+    //! no longer be used</b>.
+    //! Likewise any objects that have referenced the cached information may no longer be used anymore either. 
+    //! This includes ECSqlStatements and anything that uses them like the ECSQL adapters or an ECSqlStatementCache.
+    //!
+    //! @note ECDb also calls this method internally, e.g. within ECDb::ImportSchemas, ECDb::DetachChangeCache or BeSQLite::Db::DetachDb.
+    //! The same rules described above therefore apply after having called those methods.
+    //!
+    //! @note For subclass implementors: calling this method fires the _OnBeforeClearECDbCache callback. This allows subclasses
+    //! to free any items that referred to the objects in the cache.
+    ECDB_EXPORT void ClearECDbCache() const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetImpl() const;
-    void FireAfterSchemaImportEvent() const { _OnAfterSchemaImport(); }
 #endif
 };
 

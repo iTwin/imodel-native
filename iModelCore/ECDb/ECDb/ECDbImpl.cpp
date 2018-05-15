@@ -55,7 +55,11 @@ DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) cons
     if (!DbTableSpace::IsAttachedECDbFile(m_ecdb, tableSpaceName))
         return BE_SQLITE_OK; //only need to react to attached ECDb files
 
-    return m_schemaManager->GetDispatcher().AddManager(tableSpace) == SUCCESS ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+    if (SUCCESS != m_schemaManager->GetDispatcher().AddManager(tableSpace))
+        return BE_SQLITE_ERROR;
+    
+    GetChangeManager().OnDbAttached(tableSpace);
+    return BE_SQLITE_OK;
     }
 
 //--------------------------------------------------------------------------------------
@@ -63,7 +67,13 @@ DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) cons
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbDetached(Utf8CP tableSpaceName) const
     {
-    return SUCCESS == m_schemaManager->GetDispatcher().RemoveManager(DbTableSpace(tableSpaceName)) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+    DbTableSpace tableSpace(tableSpaceName);
+    ClearECDbCache(tableSpaceName);
+    if (SUCCESS != m_schemaManager->GetDispatcher().RemoveManager(tableSpace))
+        return BE_SQLITE_ERROR;
+
+    GetChangeManager().OnDbDetached(tableSpace);
+    return BE_SQLITE_OK;
     }
 
 //--------------------------------------------------------------------------------------
@@ -245,16 +255,20 @@ CachedStatementPtr ECDb::Impl::GetCachedSqliteStatement(Utf8CP sql) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2014
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::Impl::ClearECDbCache(Utf8CP tableSpace) const
+void ECDb::Impl::ClearECDbCache() const
     {
     BeMutexHolder lock(m_mutex);
+    
+    //this event allows consuming code to free anything that relies on the ECDb cache (like ECSchemas, ECSqlStatements etc)
+    m_ecdb._OnBeforeClearECDbCache();
+
     for (AppData::Key const* appDataKey : m_appDataToDeleteOnClearCache)
         {
         m_ecdb.DropAppData(*appDataKey);
         }
 
     if (m_schemaManager != nullptr)
-        m_schemaManager->ClearCache(tableSpace);
+        m_schemaManager->ClearCache();
 
     const_cast<ChangeManager&>(m_changeManager).ClearCache();
     const_cast<StatementCache&>(m_sqliteStatementCache).Empty();
@@ -262,7 +276,6 @@ void ECDb::Impl::ClearECDbCache(Utf8CP tableSpace) const
     //increment the counter. This allows code (e.g. ECSqlStatement) that depends on objects in the cache to invalidate itself
     //after the cache was cleared.
     m_clearCacheCounter.Increment();
-
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("After ECDb::ClearECDbCache");
     }
 

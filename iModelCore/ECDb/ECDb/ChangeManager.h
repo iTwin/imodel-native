@@ -33,6 +33,8 @@ struct ChangeManager final
     private:
         ECDbCR m_ecdb;
         mutable std::unique_ptr<ChangedValueSqlFunction> m_changedValueSqlFunction;
+        mutable bool m_isCacheAttached = false;
+
         //static non-POD must not be deleted (Bentley guideline)
         static ProfileVersion const* s_expectedCacheVersion;
 
@@ -52,12 +54,14 @@ struct ChangeManager final
         //! This only checks whether a file with the change summary alias was attached. It could be any file though.
         //! Use IsChangeCacheAttached to find out whether the attached file is a valid change summary cache file
         bool ChangeTableSpaceExists() const { return DbUtilities::TableSpaceExists(m_ecdb, TABLESPACE_ECChange); }
-        static bool IsChangeCacheAttachedAndValid(ECDbCR, bool logError = false);
-        static bool IsChangeCacheValid(ECDbCR cacheFile, bool logError = false);
-
+        bool IsChangeCacheAttached() const { return m_isCacheAttached; }
         DbResult AttachChangeCacheFile(BeFileNameCR cacheFilePath, bool createIfNotExists) const;
+        void OnDbAttached(DbTableSpace const&) const;
+        void OnDbDetached(DbTableSpace const&) const;
         DbResult DetachChangeCacheFile() const;
         DbResult CreateChangeCacheFile(ECDbR, BeFileNameCR cacheFilePath) const;
+
+        static BentleyStatus ValidateChangeCache(ECDbCR changeCache, IIssueReporter const&);
 
         void RegisterSqlFunctions() const;
         void UnregisterSqlFunction() const;

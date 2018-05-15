@@ -1404,8 +1404,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Castle", IECSqlBinder::MakeCopy::No)) << scenario;
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindPoint2d(2, DPoint2d::From(300.0, 300.0))) << scenario;
         ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(castleKey)) << scenario;
-        insertStmt.ClearBindings();
-        insertStmt.Reset();
+        insertStmt.Finalize();
 
         ASSERT_TRUE(tracker.HasChanges()) << scenario;
         TestChangeSet changeset1;
@@ -1417,11 +1416,11 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithPointProp)
         //Changeset 2
         tracker.Restart();
 
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.POI(Name,Location) VALUES(?,?)")) << scenario;
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Lake", IECSqlBinder::MakeCopy::No)) << scenario;
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindPoint2d(2, DPoint2d::From(400.0, 400.0))) << scenario;
         ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(lakeKey)) << scenario;
-        insertStmt.ClearBindings();
-        insertStmt.Reset();
+        insertStmt.Finalize();
 
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.POI WHERE Name='Station'")) << scenario;
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.POI SET Name='County Hall', Location.X=150 WHERE Name='City Hall'")) << scenario;
@@ -1687,8 +1686,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(2, "Paris", IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(3, 20000));
         ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(stationKey)) << scenario;
-        insertStmt.ClearBindings();
-        insertStmt.Reset();
+        insertStmt.Finalize();
 
         ASSERT_TRUE(tracker.HasChanges()) << scenario;
         TestChangeSet changeset1;
@@ -1699,12 +1697,12 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithStructProp)
 
         //Changeset 2
         tracker.Restart();
+        ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.POI(Name,Address.City,Address.Zip) VALUES(?,?,?)")) << scenario;
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Castle", IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(2, "Heidelberg", IECSqlBinder::MakeCopy::No));
         ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(3, 30000));
         ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step(castleKey)) << scenario;
-        insertStmt.ClearBindings();
-        insertStmt.Reset();
+        insertStmt.Finalize();
 
         ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.POI WHERE Name='Station'")) << scenario;
         //fix Name and Location.Zip of Hall entry

@@ -172,10 +172,10 @@ BentleyStatus ECDbCustomizeChangeCacheFile()
     ECDb primaryECDb;
     //__PUBLISH_EXTRACT_START__ Overview_ECDb_CustomizeChangeCacheFile.sampleCode
 
-    //*** Step 1: Set-up Change Cache File
-    BeFileName cacheFilePath = ECDb::GetDefaultChangeCachePath(primaryECDb.GetDbFileName());
-    ECDb cacheFile;
-    primaryECDb.CreateChangeCache(cacheFile, cacheFilePath);
+    //*** Step 1: Set-up Change Cache file
+    BeFileName changeCacheFilePath = ECDb::GetDefaultChangeCachePath(primaryECDb.GetDbFileName());
+    ECDb changeCacheFile;
+    primaryECDb.CreateChangeCache(changeCacheFile, changeCacheFilePath);
 
     //Read a custom schema (the method ReadSchema is just a place holder function to keep the example simple) 
     bvector<ECN::ECSchemaCP> customSchemas = ReadSchema(
@@ -199,9 +199,9 @@ BentleyStatus ECDbCustomizeChangeCacheFile()
          </ECSchema>
              )xml");
 
-    cacheFile.Schemas().ImportSchemas(customSchemas);
-    cacheFile.SaveChanges();
-    cacheFile.CloseDb();
+    changeCacheFile.Schemas().ImportSchemas(customSchemas);
+    changeCacheFile.SaveChanges();
+    changeCacheFile.CloseDb();
 
     //***Step 2: Add additional information to extracted change summary
     
@@ -211,15 +211,15 @@ BentleyStatus ECDbCustomizeChangeCacheFile()
     Utf8String createdBy;
     BeSQLite::IChangeSet& changeSet = GetChangeSetInfoFromHub(pushDate, createdBy, changeSetHubId);
 
-    cacheFile.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    changeCacheFile.OpenBeSQLiteDb(changeCacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
 
     //extract the change summary
     ECInstanceKey changeSummaryKey;
-    ECDb::ExtractChangeSummary(changeSummaryKey, cacheFile, primaryECDb, ChangeSetArg(changeSet));
+    ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheFile, primaryECDb, ChangeSetArg(changeSet));
 
     //add additional information and relate it to the new change summary
     ECSqlStatement insertChangeSetStmt;
-    insertChangeSetStmt.Prepare(cacheFile, "INSERT INTO cset.ChangeSet(Summary,ChangeSetHubId,PushDate,CreatedBy) VALUES(?,?,?,?)");
+    insertChangeSetStmt.Prepare(changeCacheFile, "INSERT INTO cset.ChangeSet(Summary,ChangeSetHubId,PushDate,CreatedBy) VALUES(?,?,?,?)");
     insertChangeSetStmt.BindNavigationValue(1, changeSummaryKey.GetInstanceId());
     insertChangeSetStmt.BindText(2, changeSetHubId, IECSqlBinder::MakeCopy::No);
     insertChangeSetStmt.BindDateTime(3, pushDate);
@@ -228,8 +228,8 @@ BentleyStatus ECDbCustomizeChangeCacheFile()
     insertChangeSetStmt.ClearBindings();
     insertChangeSetStmt.Reset();
 
-    cacheFile.SaveChanges();
-    cacheFile.CloseDb();
+    changeCacheFile.SaveChanges();
+    changeCacheFile.CloseDb();
 
     //__PUBLISH_EXTRACT_END__
     return SUCCESS;
