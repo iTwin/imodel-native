@@ -1109,6 +1109,7 @@ static const Utf8CP s_schemasThatAllowOverridingArrays[] =
     "ECXA_ams.01",
     "ECXA_ams_user.01",
     "ams.01",
+    "ams_lcs.01",
     "ams_user.01",
     "Bentley_JSpace_CustomAttributes.02",
     "Bentley_Plant.06",
