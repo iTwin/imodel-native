@@ -194,6 +194,76 @@ DgnDbStatus JsInterop::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8CP
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Schili                  05/18
+//---------------------------------------------------------------------------------------
+DgnDbStatus JsInterop::GetSchemaItem(JsonValueR mjson, DgnDbR dgndb, Utf8CP schemaName, Utf8CP itemName)
+    {
+    const auto& schemaManager = dgndb.Schemas();
+    /*auto schema = schemaManager.GetSchema(schemaName, true);
+    if (nullptr == schema)
+        return DgnDbStatus::NotFound;    // This is not an exception. It just returns an empty result.*/
+
+    const auto ecClass = schemaManager.GetClass(schemaName, itemName);
+    if (nullptr != ecClass)
+        {
+        auto nonConstWorkaround = const_cast<ECClassP>(ecClass);
+        auto result = nonConstWorkaround->WriteJson(mjson, true, true);
+        if(result == SchemaWriteStatus::Success)
+            return DgnDbStatus::Success;
+        else
+            return DgnDbStatus::NotFound; //TODO: is there a better status? Item was found, but failed to serialize
+        }
+
+    const auto kindOfQuantity = schemaManager.GetKindOfQuantity(schemaName, itemName);
+    if (nullptr != kindOfQuantity)
+        {
+        auto result = kindOfQuantity->WriteJson(mjson, true);
+        if (result == SchemaWriteStatus::Success)
+            return DgnDbStatus::Success;
+        else
+            return DgnDbStatus::NotFound; //TODO: is there a better status? Item was found, but failed to serialize
+        }
+
+    const auto enumeration = schemaManager.GetEnumeration(schemaName, itemName);
+    if (nullptr != enumeration)
+        {
+        auto result = enumeration->WriteJson(mjson, true);
+        if (result == SchemaWriteStatus::Success)
+            return DgnDbStatus::Success;
+        else
+            return DgnDbStatus::NotFound; //TODO: is there a better status? Item was found, but failed to serialize
+        }
+
+    const auto category = schemaManager.GetPropertyCategory(schemaName, itemName);
+    if (nullptr != category)
+        {
+        auto result = category->WriteJson(mjson, true);
+        if (result == SchemaWriteStatus::Success)
+            return DgnDbStatus::Success;
+        else
+            return DgnDbStatus::NotFound; //TODO: is there a better status? Item was found, but failed to serialize
+        }
+
+    return DgnDbStatus::NotFound;    // This is not an exception. It just returns an empty result.
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Schili                  05/18
+//---------------------------------------------------------------------------------------
+DgnDbStatus JsInterop::GetSchema(JsonValueR mjson, DgnDbR dgndb, Utf8CP name)
+    {
+    auto schema = dgndb.Schemas().GetSchema(name, true);
+    if (nullptr == schema)
+        return DgnDbStatus::NotFound;    // This is not an exception. It just returns an empty result.
+
+    auto result = schema->WriteToJsonValue(mjson);
+    if (result == SchemaWriteStatus::Success)
+        return DgnDbStatus::Success;
+
+    return DgnDbStatus::NotFound; //TODO: is there a better status? Item was found, but failed to serialize
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
 DgnDbStatus JsInterop::GetElement(JsonValueR elementJson, DgnDbR dgndb, JsonValueCR inOpts)

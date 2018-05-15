@@ -801,6 +801,26 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), metaDataJson.ToString().c_str()));
         }
 
+    Napi::Value GetSchemaItem(Napi::CallbackInfo const& info)
+    {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, schemaName, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(1, itemName, Env().Undefined());
+        Json::Value metaDataJson;
+        auto status = JsInterop::GetSchemaItem(metaDataJson, GetDgnDb(), schemaName.c_str(), itemName.c_str());
+        return CreateBentleyReturnObject(status, Napi::String::New(Env(), metaDataJson.ToString().c_str()));
+    }
+
+    Napi::Value GetSchema(Napi::CallbackInfo const& info)
+    {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, name, Env().Undefined());
+
+        Json::Value metaDataJson;
+        auto status = JsInterop::GetSchema(metaDataJson, GetDgnDb(), name.c_str());
+        return CreateBentleyReturnObject(status, Napi::String::New(Env(), metaDataJson.ToString().c_str()));
+    }
+
     Napi::Value GetElement(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -1679,6 +1699,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("getCachedBriefcaseInfos", &NativeDgnDb::GetCachedBriefcaseInfos),
             InstanceMethod("getDbGuid", &NativeDgnDb::GetDbGuid),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
+            InstanceMethod("getSchemaItem", &NativeDgnDb::GetSchemaItem),
+            InstanceMethod("getSchema", &NativeDgnDb::GetSchema),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
             InstanceMethod("getElementPropertiesForDisplay", &NativeDgnDb::GetElementPropertiesForDisplay),
             InstanceMethod("getIModelProps", &NativeDgnDb::GetIModelProps),
