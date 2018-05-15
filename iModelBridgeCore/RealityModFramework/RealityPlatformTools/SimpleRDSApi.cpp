@@ -301,6 +301,9 @@ void ConnectedRealityDataRelationship::Clone(RealityDataRelationshipPtr relation
     m_realityDataId = relationship->GetRealityDataId();
     m_relatedId = relationship->GetRelatedId();
     m_relationType = relationship->GetRelationType();
+    m_modifiedDateTime = relationship->GetModifiedDateTime();
+    m_createdDateTime = relationship->GetCreationDateTime();
+
     }
 
 //-------------------------------------------------------------------------------------

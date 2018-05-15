@@ -26,6 +26,20 @@ RealityDataRelationship::RealityDataRelationship(Json::Value jsonInstance)
             m_relatedId = jsonInstance["properties"]["RelatedId"].asCString();
         if (jsonInstance["properties"].isMember("RelationType") && !jsonInstance["properties"]["RelationType"].isNull())
             m_relationType = jsonInstance["properties"]["RelationType"].asCString();
+
+        if (jsonInstance["properties"].isMember("ModifiedTimestamp") && !jsonInstance["properties"]["ModifiedTimestamp"].isNull())
+            {
+            DateTime dt;
+            DateTime::FromString(dt, jsonInstance["properties"]["ModifiedTimestamp"].asString().c_str());
+            m_modifiedDateTime = dt;
+            }
+
+        if (jsonInstance["properties"].isMember("CreatedTimestamp") && !jsonInstance["properties"]["CreatedTimestamp"].isNull())
+            {
+            DateTime dt;
+            DateTime::FromString(dt, jsonInstance["properties"]["CreatedTimestamp"].asString().c_str());
+            m_createdDateTime = dt;
+            }
         }
     }
 
@@ -77,6 +91,33 @@ void RealityDataRelationship::SetRelationType(Utf8StringCR relationType)
     {   
     // Project id may comply with some naming rules ... check?
     m_relationType = relationType;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                           05/2018
+//-------------------------------------------------------------------------------------
+DateTimeCR RealityDataRelationship::GetModifiedDateTime() const { return m_modifiedDateTime; }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            05/2018
+//-------------------------------------------------------------------------------------
+void RealityDataRelationship::SetModifiedDateTime(DateTimeCR modifiedDateTime)
+    {   
+    m_modifiedDateTime = modifiedDateTime;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                           05/2018
+//-------------------------------------------------------------------------------------
+DateTimeCR RealityDataRelationship::GetCreationDateTime() const { return m_createdDateTime; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Alain.Robert                            05/2018
+//-------------------------------------------------------------------------------------
+void RealityDataRelationship::SetCreationDateTime(DateTimeCR createdDateTime)
+    {   
+    m_createdDateTime = createdDateTime;
     }
 
 //-------------------------------------------------------------------------------------

@@ -2115,7 +2115,11 @@ void RealityDataConsole::Relationships()
 
     DisplayInfo("Related attached to this RealityData\n\n");
     for (RealityDataRelationshipPtr entity : entities)
-        DisplayInfo(Utf8PrintfString(" RelatedId          : %s\n RelationType       : %s\n", entity->GetRelatedId(), entity->GetRelationType()));
+        DisplayInfo(Utf8PrintfString(" RelatedId          : %s\n RelationType       : %s\n Modified Time      : %s\n Created Time       : %s\n", 
+                          entity->GetRelatedId(), 
+                          entity->GetRelationType(), 
+                          entity->GetModifiedDateTime().ToString(), 
+                          entity->GetCreationDateTime().ToString()));
     }
 
 void RealityDataConsole::CreateRD()

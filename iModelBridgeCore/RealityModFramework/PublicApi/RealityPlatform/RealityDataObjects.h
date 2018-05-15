@@ -75,6 +75,14 @@ public:
     //! The relation type. The type of relationship is a string key that can be in the reserved list or not (user defined type).
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRelationType() const;
     REALITYDATAPLATFORM_EXPORT void SetRelationType(Utf8StringCR relationType);
+
+    //! The date the relation was created.
+    REALITYDATAPLATFORM_EXPORT DateTimeCR GetCreationDateTime() const;
+    REALITYDATAPLATFORM_EXPORT void SetCreationDateTime(DateTimeCR createdDate);
+
+    //! The date the relation was modified.
+    REALITYDATAPLATFORM_EXPORT DateTimeCR GetModifiedDateTime() const;
+    REALITYDATAPLATFORM_EXPORT void SetModifiedDateTime(DateTimeCR createdDate);
     
 protected:
     REALITYDATAPLATFORM_EXPORT RealityDataRelationship(Json::Value jsonInstance);
@@ -82,6 +90,9 @@ protected:
     Utf8String m_realityDataId;
     Utf8String m_relatedId;
     Utf8String m_relationType;
+    DateTime   m_createdDateTime;
+    DateTime   m_modifiedDateTime;
+
     }; 
 
 
