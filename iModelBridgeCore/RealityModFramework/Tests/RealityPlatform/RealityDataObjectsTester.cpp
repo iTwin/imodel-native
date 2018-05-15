@@ -880,7 +880,7 @@ TEST_F(RealityDataObjectTestFixture, RealityDataRelationshipBasicTest)
                             "\"properties\" : {"
                                   "\"RealityDataId\": \"f4425509-55c4-4e03-932a-d67b87ace30f\","
                                   "\"RelatedId\" : \"504fc784-2b2d-465f-b1d9-de58bf6cf0f2\","
-                                  "\"RelationType\" : \"CONNECT-Project\""
+                                  "\"RelationType\" : \"CONNECT-Project\","
                                   "\"ModifiedTimestamp\": \"0001-01-01T00:00:00.0000000\","
                                   "\"CreatedTimestamp\": \"0001-01-01T00:00:00.0000000\""
                                " },"
@@ -893,9 +893,9 @@ TEST_F(RealityDataObjectTestFixture, RealityDataRelationshipBasicTest)
                             "\"properties\" : {"
                                   "\"RealityDataId\": \"8411d048-78ec-495a-b263-cad44dba7a17\","
                                   "\"RelatedId\" : \"73597d7f-e2fe-4704-8ee9-be37ed1f3d37\","
-                                  "\"RelationType\" : \"CONNECT-Project\""
-                                  "\"ModifiedTimestamp\": \"2018-01-23T12:45:23.4560000\","
-                                  "\"CreatedTimestamp\": \"2017-11-14T00:33:20.0560000\""
+                                  "\"RelationType\" : \"CONNECT-Project\","
+                                  "\"ModifiedTimestamp\": \"2018-01-23T12:45:23.4560000Z\","
+                                  "\"CreatedTimestamp\": \"2017-11-14T00:33:20.0560000Z\""
                                " },"
                             " \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\""
                            "}"
@@ -918,9 +918,9 @@ TEST_F(RealityDataObjectTestFixture, RealityDataRelationshipBasicTest)
     EXPECT_STREQ(myRelationShip->GetRelationType().c_str(), "CONNECT-Project");
 
     EXPECT_TRUE(myRelationShip->GetModifiedDateTime().IsValid());
-    EXPECT_TRUE(myRelationShip->GetModifiedDateTime() == DateTime(0001,01,1));
+    EXPECT_TRUE(myRelationShip->GetModifiedDateTime() == DateTime(DateTime::Kind::Unspecified, 0001, 01, 01, 00, 00, 00, 0));
     EXPECT_TRUE(myRelationShip->GetCreationDateTime().IsValid());
-    EXPECT_TRUE(myRelationShip->GetCreationDateTime() == DateTime(0001,01,1));
+    EXPECT_TRUE(myRelationShip->GetCreationDateTime() == DateTime(DateTime::Kind::Unspecified, 0001, 01, 01, 00, 00, 00, 0));
 
     const Json::Value instance2 = root["instances"][1];
     ASSERT_TRUE(instance.isMember("properties"));
