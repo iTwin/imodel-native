@@ -47,7 +47,7 @@ DefaultHttpHandler::~DefaultHttpHandler()
     {
     if (m_handler != nullptr)
         {
-        LOG.fatal("Call HttpClient::Uninitialize() before shutting down application.");
+        //LOG.fatal("Call HttpClient::Uninitialize() before shutting down application.");
         BeAssert(false && "Call HttpClient::Uninitialize() before shutting down application.");
 
         // Windows process is now running one thread. Clean shut down impossible at this point.
