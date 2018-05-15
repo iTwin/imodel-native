@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #
-#     $Source: RunCompatibilityTests.mke $
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/PullCompatibilityDatasets.mke $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -11,8 +11,10 @@
 #----------------------------------------------------------
 %include  mdl.mki
 
-# Dir that all the nuget packages should be pulled are in
-NUGET_DIR       = $(OutputRootDir)/iModelSchemaEvolution/Nugets/
-
+#TODO pull from rsync server instead of local symlink
+IMS_DIR = $(OutputRootDir)iModelSchemaEvolution
+DATA_DIR = $(IMS_DIR)/Data
 always:
-    python $(SrcRoot)/DgnPlatform/RunCompatibilityTests.py $(NUGET_DIR)
+    ~mkdir $(IMS_DIR)
+    ~mkdir $(DATA_DIR)
+    #$(SrcRoot)bsicommon/build/CopyWithSymlinks.py D:\\Temp\\iModelCompat\\Compatibility $(DATA_DIR)

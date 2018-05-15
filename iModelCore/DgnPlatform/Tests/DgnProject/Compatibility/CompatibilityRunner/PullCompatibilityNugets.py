@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #
-#     $Source: PullCompatibilityNugets.py $
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/PullCompatibilityNugets.py $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #

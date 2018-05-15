@@ -255,10 +255,10 @@
         </Bindings>
     </Part>
 
-    <Part Name="DgnPlatform-Compatibility-Pull-All-Datasets" BentleyBuildMakeFile="PullCompatibilityDatasets.mke">
+    <Part Name="DgnPlatform-Compatibility-Pull-All-Datasets" BentleyBuildMakeFile="Tests/DgnProject/Compatibility/CompatibilityRunner/PullCompatibilityDatasets.mke">
     </Part>
  
-    <Part Name="DgnPlatform-Compatibility-Pull-All-Nugets" BentleyBuildMakeFile="PullCompatibilityNugets.mke">
+    <Part Name="DgnPlatform-Compatibility-Pull-All-Nugets" BentleyBuildMakeFile="Tests/DgnProject/Compatibility/CompatibilityRunner/PullCompatibilityNugets.mke">
          <SubPart PartName="RunGTest-DgnPlatform-Compatibility" />    
     </Part>
 
@@ -276,7 +276,7 @@
         <SubPart PartName="DgnPlatform-Compatibility-Pull-All-Datasets"/>
      </Part>
  
-    <Part Name="RunGtest-DgnPlatform-Compatibility-Forwards" DeferType="RunUnitTests" BentleyBuildMakeFile="RunCompatibilityTests.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest-DgnPlatform-Compatibility-Forwards" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests/DgnProject/Compatibility/CompatibilityRunner/RunCompatibilityTests.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubPart PartName="RunGtest-DgnPlatform-Compatibility-Backwards"/>
         <SubPart PartName="DgnPlatform-Compatibility-Pull-All-Nugets"/>
     </Part>

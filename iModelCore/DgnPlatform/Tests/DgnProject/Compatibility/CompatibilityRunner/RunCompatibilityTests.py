@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #
-#     $Source: RunCompatibilityTests.py $
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/RunCompatibilityTests.py $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
