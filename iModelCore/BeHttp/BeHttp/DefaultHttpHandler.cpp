@@ -9,6 +9,7 @@
 #include <BeHttp/DefaultHttpHandler.h>
 #include <Bentley/Tasks/AsyncTasksManager.h>
 #include "Curl/ThreadCurlHttpHandler.h"
+#include "WebLogging.h"
 
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
@@ -44,8 +45,22 @@ DefaultHttpHandler::DefaultHttpHandler()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DefaultHttpHandler::~DefaultHttpHandler()
     {
-    BeAssert(m_handler == nullptr && "Call HttpClient::Uninitialize() before shutting down application");
+    if (m_handler != nullptr)
+        {
+        LOG.fatal("Call HttpClient::Uninitialize() before shutting down application.");
+        BeAssert(false && "Call HttpClient::Uninitialize() before shutting down application.");
+
+        // Windows process is now running one thread. Clean shut down impossible at this point.
+        // Destructor is called from static singleton variable - process shutdown.
+        // All threads are killed off - web threads are destroyed and stuck in "running" state.
+        
+        // Disable waiting to avoid hanging process in destructor.
+        // Crash could still occur as CURL is unitialized too late in process lifetime.
+        CurlHttpHandler::SetWaitOnDestroy(false);
+        }
+    
     m_handler = nullptr;
+
     CurlHttpHandler::ProcessUninitialize();
     }
 

@@ -29,6 +29,9 @@ struct CurlHttpHandler : IHttpHandler, IApplicationEventsListener
     public:
         typedef std::function<void(Utf8CP name, std::function<void()> task, std::function<void()> onExpired)> StartBackgroundTask;
 
+    private:
+        static bool s_waitOnDestroy;
+
     protected:
         // NotificationPipe for wake up from idle when request is added. Will not work for cancellation of existing requests.
         NotificationPipe                    m_notifier;
@@ -54,6 +57,8 @@ struct CurlHttpHandler : IHttpHandler, IApplicationEventsListener
         void InitStartBackgroundTask(StartBackgroundTask callback);
 
         void CancelAllRequests();
+
+        static void SetWaitOnDestroy(bool wait) { s_waitOnDestroy = wait; }
     };
 
 END_BENTLEY_HTTP_NAMESPACE

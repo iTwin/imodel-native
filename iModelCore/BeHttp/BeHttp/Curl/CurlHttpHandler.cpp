@@ -23,6 +23,8 @@ USING_NAMESPACE_BENTLEY_TASKS
 
 #define ENABLE_BACKGROUND_TRANSFER
 
+bool CurlHttpHandler::s_waitOnDestroy = true;
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -70,7 +72,8 @@ CurlHttpHandler::~CurlHttpHandler()
 
     m_webRunnerFactory->StopRunners();
     m_webThreadPool = nullptr;
-    m_webRunnerFactory->WaitUntilRunnersStopped();
+    if (s_waitOnDestroy)
+        m_webRunnerFactory->WaitUntilRunnersStopped();
     m_curlPool.Resize(0);
 
 #if defined (BENTLEYCONFIG_OS_APPLE_IOS)
