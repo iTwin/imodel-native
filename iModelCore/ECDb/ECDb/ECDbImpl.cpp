@@ -68,9 +68,10 @@ DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) cons
 DbResult ECDb::Impl::OnDbDetached(Utf8CP tableSpaceName) const
     {
     DbTableSpace tableSpace(tableSpaceName);
-    ClearECDbCache(tableSpaceName);
     if (SUCCESS != m_schemaManager->GetDispatcher().RemoveManager(tableSpace))
         return BE_SQLITE_ERROR;
+
+    ClearECDbCache();
 
     GetChangeManager().OnDbDetached(tableSpace);
     return BE_SQLITE_OK;
