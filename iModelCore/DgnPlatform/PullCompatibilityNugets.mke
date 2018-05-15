@@ -18,8 +18,14 @@
 #----------------------------------------------------------
 
 NUGET_DIR = $(SrcRoot)/nuget/iModelCompatibility/
-
+IMS_DIR = $(OutputRootDir)iModelSchemaEvolution
+ASSETS_DIR = $(IMS_DIR)/Assets
+IMS_NUGETS_DIR = $(IMS_DIR)/Nugets
 always:
     ~mkdir $(NUGET_DIR)
+    ~mkdir $(IMS_DIR)
+    ~mkdir $(ASSETS_DIR)
+    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(BuildContext)Delivery/Gtest/DgnCompatibility/Assets/ $(ASSETS_DIR)
     python PullCompatibilityNugets.py $(NUGET_DIR)
-    ~linkmultidirs $(OutBuildContexts)/DgnPlatform/iModelCompatibility/=$(NUGET_DIR)
+    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(NUGET_DIR) $(IMS_NUGETS_DIR)
+    python SymLinkAssetDir.py $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(ASSETS_DIR) $(IMS_NUGETS_DIR)

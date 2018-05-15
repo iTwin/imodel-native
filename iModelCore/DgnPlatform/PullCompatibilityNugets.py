@@ -16,7 +16,8 @@ from shutil import copyfile, rmtree
 def pullAllNugets(path):
     rmtree(path)
     os.makedirs(path)
-    copyfile("C:\\Users\\kyle.abramowitz\\OneDrive - Bentley Systems, Inc\\Desktop\\ecobjects.nupkg", path + "ecobjects.nupkg")
+    #copyfile("C:\\Users\\kyle.abramowitz\\OneDrive - Bentley Systems, Inc\\Desktop\\ecobjects.nupkg", path + "ecobjects.nupkg")
+    #copyfile("C:\\Users\\kyle.abramowitz\\OneDrive - Bentley Systems, Inc\\Desktop\\bim0200.nupkg", path + "bim0200.nupkg")
 
 #------------------------------------------------------------------------
 # bsimethod                         Kyle.Abramowitz             05/2018
@@ -32,7 +33,7 @@ def main():
 
     for filename in os.listdir(nugetPath):
         zip_ref = zipfile.ZipFile(nugetPath + filename, "r")
-        split = nugetPath + os.path.splitext(filename)[0]
+        split = os.path.join(nugetPath, os.path.splitext(filename)[0])
         if os.path.isdir(split):
             rmtree(split, ignore_errors=True)
         zip_ref.extractall(split)
