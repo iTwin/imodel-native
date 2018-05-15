@@ -512,7 +512,7 @@ DPoint2dCP pVector2
 * @return true if and only if the area of T is sufficiently large.
 * @bsihdr                                                                       DavidAssaf      10/98
 +---------------+---------------+---------------+---------------+------*/
-Public  bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
+Public   bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
 
 (
 DPoint3dP pInstance,
@@ -550,7 +550,7 @@ DPoint2dCP pVertex2
 * @return true if and only if the area of T is sufficiently large.
 * @bsihdr                                                                       DavidAssaf      10/98
 +---------------+---------------+---------------+---------------+------*/
-Public  bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
+Public  GEOMDLLIMPEXP bool    bsiDPoint3d_barycentricFromDPoint2dTriangle
 (
 DPoint3dR uvw,
 DPoint3dR dUVWdX,

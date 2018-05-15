@@ -248,7 +248,6 @@ enum
 END_BENTLEY_GEOMETRY_NAMESPACE
 
 #include <Geom/bspmisc.fdf>
-#include <Geom/bsp/bspstrok.fdf>
 #include <Geom/bsp/bspsurf.fdf>
 #include <Geom/bsp/bspproc.fdf>
 #include <Geom/bsp/bsp_curvature.fdf>
@@ -259,15 +258,12 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include <Geom/bsp/bspdcurv.fdf>
 #include <Geom/bsp/bspconv.fdf>
 #include <Geom/bsp/bspprof.fdf>
-#include <Geom/bsp/bsprcurv.fdf>
 #include <Geom/bsp/bspcci.fdf>
 #include <Geom/bsp/bspdsurf.fdf>
 #include <Geom/bsp/bspssi.fdf>
 #include <Geom/bsp/bsprange.fdf>
 #include <Geom/bsp/bspicurv.fdf>
 #include <Geom/bsp/bspmesh.fdf>
-#include <Geom/bsp/bsprfit.fdf>
-#include <Geom/bsp/bspv7.fdf>
 #include <Geom/bsp/bspcurvcurv.fdf>
 #include <Geom/bspcurv.fdf>
 #include <Geom/bsp/bspplank.fdf>
