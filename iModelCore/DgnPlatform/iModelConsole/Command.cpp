@@ -401,7 +401,7 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
         return;
 
     IModelConsole::WriteLine("Current file: ");
-    IModelConsole::WriteLine("  %s", session.GetFile().GetPath());
+    IModelConsole::WriteLine("  Path: %s", session.GetFile().GetPath());
 
     ProfileVersion initialECDbProfileVersion(0, 0, 0, 0);
     if (session.GetFile().GetType() != SessionFile::Type::BeSQLite)
@@ -469,6 +469,25 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
             IModelConsole::WriteLine("    %s: %s", profileInfo.second.m_name.c_str(), profileInfo.second.m_version.ToString().c_str());
         }
 
+    // Table spaces
+    IModelConsole::WriteLine("  Tablespaces:");
+    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), "pragma database_list"))
+        {
+        IModelConsole::WriteErrorLine("Could not execute SQL 'pragma database_list' to retrieve table spaces.");
+        return;
+        }
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP tableSpace = stmt.GetValueText(1);
+        Utf8CP path = stmt.GetValueText(2);
+        if (Utf8String::IsNullOrEmpty(path))
+            IModelConsole::WriteLine("    %s", tableSpace);
+        else
+            IModelConsole::WriteLine("    %s \t(%s)", tableSpace, path);
+        }
+
+    stmt.Finalize();
     }
 
 //******************************* CommitCommand ******************
@@ -584,7 +603,14 @@ void AttachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    if (BE_SQLITE_OK != session.GetFile().GetHandle().AttachDb(filePath, args[1].c_str()))
+    Utf8StringCR tableSpaceName = args[1];
+    if (session.GetFile().IsAttached(tableSpaceName))
+        {
+        IModelConsole::WriteErrorLine("Table space %s is already in use.", tableSpaceName.c_str());
+        return;
+        }
+
+    if (BE_SQLITE_OK != session.GetFile().GetHandle().AttachDb(filePath, tableSpaceName.c_str()))
         {
         IModelConsole::WriteErrorLine("Failed to attach file %s as table space %s: %s", filePath, args[1].c_str(),
                                    session.GetFile().GetHandle().GetLastError().c_str());
@@ -593,6 +619,7 @@ void AttachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     IModelConsole::WriteLine("Attached file %s as table space %s.", filePath, args[1].c_str());
     }
+
 
 //******************************* DetachCommand ******************
 //---------------------------------------------------------------------------------------
@@ -620,7 +647,14 @@ void DetachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     if (!session.IsFileLoaded(true))
         return;
 
-    if (BE_SQLITE_OK != session.GetFile().GetHandle().DetachDb(args[0].c_str()))
+    Utf8StringCR tableSpaceName = args[0];
+    if (!session.GetFile().IsAttached(tableSpaceName))
+        {
+        IModelConsole::WriteErrorLine("Table space %s does not exist.", tableSpaceName.c_str());
+        return;
+        }
+
+    if (BE_SQLITE_OK != session.GetFile().GetHandle().DetachDb(tableSpaceName.c_str()))
         {
         IModelConsole::WriteErrorLine("Failed to detach table space %s and backing file: %s", args[0].c_str(), session.GetFile().GetHandle().GetLastError().c_str());
         return;
@@ -637,7 +671,8 @@ void DetachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 Utf8String ChangeCommand::_GetUsage() const
     {
     return " .change tracking [on|off]      Enable / pause change tracking. Pausing does not create a revision.\r\n"
-           "         attachcache [cache path] attaches (and creates if necessary) the change cache file.\r\n"
+           "         attachcache [cache path] attaches (and creates if necessary) the Change Cache file.\r\n"
+           "         detachcache            Detaches the Change Cache file, if it was attached.\r\n"
            "         extractsummary [changeset file] if a changeset file is specified, a change summary is created from it.\r\n"
            "                                Otherwise a revision from the current local changes is created and the summary extracted from it.\r\n";
     }
@@ -686,7 +721,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         {
         if (session.GetFileR().GetECDbHandle()->IsChangeCacheAttached())
             {
-            IModelConsole::WriteErrorLine("Change cache file has already been attached.");
+            IModelConsole::WriteErrorLine("A Change Cache file has already been attached.");
             return;
             }
 
@@ -698,11 +733,29 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
         if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->AttachChangeCache(cachePath))
             {
-            IModelConsole::WriteErrorLine("Failed to attach Change cache file %s.", cachePath.GetNameUtf8().c_str());
+            IModelConsole::WriteErrorLine("Failed to attach Change Cache file %s.", cachePath.GetNameUtf8().c_str());
             return;
             }
 
-        IModelConsole::WriteLine("Attached Change cache file %s.", cachePath.GetNameUtf8().c_str());
+        IModelConsole::WriteLine("Attached Change Cache file %s.", cachePath.GetNameUtf8().c_str());
+        return;
+        }
+
+    if (args[0].EqualsIAscii("detachcache"))
+        {
+        if (!session.GetFileR().GetECDbHandle()->IsChangeCacheAttached())
+            {
+            IModelConsole::WriteErrorLine("No Change Cache file has been attached.");
+            return;
+            }
+
+        if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->DetachChangeCache())
+            {
+            IModelConsole::WriteErrorLine("Failed to detach Change Cache file.");
+            return;
+            }
+
+        IModelConsole::WriteLine("Detached Change Cache file.");
         return;
         }
 
@@ -710,7 +763,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         {
         if (!session.GetFileR().GetECDbHandle()->IsChangeCacheAttached())
             {
-            IModelConsole::WriteErrorLine("Failed to extract change summary. No Change cache file is attached. Make sure to attach it first or specify a path to the Change cache file.");
+            IModelConsole::WriteErrorLine("Failed to extract change summary. No Change Cache file is attached. Make sure to attach it first or specify a path to the Change Cache file.");
             return;
             }
 

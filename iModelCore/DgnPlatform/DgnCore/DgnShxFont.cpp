@@ -76,7 +76,7 @@ static void bulgeFactorToDEllipse3d(DEllipse3dP pEllipse, DPoint2dCP pStart, DPo
     theta0 = x.AngleTo (r);
 
     // Setup for ellipse
-    bsiDEllipse3d_init(pEllipse, center.x, center.y, 0.0, radius, 0.0, 0.0, 0.0, radius, 0.0, theta0, sweep);
+    pEllipse->Init( center.x, center.y, 0.0, radius, 0.0, 0.0, 0.0, radius, 0.0, theta0, sweep);
     }
 
 //---------------------------------------------------------------------------------------
@@ -485,7 +485,7 @@ void ShapeConverter::DecodeFractionArc(int& currentCode, CharCP pCodes)
     s90Vector.z = 0.0;
     s0Vector.z = 0.0;
 
-    bsiDEllipse3d_initFrom3dVectors(&sEllipse, &center, &s0Vector, &s90Vector, 0, sweep);
+    sEllipse.InitFromVectors (center, s0Vector, s90Vector, 0, sweep);
 
     // *Note: We have empirically found that AutoCAD will always draw arcs, regardless of the pen up/down state.
     //  It does not, however, leave the pen down after arcs; therefore, simply ignore IsPenDown checks.
@@ -673,7 +673,7 @@ void ShapeConverter::DecodeOctantArc(int& currentCode, CharCP pCodes)
     s0Vector.z = 0.0;
 
     DEllipse3d sEllipse;
-    bsiDEllipse3d_initFrom3dVectors(&sEllipse, &center, &s0Vector, &s90Vector, 0, sweep);
+    sEllipse.InitFromVectors (center, s0Vector, s90Vector, 0, sweep);
 
     // *Note: We have empirically found that AutoCAD will always draw arcs, regardless of the pen up/down state.
     //  It does not, however, leave the pen down after arcs; therefore, simply ignore IsPenDown checks.

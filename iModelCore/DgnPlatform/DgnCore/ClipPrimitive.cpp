@@ -957,7 +957,7 @@ virtual bool _PointInside(DPoint3dCR point, double onTolerance, bool applyTransf
     if ((!_ClipZLow()   || testPoint.z > (_GetZLow()  - zTolerance)) &&
         (!_ClipZHigh() || testPoint.z < (_GetZHigh() + zTolerance)))
         {
-        int     parity = bsiDPoint2d_PolygonParity((DPoint2d *) &testPoint, &m_points.front(), (int) m_points.size(), onTolerance);
+        int     parity = PolygonOps::PointPolygonParity (DPoint2d::From (testPoint), m_points, onTolerance);
 
         if (0 == parity)
             return true;
