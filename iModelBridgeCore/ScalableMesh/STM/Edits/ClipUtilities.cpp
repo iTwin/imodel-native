@@ -275,7 +275,7 @@ bool FaceToUVMap::SplitEdge(DPoint2d* newUvs, const int32_t newPt, const int32_t
             SplitFacetOrEdge(newUvs[i], ptIdx, facetIndices, interpolateCallback, true);
             ++i;
             }
-        if (bsiDPoint2d_pointEqualTolerance(&newUvs[0], &newUvs[1], 1e-3)) newUvs[1] = DPoint2d::From(DBL_MAX, DBL_MAX);
+        if (newUvs[0].Distance (newUvs[1]) <= 1e-3) newUvs[1] = DPoint2d::From(DBL_MAX, DBL_MAX);
         return true;
         }
 #if SM_TRACE_CLIPS_GETMESH

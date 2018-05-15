@@ -990,9 +990,7 @@ inline bool isPointOnLineSegment(DPoint3d& p, DPoint3d& p1, DPoint3d& p2)
 
 bool PointProjectsToTriangle2d(DPoint3d& point, DPoint3d* triangle)
     {
-    DPoint2d tri[3] = { DPoint2d::From(triangle[0].x, triangle[0].y), DPoint2d::From(triangle[1].x, triangle[1].y), DPoint2d::From(triangle[2].x, triangle[2].y) };
-    DPoint2d ptA = DPoint2d::From(point.x, point.y);
-    return bsiDPoint2d_isPointInConvexPolygon(&ptA, tri, 3, 1);
+    return PolygonOps::IsPointInOrOnXYTriangle (point, triangle[0], triangle[1], triangle[2]);
     }
 
 bool ScalableMeshMesh::_FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d) const
