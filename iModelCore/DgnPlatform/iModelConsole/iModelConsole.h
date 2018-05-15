@@ -95,6 +95,7 @@ struct SessionFile
         BeSQLite::Db& GetHandleR() const { return _GetBeSqliteHandle(); }
 
         bool TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>&) const;
+        bool IsAttached(Utf8StringCR tableSpaceName) const;
         bool EnableTracking(bool enable);
         bool IsTracking() const { return m_changeTracker != nullptr && m_changeTracker->IsTracking(); }
         IModelConsoleChangeTracker* GetTracker() const { return m_changeTracker.get(); }

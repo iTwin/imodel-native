@@ -135,6 +135,26 @@ bool SessionFile::TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>& 
     return !profileInfos.empty();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle    03/2017
+//---------------------------------------------------------------------------------------
+bool SessionFile::IsAttached(Utf8StringCR tableSpaceName) const
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(GetHandle(), "pragma database_list"))
+        {
+        IModelConsole::WriteErrorLine("Could not execute SQL 'pragma database_list' to retrieve tablespaces.");
+        return false;
+        }
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        if (tableSpaceName.EqualsIAscii(stmt.GetValueText(1)))
+            return true;
+        }
+
+    return false;
+    }
 //******************** IModelConsole ***********************
 
 //---------------------------------------------------------------------------------------

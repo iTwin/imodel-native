@@ -289,7 +289,6 @@ struct AttachCommand final : public Command
         Utf8String _GetName() const override { return ".attach"; }
         Utf8String _GetUsage() const override;
         void _Run(Session&, Utf8StringCR args) const override;
-
     public:
         AttachCommand() : Command() {}
         ~AttachCommand() {}
@@ -304,7 +303,6 @@ struct DetachCommand final : public Command
         Utf8String _GetName() const override { return ".detach"; }
         Utf8String _GetUsage() const override;
         void _Run(Session&, Utf8StringCR args) const override;
-
     public:
         DetachCommand() : Command() {}
         ~DetachCommand() {}
