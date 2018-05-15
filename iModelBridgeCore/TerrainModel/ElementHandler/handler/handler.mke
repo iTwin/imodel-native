@@ -117,6 +117,9 @@ $(o)RasterTextureSourceManager$(oext)           : $(basedir)RasterTextureSourceM
                                                   $(basedir)..\PublicAPI\IRasterTextureSourceManager.h \
                                                   ${MultiCompileDepends}
 
+$(o)CivilElemSource$(oext)           : $(basedir)CivilElemSource.cpp \
+                                       ${MultiCompileDepends}
+                                       
 
 %include MultiCppCompileGo.mki
 
@@ -146,6 +149,7 @@ LINKER_LIBRARIES             = 	$(ContextSubpartsLibs)$(libprefix)DgnView$(libex
                                 $(ContextSubpartsLibs)$(libprefix)IppGraLibs$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)IppImaging$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)IppUtlLibs$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ScalableMesh$(libext)
                                 
 
 DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
