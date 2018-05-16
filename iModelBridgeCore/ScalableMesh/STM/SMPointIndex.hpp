@@ -1609,6 +1609,8 @@ void SMPointIndexNode<POINT, EXTENT>::SplitNode(POINT splitPosition, bool propag
 template<class POINT, class EXTENT>
 void SMPointIndexNode<POINT, EXTENT>::SetupNeighborNodesAfterSplit()
     {
+    if (m_needsNeighborSetting == false)
+        return;
 
 /* Neighbor nodes are ordered as follow :  
 
@@ -1633,7 +1635,7 @@ Middle layer                Bottom layer                Top layer
     m_apSubNodes[0]->m_apNeighborNodes[7].push_back(m_apSubNodes[3]);
     if (m_apSubNodes.size() == 8)
         {
-    m_apSubNodes[0]->m_apNeighborNodes[21].push_back(m_apSubNodes[4]);
+        m_apSubNodes[0]->m_apNeighborNodes[21].push_back(m_apSubNodes[4]);
         m_apSubNodes[0]->m_apNeighborNodes[22].push_back(m_apSubNodes[5]);
         m_apSubNodes[0]->m_apNeighborNodes[24].push_back(m_apSubNodes[6]);
         m_apSubNodes[0]->m_apNeighborNodes[25].push_back(m_apSubNodes[7]);
@@ -1840,6 +1842,7 @@ Middle layer                Bottom layer                Top layer
             }     
         }
 
+    m_needsNeighborSetting = false;
     }
 
 //=======================================================================================
@@ -2125,6 +2128,37 @@ void SMPointIndexNode<POINT, EXTENT>::Balance(size_t depth, bool splitNode)
 
     HINVARIANTS;
     }
+
+//=======================================================================================
+// @bsimethod                                                   Mathieu.St-Pierre   05/18
+//=======================================================================================
+template<class POINT, class EXTENT>
+void SMPointIndexNode<POINT, EXTENT>::SetupNeighborNodes()
+    {
+    this->ValidateInvariantsSoft();
+
+    if (!IsLoaded())
+        Load();
+                                
+    if (!m_nodeHeader.m_IsLeaf)                     
+        {
+        SetupNeighborNodesAfterSplit();
+
+        if (m_pSubNodeNoSplit != NULL)
+            {
+            return;
+            }
+        else
+            {
+            for (size_t indexNode = 0; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
+                {
+                m_apSubNodes[indexNode]->SetupNeighborNodes();
+                }
+            }
+        }
+
+    HINVARIANTS;
+    }                
 
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10
@@ -9251,6 +9285,26 @@ void SMPointIndex<POINT, EXTENT>::Balance(bool splitNode)
 
     HINVARIANTS;
     }
+
+
+
+//=======================================================================================
+// @bsimethod                                                   Mathieu.St-Pierre   05/18
+//=======================================================================================
+template<class POINT, class EXTENT>
+void SMPointIndex<POINT, EXTENT>::SetupNeighborNodes()
+    {
+    HINVARIANTS;
+    
+    if (m_pRootNode != NULL)
+        {        
+        m_pRootNode->SetupNeighborNodes();
+        }
+    
+    HINVARIANTS;
+    }
+
+
 
 
 template<class POINT, class EXTENT> size_t SMPointIndex<POINT, EXTENT>::Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject,

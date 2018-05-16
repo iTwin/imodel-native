@@ -287,6 +287,11 @@ public:
     void Balance(size_t depth, bool splitNode);
 
     /**----------------------------------------------------------------------------
+    Set up neighbor nodes
+    -----------------------------------------------------------------------------*/
+    void SetupNeighborNodes();
+
+    /**----------------------------------------------------------------------------
     Pull up sub node.
     -----------------------------------------------------------------------------*/
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > PullSubNodeNoSplitUp(size_t levelToPullTo);
@@ -804,6 +809,7 @@ public:
     mutable bool m_wasBalanced;
     bool m_needsBalancing;
     bool m_isGrid;
+    bool m_needsNeighborSetting = true;
     //NEEDS_WORK_SM : Need to be set even if SMMeshIndexNode are not used (point cloud)
     SMPointIndex<POINT, EXTENT>* m_SMIndex;
 
@@ -1490,6 +1496,12 @@ public:
     nothing will occur otherwise the balancing will immediately be performed.
     -----------------------------------------------------------------------------*/
     void                Balance(bool splitNode);
+
+
+    /**----------------------------------------------------------------------------
+    Setup the neighbor nodes
+    -----------------------------------------------------------------------------*/
+    void                SetupNeighborNodes();
 
     /**----------------------------------------------------------------------------
     Returns the number of subnodes on split. This number can be 4 or 8

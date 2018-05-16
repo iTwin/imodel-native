@@ -5433,6 +5433,8 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::CutTiles(
 
    // WaitForThreadStop();
     //for (auto& task : m_textureWorkerTasks) task.get();
+  
+    SetupNeighborNodes();
 
     m_indexHeader.m_depth = (size_t)-1;
     m_indexHeader.m_depth = GetDepth();
