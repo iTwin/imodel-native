@@ -634,7 +634,8 @@ void            Converter::MakeAttachmentsMatchRootAnnotationScale(DgnModelRefR 
             MakeAttachedModelMatchRootAnnotationScale(*attachment);
         }
     }
-
+        con
+#ifdef DO_UNNEST_TO_SHEET
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -693,6 +694,7 @@ void Converter::UnnestAttachments(DgnV8ModelR parentModel)
             Classify2dModelIfNormal(*attachment->GetDgnModelP(), nullptr);
         }
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
@@ -768,11 +770,11 @@ void RootModelConverter::Transform2dAttachments(DgnV8ModelR v8ParentModel)
     if (!ScaledCopyMarker::IsFoundOn(v8ParentModel))    // *** NEEDS WORK: not sure why we need this check
         MakeAttachmentsMatchRootAnnotationScale(v8ParentModel);
     
-#ifdef DO_UNNEST
+#ifdef DO_UNNEST_TO_SHEET
     UnnestAttachments(v8ParentModel);
+#endif
     
     TransformSheetAttachmentsToDrawings(v8ParentModel);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

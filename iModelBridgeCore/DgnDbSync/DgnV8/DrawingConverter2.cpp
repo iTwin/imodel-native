@@ -130,7 +130,8 @@ bool InitGeometryParams(Render::GeometryParams& params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void _DrawTextString (Bentley::TextStringCR v8Text, double* zDepth)  override
     {
-    AutoRestore<bool>     saveProcessingText(&m_processingText, true);
+    AutoRestore<bool>   saveInText(&m_processingText, true);
+
     InitCurrentModel();
 
     DgnAttachmentCP     currentAttachment = m_currentModelRef->AsDgnAttachmentCP();
@@ -341,7 +342,10 @@ void CreateDrawingElements()
 
         for (auto& byElement : byModelRef.second)
             {
-            SyncInfo::V8ElementMapping originalElementMapping = m_converter.FindFirstElementMappedTo(*modelRef->GetDgnModelP(), byElement.first);
+            SyncInfo::V8ElementMapping originalElementMapping;
+            
+            if (nullptr != modelRef && nullptr != modelRef->GetDgnModelP())
+                originalElementMapping = m_converter.FindFirstElementMappedTo(*modelRef->GetDgnModelP(), byElement.first);
             
             for (auto& bycategory : byElement.second)
                 {
@@ -421,7 +425,6 @@ virtual void _DrawTextString (DgnV8Api::TextString const& text) override
 
     double priority = GetDisplayPriority();
 
-    AutoRestore<bool>   saveInText(&m_output.m_processingText, true);
     GetIDrawGeom().DrawTextString (text, text.Is3d() ? NULL : &priority);
     }
 
@@ -443,6 +446,20 @@ virtual void _CookDisplayParams (ElemDisplayParamsR elParams, ElemMatSymbR elMat
 
     tmpElParams.Resolve (*this);
     elMatSymb.FromResolvedElemDisplayParams (tmpElParams, *this, m_startTangent, m_endTangent);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Bentley::StatusInt       _OnNewModelRef (DgnModelRefP modelRef) override
+    {
+    Bentley::StatusInt   status = T_Super::_OnNewModelRef(modelRef);
+    auto        viewFlags = *GetViewFlags();
+
+    viewFlags.text_nodes = false;
+    SetViewFlags(&viewFlags);
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -819,7 +836,7 @@ void Converter::CreateSheetExtractionAttachments(ResolvedModelMapping const& v8S
     
     for (auto attachment : *attachments)
         {
-        if (_UseProxyGraphicsFor2(*attachment))
+        if (attachment->Is3d())             // NEEDS_WORK -- rendered attachment.
             {
             auto                createdDrawing = drawingGenerator._CreateAndInsertDrawing(*attachment, v8SheetModelMapping, *this);
 
