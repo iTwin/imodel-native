@@ -33,21 +33,26 @@ class RequestHandler
         FAKESERVER_EXPORT Response UploadSeedFile(Request req);
         FAKESERVER_EXPORT Response FileCreationConfirmation(Request req);
         FAKESERVER_EXPORT Response GetInitializationState(Request req);
-
+        FAKESERVER_EXPORT Response GetBriefcaseInfo(Request req);
         FAKESERVER_EXPORT Response CreateBriefcaseInstance(Request req);
+        FAKESERVER_EXPORT Response DeleteBriefcaseInstance(Request req);
         FAKESERVER_EXPORT Response DownloadiModel(Request req);
         FAKESERVER_EXPORT Response UploadNewSeedFile(Request req);
         FAKESERVER_EXPORT Response CreateFileInstance(Request req);
         FAKESERVER_EXPORT Response GetiModels(Request req);
         FAKESERVER_EXPORT Response DeleteiModels(Request req);
         FAKESERVER_EXPORT Response PushChangeSetMetadata(Request req);
-        FAKESERVER_EXPORT Response Pull(Request req);
         FAKESERVER_EXPORT Response GetChangeSetInfo(Request req);
 
+        FAKESERVER_EXPORT Response PushAcquiredLocks(Request req);
+        FAKESERVER_EXPORT Response LocksInfo(Request req);
+        FAKESERVER_EXPORT Response MultiLocksInfo(Request req);
+        FAKESERVER_EXPORT Response CodesInfo(Request req);
         FAKESERVER_EXPORT BeFileName GetDbPath();
+
         FAKESERVER_EXPORT void CheckDb();
+        FAKESERVER_EXPORT void CreateTables(BentleyB0200::BeSQLite::Db *m_db);
         FAKESERVER_EXPORT void DeleteTables(Utf8String tableName);
         FAKESERVER_EXPORT void Insert(bvector<Utf8String> insertStr);
-
 
     };
