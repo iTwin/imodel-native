@@ -51,6 +51,7 @@ static Utf8CP const JSON_TYPE_WorkBreakdown = "WorkBreakdown";
 static Utf8CP const JSON_TYPE_Activity = "Activity";
 static Utf8CP const JSON_TYPE_Baseline = "Baseline";
 static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
+static Utf8CP const JSON_TYPE_GenericElementAspect = "GenericElementAspect";
 
 static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec = "CodeSpec";
 static Utf8CP const  BIS_ELEMENT_PROP_CodeScope = "CodeScope";
@@ -477,6 +478,17 @@ struct PropertyDataReader : Reader
     protected:
         BentleyStatus _Read(Json::Value& propData) override;
 
+    public:
+        using Reader::Reader;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct GenericElementAspectReader : Reader
+    {
+    protected:
+        BentleyStatus _Read(Json::Value& object) override;
     public:
         using Reader::Reader;
     };

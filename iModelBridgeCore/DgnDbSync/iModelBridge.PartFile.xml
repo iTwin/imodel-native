@@ -8,8 +8,10 @@
 
     <Part Name="iModelBridgeLibrary" BentleyBuildMakeFile="iModelBridge/iModelBridge.mke" ApiNumber="B02">
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="WebServicesClient-PublicAPI" PartFile="WSClient" Repository="WSClient" />
         <SubPart PartName="PublicAPI" />
-        <Bindings>
+      
+      <Bindings>
             <Libs Required="false">Delivery/$(libprefix)iModelBridge$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)iModelBridge$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>

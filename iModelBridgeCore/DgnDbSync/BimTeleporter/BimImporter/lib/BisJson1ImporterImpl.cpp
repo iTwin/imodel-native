@@ -236,6 +236,8 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
         reader = new BaselineReader(this);
     else if (objectType.Equals(JSON_TYPE_PropertyData))
         reader = new PropertyDataReader(this);
+    else if (objectType.Equals(JSON_TYPE_GenericElementAspect))
+        reader = new GenericElementAspectReader(this);
 
     if (nullptr == reader)
         return ERROR;
@@ -255,6 +257,8 @@ void BisJson1ImporterImpl::FinalizeImport()
     {
     m_dgndb->GeoLocation().InitializeProjectExtents();
 //    m_dgndb->Schemas().CreateClassViewsInDb();
+
+    ElementClassToAspectClassMapping::CreatePresentationRules(*m_dgndb);
 
     GenerateThumbnails();
     m_dgndb->SaveChanges();

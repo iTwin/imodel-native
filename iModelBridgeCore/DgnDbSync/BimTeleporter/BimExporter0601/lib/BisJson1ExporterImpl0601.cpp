@@ -35,7 +35,7 @@ static Utf8CP const JSON_TYPE_DictionaryModel = "DictionaryModel";
 static Utf8CP const JSON_TYPE_CodeSpec = "CodeSpec";
 static Utf8CP const JSON_TYPE_Schema = "Schema";
 static Utf8CP const JSON_TYPE_Element = "Element";
-static Utf8CP const JSON_TYPE_ElementAspect = "ElementAspect";
+static Utf8CP const JSON_TYPE_GenericElementAspect = "GenericElementAspect";
 static Utf8CP const JSON_TYPE_GeometricElement2d = "GeometricElement2d";
 static Utf8CP const JSON_TYPE_GeometricElement3d = "GeometricElement3d";
 static Utf8CP const JSON_TYPE_GeometryPart = "GeometryPart";
@@ -54,6 +54,7 @@ static Utf8CP const JSON_TYPE_WorkBreakdown = "WorkBreakdown";
 static Utf8CP const JSON_TYPE_Activity = "Activity";
 static Utf8CP const JSON_TYPE_Baseline = "Baseline";
 static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
+// unused - static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
 
 static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec="CodeSpec";
 static Utf8CP const  BIS_ELEMENT_PROP_CodeScope="CodeScope";
@@ -460,6 +461,16 @@ bool BisJson1ExporterImpl::ExportDgnDb()
         return false;
     ReportProgress();
     LogPerformanceMessage(timer, "Export Elements");
+
+    timer.Start();
+    if (SUCCESS != (stat = ExportElementAspects()))
+        return false;
+    LogPerformanceMessage(timer, "Export ElementAspects");
+
+    timer.Start();
+    if (SUCCESS != (stat = ExportTextAnnotationData()))
+        return false;
+    LogPerformanceMessage(timer, "Export TextAnnotationData");
 
     timer.Start();
     if (SUCCESS != (stat = ExportNamedGroups()))
@@ -1214,7 +1225,7 @@ BentleyStatus BisJson1ExporterImpl::ExportSchemas() const
                     if (prop->IsCalculated())
                         prop->SetIsReadOnly(false);
                     // BisCore renames several properties on core classes.  This could cause a conflict with an inherited class's property, so we need to rename it
-                    if (prop->GetName().EqualsIAscii("Model") || prop->GetName().EqualsIAscii("Parent") || prop->GetName().EqualsIAscii("Category"))
+                    if (prop->GetName().EqualsIAscii("Model") || prop->GetName().EqualsIAscii("Parent") || prop->GetName().EqualsIAscii("Category") || prop->GetName().EqualsIAscii("ID"))
                         {
                         nonConstClass->RenameConflictProperty(prop, true);
                         }
@@ -1909,16 +1920,17 @@ BentleyStatus BisJson1ExporterImpl::ExportTimelines()
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus BisJson1ExporterImpl::ExportElementAspects()
     {
-    CachedECSqlStatementPtr statement = m_dgndb->GetPreparedECSqlStatement("select distinct ECClassId from [dgn].[ElementAspect]");
-    if (!statement.IsValid())
+    Statement stmt;
+    Utf8CP sql = "SELECT DISTINCT ECClassId from generic_MultiAspect";
+    if (BE_SQLITE_OK != (stmt.Prepare(*m_dgndb, sql)))
         {
-        LogMessage(TeleporterLoggingSeverity::LOG_FATAL, "Unable to get cached statement ptr.");
+        LogMessage(TeleporterLoggingSeverity::LOG_ERROR, "Unable to prepare statement to retrieve element aspect classes");
         return ERROR;
         }
 
-    while (BE_SQLITE_ROW == statement->Step())
+    while (BE_SQLITE_ROW == stmt.Step())
         {
-        ECClassId classId = statement->GetValueId<ECClassId>(0);
+        ECClassId classId = stmt.GetValueId<ECClassId>(0);
         ExportElementAspects(classId, ECInstanceId());
         }
     return SUCCESS;
@@ -1930,6 +1942,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElementAspects()
 BentleyStatus BisJson1ExporterImpl::ExportElementAspects(ECClassId classId, ECInstanceId aspectId)
     {
     ECClassCP ecClass = m_dgndb->Schemas().GetECClass(classId);
+
     Utf8PrintfString ecSql("SELECT * FROM ONLY %s.%s", ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
     if (aspectId.IsValid())
         {
@@ -1943,11 +1956,13 @@ BentleyStatus BisJson1ExporterImpl::ExportElementAspects(ECClassId classId, ECIn
         }
     JsonECSqlSelectAdapter jsonAdapter(*statement, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
     jsonAdapter.SetStructArrayAsString(true);
+    jsonAdapter.SetPreferNativeDgnTypes(true);
 
     while (BE_SQLITE_ROW == statement->Step())
         {
         auto entry = Json::Value(Json::ValueType::objectValue);
-        entry[JSON_TYPE_KEY] = JSON_TYPE_ElementAspect;
+        entry[JSON_TYPE_KEY] = JSON_TYPE_GenericElementAspect;
+
         entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
         entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
         Json::Value obj = Json::Value(Json::ValueType::objectValue);
@@ -1967,6 +1982,9 @@ BentleyStatus BisJson1ExporterImpl::ExportElementAspects(ECClassId classId, ECIn
             obj[JSON_TYPE_KEY] = JSON_TYPE_Baseline;
             }
 
+        MakeNavigationProperty(obj, "Element", IdToString(obj["ElementId"].asCString()).c_str());
+        obj.removeMember("ElementId");
+
         obj.removeMember("$ECClassKey");
         obj.removeMember("$ECClassId");
         obj.removeMember("$ECClassLabel");
@@ -1977,6 +1995,16 @@ BentleyStatus BisJson1ExporterImpl::ExportElementAspects(ECClassId classId, ECIn
         }
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus BisJson1ExporterImpl::ExportTextAnnotationData()
+    {
+    return SUCCESS;
+
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2017
 //---------------+---------------+---------------+---------------+---------------+-------

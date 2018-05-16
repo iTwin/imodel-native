@@ -1387,7 +1387,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
      bvector<BECN::ECSchemaP> schemas;
      m_schemaReadContext->GetCache().GetSchemas(schemas);
      bvector<Utf8CP> schemasWithMultiInheritance = {"OpenPlant_3D", "BuildingDataGroup", "StructuralModelingComponents", "OpenPlant", "jclass", "pds", "group", 
-         "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals", "Electrical_RCM", "pid_ansi"};
+         "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals", "Electrical_RCM", "pid_ansi", "PDMx_Base"};
      bool needsFlattening = false;
      // It is possible that a schema will refer to one of the above schemas that needs flattening.  In such a situation, the reference needs to be updated to the flattened ref.  There is no
      // easy way to replace a referenced schema.  Therefore, if one of the schemas in the set needs to be flattened, we just flatten everything which automatically updates the references.
@@ -2545,10 +2545,33 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
         if (context.ExcludeSchemaFromBisification(*schema))
             continue;
 
-        if (!schema->Validate(true) || !schema->IsECVersion(ECN::ECVersion::Latest))
+        if (!schema->Validate(true) || !schema->IsECVersion(ECN::ECVersion::V3_1))
             {
+//#define EXPORT_FAILEDECSCHEMAS 1
+#ifdef EXPORT_FAILEDECSCHEMAS
+                    {
+                    BeFileName bimFileName = GetDgnDb().GetFileName();
+                    BeFileName outFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_failed").c_str());
+
+                    if (!outFolder.DoesPathExist())
+                        BeFileName::CreateNewDirectory(outFolder.GetName());
+
+                    WString fileName;
+                    fileName.AssignUtf8(schema->GetFullSchemaName().c_str());
+                    fileName.append(L".ecschema.xml");
+
+                    BeFileName outPath(outFolder);
+                    outPath.AppendToPath(fileName.c_str());
+
+                    if (outPath.DoesPathExist())
+                        outPath.BeDeleteFile();
+
+                    schema->WriteToXmlFile(outPath.GetName(), schema->GetECVersion());
+                    }
+#endif
+
             Utf8String errorMsg;
-            errorMsg.Sprintf("Failed to validate ECSchema %s as an EC%s ECSchema.", schema->GetFullSchemaName().c_str(), BECN::ECSchema::GetECVersionString(ECN::ECVersion::Latest));
+            errorMsg.Sprintf("Failed to validate ECSchema %s as an EC3.1 ECSchema.", schema->GetFullSchemaName().c_str());
             ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
             return BentleyApi::BSIERROR;
             }
@@ -2934,7 +2957,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessReferenceSchemasFromExternal(ECObje
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::SchemaKey& schemaKey, Utf8CP schemaXml, bool isDynamicSchema, DgnV8ModelR v8Model)
     {
-    Bentley::Utf8String schemaName(schemaKey.GetName());
+    Utf8String schemaName(schemaKey.GetName().c_str());
     BECN::SchemaKey existingSchemaKey;
     SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
     if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str()))
@@ -2981,8 +3004,19 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                     ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                     }
                 else
-                    return BSISUCCESS;
-                    */
+                    {
+                    // If on a previous conversion we found the schema but it wasn't used, it will have an entry in the SyncInfo table but won't actually exist in the dgndb.  We still need to import it
+                    if (m_converter.IsUpdating())
+                        {
+                        if (GetDgnDb().Schemas().GetSchema(schemaName, false) != nullptr)
+                            {
+                            return BSISUCCESS;
+                            }
+                        }
+                    else
+                        return BSISUCCESS;
+                    }
+					*/
                 }
             }
         }

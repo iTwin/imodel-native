@@ -2,7 +2,7 @@
 #
 #     $Source: Dwg/DwgCompileOptions.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if !defined (__mdlMKI__)
@@ -50,9 +50,13 @@ DwgDbPubApi         = $(DgnDbSyncPubApi)Dwg/DwgDb/
 
 %else
     %error Must define DWGTOOLKIT to either OpenDwg or RealDwg!
-%endif
+%endif  # DWGTOOLKIT
 
 CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT)
+
+%if defined (DLM_API_NUMBER)
+    CCompOpts + -DDLM_API_NUMBER=\"$(DLM_API_NUMBER)\"
+%endif
 
 %if defined(DEBUG) && !defined(NDEBUG)
     CCompOpts + -DDEBUG

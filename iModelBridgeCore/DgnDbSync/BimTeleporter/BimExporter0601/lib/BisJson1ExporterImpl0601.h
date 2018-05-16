@@ -125,6 +125,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         BentleyStatus ExportElements(Json::Value& out, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause = nullptr, bool sendToQueue = true, bool allowDuplicates = false);
         BentleyStatus ExportElementAspects();
         BentleyStatus ExportElementAspects(ECN::ECClassId classId, BentleyApi::BeSQLite::EC::ECInstanceId aspectId);
+        BentleyStatus ExportTextAnnotationData();
         BentleyStatus ExportNamedGroups();
         BentleyStatus ExportElementHasLinks();
         BentleyStatus ExportConstraint(ECN::ECClassId constraintClassId, BentleyApi::BeSQLite::EC::ECInstanceId constraintId);
