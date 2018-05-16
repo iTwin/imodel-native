@@ -394,6 +394,64 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     ASSERT_STREQ("OverrideKindOfQuantity", derivedProp3->GetKindOfQuantity()->GetName().c_str());
     }
 
+Utf8String generateSchemaXml(ECSchemaPtr schema, bvector<ECSchemaPtr> &refSchemas)
+    {
+    Utf8String xmlStr = Utf8String("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    xmlStr.append("<ECSchema schemaName=\"" + schema->GetName() + "\" alias=\"" + schema->GetAlias() + "\" version=\"01.00.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "\">\n");
+    for (ECSchemaPtr &refSchema : refSchemas)
+        xmlStr.append("    <ECSchemaReference name=\"" + refSchema->GetName() + "\" version=\"01.00.00\" alias=\"" + refSchema->GetAlias() + "\"/>\n");
+    xmlStr.append("</ECSchema>\n");
+
+    return xmlStr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                            Joseph.Urbano                          05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaXmlSerializationTest, ExpectReferencedSchemasSerializedInOrder)
+    {
+    ECSchemaPtr schema1, schema2;
+    bvector<ECSchemaPtr> refSchemas(4);
+
+    bvector<bpair<Utf8String, Utf8String>> schemas;
+    schemas.push_back(make_bpair<Utf8String, Utf8String>("aRefSchema", "rsA"));
+    schemas.push_back(make_bpair<Utf8String, Utf8String>("bRefSchema", "rsB"));
+    schemas.push_back(make_bpair<Utf8String, Utf8String>("cRefSchema", "rsC"));
+    schemas.push_back(make_bpair<Utf8String, Utf8String>("dRefSchema", "rsD"));
+
+    int i = 0;
+    for(const auto &pair : schemas)
+        ECSchema::CreateSchema(refSchemas[i++], pair.first, pair.second, 1, 0, 0);
+
+    // add references in order, serialize, and make sure they're still in order
+    ECSchema::CreateSchema(schema1, "testSchema1", "ts", 1, 0, 0);
+    
+    i = 0;
+    for (ECSchemaPtr refSchema : refSchemas)
+        schema1->AddReferencedSchema(*refSchema);
+
+    Utf8String schemaXml;
+    schema1->WriteToXmlString(schemaXml);
+
+    Utf8String targetSchemaXml = generateSchemaXml(schema1, refSchemas);
+    EXPECT_TRUE(schemaXml.Equals(targetSchemaXml));
+
+    // add references in reverse order, serialize, and make sure they're still in order
+    bvector<ECSchemaPtr> refSchemasReversed;
+    refSchemasReversed.resize(refSchemas.size());
+    std::reverse_copy(refSchemas.begin(), refSchemas.end(), refSchemasReversed.begin());
+
+    ECSchema::CreateSchema(schema2, "testSchema2", "ts", 1, 0, 0);
+
+    for (ECSchemaPtr refSchema : refSchemasReversed)
+        schema2->AddReferencedSchema(*refSchema);
+
+    schema2->WriteToXmlString(schemaXml);
+
+    targetSchemaXml = generateSchemaXml(schema2, refSchemas);
+    EXPECT_TRUE(schemaXml.Equals(targetSchemaXml));
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
