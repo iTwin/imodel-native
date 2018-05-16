@@ -1474,7 +1474,6 @@ void ExportCommand::PropertyValueChangesToJson(Json::Value& propValJson, BeSQLit
 
     Utf8String changedInstanceIdStr = changedInstanceId.ToHexStr();
     Utf8CP changedValueStateStr = ToString(changedValueState);
-    PerfLogger buildECSqlPerf(Utf8PrintfString("iModelConsole>ExportChangeSummary,%s:%s (%s)-Build ECSQL", changedInstanceClassName.c_str(), changedInstanceIdStr.c_str(), changedValueStateStr));
 
     Utf8String propValECSql("SELECT ");
     bool isFirstRow = true;
@@ -1504,9 +1503,8 @@ void ExportCommand::PropertyValueChangesToJson(Json::Value& propValJson, BeSQLit
     accessStringStmt.Reset();
     accessStringStmt.ClearBindings();
     propValECSql.append(Utf8PrintfString(" FROM main.%s.Changes(?,%d) WHERE ECInstanceId=?", changedInstanceClassName.c_str(), (int) changedValueState));
-    buildECSqlPerf.Dispose();
 
-    PerfLogger prepareECSqlPerf(Utf8PrintfString("iModelConsole>ExportChangeSummary,%s:%s (%s)-Prepare ECSQL", changedInstanceClassName.c_str(), changedInstanceIdStr.c_str(), changedValueStateStr));
+    PerfLogger prepareECSqlPerf(Utf8PrintfString("iModelConsole>ExportChangeSummary,\"%s | Prepare\"", propValECSql.c_str()));
     CachedECSqlStatementPtr stmt = changedInstanceStmtCache.GetPreparedStatement(ecdb, propValECSql.c_str());
     prepareECSqlPerf.Dispose();
 
@@ -1517,7 +1515,7 @@ void ExportCommand::PropertyValueChangesToJson(Json::Value& propValJson, BeSQLit
         }
 
     //seperate out call to Step to measure its performance without the binding calls
-    PerfLogger stepECSqlPerf(Utf8PrintfString("iModelConsole>ExportChangeSummary,%s:%s (%s)-Step ECSQL", changedInstanceClassName.c_str(), changedInstanceIdStr.c_str(), changedValueStateStr));
+    PerfLogger stepECSqlPerf(Utf8PrintfString("iModelConsole>ExportChangeSummary,\"%s | Step\"", propValECSql.c_str()));
     if (BE_SQLITE_ROW != stmt->Step())
         {
         IModelConsole::WriteErrorLine("Failed to retrieve changes for instance %s [ECSQL: %s].",changedInstanceId.ToHexStr().c_str(), propValECSql.c_str());
@@ -1526,7 +1524,7 @@ void ExportCommand::PropertyValueChangesToJson(Json::Value& propValJson, BeSQLit
 
     stepECSqlPerf.Dispose();
 
-    PerfLogger toJsonPerf(Utf8PrintfString("iModelConsole>ExportChangeSummary,%s:%s (%s)-To JSON", changedInstanceClassName.c_str(), changedInstanceIdStr.c_str(), changedValueStateStr));
+    PerfLogger toJsonPerf(Utf8PrintfString("iModelConsole>ExportChangeSummary,\"%s | To JSON\"", propValECSql.c_str()));
     JsonECSqlSelectAdapter adapter(*stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECN::ECJsonInt64Format::AsNumber));
     if (SUCCESS != adapter.GetRow(propValJson))
         {
