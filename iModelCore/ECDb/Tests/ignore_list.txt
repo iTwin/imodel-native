@@ -8,4 +8,5 @@ ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run w
 #----------------------------------------------------------------------------------------
 #TFS 720060 Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
-
+#TFS 891547  OBM model failed to import V8 ECSchemas
+ECSqlNavigationPropertyTestFixture.NavigationPropertyFromOverflowTableIsDetectedAsDuplicate

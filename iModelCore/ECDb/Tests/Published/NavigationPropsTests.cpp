@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/NavigationPropsTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -1729,7 +1729,50 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
     ASSERT_FALSE(stmt.GetValueId<ECInstanceId>(0).IsValid());
     ASSERT_FALSE(stmt.GetValueId<ECClassId>(1).IsValid());
     }
-
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Affan.Khan                 11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, NavigationPropertyFromOverflowTableIsDetectedAsDuplicate)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlnavpropsupport_ec.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                            <ECEntityClass typeName="_From">
+                                <ECProperty propertyName="Code" typeName="string" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="_To" modifier="Abstract">
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                    <ShareColumns xmlns="ECDbMap.02.00">
+                                        <MaxSharedColumnsBeforeOverflow>2</MaxSharedColumnsBeforeOverflow>
+                                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                                    </ShareColumns>
+                                </ECCustomAttributes>
+                                <ECProperty propertyName="Code" typeName="string" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="ClassB1">
+                                <BaseClass>_To</BaseClass>
+                                <ECProperty propertyName="B1" typeName="string" />
+                                <ECNavigationProperty propertyName="_R1" relationshipName="_R1" direction="Backward" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="ClassB2">
+                                <BaseClass>_To</BaseClass>
+                                <ECProperty propertyName="B2" typeName="string" />
+                                <ECNavigationProperty propertyName="_R1" relationshipName="_R1" direction="Backward" />
+                            </ECEntityClass>
+                            <ECRelationshipClass typeName="_R1" strength="referencing"  modifier="None"  strengthDirection="backward" >
+                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="_From">
+                                    <Class class ="_From" />
+                                </Source>
+                                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="_To" abstractConstraint="_To">
+                                    <Class class ="ClassB1" />
+                                    <Class class ="ClassB2" />
+                                </Target>
+                            </ECRelationshipClass>
+                        </ECSchema>)xml")));
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 11/16
 //+---------------+---------------+---------------+---------------+---------------+------
