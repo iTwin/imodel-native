@@ -778,6 +778,20 @@ declare class NativeECPresentationManager {
      */
     setupRulesetDirectories(directories: string[]): void;
     /**
+     * Adds ruleset that can be used by NativeECPresentationManager
+     * @param ruleSetJson Serialized JSON string of a ruleset to be added
+     */
+    addRuleSet(ruleSetJson: string): void;
+    /**
+     * Removes a ruleset
+     * @param ruleSetId Id of a ruleset to be removed
+     */
+    removeRuleSet(ruleSetId: string): void;
+    /**
+     * Removes all rulesets
+     */
+    clearRuleSets(): void;
+    /**
      * Terminates the presentation manager.
      */
     terminate(): void;

@@ -2683,11 +2683,13 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
 
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
-
+    RefCountedPtr<SimpleRuleSetLocater> m_ruleSetLocater;
     NativeECPresentationManager(Napi::CallbackInfo const& info)
         : Napi::ObjectWrap<NativeECPresentationManager>(info)
         {
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections, T_HOST.GetIKnownLocationsAdmin()));
+        m_ruleSetLocater = SimpleRuleSetLocater::Create();
+        m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
         }
 
     static bool InstanceOf(Napi::Value val) {
@@ -2705,6 +2707,9 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         Napi::Function t = DefineClass(env, "NativeECPresentationManager", {
           InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
           InstanceMethod("setupRulesetDirectories", &NativeECPresentationManager::SetupRulesetDirectories),
+          InstanceMethod("addRuleSet", &NativeECPresentationManager::AddRuleSet),
+          InstanceMethod("removeRuleSet", &NativeECPresentationManager::RemoveRuleSet),
+          InstanceMethod("clearRuleSets", &NativeECPresentationManager::ClearRuleSets),
           InstanceMethod("terminate", &NativeECPresentationManager::Terminate)
         });
 
@@ -2773,6 +2778,23 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, rulesetDirectories,);
         ECPresentationUtils::SetupRulesetDirectories(*m_presentationManager, rulesetDirectories);
+        }
+
+    void AddRuleSet(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, rulesetJsonString,);
+        ECPresentationUtils::AddRuleSet(*m_ruleSetLocater, rulesetJsonString);
+        }
+
+    void RemoveRuleSet(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, ruleSetId,);
+        ECPresentationUtils::RemoveRuleSet(*m_ruleSetLocater, ruleSetId);
+        }
+
+    void ClearRuleSets(Napi::CallbackInfo const& info)
+        {
+        ECPresentationUtils::ClearRuleSets(*m_ruleSetLocater);
         }
 
     void Terminate(Napi::CallbackInfo const& info)
