@@ -232,7 +232,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
 
     if (!ctx.GetECDb().IsChangeCacheAttached())
         {
-        ctx.GetECDb().GetImpl().Issues().ReportV("Failed to prepare ECSQL. When using the function " ECSQLFUNC_Changes " the Change cache file must have been attached before.");
+        ctx.GetECDb().GetImpl().Issues().ReportV("Failed to prepare ECSQL. When using the function " ECSQLFUNC_Changes " the Change Cache file must have been attached before.");
         return ERROR;
         }
 

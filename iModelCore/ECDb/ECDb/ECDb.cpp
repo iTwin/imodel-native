@@ -182,7 +182,7 @@ ECN::IECClassLocater& ECDb::GetClassLocater() const { return m_pimpl->GetClassLo
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
 //---------------+---------------+---------------+---------------+---------------+------
-bool ECDb::IsChangeCacheAttached() const { return ChangeManager::IsChangeCacheAttachedAndValid(*this); }
+bool ECDb::IsChangeCacheAttached() const { return m_pimpl->IsChangeCacheAttached(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2017
@@ -258,7 +258,7 @@ BentleyStatus ECDb::OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpace, ECN::ECClassCR
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::ClearECDbCache(Utf8CP tableSpace) const { m_pimpl->ClearECDbCache(tableSpace); }
+void ECDb::ClearECDbCache() const { m_pimpl->ClearECDbCache(); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012

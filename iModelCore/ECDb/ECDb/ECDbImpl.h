@@ -111,8 +111,8 @@ private:
     void AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appData, bool deleteOnClearCache) const;
 
     BentleyStatus OpenBlobIO(BlobIO&, Utf8CP tableSpace, ECN::ECClassCR, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const*) const;
-
-    void ClearECDbCache(Utf8CP tableSpace = nullptr) const;
+    bool IsChangeCacheAttached() const { return m_changeManager.IsChangeCacheAttached(); }
+    void ClearECDbCache() const;
     DbResult OnDbOpening() const;
     DbResult OnDbCreated() const;
     DbResult OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const;

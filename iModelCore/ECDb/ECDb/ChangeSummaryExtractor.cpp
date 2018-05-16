@@ -798,7 +798,7 @@ ChangeSummaryExtractor::Context::~Context()
         {
         if (BE_SQLITE_OK != changeCache.SaveChanges())
             {
-            Issues().ReportV("Failed to extract ChangeSummaries from change set: Could not commit changes to ChangeSummary cache file '%s'.", changeCache.GetDbFileName());
+            Issues().ReportV("Failed to extract ChangeSummaries from change set: Could not commit changes to Change Cache file '%s'.", changeCache.GetDbFileName());
             BeAssert(false);
             }
         }
@@ -813,7 +813,7 @@ ChangeSummaryExtractor::Context::~Context()
         {
         if (BE_SQLITE_OK != m_primaryECDb.AttachDb(m_attachedChangeCachePath.c_str(), TABLESPACE_ECChange))
             {
-            Issues().ReportV("Failed to extract ChangeSummaries from change set: Could not re-attach ChangeSummary cache file '%s' to '%s'.",
+            Issues().ReportV("Failed to extract ChangeSummaries from change set: Could not re-attach Change Cache file '%s' to '%s'.",
                             m_attachedChangeCachePath.c_str(), m_primaryECDb.GetDbFileName());
             BeAssert(false);
             }
@@ -836,18 +836,18 @@ DbResult ChangeSummaryExtractor::Context::Initialize()
         {
         if (!m_userChangeCacheECDb->IsDbOpen() || m_userChangeCacheECDb->IsReadonly())
             {
-            Issues().Report("Failed to extract ChangeSummaries from change set: Change cache file must be opened read-write.");
+            Issues().Report("Failed to extract ChangeSummaries from change set: Change Cache file must be opened read-write.");
             return BE_SQLITE_ERROR;
             }
 
-        if (!ChangeManager::IsChangeCacheValid(*m_userChangeCacheECDb, true))
+        if (SUCCESS != ChangeManager::ValidateChangeCache(*m_userChangeCacheECDb, Issues()))
             return BE_SQLITE_ERROR;
         }
     else
         {
-        if (!ChangeManager::IsChangeCacheAttachedAndValid(m_primaryECDb, true))
+        if (!m_attachedChangeCachePath.empty() && !m_primaryECDb.IsChangeCacheAttached())
             {
-            Issues().ReportV("Failed to extract ChangeSummaries from change set: Change cache file attached to '%s' is no valid change cache file.", m_primaryECDb.GetDbFileName());
+            Issues().ReportV("Failed to extract ChangeSummaries from change set: Change Cache file attached to '%s' is no valid Change Cache file.", m_primaryECDb.GetDbFileName());
             return BE_SQLITE_ERROR;
             }
 
@@ -862,7 +862,7 @@ DbResult ChangeSummaryExtractor::Context::Initialize()
         DbResult r = GetPrimaryECDb().DetachChangeCache();
         if (BE_SQLITE_OK != r)
             {
-            Issues().ReportV("Failed to extract ChangeSummaries from change set: Could not detach ChangeSummary cache file  from '%s': %s", GetPrimaryECDb().GetDbFileName(), GetPrimaryECDb().GetLastError().c_str());
+            Issues().ReportV("Failed to extract ChangeSummaries from change set: Could not detach Change Cache file from '%s': %s", GetPrimaryECDb().GetDbFileName(), GetPrimaryECDb().GetLastError().c_str());
             return r;
             }
         }

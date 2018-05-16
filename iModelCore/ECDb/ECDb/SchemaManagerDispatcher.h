@@ -260,7 +260,7 @@ struct SchemaManager::Dispatcher final
         ECN::PhenomenonCP GetPhenomenon(Utf8StringCR schemaNameOrAlias, Utf8StringCR phenName, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::PropertyCategoryCP GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR propertyCategoryName, SchemaLookupMode, Utf8CP tableSpace) const;
 
-        void ClearCache(Utf8CP tableSpace) const;
+        void ClearCache() const;
 
         static std::vector<Utf8CP> GetECDbSchemaNames() { return {"ECDbFileInfo", "ECDbMap", "ECDbMeta", "ECDbSchemaPolicies", "ECDbSystem", "ECDbChange"}; }
     };

@@ -124,7 +124,7 @@ PropertyCategoryCP SchemaManager::GetPropertyCategory(Utf8StringCR schemaNameOrA
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SchemaManager::ClearCache(Utf8CP tableSpace) const { return m_dispatcher->ClearCache(tableSpace); }
+void SchemaManager::ClearCache() const { return m_dispatcher->ClearCache(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      01/2013
