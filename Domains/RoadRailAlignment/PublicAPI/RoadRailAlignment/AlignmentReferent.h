@@ -27,7 +27,7 @@ protected:
     explicit LinearlyLocatedReferentElement(CreateParams const& params) : T_Super(params) {}
 
     //! @private
-    explicit LinearlyLocatedReferentElement(CreateParams const& params, double distanceAlong);
+    explicit LinearlyLocatedReferentElement(CreateParams const& params, CreateAtParams const& atParams);
 
     //! @private
     virtual LinearReferencing::ILinearlyLocatedElementCP _ToLinearlyLocatedElement() const { return this; }
@@ -57,12 +57,23 @@ struct AlignmentStation : LinearlyLocatedReferentElement
     DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentStation, LinearlyLocatedReferentElement);
     friend struct AlignmentStationHandler;
 
+public:
+    struct CreateAtParams : LinearReferencing::ILinearlyLocatedSingleAt::CreateAtParams
+    {
+        DEFINE_T_SUPER(LinearReferencing::ILinearlyLocatedSingleAt::CreateAtParams)
+        
+        double m_station;
+
+        CreateAtParams(AlignmentCR alignment, double distanceAlong, double station = 0.0) : 
+            T_Super(alignment, LinearReferencing::DistanceExpression(distanceAlong)), m_station(station) {}
+    }; // CreateAtParams
+
 protected:
     //! @private
     explicit AlignmentStation(CreateParams const& params);
 
     //! @private
-    explicit AlignmentStation(CreateParams const& params, double distanceAlong, double station);
+    explicit AlignmentStation(CreateParams const& params, CreateAtParams const& atParams);
 
     //! @private
     virtual LinearReferencing::NullableDouble _GetRestartValue() const override { return GetPropertyValueDouble("Station"); }
@@ -77,7 +88,7 @@ public:
     //! @private
     void SetStation(double newStation) { SetPropertyValue("Station", newStation); }
 
-    ROADRAILALIGNMENT_EXPORT static AlignmentStationPtr Create(AlignmentCR alignment, double distanceAlongFromStart, double station = 0.0);
+    ROADRAILALIGNMENT_EXPORT static AlignmentStationPtr Create(CreateAtParams const& params);
 }; // AlignmentStation
 
 //=======================================================================================
