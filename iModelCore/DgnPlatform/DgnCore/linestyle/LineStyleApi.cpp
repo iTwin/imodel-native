@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LineStyleApi.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -152,12 +152,12 @@ StatusInt LsComponent::_StrokeArc(LineStyleContextR lsContext, LineStyleSymbR ls
         {
         DPoint3d point;
         DVec3d startTan = DVec3d::UnitX(), endTan = DVec3d::UnitX();
-
+        DVec3d startK = DVec3d::FromZero (), endK = DVec3d::FromZero ();
         if (!hasStartTan)
-            bsiDEllipse3d_fractionParameterToDerivatives(&arc, &point, &startTan, NULL, 0.0);
+            arc.FractionParameterToDerivatives (point, startTan, startK, 0.0);
 
         if (!hasEndTan)
-            bsiDEllipse3d_fractionParameterToDerivatives(&arc, &point, &endTan, NULL, 1.0);
+            arc.FractionParameterToDerivatives (point, endTan, endK, 1.0);
 
         lsSymb.SetTangents(hasStartTan ? lsSymb.GetStartTangent() : &startTan, hasEndTan ? lsSymb.GetEndTangent() : &endTan);
         }

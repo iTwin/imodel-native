@@ -2009,6 +2009,7 @@ private:
     MeshBuilderMap          m_builderMap;
     DRange3d                m_contentRange = DRange3d::NullRange();
     bool                    m_maxGeometryCountExceeded = false;
+    bool                    m_didDecimate = false;
     ThematicMeshBuilderPtr  m_thematicMeshBuilder;
 
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
@@ -2041,6 +2042,8 @@ private:
         }
 public:
     MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
+
+    bool DidDecimation() const { return m_didDecimate; }
 
     // Add meshes to the MeshBuilder map
     void AddMeshes(GeometryList const& geometries, bool doRangeTest);
@@ -2203,16 +2206,17 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
         return;
 
-    bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount() && 0 == polyface->GetFaceCount();
+    bool doDecimate = !m_tile.IsLeaf() && !m_tile.HasZoomFactor() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount() && 0 == polyface->GetFaceCount();
 
     if (doDecimate)
         {
         BeAssert(0 == polyface->GetEdgeChainCount());       // The decimation does not handle edge chains - but this only occurs for polyfaces which should never have them.
-
         PolyfaceHeaderPtr   decimated;
-
         if (doDecimate && (decimated = polyface->ClusteredVertexDecimate(m_tolerance)).IsValid())
+            {
             polyface = decimated.get();
+            m_didDecimate = true;
+            }
         }
 
 #if defined(DISABLE_EDGE_GENERATION)
@@ -2594,6 +2598,9 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         if (aborted || isPartialTile)
             break;
         }
+
+    if (m_meshGenerator.DidDecimation())
+        m_geometries.MarkIncomplete();
 
     // Don't discard our progress if this is a partial tile
     if (!isPartialTile && loadContext.WasAborted())
@@ -3231,7 +3238,8 @@ Utf8CP TileCache::GetCurrentVersion()
     //  5: Ensure curved, stroked curve vectors are treated as curved
     //  6: Treat transparency < 15 as opaque (affects mesh batching)
     //  7: Fix out-of-control subdivision in specific cases (TFS#884193, TFS#886685)
-    return "7";
+    //  8: Fix issue in which MeshGenerator::AddPolyface() decimates a polyface in a tile which later becomes a leaf tile (TFS#889847)
+    return "8";
     }
 
 /*---------------------------------------------------------------------------------**//**

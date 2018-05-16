@@ -240,24 +240,52 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Gtest-DgnPlatform-Compatibility" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnCompatibility -dTEST_COLLECTION_PRODUCT=DgnPlatform-Compatibility -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
-        <SubProduct ProductName="DgnPlatform-Compatibility"/>
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <Part Name="Gtest-DgnPlatform-Compatibility" DeferType="BuildUnitTests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <SubPart PartName="Gtest-DgnPlatform-Compatibility-No-Assets" /> <!-- Separate into Assets and No-Assets to deliver via NuGet-->
         <Bindings>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnCompatibility/Assets" />
+        </Bindings>
+    </Part>
+
+    <Part Name="Gtest-DgnPlatform-Compatibility-No-Assets" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnCompatibility -dTEST_COLLECTION_PRODUCT=DgnPlatform-Compatibility -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+         <SubProduct ProductName="DgnPlatform-Compatibility"/>
+         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+         <Bindings>
             <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/DgnCompatibility/Assemblies/*</Files>
             <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/DgnCompatibility/Assets" />
         </Bindings>
+    </Part>
+
+    <Part Name="DgnPlatform-Compatibility-Pull-All-Datasets" BentleyBuildMakeFile="Tests/DgnProject/Compatibility/CompatibilityRunner/PullCompatibilityDatasets.mke">
+    </Part>
+ 
+    <Part Name="DgnPlatform-Compatibility-Pull-All-Nugets" BentleyBuildMakeFile="Tests/DgnProject/Compatibility/CompatibilityRunner/PullCompatibilityNugets.mke">
+         <SubPart PartName="RunGTest-DgnPlatform-Compatibility" />    
     </Part>
 
     <Product Name="GTest-DgnPlatform-Compatibility">
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="GTest-DgnPlatform-Compatibility"/>
     </Product>
-
-    <Part Name="RunGtest-DgnPlatform-Compatibility" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GTest-DgnPlatform-Compatibility -dGTEST_NAME=DgnCompatibility -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DgnCompatibility" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubProduct ProductName="GTest-DgnPlatform-Compatibility" />
-        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+ 
+    <Part Name="RunGtest-DgnPlatform-Compatibility" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GTest-DgnPlatform-Compatibility -dGTEST_NAME=DgnCompatibility -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DgnCompatibility" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+         <SubProduct ProductName="GTest-DgnPlatform-Compatibility" />
     </Part>
+
+     <Part Name="RunGtest-DgnPlatform-Compatibility-Backwards" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GTest-DgnPlatform-Compatibility -dGTEST_NAME=DgnCompatibility -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DgnCompatibility" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubPart PartName="RunGtest-DgnPlatform-Compatibility"/>
+        <SubPart PartName="DgnPlatform-Compatibility-Pull-All-Datasets"/>
+     </Part>
+ 
+    <Part Name="RunGtest-DgnPlatform-Compatibility-Forwards" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests/DgnProject/Compatibility/CompatibilityRunner/RunCompatibilityTests.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubPart PartName="RunGtest-DgnPlatform-Compatibility-Backwards"/>
+        <SubPart PartName="DgnPlatform-Compatibility-Pull-All-Nugets"/>
+    </Part>
+
+    <NuGetProduct Name="GTest-DgnPlatform-Compatibility-nuget" Description="Awesome description here">
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="GTest-DgnPlatform-Compatibility-No-Assets"/>
+    </NuGetProduct>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
