@@ -175,20 +175,20 @@ ConnectedRealityDataEnterpriseStat::ConnectedRealityDataEnterpriseStat(const Rea
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert                04/2018
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityDataServiceStat::GetServiceStats()
-    {
-    ConnectedResponse response = ConnectedResponse();
-    RealityDataServiceStatRequest ptt("");
+// ConnectedResponse ConnectedRealityDataServiceStat::GetServiceStats()
+    // {
+    // ConnectedResponse response = ConnectedResponse();
+    // RealityDataServiceStatRequest ptt("");
 
-    RawServerResponse rawResponse = RawServerResponse();
-    RealityDataServiceStat stat;
-    RealityDataService::Request(ptt, stat, rawResponse);
-    Clone(stat);
+    // RawServerResponse rawResponse = RawServerResponse();
+    // RealityDataServiceStat stat;
+    // RealityDataService::Request(ptt, stat, rawResponse);
+    // Clone(stat);
 
-    response.Clone(rawResponse);
+    // response.Clone(rawResponse);
 
-    return response;
-    }
+    // return response;
+    // }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert                04/2018
@@ -201,20 +201,20 @@ ConnectedRealityDataServiceStat::ConnectedRealityDataServiceStat(const RealityDa
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert                04/2018
 //-------------------------------------------------------------------------------------
-ConnectedResponse ConnectedRealityDataUserStat::GetUserStats()
-    {
-    ConnectedResponse response = ConnectedResponse();
-    RealityDataUserStatRequest ptt("");
+// ConnectedResponse ConnectedRealityDataUserStat::GetUserStats()
+    // {
+    // ConnectedResponse response = ConnectedResponse();
+    // RealityDataUserStatRequest ptt("");
 
-    RawServerResponse rawResponse = RawServerResponse();
-    RealityDataUserStat stat;
-    RealityDataService::Request(ptt, stat, rawResponse);
-    Clone(stat);
+    // RawServerResponse rawResponse = RawServerResponse();
+    // bvector<RealityDataUserStat> stats;
+    // stats = RealityDataService::Request(ptt, rawResponse);
+    // Clone(stats);
 
-    response.Clone(rawResponse);
+    // response.Clone(rawResponse);
 
-    return response;
-    }
+    // return response;
+    // }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert                04/2018

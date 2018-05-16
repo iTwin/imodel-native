@@ -617,8 +617,8 @@ TEST_F(RealityDataServiceFixture, RealityDataServiceStatRequestBadRequest)
     RealityDataServiceStatRequest requestUT("RealityDataID");
     RawServerResponse rawResponse{};
 
-    RealityDataServiceStat stat {};
-    s_realityDataService->Request(requestUT, stat, rawResponse);
+    bvector<RealityDataServiceStat> stats;
+    stats = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(rawResponse.status, ::BADREQ);
     }
     
@@ -636,8 +636,8 @@ TEST_F(RealityDataServiceFixture, RealityDataUserStatRequestBadRequest)
     RealityDataUserStatRequest requestUT("RealityDataID");
     RawServerResponse rawResponse{};
 
-    RealityDataUserStat stat {};
-    s_realityDataService->Request(requestUT, stat, rawResponse);
+    bvector<RealityDataUserStat> stats;
+    stats = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(rawResponse.status, ::BADREQ);
     }
     
@@ -1028,11 +1028,11 @@ TEST_F(RealityDataServiceFixture, RealityDataServiceStatRequestGoodRequest)
     EXPECT_STREQ(requestUT.GetId().c_str(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
 
     RawServerResponse rawResponse{};
-    RealityDataServiceStat stats;
+    bvector<RealityDataServiceStat> stats;
 
-    s_realityDataService->Request(requestUT, stats, rawResponse);
+    stats = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(rawResponse.status, RequestStatus::OK);
-    EXPECT_EQ(stats.GetUltimateId(), "53dd5a3b-929e-4169-b2e7-afce74a1d0af");
+    EXPECT_EQ(stats[0].GetUltimateId(), "53dd5a3b-929e-4169-b2e7-afce74a1d0af");
     
     }
 
@@ -1058,11 +1058,11 @@ TEST_F(RealityDataServiceFixture, RealityDataUserStatRequestGoodRequest)
     EXPECT_STREQ(requestUT.GetId().c_str(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
 
     RawServerResponse rawResponse{};
-    RealityDataUserStat stats;
+    bvector<RealityDataUserStat> stats;
 
-    s_realityDataService->Request(requestUT, stats, rawResponse);
+    stats = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(rawResponse.status, RequestStatus::OK);
-    EXPECT_EQ(stats.GetUltimateId(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
+    EXPECT_EQ(stats[0].GetUltimateId(), "72adad30-c07c-465d-a1fe-2f2dfac950a4");
     
     }
     
@@ -1696,8 +1696,8 @@ TEST_F(RealityDataServiceBadComponentsFixture, RealityDataServiceStatRequestBadC
     RealityDataServiceStatRequest requestUT("RealityDataID");
     RawServerResponse rawResponse{};
 
-    RealityDataServiceStat stat {};
-    s_realityDataService->Request(requestUT, stat, rawResponse);
+    bvector<RealityDataServiceStat> stats;
+    stats = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
     }
 
@@ -1709,8 +1709,8 @@ TEST_F(RealityDataServiceBadComponentsFixture, RealityDataUserStatRequestBadComp
     RealityDataUserStatRequest requestUT("RealityDataID");
     RawServerResponse rawResponse{};
 
-    RealityDataUserStat stat {};
-    s_realityDataService->Request(requestUT, stat, rawResponse);
+    bvector<RealityDataUserStat> stats;
+    stats = s_realityDataService->Request(requestUT, rawResponse);
     EXPECT_EQ(rawResponse.status, ::PARAMSNOTSET);
     }
 

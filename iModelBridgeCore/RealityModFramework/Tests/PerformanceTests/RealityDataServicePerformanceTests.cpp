@@ -1167,7 +1167,7 @@ StatusInt RealityDataServicePerformanceTests::ServiceStatTest(timeStats& theTime
     {
     RawServerResponse response;
     RealityDataServiceStatRequest ptt("");
-    RealityDataServiceStat stat;
+    bvector<RealityDataServiceStat> stats;
 
     int64_t startTime;
     int64_t endTime;
@@ -1176,7 +1176,7 @@ StatusInt RealityDataServicePerformanceTests::ServiceStatTest(timeStats& theTime
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
 
     // Perform operation
-    RealityDataService::Request(ptt, stat, response);
+    stats = RealityDataService::Request(ptt, response);
     
     // End time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);
@@ -1200,7 +1200,7 @@ StatusInt RealityDataServicePerformanceTests::UserStatTest(timeStats& theTimeSta
     {
     RawServerResponse response;
     RealityDataUserStatRequest ptt("");
-    RealityDataUserStat stat;
+    bvector<RealityDataUserStat> stats;
 
     int64_t startTime;
     int64_t endTime;
@@ -1209,7 +1209,7 @@ StatusInt RealityDataServicePerformanceTests::UserStatTest(timeStats& theTimeSta
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(startTime);
 
     // Perform operation
-    RealityDataService::Request(ptt, stat, response);
+    stats = RealityDataService::Request(ptt, response);
     
     // End time
     DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(endTime);

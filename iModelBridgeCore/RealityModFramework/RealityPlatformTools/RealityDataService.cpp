@@ -2052,40 +2052,52 @@ void RealityDataService::Request(const RealityDataEnterpriseStatRequest& request
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataService::Request(const RealityDataServiceStatRequest& request, RealityDataServiceStat& statObject, RawServerResponse& rawResponse)
+bvector<RealityDataServiceStat> RealityDataService::Request(const RealityDataServiceStatRequest& request, RawServerResponse& rawResponse)
     {
-    if (!RealityDataService::AreParametersSet())
+
+    bvector<RealityDataServiceStat> entities;
+    if(!RealityDataService::AreParametersSet())
         {
         rawResponse.status = RequestStatus::PARAMSNOTSET;
-        return;
+        return entities;
         }
 
     rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request));
 
     if (rawResponse.status != RequestStatus::OK)
         s_errorCallback("RealityDataServiceStatRequest failed with response", rawResponse);
+    else
+        {
+        RealityConversionTools::JsonToServiceStats(rawResponse.body.c_str(), entities);
+        }
 
-    RealityConversionTools::JsonToServiceStat(rawResponse.body.c_str(), statObject);
+    return entities;
     }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-void RealityDataService::Request(const RealityDataUserStatRequest& request, RealityDataUserStat& statObject, RawServerResponse& rawResponse)
+bvector<RealityDataUserStat> RealityDataService::Request(const RealityDataUserStatRequest& request, RawServerResponse& rawResponse)
     {
-    if (!RealityDataService::AreParametersSet())
+
+    bvector<RealityDataUserStat> entities;
+    if(!RealityDataService::AreParametersSet())
         {
         rawResponse.status = RequestStatus::PARAMSNOTSET;
-        return;
+        return entities;
         }
 
     rawResponse = BasicRequest(static_cast<const RealityDataUrl*>(&request));
 
     if (rawResponse.status != RequestStatus::OK)
         s_errorCallback("RealityDataUserStatRequest failed with response", rawResponse);
+    else
+        {
+        RealityConversionTools::JsonToUserStats(rawResponse.body.c_str(), entities);
+        }
 
-    RealityConversionTools::JsonToUserStat(rawResponse.body.c_str(), statObject);
-    }	
+    return entities;
+    }
 
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017

@@ -1180,13 +1180,13 @@ public:
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataEnterpriseStat> Request(const RealityDataAllEnterpriseStatsRequest& request, RawServerResponse& rawResponse);
 
     //! Returns the size in KB for the specify Enterprise, or the default one.
-    REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataServiceStatRequest& request, RealityDataServiceStat& statObject, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataServiceStat> RealityDataService::Request(const RealityDataServiceStatRequest& request, RawServerResponse& rawResponse);
 
     //! Returns a list of EnterpriseStat objects for every organization.
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataServiceStat> Request(const RealityDataAllServiceStatsRequest& request, RawServerResponse& rawResponse);
 
     //! Returns the user stats for the specify Enterprise, or the default one.
-    REALITYDATAPLATFORM_EXPORT static void RealityDataService::Request(const RealityDataUserStatRequest& request, RealityDataUserStat& statObject, RawServerResponse& rawResponse);
+    REALITYDATAPLATFORM_EXPORT static bvector<RealityDataUserStat> RealityDataService::Request(const RealityDataUserStatRequest& request, RawServerResponse& rawResponse);
 
     //! Returns a list of UserStat objects for every organization.
     REALITYDATAPLATFORM_EXPORT static bvector<RealityDataUserStat> Request(const RealityDataAllUserStatsRequest& request, RawServerResponse& rawResponse);

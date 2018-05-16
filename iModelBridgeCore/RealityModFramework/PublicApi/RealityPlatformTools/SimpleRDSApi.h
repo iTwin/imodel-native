@@ -90,7 +90,7 @@ public:
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataServiceStat() : RealityDataServiceStat(){}
 
     //! Gets stats for the user's enterprise
-    REALITYDATAPLATFORM_EXPORT ConnectedResponse GetServiceStats();
+//    REALITYDATAPLATFORM_EXPORT ConnectedResponse GetServiceStats();
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataServiceStat(const RealityDataServiceStat& stat);
 private:
     REALITYDATAPLATFORM_EXPORT void Clone(const RealityDataServiceStat& stat);
@@ -108,7 +108,7 @@ public:
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataUserStat() : RealityDataUserStat(){}
 
     //! Gets stats for the user's enterprise
-    REALITYDATAPLATFORM_EXPORT ConnectedResponse GetUserStats();
+//     REALITYDATAPLATFORM_EXPORT ConnectedResponse GetUserStats();
     REALITYDATAPLATFORM_EXPORT ConnectedRealityDataUserStat(const RealityDataUserStat& stat);
 private:
     REALITYDATAPLATFORM_EXPORT void Clone(const RealityDataUserStat& stat);

@@ -1161,15 +1161,20 @@ void RealityDataConsole::ServiceStat()
     {
     RawServerResponse rawResponse = RawServerResponse();
     RealityDataServiceStatRequest* ptt = new RealityDataServiceStatRequest("");
-    RealityDataServiceStat stat;
-    RealityDataService::Request(*ptt, stat, rawResponse);
+    bvector<RealityDataServiceStat> stats;
+    stats = RealityDataService::Request(*ptt, rawResponse);
 
-    DisplayInfo("Service statistics: \n");
-    DisplayInfo(Utf8PrintfString("   NbRealityData : %lu\n", stat.GetNbRealityData()));
-    DisplayInfo(Utf8PrintfString("   TotalSize(KB) : %lu\n", stat.GetTotalSizeKB()));
-    DisplayInfo(Utf8PrintfString("   UltimateId    : %s\n", stat.GetUltimateId().c_str()));
-    DisplayInfo(Utf8PrintfString("   ServiceId     : %s\n", stat.GetServiceId().c_str()));
+    DisplayInfo("======================================================\n");
+    for (auto currentStat : stats)
+        {
+        DisplayInfo(Utf8PrintfString("   NbRealityData : %lu\n", currentStat.GetNbRealityData()));
+        DisplayInfo(Utf8PrintfString("   TotalSize(KB) : %lu\n", currentStat.GetTotalSizeKB()));
+        DisplayInfo(Utf8PrintfString("   UltimateId    : %s\n", currentStat.GetUltimateId().c_str()));
+        DisplayInfo(Utf8PrintfString("   ServiceId     : %s\n", currentStat.GetServiceId().c_str()));
 	
+        DisplayInfo("======================================================\n");
+        }
+
     }
 
 
@@ -1325,17 +1330,25 @@ void RealityDataConsole::UserStat()
     {
     RawServerResponse rawResponse = RawServerResponse();
     RealityDataUserStatRequest* ptt = new RealityDataUserStatRequest("");
-    RealityDataUserStat stat;
-    RealityDataService::Request(*ptt, stat, rawResponse);
+    bvector<RealityDataUserStat> stats;
+    stats = RealityDataService::Request(*ptt, rawResponse);
 
     DisplayInfo("User statistics: \n");
-    DisplayInfo(Utf8PrintfString("   NbRealityData : %lu\n", stat.GetNbRealityData()));
-    DisplayInfo(Utf8PrintfString("   TotalSize(KB) : %lu\n", stat.GetTotalSizeKB()));
-    DisplayInfo(Utf8PrintfString("   UserId        : %s\n", stat.GetUserId().c_str()));
-    DisplayInfo(Utf8PrintfString("   UserEmail     : %s\n", stat.GetUserEmail().c_str()));
-    DisplayInfo(Utf8PrintfString("   UltimateId    : %s\n", stat.GetUltimateId().c_str()));
-    DisplayInfo(Utf8PrintfString("   ServiceId     : %s\n", stat.GetServiceId().c_str()));
-    DisplayInfo(Utf8PrintfString("   DataLocation  : %s\n\n", stat.GetDataLocationGuid().c_str()));
+
+    for (auto currentStat: stats)
+        {        
+        DisplayInfo("=======================================================");
+
+        DisplayInfo(Utf8PrintfString("   NbRealityData : %lu\n", currentStat.GetNbRealityData()));
+        DisplayInfo(Utf8PrintfString("   TotalSize(KB) : %lu\n", currentStat.GetTotalSizeKB()));
+        DisplayInfo(Utf8PrintfString("   UserId        : %s\n", currentStat.GetUserId().c_str()));
+        DisplayInfo(Utf8PrintfString("   UserEmail     : %s\n", currentStat.GetUserEmail().c_str()));
+        DisplayInfo(Utf8PrintfString("   UltimateId    : %s\n", currentStat.GetUltimateId().c_str()));
+        DisplayInfo(Utf8PrintfString("   ServiceId     : %s\n", currentStat.GetServiceId().c_str()));
+        DisplayInfo(Utf8PrintfString("   DataLocation  : %s\n\n", currentStat.GetDataLocationGuid().c_str()));
+        }
+    DisplayInfo("=======================================================");
+
     }
 
 
