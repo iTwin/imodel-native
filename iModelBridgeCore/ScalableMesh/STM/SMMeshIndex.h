@@ -1030,10 +1030,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         size_t m_texId = 0;
 
         SharedTextureManager m_texMgr;
-
-        
-        std::vector<std::future<bool>> m_textureWorkerTasks;
-        WorkerThreadPoolPtr            m_texturingThreadPoolPtr;
+                
+        WorkerThreadPoolPtr            m_creationProcessThreadPoolPtr;
 
         bvector < RefCountedPtr<EditOperation> > m_edits;
 #if 0

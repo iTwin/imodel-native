@@ -13,21 +13,6 @@
     <Filter Include="Transkit">
       <UniqueIdentifier>{ce869690-c885-46b5-8f3f-79ba896701dc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Includes\Foundations">
-      <UniqueIdentifier>{c89a4281-261d-42b9-87cc-5ab3a8575a0c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Includes\GeoCoords">
-      <UniqueIdentifier>{bc185098-fa4a-4642-8aee-7fae6fc23f3e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Includes\Import">
-      <UniqueIdentifier>{48a7f415-ef12-4d5a-aab6-e3911afafb47}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Includes\Memory">
-      <UniqueIdentifier>{fd72e706-9e89-4a6c-a603-29237a7cb79a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Includes\PrivateAPI">
-      <UniqueIdentifier>{2d1a9120-ceee-4c48-aba1-c8e82807f2e9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Includes\PublicAPI">
       <UniqueIdentifier>{4245fa35-4e44-4b19-aeec-d0e9d0c602e7}</UniqueIdentifier>
     </Filter>
@@ -126,159 +111,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GeoCoords\GCSWktParsing.h">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\StdCpp.h">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\TransfoModelAffine.hpp">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\TransfoModelBase.h">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\TransfoModelCombined.hpp">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\TransfoModelIdentity.hpp">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\TransfoModelMixinBase.h">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\TransfoModelScaling.hpp">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\TransfoModelScalingTranslating.hpp">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\TransfoModelTranslating.hpp">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\TransfoModelUniformScaling.hpp">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\TransformationInternal.h">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\TransformationUtils.h">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\WKTUtils.h">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\ContentConfigComponentMixinBaseImpl.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\DimensionIterator.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\ImportCommandMixinBaseImpl.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\ImportConfigComponentMixinBaseImpl.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\ImporterCommandVisitor.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\ImporterImpl.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\InputExtractor.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\InternalContentDescriptor.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\InternalImporterConfig.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\InternalSourceHandler.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\PluginRegistryHelper.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\PluginRegistryHelper.hpp">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\ReprojectionFilterFactory.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\Sink.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\SourcePlugin.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\StdCpp.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="Import\TypeConversionFilterFactory.h">
-      <Filter>Includes\Import</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\InternalUtilityFunctions.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshCreator.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshEditListener.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshImportSequencePersistance.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshMoniker.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.hpp">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshQuadTreeQueries.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshQuadTreeQueries.hpp">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshQuery.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshQuery.hpp">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshRasterDraping.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshRelevanceDistribution.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshSourcePersistance.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshSources.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshSourcesImport.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshSourcesPersistance.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshStorage.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshTilingOptions.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshPCH.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMesh.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
@@ -495,12 +327,6 @@
     <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshSTMSource.h">
       <Filter>Includes\PublicAPI\Plugin</Filter>
     </ClInclude>
-    <ClInclude Include="PrivateAPI\STMInternal\Foundations\FoundationsPrivateTools.h">
-      <Filter>Includes\PrivateAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="PrivateAPI\STMInternal\Foundations\PrivateStringTools.h">
-      <Filter>Includes\PrivateAPI</Filter>
-    </ClInclude>
     <ClInclude Include="STM\ImportPlugins\CivilDTMHelpers.h">
       <Filter>Includes\Core\ImportPlugins</Filter>
     </ClInclude>
@@ -509,12 +335,6 @@
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshClipContainer.h">
       <Filter>Includes\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshMesher.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshMesher.hpp">
-      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="STM\3dDelaunay\DTetrahedron3d.h">
       <Filter>Source\Core\ScalableMesh\3dDelaunay</Filter>
@@ -549,9 +369,6 @@
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceImporter.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="STM\ScalableMeshSourceImporter.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\DGNModelGeoref.h">
       <Filter>Includes\PublicAPI\GeoCoords</Filter>
     </ClInclude>
@@ -579,71 +396,17 @@
     <ClInclude Include="STM\ScalableMeshTime.h">
       <Filter>Resources</Filter>
     </ClInclude>
-    <ClInclude Include="STM\SMMeshIndex.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\SMMeshIndex.hpp">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\SMPointIndex.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\SMPointIndex.hpp">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\SMPointTileStore.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshMemoryPools.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshSourceCreator.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshNodeCreator.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="STM\ScalableMeshSourceCreator.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
     <ClInclude Include="STM\ScalableMeshNodeCreator.h">
       <Filter>Source\Core</Filter>
     </ClInclude>
-    <ClInclude Include="STM\PointTypeDPoint3d.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\CGALEdgeCollapse.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\CGAL_BentleyKernel.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\CGAL_MTGGraphGraphTraits.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\LogUtils.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\SMTextureTileStore.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
     <ClInclude Include="STM\DrapeOnGraph.h">
       <Filter>Source\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\SMMemoryPool.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="stm\ScalableMeshDb.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\SMDataSourceParams.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ISMDataStore.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ISMDataStore.hpp">
-      <Filter>Includes\Core</Filter>
     </ClInclude>
     <ClInclude Include="stm\ComputeMemoryUseTraits.h">
       <Filter>Includes\PublicAPI\Import</Filter>
@@ -744,21 +507,6 @@
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Warnings.h">
       <Filter>Includes\PublicAPI\Import</Filter>
     </ClInclude>
-    <ClInclude Include="STM\ScalableMeshProgressiveQuery.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\MeshingFunctions.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\SMNodeGroup.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\SmCachedDisplayData.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\SharedTextureManager.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshGroundExtractor.h">
       <Filter>Includes\PublicAPI\AutomaticGroundDetection</Filter>
     </ClInclude>
@@ -774,29 +522,11 @@
     <ClInclude Include="PublicAPI\ScalableMesh\ITextureProvider.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="GeneratorTextureProvider.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="stm\RasterUtilities.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="stm\MapBoxTextureProvider.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="stm\ReprojectionModel.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="GeoCoords\ReprojectionUtils.h">
-      <Filter>Includes\GeoCoords</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshFrom3MX.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshAnalysis.h">
       <Filter>Includes\PublicAPI</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\ScalableMeshInfo.h">
-      <Filter>Includes\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1181,9 +911,6 @@
     <ClCompile Include="STM\Edits\Skirts.cpp">
       <Filter>Source\Core\Edits</Filter>
     </ClCompile>
-    <ClCompile Include="STM\SMMemoryPool.cpp">
-      <Filter>Includes\Core</Filter>
-    </ClCompile>
     <ClCompile Include="stm\ScalableMeshDb.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -1192,15 +919,6 @@
     </ClCompile>
     <ClCompile Include="Import\DataSQLite.cpp">
       <Filter>Includes\PublicAPI\Import</Filter>
-    </ClCompile>
-    <ClCompile Include="Import\ScalableMeshData.cpp">
-      <Filter>Includes\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMeshProgressiveQuery.cpp">
-      <Filter>Includes\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\ScalableMeshTexture.cpp">
-      <Filter>Includes\Core</Filter>
     </ClCompile>
     <ClCompile Include="STM\MeshingFunctions.cpp">
       <Filter>Source\Core</Filter>
