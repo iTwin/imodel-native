@@ -9,7 +9,7 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
-
+#include <Bentley/PerformanceLogger.h>
 #include "Command.h"
 
 USING_NAMESPACE_BENTLEY
@@ -95,6 +95,7 @@ struct SessionFile
         BeSQLite::Db& GetHandleR() const { return _GetBeSqliteHandle(); }
 
         bool TryRetrieveProfileInfos(bmap<ProfileInfo::Type, ProfileInfo>&) const;
+        bool IsAttached(Utf8StringCR tableSpaceName) const;
         bool EnableTracking(bool enable);
         bool IsTracking() const { return m_changeTracker != nullptr && m_changeTracker->IsTracking(); }
         IModelConsoleChangeTracker* GetTracker() const { return m_changeTracker.get(); }
@@ -186,6 +187,41 @@ struct Session final
         BentleyStatus SetFile(std::unique_ptr<SessionFile>);
         void Reset() { m_file = nullptr; m_issueListener.Reset(); }
         ECDbIssueListener const& GetIssues() const { return m_issueListener; }
+    };
+
+//=======================================================================================
+// @bsiclass                                    BentleySystems 
+//=======================================================================================
+struct PerfLogger final
+    {
+    private:
+        Utf8CP m_application = nullptr;
+        Utf8CP m_feature = nullptr;
+        Utf8String m_message;
+        uint64_t m_startTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+        bool m_isDisposed = false;
+        PerfLogger(PerfLogger const&) = delete;
+        PerfLogger& operator=(PerfLogger const&) = delete;
+        PerfLogger(PerfLogger&&) = delete;
+        PerfLogger& operator=(PerfLogger&&) = delete;
+
+    public:
+        PerfLogger(Utf8CP application, Utf8CP feature) : m_application(application), m_feature(feature) {}
+        explicit PerfLogger(Utf8StringCR message) : m_message(message) {}
+        ~PerfLogger() { Dispose(); }
+
+        void Dispose() 
+            {
+            if (m_isDisposed)
+                return;
+
+            if (m_feature != nullptr)
+                PERFLOG.infov("%s,%s,%" PRIu64, m_application, m_feature, BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime);
+            else
+                PERFLOG.infov("%s,%" PRIu64, m_message.c_str(), BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime);
+
+            m_isDisposed = true;
+            }
     };
 
 

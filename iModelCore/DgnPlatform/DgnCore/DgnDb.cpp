@@ -332,7 +332,7 @@ DbResult DgnDb::RestoreParentChangeSetIds()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/17
 //--------------------------------------------------------------------------------------
-void DgnDb::_OnAfterSchemaImport() const
+void DgnDb::_OnBeforeClearECDbCache() const
     {
     m_cacheECInstanceInserter.clear();
     ClearECSqlCache();

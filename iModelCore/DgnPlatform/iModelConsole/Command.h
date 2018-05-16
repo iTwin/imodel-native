@@ -159,18 +159,22 @@ struct ImportCommand final : public Command
 struct ExportCommand final : public Command
     {
     private:
-        static Utf8CP const ECSCHEMA_SWITCH;
-        static Utf8CP const TABLES_SWITCH;
+        static constexpr Utf8CP s_schemaSwitch = "schema";
+        static constexpr Utf8CP s_tablesSwitch = "tables";
+        static constexpr Utf8CP s_changeSummarySwitch = "changesummary";
 
         Utf8String _GetName() const override { return ".export"; }
         Utf8String _GetUsage() const override;
         void _Run(Session&, Utf8StringCR args) const override;
 
-        void RunExportSchema(Session&, Utf8CP outFolder, bool useECXmlV2) const;
-        void RunExportTables(Session&, Utf8CP jsonFile) const;
-
-        void ExportTables(Session&, Utf8CP jsonFile) const;
+        void RunExportSchema(Session&, Utf8StringCR outFolder, bool useECXmlV2) const;
+        void RunExportTables(Session&, Utf8StringCR jsonFile) const;
         void ExportTable(Session&, Json::Value& out, Utf8CP tableName) const;
+        void RunExportChangeSummary(Session&, BeSQLite::EC::ECInstanceId changeSummaryId, Utf8StringCR jsonFile) const;
+        void PropertyValueChangesToJson(Json::Value& propValueJson, BeSQLite::EC::ECDbCR, BeSQLite::EC::ECSqlStatement&, BeSQLite::EC::ECSqlStatementCache&, BeSQLite::EC::ECInstanceId summaryId, BeSQLite::EC::ECInstanceId instanceChangeId, BeSQLite::EC::ECInstanceId changedInstanceId, Utf8StringCR changedInstanceClassName, BeSQLite::EC::ChangedValueState) const;
+
+        static Utf8CP ToString(BeSQLite::EC::ChangedValueState);
+
     public:
         ExportCommand() : Command() {}
         ~ExportCommand() {}
@@ -289,7 +293,6 @@ struct AttachCommand final : public Command
         Utf8String _GetName() const override { return ".attach"; }
         Utf8String _GetUsage() const override;
         void _Run(Session&, Utf8StringCR args) const override;
-
     public:
         AttachCommand() : Command() {}
         ~AttachCommand() {}
@@ -304,7 +307,6 @@ struct DetachCommand final : public Command
         Utf8String _GetName() const override { return ".detach"; }
         Utf8String _GetUsage() const override;
         void _Run(Session&, Utf8StringCR args) const override;
-
     public:
         DetachCommand() : Command() {}
         ~DetachCommand() {}

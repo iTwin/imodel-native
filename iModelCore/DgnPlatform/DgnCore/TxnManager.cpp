@@ -1127,12 +1127,10 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     if (containsSchemaChanges)
         {
         /* Note: All caches that hold ec-classes and handler-associations in memory have to be cleared.
-         * The calls below replicate a similar clearing that happens when ImportSchemas() are called.
+         * The call to ClearECDbCache also clears all EC related caches held by DgnDb.
          * Additionally, we force merging of revisions containing schema changes to happen right when the
          * DgnDb is opened, and the Element caches haven't had a chance to get initialized.
          */
-        m_dgndb.FireAfterSchemaImportEvent();
-
         m_dgndb.ClearECDbCache();
         m_dgndb.Schemas().RepopulateCacheTables();
         m_dgndb.Domains().SyncWithSchemas();
