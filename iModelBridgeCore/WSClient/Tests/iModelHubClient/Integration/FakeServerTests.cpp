@@ -25,7 +25,10 @@ class FakeServerFixture : public testing::Test
             {
             static bool s_initialized = false;
             if (s_initialized)
+                {
+                Http::HttpClient::Reinitialize();
                 return;
+                }
 
             iModelHubHost& host = iModelHubHost::Instance();
             host.CleanOutputDirectory();
@@ -66,7 +69,7 @@ class FakeServerFixture : public testing::Test
             {
             /*WCharCP serverPath = outPath.GetWCharCP();
             EXPECT_EQ(BeFileNameStatus::Success, FakeServer::DeleteAlliModels(serverPath));*/
-
+            Http::HttpClient::Uninitialize();
             }
     };
 
