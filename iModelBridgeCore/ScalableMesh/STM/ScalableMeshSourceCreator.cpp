@@ -729,8 +729,13 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     if (!restrictLevelForPropagation)
         {
+        bool splitNode = false;
+
+        if (m_sourceCreationMethod == SCM_SOURCE_CREATION_BIG_SPLIT_CUT)
+            splitNode = true;
+
         // Balance data             
-        if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth))
+        if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth, splitNode))
             return BSIERROR;
         }
     else if (!s_inEditing)
@@ -773,9 +778,9 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             return BSIERROR;
 
         pDataIndex->CutTiles(SM_ONE_SPLIT_THRESHOLD);
-
+     
         // Balance data             
-        if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth, true))
+        if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth, false, false))
             return BSIERROR;
         }
 

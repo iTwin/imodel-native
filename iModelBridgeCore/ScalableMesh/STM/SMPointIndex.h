@@ -284,7 +284,7 @@ public:
     Changes an unbalanced index to a balanced index. If the index is already balanced
     nothing will occur otherwise the balancing will immediately be performed.
     -----------------------------------------------------------------------------*/
-    void Balance(size_t depth);
+    void Balance(size_t depth, bool splitNode);
 
     /**----------------------------------------------------------------------------
     Pull up sub node.
@@ -1330,7 +1330,7 @@ public:
      Push the data in leaf and balance the octree
     -----------------------------------------------------------------------------*/
     //NEEDS_WORK_SM : Maybe should be virtual.
-    BENTLEY_SM_EXPORT void BalanceDown(size_t depthBeforePartialUpdate, bool keepUnbalanced = false, bool meshBalancing = false);
+    BENTLEY_SM_EXPORT void BalanceDown(size_t depthBeforePartialUpdate, bool keepUnbalanced = false, bool splitNode = false, bool propagateDownImmediately = true);
 
     /**----------------------------------------------------------------------------
      Remove useless root
@@ -1489,7 +1489,7 @@ public:
     Changes an unbalanced index to a balanced index. If the index is already balanced
     nothing will occur otherwise the balancing will immediately be performed.
     -----------------------------------------------------------------------------*/
-    void                Balance();
+    void                Balance(bool splitNode);
 
     /**----------------------------------------------------------------------------
     Returns the number of subnodes on split. This number can be 4 or 8

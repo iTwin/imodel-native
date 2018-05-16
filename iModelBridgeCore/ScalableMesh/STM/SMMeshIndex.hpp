@@ -3212,17 +3212,18 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     // Indicate node is not a leaf anymore
     m_nodeHeader.m_IsLeaf = false;
     m_nodeHeader.m_IsBranched = true;
+
+    //Doesn't work with multithread optimization, deactivated since currently not needed after the generation
+    static bool s_applyNeighbor = false;
+
+    if (s_applyNeighbor)
+        SetupNeighborNodesAfterSplit();
+
     for (size_t i = 0; i < m_nodeHeader.m_numberOfSubNodesOnSplit;++i)
         {        
         this->AdviseSubNodeIDChanged(m_apSubNodes[i]);
-        }
-
-    static bool s_applyNeighbor = false;
-
-    //Doesn't work with multithread optimization, deactivated since currently not needed after the generation
-    if (s_applyNeighbor)
-	    SetupNeighborNodesAfterSplit();
-
+        }    
+    
     for (auto& node : m_apSubNodes) 
         this->AdviseSubNodeIDChanged(node);
 

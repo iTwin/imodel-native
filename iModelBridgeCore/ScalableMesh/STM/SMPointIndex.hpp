@@ -2018,8 +2018,8 @@ size_t SMPointIndexNode<POINT, EXTENT>::GetReciprocalNeighborPos(size_t neighbor
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
 template<class POINT, class EXTENT>
-void SMPointIndexNode<POINT, EXTENT>::Balance(size_t depth)
-    {
+void SMPointIndexNode<POINT, EXTENT>::Balance(size_t depth, bool splitNode)
+    {    
     this->ValidateInvariantsSoft();
 
     if (!IsLoaded())
@@ -2034,9 +2034,23 @@ void SMPointIndexNode<POINT, EXTENT>::Balance(size_t depth)
             {
             if (m_nodeHeader.m_level < depth)
                 { 
-                    if (m_needsBalancing) PushNodeDown(depth);
-                    else PushNodeDownVirtual(depth);
+                if (m_needsBalancing) 
+                    {
+                    if (splitNode) 
+                        {
+                        SplitNode(GetDefaultSplitPosition());                        
+
+                        for (size_t indexNode = 0; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
+                            {
+                            m_apSubNodes[indexNode]->Balance(depth, splitNode);
+                            }
+                        }
+                    else
+                        PushNodeDown(depth);
                     }
+                else 
+                    PushNodeDownVirtual(depth);
+                }
 
             if (!m_nodeHeader.m_contentExtentDefined && GetCount() > 0)
                 {
@@ -2062,7 +2076,7 @@ void SMPointIndexNode<POINT, EXTENT>::Balance(size_t depth)
             {
             if (m_pSubNodeNoSplit != NULL)
                 {
-                m_pSubNodeNoSplit->Balance(depth);
+                m_pSubNodeNoSplit->Balance(depth, splitNode);
 
                 if (!m_nodeHeader.m_contentExtentDefined && GetCount() > 0)
                     {
@@ -2076,7 +2090,7 @@ void SMPointIndexNode<POINT, EXTENT>::Balance(size_t depth)
                 {
                 for (size_t indexNode = 0; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
                     {
-                    m_apSubNodes[indexNode]->Balance(depth);
+                    m_apSubNodes[indexNode]->Balance(depth, splitNode);
                     }
 
                 if (!m_nodeHeader.m_contentExtentDefined && GetCount()> 0)
@@ -8025,10 +8039,10 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::ValidateIs
  Balance
  Balance the data.
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDown(size_t depthBeforePartialUpdate, bool keepUnbalanced, bool meshBalancing)
+template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDown(size_t depthBeforePartialUpdate, bool keepUnbalanced, bool splitNode, bool propagateDownImmediately)
     {    
 
-    if (!meshBalancing)
+    if (propagateDownImmediately)
         m_pRootNode->PropagateDataDownImmediately (true);
 //#ifndef WIP_MESH_IMPORT    
     //size_t depth = m_pRootNode->GetDepth();    
@@ -8039,7 +8053,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDow
         if (s_inEditing)
             {
             //Not supported yet
-            assert(meshBalancing == false);
+            assert(propagateDownImmediately == false);
 
             bool hasRootChanged = BalanceRoot();
             bool hasUnsplitDone = UnsplitEmptyNode();
@@ -8057,8 +8071,13 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDow
 
         //NEEDS_WORK_SM - Couldn't we pass the depth to the function given that it 
         //might require loading and passing all the node.
-         Balance();
+         Balance(splitNode);
         }
+
+    size_t splitDepth = m_pRootNode->GetSplitDepth();
+    size_t depth = m_pRootNode->GetDepth();
+
+    splitDepth = depth;
 
     assert(m_pRootNode->GetSplitDepth() == m_pRootNode->GetDepth());    
 //#endif
@@ -9211,7 +9230,7 @@ EXTENT SMPointIndex<POINT, EXTENT>::GetContentExtent() const
 // @bsimethod                                                   Alain.Robert 10/10
 //=======================================================================================
 template<class POINT, class EXTENT>
-void SMPointIndex<POINT, EXTENT>::Balance()
+void SMPointIndex<POINT, EXTENT>::Balance(bool splitNode)
     {
     HINVARIANTS;
 
@@ -9226,7 +9245,7 @@ void SMPointIndex<POINT, EXTENT>::Balance()
             {
 
             size_t depth = m_pRootNode->GetDepth();
-            m_pRootNode->Balance(depth);
+            m_pRootNode->Balance(depth, splitNode);
             }
        // }
 
