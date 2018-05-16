@@ -9,11 +9,6 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 
 RequestHandler::RequestHandler()
     {
-    /*BeFileName documentsDir;
-    BeTest::GetHost().GetOutputRoot(documentsDir);
-    documentsDir.AppendToPath(L"ImodelHubTestData");
-    documentsDir.AppendToPath(L"iModelHubNativeTests");
-    serverPath = documentsDir.GetNameUtf8();*/
     BeFileName outPath;
     BeTest::GetHost().GetOutputRoot(outPath);
     outPath.AppendToPath(L"iModelHubServer");
@@ -26,7 +21,7 @@ RequestHandler::~RequestHandler()
     {
     }
 
-void CreateTable(Utf8CP tableName, BentleyB0200::BeSQLite::Db& db, Utf8CP ddl) 
+void CreateTable(Utf8CP tableName, BentleyB0200::BeSQLite::Db& db, Utf8CP ddl)
     {
     if (!db.TableExists(tableName))
         if (DbResult::BE_SQLITE_OK != db.CreateTable(tableName, ddl))
@@ -36,7 +31,7 @@ Utf8String GetInstanceid(Utf8String str)
     {
     bvector<Utf8String> tokens;
 
-    BeStringUtilities::Split(str.c_str(), "-",nullptr,  tokens);
+    BeStringUtilities::Split(str.c_str(), "-", nullptr, tokens);
     Utf8String instanceid(tokens[1]);
     instanceid.append("-");
     instanceid.append(tokens[2]);
@@ -46,15 +41,14 @@ Utf8String GetInstanceid(Utf8String str)
     instanceid.append(tokens[4]);
     instanceid.append("-");
     instanceid.append(tokens[5]);
-
     return instanceid;
     }
-bvector<Utf8String> ParseUrl(Request req) 
+bvector<Utf8String> ParseUrl(Request req, Utf8CP delimiter)
     {
     Utf8String requestUrl = req.GetUrl();
     bvector<Utf8String> tokens;
     Utf8CP url = requestUrl.c_str();
-    BeStringUtilities::Split(url, "/", nullptr, tokens);
+    BeStringUtilities::Split(url, delimiter, nullptr, tokens);
     return tokens;
     }
 
@@ -66,14 +60,12 @@ Response RequestHandler::PluginRequest(Request req)
     Utf8String responseBody("{\"instances\":[{\"instanceId\":\"Project\",\"schemaName\":\"Plugins\",\"className\":\"PluginIdentifier\",\"properties\":{\"ECPluginID\":\"Project\",\"DisplayLabel\":\"Project\"},\"eTag\":\"\\\"XX8D88hmQX54h3Mq4muPnVO0yVQ=\\\"\"},{\"instanceId\":\"iModel\",\"schemaName\":\"Plugins\",\"className\":\"PluginIdentifier\",\"properties\":{\"ECPluginID\":\"iModel\",\"DisplayLabel\":\"iModel\"},\"eTag\":\"\\\"rCWzHX/X9jqKDPqDqq1rSrXMseI=\\\"\"},{\"instanceId\":\"Bentley.ECServices\",\"schemaName\":\"Plugins\",\"className\":\"PluginIdentifier\",\"properties\":{\"ECPluginID\":\"Bentley.ECServices\",\"DisplayLabel\":\"Bentley.ECServices\"},\"eTag\":\"\\\"HqP0PTZyesAOhccoX8fGr3fosBk=\\\"\"}]}");
     auto content = HttpResponseContent::Create(HttpStringBody::Create(responseBody));
     for (const auto& header : headers)
-        {
         content->GetHeaders().SetValue(header.first, header.second);
-        }
     content->GetHeaders().SetValue(Utf8String("Mas-Server"), Utf8String("Bentley-WSG/02.06.04.04, Bentley-WebAPI/2.7"));
     return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
     }
 
-Response RequestHandler::BuddiRequest(Request req) 
+Response RequestHandler::BuddiRequest(Request req)
     {
     const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>();
     auto newHeaders = headers;
@@ -83,16 +75,13 @@ Response RequestHandler::BuddiRequest(Request req)
         responseBody = "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><soap:Body><GetUrlResponse xmlns=\"http://tempuri.org/\"><GetUrlResult>https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx</GetUrlResult></GetUrlResponse></soap:Body></soap:Envelope>";
     if (req.GetRequestBody()->AsString().Contains("iModelHubApi"))
         responseBody = "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><soap:Body><GetUrlResponse xmlns=\"http://tempuri.org/\"><GetUrlResult>https://qa-imodelhubapi.bentley.com</GetUrlResult></GetUrlResponse></soap:Body></soap:Envelope>";
-
     auto content = HttpResponseContent::Create(HttpStringBody::Create(responseBody));
     for (const auto& header : headers)
-        {
         content->GetHeaders().SetValue(header.first, header.second);
-        }
     return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
     }
 
-Response RequestHandler::ImsTokenRequest(Request req) 
+Response RequestHandler::ImsTokenRequest(Request req)
     {
 
     const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>();
@@ -101,55 +90,73 @@ Response RequestHandler::ImsTokenRequest(Request req)
     Utf8String responseBody("{\"RequestedSecurityToken\":\"<saml:Assertion MajorVersion=\\\"1\\\" MinorVersion=\\\"1\\\" AssertionID=\\\"_f0e79a5d-6b8b-4f6c-9dc2-84950140a776\\\" Issuer=\\\"https:\\/\\/qa-ims.bentley.com\\/\\\" IssueInstant=\\\"2018-01-23T06:59:22.817Z\\\" xmlns:saml=\\\"urn:oasis:names:tc:SAML:1.0:assertion\\\"><saml:Conditions NotBefore=\\\"2018-01-23T06:59:22.785Z\\\" NotOnOrAfter=\\\"2018-01-30T06:59:22.785Z\\\"><saml:AudienceRestrictionCondition><saml:Audience>sso:\\/\\/wsfed_desktop\\/1654<\\/saml:Audience><\\/saml:AudienceRestrictionCondition><\\/saml:Conditions><saml:AttributeStatement><saml:Subject><saml:NameIdentifier>87313509-6248-41e0-b43f-62aa4513a3e4<\\/saml:NameIdentifier><saml:SubjectConfirmation><saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key<\\/saml:ConfirmationMethod><KeyInfo xmlns=\\\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#\\\"><trust:BinarySecret xmlns:trust=\\\"http:\\/\\/docs.oasis-open.org\\/ws-sx\\/ws-trust\\/200512\\\">fS7XRoWI0KsO1u0L8dtk96kaxmf4yxxV74dPz9DlWKE=<\\/trust:BinarySecret><\\/KeyInfo><\\/saml:SubjectConfirmation><\\/saml:Subject><saml:Attribute AttributeName=\\\"name\\\" AttributeNamespace=\\\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\\\"><saml:AttributeValue>farhad.kabir@bentley.com<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"givenname\\\" AttributeNamespace=\\\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\\\"><saml:AttributeValue>Farhad<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"surname\\\" AttributeNamespace=\\\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\\\"><saml:AttributeValue>Kabir<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"emailaddress\\\" AttributeNamespace=\\\"http:\\/\\/schemas.xmlsoap.org\\/ws\\/2005\\/05\\/identity\\/claims\\\"><saml:AttributeValue>farhad.kabir@bentley.com<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"role\\\" AttributeNamespace=\\\"http:\\/\\/schemas.microsoft.com\\/ws\\/2008\\/06\\/identity\\/claims\\\"><saml:AttributeValue>BENTLEY_EMPLOYEE<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"sapbupa\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>1004183475<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"site\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>1004174721<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"ultimatesite\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>1001389117<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"sapentitlement\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>INTERNAL<\\/saml:AttributeValue><saml:AttributeValue>BENTLEY_LEARN<\\/saml:AttributeValue><saml:AttributeValue>SELECT_2006<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"entitlement\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>BENTLEY_EMPLOYEE<\\/saml:AttributeValue><saml:AttributeValue>BENTLEY_LEARN<\\/saml:AttributeValue><saml:AttributeValue>SELECT_2006<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"countryiso\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>PK<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"languageiso\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>EN<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"ismarketingprospect\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>false<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"isbentleyemployee\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>true<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"becommunitiesusername\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>87313509-6248-41E0-B43F-62AA4513A3E4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"becommunitiesemailaddress\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>Farhad.Kabir@bentley.com<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"userid\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>87313509-6248-41e0-b43f-62aa4513a3e4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"organization\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>Bentley Systems Inc<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"has_select\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>true<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"organizationid\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>e82a584b-9fae-409f-9581-fd154f7b9ef9<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"ultimateid\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>72adad30-c07c-465d-a1fe-2f2dfac950a4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"ultimatereferenceid\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>72adad30-c07c-465d-a1fe-2f2dfac950a4<\\/saml:AttributeValue><\\/saml:Attribute><saml:Attribute AttributeName=\\\"usagecountryiso\\\" AttributeNamespace=\\\"http:\\/\\/schemas.bentley.com\\/ws\\/2011\\/03\\/identity\\/claims\\\"><saml:AttributeValue>PK<\\/saml:AttributeValue><\\/saml:Attribute><\\/saml:AttributeStatement><ds:Signature xmlns:ds=\\\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#\\\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\\\"http:\\/\\/www.w3.org\\/2001\\/10\\/xml-exc-c14n#\\\" \\/><ds:SignatureMethod Algorithm=\\\"http:\\/\\/www.w3.org\\/2001\\/04\\/xmldsig-more#rsa-sha256\\\" \\/><ds:Reference URI=\\\"#_f0e79a5d-6b8b-4f6c-9dc2-84950140a776\\\"><ds:Transforms><ds:Transform Algorithm=\\\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#enveloped-signature\\\" \\/><ds:Transform Algorithm=\\\"http:\\/\\/www.w3.org\\/2001\\/10\\/xml-exc-c14n#\\\" \\/><\\/ds:Transforms><ds:DigestMethod Algorithm=\\\"http:\\/\\/www.w3.org\\/2001\\/04\\/xmlenc#sha256\\\" \\/><ds:DigestValue>d9YJQ24N1Yqgy5t2goeaXxC+e4YKLSVkv3jV3sOu0t4=<\\/ds:DigestValue><\\/ds:Reference><\\/ds:SignedInfo><ds:SignatureValue>LQwKIaerw5fJbtgUdi4nyrXaNS1I+R90z+hBruz9\\/pK3EABOPit4n673yt5LoMStkUY+Pori8Lmi+1xMd6qgTmo3Rlv8owwFXmTpGqZGlCsS67\\/yI3t8+fWjqP5T97\\/FCfOvM9WAu4jiiKkZd4BhaabImGKlSZpsAIFtTrvFnapX8UBRKDnXZIgoYJd8F1Q4Ky\\/qBfVBUOnQfOwoqo8X9xz65tZfN9\\/f6+3hZMcDdyC2r63Cm09g\\/IEvcItIAAQWWExiMzUFdjfg\\/fnYzt\\/QHhjCeKCsy9c94j71NFj\\/sa5fPgp6D+gp130Aqim+gsQ+wj4mgBT6RWH9zej5T2nAeA==<\\/ds:SignatureValue><KeyInfo xmlns=\\\"http:\\/\\/www.w3.org\\/2000\\/09\\/xmldsig#\\\"><X509Data><X509Certificate>MIIFXjCCBEagAwIBAgITXwAAMAAnZoWkOOCfDgAAAAAwADANBgkqhkiG9w0BAQsFADBMMRMwEQYKCZImiZPyLGQBGRYDY29tMRcwFQYKCZImiZPyLGQBGRYHYmVudGxleTEcMBoGA1UEAxMTQmVudGxleS1JbnRlcm5hbC1DQTAeFw0xNzA4MjgxOTQ2MDdaFw0yMjA4MjcxOTQ2MDdaMH0xCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJQQTEOMAwGA1UEBxMFRXh0b24xHDAaBgNVBAoTE0JlbnRsZXkgU3lzdGVtcyBJbmMxCzAJBgNVBAsTAklUMSYwJAYDVQQDEx1pbXMtdG9rZW4tc2lnbmluZy5iZW50bGV5LmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALnpXaPUjWevGxnIkY9bJsdatInIbo2StS3xAmVX3dd9uGUFu7HL4ciJMOlHFlwsASOGreMGdHVQmPnFgL2W5ekghzs\\/Vk\\/asXSYzWtVwQftS2VZZqTcuLrwaYNPznv6vaNPNTTbUI4kXgBCH0S+pA\\/ulhqF03dCopRCB4BR0z\\/9r1WrkxYzUF2fKhKifoyBaX8TqqEnw6ZKAyCMDVRN\\/Dm7ORVEDw\\/\\/iMO0vtXXjFPH3KV2EZn02+K5pdqWpkVzf9TSCfEQZL2JoYAfCVC6Z5gh5Dja+UTIfjJw45lTy4TPD+ivVpPcni6Wiln6i701OCYXMK1WxhwU1vV+eeaQvDUCAwEAAaOCAgYwggICMAsGA1UdDwQEAwIFoDAdBgNVHQ4EFgQUadvHSgG2syhu++t\\/OnkpOawqhOQwKAYDVR0RBCEwH4IdaW1zLXRva2VuLXNpZ25pbmcuYmVudGxleS5jb20wHwYDVR0jBBgwFoAUbjdsNQxJ7tInD1RS39J9x4\\/\\/Zt0wUQYDVR0fBEowSDBGoESgQoZAaHR0cDovL2V4dHByZGNhMDEuYmVudGxleS5jb20vQ2VydEVucm9sbC9CZW50bGV5LUludGVybmFsLUNBLmNybDCBxQYIKwYBBQUHAQEEgbgwgbUwgbIGCCsGAQUFBzAChoGlbGRhcDovLy9DTj1CZW50bGV5LUludGVybmFsLUNBLENOPUFJQSxDTj1QdWJsaWMlMjBLZXklMjBTZXJ2aWNlcyxDTj1TZXJ2aWNlcyxDTj1Db25maWd1cmF0aW9uLERDPWJzaXJvb3QsREM9Y29tP2NBQ2VydGlmaWNhdGU\\/YmFzZT9vYmplY3RDbGFzcz1jZXJ0aWZpY2F0aW9uQXV0aG9yaXR5MDwGCSsGAQQBgjcVBwQvMC0GJSsGAQQBgjcVCIXHrEDf+UuDsZcegeqVQoex+FwxgYOFKoGk0EgCAWQCAQYwEwYDVR0lBAwwCgYIKwYBBQUHAwEwGwYJKwYBBAGCNxUKBA4wDDAKBggrBgEFBQcDATANBgkqhkiG9w0BAQsFAAOCAQEAVyEM1YbcQbtxXpt9qheZ4VIDaCKmhyf1PyyqRQqqzZF9KKpbEnV\\/XRf0qSQNGO4CU6HwOp5zpOpCDX3pKOJYP3NRL6OkvU01jiDg6d9v9EyTd6sqVbEUJ7pKkzmGWkEL1URXPAZY6TiHShpMdkC5+BGLOSIXYcbdp2aMGRMT5Y6e+vWggvy4BUC1Ced9mULAKMSIQeEH76tLYKyLQ44ftqaYep+piGEdtEzah8S9bsS9dcbiIm+yeXiCgyNGvmV1SteaKLn+o2r\\/bU3BAzjA3slKLzZG5u295SeRh6+xRxbm4tOAq\\/s02uN7Jxn22GwXv\\/l+RRhpK4RmgPVnygmbUA==<\\/X509Certificate><\\/X509Data><\\/KeyInfo><\\/ds:Signature><\\/saml:Assertion> \",\"TokenType\":\"\"}");
     auto content = HttpResponseContent::Create(HttpStringBody::Create(responseBody));
     for (const auto& header : headers)
-        {
         content->GetHeaders().SetValue(header.first, header.second);
-        }
     return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+    }
+
+void RequestHandler::CreateTables(BentleyB0200::BeSQLite::Db *m_db)
+    {
+    if (!m_db->TableExists("Instances"))
+        CreateTable("Instances", *m_db, "Id STRING, Name STRING, Description STRING, Briefcases INTEGER DEFAULT 1, UserCreated String, CreatedDate STRING, Initialized STRING");
+    if (!m_db->TableExists("Users"))
+        CreateTable("Users", *m_db, "UserCreated STRING, CreatedDate STRING");
+    if (!m_db->TableExists("ChangeSets"))
+        CreateTable("ChangeSets", *m_db, "Id STRING, Description STRING, iModelId STRING, FileSize INTEGER, BriefcaseId INTEGER, ParentId STRING, SeedFileId STRING, IndexNo INTEGER, IsUploaded BOOLEAN, UserCreated STRING, CreatedDate STRING");
+    if (!m_db->TableExists("SeedFile"))
+        CreateTable("SeedFile", *m_db, "Id STRING, FileName STRING, FileDescription STRING, FileSize INTEGER, iModelId STRING, IsUploaded BOOLEAN, UserUploaded STRING, UploadedDate STRING");
+    if (!m_db->TableExists("Locks"))
+        CreateTable("Locks", *m_db, "ObjectId STRING, iModelId STRING, LockType INTEGER, LockLevel INTEGER, BriefcaseId INTEGER, ReleasedWithChangeSetIndex INTEGER");
+    if (!m_db->TableExists("Briefcases"))
+        CreateTable("Briefcases", *m_db, "BriefcaseId INTEGER, iModelId STRING, MergedChangeSetId STRING");
     }
 
 void RequestHandler::CheckDb()
     {
     BentleyB0200::BeSQLite::Db m_db;
     BeFileName dbPath = GetDbPath();
-    
+
     if (dbPath.DoesPathExist())
         {
         if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
             return;
-        if(!m_db.TableExists("Instances"))
-            CreateTable("Instances", m_db, "Id STRING, Name STRING, Description STRING, Briefcases INTEGER DEFAULT 1, UserCreated String, CreatedDate STRING, Initialized STRING");
-        if(!m_db.TableExists("Users"))
-            CreateTable("Users", m_db, "UserCreated STRING, CreatedDate STRING");
-        if(!m_db.TableExists("ChangeSets"))
-            CreateTable("ChangeSets", m_db, "Id STRING, Description STRING, iModelId STRING, FileSize INTEGER, BriefcaseId INTEGER, ParentId STRING, UserCreated STRING, CreatedDate STRING");
-        if(!m_db.TableExists("SeedFile"))
-            CreateTable("SeedFile", m_db, "Id STRING, FileName STRING, FileDescription STRING, FileSize INTEGER, iModelId STRING, IsUploaded BOOLEAN, UserUploaded STRING, UploadedDate STRING");
-        
+        CreateTables(&m_db);
         }
     else
         {
         m_db.CreateNewDb(dbPath);
-        /*if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
-            return;*/
-        if(!m_db.TableExists("Instances"))
-            CreateTable("Instances", m_db, "Id STRING, Name STRING, Description STRING, Briefcases INTEGER DEFAULT 1, UserCreated String, CreatedDate STRING, Initialized STRING");
-        if(!m_db.TableExists("Users"))
-            CreateTable("Users", m_db, "UserCreated STRING, CreatedDate STRING");
-        if(!m_db.TableExists("ChangeSets"))
-            CreateTable("ChangeSets", m_db, "Id STRING, Description STRING, iModelId STRING, FileSize INTEGER, BriefcaseId INTEGER, ParentId STRING, UserCreated STRING, CreatedDate STRING");
-        if(!m_db.TableExists("SeedFile"))
-            CreateTable("SeedFile", m_db, "Id STRING, FileName STRING, FileDescription STRING, FileSize INTEGER, iModelId STRING, IsUploaded BOOLEAN, UserUploaded STRING, UploadedDate STRING");
+        CreateTables(&m_db);
         }
     m_db.CloseDb();
     }
 
-void RequestHandler::Insert(bvector<Utf8String> insertStr) 
+Utf8CP ParseUrlFilter(Utf8String filter)
+    {
+    bvector<Utf8String> tokens, tokens2;
+    BeStringUtilities::Split(filter.c_str(), "=", nullptr, tokens);
+    if (filter.Contains("$select")) BeStringUtilities::Split(tokens[2].c_str(), "(+)", nullptr, tokens2);
+    else BeStringUtilities::Split(tokens[1].c_str(), "(+)", nullptr, tokens2);
+
+    Utf8String filterQuery("");
+    for (size_t i = 0; i < (tokens2.size() + 1) / 4; i++)
+        {
+        if (i != 0) if (tokens2[4 * i - 1].Contains("and") || tokens2[4 * i - 1].Contains("or")) filterQuery.append(tokens2[4 * i - 1]);
+        filterQuery.append(" ");
+        filterQuery.append(tokens2[4 * i]);
+        if (tokens2[4 * i + 1].Contains("eq")) filterQuery.append(" = ");
+        else if (tokens2[4 * i + 1].Contains("ne")) filterQuery.append(" != ");
+        else if (tokens2[4 * i + 1].Contains("gt")) filterQuery.append(" > ");
+        filterQuery.append(tokens2[4 * i + 2]);
+        filterQuery.append(" ");
+        }
+    return filterQuery.c_str();
+    }
+void RequestHandler::Insert(bvector<Utf8String> insertStr)
     {
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
     if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         return;
-    
+
     Statement insertSt;
     insertSt.Prepare(m_db, "INSERT INTO Instances(Id, Name, Description) VALUES (?,?,?)");
     insertSt.BindText(1, insertStr[0], Statement::MakeCopy::No);
@@ -162,23 +169,21 @@ void RequestHandler::Insert(bvector<Utf8String> insertStr)
     }
 
 
-Http::Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8CP url, Utf8StringCR body, const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String> ())
+Http::Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8CP url, Utf8StringCR body, const bmap<Utf8String, Utf8String>& headers = bmap<Utf8String, Utf8String>())
     {
     auto newHeaders = headers;
     newHeaders["Content-Type"] = "application/json";
     ConnectionStatus status = ConnectionStatus::OK;
     auto content = HttpResponseContent::Create(HttpStringBody::Create(body));
     for (const auto& header : headers)
-        {
         content->GetHeaders().SetValue(header.first, header.second);
-        }
     return Http::Response(content, url, status, httpStatus);
     }
 
-Json::Value ParsedJson(Request req) 
+Json::Value ParsedJson(Request req)
     {
     HttpBodyPtr reqBody = req.GetRequestBody();
-    char readBuff[1000] ;
+    char readBuff[1000];
     size_t buffSize = 100000;
     reqBody->Read(readBuff, buffSize);
     Utf8String reqBodyRead(readBuff);
@@ -194,9 +199,9 @@ Response RequestHandler::CreateiModelInstance(Request req)
     BeGuid projGuid(true);
     Json::Value settings = ParsedJson(req);
 
-    bvector<Utf8String> input = {   projGuid.ToString(),  
+    bvector<Utf8String> input = { projGuid.ToString(),
         settings["instance"]["properties"]["Name"].asString(),
-        settings["instance"]["properties"]["Description"].asString()};
+        settings["instance"]["properties"]["Description"].asString() };
 
     CheckDb();
     Insert(input);
@@ -217,16 +222,16 @@ Response RequestHandler::CreateiModelInstance(Request req)
     return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
     }
 
-Response RequestHandler::CreateSeedFileInstance(Request req) 
+Response RequestHandler::CreateSeedFileInstance(Request req)
     {
     Json::Value settings = ParsedJson(req);
-    bvector<Utf8String> args = ParseUrl(req);
+    bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = GetInstanceid(args[4]);
     bvector<Utf8String> input = {
         settings["instance"]["properties"]["FileId"].asString(),
         settings["instance"]["properties"]["FileName"].asString(),
         settings["instance"]["properties"]["FileDescription"].asString(),
-        iModelid};
+        iModelid };
 
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
@@ -257,11 +262,11 @@ Response RequestHandler::CreateSeedFileInstance(Request req)
         properties[ServerSchema::Property::MergedChangeSetId] = "";
         properties[ServerSchema::Property::IsUploaded] = false;
         properties[ServerSchema::Property::Index] = 0;
-        JsonValueR relationshipInstances =  instance[ServerSchema::RelationshipInstances] = Json::arrayValue;
-        JsonValueR relationsArray =  relationshipInstances[0] = Json::objectValue;
+        JsonValueR relationshipInstances = instance[ServerSchema::RelationshipInstances] = Json::arrayValue;
+        JsonValueR relationsArray = relationshipInstances[0] = Json::objectValue;
         relationsArray[ServerSchema::InstanceId] = "";
         relationsArray[ServerSchema::SchemaName] = "iModelScope";
-        relationsArray[ServerSchema::ClassName] = "FileAccesKey";
+        relationsArray[ServerSchema::ClassName] = "FileAccessKey";
         relationsArray["direction"] = "forward";
         JsonValueR relatedInstance = relationsArray[ServerSchema::RelatedInstance] = Json::objectValue;;
         relatedInstance[ServerSchema::InstanceId] = "";
@@ -277,15 +282,14 @@ Response RequestHandler::CreateSeedFileInstance(Request req)
         insertSt.Finalize();
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::Created);
-
         }
     return Response();
     }
 Response RequestHandler::UploadSeedFile(Request req)
     {
-    bvector<Utf8String> args = ParseUrl(req);
+    bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String instanceid = GetInstanceid(args[2]);
-    
+
     HttpBodyPtr body = req.GetRequestBody();
     Utf8String requestBody = body->AsString();
     if (requestBody.Contains("<?xml"))
@@ -320,8 +324,8 @@ Response RequestHandler::UploadSeedFile(Request req)
 
 Response RequestHandler::FileCreationConfirmation(Request req)
     {
-    
-    bvector<Utf8String> args = ParseUrl(req);
+
+    bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = args[7];
     Json::Value settings = ParsedJson(req);
     bvector<Utf8String> input = {
@@ -361,15 +365,14 @@ Response RequestHandler::FileCreationConfirmation(Request req)
         insertSt.Finalize();
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
-
         }
     return Response();
     }
 Response RequestHandler::GetInitializationState(Request req)
     {
-    //GET /v2.5/Repositories/iModel--{iModelId}/iModelScope/SeedFile/{fileId}
+    
     //https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--0794d7ec-fc1d-4677-9831-dddbf2dbef24/iModelScope/SeedFile?$filter=FileId+eq+'0d45d871-bda7-40fa-b9d3-dfa9904ccaa7'
-    bvector<Utf8String> args = ParseUrl(req);
+    bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = GetInstanceid(args[4]);
 
     BeFileName dbPath = GetDbPath();
@@ -379,11 +382,10 @@ Response RequestHandler::GetInitializationState(Request req)
         Statement st;
         st.Prepare(m_db, "Select Id, FileName, FileDescription, FileSize from SeedFile where iModelId = ?");
         st.BindText(1, iModelid, Statement::MakeCopy::No);
-
         st.Step();
         BeFileName name(st.GetValueText(1));
         BeFileName fileName(name.GetFileNameWithoutExtension());
-        
+
         Json::Value instanceState(Json::objectValue);
         JsonValueR instances = instanceState[ServerSchema::Instances] = Json::arrayValue;
         JsonValueR instance = instances[0] = Json::objectValue;
@@ -401,18 +403,17 @@ Response RequestHandler::GetInitializationState(Request req)
         properties[ServerSchema::Property::UserUploaded] = "";
         properties[ServerSchema::Property::UserCreated] = "";
         properties[ServerSchema::Property::InitializationState] = 0;
-        
-        Utf8String contentToWrite(Json::FastWriter().write(instanceState));
 
+        Utf8String contentToWrite(Json::FastWriter().write(instanceState));
         st.Finalize();
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }
     return Response();
     }
-Response RequestHandler::UploadNewSeedFile(Request req) 
+Response RequestHandler::UploadNewSeedFile(Request req)
     {
-    bvector<Utf8String> args = ParseUrl(req);
+    bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String instanceid = GetInstanceid(args[2]);
 
     HttpBodyPtr body = req.GetRequestBody();
@@ -422,7 +423,6 @@ Response RequestHandler::UploadNewSeedFile(Request req)
     auto ptr2 = bodyOfRange.get();
     HttpFileBody* fileBody = dynamic_cast<HttpFileBody*>(ptr2);
     BeFileName filePath(fileBody->GetFilePath());
-
     BeFileName dbPath = GetDbPath();
 
     BentleyB0200::BeSQLite::Db m_db;
@@ -430,7 +430,6 @@ Response RequestHandler::UploadNewSeedFile(Request req)
         {
         BeFileName serverFilePath(serverPath);
         serverFilePath.AppendToPath(BeFileName(instanceid).GetWCharCP());
-
 
         if (BeFileNameStatus::Success == FakeServer::CreateiModelFromSeed(filePath.GetWCharCP(), serverFilePath.GetWCharCP()))
             {
@@ -444,16 +443,14 @@ Response RequestHandler::UploadNewSeedFile(Request req)
             BeFileName fileDelete(serverFilePath);
             fileDelete.AppendToPath(BeFileName(fileToDelete));
             fileDelete.BeDeleteFile();
-
             st.Finalize();
-            
+
             Statement stUpdate;
             stUpdate.Prepare(m_db, "UPDATE Instances SET Name = ? where iModelId = ?");
             WString fileName = BeFileName(BeFileName::GetFileNameAndExtension(filePath)).GetFileNameWithoutExtension();
             Utf8String name = BeFileName(fileName).GetNameUtf8();
             stUpdate.BindText(1, name, Statement::MakeCopy::No);
             stUpdate.BindText(2, instanceid, Statement::MakeCopy::No);
-
             stUpdate.Step();
             stUpdate.Finalize();
             Utf8String contentEmpty("");
@@ -464,15 +461,15 @@ Response RequestHandler::UploadNewSeedFile(Request req)
     return Response();
     }
 
-BeFileName RequestHandler::GetDbPath() 
+BeFileName RequestHandler::GetDbPath()
     {
     BeFileName dbName("ServerRepo.db");
     BeFileName dbPath(serverPath);
     return dbPath.AppendToPath(dbName);
     }
-Response RequestHandler::CreateBriefcaseInstance(Request req) 
+Response RequestHandler::CreateBriefcaseInstance(Request req)
     {
-    bvector<Utf8String> args = ParseUrl(req);
+    bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String instanceid = GetInstanceid(args[4]);
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
@@ -488,14 +485,16 @@ Response RequestHandler::CreateBriefcaseInstance(Request req)
         Utf8CP fileName = st.GetValueText(2);
         Utf8CP fileDescription = st.GetValueText(3);
         size_t fileSize = st.GetValueInt(4);
-        
+
         briefcaseCount += 1;
-        
+        char buff[50];
+        sprintf(buff, "%d", (int)briefcaseCount);
+
         Json::Value instanceCreation(Json::objectValue);
         JsonValueR changedInstance = instanceCreation[ServerSchema::ChangedInstance] = Json::objectValue;
         changedInstance["change"] = "Created";
         JsonValueR instanceAfterChange = changedInstance[ServerSchema::InstanceAfterChange] = Json::objectValue;
-        instanceAfterChange[ServerSchema::InstanceId] = briefcaseCount2;
+        instanceAfterChange[ServerSchema::InstanceId] = buff;
         instanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
         instanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::Briefcase;
         JsonValueR properties = instanceAfterChange[ServerSchema::Properties] = Json::objectValue;
@@ -507,8 +506,8 @@ Response RequestHandler::CreateBriefcaseInstance(Request req)
         properties[ServerSchema::Property::MergedChangeSetId] = "";
         properties[ServerSchema::Property::UserOwned] = "";
         properties[ServerSchema::Property::IsReadOnly] = false;
-        JsonValueR relationshipInstances =  instanceAfterChange[ServerSchema::RelationshipInstances] = Json::arrayValue;
-        JsonValueR relationsArray =  relationshipInstances[0] = Json::objectValue;
+        JsonValueR relationshipInstances = instanceAfterChange[ServerSchema::RelationshipInstances] = Json::arrayValue;
+        JsonValueR relationsArray = relationshipInstances[0] = Json::objectValue;
         relationsArray[ServerSchema::InstanceId] = "";
         relationsArray[ServerSchema::SchemaName] = "iModelScope";
         relationsArray[ServerSchema::ClassName] = "FileAccesKey";
@@ -518,10 +517,10 @@ Response RequestHandler::CreateBriefcaseInstance(Request req)
         relatedInstance[ServerSchema::SchemaName] = "iModelScope";
         relatedInstance[ServerSchema::ClassName] = "AccessKey";
         JsonValueR propertiesl2 = relatedInstance[ServerSchema::Properties] = Json::objectValue;
-        Utf8String UploadUrl("https://imodelhubqasa01.blob.core.windows.net/imodelhub-");
-        UploadUrl += instanceid + "/BriefcaseTestsm-" + fileId;
+        Utf8String downloadloadUrl("https://imodelhubqasa01.blob.core.windows.net/imodelhub-");
+        downloadloadUrl += instanceid + "/BriefcaseTestsm-" + fileId;
         propertiesl2[ServerSchema::Property::UploadUrl] = NULL;
-        propertiesl2[ServerSchema::Property::DownloadUrl] = UploadUrl.c_str();
+        propertiesl2[ServerSchema::Property::DownloadUrl] = downloadloadUrl.c_str();
         Utf8String contentToWrite(Json::FastWriter().write(instanceCreation));
         printf("%s\n", contentToWrite.c_str());
         st.Finalize();
@@ -538,16 +537,67 @@ Response RequestHandler::CreateBriefcaseInstance(Request req)
 
     return Response();
     }
+Response RequestHandler::DeleteBriefcaseInstance(Request req) 
+    {
+    bvector<Utf8String> args = ParseUrl(req, "/");
+    Utf8String instanceid = GetInstanceid(args[4]);
+    BeFileName dbPath = GetDbPath();
+    BentleyB0200::BeSQLite::Db m_db;
+
+    Utf8String contentToWrite("");
+    auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
+    return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+    }
+Response RequestHandler::GetBriefcaseInfo(Request req)
+    {
+    bvector<Utf8String> args = ParseUrl(req, "/");
+    Utf8String instanceid = GetInstanceid(args[4]);
+    BeFileName dbPath = GetDbPath();
+    BentleyB0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+        {
+        Statement st;
+        st.Prepare(m_db, "Select * from SeedFile where iModelId = ? ");
+        st.BindText(1, instanceid, Statement::MakeCopy::No);
+        DbResult result = DbResult::BE_SQLITE_ROW;
+        result = st.Step();
+        int briefcaseId;
+        sscanf(args[7].c_str(), "%d", &briefcaseId);
+        Json::Value instancesinfo(Json::objectValue);
+        JsonValueR instanceArray = instancesinfo[ServerSchema::Instances] = Json::arrayValue;
+        for (int i = 0; result == DbResult::BE_SQLITE_ROW; i++)
+            {
+            JsonValueR instance = instanceArray[i] = Json::objectValue;
+            instance[ServerSchema::InstanceId] = args[7].c_str();
+            instance[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
+            instance[ServerSchema::ClassName] = ServerSchema::Class::Briefcase;
+            JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
+            properties[ServerSchema::Property::FileName] = st.GetValueText(1);
+            properties[ServerSchema::Property::FileDescription] = st.GetValueText(2);
+            properties[ServerSchema::Property::FileSize] = st.GetValueText(3);
+            properties[ServerSchema::Property::FileId] = st.GetValueText(0);
+            properties[ServerSchema::Property::BriefcaseId] = briefcaseId;
+            properties[ServerSchema::Property::UserOwned] = "";
+            properties["AcquiredDate"] = "";
+            properties[ServerSchema::Property::IsReadOnly] = true;
+            result = st.Step();
+            }
+        st.Finalize();
+        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
+        auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
+        return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+        }
+    return Response();
+    }
 Response RequestHandler::DownloadiModel(Request req)
     {
-    bvector<Utf8String> args = ParseUrl(req);
+    bvector<Utf8String> args = ParseUrl(req, "/");
 
     //download by checking instanceid from db
     Utf8String instanceid = GetInstanceid(args[3]);
 
     bvector<Utf8String> tokens;
     BeStringUtilities::Split(instanceid.c_str(), ".", nullptr, tokens);
-
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
     CharCP filetoDownload, iModelId;
@@ -565,63 +615,62 @@ Response RequestHandler::DownloadiModel(Request req)
         st.Prepare(m_db, "Select iModelId, FileName from SeedFile where Id = ?");
         st.BindText(1, instanceid, Statement::MakeCopy::No);
         st.Step();
-        
+
         iModelId = st.GetValueText(0);
         filetoDownload = st.GetValueText(1);
-
         BeFileName serverFilePath(serverPath);
         serverFilePath.AppendToPath(BeFileName(iModelId));
         if (FakeServer::DownloadiModel(fileDownloadPath, serverFilePath.GetNameUtf8().c_str(), filetoDownload) == BeFileNameStatus::Success)
             {
             auto content = HttpResponseContent::Create(HttpStringBody::Create(Utf8String("")));
-            
             st.Finalize();
             return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
             }
         }
-
     return Response();
     }
 
-Response RequestHandler::GetiModels(Request req) 
+Response RequestHandler::GetiModels(Request req)
     {
-    bvector<Utf8String> args = ParseUrl(req);
+    bvector<Utf8String> args = ParseUrl(req, "/");
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
 
-    if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+    Utf8String sql("Select * from Instances");
+    if (args[6].Contains("$filter"))
         {
-        return Response();
+        sql.append(" where ");
+        sql.append(ParseUrlFilter(req.GetUrl()));
         }
-    else
+
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
-        st.Prepare(m_db, "Select * from Instances");
-        
-        DbResult result  = DbResult::BE_SQLITE_ROW;
+        st.Prepare(m_db, sql.c_str());
+        DbResult result = DbResult::BE_SQLITE_ROW;
+        result = st.Step();
         Json::Value instancesinfo(Json::objectValue);
         JsonValueR instanceArray = instancesinfo[ServerSchema::Instances] = Json::arrayValue;
         for (int i = 0; result == DbResult::BE_SQLITE_ROW; i++)
             {
-            result = st.Step();
-            
             JsonValueR instance = instanceArray[i] = Json::objectValue;
             instance[ServerSchema::InstanceId] = st.GetValueText(0);
-            instance[ServerSchema::SchemaName] = st.GetValueText(1);
-            instance[ServerSchema::ClassName] = st.GetValueText(2);
+            instance[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
+            instance[ServerSchema::ClassName] = ServerSchema::Class::iModel;
             JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
-            properties[ServerSchema::Property::Description] = st.GetValueText(3);
-            properties[ServerSchema::Property::Name] = st.GetValueText(4);
+            properties[ServerSchema::Property::Description] = st.GetValueText(2);
+            properties[ServerSchema::Property::Name] = st.GetValueText(1);
             properties[ServerSchema::Property::UserCreated] = "";
             properties[ServerSchema::Property::CreatedDate] = "";
             properties[ServerSchema::Property::Initialized] = "";
+            result = st.Step();
             }
         st.Finalize();
         Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
-        
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }
+    return Response();
     }
 void RequestHandler::DeleteTables(Utf8String tableName)
     {
@@ -639,7 +688,7 @@ void RequestHandler::DeleteTables(Utf8String tableName)
     }
 Response RequestHandler::DeleteiModels(Request req)
     {
-    bvector<Utf8String> args = ParseUrl(req);
+    bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelId = args[7];
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
@@ -648,7 +697,7 @@ Response RequestHandler::DeleteiModels(Request req)
         {
         return Response();
         }
-    
+
     if (BeFileNameStatus::Success == FakeServer::DeleteiModel(serverPath, iModelId))
         {
         Statement stDelete;
@@ -665,10 +714,6 @@ Response RequestHandler::DeleteiModels(Request req)
         instanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
         instanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::iModel;
 
-        m_db.DropTable("Instances");
-        m_db.DropTable("ChangeSets");
-        m_db.DropTable("SeedFile");
-        m_db.DropTable("Users");
         Utf8String contentToWrite(Json::FastWriter().write(instanceDeletion));
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
@@ -678,31 +723,35 @@ Response RequestHandler::DeleteiModels(Request req)
 
 Response RequestHandler::PushChangeSetMetadata(Request req)
     {
-    bvector<Utf8String> args = ParseUrl(req);
+    bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = GetInstanceid(args[4]);
     Json::Value settings = ParsedJson(req);
-    
-    bvector<Utf8String> input = {  
+
+    bvector<Utf8String> input = {
         settings["instance"]["properties"]["Id"].asString(),
         settings["instance"]["properties"]["Description"].asString(),
         settings["instance"]["properties"]["ParentId"].asString(),
         settings["instance"]["properties"]["FileSize"].asString(),
-        settings["instance"]["properties"]["BriefcaseId"].asString(),};
+        settings["instance"]["properties"]["BriefcaseId"].asString(),
+        settings["instance"]["properties"]["SeedFileId"].asString() };
 
     CheckDb();
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
-        Statement st;
-        st.Prepare(m_db, "INSERT INTO Instances(Id, Description, iModelId, FileSize, BriefcaseId, ParentId) VALUES (?,?,?,?,?,?)");
-        st.BindText(1, input[0], Statement::MakeCopy::No);
-        st.BindText(2, input[1], Statement::MakeCopy::No);
-        st.BindText(3, iModelid, Statement::MakeCopy::No);
-        st.BindInt(4, settings["instance"]["properties"]["FileSize"].asInt());
-        st.BindInt(5, settings["instance"]["properties"]["BriefcaseId"].asInt());
-        st.BindText(6, input[2], Statement::MakeCopy::No);
-        st.Step();
+        Statement stIndex;
+        stIndex.Prepare(m_db, "Select IndexNo from ChangeSets where Id = ?");
+        stIndex.BindText(1, input[2], Statement::MakeCopy::No);
+        stIndex.Step();
+        int index;
+        if (settings["instance"]["properties"]["BriefcaseId"].empty())
+            index = 1;
+        else
+            index = stIndex.GetValueInt(0); index += 1;
+
+        char buffer[50];
+        sprintf(buffer, "%d", index);
 
         Json::Value changesetMetadata(Json::objectValue);
         JsonValueR changedInstance = changesetMetadata[ServerSchema::ChangedInstance] = Json::objectValue;
@@ -712,83 +761,367 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
         InstanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
         InstanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::ChangeSet;
         JsonValueR properties = InstanceAfterChange[ServerSchema::Properties] = Json::objectValue;
-        properties[ServerSchema::Property::BriefcaseId] = 2;
-        properties[ServerSchema::Property::ContainingChanges] = 0;
+        properties[ServerSchema::Property::BriefcaseId] = settings["instance"]["properties"]["BriefcaseId"].asInt();
+        properties[ServerSchema::Property::ContainingChanges] = settings["instance"]["properties"]["ContainingChanges"].asInt();
         properties[ServerSchema::Property::Description] = input[1];
         properties[ServerSchema::Property::FileSize] = input[3];
         properties[ServerSchema::Property::Id] = input[0];
         properties[ServerSchema::Property::IsUploaded] = false;
         properties[ServerSchema::Property::ParentId] = input[2];
-        properties[ServerSchema::Property::SeedFileId] = input[4];
-        properties[ServerSchema::Property::Index] = "";
-        JsonValueR relationshipInstances = InstanceAfterChange[ServerSchema::RelationshipInstances] = Json::objectValue;
-        relationshipInstances[ServerSchema::InstanceId] = "";
-        relationshipInstances[ServerSchema::SchemaName] = "iModelScope";
-        relationshipInstances[ServerSchema::ClassName] = "FileAccessKey";
-        relationshipInstances["direction"] = "forward";
-        JsonValueR relatedInstance = relationshipInstances[ServerSchema::RelatedInstance] = Json::objectValue;
+        properties[ServerSchema::Property::SeedFileId] = input[5];
+        properties[ServerSchema::Property::Index] = buffer;
+        JsonValueR relationshipInstances = InstanceAfterChange[ServerSchema::RelationshipInstances] = Json::arrayValue;
+        JsonValueR relationsArray = relationshipInstances[0] = Json::objectValue;
+        relationsArray[ServerSchema::InstanceId] = "";
+        relationsArray[ServerSchema::SchemaName] = "iModelScope";
+        relationsArray[ServerSchema::ClassName] = "FileAccessKey";
+        relationsArray["direction"] = "forward";
+        JsonValueR relatedInstance = relationsArray[ServerSchema::RelatedInstance] = Json::objectValue;
         relatedInstance[ServerSchema::InstanceId] = "";
         relatedInstance[ServerSchema::SchemaName] = "iModelScope";
         relatedInstance[ServerSchema::ClassName] = "AccessKey";
-        JsonValueR propertiesl1 = relationshipInstances[ServerSchema::Properties] = Json::objectValue;
-        propertiesl1[ServerSchema::Property::UploadUrl] = "";
+        JsonValueR propertiesl1 = relatedInstance[ServerSchema::Properties] = Json::objectValue;
+        Utf8String uploadUrl("https://imodelhubqasa01.blob.core.windows.net/imodelhub-");
+        uploadUrl += iModelid + "/" + input[0] + ".cs";
+        propertiesl1[ServerSchema::Property::UploadUrl] = uploadUrl.c_str();
         propertiesl1[ServerSchema::Property::DownloadUrl] = NULL;
+        stIndex.Finalize();
 
+        Statement st;
+        st.Prepare(m_db, "INSERT INTO ChangeSets(Id, Description, iModelId, FileSize, BriefcaseId, ParentId, SeedFileId, IndexNo, IsUploaded) VALUES (?,?,?,?,?,?,?,?,?)");
+        st.BindText(1, input[0], Statement::MakeCopy::No);
+        st.BindText(2, input[1], Statement::MakeCopy::No);
+        st.BindText(3, iModelid, Statement::MakeCopy::No);
+        st.BindInt(4, settings["instance"]["properties"]["FileSize"].asInt());
+        st.BindInt(5, settings["instance"]["properties"]["BriefcaseId"].asInt());
+        st.BindText(6, input[4], Statement::MakeCopy::No);
+        st.BindText(7, input[5], Statement::MakeCopy::No);
+        st.BindInt(8, index);
+        st.BindBoolean(9, false);
+        st.Step();
+        st.Finalize();
         Utf8String contentToWrite(Json::FastWriter().write(changesetMetadata));
-
         return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
         }
     return Response();
     }
 
-Response RequestHandler::Pull(Request req)
+Response RequestHandler::GetChangeSetInfo(Request req)
     {
-    bvector<Utf8String> args = ParseUrl(req);
+    bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelId = GetInstanceid(args[4]);
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
+
+    int fileAccessKey = 0;
+    if (args[6].Contains("filter"))
+        fileAccessKey = 1;
+
+    char buffer[50];
+    bool flag = false;
+    bvector<Utf8String> tokens;
+    bvector<Utf8String> tokens2;
+    if (args[6].Contains("filter"))
+        {
+        BeStringUtilities::Split(args[6].c_str(), "=", nullptr, tokens);
+        BeStringUtilities::Split(tokens[2].c_str(), "+", nullptr, tokens2);
+        flag = true;
+        }
+
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
-
+        if (!flag)
+            {
+            st.Prepare(m_db, "Select * from ChangeSets where iModelId = ?");
+            st.BindText(1, iModelId, Statement::MakeCopy::No);
+            printf("%s\n", iModelId.c_str());
+            }
+        else
+            {
+            st.Prepare(m_db, "Select * from ChangeSets where SeedFileId = ?");
+            bvector<Utf8String> tokens3;
+            BeStringUtilities::Split(tokens2[2].c_str(), "'", nullptr, tokens3);
+            Utf8String bind1(tokens3[0]);
+            st.BindText(1, bind1, Statement::MakeCopy::No);
+            }
+        DbResult result = DbResult::BE_SQLITE_ROW;
+        result = st.Step();
         Json::Value instancesinfo(Json::objectValue);
         JsonValueR instanceArray = instancesinfo[ServerSchema::Instances] = Json::arrayValue;
-        JsonValueR instance = instanceArray[0] = Json::objectValue;
-        instance[ServerSchema::InstanceId] = st.GetValueText(0);
-        instance[ServerSchema::SchemaName] = st.GetValueText(1);
-        instance[ServerSchema::ClassName] = st.GetValueText(2);
-        JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
-        properties[ServerSchema::Property::Id] = st.GetValueText(3);
-        properties[ServerSchema::Property::ParentId] = st.GetValueText(4);
-        properties[ServerSchema::Property::SeedFileId] = "";
-        JsonValueR relationshipInstances =  properties[ServerSchema::RelationshipInstances] = Json::objectValue;
-        relationshipInstances[ServerSchema::InstanceId] = "";
-        relationshipInstances[ServerSchema::SchemaName] = "";
-        relationshipInstances[ServerSchema::ClassName] = "";
-        relationshipInstances["direction"] = "forward";
-        // - unused JsonValueR propertiesl1 = relationshipInstances[ServerSchema::Properties] = Json::objectValue;
-        JsonValueR relatedInstance = relationshipInstances[ServerSchema::RelatedInstance] = Json::objectValue;;
-        relatedInstance[ServerSchema::InstanceId] = "";
-        relatedInstance[ServerSchema::SchemaName] = "";
-        relatedInstance[ServerSchema::ClassName] = "";
-        JsonValueR propertiesl2 = relatedInstance[ServerSchema::Properties] = Json::objectValue;
-        propertiesl2[ServerSchema::Property::DownloadUrl] = "";
-        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
 
+        for (int i = 0; result == DbResult::BE_SQLITE_ROW; i++)
+            {
+            Utf8String fileName(st.GetValueText(0));
+            fileName.append(".cs");
+            JsonValueR instance = instanceArray[i] = Json::objectValue;
+            instance[ServerSchema::InstanceId] = st.GetValueText(0);
+            instance[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
+            instance[ServerSchema::ClassName] = ServerSchema::Class::ChangeSet;
+            JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
+            properties[ServerSchema::Property::FileName] = fileName.c_str();
+            properties[ServerSchema::Property::Description] = st.GetValueText(1);
+            properties[ServerSchema::Property::FileSize] = st.GetValueText(3);
+            properties[ServerSchema::Property::Index] = st.GetValueText(7);
+            properties[ServerSchema::Property::Id] = st.GetValueText(0);
+            properties[ServerSchema::Property::ParentId] = st.GetValueText(5);
+            properties[ServerSchema::Property::SeedFileId] = st.GetValueText(6);
+            properties[ServerSchema::Property::BriefcaseId] = st.GetValueInt(4);
+            properties[ServerSchema::Property::UserCreated] = "";
+            properties[ServerSchema::Property::PushDate] = "";
+            properties[ServerSchema::Property::ContainingChanges] = 0;
+            properties[ServerSchema::Property::IsUploaded] = true;
+            if (fileAccessKey)
+                {
+                JsonValueR relationshipInstances = properties[ServerSchema::RelationshipInstances] = Json::objectValue;
+                relationshipInstances[ServerSchema::InstanceId] = "";
+                relationshipInstances[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
+                relationshipInstances[ServerSchema::ClassName] = "FileAccessKey";
+                relationshipInstances["direction"] = "forward";
+                JsonValueR relatedInstance = relationshipInstances[ServerSchema::RelatedInstance] = Json::objectValue;;
+                relatedInstance[ServerSchema::InstanceId] = "";
+                relatedInstance[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
+                relatedInstance[ServerSchema::ClassName] = "AccessKey";
+                JsonValueR propertiesl2 = relatedInstance[ServerSchema::Properties] = Json::objectValue;
+                Utf8String downloadUrl("https://imodelhubqasa01.blob.core.windows.net/imodelhub-");
+                downloadUrl += iModelId + "/" + fileName;
+                propertiesl2[ServerSchema::Property::DownloadUrl] = downloadUrl.c_str();
+                }
+            result = st.Step();
+            }
         st.Finalize();
+        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
+        auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
+        return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+        }
+    return Response();
+    }
+Response RequestHandler::PushAcquiredLocks(Request req)
+    {
+    bvector<Utf8String> args = ParseUrl(req, "/");
+    Utf8String iModelid = GetInstanceid(args[4]);
+    Json::Value settings = ParsedJson(req);
+    BeFileName dbPath = GetDbPath();
+    BentleyB0200::BeSQLite::Db m_db;
+    CheckDb();
+
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+        {
+        Statement st;
+        if (settings["instances"][0]["className"] == "ChangeSet")
+            {
+            st.Prepare(m_db, "Update ChangeSets SET IsUploaded = ? where Id = ?");
+            st.BindBoolean(1, true);
+            st.BindText(2, settings["instances"][0]["instanceId"].asString(), Statement::MakeCopy::No);
+            if (BE_SQLITE_DONE != st.Step())
+                return Response();
+            st.Finalize();
+            auto content = HttpResponseContent::Create(HttpStringBody::Create(Utf8String()));
+            return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+            }
+
+        Statement stGetCount;
+        int records;
+        Json::Value properties;
+        for (Json::ArrayIndex i = 0; i < settings["instances"].size(); i++)
+            {
+            properties = settings["instances"][i]["properties"];
+            if (settings["instances"][i]["className"] == "MultiLock")
+                {
+                for (Json::ArrayIndex j = 0; j < properties["ObjectIds"].size(); j++)
+                    {
+                    stGetCount.Prepare(m_db, "Select Count(*) from Locks where iModelId = ? AND ObjectId = ? AND BriefcaseId = 0");
+                    stGetCount.BindText(1, iModelid, Statement::MakeCopy::No);
+                    stGetCount.BindText(2, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
+                    stGetCount.BindInt(3, properties["BriefcaseId"].asInt());
+                    stGetCount.Step();
+                    records = stGetCount.GetValueInt(0);
+                    stGetCount.Finalize();
+                    if (records == 0)
+                        {
+                        stGetCount.Prepare(m_db, "INSERT INTO Locks(ObjectId, iModelId, LockType, LockLevel, BriefcaseId) VALUES (?,?,?,?,?)");
+                        stGetCount.BindText(1, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
+                        stGetCount.BindText(2, iModelid, Statement::MakeCopy::No);
+                        stGetCount.BindInt(3, properties["LockType"].asInt());
+                        stGetCount.BindInt(4, properties["LockLevel"].asInt());
+                        stGetCount.BindInt(5, properties["BriefcaseId"].asInt());
+                        stGetCount.Step();
+                        stGetCount.Finalize();
+                        }
+                    else 
+                        {
+                        stGetCount.Prepare(m_db, "UPDATE Locks Set LockType = ?, LockLevel = ?, BriefcaseId = ? where iModelId = ? AND BriefcaseId = 0");
+                        stGetCount.BindInt(1, properties["LockType"].asInt());
+                        stGetCount.BindInt(2, properties["LockLevel"].asInt());
+                        stGetCount.BindInt(3, properties["BriefcaseId"].asInt());
+                        stGetCount.BindText(4, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
+                        stGetCount.BindText(5, iModelid, Statement::MakeCopy::No);
+                        stGetCount.Step();
+                        stGetCount.Finalize();
+                        }
+
+                    }
+                }
+            else if (settings["instances"][i]["className"] == "Lock" && settings["instances"][i]["changeState"] == "deleted")
+                {
+                bvector<Utf8String> tokens;
+                BeStringUtilities::Split(settings["instances"][i]["instanceId"].asString().c_str(), "-", nullptr, tokens);
+                st.Prepare(m_db, "UPDATE Locks Set LockLevel = 0, BriefcaseId = 0 where iModelId = ? AND BriefcaseId = ?");
+                st.BindText(1, iModelid, Statement::MakeCopy::No);
+                int briefcaseId;
+                sscanf(tokens[1].c_str(), "%d", &briefcaseId);
+                st.BindInt(2, briefcaseId);
+                st.Step();
+                st.Finalize();
+                }
+            }
+
+        auto content = HttpResponseContent::Create(HttpStringBody::Create(Utf8String()));
+        return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+        }
+    return Response();
+    }
+Utf8CP GetLockType(int t)
+    {
+    if (t == 0) return "Db";
+    else if (t == 1) return "Model";
+    else if (t == 2) return "Element";
+    else if (t == 3) return "Schemas";
+    else return "CodeSpecs";
+    }
+Utf8CP GetLockLevel(int l)
+    {
+    if (l == 0) return "None";
+    else if (l == 1) return "Shared";
+    else return "Exclusive";
+    }
+Response RequestHandler::MultiLocksInfo(Request req)
+    {
+    bvector<Utf8String> args = ParseUrl(req, "/");
+    Utf8String iModelid = GetInstanceid(args[4]);
+    BeFileName dbPath = GetDbPath();
+    BentleyB0200::BeSQLite::Db m_db;
+
+    Utf8String sql("Select Count(*), LockLevel, LockType, BriefcaseId from Locks where iModelId = ?");
+    if (args[6].Contains("filter"))
+        {
+        sql.append(" AND ");
+        sql.append(ParseUrlFilter(req.GetUrl()));
+        }
+    sql.append(" Group By LockLevel, LockType, BriefcaseId");
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+        {
+        Statement st;
+        st.Prepare(m_db, sql.c_str());
+        st.BindText(1, iModelid, Statement::MakeCopy::No);
+        DbResult result = DbResult::BE_SQLITE_ROW;
+        DbResult result2 = DbResult::BE_SQLITE_ROW;
+        result = st.Step();
+        Json::Value instancesinfo(Json::objectValue);
+        JsonValueR instanceArray = instancesinfo[ServerSchema::Instances] = Json::arrayValue;
+        Statement stObjectIds;
+        for (int i = 0; result == DbResult::BE_SQLITE_ROW; i++)
+            {
+            Utf8String instanceId("MultiLock");
+            instanceId.append("-");
+            instanceId.append(GetLockType(st.GetValueInt(2)));
+            instanceId.append("-");
+            instanceId.append(GetLockLevel(st.GetValueInt(3)));
+            JsonValueR instance = instanceArray[i] = Json::objectValue;
+            instance[ServerSchema::InstanceId] = instanceId.c_str();
+            instance[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
+            instance[ServerSchema::ClassName] = ServerSchema::Class::MultiLock;
+            JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
+
+            stObjectIds.Prepare(m_db, "Select ObjectId from Locks where LockLevel = ? AND LockType = ? AND BriefcaseId = ?");
+            stObjectIds.BindInt(1, st.GetValueInt(1));
+            stObjectIds.BindInt(2, st.GetValueInt(2));
+            stObjectIds.BindInt(3, st.GetValueInt(3));
+            result2 = DbResult::BE_SQLITE_ROW;
+            result2 = stObjectIds.Step();
+            JsonValueR ObjectIdsArray = properties[ServerSchema::Property::ObjectId] = Json::arrayValue;
+            for (int j = 0; result2 == DbResult::BE_SQLITE_ROW; j++)
+                {
+                ObjectIdsArray[j] = stObjectIds.GetValueText(0);
+                result2 = stObjectIds.Step();
+                }
+            stObjectIds.Finalize();
+            properties[ServerSchema::Property::LockLevel] = st.GetValueInt(1);
+            properties[ServerSchema::Property::LockType] = st.GetValueInt(2);
+            properties[ServerSchema::Property::BriefcaseId] = st.GetValueInt(3);
+            result = st.Step();
+            }
+        st.Finalize();
+        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }
     return Response();
     }
 
+Response RequestHandler::LocksInfo(Request req)
+    {
+    bvector<Utf8String> args = ParseUrl(req, "/");
+    Utf8String iModelid = GetInstanceid(args[4]);
+    BeFileName dbPath = GetDbPath();
+    BentleyB0200::BeSQLite::Db m_db;
+
+    Utf8String sql("Select * from Locks where iModelId = ?");
+    if (args[6].Contains("filter"))
+        {
+        sql.append(" AND ");
+        sql.append(ParseUrlFilter(req.GetUrl()));
+        }
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+        {
+        Statement st;
+        st.Prepare(m_db, sql.c_str());
+        st.BindText(1, iModelid, Statement::MakeCopy::No);
+        DbResult result = DbResult::BE_SQLITE_ROW;
+        result = st.Step();
+        Json::Value instancesinfo(Json::objectValue);
+        JsonValueR instanceArray = instancesinfo[ServerSchema::Instances] = Json::arrayValue;
+
+        for (int i = 0; result == DbResult::BE_SQLITE_ROW; i++)
+            {
+            Utf8String instanceId(st.GetValueText(2));
+            instanceId.append("-");
+            instanceId.append(st.GetValueText(0));
+            instanceId.append("-");
+            instanceId.append(st.GetValueText(3));
+            JsonValueR instance = instanceArray[i] = Json::objectValue;
+            instance[ServerSchema::InstanceId] = instanceId.c_str();
+            instance[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
+            instance[ServerSchema::ClassName] = ServerSchema::Class::Lock;
+            JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
+            properties[ServerSchema::Property::ObjectId] = st.GetValueText(0);
+            properties[ServerSchema::Property::LockType] = st.GetValueInt(2);
+            properties[ServerSchema::Property::LockLevel] = st.GetValueInt(3);
+            properties[ServerSchema::Property::BriefcaseId] = st.GetValueInt(4);
+            properties["AcquiredDate"] = "";
+            properties[ServerSchema::Property::ReleasedWithChangeSet] = "";
+            properties[ServerSchema::Property::ReleasedWithChangeSetIndex] = "";
+            properties[ServerSchema::Property::QueryOnly] = true;
+            result = st.Step();
+            }
+        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
+        auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
+        return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+        }
+    return Response();
+    }
+Response RequestHandler::CodesInfo(Request req)
+    {
+    Utf8String contentToWrite("{\"instances\":[]}");
+    auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
+    return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+    }
+
 Response RequestHandler::PerformGetRequest(Request req)
     {
     Utf8String urlExpected("https://qa-imodelhubapi.bentley.com/v2.0/Plugins");
-    
-    bvector<Utf8String> args = ParseUrl(req);
-    
-    
+    bvector<Utf8String> args = ParseUrl(req, "/");
+
     if (!req.GetUrl().CompareTo(urlExpected))
         return RequestHandler::PluginRequest(req);
     if (req.GetUrl().Contains("Repositories/Project") && req.GetUrl().Contains("ProjectScope/iModel"))
@@ -796,11 +1129,17 @@ Response RequestHandler::PerformGetRequest(Request req)
     if (req.GetUrl().Contains("https://imodelhubqasa01.blob.core.windows.net/imodelhub"))//detect imodelhub
         return DownloadiModel(req);
     if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/ChangeSet"))
-        return RequestHandler::Pull(req);
+        return RequestHandler::GetChangeSetInfo(req);
     if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/SeedFile"))
-        {
         return RequestHandler::GetInitializationState(req);
-        }
+    if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/Briefcase"))
+        return RequestHandler::GetBriefcaseInfo(req);
+    if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/Lock"))
+        return RequestHandler::LocksInfo(req);
+    if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/MultiLock"))
+        return RequestHandler::MultiLocksInfo(req);
+    if (req.GetUrl().Contains("Repositories/iModel") && (req.GetUrl().Contains("iModelScope/Code") || req.GetUrl().Contains("iModelScope/MultiCode")))
+        return RequestHandler::CodesInfo(req);
     return Response();
     }
 Response RequestHandler::PerformOtherRequest(Request req)
@@ -808,7 +1147,7 @@ Response RequestHandler::PerformOtherRequest(Request req)
     Utf8String urlExpected("https://buddi.bentley.com/discovery.asmx");
     Utf8String urlExpected2("https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx");
     Utf8String urlExpected3("https://qa-ims.bentley.com/rest/DelegationSTSService/json/IssueEx");
-    
+
     if (!req.GetUrl().CompareTo(urlExpected))
         return RequestHandler::BuddiRequest(req);
     if (!req.GetUrl().CompareTo(urlExpected2))
@@ -824,15 +1163,22 @@ Response RequestHandler::PerformOtherRequest(Request req)
         }
     if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/SeedFile"))
         {
-        if (ParseUrl(req).size() == 8)
+        if (ParseUrl(req, "/").size() == 8)
             return RequestHandler::FileCreationConfirmation(req);
         return RequestHandler::CreateSeedFileInstance(req);
         }
     if (req.GetUrl().Contains("https://imodelhubqasa01.blob.core.windows.net"))
         return RequestHandler::UploadSeedFile(req);
     if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/Briefcase"))
+        {
+        if (req.GetMethod().Equals("DELETE"))
+            return RequestHandler::DeleteBriefcaseInstance(req);
         return RequestHandler::CreateBriefcaseInstance(req);
-
+        }
+    if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/ChangeSet"))
+        return RequestHandler::PushChangeSetMetadata(req);
+    if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("$changeset"))
+        return RequestHandler::PushAcquiredLocks(req);
     if (req.GetMethod().Equals("PUT"))
         return RequestHandler::UploadNewSeedFile(req);
     return Response();
