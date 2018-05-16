@@ -29,6 +29,7 @@ struct SchemaChecksumTest : ECTestFixture {};
 struct SchemaImmutableTest : ECTestFixture {};
 struct SchemaVersionTest : ECTestFixture {};
 struct ECNameValidationTest;
+struct SchemaElementsOrderTest : ECTestFixture {};
 
 //=======================================================================================
 //! SchemaTest
@@ -2398,4 +2399,138 @@ TEST_F(SchemaVersionTest, CustomAttributeNameSpacesMustUseCorrectVersions)
     ExpectSchemaDeserializationSuccess(schemaXML, "Should successfully deserialize a 3.3 schema with 3 part versions");
     }
     }
+
+//=======================================================================================
+//! SchemaElementsOrderTest
+//=======================================================================================
+
+bvector<bpair<Utf8CP, ECSchemaElementType>> getTestElements()
+    {
+    // return elements in expected order if created alphabetically
+    bvector<bpair<Utf8CP, ECSchemaElementType>> elements;
+
+    elements.push_back(make_bpair<Utf8CP, ECSchemaElementType>("aEnum", ECSchemaElementType::ECEnumeration));
+    elements.push_back(make_bpair<Utf8CP, ECSchemaElementType>("bEnum", ECSchemaElementType::ECEnumeration));
+    elements.push_back(make_bpair<Utf8CP, ECSchemaElementType>("cEnum", ECSchemaElementType::ECEnumeration));
+    elements.push_back(make_bpair<Utf8CP, ECSchemaElementType>("aClass", ECSchemaElementType::ECClass));
+    elements.push_back(make_bpair<Utf8CP, ECSchemaElementType>("bClass", ECSchemaElementType::ECClass));
+    elements.push_back(make_bpair<Utf8CP, ECSchemaElementType>("cClass", ECSchemaElementType::ECClass));
+    elements.push_back(make_bpair<Utf8CP, ECSchemaElementType>("aKOQ", ECSchemaElementType::KindOfQuantity));
+    elements.push_back(make_bpair<Utf8CP, ECSchemaElementType>("bKOQ", ECSchemaElementType::KindOfQuantity));
+    elements.push_back(make_bpair<Utf8CP, ECSchemaElementType>("aPropertyCategory", ECSchemaElementType::PropertyCategory));
+    elements.push_back(make_bpair<Utf8CP, ECSchemaElementType>("bPropertyCategory", ECSchemaElementType::PropertyCategory));
+
+    return elements;
+    }
+
+ECSchemaPtr generateSchemaFromElements(const bvector<bpair<Utf8CP, ECSchemaElementType>> &elements)
+    {
+    ECSchemaPtr schema;
+
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "TS", 1, 1, 1));
+
+    for (auto element : elements)
+        {
+        switch (element.second)
+            {
+                case ECSchemaElementType::ECEnumeration:
+                    ECEnumerationP e;
+                    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateEnumeration(e, element.first, PrimitiveType::PRIMITIVETYPE_Integer));
+                    break;
+                case ECSchemaElementType::ECClass:
+                    ECEntityClassP c;
+                    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(c, element.first));
+                    break;
+                case ECSchemaElementType::KindOfQuantity:
+                    KindOfQuantityP k;
+                    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(k, element.first));
+                    break;
+                case ECSchemaElementType::PropertyCategory:
+                    PropertyCategoryP p;
+                    EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(p, element.first));
+                    break;
+            }
+        }
+    
+    return schema;
+    }
+
+void generateSchemaElementsOrder(ECSchemaElementsOrder &order, const bvector<bpair<Utf8CP, ECSchemaElementType>> &elements, bool reverse = false)
+    {
+    if (reverse)
+        {
+        bvector<bpair<Utf8CP, ECSchemaElementType>> reversed;
+        reversed.resize(elements.size());
+        std::reverse_copy(elements.begin(), elements.end(), reversed.begin());
+        
+        for (const auto pair : reversed)
+            {
+            order.AddElement(pair.first, pair.second);
+            }
+        }
+    else
+        {
+        for (const auto pair : elements)
+            {
+            order.AddElement(pair.first, pair.second);
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Joseph.Urbano                     05/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaElementsOrderTest, PreserveElementOrder)
+    {
+    bvector<bpair<Utf8CP, ECSchemaElementType>> elements;
+    ECSchemaElementsOrder order, orderReversed;
+    ECSchemaPtr schema;
+    
+    elements = getTestElements();
+    
+    int i = 0;
+
+    // Create schema element order with elements in order
+    generateSchemaElementsOrder(order, elements, false);
+    for (auto entry : order)
+        {
+        EXPECT_TRUE(entry.first.EqualsIAscii(elements[i++].first));
+        }
+
+    // Create schema element order with elements in reverse order
+    generateSchemaElementsOrder(orderReversed, elements, true);
+    for (auto entry : orderReversed)
+        {
+        EXPECT_TRUE(entry.first.EqualsIAscii(elements[--i].first));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Joseph.Urbano                     05/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaElementsOrderTest, CreateAlphabeticalOrder)
+    {
+    bvector<bpair<Utf8CP, ECSchemaElementType>> elements;
+    ECSchemaElementsOrder order;
+    ECSchemaPtr schema;
+
+    elements = getTestElements();
+
+    // Generate schema from the elements in reversed alphabetical order
+    bvector<bpair<Utf8CP, ECSchemaElementType>> reversedElements;
+    reversedElements.resize(elements.size());
+    std::reverse_copy(elements.begin(), elements.end(), reversedElements.begin());
+
+    schema = generateSchemaFromElements(reversedElements);
+
+    int i = 0;
+    
+    // create schema element order from schema and make sure they're in alphabetical order
+    order.CreateAlphabeticalOrder(*schema);
+    for (auto entry : order)
+        {
+        EXPECT_TRUE(entry.first.EqualsIAscii(elements[i++].first));
+        }
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

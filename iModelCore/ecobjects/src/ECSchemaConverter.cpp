@@ -1565,7 +1565,7 @@ PropertyCategoryP getExistingCategory(ECSchemaR schema, ECPropertyP prop, IECIns
 
 ECObjectsStatus createPropertyCategory(ECSchemaR schema, PropertyCategoryP& newCategory, Utf8CP newName, IECInstanceR categoryCA)
     {
-    ECObjectsStatus status = schema.CreatePropertyCategory(newCategory, newName);
+    ECObjectsStatus status = schema.CreatePropertyCategory(newCategory, newName, false);
     if (ECObjectsStatus::Success == status)
         {
         ECValue value;

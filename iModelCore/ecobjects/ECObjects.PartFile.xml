@@ -328,6 +328,10 @@
         <Directories DirectoryListName="ECObjectsToolsNuGet" />
     </NuGetProduct>
 
+    <Part Name="ECObjectsToolsNuGet-TopLevel" PrgOutputDir="ECObjectsTools">
+        <SubNuGetProduct NuGetProductName="ECObjectsToolsNuGet" />
+    </Part>
+
     <!-- *************** -->
     <!-- **** Tools **** -->
     <!-- *************** -->

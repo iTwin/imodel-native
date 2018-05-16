@@ -3248,7 +3248,7 @@ public:
                 }
         }
 
-    void CreateAlphabeticalOrder(ECSchemaCR ecSchema);
+    ECOBJECTS_EXPORT void CreateAlphabeticalOrder(ECSchemaCR ecSchema);
     bool GetPreserveElementOrder() const {return m_preserveElementOrder;}
     void SetPreserveElementOrder(bool value) {m_preserveElementOrder = value;}
     bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator begin() const {return m_elementVector.begin();} //!< Returns the beginning of the iterator
@@ -3674,8 +3674,9 @@ public:
     //! Creates a new PropertyCategory and adds it to the schema.
     //! @param[out] propertyCategory If successful, will contain a new PropertyCategory object
     //! @param[in] name              Name of the propertyCategory to create
+    //! @param [in] logError
     //! @return A status code indicating whether or not the property category was successfully created and added to the schema
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePropertyCategory(PropertyCategoryP& propertyCategory, Utf8CP name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePropertyCategory(PropertyCategoryP& propertyCategory, Utf8CP name, bool logError = true);
 
     //! Creates a new UnitSystem and adds it to the schema.
     //! @param[out] unitSystem If successful, will contain a new UnitSystem object
