@@ -1491,7 +1491,7 @@ void ScalableMeshModel::Cleanup(bool isModelDelete)
     ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(GetDgnDb()));
     if (appData != nullptr && appData->m_smTerrainPhysicalModelP == this)
         ScalableMeshTerrainModelAppData::Delete(GetDgnDb());
-    ClearProgressiveQueriesInfo();
+    //ClearProgressiveQueriesInfo();
 
     if (m_smPtr.IsValid())
         {                
