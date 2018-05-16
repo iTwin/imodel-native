@@ -86,6 +86,7 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<ECSchemaPtr>& schem
         }
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
+    EC::SchemaManager::SchemaImportOptions options = EC::SchemaManager::SchemaImportOptions::None;
     for (ECSchemaPtr schema : schemas)
         {
         if (schema.IsNull())
@@ -94,6 +95,8 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<ECSchemaPtr>& schem
             return ERROR;
             }
         schemaCache->AddSchema(*schema);
+        if (schema->GetFullSchemaName().Equals("Issue.01.00.01"))
+            options = EC::SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues;
         }
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_TRACE))
@@ -111,8 +114,7 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<ECSchemaPtr>& schem
         }
 
     m_db.NotifyOnSchemaChangedListeners();
-
-    if (SUCCESS != m_db.Schemas().ImportSchemas(schemaCache->GetSchemas()))
+    if (SUCCESS != m_db.Schemas().ImportSchemas(schemaCache->GetSchemas(), options, nullptr))
         {
         LOG.errorv("Failed to import one or more schemas: %s", ToFullNameListString(schemas).c_str());
         return ERROR;
