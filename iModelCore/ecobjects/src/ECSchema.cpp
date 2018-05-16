@@ -981,14 +981,14 @@ ECObjectsStatus ECSchema::CreateKindOfQuantity(KindOfQuantityP& kindOfQuantity, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CreatePropertyCategory(PropertyCategoryP& propertyCategory, Utf8CP name)
+ECObjectsStatus ECSchema::CreatePropertyCategory(PropertyCategoryP& propertyCategory, Utf8CP name, bool logError)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     propertyCategory = new PropertyCategory(*this);
     propertyCategory->SetName(name);
 
-    auto status = AddSchemaChildToMap<PropertyCategory, PropertyCategoryMap>(propertyCategory, &m_propertyCategoryMap, ECSchemaElementType::PropertyCategory);
+    auto status = AddSchemaChildToMap<PropertyCategory, PropertyCategoryMap>(propertyCategory, &m_propertyCategoryMap, ECSchemaElementType::PropertyCategory, logError);
     if (ECObjectsStatus::Success != status)
         {
         delete propertyCategory;
@@ -1298,13 +1298,14 @@ ECObjectsStatus ECSchema::CreateFormat(ECFormatP& unitFormat, Utf8CP name, Utf8C
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
 template<typename T, typename T_MAP>
-ECObjectsStatus ECSchema::AddSchemaChildToMap(T* child, T_MAP* map, ECSchemaElementType childType)
+ECObjectsStatus ECSchema::AddSchemaChildToMap(T* child, T_MAP* map, ECSchemaElementType childType, bool logError)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     if(NamedElementExists(child->GetName().c_str()))
         {
-        LOG.errorv("Cannot create %s '%s' because a named element with the same identifier already exists in the schema", SchemaParseUtils::SchemaElementTypeToString(childType), child->GetName().c_str());
+        if (logError)
+            LOG.errorv("Cannot create %s '%s' because a named element with the same identifier already exists in the schema", SchemaParseUtils::SchemaElementTypeToString(childType), child->GetName().c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
@@ -3359,32 +3360,15 @@ void ECSchemaCache::GetSupplementalSchemasFor(Utf8CP schemaName, bvector<ECSchem
 void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     {
     m_elementVector.clear();
-    for (ECEnumerationCP pEnum : ecSchema.GetEnumerations())
-        {
-        if (nullptr == pEnum)
-            {
-            BeAssert(false);
-            continue;
-            }
-        else
-            AddElement(pEnum->GetName().c_str(), ECSchemaElementType::ECEnumeration);
-        }
-
-    for (ECClassP pClass : ecSchema.GetClasses())
-        {
-        if (nullptr == pClass)
-            {
-            BeAssert(false);
-            continue;
-            }
-        else
-            AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
-
+    AddElements<ECEnumeration, ECEnumerationContainer>(ecSchema.GetEnumerations(), ECSchemaElementType::ECEnumeration);
+    AddElements<ECClass, ECClassContainer>(ecSchema.GetClasses(), ECSchemaElementType::ECClass);
     AddElements<KindOfQuantity, KindOfQuantityContainer>(ecSchema.GetKindOfQuantities(), ECSchemaElementType::KindOfQuantity);
     AddElements<PropertyCategory, PropertyCategoryContainer>(ecSchema.GetPropertyCategories(), ECSchemaElementType::PropertyCategory);
     AddElements<UnitSystem, UnitSystemContainer>(ecSchema.GetUnitSystems(), ECSchemaElementType::UnitSystem);
     AddElements<Phenomenon, PhenomenonContainer>(ecSchema.GetPhenomena(), ECSchemaElementType::Phenomenon);
     AddElements<ECFormat, FormatContainer>(ecSchema.GetFormats(), ECSchemaElementType::Format);
+
+    // Units are a special case because all 3 types are in the same container.
     for (const auto u: ecSchema.GetUnits())
         {
         if (nullptr == u)

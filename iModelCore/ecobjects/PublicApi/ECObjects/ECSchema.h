@@ -3420,7 +3420,7 @@ private:
     ECSchemaP GetSchemaPByAlias(Utf8StringCR alias);
 
     template<typename T, typename T_MAP>
-    ECObjectsStatus AddSchemaChildToMap(T* child, T_MAP* map, ECSchemaElementType childType);
+    ECObjectsStatus AddSchemaChildToMap(T* child, T_MAP* map, ECSchemaElementType childType, bool logError = true);
 
     template<typename T>
     ECObjectsStatus AddUnitType(T* child, ECSchemaElementType childType);
