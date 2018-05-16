@@ -1125,6 +1125,26 @@ BentleyStatus ViewDefinitionReader::_Read(Json::Value& viewDefinition)
 
         // WIP: Need to set UserProperties?
 
+        if (viewDefinition.isMember("overrides"))
+            {
+            auto const& subcatJson = viewDefinition["overrides"];
+            for (Json::ArrayIndex i = 0; i < subcatJson.size(); ++i)
+                {
+                JsonValueCR val = subcatJson[i];
+                DgnSubCategoryId subCategoryId(val["subCategoryId"].asUInt64());
+                if (subCategoryId.IsValid())
+                    {
+                    DgnSubCategoryId remapped = DgnSubCategoryId(m_importer->FindElementId(DgnElementId(subCategoryId.GetValue())).GetValue());
+                    if (remapped.IsValid())
+                        {
+                        DgnSubCategory::Override ovr(val);
+                        DisplayStyle3dR disp = viewDef->GetDisplayStyle3d();
+                        disp.OverrideSubCategory(remapped, ovr);
+                        disp.Update();
+                        }
+                    }
+                }
+            }
         DgnDbStatus stat;
         DgnElementCPtr inserted = viewDef->Insert(&stat);
         if (!inserted.IsValid())

@@ -827,28 +827,39 @@ DgnElementId BisJson1ExporterImpl::CreateCategorySelector(ViewControllerCR vc, U
     // Need to export the categories before we can create the category selector
     for (DgnCategoryId id : vc.GetViewedCategories())
         {
-        if (m_insertedElements.end() != m_insertedElements.find(id))
-            continue;
+        if (m_insertedElements.end() == m_insertedElements.find(id))
+            {
 
-        DgnCategoryCPtr cat = DgnCategory::QueryCategory(id, *m_dgndb);
-        if (!cat.IsValid())
-            continue;
-        Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, cat->GetElementId().GetValue());
-        auto out = Json::Value(Json::ValueType::objectValue);
-        ExportElements(out, cat->GetElementClass()->GetSchema().GetName().c_str(), cat->GetElementClass()->GetName().c_str(), cat->GetModelId(), whereClause.c_str(), false);
-        auto& entry = out[JSON_OBJECT_KEY];
-        auto& codeSpec = entry[BIS_ELEMENT_PROP_CodeSpec] = Json::Value(Json::ValueType::objectValue);
-        if (vc.IsDrawingView() || vc.IsSheetView())
-            {
-            entry[JSON_CLASSNAME] = "BisCore.DrawingCategory";
-            codeSpec["id"] = m_authorityIds["bis:DrawingCategory"].c_str();
+            DgnCategoryCPtr cat = DgnCategory::QueryCategory(id, *m_dgndb);
+            if (!cat.IsValid())
+                continue;
+            Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, cat->GetElementId().GetValue());
+            auto out = Json::Value(Json::ValueType::objectValue);
+            ExportElements(out, cat->GetElementClass()->GetSchema().GetName().c_str(), cat->GetElementClass()->GetName().c_str(), cat->GetModelId(), whereClause.c_str(), false);
+            auto& entry = out[JSON_OBJECT_KEY];
+            auto& codeSpec = entry[BIS_ELEMENT_PROP_CodeSpec] = Json::Value(Json::ValueType::objectValue);
+            if (vc.IsDrawingView() || vc.IsSheetView())
+                {
+                entry[JSON_CLASSNAME] = "BisCore.DrawingCategory";
+                codeSpec["id"] = m_authorityIds["bis:DrawingCategory"].c_str();
+                }
+            else
+                {
+                entry[JSON_CLASSNAME] = "BisCore.SpatialCategory";
+                codeSpec["id"] = m_authorityIds["bis:SpatialCategory"].c_str();
+                }
+            (QueueJson) (out.toStyledString().c_str());
             }
-        else
+
+        for (DgnSubCategoryId subCatId : DgnSubCategory::QuerySubCategories(*m_dgndb, id))
             {
-            entry[JSON_CLASSNAME] = "BisCore.SpatialCategory";
-            codeSpec["id"] = m_authorityIds["bis:SpatialCategory"].c_str();
+            if (m_insertedElements.end() != m_insertedElements.find(subCatId))
+                continue;
+            DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(subCatId, *m_dgndb);
+            Utf8PrintfString subCatWhereClause(" AND ECInstanceId=%" PRIu64, subCatId.GetValue());
+            auto subCatJson = Json::Value(Json::ValueType::objectValue);
+            ExportElements(subCatJson, subCat->GetElementClass()->GetSchema().GetName().c_str(), subCat->GetElementClass()->GetName().c_str(), subCat->GetModelId(), subCatWhereClause.c_str(), true);
             }
-        (QueueJson) (out.toStyledString().c_str());
         }
 
     auto categorySelector = Json::Value(Json::ValueType::objectValue);
@@ -992,6 +1003,13 @@ BentleyStatus BisJson1ExporterImpl::ExportViews()
         MakeNavigationProperty(obj, "DisplayStyle", displayStyle.GetValue());
         MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeSpec, m_authorityIds["bis:ViewDefinition"].c_str());
         MakeNavigationProperty(obj, BIS_ELEMENT_PROP_Model, m_jobDefinitionModelId);
+
+        if (vc->HasSubCategoryOverride())
+            {
+            auto const& settings = vc->GetSettings();
+            auto const& subcatJson = settings["subCategories"];
+            obj["overrides"] = subcatJson;
+            }
 
         if (obj.isMember("Source"))
             {
@@ -1160,6 +1178,17 @@ BentleyStatus BisJson1ExporterImpl::ExportCategories(Utf8CP tableName, Utf8CP bi
             }
         MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeSpec, bisAuthorityStr);
         (QueueJson) (entry.toStyledString().c_str());
+
+        for (DgnSubCategoryId subCatId : DgnSubCategory::QuerySubCategories(*m_dgndb, categoryId))
+            {
+            if (m_insertedElements.end() != m_insertedElements.find(subCatId))
+                continue;
+            DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(subCatId, *m_dgndb);
+            Utf8PrintfString subCatWhereClause(" AND ECInstanceId=%" PRIu64, subCatId.GetValue());
+            auto subCatJson = Json::Value(Json::ValueType::objectValue);
+            ExportElements(subCatJson, subCat->GetElementClass()->GetSchema().GetName().c_str(), subCat->GetElementClass()->GetName().c_str(), subCat->GetModelId(), subCatWhereClause.c_str(), true);
+            }
+
         }
     return SUCCESS;
     }
@@ -1697,6 +1726,8 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& entry, Utf8CP sc
             DgnSubCategoryCPtr sub = m_dgndb->Elements().Get<DgnSubCategory>(element->GetElementId());
             if (sub->IsDefaultSubCategory())
                 entry["IsDefaultSubCategory"] = true;
+            else
+                entry["IsDefaultSubCategory"] = false;
             MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeScope, element->GetParentId());
             }
         else if (element->GetElementClass()->Is(m_categoryClass))
