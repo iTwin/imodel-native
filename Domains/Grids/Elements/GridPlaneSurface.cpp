@@ -771,6 +771,18 @@ void ElevationGridSurface::SerializeProperties (Json::Value& elementData) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElevationGridSurface::UpdateFromJson (Json::Value const& elementData)
+    {
+    BeAssert(GetElementId().GetValueUnchecked() == elementData[BCSSERIALIZABLE_ELEMENT_ElementId].asUInt64());
+    SetElevation(elementData[BCSSERIALIZABLE_ELEVSURFACE_Elevation].asDouble());
+    
+    BuildingLocks_LockElementForOperation(*this, BeSQLite::DbOpcode::Update, "ElevationGridSurface::UpdateFromJson");
+    Update();
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElevationGridSurface::FormatSerializedProperties (Json::Value& elementData) const

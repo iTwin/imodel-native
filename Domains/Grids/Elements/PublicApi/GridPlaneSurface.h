@@ -373,6 +373,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface, BENTLEY
         //! @param[in]  elementData JSON object that will hold serialized data
         GRIDELEMENTS_EXPORT void SerializeProperties(Json::Value& elementData) const override;
 
+        //! Updates element from Json properties
+        //! @param[in]  elementData JSON object that holds serialized data
+        GRIDELEMENTS_EXPORT void UpdateFromJson(Json::Value const& elementData) override;
+
         //! Formats serialized element data in a JSON object
         //! @param[in]  elementData JSON object that holds serialized data
         GRIDELEMENTS_EXPORT void FormatSerializedProperties(Json::Value& elementData) const override;
