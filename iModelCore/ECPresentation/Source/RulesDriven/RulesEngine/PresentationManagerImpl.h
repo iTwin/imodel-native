@@ -52,7 +52,6 @@ private:
     IRulesetLocaterManager* m_locaters;
     IUserSettingsManager* m_userSettings;
     IJsonLocalState* m_localState;
-    ILocalizationProvider const* m_localizationProvider;
     IECPropertyFormatter const* m_ecPropertyFormatter;
     IPropertyCategorySupplier* m_categorySupplier;
     bset<IECInstanceChangeHandlerPtr, IECInstanceChangeHandlerPtrComparer> m_ecInstanceChangeHandlers;
@@ -108,12 +107,6 @@ public:
     IUserSettings& GetUserSettings(Utf8CP rulesetId) const {return m_userSettings->GetSettings(rulesetId);}
     ECPRESENTATION_EXPORT void SetLocalState(IJsonLocalState* localState);
     IJsonLocalState* GetLocalState() const {return m_localState;}
-/** @} */
-
-/** @name Localization */
-/** @{ */
-    ECPRESENTATION_EXPORT void SetLocalizationProvider(ILocalizationProvider const*);
-    ECPRESENTATION_EXPORT ILocalizationProvider const& GetLocalizationProvider() const;
 /** @} */
 
 /** @name Property Formatting */
@@ -210,8 +203,8 @@ private:
         
 protected:
     // IRulesetCallbacksHandler
-    ECPRESENTATION_EXPORT void _OnRulesetDispose(PresentationRuleSetCR) override;
-    ECPRESENTATION_EXPORT void _OnRulesetCreated(PresentationRuleSetCR) override;
+    ECPRESENTATION_EXPORT void _OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetCR) override;
+    ECPRESENTATION_EXPORT void _OnRulesetCreated(RuleSetLocaterCR, PresentationRuleSetR) override;
 
     // IUserSettingsChangeListener
     ECPRESENTATION_EXPORT void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;

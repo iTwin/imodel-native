@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRule.h>
 
@@ -42,6 +43,23 @@ bool InstanceLabelOverride::_ReadXml(BeXmlNodeP xmlNode)
         propertyNames = "";
     m_properties = CommonTools::ParsePropertiesNames(propertyNames);
     return CustomizationRule::_ReadXml(xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InstanceLabelOverride::_ReadJson(JsonValueCR json)
+    {
+    m_className = json[INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_CLASSNAME].asCString("");
+
+    JsonValueCR propertyNames = json[INSTANCE_LABEL_OVERRIDE_JSON_ATTRIBUTE_PROPERTYNAMES];
+    for (unsigned int i = 0; i < propertyNames.size(); i++)
+        {
+        Utf8CP prop = propertyNames[i].asCString(nullptr);
+        if (prop != nullptr)
+            m_properties.push_back(((Utf8String) prop).Trim());
+        }
+    return CustomizationRule::_ReadJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**

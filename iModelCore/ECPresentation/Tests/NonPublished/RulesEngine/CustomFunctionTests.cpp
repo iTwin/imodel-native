@@ -143,10 +143,10 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesDefaultInstanceDisplay
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_Localizes)
     {
-    m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "\"@LocalizationId@\"", ""));
+    m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "\"@Namespace:Id@\"", ""));
     m_localizationProvider.SetHandler([](Utf8StringCR key, Utf8StringR localized)
         {
-        EXPECT_TRUE(key.Equals("LocalizationId"));
+        EXPECT_TRUE(key.Equals("Namespace:Id"));
         localized = "LocalizedLabel";
         return true;
         });
@@ -185,7 +185,7 @@ TEST_F(CustomFunctionTests, EvaluateECExpression)
     {
     m_localizationProvider.SetHandler([](Utf8StringCR key, Utf8StringR localized)
         {
-        EXPECT_TRUE(key.Equals("LocalizationId"));
+        EXPECT_TRUE(key.Equals("Namespace:Id"));
         localized = "LocalizedLabel";
         return true;
         });
@@ -201,7 +201,7 @@ TEST_F(CustomFunctionTests, EvaluateECExpression)
 
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?) FROM RET.Widget"));
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "this.MyID & \"Calculated_@LocalizationId@_\" & 2", IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "this.MyID & \"Calculated_@Namespace:Id@_\" & 2", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("TestCalculated_LocalizedLabel_2", stmt.GetValueText(0));  
     }
@@ -225,10 +225,10 @@ TEST_F(CustomFunctionTests, GetECClassDisplayLabel_UsesClassDisplayLabel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECClassDisplayLabel_Localizes)
     {
-    m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "\"@LocalizationId@\"", ""));
+    m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "\"@Namespace:Id@\"", ""));
     m_localizationProvider.SetHandler([](Utf8StringCR key, Utf8StringR localized)
         {
-        EXPECT_TRUE(key.Equals("LocalizationId"));
+        EXPECT_TRUE(key.Equals("Namespace:Id"));
         localized = "LocalizedLabel";
         return true;
         });
@@ -282,10 +282,10 @@ TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_UsesPropertyValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, GetECPropertyDisplayLabel_Localizes)
     {
-    m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "\"@LocalizationId@\"", ""));
+    m_ruleset->AddPresentationRule(*new LabelOverride("", 1, "\"@Namespace:Id@\"", ""));
     m_localizationProvider.SetHandler([](Utf8StringCR key, Utf8StringR localized)
         {
-        EXPECT_TRUE(key.Equals("LocalizationId"));
+        EXPECT_TRUE(key.Equals("Namespace:Id"));
         localized = "LocalizedLabel";
         return true;
         });

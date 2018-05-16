@@ -55,6 +55,67 @@ TEST_F(ContentModifierTests, CopyConstructorCopiesProperties)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentModifierTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "schemaName": "TestSchema",
+        "className": "TestClassName",
+        "relatedProperties": [
+            { }
+        ],
+        "propertyDisplaySpecifications": [
+            { "propertyNames": "property names" }
+        ],
+        "calculatedProperties": [
+            {
+                "value": "value",
+                "label": "label"
+            }
+        ],
+        "propertyEditors": [
+            {
+                "propertyName": "property names",
+                "editorName": "editor"
+            }
+        ]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ContentModifier modifier;
+    EXPECT_TRUE(modifier.ReadJson(json));
+
+    EXPECT_STREQ("TestSchema", modifier.GetSchemaName().c_str());
+    EXPECT_STREQ("TestClassName", modifier.GetClassName().c_str());
+    EXPECT_EQ(1, modifier.GetCalculatedProperties().size());
+    EXPECT_EQ(1, modifier.GetRelatedProperties().size());
+    EXPECT_EQ(1, modifier.GetPropertiesDisplaySpecifications().size());
+    EXPECT_EQ(1, modifier.GetPropertyEditors().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentModifierTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    ContentModifier modifier;
+    EXPECT_TRUE(modifier.ReadJson(json));
+
+    EXPECT_STREQ("", modifier.GetSchemaName().c_str());
+    EXPECT_STREQ("", modifier.GetClassName().c_str());
+    EXPECT_EQ(0, modifier.GetCalculatedProperties().size());
+    EXPECT_EQ(0, modifier.GetRelatedProperties().size());
+    EXPECT_EQ(0, modifier.GetPropertiesDisplaySpecifications().size());
+    EXPECT_EQ(0, modifier.GetPropertyEditors().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ContentModifierTests, LoadsFromXml)

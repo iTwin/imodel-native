@@ -2,11 +2,12 @@
 |
 |     $Source: Source/RulesDriven/Rules/CalculatedPropertySpecification.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/CommonTools.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
@@ -19,13 +20,42 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 bool CalculatedPropertiesSpecification::ReadXml(BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_label, CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_LABEL))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME, CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_LABEL);
         return false;
-
+        }
     if (BEXML_Success != xmlNode->GetAttributeInt32Value(m_priority, CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PRIORITY))
         m_priority = 1000;
 
     if (BEXML_Success != xmlNode->GetContent(m_value) || m_value.empty())
         return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CalculatedPropertiesSpecification::ReadJson(JsonValueCR json)
+    {
+    //Required
+    m_value = json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE].asCString("");
+    if (m_value.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, CALCULATED_PROPERTIES_SPECIFICATION_JSON_NAME, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE);
+        return false;
+        }
+
+    JsonValueCR jsonValue = json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_LABEL];
+    if (jsonValue.isNull() || !jsonValue.isConvertibleTo(Json::ValueType::stringValue))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, CALCULATED_PROPERTIES_SPECIFICATION_JSON_NAME, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_LABEL);
+        return false;
+        }
+    m_label = jsonValue.asCString("");
+
+    //Optional
+    m_priority = json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PRIORITY].asInt(1000);
 
     return true;
     }

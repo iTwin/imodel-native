@@ -663,7 +663,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance1, *instance2);
 
     bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
-        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), nullptr);
+        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), RelatedClassPath(), nullptr);
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
     EXPECT_EQ(class2, result[0][0].GetTargetClass());
@@ -686,7 +686,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instance1, *instance3);
 
     bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
-        rel->GetFullName(), ECRelatedInstanceDirection::Forward, class2->GetFullName(), nullptr);
+        rel->GetFullName(), ECRelatedInstanceDirection::Forward, class2->GetFullName(), RelatedClassPath(), nullptr);
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
     EXPECT_EQ(class2, result[0][0].GetTargetClass());
@@ -715,7 +715,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, selectInfo, nullptr, instanceFilter.c_str());
 
     bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
-        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), &filteringParams);
+        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), RelatedClassPath(), &filteringParams);
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
     EXPECT_EQ(class2, result[0][0].GetTargetClass());
@@ -744,7 +744,7 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
     InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), &input, selectInfo, nullptr, "");
 
     bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class1,
-        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), &filteringParams);
+        rel->GetFullName(), ECRelatedInstanceDirection::Forward, baseof2and3->GetFullName(), RelatedClassPath(), &filteringParams);
     ASSERT_EQ(1, result.size());
     ASSERT_EQ(1, result[0].size());
     EXPECT_EQ(class2, result[0][0].GetTargetClass());
@@ -777,10 +777,41 @@ TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_Retur
         Utf8PrintfString("%s:%s,%s", rel1->GetSchema().GetName().c_str(), rel1->GetName().c_str(), rel2->GetName().c_str()), 
         ECRelatedInstanceDirection::Forward, 
         Utf8PrintfString("%s:%s,%s", class1->GetSchema().GetName().c_str(), class1->GetName().c_str(), class2->GetName().c_str()), 
+        RelatedClassPath(),
         &filteringParams);
     ASSERT_EQ(2, result.size());
     ASSERT_EQ(1, result[0].size());
     EXPECT_EQ(class1, result[0][0].GetTargetClass());
     ASSERT_EQ(1, result[1].size());
     EXPECT_EQ(class2, result[1][0].GetTargetClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSchemaHelperTests, GetPolymorphicallyRelatedClassesWithInstances_ReturnsNestedRalationshipInstanceClassesWhichMatchInstanceFilter)
+    {
+    ECEntityClassCP class1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex2", "Class1")->GetEntityClassCP();
+    ECEntityClassCP class2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex2", "Class2")->GetEntityClassCP();
+    ECEntityClassCP class3 = s_project->GetECDb().Schemas().GetClass("SchemaComplex2", "Class3")->GetEntityClassCP();
+    ECRelationshipClassCP rel1 = s_project->GetECDb().Schemas().GetClass("SchemaComplex2", "Class1HasClass2")->GetRelationshipClassCP();
+    ECRelationshipClassCP rel2 = s_project->GetECDb().Schemas().GetClass("SchemaComplex2", "Class3HasClass2")->GetRelationshipClassCP();
+    
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class1);
+    IECInstancePtr instance2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class2);
+    IECInstancePtr instance3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *class3);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel1, *instance1, *instance2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel2, *instance3, *instance2);
+
+    SelectClassInfo selectInfo(*class3, true);
+    Utf8PrintfString instanceFilter("this.ECInstanceId = %s", instance3->GetInstanceId().c_str());
+    InstanceFilteringParams filteringParams(*m_connection, m_helper->GetECExpressionsCache(), nullptr, selectInfo, nullptr, instanceFilter.c_str());
+    RelatedClassPath nestedRelationship({RelatedClass(*class2, *class3, *rel2, false)});
+
+    bvector<RelatedClassPath> result = m_helper->GetPolymorphicallyRelatedClassesWithInstances(*class2,
+        rel1->GetFullName(), ECRelatedInstanceDirection::Backward, class1->GetFullName(), nestedRelationship, &filteringParams);
+
+    ASSERT_EQ(1, result.size());
+    ASSERT_EQ(1, result[0].size());
+    EXPECT_EQ(class1, result[0][0].GetTargetClass());
     }

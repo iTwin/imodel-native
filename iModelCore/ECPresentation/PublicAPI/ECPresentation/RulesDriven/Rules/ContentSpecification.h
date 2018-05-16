@@ -51,6 +51,9 @@ protected:
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
     virtual bool                         _ReadXml (BeXmlNodeP xmlNode) = 0;
 
+    //! Reads rule information from Json, returns true if it can read it successfully.
+    virtual bool                         _ReadJson(JsonValueCR json) = 0;
+
     //! Writes rule information to given XmlNode.
     virtual void                         _WriteXml (BeXmlNodeP xmlNode) const = 0;
 
@@ -69,6 +72,9 @@ public:
 
     //! Reads specification from XML.
     ECPRESENTATION_EXPORT bool                                 ReadXml (BeXmlNodeP xmlNode);
+
+    //! Reads specification from Json.
+    ECPRESENTATION_EXPORT bool                                 ReadJson(JsonValueCR json);
 
     //! Writes specification to xml node.
     ECPRESENTATION_EXPORT void                                 WriteXml (BeXmlNodeP parentXmlNode) const;

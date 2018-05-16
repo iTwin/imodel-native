@@ -97,6 +97,54 @@ public:
         for (BeXmlNodeP& ruleNode: ruleNodes)
             LoadRuleFromXmlNode<RuleType, RuleCollectionType> (ruleNode, rulesCollection);
         }
+	
+    //! Load rules from Json array and adds to collection
+    template<typename RuleType, typename RuleCollectionType>
+    static void                        LoadRulesFromJson(JsonValueCR json, RuleCollectionType& rulesCollection, char const* type = nullptr)
+        {
+        for(unsigned int i=0; i < json.size(); i++)
+            {
+            JsonValueCR arrayItem = json[i];
+            if (type != nullptr && strcmp(arrayItem["type"].asCString(""), type) != 0)
+                continue;
+            LoadRuleFromJson<RuleType, RuleCollectionType>(arrayItem, rulesCollection);
+            }
+        }
+
+    //! Load rule from Json object and adds to collection
+    template<typename RuleType, typename RuleCollectionType>
+    static void                        LoadRuleFromJson(JsonValueCR json, RuleCollectionType& rulesCollection)
+        {
+        RuleType* rule = new RuleType();
+        if (rule->ReadJson(json))
+            AddToListByPriority(rulesCollection, *rule);
+        else
+            delete rule;
+        }
+
+    //! Load specification from Json object and adds to collection
+    template<typename SpecificationType, typename SpecificationsCollectionType>
+    static void                        LoadSpecificationFromJson(JsonValueCR json, SpecificationsCollectionType& specificationsCollection)
+        {
+        SpecificationType* specification = new SpecificationType();
+        if (specification->ReadJson(json))
+            specificationsCollection.push_back(specification);
+        else
+            delete specification;
+        }
+
+    //! Load specifications from Json array and adds to collection
+    template<typename SpecificationType, typename SpecificationsCollectionType>
+    static void                        LoadSpecificationsFromJson(JsonValueCR json, SpecificationsCollectionType& specificationsCollection, char const* type = nullptr)
+        {
+        for (unsigned int i = 0; i < json.size(); i++)
+            {
+            JsonValueCR arrayItem = json[i];
+            if (type != nullptr && strcmp(arrayItem["type"].asCString(""), type) != 0)
+                continue;
+            LoadSpecificationFromJson<SpecificationType, SpecificationsCollectionType>(arrayItem, specificationsCollection);
+            }
+        }
 
     //! Load specification from XmlNode and adds to collection
     template<typename SpecificationType, typename SpecificationsCollectionType>

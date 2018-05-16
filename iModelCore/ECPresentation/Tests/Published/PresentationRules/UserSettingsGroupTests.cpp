@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/UserSettingsGroupTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -17,6 +17,48 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct UserSettingsGroupTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "id": "id",
+        "label": "label",
+        "options": "options",
+        "defaultValue": "defaultValue"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    UserSettingsItem item;
+    EXPECT_TRUE(item.ReadJson(json));
+    EXPECT_STREQ("id", item.GetId().c_str());
+    EXPECT_STREQ("label", item.GetLabel().c_str());
+    EXPECT_STREQ("options", item.GetOptions().c_str());
+    EXPECT_STREQ("defaultValue", item.GetDefaultValue().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = R"({
+        "id": "id",
+        "label": "label"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    UserSettingsItem item;
+    EXPECT_TRUE(item.ReadJson(json));
+    EXPECT_STREQ("id", item.GetId().c_str());
+    EXPECT_STREQ("label", item.GetLabel().c_str());
+    EXPECT_STREQ("", item.GetOptions().c_str());
+    EXPECT_STREQ("", item.GetDefaultValue().c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
@@ -59,6 +101,36 @@ TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadsFromXmlWithDefaultValues)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadFromJsonFailsWhenIdIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "label": "label"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    UserSettingsItem item;
+    EXPECT_FALSE(item.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadFromJsonFailsWhenLabelIsNotSpecified)
+    {
+    static Utf8CP jsonString = R"({
+        "id": "id"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    UserSettingsItem item;
+    EXPECT_FALSE(item.ReadJson(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadFromXmlFailsWhenIdIsNotSpecified)
@@ -88,6 +160,56 @@ TEST_F(UserSettingsGroupTests, UserSettingsItem_LoadFromXmlFailsWhenLabelIsNotSp
     
     UserSettingsItem item;
     EXPECT_FALSE(item.ReadXml(xml->GetRootElement()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UserSettingsGroupTests, UserSettingsGroup_LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "categoryLabel": "category",
+        "settingsItems": [
+            {
+                "id": "id",
+                "label": "label"
+            }
+        ],
+        "nestedSettings": [
+            {
+                "categoryLabel": "nestedCategory"
+            }
+        ]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    UserSettingsGroup group;
+    EXPECT_TRUE(group.ReadJson(json));
+    EXPECT_STREQ("category", group.GetCategoryLabel().c_str());
+    EXPECT_EQ(1, group.GetSettingsItems().size());
+    EXPECT_STREQ("id", group.GetSettingsItems()[0]->GetId().c_str());
+    EXPECT_STREQ("label", group.GetSettingsItems()[0]->GetLabel().c_str());
+    EXPECT_STREQ("", group.GetSettingsItems()[0]->GetOptions().c_str());
+    EXPECT_STREQ("", group.GetSettingsItems()[0]->GetDefaultValue().c_str());
+    EXPECT_EQ(1, group.GetSettingsItems().size());
+    EXPECT_STREQ("nestedCategory", group.GetNestedSettings()[0]->GetCategoryLabel().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UserSettingsGroupTests, UserSettingsGroup_LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    UserSettingsGroup group;
+    EXPECT_TRUE(group.ReadJson(json));
+    EXPECT_STREQ("", group.GetCategoryLabel().c_str());
+    EXPECT_EQ(0, group.GetSettingsItems().size());
+    EXPECT_EQ(0, group.GetSettingsItems().size());
     }
 
 /*---------------------------------------------------------------------------------**//**

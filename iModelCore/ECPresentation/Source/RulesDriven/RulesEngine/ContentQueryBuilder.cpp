@@ -114,7 +114,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(SelectedNodeInstancesSpecificat
         
         // handle filtering 
         InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), &input, selectClassInfo, nullptr, nullptr);
-        QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams);
+        QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams, RelatedClassPath());
         
         // handle selecting property for distinct values 
         if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())
@@ -195,7 +195,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentRelatedInstancesSpecific
         // handle filtering 
         InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), &input, 
             selectClassInfo, recursiveInfo, specification.GetInstanceFilter().c_str());
-        QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams);
+        QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams, RelatedClassPath());
             
         // handle selecting property for distinct values 
         if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())
@@ -241,7 +241,7 @@ ContentQueryPtr ContentQueryBuilder::CreateQuery(ContentInstancesOfSpecificClass
         // handle filtering 
         InstanceFilteringParams filteringParams(m_params.GetConnection(), m_params.GetECExpressionsCache(), nullptr, 
             selectClassInfo, nullptr, specification.GetInstanceFilter().c_str());
-        QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams);
+        QueryBuilderHelpers::ApplyInstanceFilter(*classQuery, filteringParams, RelatedClassPath());
 
         // handle selecting property for distinct values 
         if (descriptor.OnlyDistinctValues() && descriptor.GetVisibleFields().size() == 1 && nullptr != descriptor.GetVisibleFields()[0]->AsPropertiesField())

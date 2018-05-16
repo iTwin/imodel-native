@@ -2,11 +2,12 @@
 |
 |     $Source: Source/RulesDriven/Rules/UserSettingsGroup.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/CommonTools.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
@@ -71,6 +72,18 @@ bool UserSettingsGroup::_ReadXml (BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UserSettingsGroup::_ReadJson(JsonValueCR json)
+    {
+    m_categoryLabel = json[USER_SETTINGS_JSON_ATTRIBUTE_CATEGORY_LABEL].asCString("");
+    CommonTools::LoadSpecificationsFromJson<UserSettingsItem>(json[USER_SETTINGS_JSON_ATTRIBUTE_SETTINGS_ITEMS], m_settingsItems);
+    CommonTools::LoadRulesFromJson<UserSettingsGroup>(json[USER_SETTINGS_JSON_ATTRIBUTE_NESTED_SETTINGS], m_nestedSettings);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UserSettingsGroup::_WriteXml (BeXmlNodeP xmlNode) const
@@ -83,7 +96,8 @@ void UserSettingsGroup::_WriteXml (BeXmlNodeP xmlNode) const
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
++---------------+---------------+---------------+-------
+--------+---------------+------*/
 Utf8StringCR UserSettingsGroup::GetCategoryLabel (void) const { return m_categoryLabel; }
 
 /*---------------------------------------------------------------------------------**//**
@@ -164,13 +178,13 @@ bool UserSettingsItem::ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_id, USER_SETTINGS_ITEM_XML_ATTRIBUTE_ID))
         {
-        ECPRENSETATION_RULES_LOG.errorv ("Invalid UserSettingsItemXML: %hs element must contain a %hs attribute", USER_SETTINGS_ITEM_XML_NODE_NAME, USER_SETTINGS_ITEM_XML_ATTRIBUTE_ID);
+        ECPRENSETATION_RULES_LOG.errorv (INVALID_XML, USER_SETTINGS_ITEM_XML_NODE_NAME, USER_SETTINGS_ITEM_XML_ATTRIBUTE_ID);
         return false;
         }
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_label, USER_SETTINGS_ITEM_XML_ATTRIBUTE_LABEL))
         {
-        ECPRENSETATION_RULES_LOG.errorv ("Invalid UserSettingsItemXML: %hs element must contain a %hs attribute", USER_SETTINGS_ITEM_XML_NODE_NAME, USER_SETTINGS_ITEM_XML_ATTRIBUTE_LABEL);
+        ECPRENSETATION_RULES_LOG.errorv (INVALID_XML, USER_SETTINGS_ITEM_XML_NODE_NAME, USER_SETTINGS_ITEM_XML_ATTRIBUTE_LABEL);
         return false;
         }
 
@@ -180,6 +194,35 @@ bool UserSettingsItem::ReadXml (BeXmlNodeP xmlNode)
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_defaultValue, USER_SETTINGS_ITEM_XML_ATTRIBUTE_DEFAULT_VALUE))
         m_defaultValue = "";    
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UserSettingsItem::ReadJson (JsonValueCR json)
+    {
+    //Required
+    JsonValueCR idJson = json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_ID];
+    if (idJson.isNull() || !idJson.isConvertibleTo(Json::ValueType::stringValue))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, USER_SETTINGS_ITEM_JSON_NAME, USER_SETTINGS_ITEM_JSON_ATTRIBUTE_ID);
+        return false;
+        }
+    m_id = idJson.asCString("");
+
+    JsonValueCR labelJson = json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_LABEL];
+    if (labelJson.isNull() || !labelJson.isConvertibleTo(Json::ValueType::stringValue))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, USER_SETTINGS_ITEM_JSON_NAME, USER_SETTINGS_ITEM_JSON_ATTRIBUTE_LABEL);
+        return false;
+        }
+    m_label = labelJson.asCString("");
+
+    //Optional
+    m_options = json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_OPTIONS].asCString("");
+    m_defaultValue = json[USER_SETTINGS_ITEM_JSON_ATTRIBUTE_DEFAULT_VALUE].asCString("");
 
     return true;
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/DisplayRelatedItemsSpecification.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -44,6 +44,14 @@ bool DisplayRelatedItemsSpecification::ReadXml (BeXmlNodeP xmlNode)
         m_relationshipClasses = "";
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DisplayRelatedItemsSpecification::ReadJson(JsonValueCR json)
+    {
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

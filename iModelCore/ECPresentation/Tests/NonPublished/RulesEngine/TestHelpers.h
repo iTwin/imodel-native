@@ -604,12 +604,12 @@ struct TestRulesetCallbacksHandler : IRulesetCallbacksHandler
     void SetCreatedHandler(CallbackHandler const& handler) {m_onCreatedHandler = handler;}
     void SetDisposedHandler(CallbackHandler const& handler) {m_onDisposedHandler = handler;}
 
-    virtual void _OnRulesetCreated(PresentationRuleSetCR ruleset)
+    virtual void _OnRulesetCreated(RuleSetLocaterCR,PresentationRuleSetR ruleset) override
         {
         if (nullptr != m_onCreatedHandler)
             m_onCreatedHandler(ruleset);
         }
-    virtual void _OnRulesetDispose(PresentationRuleSetCR ruleset)
+    virtual void _OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetCR ruleset) override
         {
         if (nullptr != m_onDisposedHandler)
             m_onDisposedHandler(ruleset);
@@ -644,5 +644,24 @@ protected:
 public:
     TestCancelationToken(std::function<bool()> callback) : m_isCanceledCallback(callback) {}
 };
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                11/2017
++===============+===============+===============+===============+===============+======*/
+struct TestCallbackRulesetLocater : RefCounted<RuleSetLocater>
+{
+private:
+    std::function<void()> m_callback;
+    void Callback() const {if (m_callback) {m_callback();}}
+protected:
+    bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override {Callback(); return bvector<PresentationRuleSetPtr>();}
+    bvector<Utf8String> _GetRuleSetIds() const override {Callback(); return bvector<Utf8String>();}
+    int _GetPriority() const override {Callback(); return 1;}
+    void _InvalidateCache(Utf8CP rulesetId) override {Callback();}
+public:
+    static RefCountedPtr<TestCallbackRulesetLocater> Create() {return new TestCallbackRulesetLocater();}
+    void SetCallback(std::function<void()> callback) {m_callback = callback;}
+};
+
 
 END_ECPRESENTATIONTESTS_NAMESPACE

@@ -137,8 +137,8 @@ public:
     ECPRESENTATION_EXPORT bvector<bpair<RelatedClassPath, bool>> GetRelationshipClassPaths(RelationshipClassPathOptions const&) const;
     ECPRESENTATION_EXPORT ECRelationshipConstraintClassList GetRelationshipConstraintClasses(ECRelationshipClassCR relationship, 
         ECRelatedInstanceDirection direction, Utf8StringCR supportedSchemas) const;
-    ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetPolymorphicallyRelatedClassesWithInstances(ECClassCR sourceClass, 
-        Utf8StringCR relationshipName, ECRelatedInstanceDirection direction, Utf8StringCR baseClassName, InstanceFilteringParams const*) const;
+    ECPRESENTATION_EXPORT bvector<RelatedClassPath> GetPolymorphicallyRelatedClassesWithInstances(ECClassCR sourceClass, Utf8StringCR relationshipName,
+        ECRelatedInstanceDirection direction, Utf8StringCR baseClassName, RelatedClassPathCR relatedClassPath, InstanceFilteringParams const*) const;
     ECPRESENTATION_EXPORT RelatedClass GetForeignKeyClass(ECPropertyCR prop) const;
 };
 

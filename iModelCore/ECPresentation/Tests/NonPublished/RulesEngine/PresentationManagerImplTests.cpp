@@ -110,24 +110,6 @@ struct RulesDrivenECPresentationManagerImplRequestCancelationTests : RulesDriven
     {
     };
 
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2017
-+===============+===============+===============+===============+===============+======*/
-struct CallbackRulesetLocater : RefCounted<RuleSetLocater>
-{
-private:
-    std::function<void()> m_callback;
-    void Callback() const {if (m_callback) {m_callback();}}
-protected:
-    bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override {Callback(); return bvector<PresentationRuleSetPtr>();}
-    bvector<Utf8String> _GetRuleSetIds() const override {Callback(); return bvector<Utf8String>();}
-    int _GetPriority() const override {Callback(); return 1;}
-    void _InvalidateCache(Utf8CP rulesetId) override {Callback();}
-public:
-    static RefCountedPtr<CallbackRulesetLocater> Create() {return new CallbackRulesetLocater();}
-    void SetCallback(std::function<void()> callback) {m_callback = callback;}
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -135,8 +117,9 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsRootNo
     {
     // add a ruleset locater which cancels the request
     SimpleCancelationTokenPtr token = SimpleCancelationToken::Create();
-    RefCountedPtr<CallbackRulesetLocater> locater = CallbackRulesetLocater::Create();
+    RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
     m_impl->GetLocaters().RegisterLocater(*locater);
+    m_impl->GetLocaters().InvalidateCache();
     locater->SetCallback([&]()
         {
         token->SetCanceled(true);
@@ -155,8 +138,9 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsRootNo
     {
     // add a ruleset locater which cancels the request
     SimpleCancelationTokenPtr token = SimpleCancelationToken::Create();
-    RefCountedPtr<CallbackRulesetLocater> locater = CallbackRulesetLocater::Create();
+    RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
     m_impl->GetLocaters().RegisterLocater(*locater);
+    m_impl->GetLocaters().InvalidateCache();
     locater->SetCallback([&]()
         {
         token->SetCanceled(true);
@@ -182,7 +166,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsChildN
     ASSERT_TRUE(rootNode.IsValid());
 
     // add a ruleset locater which cancels the request
-    RefCountedPtr<CallbackRulesetLocater> locater = CallbackRulesetLocater::Create();
+    RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
     m_impl->GetLocaters().RegisterLocater(*locater);
     m_impl->GetLocaters().InvalidateCache();
     locater->SetCallback([&]()
@@ -209,7 +193,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsChildN
     ASSERT_TRUE(rootNode.IsValid());
 
     // add a ruleset locater which cancels the request
-    RefCountedPtr<CallbackRulesetLocater> locater = CallbackRulesetLocater::Create();
+    RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
     m_impl->GetLocaters().RegisterLocater(*locater);
     m_impl->GetLocaters().InvalidateCache();
     locater->SetCallback([&]()
@@ -229,8 +213,9 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
     {
     // add a ruleset locater which cancels the request
     SimpleCancelationTokenPtr token = SimpleCancelationToken::Create();
-    RefCountedPtr<CallbackRulesetLocater> locater = CallbackRulesetLocater::Create();
+    RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
     m_impl->GetLocaters().RegisterLocater(*locater);
+    m_impl->GetLocaters().InvalidateCache();
     locater->SetCallback([&]()
         {
         token->SetCanceled(true);
@@ -250,8 +235,9 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
     {    
     // add a ruleset locater which cancels the request
     SimpleCancelationTokenPtr token = SimpleCancelationToken::Create();
-    RefCountedPtr<CallbackRulesetLocater> locater = CallbackRulesetLocater::Create();
+    RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
     m_impl->GetLocaters().RegisterLocater(*locater);
+    m_impl->GetLocaters().InvalidateCache();
     locater->SetCallback([&]()
         {
         token->SetCanceled(true);
@@ -275,7 +261,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
     ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, *KeySet::Create(), nullptr, options, *token);
         
     // add a ruleset locater which cancels the request
-    RefCountedPtr<CallbackRulesetLocater> locater = CallbackRulesetLocater::Create();
+    RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
     m_impl->GetLocaters().RegisterLocater(*locater);
     m_impl->GetLocaters().InvalidateCache();
     locater->SetCallback([&]()
@@ -300,7 +286,7 @@ TEST_F(RulesDrivenECPresentationManagerImplRequestCancelationTests, AbortsConten
     ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*m_connection, nullptr, *KeySet::Create(), nullptr, options, *token);
         
     // add a ruleset locater which cancels the request
-    RefCountedPtr<CallbackRulesetLocater> locater = CallbackRulesetLocater::Create();
+    RefCountedPtr<TestCallbackRulesetLocater> locater = TestCallbackRulesetLocater::Create();
     m_impl->GetLocaters().RegisterLocater(*locater);
     m_impl->GetLocaters().InvalidateCache();
     locater->SetCallback([&]()

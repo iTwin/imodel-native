@@ -197,7 +197,7 @@ TEST_F (CustomizationHelperTests, CustomizeNode_ApplyLocalization)
     TestLocalizationProvider provider;
     provider.SetHandler([](Utf8StringCR key, Utf8StringR localizedValue) { localizedValue = "localized"; return true; });
     m_context->SetLocalizationContext(provider);
-    JsonNavNodePtr node = CreateNode("@customLabel@", "description", "imageId", "type");
+    JsonNavNodePtr node = CreateNode("@Namespace:Id@", "description", "imageId", "type");
     CustomizationHelper::Customize(*m_context, *node, false);
     ASSERT_TRUE(NavNodeExtendedData(*node).IsCustomized());
     ASSERT_STREQ("localized", node->GetLabel().c_str());

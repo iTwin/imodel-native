@@ -2,11 +2,12 @@
 |
 |     $Source: Source/RulesDriven/Rules/PropertyEditorsSpecification.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/CommonTools.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
@@ -19,11 +20,17 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 bool PropertyEditorsSpecification::ReadXml(BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_propertyName, PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAME))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, PROPERTY_EDITORS_SPECIFICATION_XML_NODE_NAME, PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAME);
         return false;
+        }
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_editorName, PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_EDITORNAME))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, PROPERTY_EDITORS_SPECIFICATION_XML_NODE_NAME, PROPERTY_EDITORS_SPECIFICATION_XML_ATTRIBUTE_EDITORNAME);
         return false;
-    
+        }
+
     for (BeXmlNodeP child = xmlNode->GetFirstChild(BEXMLNODE_Element); nullptr != child; child = child->GetNextSibling(BEXMLNODE_Element))
         {
         if (0 == BeStringUtilities::Stricmp(child->GetName(), PROPERTY_EDITOR_JSON_PARAMETERS_XML_NODE_NAME))
@@ -35,6 +42,39 @@ bool PropertyEditorsSpecification::ReadXml(BeXmlNodeP xmlNode)
         else if (0 == BeStringUtilities::Stricmp(child->GetName(), PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_NODE_NAME))
             CommonTools::LoadSpecificationFromXmlNode<PropertyEditorSliderParameters, PropertyEditorParametersList>(child, m_parameters);
         }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PropertyEditorsSpecification::ReadJson(JsonValueCR json)
+    {
+    //Required
+    m_propertyName = json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAME].asCString("");
+    if (m_propertyName.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, PROPERTY_EDITORS_SPECIFICATION_JSON_NAME, PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAME);
+        return false;
+        }
+
+    m_editorName = json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_EDITORNAME].asCString("");
+    if (m_editorName.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, PROPERTY_EDITORS_SPECIFICATION_JSON_NAME, PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_EDITORNAME);
+        return false;
+        }
+
+    JsonValueCR parametersJson = json[PROPERTY_EDITORS_SPECIFICATION_JSON_ATTRIBUTE_PARAMETERS];
+    CommonTools::LoadSpecificationsFromJson<PropertyEditorJsonParameters, PropertyEditorParametersList>
+        (parametersJson, m_parameters, PROPERTY_EDITOR_JSON_PARAMETERS_JSON_TYPE);
+    CommonTools::LoadSpecificationsFromJson<PropertyEditorMultilineParameters, PropertyEditorParametersList>
+        (parametersJson, m_parameters, PROPERTY_EDITOR_MULTILINE_PARAMETERS_JSON_TYPE);
+    CommonTools::LoadSpecificationsFromJson<PropertyEditorRangeParameters, PropertyEditorParametersList>
+        (parametersJson, m_parameters, PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_TYPE);
+    CommonTools::LoadSpecificationsFromJson<PropertyEditorSliderParameters, PropertyEditorParametersList>
+        (parametersJson, m_parameters, PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_TYPE);
 
     return true;
     }
@@ -111,6 +151,17 @@ bool PropertyEditorJsonParameters::_ReadXml(BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PropertyEditorJsonParameters::_ReadJson(JsonValueCR json)
+    {
+    m_json = json[PROPERTY_EDITOR_JSON_PARAMETERS_JSON_ATTRIBUTE_JSON];
+    if (m_json.isNull())
+        BeAssert(false);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PropertyEditorJsonParameters::_WriteXml(BeXmlNodeP parentXmlNode) const
@@ -142,6 +193,15 @@ bool PropertyEditorMultilineParameters::_ReadXml(BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeUInt32Value(m_height, PROPERTY_EDITOR_MULTILINE_PARAMETERS_ATTRIBUTE_HEIGHT))
         m_height = 1;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PropertyEditorMultilineParameters::_ReadJson(JsonValueCR json)
+    {
+    m_height = json[PROPERTY_EDITOR_MULTILINE_PARAMETERS_JSON_ATTRIBUTE_HEIGHT].asUInt(1);
     return true;
     }
 
@@ -182,6 +242,27 @@ bool PropertyEditorRangeParameters::_ReadXml(BeXmlNodeP xmlNode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PropertyEditorRangeParameters::_ReadJson(JsonValueCR json)
+    {
+    JsonValueCR minJson = json[PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MINIMUM];
+    if (!minJson.isNull() && minJson.isConvertibleTo(Json::ValueType::realValue))
+        {
+        m_min = minJson.asDouble();
+        m_isMinSet = true;
+        }
+
+    JsonValueCR maxJson = json[PROPERTY_EDITOR_RANGE_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM];
+    if (!maxJson.isNull() && maxJson.isConvertibleTo(Json::ValueType::realValue))
+        {
+        m_max = maxJson.asDouble();
+        m_isMaxSet = true;
+        }
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PropertyEditorRangeParameters::_WriteXml(BeXmlNodeP parentXmlNode) const
@@ -217,15 +298,51 @@ Utf8CP PropertyEditorSliderParameters::_GetXmlElementName() const {return PROPER
 bool PropertyEditorSliderParameters::_ReadXml(BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeDoubleValue(m_min, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_MINIMUM))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_NODE_NAME, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_MINIMUM);
         return false;
+        }
     if (BEXML_Success != xmlNode->GetAttributeDoubleValue(m_max, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_MAXIMUM))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_XML, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_NODE_NAME, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_MAXIMUM);
         return false;
+        }
     if (BEXML_Success != xmlNode->GetAttributeUInt32Value(m_intervalsCount, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_INTERVALS))
         m_intervalsCount = 1;
     if (BEXML_Success != xmlNode->GetAttributeUInt32Value(m_valueFactor, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_VALUEFACTOR))
         m_valueFactor = 1;
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_isVertical, PROPERTY_EDITOR_SLIDER_PARAMETERS_XML_ATTRIBUTE_VERTICAL))
         m_isVertical = false;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PropertyEditorSliderParameters::_ReadJson(JsonValueCR json)
+    {
+    //Required
+    JsonValueCR minJson = json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MINIMUM];
+    if (minJson.isNull() || !minJson.isConvertibleTo(Json::ValueType::realValue))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_NAME, PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MINIMUM);
+        return false;
+        }
+    m_min = minJson.asDouble();
+
+    JsonValueCR maxJson = json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM];
+    if (maxJson.isNull() || !maxJson.isConvertibleTo(Json::ValueType::realValue))
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_NAME, PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_MAXIMUM);
+        return false;
+        }
+    m_max = maxJson.asDouble();
+
+    //Optional
+    m_intervalsCount = json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_INTERVALS].asUInt(1);
+    m_valueFactor = json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_VALUEFACTOR].asUInt(1);
+    m_isVertical = json[PROPERTY_EDITOR_SLIDER_PARAMETERS_JSON_ATTRIBUTE_VERTICAL].asBool(false);
+
     return true;
     }
 

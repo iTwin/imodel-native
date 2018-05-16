@@ -444,7 +444,7 @@ rapidjson::Document ContentDescriptor::Category::AsJson(rapidjson::Document::All
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Category ContentDescriptor::Category::GetDefaultCategory()
     {
-    Utf8String label = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_Category_Miscellaneous());
+    Utf8String label = IECPresentationManager::GetLocalizationProvider().GetString(bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_Category_Miscellaneous()});
     return ContentDescriptor::Category("Miscellaneous", label, "", 1000);
     }
 
@@ -453,7 +453,7 @@ ContentDescriptor::Category ContentDescriptor::Category::GetDefaultCategory()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Category ContentDescriptor::Category::GetFavoriteCategory()
     {
-    Utf8String label = L10N::GetString(ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_Category_Favorite());
+    Utf8String label = IECPresentationManager::GetLocalizationProvider().GetString(bvector<Utf8CP>{ECPresentationL10N::GetNameSpace(), ECPresentationL10N::LABEL_Category_Favorite()});
     return ContentDescriptor::Category("Favorite", label, "", 500000, true);
     }
 

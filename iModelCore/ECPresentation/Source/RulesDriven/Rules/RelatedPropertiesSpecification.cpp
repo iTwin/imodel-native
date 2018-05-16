@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/CommonTools.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
@@ -93,6 +94,24 @@ bool RelatedPropertiesSpecification::ReadXml (BeXmlNodeP xmlNode)
 
     CommonTools::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_nestedRelatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
 
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool RelatedPropertiesSpecification::ReadJson(JsonValueCR json)
+    {
+    m_relationshipClassNames = json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPCLASSNAMES].asCString("");
+    m_relatedClassNames = json[COMMON_JSON_ATTRIBUTE_RELATEDCLASSNAMES].asCString("");
+    m_propertyNames = json[COMMON_JSON_ATTRIBUTE_PROPERTYNAMES].asCString("");
+    m_polymorphic = json[COMMON_JSON_ATTRIBUTE_ISPOLYMORPHIC].asBool(false);
+    m_relationshipMeaning = CommonTools::ParseRelationshipMeaningString(json[COMMON_JSON_ATTRIBUTE_RELATIONSHIPMEANING].asCString(""));
+    m_requiredDirection = CommonTools::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""));
+
+    CommonTools::LoadSpecificationsFromJson<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>
+        (json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRELATEDPROPERTIES], m_nestedRelatedPropertiesSpecification);
+    
     return true;
     }
 

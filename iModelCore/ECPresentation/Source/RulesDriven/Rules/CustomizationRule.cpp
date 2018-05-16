@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
@@ -31,6 +32,15 @@ bool ConditionalCustomizationRule::_ReadXml(BeXmlNodeP xmlNode)
         m_condition = "";
 
     return CustomizationRule::_ReadXml(xmlNode);;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ConditionalCustomizationRule::_ReadJson(JsonValueCR json)
+    {
+    m_condition = json[PRESENTATION_RULE_JSON_ATTRIBUTE_CONDITION].asString("");
+    return CustomizationRule::_ReadJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**

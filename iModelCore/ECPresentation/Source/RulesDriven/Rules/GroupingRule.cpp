@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/CommonTools.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
@@ -64,13 +65,13 @@ bool GroupingRule::_ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_schemaName, GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME))
         {
-        ECPRENSETATION_RULES_LOG.errorv ("Invalid GroupingRuleXML: %s element must contain a %s attribute", GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME);
+        ECPRENSETATION_RULES_LOG.errorv (INVALID_XML, GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_SCHEMANAME);
         return false;
         }
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_className, GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME))
         {
-        ECPRENSETATION_RULES_LOG.errorv ("Invalid GroupingRuleXML: %s element must contain a %s attribute", GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME);
+        ECPRENSETATION_RULES_LOG.errorv (INVALID_XML, GROUPING_RULE_XML_NODE_NAME, GROUPING_RULE_XML_ATTRIBUTE_CLASSNAME);
         return false;
         }
 
@@ -96,6 +97,39 @@ bool GroupingRule::_ReadXml (BeXmlNodeP xmlNode)
         }
 
     return ConditionalCustomizationRule::_ReadXml (xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GroupingRule::_ReadJson(JsonValueCR json)
+    {
+    //Required
+    m_schemaName = json[GROUPING_RULE_JSON_ATTRIBUTE_SCHEMANAME].asCString("");
+    if (m_schemaName.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, GROUPING_RULE_JSON_NAME, GROUPING_RULE_JSON_ATTRIBUTE_SCHEMANAME);
+        return false;
+        }
+
+    m_className = json[GROUPING_RULE_JSON_ATTRIBUTE_CLASSNAME].asCString("");
+    if (m_className.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, GROUPING_RULE_JSON_NAME, GROUPING_RULE_JSON_ATTRIBUTE_CLASSNAME);
+        return false;
+        }
+
+    //Optional
+    m_contextMenuCondition = json[GROUPING_RULE_JSON_ATTRIBUTE_MENUCONDITION].asCString("");
+    m_settingsId = json[GROUPING_RULE_JSON_ATTRIBUTE_SETTINGSID].asCString("");
+    m_contextMenuLabel = json[GROUPING_RULE_JSON_ATTRIBUTE_MENULABEL].asCString("");
+
+    JsonValueCR groupsJson = json[GROUPING_RULE_JSON_ATTRIBUTE_GROUPS];
+    CommonTools::LoadSpecificationsFromJson<ClassGroup, GroupList>(groupsJson, m_groups, CLASS_GROUP_JSON_TYPE);
+    CommonTools::LoadSpecificationsFromJson<PropertyGroup, GroupList>(groupsJson, m_groups, PROPERTY_GROUP_JSON_TYPE);
+    CommonTools::LoadSpecificationsFromJson<SameLabelInstanceGroup, GroupList>(groupsJson, m_groups, SAMEL_LABEL_INSTANCE_GROUP_JSON_TYPE);
+
+    return ConditionalCustomizationRule::_ReadJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -234,6 +268,19 @@ void GroupSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                   04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GroupSpecification::ReadJson (JsonValueCR json)
+    {
+    //Optional:
+    m_contextMenuLabel = json[GROUP_JSON_ATTRIBUTE_MENULABEL].asCString("");
+    m_defaultLabel = json[GROUP_JSON_ATTRIBUTE_DEFAULTLABEL].asCString("");
+
+    //Make sure we call protected override
+    return _ReadJson (json);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR GroupSpecification::GetContextMenuLabel (void) const  { return m_contextMenuLabel; }
@@ -299,6 +346,15 @@ void SameLabelInstanceGroup::_WriteXml (BeXmlNodeP xmlNode) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SameLabelInstanceGroup::_ReadJson (JsonValueCR json)
+    {
+    return true;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 MD5 SameLabelInstanceGroup::_ComputeHash(Utf8CP parentHash) const
@@ -350,6 +406,18 @@ bool ClassGroup::_ReadXml (BeXmlNodeP xmlNode)
     
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_baseClassName, CLASS_GROUP_XML_ATTRIBUTE_BASECLASSNAME))
         m_baseClassName = "";
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ClassGroup::_ReadJson (JsonValueCR json) 
+    {
+    m_createGroupForSingleItem = json[GROUP_JSON_ATTRIBUTE_CREATEGROUPFORSINGLEITEM].asBool(false);
+    m_schemaName = json[CLASS_GROUP_JSON_ATTRIBUTE_SCHEMANAME].asCString("");
+    m_baseClassName = json[CLASS_GROUP_JSON_ATTRIBUTE_BASECLASSNAME].asCString("");
 
     return true;
     }
@@ -479,7 +547,7 @@ bool PropertyGroup::_ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_propertyName, COMMON_XML_ATTRIBUTE_PROPERTYNAME))
         {
-        ECPRENSETATION_RULES_LOG.errorv ("Invalid PropertyGroupXML: %s element must contain a %s attribute", PROPERTY_GROUP_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_PROPERTYNAME);
+        ECPRENSETATION_RULES_LOG.errorv (INVALID_XML, PROPERTY_GROUP_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_PROPERTYNAME);
         return false;
         }
 
@@ -503,6 +571,31 @@ bool PropertyGroup::_ReadXml (BeXmlNodeP xmlNode)
 
     //Load Ranges
     CommonTools::LoadSpecificationsFromXmlNode<PropertyRangeGroupSpecification, PropertyRangeGroupList> (xmlNode, m_ranges, PROPERTY_RANGE_GROUP_XML_NODE_NAME);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PropertyGroup::_ReadJson (JsonValueCR json) 
+    {
+    //Required
+    m_propertyName = json[COMMON_JSON_ATTRIBUTE_PROPERTYNAME].asCString("");
+    if (m_propertyName.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, PROPERTY_GROUP_JSON_NAME, COMMON_JSON_ATTRIBUTE_PROPERTYNAME);
+        return false;
+        }
+
+    //Optional
+    m_imageId = json[GROUP_JSON_ATTRIBUTE_IMAGEID].asCString("");
+    m_createGroupForSingleItem = json[GROUP_JSON_ATTRIBUTE_CREATEGROUPFORSINGLEITEM].asBool(false);
+    m_createGroupForUnspecifiedValues = json[GROUP_JSON_ATTRIBUTE_CREATEGROUPFORUNSPECIFIEDVALUES].asBool(true);
+    m_groupingValue = GetPropertyGroupingValueFromString(json[PROPERTY_GROUP_JSON_ATTRIBUTE_GROUPINGVALUE].asCString());
+    m_sortingValue = GetPropertyGroupingValueFromString(json[PROPERTY_GROUP_JSON_ATTRIBUTE_SORTINGVALUE].asCString());
+    CommonTools::LoadSpecificationsFromJson<PropertyRangeGroupSpecification, PropertyRangeGroupList>
+        (json[PROPERTY_GROUP_JSON_ATTRIBUTE_RANGES], m_ranges);
 
     return true;
     }
@@ -609,13 +702,13 @@ bool PropertyRangeGroupSpecification::ReadXml (BeXmlNodeP xmlNode)
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_fromValue, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_FROMVALUE))
         {
-        ECPRENSETATION_RULES_LOG.errorv ("Invalid PropertyRangeGroupSpecificationXML: %s element must contain a %s attribute", PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_FROMVALUE);
+        ECPRENSETATION_RULES_LOG.errorv (INVALID_XML, PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_FROMVALUE);
         return false;
         }
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_toValue, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE))
         {
-        ECPRENSETATION_RULES_LOG.errorv ("Invalid PropertyRangeGroupSpecificationXML: %s element must contain a %s attribute", PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE);
+        ECPRENSETATION_RULES_LOG.errorv (INVALID_XML, PROPERTY_RANGE_GROUP_XML_NODE_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE);
         return false;
         }
 
@@ -625,6 +718,33 @@ bool PropertyRangeGroupSpecification::ReadXml (BeXmlNodeP xmlNode)
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_imageId, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_IMAGEID))
         m_imageId = "";    
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PropertyRangeGroupSpecification::ReadJson(JsonValueCR json)
+    {
+    //Required
+    m_fromValue = json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_FROMVALUE].asCString("");
+    if (m_fromValue.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, PROPERTY_RANGE_GROUP_JSON_NAME, PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_FROMVALUE);
+        return false;
+        }
+
+    m_toValue = json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_TOVALUE].asCString("");
+    if (m_toValue.empty())
+        {
+        ECPRENSETATION_RULES_LOG.errorv(INVALID_JSON, PROPERTY_RANGE_GROUP_JSON_NAME, PROPERTY_RANGE_GROUP_XML_ATTRIBUTE_TOVALUE);
+        return false;
+        }
+
+    //Optional
+    m_imageId = json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_IMAGEID].asCString("");
+    m_label = json[PROPERTY_RANGE_GROUP_JSON_ATTRIBUTE_LABEL].asCString("");
 
     return true;
     }

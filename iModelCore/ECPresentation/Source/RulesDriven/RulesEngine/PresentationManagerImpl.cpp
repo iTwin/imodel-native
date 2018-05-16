@@ -69,11 +69,11 @@ IUserSettingsManager* RulesDrivenECPresentationManagerDependenciesFactory::_Crea
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager::Impl::Impl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, IConnectionManagerCR connections, Paths const& paths)
-    : m_localState(nullptr), m_localizationProvider(nullptr), m_ecPropertyFormatter(nullptr), m_categorySupplier(nullptr)
+    : m_localState(nullptr), m_ecPropertyFormatter(nullptr), m_categorySupplier(nullptr)
     {
     m_locaters = dependenciesFactory._CreateRulesetLocaterManager(connections);
     m_userSettings = dependenciesFactory._CreateUserSettingsManager(paths.GetTemporaryDirectory());
-    m_userSettings->SetLocalizationProvider(&GetLocalizationProvider());
+    m_userSettings->SetLocalizationProvider(&IECPresentationManager::GetLocalizationProvider());
     m_compositeUpdateRecordsHandler = new CompositeUpdateRecordsHandler();
     m_compositeUpdateRecordsHandler->AddRef();
     }
@@ -98,15 +98,6 @@ void RulesDrivenECPresentationManager::Impl::SetLocalState(IJsonLocalState* loca
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::Impl::SetLocalizationProvider(ILocalizationProvider const* provider)
-    {
-    m_localizationProvider = provider;
-    m_userSettings->SetLocalizationProvider(&GetLocalizationProvider());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECPropertyFormatter const& RulesDrivenECPresentationManager::Impl::GetECPropertyFormatter() const
@@ -128,18 +119,6 @@ IPropertyCategorySupplier& RulesDrivenECPresentationManager::Impl::GetCategorySu
 
     static DefaultCategorySupplier s_defaultCategorySupplier;
     return s_defaultCategorySupplier;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ILocalizationProvider const& RulesDrivenECPresentationManager::Impl::GetLocalizationProvider() const
-    {
-    if (nullptr != m_localizationProvider)
-        return *m_localizationProvider;
-
-    static SQLangLocalizationProvider s_localizationProvider;
-    return s_localizationProvider;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -526,7 +505,7 @@ protected:
             settings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_manager.m_nodesFactory, m_manager.GetNodesCache(),
             *m_manager.m_nodesProviderFactory, m_manager.GetLocalState());
         context->SetQueryContext(m_manager.m_connections, connection, statementsCache, *m_manager.m_customFunctions, m_manager.m_usedClassesListener);
-        context->SetLocalizationContext(m_manager.GetLocalizationProvider());
+        context->SetLocalizationContext(IECPresentationManager::GetLocalizationProvider());
         context->SetIsUpdatesDisabled(disableUpdates);
         context->SetCancelationToken(cancelationToken);
         _l2 = nullptr;
@@ -585,7 +564,7 @@ RulesDrivenECPresentationManagerImpl::~RulesDrivenECPresentationManagerImpl()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerImpl::_OnRulesetCreated(PresentationRuleSetCR ruleset)
+void RulesDrivenECPresentationManagerImpl::_OnRulesetCreated(RuleSetLocaterCR, PresentationRuleSetR ruleset)
     {
     IUserSettings& settings = GetUserSettings(ruleset.GetRuleSetId().c_str());
     settings.InitFrom(ruleset.GetUserSettings());
@@ -595,7 +574,7 @@ void RulesDrivenECPresentationManagerImpl::_OnRulesetCreated(PresentationRuleSet
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerImpl::_OnRulesetDispose(PresentationRuleSetCR ruleset)
+void RulesDrivenECPresentationManagerImpl::_OnRulesetDispose(RuleSetLocaterCR, PresentationRuleSetCR ruleset)
     {
     m_rulesetECExpressionsCache->Clear(ruleset.GetRuleSetId().c_str());
     m_updateHandler->NotifyRulesetDisposed(ruleset);
@@ -910,7 +889,7 @@ SpecificationContentProviderCPtr RulesDrivenECPresentationManagerImpl::GetConten
     ContentProviderContextPtr context = ContentProviderContext::Create(*ruleset, true, key.GetPreferredDisplayType(), inputKeys, *m_nodesCache,
         GetCategorySupplier(), settings, ecexpressionsCache, relatedPathsCache, polymorphicallyRelatedClassesCache, *m_nodesFactory, GetLocalState());
     context->SetQueryContext(m_connections, connection, statementsCache, *m_customFunctions);
-    context->SetLocalizationContext(GetLocalizationProvider());
+    context->SetLocalizationContext(IECPresentationManager::GetLocalizationProvider());
     context->SetPropertyFormattingContext(GetECPropertyFormatter());
     context->SetCancelationToken(&cancelationToken);
     if (nullptr != selectionInfo)

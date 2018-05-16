@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/TestHelpers/TestRuleSetLocater.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECPresentationTest.h"
@@ -20,18 +20,23 @@ struct TestRuleSetLocater : RefCounted<RuleSetLocater>
 {
 private:
     bvector<PresentationRuleSetPtr> m_rulesets;
-    TestRuleSetLocater() {}
+    int m_priority;
+    IConnectionCP m_designatedConnection;
+    TestRuleSetLocater() : m_priority(9999), m_designatedConnection(nullptr) {}
 
 protected:
     bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override;
     bvector<Utf8String> _GetRuleSetIds() const override;
     void _InvalidateCache(Utf8CP rulesetId) override;
-    int _GetPriority() const override {return 9999;}
+    int _GetPriority() const override {return m_priority;}
+    IConnectionCP _GetDesignatedConnection() const override {return m_designatedConnection;}
 
 public:
     ~TestRuleSetLocater();
     static RefCountedPtr<TestRuleSetLocater> Create() {return new TestRuleSetLocater();}
     void AddRuleSet(PresentationRuleSetR ruleset);
+    void SetPriority(int priority) {m_priority = priority;}
+    void SetDesignatedConnection(IConnectionCP connection) {m_designatedConnection = connection;}
     void Clear();
 };
 typedef RefCountedPtr<TestRuleSetLocater> TestRuleSetLocaterPtr;

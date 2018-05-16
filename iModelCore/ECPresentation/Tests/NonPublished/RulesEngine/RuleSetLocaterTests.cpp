@@ -17,15 +17,39 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
+/*=================================================================================**//**
+* @bsiclass                                     Aidas.Kilinskas                05/2018
++===============+===============+===============+===============+===============+======*/
+struct RuleSetLocaterManagerTests : ECPresentationTest
+    {
+    ECDbTestProject* m_project;
+    RuleSetLocaterManager* m_manager;
+    TestConnectionManager* m_connections;
+    void SetUp() override
+        {
+        ECPresentationTest::SetUp();
+        m_connections = new TestConnectionManager();
+        m_manager = new RuleSetLocaterManager(*m_connections);
+        m_project = new ECDbTestProject();
+        }
+
+    void TearDown() override
+        {
+        ECPresentationTest::TearDown();
+        DELETE_AND_CLEAR(m_manager);
+        DELETE_AND_CLEAR(m_connections);
+        DELETE_AND_CLEAR(m_project);
+        }
+    };
+
+
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(RulesetLocaterManager, LocateSupportedRulesets)
+TEST_F(RuleSetLocaterManagerTests, LocateSupportedRulesets)
     {
-    TestConnectionManager connections;
     TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
-    RuleSetLocaterManager manager(connections);
-    manager.RegisterLocater(*locater);
+    m_manager->RegisterLocater(*locater);
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("EmptySupportedSchemas", 1, 0, false, "", "", "", false));
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("SupportedSchema", 1, 0, false, "", "SupportedSchema", "", false));
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("UnsupportedSchema", 1, 0, false, "", "UnsupportedSchema", "", false));
@@ -39,12 +63,11 @@ TEST(RulesetLocaterManager, LocateSupportedRulesets)
     ECSchemaPtr schema;
     ECSchema::ReadFromXmlString(schema, xml, *context);
 
-    ECDbTestProject project;
-    project.Create("RulesetLocaterManager_LocateSupportedRulesets");
-    project.GetECDb().Schemas().ImportSchemas(context->GetCache().GetSchemas());
-    IConnectionPtr connection = connections.NotifyConnectionOpened(project.GetECDb());
+    m_project->Create("RulesetLocaterManager_LocateSupportedRulesets");
+    m_project->GetECDb().Schemas().ImportSchemas(context->GetCache().GetSchemas());
+    IConnectionPtr connection = m_connections->NotifyConnectionOpened(m_project->GetECDb());
 
-    bvector<PresentationRuleSetPtr> rulesets = manager.LocateRuleSets(*connection, nullptr);
+    bvector<PresentationRuleSetPtr> rulesets = m_manager->LocateRuleSets(*connection, nullptr);
     ASSERT_EQ(3, rulesets.size());
 
     // note: the order of rule sets is unknown
@@ -56,103 +79,257 @@ TEST(RulesetLocaterManager, LocateSupportedRulesets)
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(RulesetLocaterManager, DisposesCachedRulesetsOnRulesetDispose)
+TEST_F(RuleSetLocaterManagerTests, DisposesCachedRulesetsOnRulesetDispose)
     {
-    
-    TestConnectionManager connections;
-    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
-    RuleSetLocaterManager manager(connections);
-    manager.RegisterLocater(*locater);
-    
-    ECDbTestProject project;
-    project.Create("DisposesCachedRulesetsOnRulesetDispose");
-    IConnectionPtr connection = connections.NotifyConnectionOpened(project.GetECDb());
+    m_project->Create("DisposesCachedRulesetsOnRulesetDispose");
+    IConnectionPtr connection = m_connections->NotifyConnectionOpened(m_project->GetECDb());
 
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false));
+    m_manager->RegisterLocater(*locater);
+
+    RefCountedPtr<TestCallbackRulesetLocater> callbackLocater = TestCallbackRulesetLocater::Create();
+    bool locateRuleSetsCalled;
+    callbackLocater->SetCallback([&] ()
+        {
+        locateRuleSetsCalled = true;
+        });
+    m_manager->RegisterLocater(*callbackLocater);
 
     // first pass:
-    bvector<PresentationRuleSetPtr> rulesets = manager.LocateRuleSets(*connection, nullptr);
+    locateRuleSetsCalled = false;
+    bvector<PresentationRuleSetPtr> rulesets = m_manager->LocateRuleSets(*connection, nullptr);
+    EXPECT_TRUE(locateRuleSetsCalled);
     ASSERT_EQ(1, rulesets.size());
-    EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
 
-    // add a new ruleset with a higher minor version
-    locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false));
-
-    // verify we still get cached version:
-    rulesets = manager.LocateRuleSets(*connection, "Test");
+    // verify manager doesnt ask locaters to locate:
+    locateRuleSetsCalled = false;
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    EXPECT_FALSE(locateRuleSetsCalled);
     ASSERT_EQ(1, rulesets.size());
-    EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
 
     // tell the ruleset was disposed
-    ((IRulesetCallbacksHandler&)manager)._OnRulesetDispose(*rulesets[0]);
+    ((IRulesetCallbacksHandler*)m_manager)->_OnRulesetDispose(*locater, *rulesets[0]);
     
-    // verify we get new results now:
-    rulesets = manager.LocateRuleSets(*connection, "Test");
-    ASSERT_EQ(2, rulesets.size());
-    EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
-    EXPECT_EQ(1, rulesets[1]->GetVersionMinor());
+    // verify locateRulesets was called:
+    locateRuleSetsCalled = false;
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    EXPECT_TRUE(locateRuleSetsCalled);
+    ASSERT_EQ(1, rulesets.size());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(RulesetLocaterManager, DisposesCachedRulesetsOnConnectionClose)
+TEST_F(RuleSetLocaterManagerTests, DisposesCachedRulesetsOnConnectionClose)
     {    
-    TestConnectionManager connections;
-    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
-    RuleSetLocaterManager manager(connections);
-    manager.RegisterLocater(*locater);
-    
-    ECDbTestProject project;
-    project.Create("DisposesCachedRulesetsOnConnectionClose");
-    IConnectionPtr connection = connections.NotifyConnectionOpened(project.GetECDb());
+    m_project->Create("DisposesCachedRulesetsOnConnectionClose");
+    IConnectionPtr connection = m_connections->NotifyConnectionOpened(m_project->GetECDb());
 
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    locater->SetDesignatedConnection(connection.get());
     locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false));
+    m_manager->RegisterLocater(*locater);
+
+    RefCountedPtr<TestCallbackRulesetLocater> callbackLocater = TestCallbackRulesetLocater::Create();
+    bool locateRuleSetsCalled;
+    callbackLocater->SetCallback([&] ()
+        {
+        locateRuleSetsCalled = true;
+        });
+    m_manager->RegisterLocater(*callbackLocater);
 
     // first pass:
-    bvector<PresentationRuleSetPtr> rulesets = manager.LocateRuleSets(*connection, nullptr);
+    locateRuleSetsCalled = false;
+    bvector<PresentationRuleSetPtr> rulesets = m_manager->LocateRuleSets(*connection, nullptr);
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    EXPECT_TRUE(locateRuleSetsCalled);
     ASSERT_EQ(1, rulesets.size());
-    EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
 
-    // add a new ruleset with a higher minor version
-    locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false));
-
-    // verify we still get cached version:
-    rulesets = manager.LocateRuleSets(*connection, "Test");
+    // verify manager doesnt ask locaters to locate:
+    locateRuleSetsCalled = false;
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    EXPECT_FALSE(locateRuleSetsCalled);
     ASSERT_EQ(1, rulesets.size());
-    EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
 
     // simulate connection close
-    connections.NotifyConnectionClosed(*connection);
-    connections.NotifyConnectionOpened(project.GetECDb());
+    m_connections->NotifyConnectionClosed(*connection);
+    m_connections->NotifyConnectionOpened(m_project->GetECDb());
     
-    // verify we get a fresh version:
-    rulesets = manager.LocateRuleSets(*connection, "Test");
+    // verify locateRulesets was called:
+    locateRuleSetsCalled = false;
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    EXPECT_TRUE(locateRuleSetsCalled);
+    ASSERT_EQ(1, rulesets.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RuleSetLocaterManagerTests, DisposesCachedRulesetsOnLocaterRegistered)
+    {    
+    m_project->Create("DisposesCachedRulesetsOnLocaterRegistered");
+    IConnectionPtr connection = m_connections->NotifyConnectionOpened(m_project->GetECDb());
+
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false));
+    m_manager->RegisterLocater(*locater);
+
+    RefCountedPtr<TestCallbackRulesetLocater> callbackLocater = TestCallbackRulesetLocater::Create();
+    bool locateRuleSetsCalled;
+    callbackLocater->SetCallback([&] ()
+        {
+        locateRuleSetsCalled = true;
+        });
+    m_manager->RegisterLocater(*callbackLocater);
+
+    // first pass:
+    locateRuleSetsCalled = false;
+    bvector<PresentationRuleSetPtr> rulesets = m_manager->LocateRuleSets(*connection, nullptr);
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    EXPECT_TRUE(locateRuleSetsCalled);
+    ASSERT_EQ(1, rulesets.size());
+
+    // verify manager doesnt ask locaters to locate:
+    locateRuleSetsCalled = false;
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    EXPECT_FALSE(locateRuleSetsCalled);
+    ASSERT_EQ(1, rulesets.size());
+
+    // register new locater
+    TestRuleSetLocaterPtr locater1 = TestRuleSetLocater::Create();
+    m_manager->RegisterLocater(*locater1);
+    
+    // verify locateRulesets was called:
+    locateRuleSetsCalled = false;
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    EXPECT_TRUE(locateRuleSetsCalled);
+    ASSERT_EQ(1, rulesets.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RuleSetLocaterManagerTests, DisposesCachedRulesetsOnLocaterUnregistered)
+    {    
+    IConnectionPtr connection = m_connections->NotifyConnectionOpened(m_project->GetECDb());
+
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false));
+    m_manager->RegisterLocater(*locater);
+
+    RefCountedPtr<TestCallbackRulesetLocater> callbackLocater = TestCallbackRulesetLocater::Create();
+    bool locateRuleSetsCalled;
+    callbackLocater->SetCallback([&] ()
+        {
+        locateRuleSetsCalled = true;
+        });
+    m_manager->RegisterLocater(*callbackLocater);
+
+    // first pass:
+    locateRuleSetsCalled = false;
+    bvector<PresentationRuleSetPtr> rulesets = m_manager->LocateRuleSets(*connection, nullptr);
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    EXPECT_TRUE(locateRuleSetsCalled);
+    ASSERT_EQ(1, rulesets.size());
+
+    // verify manager doesnt ask locaters to locate:
+    locateRuleSetsCalled = false;
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    EXPECT_FALSE(locateRuleSetsCalled);
+    ASSERT_EQ(1, rulesets.size());
+
+    //unregister locater
+    m_manager->UnregisterLocater(*locater);
+    
+    // verify locateRulesets was called:
+    locateRuleSetsCalled = false;
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    EXPECT_TRUE(locateRuleSetsCalled);
+    ASSERT_EQ(0, rulesets.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kililiskas                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RuleSetLocaterManagerTests, FindsRulesetsCreatedAfterLocate)
+    {
+    TestRuleSetLocaterPtr locater = TestRuleSetLocater::Create();
+    m_manager->RegisterLocater(*locater);
+
+    m_project->Create("UpdatesCacheInOnRuleSetCreated");
+    IConnectionPtr connection = m_connections->NotifyConnectionOpened(m_project->GetECDb());
+    
+    locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false));
+
+    bvector<PresentationRuleSetPtr> rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    ASSERT_EQ(1, rulesets.size());
+    EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
+
+    locater->AddRuleSet(*PresentationRuleSet::CreateInstance("Test", 1, 1, false, "", "", "", false));
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
     ASSERT_EQ(2, rulesets.size());
     EXPECT_EQ(0, rulesets[0]->GetVersionMinor());
     EXPECT_EQ(1, rulesets[1]->GetVersionMinor());
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kililiskas                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RuleSetLocaterManagerTests, FindsRulesetWhoseLocatersPriorityIsHigher)
+    {
+    TestRuleSetLocaterPtr locater1 = TestRuleSetLocater::Create();
+    TestRuleSetLocaterPtr locater2 = TestRuleSetLocater::Create();
+    TestRuleSetLocaterPtr locater3 = TestRuleSetLocater::Create();
+    locater1->SetPriority(1);
+    locater2->SetPriority(1);
+    locater3->SetPriority(2);
+
+    m_manager->RegisterLocater(*locater1);
+    m_manager->RegisterLocater(*locater2);
+    m_manager->RegisterLocater(*locater3);
+
+    m_project->Create("FindsRulesetWhoseLocatersPriorityIsHigher");
+    IConnectionPtr connection = m_connections->NotifyConnectionOpened(m_project->GetECDb());
+
+    PresentationRuleSetPtr ruleset1 = PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr ruleset2 = PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false);
+    PresentationRuleSetPtr ruleset3 = PresentationRuleSet::CreateInstance("Test", 1, 0, false, "", "", "", false);
+    
+    locater1->AddRuleSet(*ruleset1);
+
+    bvector<PresentationRuleSetPtr> rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    ASSERT_EQ(1, rulesets.size());
+    EXPECT_EQ(ruleset1, rulesets[0]);
+
+    locater2->AddRuleSet(*ruleset2);
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    ASSERT_EQ(1, rulesets.size());
+    EXPECT_EQ(ruleset1, rulesets[0]);
+
+    locater3->AddRuleSet(*ruleset3);
+    rulesets = m_manager->LocateRuleSets(*connection, "Test");
+    ASSERT_EQ(1, rulesets.size());
+    EXPECT_EQ(ruleset3, rulesets[0]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(RulesetLocaterManager, InvalidateCacheForwardsCallToRegisteredLocaters)
+TEST_F(RuleSetLocaterManagerTests, InvalidateCacheForwardsCallToRegisteredLocaters)
     {
-    TestConnectionManager connections;
-    RuleSetLocaterManager manager(connections);
-    
     TestRuleSetLocaterPtr locater1 = TestRuleSetLocater::Create();
     locater1->AddRuleSet(*PresentationRuleSet::CreateInstance("1", 1, 0, false, "", "", "", false));
-    manager.RegisterLocater(*locater1);
+    m_manager->RegisterLocater(*locater1);
 
     TestRuleSetLocaterPtr locater2 = TestRuleSetLocater::Create();
     locater2->AddRuleSet(*PresentationRuleSet::CreateInstance("2", 1, 0, false, "", "", "", false));
-    manager.RegisterLocater(*locater2);
+    m_manager->RegisterLocater(*locater2);
 
     EXPECT_FALSE(locater1->GetRuleSetIds().empty());
     EXPECT_FALSE(locater2->GetRuleSetIds().empty());
 
-    manager.InvalidateCache();
+    m_manager->InvalidateCache();
     EXPECT_TRUE(locater1->GetRuleSetIds().empty());
     EXPECT_TRUE(locater2->GetRuleSetIds().empty());
     }
@@ -796,4 +973,188 @@ TEST_F(EmbeddedRuleSetLocaterTests, DisposesAllCachedRulesetsWhenInvalidateReque
     EXPECT_EQ(2, disposedRulesetsCount);
     EXPECT_EQ(1, rulesets[0]->GetRefCount());
     EXPECT_EQ(1, rulesets[1]->GetRefCount());
+    }
+
+
+/*=================================================================================**//**
+* @bsiclass                                     Aidas.Kilinskas                05/2018
++===============+===============+===============+===============+===============+======*/
+struct SimpleRuleSetLocaterTests : ECPresentationTest
+    {
+    const PresentationRuleSetPtr ruleSet1 = PresentationRuleSet::CreateInstance("id1", 0, 0, "", "", "", "", false);
+    const PresentationRuleSetPtr ruleSet2 = PresentationRuleSet::CreateInstance("id2", 0, 0, "", "", "", "", false);
+    const PresentationRuleSetPtr ruleSet3 = PresentationRuleSet::CreateInstance("id3", 0, 0, "", "", "", "", false);
+    RefCountedPtr<SimpleRuleSetLocater> m_ruleSetLocater;
+    size_t m_disposedRulesetCount;
+    size_t m_createdRulesetCount;
+
+    private:
+        TestRulesetCallbacksHandler* m_handler;
+
+    public:
+        void SetUp() override
+            {
+            m_ruleSetLocater = SimpleRuleSetLocater::Create();
+            m_createdRulesetCount = 0;
+            m_disposedRulesetCount = 0;
+            m_handler = new TestRulesetCallbacksHandler();
+            m_handler->SetCreatedHandler([this] (PresentationRuleSetCR) { m_createdRulesetCount++; });
+            m_handler->SetDisposedHandler([this] (PresentationRuleSetCR) { m_disposedRulesetCount++; });
+            m_ruleSetLocater->SetRulesetCallbacksHandler(m_handler);
+            }
+
+        void TearDown() override
+            {
+            delete m_handler;
+            }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, AddsRuleset)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    EXPECT_EQ(1, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
+    EXPECT_EQ(1, m_ruleSetLocater->LocateRuleSets().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, AddRuleSetReplacesRulesetWithSameId)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets();
+    m_ruleSetLocater->AddRuleSet(*PresentationRuleSet::CreateInstance("id1", 0, 0, "", "", "", "", false));
+
+    EXPECT_EQ(2, m_createdRulesetCount);
+    EXPECT_EQ(1, m_disposedRulesetCount);
+    EXPECT_EQ(1, ruleSets.size());
+    EXPECT_EQ(1, m_ruleSetLocater->LocateRuleSets().size());
+    EXPECT_NE(ruleSets[0], m_ruleSetLocater->LocateRuleSets()[0]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, LocatesSpecificRuleset)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    m_ruleSetLocater->AddRuleSet(*ruleSet2);
+    m_ruleSetLocater->AddRuleSet(*ruleSet3);
+
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets("id2");
+    EXPECT_EQ(3, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
+    EXPECT_EQ(1, ruleSets.size());
+    EXPECT_STREQ("id2", ruleSets[0]->GetRuleSetId().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, LocatesAllRulesets)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    m_ruleSetLocater->AddRuleSet(*ruleSet2);
+    m_ruleSetLocater->AddRuleSet(*ruleSet3);
+
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets();
+    EXPECT_EQ(3, m_ruleSetLocater->LocateRuleSets().size());
+    EXPECT_EQ(3, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
+    EXPECT_STREQ("id1", ruleSets[0]->GetRuleSetId().c_str());
+    EXPECT_STREQ("id2", ruleSets[1]->GetRuleSetId().c_str());
+    EXPECT_STREQ("id3", ruleSets[2]->GetRuleSetId().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, LocatesNoRulesetsFromEmptyCache)
+    {
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets();
+    EXPECT_EQ(0, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
+    EXPECT_EQ(0, m_ruleSetLocater->LocateRuleSets().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, RemovesSpecificRuleSet)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    m_ruleSetLocater->AddRuleSet(*ruleSet2);
+    m_ruleSetLocater->AddRuleSet(*ruleSet3);
+
+    m_ruleSetLocater->RemoveRuleSet("id2");
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets();
+
+    EXPECT_EQ(2, m_ruleSetLocater->LocateRuleSets().size());
+    EXPECT_EQ(3, m_createdRulesetCount);
+    EXPECT_EQ(1, m_disposedRulesetCount);
+    EXPECT_STREQ("id1", ruleSets[0]->GetRuleSetId().c_str());
+    EXPECT_STREQ("id3", ruleSets[1]->GetRuleSetId().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, ClearsRulesets)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    m_ruleSetLocater->AddRuleSet(*ruleSet2);
+    m_ruleSetLocater->AddRuleSet(*ruleSet3);
+
+    m_ruleSetLocater->Clear();
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets();
+    EXPECT_EQ(3, m_createdRulesetCount);
+    EXPECT_EQ(3, m_disposedRulesetCount);
+    EXPECT_EQ(0, m_ruleSetLocater->LocateRuleSets().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, ClearsEmptyCache)
+    {
+    m_ruleSetLocater->Clear();
+    bvector<PresentationRuleSetPtr> ruleSets = m_ruleSetLocater->LocateRuleSets();
+    EXPECT_EQ(0, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
+    EXPECT_EQ(0, m_ruleSetLocater->LocateRuleSets().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, GetsRulesetsIds)
+    {
+    m_ruleSetLocater->AddRuleSet(*ruleSet1);
+    m_ruleSetLocater->AddRuleSet(*ruleSet2);
+    m_ruleSetLocater->AddRuleSet(*ruleSet3);
+
+    bvector<Utf8String> ruleSetIds = m_ruleSetLocater->GetRuleSetIds();
+
+    EXPECT_EQ(3, ruleSetIds.size());
+    EXPECT_EQ(3, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
+    EXPECT_STREQ("id1", ruleSetIds[0].c_str());
+    EXPECT_STREQ("id2", ruleSetIds[1].c_str());
+    EXPECT_STREQ("id3", ruleSetIds[2].c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Aidas.Kilinskas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SimpleRuleSetLocaterTests, GetsRulesetsIdsFromEmptyCache)
+    {
+    bvector<Utf8String> ruleSetIds = m_ruleSetLocater->GetRuleSetIds();
+
+    EXPECT_EQ(0, ruleSetIds.size());
+    EXPECT_EQ(0, m_createdRulesetCount);
+    EXPECT_EQ(0, m_disposedRulesetCount);
     }

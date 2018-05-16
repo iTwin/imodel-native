@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/LabelOverrideTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -17,6 +17,39 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct LabelOverrideTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LabelOverrideTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "label":"label",
+        "description":"description"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    LabelOverride override;
+    EXPECT_TRUE(override.ReadJson(json));
+    EXPECT_STREQ("label", override.GetLabel().c_str());
+    EXPECT_STREQ("description", override.GetDescription().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LabelOverrideTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    LabelOverride override;
+    EXPECT_TRUE(override.ReadJson(json));
+    EXPECT_STREQ("", override.GetLabel().c_str());
+    EXPECT_STREQ("", override.GetDescription().c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras               12/2017

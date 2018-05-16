@@ -2,10 +2,12 @@
 |
 |     $Source: Source/RulesDriven/Rules/ChildNodeSpecification.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
+
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/CommonTools.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
@@ -78,6 +80,24 @@ bool ChildNodeSpecification::ReadXml (BeXmlNodeP xmlNode)
 
     return _ReadXml (xmlNode);
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ChildNodeSpecification::ReadJson(JsonValueCR json)
+    {
+    m_priority = json[COMMON_JSON_ATTRIBUTE_PRIORITY].asInt(1000);
+    m_alwaysReturnsChildren = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_ALWAYSRETURNSCHILDREN].asBool(false);
+    m_hideNodesInHierarchy = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDENODESINHIERARCHY].asBool(false);
+    m_hideIfNoChildren = json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_HIDEIFNOCHILDREN].asBool(false);
+    m_doNotSort = json[SORTING_RULE_JSON_ATTRIBUTE_DONOTSORT].asBool(false);
+
+    CommonTools::LoadSpecificationsFromJson<RelatedInstanceSpecification, RelatedInstanceSpecificationList>(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCES], m_relatedInstances);
+    CommonTools::LoadRulesFromJson<ChildNodeRule, ChildNodeRuleList>(json[CHILD_NODE_SPECIFICATION_JSON_ATTRIBUTE_NESTEDRULES], m_nestedRules);
+
+    return _ReadJson(json);
+    } 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

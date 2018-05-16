@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 
+#include "PresentationRuleJsonConstants.h"
 #include "PresentationRuleXmlConstants.h"
 #include <ECPresentation/RulesDriven/Rules/CommonTools.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
@@ -78,6 +79,29 @@ bool ContentSpecification::ReadXml (BeXmlNodeP xmlNode)
         CommonTools::LoadSpecificationsFromXmlNode<PropertyEditorsSpecification, PropertyEditorsSpecificationList>(xmlPropertyNode, m_propertyEditorsSpecification, PROPERTY_EDITORS_SPECIFICATION_XML_CHILD_NAME);
 
     return _ReadXml (xmlNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ContentSpecification::ReadJson(JsonValueCR json)
+    {
+    m_priority = json[COMMON_JSON_ATTRIBUTE_PRIORITY].asInt(1000);
+    m_showImages = json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_SHOWIMAGES].asBool(false);
+
+    CommonTools::LoadSpecificationsFromJson<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>
+        (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_RELATEDPROPERTIESSPECIFICATION], m_relatedPropertiesSpecification);
+    CommonTools::LoadSpecificationsFromJson<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>
+        (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIESDISPLAYSPECIFICATION], m_propertiesDisplaySpecification);
+    CommonTools::LoadSpecificationsFromJson<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>
+        (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_CALCULATEDPROPERTIESSPECIFICATION], m_calculatedPropertiesSpecification);
+    CommonTools::LoadSpecificationsFromJson<PropertyEditorsSpecification, PropertyEditorsSpecificationList>
+        (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYEDITORSSPECIFICATION], m_propertyEditorsSpecification);
+    CommonTools::LoadSpecificationsFromJson<RelatedInstanceSpecification, RelatedInstanceSpecificationList>
+        (json[CONTENT_SPECIFICATION_JSON_ATTRIBUTE_RELATEDINSTANCESSPECIFICATION], m_relatedInstances);
+
+
+    return _ReadJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**

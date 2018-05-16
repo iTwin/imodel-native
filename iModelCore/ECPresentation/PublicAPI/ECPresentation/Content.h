@@ -807,6 +807,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! Path from the @e "content class" to the primary instance class.
         RelatedClassPath& GetRelationshipPath() {return m_relationshipPath;}
         RelatedClassPath const& GetRelationshipPath() const {return m_relationshipPath;}
+        void SetRelationshipPath(RelatedClassPath path) {m_relationshipPath = path;}
 
         //! A list of fields which this field consists from.
         bvector<Field*> const& GetFields() const {return m_fields;}

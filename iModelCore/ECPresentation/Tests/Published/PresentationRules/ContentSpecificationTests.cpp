@@ -26,8 +26,66 @@ struct TestContentSpecification : ContentSpecification
     CharCP _GetXmlElementName() const override {return "TestSpecification";}
     bool _ReadXml(BeXmlNodeP xmlNode) override {return true;}
     void _WriteXml(BeXmlNodeP xmlNode) const override {}
+    bool _ReadJson(JsonValueCR json) override {return true;}
     ContentSpecification* _Clone() const override {return new TestContentSpecification(*this);}
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ContentSpecificationsTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+        "priority": 123,
+        "showImages": true,
+        "relatedPropertiesSpecification": [
+            { }
+        ],
+        "propertiesDisplaySpecification": [
+            {
+                "propertyNames": "property names"
+            },
+            {
+                "propertyNames": "property names"
+            }
+        ],
+        "calculatedPropertiesSpecification": [
+            {
+                "value": "value",
+                "label": "label"
+            },
+            {
+                "value": "value",
+                "label": "label"
+            }
+        ],
+        "propertyEditorsSpecification": [
+            {
+                "propertyName": "property names",
+                "editorName": "editor"
+            }
+        ],
+        "relatedInstancesSpecification": [
+           { 
+                "relationshipName":"TestRelName",
+                "className":"TestClassName",
+                "alias":"TestAlias"
+           }
+        ]
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    TestContentSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_EQ(123, spec.GetPriority());
+    EXPECT_TRUE(spec.GetShowImages());
+    EXPECT_EQ(2, spec.GetCalculatedProperties().size());
+    EXPECT_EQ(2, spec.GetPropertiesDisplaySpecifications().size());
+    EXPECT_EQ(1, spec.GetRelatedProperties().size());
+    EXPECT_EQ(1, spec.GetPropertyEditors().size());   
+    EXPECT_EQ(1, spec.GetRelatedInstances().size());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017

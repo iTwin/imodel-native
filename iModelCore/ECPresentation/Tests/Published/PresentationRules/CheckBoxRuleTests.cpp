@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/CheckBoxRuleTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -16,6 +16,44 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct CheckBoxRuleTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CheckBoxRuleTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+  	    "propertyName": "checkBoxProperty",
+  	    "useInversedPropertyValue": true,
+  	    "defaultValue": true,
+  	    "isEnabled": "isEnabledExpression"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    CheckBoxRule rule;
+    EXPECT_TRUE(rule.ReadJson(json));
+    EXPECT_STREQ("checkBoxProperty", rule.GetPropertyName().c_str());
+    EXPECT_TRUE(rule.GetUseInversedPropertyValue());
+    EXPECT_TRUE(rule.GetDefaultValue());
+    EXPECT_STREQ("isEnabledExpression", rule.GetIsEnabled().c_str());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CheckBoxRuleTests, LoadsFromXmlJsonDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+    
+    CheckBoxRule rule;
+    EXPECT_TRUE(rule.ReadJson(json));
+    EXPECT_STREQ("", rule.GetPropertyName().c_str());
+    EXPECT_FALSE(rule.GetUseInversedPropertyValue());
+    EXPECT_FALSE(rule.GetDefaultValue());
+    EXPECT_STREQ("", rule.GetIsEnabled().c_str());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Aidas.Vaiksnoras                08/2017

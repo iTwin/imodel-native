@@ -2575,11 +2575,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyD
 
     RootNodeRule* rule = new RootNodeRule();
 
-    CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "type", "@customLabel@", "description", "imageId");
+    CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "type", "@custom:Label@", "description", "imageId");
     rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
 
-    LocalizationResourceKeyDefinitionP localizationRecourceKeyDefinition = new LocalizationResourceKeyDefinition(1, "customLabel", "RulesEngine:Test", "notfound");
+    LocalizationResourceKeyDefinitionP localizationRecourceKeyDefinition = new LocalizationResourceKeyDefinition(1, "custom:Label", "RulesEngine:Test", "notfound");
     rules->AddPresentationRule(*localizationRecourceKeyDefinition);
 
     // request for nodes
@@ -2604,11 +2604,11 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, LocalizationResourceKeyD
 
     RootNodeRule* rule = new RootNodeRule();
 
-    CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "type", "@customLabel@", "description", "imageId");
+    CustomNodeSpecificationP customNodeSpecification = new CustomNodeSpecification(1, false, "type", "@custom:Label@", "description", "imageId");
     rule->AddSpecification(*customNodeSpecification);
     rules->AddPresentationRule(*rule);
 
-    LocalizationResourceKeyDefinitionP localizationRecourceKeyDefinition = new LocalizationResourceKeyDefinition(1, "customLabel", "key", "notfound");
+    LocalizationResourceKeyDefinitionP localizationRecourceKeyDefinition = new LocalizationResourceKeyDefinition(1, "custom:Label", "key", "notfound");
     rules->AddPresentationRule(*localizationRecourceKeyDefinition);
 
     // request for nodes

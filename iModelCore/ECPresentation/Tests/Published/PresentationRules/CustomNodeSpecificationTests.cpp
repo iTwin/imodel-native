@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/CustomNodeSpecificationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -16,6 +16,45 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 struct CustomNodeSpecificationTests : PresentationRulesTests
     {
     };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomNodeSpecificationTests, LoadsFromJson)
+    {
+    static Utf8CP jsonString = R"({
+	    "nodeType": "type",
+	    "label": "label",
+	    "description": "description",
+	    "imageId": "imgID"
+    })";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    CustomNodeSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("type", spec.GetNodeType().c_str());
+    EXPECT_STREQ("label", spec.GetLabel().c_str());
+    EXPECT_STREQ("description", spec.GetDescription().c_str());
+    EXPECT_STREQ("imgID", spec.GetImageId().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                   Aidas.Kilinskas                		04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomNodeSpecificationTests, LoadsFromJsonWithDefaultValues)
+    {
+    static Utf8CP jsonString = "{}";
+    Json::Value json = Json::Reader::DoParse(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    CustomNodeSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    EXPECT_STREQ("", spec.GetNodeType().c_str());
+    EXPECT_STREQ("", spec.GetLabel().c_str());
+    EXPECT_STREQ("", spec.GetDescription().c_str());
+    EXPECT_STREQ("", spec.GetImageId().c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Aidas.Vaiksnoras                12/2017
