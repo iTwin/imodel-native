@@ -56,7 +56,10 @@ void InitializeTests()
     {
     static bool s_initialized = false;
     if (s_initialized)
+        {
+        Http::HttpClient::Reinitialize();
         return;
+        }
 
     InitLogging();
 
@@ -103,6 +106,7 @@ void IntegrationTestsBase::SetUpTestCase()
 
 void IntegrationTestsBase::TearDownTestCase()
     {
+    Http::HttpClient::Uninitialize();
     }
 
 void IntegrationTestsBase::SetUp()

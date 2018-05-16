@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ECDbAdapterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -210,6 +210,66 @@ TEST_F(ECDbAdapterTests, GetECClasses_MapWithTwoSameClassInstances_ReturnsOneCla
 
     ASSERT_EQ(1, classes.size());
     EXPECT_EQ(ecClass, classes[0]);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbAdapterTests, CountClassInstances_NullClass_Zero)
+    {
+    auto db = GetTestDb();
+    EXPECT_EQ(0, ECDbAdapter(*db).CountClassInstances(nullptr));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbAdapterTests, FindInstance_NullClass_Invalid)
+    {
+    auto db = GetTestDb();
+    Json::Value json;
+    EXPECT_EQ(false, ECDbAdapter(*db).FindInstance(nullptr).IsValid());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbAdapterTests, FindInstances_NullClass_Empty)
+    {
+    auto db = GetTestDb();
+    Json::Value json;
+    EXPECT_EQ(0, ECDbAdapter(*db).FindInstances(nullptr).size());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbAdapterTests, GetJsonInstance_NullClassAndValidWhere_Error)
+    {
+    auto db = GetTestDb();
+    Json::Value json;
+    EXPECT_EQ(ERROR, ECDbAdapter(*db).GetJsonInstance(json, nullptr, "true"));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbAdapterTests, GetJsonInstances_NullClassAndValidWhere_Error)
+    {
+    auto db = GetTestDb();
+    Json::Value json;
+    EXPECT_EQ(ERROR, ECDbAdapter(*db).GetJsonInstances(json, nullptr, "true"));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbAdapterTests, GetJsonInstances_NullClassAndStatement_Error)
+    {
+    auto db = GetTestDb();
+    Json::Value json;
+    ECSqlStatement statement;
+    EXPECT_EQ(ERROR, ECDbAdapter(*db).GetJsonInstances(json, nullptr, statement));
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -694,6 +694,29 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_DefaultUsedSchemasPassed_Success)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataSourceCacheTests, UpdateSchemas_IssuesSchemaPassed_Success)
+    {
+    auto cache = GetTestCache();
+
+    auto schema = ParseSchema(
+        R"xml(<ECSchema schemaName="Issue" nameSpacePrefix="issue" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca" />
+            <ECClass typeName="BaseClass" isDomainClass="True">
+                <ECProperty propertyName="CreatedBy" typeName="string" />
+            </ECClass>
+            <ECClass typeName="ChildClass" isDomainClass="False">
+                <BaseClass>BaseClass</BaseClass>
+                <ECProperty propertyName="ApprovedBy" typeName="string" displayLabel="Approved By" />
+            </ECClass>
+        </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {schema}));
+    EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("Issue"));
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DataSourceCacheTests, CacheResponse_DateTimeUtcProperty_Success)
