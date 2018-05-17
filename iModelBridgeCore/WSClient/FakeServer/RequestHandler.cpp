@@ -480,7 +480,6 @@ Response RequestHandler::CreateBriefcaseInstance(Request req)
         st.BindText(1, instanceid, Statement::MakeCopy::No);
         st.Step();
         size_t briefcaseCount = st.GetValueInt(0);
-        Utf8CP briefcaseCount2 = st.GetValueText(0);
         Utf8CP fileId = st.GetValueText(1);
         Utf8CP fileName = st.GetValueText(2);
         Utf8CP fileDescription = st.GetValueText(3);
@@ -817,7 +816,6 @@ Response RequestHandler::GetChangeSetInfo(Request req)
     if (args[6].Contains("filter"))
         fileAccessKey = 1;
 
-    char buffer[50];
     bool flag = false;
     bvector<Utf8String> tokens;
     bvector<Utf8String> tokens2;
