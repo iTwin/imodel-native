@@ -967,9 +967,10 @@ static ICurvePrimitivePtr CreateSwoosh (double x0, double y0, double x1, double 
 // @param [in] qI angle step between successive u direction sine calls.
 // @param [in] q0J start angle for v direction sine calls
 // @param [in] qJ angle step between successive v direction sine calls.
+// @param [in] weight if zero, make an unweighted spline.  Otherwise apply this weight to all poles.
 // @remarks Control point i,j is at (x,y,z) = (i,j,sin(q0I + aI * i) * sin (q0J + aJ * j))
 MSBsplineSurfacePtr SurfaceWithSinusoidalControlPolygon
-(int uOrder, int vOrder, size_t numI, size_t numJ, double q0I, double aI, double q0J, double aJ);
+(int uOrder, int vOrder, size_t numI, size_t numJ, double q0I, double aI, double q0J, double aJ, double weight = 0.0);
 
 // Return a bspline surface whose control points are on a doubly sinusoidal surface.
 // @param [in] uOrder u direction order

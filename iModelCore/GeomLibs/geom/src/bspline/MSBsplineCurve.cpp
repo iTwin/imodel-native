@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/MSBsplineCurve.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -574,13 +574,6 @@ double MSBsplineCurve::PolygonLength () const
                     );
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    earlin.lutz                     03/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-double MSBsplineCurve::Resolution () const
-    {
-    return bspcurv_getResolution (this);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    earlin.lutz                     03/2009

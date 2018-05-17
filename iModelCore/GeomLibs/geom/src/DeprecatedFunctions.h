@@ -253,18 +253,6 @@ int             nPoint
 |
 +----------------------------------------------------------------------------*/
 
-
-Public bool    bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
-
-(
-DPoint3dP pInstance,
-double    *pArea,
-DPoint2dCP pPoint,
-DPoint2dCP pOrigin,
-DPoint2dCP pVector1,
-DPoint2dCP pVector2
-);
-
 /*-----------------------------------------------------------------*//**
 * @description Sets this instance to the barycentric coordinates of pPoint
 * relative to the triangle (pVertex0, pVertex1, pVertex2) in the xy-plane.
@@ -338,31 +326,6 @@ DPoint3dCP pVertex2,
 DPoint3dP pClosePoint,
 DPoint3dP pBoundedUVW,
 DPoint3dP pUnboundedUVW
-);
-
-/*-----------------------------------------------------------------*//**
-* @description Applies transformation to simplify the problem of finding the barycentric
-* coordinates of a 3d point relative to a triangle.  Returned are the
-* components of the new 2d problem.
-*
-* @instance pInstance   => point to find barycentric coords of
-* @param pNewPoint      <= point in plane of new triangle with same barycoords
-* @param pNewVector1    <= side of new triangle
-* @param pNewVector2    <= side of new triangle
-* @param pVector1       => side of old triangle
-* @param pVector2       => side of old triangle
-* @group "DPoint3d Barycentric"
-* @bsihdr                                                                       DavidAssaf      10/98
-+---------------+---------------+---------------+---------------+------*/
-Public void transformBarycentric3dSystemTo2d
-
-(
-DPoint3dCP pInstance,
-DPoint2dP pNewPoint,
-DPoint2dP pNewVector1,
-DPoint2dP pNewVector2,
-DPoint3dCP pVector1,
-DPoint3dCP pVector2
 );
 
 

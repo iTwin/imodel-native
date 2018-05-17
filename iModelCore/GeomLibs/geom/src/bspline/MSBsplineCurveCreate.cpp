@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/MSBsplineCurveCreate.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -384,107 +384,6 @@ bvector<double>     const &knots,
 int                     order
 );
 
-bool ConvertToClampedBsplinePoles (
-bvector<double> const & knots,  //!< @param [in] knots clamped knots.
-size_t order,                   //!< @param [in] order bspline order.
-bvector<DPoint3d>const &xyz,    //!< @param [in] xyz interpolation points
-bvector<double> &criticalKnots, //!< @param [out] critical knot values
-bvector<DPoint3d> &poleXYZ      //!< @param [out] computed poles
-)
-    {
-    //bool ok = true;
-    //ok &= Check::Size (xyz.size () + order, knots.size (), "Confirm excess knots over poles");
-    size_t lastKnotIndex = knots.size () - 1;
-    for (size_t i = 1; i < order; i++)
-        {
-        //ok &= Check::Near (knots[0], knots[i], "confirm left clamp");
-        //ok &= Check::Near (knots.back (), knots[lastKnotIndex - i], "confirm right clamp");
-        }
-
-    FindMaximalBasisFunctionKnots (knots, order, criticalKnots);
-    if (s_dump > 2)
-        {
-        GEOMAPI_PRINTF("(CriticalKnots\n");
-        for (size_t i = 0; i < criticalKnots.size (); i++)
-            {
-            GEOMAPI_PRINTF ("   %.17g", criticalKnots[i]);
-            if (((i+1) % 6) == 0)
-                GEOMAPI_PRINTF ("\n");
-            }
-        GEOMAPI_PRINTF("\n");
-        }
-    double      b[MAX_BSORDER], db[MAX_BSORDER];
-    int leftKnotIndex;
-    double maxKnot = knots[lastKnotIndex - order + 1];
-    size_t numPoles = xyz.size ();
-    // Matrix A has bandwidth {order-1}  !!!
-    RowMajorMatrix A (numPoles, numPoles);
-    RowMajorMatrix B (numPoles, 3);
-
-    // RowMajorBandedMatrix matrix (poles.size (), (size_t)order - 1);
-    for (size_t i = 0; i < criticalKnots.size (); i++)
-        {
-        double knotValue = criticalKnots[i];
-        bsputil_blendingsForSecondPars (b, nullptr, nullptr, &leftKnotIndex, &knots[0], knotValue, maxKnot, (int)order, 0);
-        int leftPoleIndex = leftKnotIndex - (int)order;    // shift from knot index to pole index
-        B.At (i, 0) = xyz[i].x;
-        B.At (i, 1) = xyz[i].y;
-        B.At (i, 2) = xyz[i].z;
-        for (size_t k = 0; k < order; k++)
-            A.At (i, leftPoleIndex + k) = b[k];
-        }
-
-    if (s_dump > 100)
-        {
-        GEOMAPI_PRINTF ("MaxBasisValue Interpolation Matrix\n");
-        RowMajorMatrix::Print (A);
-        }
-#ifdef abc
-    if (!LinearAlgebra::SolveInplaceGaussPartialPivot (A, B))
-        return false;
-#else
-    double condition;
-    if (!LinearAlgebra::SolveInplaceGaussFullPivot (A, B, condition))
-        return false;
-    if (s_dump > 0)
-        GEOMAPI_PRINTF ("(NumPoles %d) (order %d) Condition %.17g\n", (int)numPoles, (int)order, condition);
-#endif
-    poleXYZ.clear ();
-    for (size_t i = 0; i < numPoles; i++)        
-        poleXYZ.push_back (DPoint3d::From (B.At (i,0), B.At (i,1), B.At (i,2)));
-
-    // RowMajorBandedMatrix matrix (poles.size (), (size_t)order - 1);
-    for (size_t i = 0; i < criticalKnots.size (); i++)
-        {
-        double knotValue = criticalKnots[i];
-        bsputil_blendingsForSecondPars (b, db, nullptr, &leftKnotIndex, &knots[0], knotValue, maxKnot, (int)order, 0);
-        int leftPoleIndex = leftKnotIndex - (int)order;    // shift from knot index to pole index
-        DPoint3d xyzB = DPoint3d::FromZero ();
-        DVec3d  dxyzB;
-        dxyzB.Zero ();
-        for (size_t k = 0; k < order; k++)
-            {
-            DVec3d xyzAsVector = DVec3d::From (poleXYZ[leftPoleIndex+k]);
-            xyzB.x += b[k] * xyzAsVector.x;
-            xyzB.y += b[k] * xyzAsVector.y;
-            xyzB.z += b[k] * xyzAsVector.z;
-
-
-            dxyzB.x += db[k] * xyzAsVector.x;
-            dxyzB.y += db[k] * xyzAsVector.y;
-            dxyzB.z += db[k] * xyzAsVector.z;
-            }
-        //Check::Near (xyz[i], xyzB, "Confirm interpolation");
-        if (s_dump > 2)
-            GEOMAPI_PRINTF (" (xyz %g, %g, %g) (xyzB %g %g %g) (dxyzB %g,%g,%g)\n",
-                        xyz[i].x, xyz[i].y, xyz[i].z,
-                        xyzB.x, xyzB.y, xyzB.z,
-                        dxyzB.x, dxyzB.y, dxyzB.z
-                        );
-        }
-
-    return true;
-    }
 
 GEOMDLLIMPEXP MSBsplineCurvePtr MSBsplineCurve::CreateFromInterpolationPointsWithKnots
 (
@@ -792,8 +691,6 @@ MSBsplineCurveCR curveB
 MSBsplineCurvePtr MSBsplineCurve::CreateCopyBezier () const
     {
     MSBsplineCurvePtr result = MSBsplineCurve::CreatePtr ();
-    if (!result.IsValid ())
-        return result;
     bspcurv_makeBezier (result.get (), this);
     return result;
     }
@@ -956,35 +853,36 @@ RotMatrixP axes
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      7/1997
 +---------------+---------------+---------------+---------------+---------------+------*/
-MSBsplineStatus MSBsplineCurve::InitFromDConic4d (DConic4dCR conic)
+MSBsplineCurvePtr MSBsplineCurve::CreateFromDConic4d (DConic4dCR conic)
     {
     DPoint3d    center;
     RotMatrix   rotMatrix;
     center.Zero ();
     rotMatrix.InitIdentity ();
-    Zero ();
+    MSBsplineCurve result;
+    result.Zero ();
 
     /* Any conic section is a unit circle mangled by a homogeneous transformation.  The center, vector0,
        and vector90 data in the DEllipse4d gives the transformation.  So we build a Bspline for
        the arc of the unit circle . . . */
-    if (SUCCESS != bspconv_arcToCurveStruct (this, conic.start, conic.sweep, 1.0, 1.0, &rotMatrix, &center))
-        return ERROR;
+    if (SUCCESS != bspconv_arcToCurveStruct (&result, conic.start, conic.sweep, 1.0, 1.0, &rotMatrix, &center))
+        return nullptr;
 
     // Apply the transformation to carry the unit circle out to real space . . .
-    for (int i=0; i < params.numPoles; i++)
+    for (int i=0; i < result.params.numPoles; i++)
         {
         DPoint4d    hPoint;
-        DPoint3d xyz = poles[i];    // that's the circle point.
+        DPoint3d xyz = result.poles[i];    // that's the circle point.
         // All the poles have z=0 !!!
         bsiDPoint4d_add3ScaledDPoint4d (&hPoint, NULL, &conic.vector0,  xyz.x,
                                                        &conic.vector90, xyz.y,
-                                                       &conic.center, weights[i]);
-        poles[i]   = DPoint3d::From (hPoint.x, hPoint.y, hPoint.z);
-        weights[i] = hPoint.w;
+                                                       &conic.center, result.weights[i]);
+        result.poles[i]   = DPoint3d::From (hPoint.x, hPoint.y, hPoint.z);
+        result.weights[i] = hPoint.w;
         }
 
     double      refWeight;
-    DRange1d weightRange = GetWeightRange ();
+    DRange1d weightRange = result.GetWeightRange ();
 
     static double zeroWeightTol = 1.0e-8;
 
@@ -999,20 +897,19 @@ MSBsplineStatus MSBsplineCurve::InitFromDConic4d (DConic4dCR conic)
 
     if (0.0 == refWeight)
         {
-        ReleaseMem ();
-
-        return ERROR;
+        result.ReleaseMem ();
+        return nullptr;
         }
 
     // Dividing through by the extreme weight moves all the weights between 0 and 1
     double  scale = 1.0 / refWeight;
-    for (int i=0; i < params.numPoles; i++)
+    for (int i=0; i < result.params.numPoles; i++)
         {
-        poles[i].Scale (scale);
-        weights[i] *= scale;
+        result.poles[i].Scale (scale);
+        result.weights[i] *= scale;
         }
 
-    return SUCCESS;
+    return result.CreateCapture ();
     }
 
 
@@ -1092,12 +989,12 @@ MSBsplineStatus MSBsplineCurve::InitFromPoints (DPoint3dCP points, int nPoints)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Peter.Yu                        10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-MSBsplineStatus MSBsplineCurve::InitFromBeziers (bvector<MSBsplineCurve> const &beziers)
+MSBsplineCurvePtr MSBsplineCurve::CreateFromBeziers (bvector<MSBsplineCurvePtr> const &beziers)
     {
     int         i, j;
     size_t      numCurve = beziers.size ();
     if (numCurve < 1)           //Defect #7321
-        return SUCCESS;
+        return nullptr;
 
     double      *ratio = (double*)BSIBaseGeom::Malloc (numCurve * sizeof(double));
     double      length1, length2, sum;
@@ -1107,14 +1004,14 @@ MSBsplineStatus MSBsplineCurve::InitFromBeziers (bvector<MSBsplineCurve> const &
     ratio[0] = sum = 1.0;
     for (size_t k=0; k<numCurve-1; k++)
         {
-        if (!mdlBspline_curveHasNormalizedKnots (&beziers[k]))
-            bspknot_normalizeKnotVector (beziers[k].knots, beziers[k].params.numPoles, beziers[k].params.order, beziers[k].params.closed);
+        if (!mdlBspline_curveHasNormalizedKnots (beziers[k].get ()))
+            bspknot_normalizeKnotVector (beziers[k]->knots, beziers[k]->params.numPoles, beziers[k]->params.order, beziers[k]->params.closed);
 
-        if (!mdlBspline_curveHasNormalizedKnots (&beziers[k+1]))
-            bspknot_normalizeKnotVector (beziers[k+1].knots, beziers[k+1].params.numPoles, beziers[k+1].params.order, beziers[k+1].params.closed);
+        if (!mdlBspline_curveHasNormalizedKnots (beziers[k+1].get ()))
+            bspknot_normalizeKnotVector (beziers[k+1]->knots, beziers[k+1]->params.numPoles, beziers[k+1]->params.order, beziers[k+1]->params.closed);
 
-        beziers[k].FractionToPoint (point1, tangent1, 1.0);
-        beziers[k+1].FractionToPoint (point2, tangent2, 0.0);
+        beziers[k]->FractionToPoint (point1, tangent1, 1.0);
+        beziers[k+1]->FractionToPoint (point2, tangent2, 0.0);
 
         length1 = tangent1.Normalize();
         length2 = tangent2.Normalize();
@@ -1130,36 +1027,42 @@ MSBsplineStatus MSBsplineCurve::InitFromBeziers (bvector<MSBsplineCurve> const &
 
     increaseP[0] = increaseP[numCurve-1] = 0;
     
-    Zero ();
-    CopyFrom (beziers[0]);
+    MSBsplineCurve result;
+    result.Zero ();
+    result.CopyFrom (*beziers[0]);
     for (size_t k=1; k<numCurve; k++)
         {
-        old = params.numPoles;
-        AppendCurves (*this, beziers[k], false, false);
-        if (params.order <= params.numPoles - old)
+        old = result.params.numPoles;
+        result.AppendCurves (result, *beziers[k], false, false);
+        if (result.params.order <= result.params.numPoles - old)
             increaseP[k] = 1;
         else
             increaseP[k] = 0;
         }
 
-    int     k = 1, p = params.order - 1;
-    int     numKnots = bspknot_numberKnots (params.numPoles, p + 1, params.closed);
+    int     k = 1, p = result.params.order - 1;
+    int     numKnots = bspknot_numberKnots (result.params.numPoles, p + 1, result.params.closed);
 
     for (i=0; i<=p; i++)
-        knots[i] = 0.0;
+        result.knots[i] = 0.0;
     for (i=p+1; i<numKnots-p-1; i+=(p+increaseP[k-1]))
         {
         for (j=0; j<p+increaseP[k]; j++)
-            knots[i+j] = knots[i-1] + ratio[k-1]*sum;
+            result.knots[i+j] = result.knots[i-1] + ratio[k-1]*sum;
         k++;
         }
     for (i=numKnots-1; i>=numKnots-p-1; i--)
-        knots[i] = 1.0;
+        result.knots[i] = 1.0;
 
     BSIBaseGeom::Free (increaseP);
     BSIBaseGeom::Free (ratio);
 
-    return (BentleyStatus) RemoveKnotsBounded (1.0E-3, true, true);
+    if (SUCCESS != result.RemoveKnotsBounded (1.0E-3, true, true))
+        {
+        result.ReleaseMem ();
+        return nullptr;
+        }
+    return result.CreateCapture ();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/BsplineCurveFit.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -3298,57 +3298,45 @@ double              parallelTolerance
     }
 
 /*---------------------------------------------------------------------------------**//**
+* EDL May 2018 recode for single bezier input.
 * @bsimethod                                    Peter.Yu                        12/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool    secondDerivativeBoundCurve
+static bool    secondDerivativeBoundBezierCurve
 (
 double&          Muu,
-MSBsplineCurveCP pCurve
+MSBsplineCurveCR    curve
 )
     {
-    int p = pCurve->params.order - 1;
-    int   i, k, r, a, al;
+    int p = curve.params.order - 1;
+    int   r, a, al;
     double *U, ui, muu;
     DPoint3d xyz; 
     DVec3d tangent;
-    bvector<MSBsplineCurve> beziers;
 
-    /* Get locals and decompose into Bezier segments */
     
-    if (MSB_SUCCESS != pCurve->MakeBeziers (beziers))
-        return false;
-    k = (int)(beziers.size ());
-
     /* Compute maximum derivative */
-
-    bvector<double> u (p + 1);
+    double u[MAX_BEZIER_ORDER];
 
     Muu = 0.0;
-    for( i=0; i<k; i++ )
+    al = 0;
+
+    r = curve.params.numPoles + p;
+    U = curve.knots;
+
+    ui   = (U[r]-U[0])/p;
+    u[0] = U[0];   
+    u[p] = U[r];
+
+    for( a=1; a<=p-1; a++ )  u[a] = U[0] + a*ui;
+
+    for( a=al; a<=p; a++ )
         {
-        if( i == 0 )  
-            al = 0;  
-        else  
-            al = 1;
+        curve.FractionToPoint (xyz, tangent, u[a]);
 
-        r = beziers[i].params.numPoles + p;
-        U = beziers[i].knots;
+        muu = tangent.Magnitude ();
 
-        ui   = (U[r]-U[0])/p;
-        u[0] = U[0];   
-        u[p] = U[r];
-
-        for( a=1; a<=p-1; a++ )  u[a] = U[0] + a*ui;
-
-        for( a=al; a<=p; a++ )
-            {
-            beziers[i].FractionToPoint (xyz, tangent, u[a]);
-
-            muu = tangent.Magnitude ();
-
-            if( muu > Muu )  
-                Muu = muu;
-            }
+        if( muu > Muu )  
+            Muu = muu;
         }
 
     return true;
@@ -3455,7 +3443,7 @@ double              tol             /* => geometric tolerance, this should be in
     double    *UP, Muu, ul, ur, uinc, f1, f2, del, num, gro, exp;
     DPoint3d  xyz;
     DVec3d    Tangent, Ts, Te;
-    bvector<MSBsplineCurve> bez;
+    bvector<MSBsplineCurvePtr> bez;
     bvector<double> knu, u;
     bvector<DPoint3d> P;
 
@@ -3474,8 +3462,7 @@ double              tol             /* => geometric tolerance, this should be in
     f1 = pow(f1, exp);
     f2 = (double) degree;
 
-    if (MSB_SUCCESS != (status = pIn->MakeBeziers (bez)))
-        return status;
+    pIn->CopyAsBeziers (bez);
     k = (int)bez.size () - 1;
 
     /* Get number of sampling points */
@@ -3483,9 +3470,9 @@ double              tol             /* => geometric tolerance, this should be in
     mu = 0;
     for( i=0; i<=k; i++ )
         {
-        bez[i].MapKnots (0.0, 1.0);
+        bez[i]->MapKnots (0.0, 1.0);
 
-        if (!secondDerivativeBoundCurve (Muu, &bez[i]))
+        if (!secondDerivativeBoundBezierCurve (Muu, *bez[i]))
             goto wrapup;
 
         num   = 0.125*Muu;
@@ -3572,11 +3559,7 @@ double              tol             /* => geometric tolerance, this should be in
         der = 0;
 
     status = pOut->RemoveKnotsBounded (tol, der == 1? 1 : 0, der == 1? 1 : 0);
-
 wrapup:
-    for( i=0; i<(int)bez.size (); i++ )
-        bez[i].ReleaseMem ();
-
     return status;
     }
 

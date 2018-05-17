@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspmesh.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -5003,7 +5003,7 @@ double tolerance
     bsiDRange3d_init (pRange);
     if (tolerance <= 0.0)
         {
-        mdlBspline_surfacePoleRange (&poleRange, pSurface);
+        pSurface->GetPoleRange (poleRange);
         if (bsiDRange3d_isNull (&poleRange))
             return ERROR;
         tolerance = s_defaultToleranceFraction *

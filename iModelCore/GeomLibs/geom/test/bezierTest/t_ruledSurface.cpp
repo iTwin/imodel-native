@@ -445,3 +445,70 @@ TEST(BezierTriangle,CreateCubicSurfaceFromNormals)
     Check::ClearGeometry ("BezierTriangle.CreateCubicSurfaceFromNormals");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BezierDPoint3d,ExactRange)
+    {
+    bvector<DPoint3d> poles {
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (2,0,0),
+        DPoint3d::From (5,3,1),
+        DPoint3d::From (3,7,2),
+        DPoint3d::From (0,1,0)
+        };
+    DRange3d exactRange;
+    bsiBezierDPoint3d_getDRange3d (&exactRange, poles.data (), (int)poles.size ());
+    DRange3d strokedRange;
+    strokedRange.Init ();
+    double du = 1.0/ 64.0;
+    for (double u = 0; u <= 1.0; u += du)
+        {
+        DPoint3d xyz;
+        bsiBezierDPoint3d_evaluateDPoint3d (&xyz, nullptr, poles.data (), (int)poles.size (), u);
+        strokedRange.Extend (xyz);
+        }
+    double cornerTol = du * strokedRange.low.Distance (strokedRange.high);  // just a guess about how closely the strokes come to the exact box
+    Check::LessThanOrEqual (exactRange.low.Distance (strokedRange.low), cornerTol, "stroked range close to exact");
+    Check::LessThanOrEqual (exactRange.high.Distance (strokedRange.high), cornerTol, "stroked range close to exact");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BezierDPoint3d,Subdivide)
+    {
+    bvector<DPoint3d> allPoles {
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (2,0,0),
+        DPoint3d::From (5,3,1),
+        DPoint3d::From (3,7,2),
+        DPoint3d::From (0,1,0)
+        };
+
+    for (int order = 2; order < (int)allPoles.size (); order++)
+        {
+        SaveAndRestoreCheckTransform shifter (0,20,0);
+        bvector<DPoint3d> poles;
+        for (int i = 0; i < order; i++)
+            poles.push_back (allPoles[i]);
+        bvector<DPoint3d> poleALeft = poles;
+        bvector<DPoint3d> poleARight = poles;
+        double u = 0.498;   // close enough to midpoint for crude chord magnitude rules apply
+        bsiBezierDPoint3d_subdivideLeftInPlace (poleALeft.data (), poleARight.data (), order, u);
+        bvector<DPoint3d> poleBLeft = poles;
+        bvector<DPoint3d> poleBRight = poles;
+        bsiBezierDPoint3d_subdivideRightInPlace (poleBRight.data (), poleBLeft.data (), order, u);
+        Check::Near (poleALeft, poleBLeft);
+        Check::Near (poleARight, poleBRight);
+        Check::SaveTransformed (poles);
+        Check::Shift (0,10,0);
+        Check::SaveTransformed (poleALeft);
+        Check::SaveTransformed (poleARight);
+        Check::Shift (0,10,0);
+        Check::SaveTransformed (poleBLeft);
+        Check::SaveTransformed (poleBRight);
+        }
+    Check::ClearGeometry ("BezierDPoint3d.Subdivide");
+    }
+

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/MSBsplineCurve_Modify.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -72,19 +72,11 @@ MSBsplineStatus MSBsplineCurve::ElevateDegree (int newDegree)
     return bspcurv_elevateDegree (this, this, newDegree);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    peter.yu                        02/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-MSBsplineStatus MSBsplineCurve::MakeBezier (MSBsplineCurveR bezierCurve)
-    {
-    return bspcurv_makeBezier (&bezierCurve, this);
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    peter.yu                        02/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-MSBsplineStatus MSBsplineCurve::MakeBeziers (bvector<MSBsplineCurve> &beziers) const
+void MSBsplineCurve::CopyAsBeziers (bvector<MSBsplineCurvePtr> &beziers) const
     {
     BCurveSegment segment;
 
@@ -95,14 +87,12 @@ MSBsplineStatus MSBsplineCurve::MakeBeziers (bvector<MSBsplineCurve> &beziers) c
          if (!segment.IsNullU ())
             {
             MSBsplineCurve curve;
-            memset (&curve, 0, sizeof (curve));
-            beziers.push_back (curve);
-            beziers.at(beziers.size () - 1).InitFromDPoint4dArray (segment.GetPoleP (), params.order, params.order);
-            beziers.at(beziers.size () - 1).display = display;
+            curve.Zero ();
+            curve.InitFromDPoint4dArray (segment.GetPoleP (), params.order, params.order);
+            curve.display = display;
+            beziers.push_back (curve.CreateCapture ());
             }
         }
-
-    return beziers.size () > 0 ? MSB_SUCCESS : MSB_ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

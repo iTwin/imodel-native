@@ -2689,7 +2689,7 @@ double              tolerance           /* => stroke tolerance for bounds */
     double minDistTol = 0.0;
     for (i = 0; i < nCurves; i++)
         {
-        double a = bspcurv_getResolution (&curves[i]);
+        double a = curves[i].Resolution ();
         if (a > minDistTol)
             minDistTol = a;
         }

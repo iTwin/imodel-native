@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/bezierDPoint4d.fdf $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -533,49 +533,16 @@ const   DPoint4d    *pPoleArray,
 //! If the poles are only 2D, it is more efficient to use
 //! <A HREF="#inflectionPointsXY">inflectionPointsXY</A>.
 //!
-//! @param pInflectPoints OUT     array of inflection points (or null)
-//! @param pInflectParams OUT     array of parameters of inflection points (or null)
-//! @param pPoleArray     IN      array of curve poles
-//! @param order          IN      curve order (number of poles, one more than degree)
-//! @return number of isolated inflection points found or -1 if invalid order
+//! @param inflectPoints OUT     array of inflection points, with curve parameter in the "a" field.
+//! @param poles     IN      array of curve poles
 //! @see #inflectionPointsXY
 //!
-Public GEOMDLLIMPEXP int         bsiBezierDPoint4d_inflectionPoints
+Public GEOMDLLIMPEXP void         bsiBezierDPoint4d_inflectionPoints
 (
-        DPoint4d    *pInflectPoints,
-        double      *pInflectParams,
-const   DPoint4d    *pPoleArray,
-        int         order
+bvector<GraphicsPoint> inflectionPoints,
+bvector<DPoint4d> poles
 );
 
-//!
-//! Given the order and homogeneous poles of an open B-spline curve with uniform
-//! (clamped) knot vector, output the homogeneous poles of the corresponding
-//! Bezier spline with the same order.  Poles shared by successive Bezier spline
-//! segments are repeated in the output iff bShare is false.  The caller must
-//! ensure the output array is allocated for
-//! <UL>
-//! <LI><CODE>numPoles + (numPoles - order) * (order - 1)</CODE> poles if
-//!     bShare is false,
-//! <LI><CODE>order + (numPoles - order) * (order - 1)</CODE> poles if
-//!     bShare is true.
-//! </UL>
-//!
-//! @param pBezierPoles   OUT     array of poles of Bezier spline
-//! @param pBsplinePoles  IN      array of homogeneous poles of B-spline curve
-//! @param numPoles       IN      number of poles of B-spline curve
-//! @param order          IN      B-spline/Bezier spline curve order (degree + 1)
-//! @param bShare         IN      true if shared Bezier points are to appear only once in output
-//! @return number of Bezier segments output or 0 if error.
-//!
-Public GEOMDLLIMPEXP int         bsiBezierDPoint4d_convertOpenUniformBsplineToBeziers
-(
-        DPoint4d    *pBezierPoles,
-const   DPoint4d    *pBsplinePoles,
-        int         numPoles,
-        int         order,
-        bool        bShare
-);
 
 //!
 //! Initializes the data structure shared between successive calls to
@@ -937,33 +904,6 @@ const   DPoint3d    *pPoleArray,
 const   double      param
 );
 
-//!
-//! Evaluate tangent mangitude and derivatives.
-//! @param    pEval0      OUT tangent magnitude and derivatives at 0
-//! @param    pEval1      OUT tangent magnitude and derivatives at 1
-//! @param    pNumTermOut   OUT actual number of terms.
-//! @param    pPoleArray  IN poles.
-//! @param    order       IN curve order.
-//! @param    numTermRequested IN number of requested terms (including magnitude itself)
-//!
-Public GEOMDLLIMPEXP void bsiBezierDPoint3d_evaluateEndPointTangentSeries
-(
-        double*     pEval0,
-        double*     pEval1,
-        int         *pNumTermOut,
-const   DPoint3d    *pPoleArray,
-        int         order,
-        int         numTermRequested
-);
-
-//!
-//!
-Public GEOMDLLIMPEXP double bsiBezierDPoint3d_arcLengthHermite
-(
-DPoint3d *pXYZ,
-int order,
-int requestedHermiteTerms
-);
 
 //!
 //! Finds the intersections, if any, of the given Bezier curve with the given
@@ -1207,19 +1147,6 @@ DPoint3d    *pPoleArray,
     double  u1
 );
 
-//!
-//! Form the order-outOrder bezier which is the componentwise least squares
-//! approximation to the
-//!
-Public GEOMDLLIMPEXP bool     bsiBezierDPoint4d_leastSquaresDegreeReduction
-(
-DPoint4d    *pOutPole,
-int         outOrder,
-DPoint4d    *pInPole,
-int         inOrder,
-int         match0,
-int         match1
-);
 
 //!
 //! Compute intersection of two bezier curves, starting with chordal approximations.

@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/CurvePrimitiveTest/t_mtgGraph.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -215,6 +215,17 @@ void CheckGrid (size_t numX, size_t numY)
     MTGGraphP graph = new MTGGraph ();
     bvector<bvector<MTGNodeId> > nodes;
     CreateGrid (*graph, numX, numY, nodes);
+    bvector<bvector<MTGNodeId> > originalFSucc = nodes;
+    bvector<bvector<MTGNodeId> > originalVSucc = nodes;
+    // save successors ...
+    for (size_t i = 0; i < numX; i++)
+        for (size_t j = 0; j < numY; j++)
+            {
+            originalFSucc[j][i] = graph->FSucc (nodes[j][i]);
+            originalVSucc[j][i] = graph->VSucc (nodes[j][i]);
+            Check::False (nodes[j][i] == originalFSucc[j][i]);
+            Check::False (nodes[j][i] == originalVSucc[j][i]);
+            }
 
     CheckCounts (*graph, (numX + 1) * (numY + 1), numX * numY + 1, 1);
     for (size_t i = 0; i < numX; i++)
@@ -222,10 +233,32 @@ void CheckGrid (size_t numX, size_t numY)
         for (size_t j = 0; j < numY; j++)
             {
             MTGNodeId lowerLeftOfQuad = nodes[j][i];
+            auto node = nodes[j][i];
+            auto fs = originalFSucc[j][i];
+            auto vs = originalVSucc[j][i];
             Check::Size (4, graph->CountNodesAroundFace (lowerLeftOfQuad), "Quad in Grid");
+            Check::True (graph->AreNodesInSameFaceLoop (node, fs), "FS check");
+            Check::True (graph->AreNodesInSameVertexLoop (node, vs), "VS check");
+            Check::False (graph->AreNodesInSameFaceLoop (node, vs), "FS check false");
+            Check::False (graph->AreNodesInSameVertexLoop (node, fs), "VS check false");
             }
         }
+    graph->ReverseFaceAndVertexLoops ();
+    // verify that all successor relations were reversed.
+    for (size_t i = 0; i < numX; i++)
+        for (size_t j = 0; j < numY; j++)
+            {
+            Check::Int (nodes[j][i], graph->FSucc (originalFSucc[j][i]), "FSucc reversed");
+            Check::Int (nodes[j][i], graph->VSucc (originalVSucc[j][i]), "VSucc reversed");
+            }
+
+    void * binaryData;
+    size_t binaryCount = graph->WriteToBinaryStream (binaryData);
+    MTGGraphP graph1 = new MTGGraph ();
+    graph1->LoadFromBinaryStream (binaryData, binaryCount);
+    CheckCounts (*graph1, (numX + 1) * (numY + 1), numX * numY + 1, 1);
     delete graph;
+    delete graph1;
     }
 
 /*---------------------------------------------------------------------------------**//**

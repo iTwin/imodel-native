@@ -60,6 +60,101 @@ TEST(BsplineCurve,PoleAccess)
     Check::Near (knotA, knotB, "Bulk Query knots");
     Check::Near (weightA, weightB, "Bulk Query weights");
     }
+
+TEST(BsplineSurface, PoleAccess)
+    {
+    int uOrder = 3;
+    int vOrder = 4;
+    size_t numI = 5;
+    size_t numJ = 7;
+    double weight = 1.1;
+    // (chuckle) start at nonzero origin so weighted point 0 at 000 does not match unweighted 000.
+    auto surfaceA = SurfaceWithSinusoidalControlPolygon (
+                uOrder, vOrder,
+                numI, numJ,
+                0.1, 0.4,
+                0.4, 0.8, 0.0);
+    auto surfaceB = SurfaceWithSinusoidalControlPolygon (
+                uOrder, vOrder,
+                numI, numJ,
+                0.1, 0.4,
+                0.4, 0.8, weight);
+    for (auto surface : {surfaceA, surfaceB})
+        {
+        Check::Bool (surface.get () == surfaceB.get (), surface->HasWeights ());
+        int uKnotsInt = surface->GetIntNumUKnots ();
+        int vKnotsInt = surface->GetIntNumVKnots ();
+        size_t uKnots = surface->GetNumUKnots ();
+        size_t vKnots = surface->GetNumVKnots ();
+
+        Check::Int (uKnotsInt, (int)uKnots, "u knot queries");
+        Check::Int (vKnotsInt, (int)vKnots, "u knot queries");
+
+        Check::Int (uKnotsInt, surface->GetIntNumUPoles () + surface->GetIntUOrder ());
+        Check::Int (vKnotsInt, surface->GetIntNumVPoles () + surface->GetIntVOrder ());
+
+        Check::Size (numI * numJ, surface->GetNumPoles ());
+        Check::Int (surface->GetIntNumPoles (), (int)surface->GetNumPoles ());
+
+        bvector<bool> manyBools {true, false, true, false};
+
+        for (bool b : manyBools)
+            {
+            surface->SetSurfaceDisplay (b);
+            Check::Bool (b, surface->GetSurfaceDisplay ());
+            surface->SetPolygonDisplay (b);
+            Check::Bool (b, surface->GetPolygonDisplay ());
+            }
+
+        for (size_t j = 0; j < numJ; j++)
+            {
+            for (size_t i = 0; i < numI; i++)
+                {
+                DPoint3d xyz = surface->GetPole (i, j);
+                DPoint3d xyz1 = xyz + DVec3d::From (1,2,3);
+                surface->SetPole (i, j, xyz1);
+                DPoint3d xyz2 = surface->GetPole (i, j);
+                Check::Exact (xyz1, xyz2);
+                Check::Exact (surface->GetPole (i,j), surface->GetPole ((int)i, (int)j));
+                size_t k = j * numI + i;
+                DPoint3d xyz3 = surface->GetPole (k);
+                Check::Exact (xyz3, xyz2);
+                surface->SetPole (k, xyz);
+                Check::Exact (surface->GetPole (k), surface->GetPole ((int)k));
+
+                DPoint3d xyz4 = surface->GetPole (i, j);
+                Check::Exact (xyz4, xyz);
+                }
+            }
+        }
+
+    surfaceB->UnWeightPoles ();
+    // xyz parts are now equal (other than bit losss in division)
+    for (size_t i = 0; i < numI * numJ; i++)
+        Check::Near (surfaceA->GetPole (i), surfaceB->GetPole (i));
+    surfaceB->WeightPoles ();
+    for (size_t i = 0; i < numI * numJ; i++)
+        {
+        Check::True(surfaceA->GetPole (i).AlmostEqual (surfaceB->GetUnWeightedPole (i)));
+        }
+// change all weights . .
+    for (size_t j = 0; j < numJ; j++)
+        {
+        for (size_t i = 0; i < numI; i++)
+            {
+            size_t k = i + numI * j;
+            double e = k / 247.0;
+            double w = surfaceB->GetWeight (k);
+            double we = w + e;
+            surfaceB->SetWeight (k, we);
+            Check::ExactDouble (surfaceB->GetWeight ((int)k), we);
+            Check::ExactDouble (we, surfaceB->GetWeight (k));
+            surfaceB->SetWeight ((int)k, w);
+            Check::ExactDouble (w, surfaceB->GetWeight (k));
+            }
+        }
+    }
+
 static bool s_printAllKnots = false;
 void PrintKnots (char const *name, double const *values, int n, int *counts = NULL)
     {

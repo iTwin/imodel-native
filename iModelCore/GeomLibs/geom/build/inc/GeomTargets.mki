@@ -325,7 +325,7 @@ $(OUT_DIR)bspdsurf$(OUT_EXT)    : $(geomSrcBspline)bspdsurf.cpp $(OTHER_DEPENDEN
 
 $(OUT_DIR)bspicurv$(OUT_EXT)    : $(geomSrcBspline)bspicurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-$(OUT_DIR)bsprange$(OUT_EXT)    : $(geomSrcBspline)bsprange.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+#$(OUT_DIR)bsprange$(OUT_EXT)    : $(geomSrcBspline)bsprange.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 #$(OUT_DIR)plank$(OUT_EXT)    : $(geomSrcBspline)plank.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 

@@ -261,7 +261,6 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include <Geom/bsp/bspcci.fdf>
 #include <Geom/bsp/bspdsurf.fdf>
 #include <Geom/bsp/bspssi.fdf>
-#include <Geom/bsp/bsprange.fdf>
 #include <Geom/bsp/bspicurv.fdf>
 #include <Geom/bsp/bspmesh.fdf>
 #include <Geom/bsp/bspcurvcurv.fdf>
