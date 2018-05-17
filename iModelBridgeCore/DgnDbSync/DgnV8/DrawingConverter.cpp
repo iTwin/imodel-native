@@ -918,7 +918,7 @@ bool InitGeometryParams(Render::GeometryParams& params)
             auto    levelId = m_context->GetCurrentDisplayParams()->GetLevel();
 
             categoryId =    m_converter.ConvertDrawingLevel(*v8Model->GetDgnFileP(), levelId);
-            subCategoryId = m_converter.ConvertLevelToSubCategory(v8Model->GetDgnFileP()->GetLevelCacheR().GetLevel(levelId), *v8Model, categoryId);
+            subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId);
             }
         }
 
