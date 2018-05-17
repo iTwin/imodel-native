@@ -563,6 +563,14 @@ void Converter::ConvertTextString(TextStringPtr& clone, Bentley::TextStringCR v8
     dbText.GetStyleR().SetIsItalic(v8Text.GetProperties().IsItalic());
     dbText.GetStyleR().SetSize(DoInterop(v8Text.GetProperties().GetFontSize()));
 
+    // DgnV8 sub-/super-script is a hard-coded display-time scale and shift.
+    if (v8Text.GetProperties().IsSubScript() || v8Text.GetProperties().IsSuperScript())
+        {
+        DPoint2d scaledSize = dbText.GetStyle().GetSize();
+        scaledSize.Scale(0.3);
+        dbText.GetStyleR().SetSize(scaledSize);
+        }
+    
     // Because DgnV8 has unsupported underline (and overline) styles, never tell this hacked DB TextString to draw an underline even if it's present, and draw it manually ourselves.
 
     // Internal implementation detail: A DgnV8 TextString will report 0 glyphs unless the caller performed layout with a listener that claimed to capture the glyphs.
