@@ -1147,55 +1147,62 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::SetupRulesetDirectories(RulesDrivenECPresentationManager& manager, bvector<Utf8String> const& directories)
+ECPresentationResult ECPresentationUtils::SetupRulesetDirectories(RulesDrivenECPresentationManager& manager, bvector<Utf8String> const& directories)
     {
     Utf8String joinedDirectories = BeStringUtilities::Join(directories, ";");
     manager.GetLocaters().RegisterLocater(*DirectoryRuleSetLocater::Create(joinedDirectories.c_str()));
+    return ECPresentationResult();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::SetupLocaleDirectories(bvector<Utf8String> const& directories)
+ECPresentationResult ECPresentationUtils::SetupLocaleDirectories(bvector<Utf8String> const& directories)
     {
     bvector<BeFileName> directoryPaths;
     for (Utf8StringCR dir : directories)
         directoryPaths.push_back(BeFileName(dir).AppendSeparator());
     s_staticSetup.GetLocalizationProvider().SetLocaleDirectories(directoryPaths);
+    return ECPresentationResult();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::SetActiveLocale(Utf8String locale)
+ECPresentationResult ECPresentationUtils::SetActiveLocale(Utf8String locale)
     {
     s_staticSetup.GetLocalizationProvider().SetActiveLocale(locale);
+    return ECPresentationResult();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kililnskas                 05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::AddRuleSet(SimpleRuleSetLocater& locater, Utf8StringCR rulesetJsonString)
+ECPresentationResult ECPresentationUtils::AddRuleSet(SimpleRuleSetLocater& locater, Utf8StringCR rulesetJsonString)
     {
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(rulesetJsonString);
-    if (ruleSet != nullptr)
-        locater.AddRuleSet(*ruleSet);
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::ReadFromJsonString(rulesetJsonString);
+    if (ruleset.IsNull())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "Failed to create rule set from serialized JSON");
+    locater.AddRuleSet(*ruleset);
+    return ECPresentationResult();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kililnskas                 05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::RemoveRuleSet(SimpleRuleSetLocater& locater, Utf8StringCR ruleSetId)
+ECPresentationResult ECPresentationUtils::RemoveRuleSet(SimpleRuleSetLocater& locater, Utf8StringCR ruleSetId)
     {
     locater.RemoveRuleSet(ruleSetId);
+    return ECPresentationResult();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Kililnskas                 05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::ClearRuleSets(SimpleRuleSetLocater& locater)
+ECPresentationResult ECPresentationUtils::ClearRuleSets(SimpleRuleSetLocater& locater)
     {
     locater.Clear();
+    return ECPresentationResult();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1234,55 +1241,62 @@ static folly::Future<NavNodeCPtr> GetNode(IECPresentationManager& mgr, IConnecti
     {
     NavNodeKeyCPtr key = NavNodeKey::FromJson(connection, params["nodeKey"]);
     if (key.IsNull())
-        {
-        // wip: throw
         return NavNodeCPtr();
-        }
     return mgr.GetNode(connection.GetECDb(), *key);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::GetRootNodesCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
+ECPresentationResult ECPresentationUtils::GetRootNodesCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     size_t count = manager.GetRootNodesCount(db, GetManagerOptions(params)).get();
-    response.SetInt64((int64_t)count);
+    return ECPresentationResult(rapidjson::Value((int64_t)count));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::GetRootNodes(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
+ECPresentationResult ECPresentationUtils::GetRootNodes(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
-    response.SetArray();
+    rapidjson::Document json;
+    json.SetArray();
     DataContainer<NavNodeCPtr> nodes = manager.GetRootNodes(db, GetPageOptions(params), GetManagerOptions(params)).get();
     for (NavNodeCPtr const& node : nodes)
-        response.PushBack(node->AsJson(&response.GetAllocator()), response.GetAllocator());
+        json.PushBack(node->AsJson(&json.GetAllocator()), json.GetAllocator());
+    return ECPresentationResult(std::move(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::GetChildrenCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
+ECPresentationResult ECPresentationUtils::GetChildrenCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
-    NavNodeCPtr parentNode = GetNode(manager, *connection, params).get(); // wip: stop using .get()
+    NavNodeCPtr parentNode = GetNode(manager, *connection, params).get();
+    if (parentNode.IsNull())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");
+
     size_t count = manager.GetChildrenCount(db, *parentNode, GetManagerOptions(params)).get();
-    response.SetInt64((int64_t)count);
+    return ECPresentationResult(rapidjson::Value((int64_t)count));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::GetChildren(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
+ECPresentationResult ECPresentationUtils::GetChildren(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
-    NavNodeCPtr parentNode = GetNode(manager, *connection, params).get(); // wip: stop using .get()
-    response.SetArray();
+    NavNodeCPtr parentNode = GetNode(manager, *connection, params).get();
+    if (parentNode.IsNull())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");
+
+    rapidjson::Document json;
+    json.SetArray();
     DataContainer<NavNodeCPtr> nodes = manager.GetChildren(db, *parentNode, GetPageOptions(params), GetManagerOptions(params)).get();
     for (NavNodeCPtr const& node : nodes)
-        response.PushBack(node->AsJson(&response.GetAllocator()), response.GetAllocator());
+        json.PushBack(node->AsJson(&json.GetAllocator()), json.GetAllocator());
+    return ECPresentationResult(std::move(json));
     }
 
 /*=================================================================================**//**
@@ -1348,43 +1362,44 @@ static KeySetPtr GetKeys(IConnectionCR connection, JsonValueCR params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::GetContentDescriptor(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
+ECPresentationResult ECPresentationUtils::GetContentDescriptor(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, GetDisplayType(params), *GetKeys(*connection, params), nullptr, GetManagerOptions(params)).get();
     if (descriptor.IsValid())
-        response = descriptor->AsJson();
+        return ECPresentationResult(descriptor->AsJson());
+    return ECPresentationResult();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::GetContent(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
+ECPresentationResult ECPresentationUtils::GetContent(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     DescriptorOverrideHelper helper(params["descriptorOverrides"]);
     ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, helper.GetDisplayType(), *GetKeys(*connection, params), nullptr, GetManagerOptions(params)).get();
     if (descriptor.IsNull())
-        return;
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor");
 
     ContentDescriptorCPtr overridenDescriptor = helper.GetOverridenDescriptor(*descriptor);
     ContentCPtr content = manager.GetContent(*overridenDescriptor, GetPageOptions(params)).get();
-    response = content->AsJson();
+    return ECPresentationResult(content->AsJson());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::GetContentSetSize(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
+ECPresentationResult ECPresentationUtils::GetContentSetSize(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
     DescriptorOverrideHelper helper(params["descriptorOverrides"]);
     ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, helper.GetDisplayType(), *GetKeys(*connection, params), nullptr, GetManagerOptions(params)).get();
     if (descriptor.IsNull())
-        return;
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor");
 
     ContentDescriptorCPtr overridenDescriptor = helper.GetOverridenDescriptor(*descriptor);
     size_t size = manager.GetContentSetSize(*overridenDescriptor).get();
-    response.SetUint64(size);
+    return ECPresentationResult(rapidjson::Value((int64_t)size));
     }
 

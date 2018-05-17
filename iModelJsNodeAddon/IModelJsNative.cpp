@@ -233,6 +233,64 @@ struct NapiUtils
 
         return env.Undefined();
         }
+    
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Grigas.Petraitis                05/18
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static Napi::Value Convert(Napi::Env env, rapidjson::Value const& jsonValue)
+        {
+        if (jsonValue.IsBool())
+            return Napi::Boolean::New(env, jsonValue.GetBool());
+        if (jsonValue.IsInt())
+            {
+            napi_value v;
+            if (napi_create_int32(env, jsonValue.GetInt(), &v) != napi_ok)
+                return env.Undefined();
+            return Napi::Number(env, v);
+            }
+        if (jsonValue.IsUint())
+            {
+            napi_value v;
+            if (napi_create_int32(env, jsonValue.GetUint(), &v) != napi_ok)
+                return env.Undefined();
+            return Napi::Number(env, v);
+            }
+        if (jsonValue.IsInt64())
+            {
+            napi_value v;
+            if (napi_create_int64(env, jsonValue.GetInt64(), &v) != napi_ok)
+                return env.Undefined();
+            return Napi::Number(env, v);
+            }
+        if (jsonValue.IsUint64())
+            {
+            napi_value v;
+            if (napi_create_int64(env, jsonValue.GetUint64(), &v) != napi_ok)
+                return env.Undefined();
+            return Napi::Number(env, v);
+            }
+        if (jsonValue.IsDouble())
+            return Napi::Number::New(env, jsonValue.GetDouble());
+        if (jsonValue.IsNull())
+            return env.Undefined();
+        if (jsonValue.IsString())
+            return Napi::String::New(env, jsonValue.GetString());
+        if (jsonValue.IsArray())
+            {
+            Napi::Array jsArray = Napi::Array::New(env, jsonValue.Size());
+            for (rapidjson::SizeType i = 0; i < jsonValue.Size(); ++i)
+                jsArray.Set((uint32_t)i, Convert(env, jsonValue[i]));
+            return jsArray;
+            }
+        if (jsonValue.IsObject())
+            {
+            Napi::Object jsObject = Napi::Object::New(env);
+            for (auto itor = jsonValue.MemberBegin(); itor != jsonValue.MemberEnd(); ++itor)
+                jsObject.Set(itor->name.GetString(), Convert(env, itor->value));
+            return jsObject;
+            }
+        return env.Undefined();
+        }
 };
 
 #if 0 //WIP
@@ -2691,6 +2749,11 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         m_ruleSetLocater = SimpleRuleSetLocater::Create();
         m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
         }
+    ~NativeECPresentationManager()
+        {
+        // 'terminate' not called
+        BeAssert(m_presentationManager == nullptr);
+        }
 
     static bool InstanceOf(Napi::Value val) {
         if (!val.IsObject())
@@ -2712,7 +2775,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
           InstanceMethod("removeRuleSet", &NativeECPresentationManager::RemoveRuleSet),
           InstanceMethod("clearRuleSets", &NativeECPresentationManager::ClearRuleSets),
           InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
-          InstanceMethod("terminate", &NativeECPresentationManager::Terminate)
+          InstanceMethod("dispose", &NativeECPresentationManager::Terminate)
         });
 
         exports.Set("NativeECPresentationManager", t);
@@ -2724,83 +2787,98 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         s_constructor.SuppressDestruct();
         }
 
+    Napi::Value CreateReturnValue(ECPresentationResult const& result, bool serializeResponse = false)
+        {
+        if (result.IsError())
+            {
+            return NapiUtils::CreateBentleyReturnErrorObject(result.GetStatus(), result.GetErrorMessage().c_str(), Env());
+            }
+        if (serializeResponse)
+            {
+            rapidjson::StringBuffer buffer;
+            rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+            result.GetSuccessResponse().Accept(writer);
+            return NapiUtils::CreateBentleyReturnSuccessObject(Napi::String::New(Env(), buffer.GetString()), Env());
+            }
+        return NapiUtils::CreateBentleyReturnSuccessObject(NapiUtils::Convert(Env(), result.GetSuccessResponse()), Env());
+        }
+
     Napi::Value HandleRequest(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db, Env().Undefined());    // contract pre-conditions
-        REQUIRE_ARGUMENT_STRING(1, serializedRequest, Env().Undefined());
-
+        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "iModel")));
         if (!db->IsOpen())
-            return NapiUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());
+            return CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "iModel: not open"));
+
+        REQUIRE_ARGUMENT_STRING(1, serializedRequest, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "request")));
+        Json::Value request = Json::Value::From(serializedRequest);
+        if (request.isNull())
+            return CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "request"));
+        Utf8CP requestId = request["requestId"].asCString();
+        if (Utf8String::IsNullOrEmpty(requestId))
+            return CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "request.requestId"));
 
         m_connections.NotifyConnectionOpened(db->GetDgnDb());
 
-        Json::Value request = Json::Value::From(serializedRequest);
-        if (request.isNull())
-            return NapiUtils::CreateErrorObject0(ERROR, nullptr, Env());
-
-        Utf8CP requestId = request["requestId"].asCString();
-        if (Utf8String::IsNullOrEmpty(requestId))
-            return NapiUtils::CreateErrorObject0(ERROR, nullptr, Env());
-
         JsonValueCR params = request["params"];
-        rapidjson::Document response;
+        ECPresentationResult result(ECPresentationStatus::InvalidArgument, "request.requestId");
+
         if (0 == strcmp("GetRootNodesCount", requestId))
-            ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db->GetDgnDb(), params, response);
+            result = ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db->GetDgnDb(), params);
         else if (0 == strcmp("GetRootNodes", requestId))
-            ECPresentationUtils::GetRootNodes(*m_presentationManager, db->GetDgnDb(), params, response);
+            result = ECPresentationUtils::GetRootNodes(*m_presentationManager, db->GetDgnDb(), params);
         else if (0 == strcmp("GetChildrenCount", requestId))
-            ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params, response);
+            result = ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params);
         else if (0 == strcmp("GetChildren", requestId))
-            ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params, response);
+            result = ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params);
         else if (0 == strcmp("GetContentDescriptor", requestId))
-            ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params, response);
+            result = ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params);
         else if (0 == strcmp("GetContent", requestId))
-            ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params, response);
+            result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params);
         else if (0 == strcmp("GetContentSetSize", requestId))
-            ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params, response);
-        else
-            return NapiUtils::CreateErrorObject0(ERROR, nullptr, Env());
+            result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params);
 
-        rapidjson::StringBuffer buffer;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-        response.Accept(writer);
-
-        return Napi::String::New(Env(), buffer.GetString());
+        return CreateReturnValue(result, true);
         }
 
-    void SetupRulesetDirectories(Napi::CallbackInfo const& info)
+    Napi::Value SetupRulesetDirectories(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING_ARRAY(0, rulesetDirectories,);
-        ECPresentationUtils::SetupRulesetDirectories(*m_presentationManager, rulesetDirectories);
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, rulesetDirectories, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetDirectories")));
+        ECPresentationResult result = ECPresentationUtils::SetupRulesetDirectories(*m_presentationManager, rulesetDirectories);
+        return CreateReturnValue(result);
         }
 
-    void SetupLocaleDirectories(Napi::CallbackInfo const& info)
+    Napi::Value SetupLocaleDirectories(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING_ARRAY(0, localeDirectories,);
-        ECPresentationUtils::SetupLocaleDirectories(localeDirectories);
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, localeDirectories, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "localeDirectories")));
+        ECPresentationResult result = ECPresentationUtils::SetupLocaleDirectories(localeDirectories);
+        return CreateReturnValue(result);
         }
 
-    void SetActiveLocale(Napi::CallbackInfo const& info)
+    Napi::Value SetActiveLocale(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, locale, );
-        ECPresentationUtils::SetActiveLocale(locale);
+        REQUIRE_ARGUMENT_STRING(0, locale, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "locale")));
+        ECPresentationResult result = ECPresentationUtils::SetActiveLocale(locale);
+        return CreateReturnValue(result);
         }
 
-    void AddRuleSet(Napi::CallbackInfo const& info)
+    Napi::Value AddRuleSet(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, rulesetJsonString,);
-        ECPresentationUtils::AddRuleSet(*m_ruleSetLocater, rulesetJsonString);
+        REQUIRE_ARGUMENT_STRING(0, rulesetJsonString, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetJsonString")));
+        ECPresentationResult result = ECPresentationUtils::AddRuleSet(*m_ruleSetLocater, rulesetJsonString);
+        return CreateReturnValue(result);
         }
 
-    void RemoveRuleSet(Napi::CallbackInfo const& info)
+    Napi::Value RemoveRuleSet(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, ruleSetId,);
-        ECPresentationUtils::RemoveRuleSet(*m_ruleSetLocater, ruleSetId);
+        REQUIRE_ARGUMENT_STRING(0, ruleSetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
+        ECPresentationResult result = ECPresentationUtils::RemoveRuleSet(*m_ruleSetLocater, ruleSetId);
+        return CreateReturnValue(result);
         }
 
-    void ClearRuleSets(Napi::CallbackInfo const& info)
+    Napi::Value ClearRuleSets(Napi::CallbackInfo const& info)
         {
-        ECPresentationUtils::ClearRuleSets(*m_ruleSetLocater);
+        ECPresentationResult result = ECPresentationUtils::ClearRuleSets(*m_ruleSetLocater);
+        return CreateReturnValue(result);
         }
 
     void Terminate(Napi::CallbackInfo const& info)

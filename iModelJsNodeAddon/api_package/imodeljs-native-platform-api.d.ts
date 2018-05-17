@@ -762,49 +762,57 @@ declare class NativeECSqlValueIterator {
     getCurrent(): NativeECSqlValue;
 }
 
+/**
+ * Status codes used by NativeECPresentationManager APIs.
+ */
+export const enum NativeECPresentationStatus {
+  Success = 0,
+  Error = 1,                            /** Base error */
+  InvalidArgument = Error + 1,          /** Argument is invalid */
+}
 /* The NativeECPresentationManager class that is projected by IModelJsNative. */
-declare class NativeECPresentationManager {
+declare class NativeECPresentationManager implements IDisposable {
     constructor();
     /**
      * Sets up a ruleset locater that looks for rulesets in the specified directories
      * @param directories Ruleset locations
      */
-    setupRulesetDirectories(directories: string[]): void;
+    setupRulesetDirectories(directories: string[]): ErrorStatusOrResult<NativeECPresentationStatus, void>;
     /**
      * Sets up a list of directories to lookup for localization files
      * @param directories Localization-related files' locations
      */
-    setupLocaleDirectories(directories: string[]): void;
+    setupLocaleDirectories(directories: string[]): ErrorStatusOrResult<NativeECPresentationStatus, void>;
     /**
      * Set the locale that should be used for localizing
      * presentation data.
      */
-    setActiveLocale(locale: string): void;
+    setActiveLocale(locale: string): ErrorStatusOrResult<NativeECPresentationStatus, void>;
     /**
      * Adds ruleset that can be used by NativeECPresentationManager
      * @param ruleSetJson Serialized JSON string of a ruleset to be added
      */
-    addRuleSet(ruleSetJson: string): void;
+    addRuleSet(ruleSetJson: string): ErrorStatusOrResult<NativeECPresentationStatus, void>;
     /**
      * Removes a ruleset
      * @param ruleSetId Id of a ruleset to be removed
      */
-    removeRuleSet(ruleSetId: string): void;
+    removeRuleSet(ruleSetId: string): ErrorStatusOrResult<NativeECPresentationStatus, void>;
     /**
      * Removes all rulesets
      */
-    clearRuleSets(): void;
+    clearRuleSets(): ErrorStatusOrResult<NativeECPresentationStatus, void>;
     /**
      * Handles an ECPresentation manager request
      * @param db The db to run the request on
      * @param options Serialized JSON object that contains parameters for the request
      * @return Serialized JSON response
      */
-    handleRequest(db: NativeDgnDb, options: string): string;
+    handleRequest(db: NativeDgnDb, options: string): ErrorStatusOrResult<NativeECPresentationStatus, string>;
     /**
      * Terminates the presentation manager.
      */
-    terminate(): void;
+    dispose(): void;
 }
 
 /* Some types used by the NativeECSchemaXmlContext class. */
