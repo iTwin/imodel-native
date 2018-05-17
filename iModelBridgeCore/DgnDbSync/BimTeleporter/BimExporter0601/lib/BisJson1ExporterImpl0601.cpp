@@ -54,7 +54,7 @@ static Utf8CP const JSON_TYPE_WorkBreakdown = "WorkBreakdown";
 static Utf8CP const JSON_TYPE_Activity = "Activity";
 static Utf8CP const JSON_TYPE_Baseline = "Baseline";
 static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
-// unused - static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
+static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
 
 static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec="CodeSpec";
 static Utf8CP const  BIS_ELEMENT_PROP_CodeScope="CodeScope";
@@ -2032,8 +2032,34 @@ BentleyStatus BisJson1ExporterImpl::ExportElementAspects(ECClassId classId, ECIn
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus BisJson1ExporterImpl::ExportTextAnnotationData()
     {
-    return SUCCESS;
 
+    Statement stmt;
+    Utf8PrintfString sql("SELECT ECInstanceId, TextAnnotation FROM dgn_TextAnnotationData");
+    if (BE_SQLITE_OK != (stmt.Prepare(*m_dgndb, sql.c_str())))
+        {
+        LogMessage(TeleporterLoggingSeverity::LOG_ERROR, "Unable to prepare statement to retrieve TextAnnotationData");
+        return ERROR;
+        }
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        auto entry = Json::Value(Json::ValueType::objectValue);
+        entry[JSON_TYPE_KEY] = JSON_TYPE_TextAnnotationData;
+        entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
+        entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
+        auto& row = entry[JSON_OBJECT_KEY];
+        row.clear();
+        int64_t id = stmt.GetValueInt64(0);
+        MakeNavigationProperty(row, "Element", id);
+
+        ByteCP data = static_cast<ByteCP>(stmt.GetValueBlob(1));
+        size_t dataSize = stmt.GetColumnBytes(1);
+        Utf8String str;
+        Base64Utilities::Encode(str, data, dataSize);
+        row["TextAnnotation"] = str.c_str();
+        (QueueJson) (entry.toStyledString().c_str());
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

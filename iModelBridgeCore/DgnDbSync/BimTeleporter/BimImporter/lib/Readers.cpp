@@ -13,6 +13,8 @@
 #include <Logging/bentleylogging.h>
 #include <DgnPlatform/GenericDomain.h>
 #include <DgnPlatform/Render.h>
+#include <DgnPlatform/Annotations/TextAnnotationElement.h>
+#include <DgnPlatform/Annotations/TextAnnotationPersistence.h>
 #include <Bentley/Base64Utilities.h>
 #include <Planning/PlanningApi.h>
 #include "SyncInfo.h"
@@ -2205,4 +2207,61 @@ BentleyStatus PropertyDataReader::_Read(Json::Value& propData)
         }
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus TextAnnotationDataReader::_Read(Json::Value& object)
+    {
+    DgnElementId mappedElementId = GetMappedElementId(object, "Element");
+    if (!mappedElementId.IsValid())
+        {
+        Utf8PrintfString error("Failed to map ElementId for TextAnnotationData entry.");
+        GetLogger().warning(error.c_str());
+        return ERROR;
+        }
+
+    bvector<Byte> data;
+    size_t size = object["TextAnnotation"].asString().SizeInBytes();
+    Base64Utilities::Decode(data, object["TextAnnotation"].asString().c_str(), size);
+
+    TextAnnotationPtr annotation = TextAnnotation::Create(*GetDgnDb());
+    if (SUCCESS != TextAnnotationPersistence::DecodeFromFlatBufWithRemap(*annotation, data.data(), size, *m_importer))
+        {
+        GetLogger().warningv("Failed to decode text annotation data");
+        return ERROR;
+        }
+
+    DgnElementCPtr annotationElement = GetDgnDb()->Elements().GetElement(mappedElementId);
+    if (!annotationElement.IsValid())
+        {
+        GetLogger().error("Failed to get AnnotationElement for TextAnnotationData entry");
+        return ERROR;
+        }
+
+    if (annotationElement->GetElementClass()->Is(GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotation2d)))
+        {
+        TextAnnotation2dPtr text2d = GetDgnDb()->Elements().GetForEdit<TextAnnotation2d>(mappedElementId);
+        if (!text2d.IsValid())
+            {
+            GetLogger().error("Failed to get TextAnnotation2d for TextAnnotationData");
+            return ERROR;
+            }
+        text2d->SetAnnotation(annotation.get());
+        text2d->Update();
+        }
+    else
+        {
+        TextAnnotation3dPtr text3d = GetDgnDb()->Elements().GetForEdit<TextAnnotation3d>(mappedElementId);
+        if (!text3d.IsValid())
+            {
+            GetLogger().error("Failed to get TextAnnotation3d for TextAnnotationData");
+            return ERROR;
+            }
+        text3d->SetAnnotation(annotation.get());
+        text3d->Update();
+        }
+    return SUCCESS;
+    }
 END_BIM_TELEPORTER_NAMESPACE
+
