@@ -2705,11 +2705,13 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NativeECPresentationManager", {
-          InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
           InstanceMethod("setupRulesetDirectories", &NativeECPresentationManager::SetupRulesetDirectories),
+          InstanceMethod("setupLocaleDirectories", &NativeECPresentationManager::SetupLocaleDirectories),
+          InstanceMethod("setActiveLocale", &NativeECPresentationManager::SetActiveLocale),
           InstanceMethod("addRuleSet", &NativeECPresentationManager::AddRuleSet),
           InstanceMethod("removeRuleSet", &NativeECPresentationManager::RemoveRuleSet),
           InstanceMethod("clearRuleSets", &NativeECPresentationManager::ClearRuleSets),
+          InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
           InstanceMethod("terminate", &NativeECPresentationManager::Terminate)
         });
 
@@ -2750,20 +2752,12 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             ECPresentationUtils::GetChildrenCount(*m_presentationManager, db->GetDgnDb(), params, response);
         else if (0 == strcmp("GetChildren", requestId))
             ECPresentationUtils::GetChildren(*m_presentationManager, db->GetDgnDb(), params, response);
-        else if (0 == strcmp("GetNodePaths", requestId))
-            ECPresentationUtils::GetNodePaths(*m_presentationManager, db->GetDgnDb(), params, response);
-        else if (0 == strcmp("GetFilteredNodesPaths", requestId))
-            ECPresentationUtils::GetFilteredNodesPaths(*m_presentationManager, db->GetDgnDb(), params, response);
         else if (0 == strcmp("GetContentDescriptor", requestId))
             ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params, response);
         else if (0 == strcmp("GetContent", requestId))
             ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params, response);
         else if (0 == strcmp("GetContentSetSize", requestId))
             ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params, response);
-        else if (0 == strcmp("GetDistinctValues", requestId))
-            ECPresentationUtils::GetDistinctValues(*m_presentationManager, db->GetDgnDb(), params, response);
-        else if (0 == strcmp("SaveValueChange", requestId))
-            ECPresentationUtils::SaveValueChange(*m_presentationManager, db->GetDgnDb(), params, response);
         else
             return NapiUtils::CreateErrorObject0(ERROR, nullptr, Env());
 
@@ -2778,6 +2772,18 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, rulesetDirectories,);
         ECPresentationUtils::SetupRulesetDirectories(*m_presentationManager, rulesetDirectories);
+        }
+
+    void SetupLocaleDirectories(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, localeDirectories,);
+        ECPresentationUtils::SetupLocaleDirectories(localeDirectories);
+        }
+
+    void SetActiveLocale(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, locale, );
+        ECPresentationUtils::SetActiveLocale(locale);
         }
 
     void AddRuleSet(Napi::CallbackInfo const& info)

@@ -766,17 +766,20 @@ declare class NativeECSqlValueIterator {
 declare class NativeECPresentationManager {
     constructor();
     /**
-     * Handles an ECPresentation manager request
-     * @param db The db to run the request on
-     * @param options Serialized JSON object that contains parameters for the request
-     * @return Serialized JSON response
-     */
-    handleRequest(db: NativeDgnDb, options: string): string;
-    /**
      * Sets up a ruleset locater that looks for rulesets in the specified directories
      * @param directories Ruleset locations
      */
     setupRulesetDirectories(directories: string[]): void;
+    /**
+     * Sets up a list of directories to lookup for localization files
+     * @param directories Localization-related files' locations
+     */
+    setupLocaleDirectories(directories: string[]): void;
+    /**
+     * Set the locale that should be used for localizing
+     * presentation data.
+     */
+    setActiveLocale(locale: string): void;
     /**
      * Adds ruleset that can be used by NativeECPresentationManager
      * @param ruleSetJson Serialized JSON string of a ruleset to be added
@@ -791,6 +794,13 @@ declare class NativeECPresentationManager {
      * Removes all rulesets
      */
     clearRuleSets(): void;
+    /**
+     * Handles an ECPresentation manager request
+     * @param db The db to run the request on
+     * @param options Serialized JSON object that contains parameters for the request
+     * @return Serialized JSON response
+     */
+    handleRequest(db: NativeDgnDb, options: string): string;
     /**
      * Terminates the presentation manager.
      */

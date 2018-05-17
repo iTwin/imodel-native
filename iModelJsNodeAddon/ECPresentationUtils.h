@@ -24,21 +24,23 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct ECPresentationUtils
 {
     static RulesDrivenECPresentationManager* CreatePresentationManager(IConnectionManagerR, Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin&);
+
     static void SetupRulesetDirectories(RulesDrivenECPresentationManager&, bvector<Utf8String> const&);
+    static void SetupLocaleDirectories(bvector<Utf8String> const&);
+    static void SetActiveLocale(Utf8String);
+
+    static void AddRuleSet(SimpleRuleSetLocater&, Utf8StringCR rulesetJsonString);
+    static void RemoveRuleSet(SimpleRuleSetLocater&, Utf8StringCR ruleSetId);
+    static void ClearRuleSets(SimpleRuleSetLocater&);
+
     static void GetRootNodesCount(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
     static void GetRootNodes(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
     static void GetChildrenCount(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
     static void GetChildren(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
-    static void GetNodePaths(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
-    static void GetFilteredNodesPaths(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
+
     static void GetContentDescriptor(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
     static void GetContent(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
     static void GetContentSetSize(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
-    static void GetDistinctValues(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
-    static void SaveValueChange(IECPresentationManagerR, ECDbR, JsonValueCR params, rapidjson::Document& response);
-    static void AddRuleSet(SimpleRuleSetLocater&, Utf8StringCR rulesetJsonString);
-    static void RemoveRuleSet(SimpleRuleSetLocater&, Utf8StringCR ruleSetId);
-    static void ClearRuleSets(SimpleRuleSetLocater&);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

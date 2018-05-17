@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECPresentationUtils.h"
+#include <Bentley/BeDirectoryIterator.h>
 
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2018
@@ -951,14 +952,181 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     };
 
 /*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                05/2018
++===============+===============+===============+===============+===============+======*/
+struct IModelJsECPresentationLocalizationProvider : ILocalizationProvider
+{
+private:
+    bvector<BeFileName> m_localeDirectories;
+    Utf8String m_activeLocale;
+    mutable bmap<Utf8String, rapidjson::Document*> m_cache;
+private:
+    static bvector<Utf8String> GetLocaleVariants(Utf8StringCR activeLocale)
+        {
+        bvector<Utf8String> variants;
+        variants.push_back(activeLocale);
+        Utf8String cultureNeutral;
+        if (Utf8String::npos != activeLocale.GetNextToken(cultureNeutral, "-", 0) && cultureNeutral.length() != activeLocale.length())
+            variants.push_back(cultureNeutral);
+        if (!activeLocale.EqualsI("en") && !cultureNeutral.EqualsI("en"))
+            variants.push_back("en");
+        return variants;
+        }
+    bvector<BeFileName> GetLocalizationDirectoryPaths() const
+        {
+        bvector<BeFileName> result;
+        bvector<Utf8String> localeVariants = GetLocaleVariants(m_activeLocale);
+        for (Utf8StringCR locale : localeVariants)
+            {
+            for (BeFileName dir : m_localeDirectories)
+                {
+                BeFileName localeDir(dir);
+                localeDir.AppendUtf8(locale.c_str());
+                if (localeDir.DoesPathExist())
+                    result.push_back(localeDir);
+                }
+            }
+        return result;
+        }
+    bvector<BeFileName> GetLocalizationFilePaths(Utf8StringCR ns) const
+        {
+        BeFileName nsFileName(ns);
+        nsFileName.AppendExtension(L"json");
+        bvector<BeFileName> result;
+        bvector<BeFileName> dirs = GetLocalizationDirectoryPaths();
+        for (BeFileNameCR dir : dirs)
+            {
+            bvector<BeFileName> matches;
+            BeDirectoryIterator::WalkDirsAndMatch(matches, dir, nsFileName.c_str(), true);
+            result.insert(result.end(), matches.begin(), matches.end());
+            }
+        return result;
+        }
+    static rapidjson::Document ReadLocalizationFile(BeFileNameCR path)
+        {
+        rapidjson::Document json;
+        BeFile file;
+        if (BeFileStatus::Success != file.Open(path.c_str(), BeFileAccess::Read))
+            {
+            BeAssert(false);
+            return json;
+            }    
+        bvector<Byte> data;
+        if (BeFileStatus::Success != file.ReadEntireFile(data))
+            {
+            BeAssert(false);
+            return json;
+            }
+        data.push_back(0);
+        json.Parse((Utf8CP)data.begin());
+        return json;
+        }
+    static void MergeLocalizationData(RapidJsonValueR target, rapidjson::Document::AllocatorType& targetAllocator, RapidJsonValueCR source)
+        {
+        if (source.IsObject())
+            {
+            BeAssert(target.IsNull() || target.IsObject());
+            if (target.IsNull())
+                target.SetObject();
+            for (auto sourceIter = source.MemberBegin(); sourceIter != source.MemberEnd(); ++sourceIter)
+                {
+                Utf8CP key = sourceIter->name.GetString();
+                if (!target.HasMember(key))
+                    target.AddMember(rapidjson::Value(key, targetAllocator), rapidjson::Value(), targetAllocator);
+                MergeLocalizationData(target[key], targetAllocator, sourceIter->value);
+                }
+            }
+        else if (source.IsString())
+            {
+            BeAssert(target.IsNull() || target.IsString());
+            // note: do not overwrite if the string is already set - we parse
+            // more specific locales first and finish with less specific ones
+            if (target.IsNull())
+                target.SetString(source.GetString(), targetAllocator);
+            }
+        else
+            {
+            BeAssert(false);
+            }
+        }
+    rapidjson::Document* CreateNamespace(Utf8StringCR ns) const
+        {
+        if (m_localeDirectories.empty() || m_activeLocale.empty())
+            return nullptr;
+        
+        rapidjson::Document* json = new rapidjson::Document();
+        json->SetObject();
+        bvector<BeFileName> filePaths = GetLocalizationFilePaths(ns);
+        for (BeFileNameCR filePath : filePaths)
+            MergeLocalizationData(*json, json->GetAllocator(), ReadLocalizationFile(filePath));
+        return json;
+        }
+    void ClearCache()
+        {
+        for (auto entry : m_cache)
+            DELETE_AND_CLEAR(entry.second);
+        m_cache.clear();
+        }
+protected:
+    bool _GetString(Utf8StringCR key, Utf8StringR localizedValue) const override
+        {
+        Utf8String ns;
+        size_t pos;
+        if (Utf8String::npos == (pos = key.GetNextToken(ns, ":", 0)))
+            return false;
+        
+        auto iter = m_cache.find(ns);
+        if (m_cache.end() == iter)
+            iter = m_cache.Insert(ns, CreateNamespace(ns)).first;
+        rapidjson::Value const* curr = iter->second;
+        if (nullptr == curr)
+            return false;
+        
+        Utf8String id(key.begin() + pos, key.end());
+        bvector<Utf8String> idPath;
+        BeStringUtilities::Split(id.c_str(), ".", idPath);
+        for (Utf8StringCR idPart : idPath)
+            {
+            auto iter = curr->FindMember(idPart.c_str());
+            if (curr->MemberEnd() == iter)
+                return false;
+            curr = &iter->value;
+            }
+        if (!curr || !curr->IsString())
+            return false;
+        localizedValue.AssignOrClear(curr->GetString());
+        return true;
+        }
+public:
+    ~IModelJsECPresentationLocalizationProvider() {ClearCache();}
+    void SetLocaleDirectories(bvector<BeFileName> directories) {m_localeDirectories = directories; ClearCache();}
+    void SetActiveLocale(Utf8String locale) {m_activeLocale = locale; ClearCache();}
+};
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2018
 +===============+===============+===============+===============+===============+======*/
-struct SerializerSetupHelper
-    {
-    SerializerSetupHelper() {IECPresentationManager::SetSerializer(new IModelJsECPresentationSerializer());}
-    ~SerializerSetupHelper() {IECPresentationManager::SetSerializer(nullptr);}
+struct IModelJsECPresentationStaticSetupHelper
+{
+private:
+    IModelJsECPresentationSerializer* m_serializer;
+    IModelJsECPresentationLocalizationProvider* m_localizationProvider;
+public:
+    IModelJsECPresentationStaticSetupHelper()
+        : m_serializer(new IModelJsECPresentationSerializer()), m_localizationProvider(new IModelJsECPresentationLocalizationProvider())
+        {
+        IECPresentationManager::SetSerializer(m_serializer);
+        IECPresentationManager::SetLocalizationProvider(m_localizationProvider);
+        }
+    ~IModelJsECPresentationStaticSetupHelper()
+        {
+        IECPresentationManager::SetSerializer(nullptr);
+        IECPresentationManager::SetLocalizationProvider(nullptr);
+        }
+    IModelJsECPresentationSerializer& GetSerializer() {return *m_serializer;}
+    IModelJsECPresentationLocalizationProvider& GetLocalizationProvider() {return *m_localizationProvider;}
     };
-static SerializerSetupHelper s_setupSerializer;
+static IModelJsECPresentationStaticSetupHelper s_staticSetup;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2017
@@ -983,6 +1151,51 @@ void ECPresentationUtils::SetupRulesetDirectories(RulesDrivenECPresentationManag
     {
     Utf8String joinedDirectories = BeStringUtilities::Join(directories, ";");
     manager.GetLocaters().RegisterLocater(*DirectoryRuleSetLocater::Create(joinedDirectories.c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECPresentationUtils::SetupLocaleDirectories(bvector<Utf8String> const& directories)
+    {
+    bvector<BeFileName> directoryPaths;
+    for (Utf8StringCR dir : directories)
+        directoryPaths.push_back(BeFileName(dir).AppendSeparator());
+    s_staticSetup.GetLocalizationProvider().SetLocaleDirectories(directoryPaths);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECPresentationUtils::SetActiveLocale(Utf8String locale)
+    {
+    s_staticSetup.GetLocalizationProvider().SetActiveLocale(locale);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kililnskas                 05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECPresentationUtils::AddRuleSet(SimpleRuleSetLocater& locater, Utf8StringCR rulesetJsonString)
+    {
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(rulesetJsonString);
+    if (ruleSet != nullptr)
+        locater.AddRuleSet(*ruleSet);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kililnskas                 05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECPresentationUtils::RemoveRuleSet(SimpleRuleSetLocater& locater, Utf8StringCR ruleSetId)
+    {
+    locater.RemoveRuleSet(ruleSetId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kililnskas                 05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECPresentationUtils::ClearRuleSets(SimpleRuleSetLocater& locater)
+    {
+    locater.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1070,22 +1283,6 @@ void ECPresentationUtils::GetChildren(IECPresentationManagerR manager, ECDbR db,
     DataContainer<NavNodeCPtr> nodes = manager.GetChildren(db, *parentNode, GetPageOptions(params), GetManagerOptions(params)).get();
     for (NavNodeCPtr const& node : nodes)
         response.PushBack(node->AsJson(&response.GetAllocator()), response.GetAllocator());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::GetNodePaths(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
-    {
-    BeAssert(false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::GetFilteredNodesPaths(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
-    {
-    BeAssert(false);
     }
 
 /*=================================================================================**//**
@@ -1189,47 +1386,5 @@ void ECPresentationUtils::GetContentSetSize(IECPresentationManagerR manager, ECD
     ContentDescriptorCPtr overridenDescriptor = helper.GetOverridenDescriptor(*descriptor);
     size_t size = manager.GetContentSetSize(*overridenDescriptor).get();
     response.SetUint64(size);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::GetDistinctValues(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
-    {
-    BeAssert(false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::SaveValueChange(IECPresentationManagerR manager, ECDbR db, JsonValueCR params, rapidjson::Document& response)
-    {
-    BeAssert(false);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kililnskas                 05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::AddRuleSet(SimpleRuleSetLocater& locater, Utf8StringCR rulesetJsonString)
-    {
-    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromJsonString(rulesetJsonString);
-    if (ruleSet != nullptr)
-        locater.AddRuleSet(*ruleSet);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kililnskas                 05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::RemoveRuleSet(SimpleRuleSetLocater& locater, Utf8StringCR ruleSetId)
-    {
-    locater.RemoveRuleSet(ruleSetId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Kililnskas                 05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECPresentationUtils::ClearRuleSets(SimpleRuleSetLocater& locater)
-    {
-    locater.Clear();
     }
 
