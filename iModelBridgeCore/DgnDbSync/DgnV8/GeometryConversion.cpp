@@ -629,6 +629,10 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
         if (DgnV8Api::STYLE_BYLEVEL != rawStyle || (lsParamsV8 && 0 != lsParamsV8->modifiers))
             InitLineStyle(params, *styleModelRef, paramsV8.GetLineStyle(), lsParamsV8);
         }
+    else if (DgnV8Api::STYLE_BYLEVEL != rawStyle)
+        {
+        params.SetLineStyle(nullptr);
+        }
 
     params.SetTransparency(paramsV8.GetTransparency());
 
