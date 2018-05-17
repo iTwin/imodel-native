@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECDb/ECDbApi.h>
+#include <ECObjects/ECJsonUtilities.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/Nullable.h>
 #include "Command.h"
@@ -1383,7 +1384,7 @@ void ExportCommand::RunExportChangeSummary(Session& session, ECInstanceId change
     const int opCodeIx = 4;
     const int isIndirectIx = 5;
 
-    if (ECSqlStatus::Success != ctx.m_accessStringStmt.Prepare(ctx.m_ecdb, "SELECT AccessString FROM ecchange.change.PropertyValueChange WHERE InstanceChange.Id=?"))
+    if (ECSqlStatus::Success != ctx.m_accessStringStmt.Prepare(ctx.m_ecdb, "SELECT AccessString, RawOldValue, TYPEOF(RawOldValue), RawNewValue, TYPEOF(RawNewValue) FROM ecchange.change.PropertyValueChange WHERE InstanceChange.Id=?"))
         {
         IModelConsole::WriteErrorLine("Failed to prepare ECSQL to retrieve property value changes for instance changes.");
         return;
@@ -1395,19 +1396,15 @@ void ExportCommand::RunExportChangeSummary(Session& session, ECInstanceId change
         {
         instanceChangeCount++;
 
-        ECInstanceId changedInstanceId = stmt.GetValueId<ECInstanceId>(changedInstanceIdIx);
-        Utf8String changedInstanceIdStr = changedInstanceId.ToHexStr();
-        Utf8PrintfString changedInstanceClassName("[%s].[%s]", stmt.GetValueText(changedInstanceSchemaNameIx), stmt.GetValueText(changedInstanceClassNameIx));
-        
-        ChangeSummaryExportContext::Timer icPerf(ctx, Utf8PrintfString("Process Changed %s:%s", changedInstanceClassName.c_str(), changedInstanceIdStr.c_str()));
-
         ECInstanceId icId = stmt.GetValueId<ECInstanceId>(icIdIx);
+        ECInstanceId changedInstanceId = stmt.GetValueId<ECInstanceId>(changedInstanceIdIx);
+        Utf8PrintfString changedInstanceClassName("[%s].[%s]", stmt.GetValueText(changedInstanceSchemaNameIx), stmt.GetValueText(changedInstanceClassNameIx));      
 
         Json::Value& instanceChangeJson = ctx.m_outputJson.append(Json::ValueType::objectValue);
         instanceChangeJson["id"] = icId.ToHexStr();
         instanceChangeJson["summaryId"] = ctx.m_summaryIdString;
         
-        instanceChangeJson["changedInstance"]["id"] = changedInstanceIdStr;
+        instanceChangeJson["changedInstance"]["id"] = changedInstanceId.ToHexStr();
         instanceChangeJson["changedInstance"]["className"] = changedInstanceClassName;
 
         ChangeOpCode opCode = (ChangeOpCode) stmt.GetValueInt(opCodeIx);
@@ -1418,14 +1415,20 @@ void ExportCommand::RunExportChangeSummary(Session& session, ECInstanceId change
         switch (opCode)
             {
                 case ChangeOpCode::Insert:
-                    PropertyValueChangesToJson(changedPropsJson["after"], ctx, icId, changedInstanceId, changedInstanceClassName, ChangedValueState::AfterInsert);
+                    if (SUCCESS != PropertyValueChangesToJson(changedPropsJson["after"], ctx, icId, changedInstanceId, changedInstanceClassName, ChangedValueState::AfterInsert))
+                        return;
+
                     break;
                 case ChangeOpCode::Update:
-                    PropertyValueChangesToJson(changedPropsJson["before"], ctx, icId, changedInstanceId, changedInstanceClassName, ChangedValueState::BeforeUpdate);
-                    PropertyValueChangesToJson(changedPropsJson["after"], ctx, icId, changedInstanceId, changedInstanceClassName, ChangedValueState::AfterUpdate);
+                    if (SUCCESS != PropertyValueChangesToJson(changedPropsJson["before"], ctx, icId, changedInstanceId, changedInstanceClassName, ChangedValueState::BeforeUpdate) ||
+                        SUCCESS != PropertyValueChangesToJson(changedPropsJson["after"], ctx, icId, changedInstanceId, changedInstanceClassName, ChangedValueState::AfterUpdate))
+                        return;
+
                     break;
                 case ChangeOpCode::Delete:
-                    PropertyValueChangesToJson(changedPropsJson["before"], ctx, icId, changedInstanceId, changedInstanceClassName, ChangedValueState::BeforeDelete);
+                    if (SUCCESS != PropertyValueChangesToJson(changedPropsJson["before"], ctx, icId, changedInstanceId, changedInstanceClassName, ChangedValueState::BeforeDelete))
+                        return;
+
                     break;
                 default:
                     BeAssert(false && "Need to adjust unhandled ChangedOpCode");
@@ -1446,7 +1449,7 @@ void ExportCommand::RunExportChangeSummary(Session& session, ECInstanceId change
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle     05/2018
 //---------------------------------------------------------------------------------------
-void ExportCommand::PropertyValueChangesToJson(Json::Value& propValJson, ChangeSummaryExportContext& ctx, BeSQLite::EC::ECInstanceId instanceChangeId, BeSQLite::EC::ECInstanceId changedInstanceId, Utf8StringCR changedInstanceClassName, BeSQLite::EC::ChangedValueState changedValueState) const
+BentleyStatus ExportCommand::PropertyValueChangesToJson(Json::Value& propValJson, ChangeSummaryExportContext& ctx, BeSQLite::EC::ECInstanceId instanceChangeId, BeSQLite::EC::ECInstanceId changedInstanceId, Utf8StringCR changedInstanceClassName, BeSQLite::EC::ChangedValueState changedValueState) const
     {
     Utf8String changedInstanceLabel;
     changedInstanceLabel.Sprintf("%s:%s (%s)", changedInstanceClassName.c_str(), changedInstanceId.ToHexStr().c_str(), ToString(changedValueState));
@@ -1454,65 +1457,62 @@ void ExportCommand::PropertyValueChangesToJson(Json::Value& propValJson, ChangeS
     if (ECSqlStatus::Success != ctx.m_accessStringStmt.BindId(1, instanceChangeId))
         {
         IModelConsole::WriteErrorLine("Failed to retrieve property value changes for %s.", changedInstanceLabel.c_str());
-        return;
+        ERROR;
         }
 
-    Utf8String propValECSql("SELECT ");
-    bool isFirstRow = true;
+    ChangeSummaryExportContext::Timer perf(ctx, Utf8PrintfString("Process Changed %s", changedInstanceLabel.c_str()));
+
+    const bool useOldValue = changedValueState == ChangedValueState::BeforeUpdate || changedValueState == ChangedValueState::BeforeDelete;
+    const int rawValueColIx = useOldValue ? 1 : 3;
+    const int rawValueTypeColIx = useOldValue ? 2 : 4;
+
+    propValJson = Json::Value(Json::objectValue);
     while (BE_SQLITE_ROW == ctx.m_accessStringStmt.Step())
         {
-        if (!isFirstRow)
-            propValECSql.append(",");
+        if (ctx.m_accessStringStmt.IsValueNull(rawValueColIx))
+            continue;
 
-        // access string tokens need to be escaped as they might collide with reserved words in ECSQL or SQLite
         Utf8CP accessString = ctx.m_accessStringStmt.GetValueText(0);
-        bvector<Utf8String> accessStringTokens;
-        BeStringUtilities::Split(accessString, ".", accessStringTokens);
-        BeAssert(!accessStringTokens.empty());
-        bool isFirstToken = true;
-        for (Utf8StringCR token : accessStringTokens)
-            {
-            if (!isFirstToken)
-                propValECSql.append(".");
+        Utf8CP valType = ctx.m_accessStringStmt.GetValueText(rawValueTypeColIx);
 
-            propValECSql.append("[").append(token).append("]");
-            isFirstToken = false;
+        if (BeStringUtilities::StricmpAscii("integer", valType) == 0)
+            {
+            int64_t val = ctx.m_accessStringStmt.GetValueInt64(rawValueColIx);
+            propValJson[accessString] = val;
+            continue;
             }
 
-        isFirstRow = false;
+        if (BeStringUtilities::StricmpAscii("real", valType) == 0)
+            {
+            double val = ctx.m_accessStringStmt.GetValueDouble(rawValueColIx);
+            propValJson[accessString] = val;
+            continue;
+            }
+
+        if (BeStringUtilities::StricmpAscii("text", valType) == 0)
+            {
+            Utf8CP val = ctx.m_accessStringStmt.GetValueText(rawValueColIx);
+            propValJson[accessString] = val;
+            continue;
+            }
+
+        if (BeStringUtilities::StricmpAscii("blob", valType) == 0)
+            {
+            int blobSize = -1;
+            void const* blob = ctx.m_accessStringStmt.GetValueBlob(rawValueColIx, &blobSize);
+            if (SUCCESS != ECN::ECJsonUtilities::BinaryToJson(propValJson[accessString], (Byte const*) blob, (size_t) blobSize))
+                {
+                IModelConsole::WriteErrorLine("Failed to convert BLOB value of property '%s.%s' to JSON.", changedInstanceLabel.c_str(), accessString);
+                return ERROR;
+                }
+
+            continue;
+            }
         }
 
     ctx.m_accessStringStmt.Reset();
     ctx.m_accessStringStmt.ClearBindings();
-    propValECSql.append(Utf8PrintfString(" FROM main.%s.Changes(?,%d) WHERE ECInstanceId=?", changedInstanceClassName.c_str(), (int) changedValueState));
-
-    ChangeSummaryExportContext::Timer prepareECSqlPerf(ctx, Utf8PrintfString("%s - Prepare", changedInstanceLabel.c_str()), propValECSql.c_str());
-    CachedECSqlStatementPtr stmt = ctx.m_changedInstanceStmtCache.GetPreparedStatement(ctx.m_ecdb, propValECSql.c_str());
-    prepareECSqlPerf.Dispose();
-
-    if (stmt == nullptr || ECSqlStatus::Success != stmt->BindId(1, ctx.m_summaryId) || ECSqlStatus::Success != stmt->BindId(2, changedInstanceId))
-        {
-        IModelConsole::WriteErrorLine("Failed to retrieve changes for %s [ECSQL: %s].", changedInstanceLabel.c_str(), propValECSql.c_str());
-        return;
-        }
-
-    //seperate out call to Step to measure its performance without the binding calls
-    ChangeSummaryExportContext::Timer stepECSqlPerf(ctx, Utf8PrintfString("%s - Step", changedInstanceLabel.c_str()), propValECSql.c_str(), stmt->GetNativeSql());
-    if (BE_SQLITE_ROW != stmt->Step())
-        {
-        IModelConsole::WriteErrorLine("Failed to retrieve changes for instance %s [ECSQL: %s].",changedInstanceId.ToHexStr().c_str(), propValECSql.c_str());
-        return;
-        }
-
-    stepECSqlPerf.Dispose();
-
-    ChangeSummaryExportContext::Timer toJsonPerf(ctx, Utf8PrintfString("%s - To JSON", changedInstanceLabel.c_str()), propValECSql.c_str(), stmt->GetNativeSql());
-    JsonECSqlSelectAdapter adapter(*stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECN::ECJsonInt64Format::AsNumber));
-    if (SUCCESS != adapter.GetRow(propValJson))
-        {
-        IModelConsole::WriteErrorLine("Failed to convert changes for instance %s to JSON [ECSQL: %s].", changedInstanceId.ToHexStr().c_str(), propValECSql.c_str());
-        return;
-        }
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

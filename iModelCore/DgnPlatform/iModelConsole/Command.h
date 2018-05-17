@@ -205,7 +205,7 @@ struct ExportCommand final : public Command
         void RunExportTables(Session&, Utf8StringCR jsonFile) const;
         void ExportTable(Session&, Json::Value& out, Utf8CP tableName) const;
         void RunExportChangeSummary(Session&, BeSQLite::EC::ECInstanceId changeSummaryId, Utf8StringCR jsonFile) const;
-        void PropertyValueChangesToJson(Json::Value& propValueJson, ChangeSummaryExportContext&, BeSQLite::EC::ECInstanceId instanceChangeId, BeSQLite::EC::ECInstanceId changedInstanceId, Utf8StringCR changedInstanceClassName, BeSQLite::EC::ChangedValueState) const;
+        BentleyStatus PropertyValueChangesToJson(Json::Value& propValueJson, ChangeSummaryExportContext&, BeSQLite::EC::ECInstanceId instanceChangeId, BeSQLite::EC::ECInstanceId changedInstanceId, Utf8StringCR changedInstanceClassName, BeSQLite::EC::ChangedValueState) const;
 
         static Utf8CP ToString(BeSQLite::EC::ChangedValueState);
 
