@@ -1457,7 +1457,7 @@ BentleyStatus ExportCommand::PropertyValueChangesToJson(Json::Value& propValJson
     if (ECSqlStatus::Success != ctx.m_accessStringStmt.BindId(1, instanceChangeId))
         {
         IModelConsole::WriteErrorLine("Failed to retrieve property value changes for %s.", changedInstanceLabel.c_str());
-        ERROR;
+        return ERROR;
         }
 
     ChangeSummaryExportContext::Timer perf(ctx, Utf8PrintfString("Process Changed %s", changedInstanceLabel.c_str()));
@@ -1667,9 +1667,9 @@ void ExportCommand::ChangeSummaryExportContext::Timer::Dispose()
     m_isDiposed = true;
     Utf8String line;
     if (Utf8String::IsNullOrEmpty(m_ecsql))
-        line.Sprintf("%s|%" PRIu64 "\r\n", m_message, BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime);
+        line.Sprintf("%s|%" PRIu64 "\r\n", m_message.c_str(), BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime);
     else
-        line.Sprintf("%s|%" PRIu64 "|%s|%s\r\n", m_message, BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime, m_ecsql, m_nativeSql);
+        line.Sprintf("%s|%" PRIu64 "|%s|%s\r\n", m_message.c_str(), BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime, m_ecsql, m_nativeSql);
 
     if (m_ctx.m_diagnosticsFile.Write(nullptr, line.c_str(), (uint32_t) line.size()) != BeFileStatus::Success)
         {
