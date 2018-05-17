@@ -82,8 +82,6 @@ $(o)SheetConverter$(oext):  $(baseDir)SheetConverter.cpp $(DgnV8Depends) $(DgnDb
 
 $(o)DrawingConverter$(oext):  $(baseDir)DrawingConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
-$(o)DrawingConverter2$(oext):  $(baseDir)DrawingConverter2.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
-
 $(o)Updater$(oext):  $(baseDir)Updater.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)LineStyleConverter$(oext):  $(baseDir)LineStyleConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}

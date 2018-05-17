@@ -454,7 +454,7 @@ DgnViewId Converter::SheetsGetViewForAttachment(bool isFromProxyGraphics, Geomet
 
     // See if we already have a ViewDefinition for this V8 attachment
     IChangeDetector::SearchResults prov;
-    DgnV8Api::EditElementHandle v8AttachmentEh(v8DgnAttachment.GetElementId(), &sheetModelMapping.GetV8Model());
+    DgnV8Api::EditElementHandle v8AttachmentEh(v8DgnAttachment.GetElementId(), v8DgnAttachment.GetParentModelRefP());
     ViewDefinitionPtr newView;
     IChangeDetector::T_SyncInfoElementFilter chooseViewElement = ElementFilters::GetViewDefinitionElementFiter();
     if (GetChangeDetector()._IsElementChanged(prov, *this, v8AttachmentEh, sheetModelMapping, &chooseViewElement))

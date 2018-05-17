@@ -667,15 +667,9 @@ struct Converter
         bool GetConvertViewsOfAllDrawings() const {return m_convertViewsOfAllDrawings;}
     };
 
-    //! Guides the search for attachments with proxy graphics
-    struct ProxyGraphicsDetector
-        {
-        //! Decides if the V8 attachment can or should have proxy graphics
-        DGNDBSYNC_EXPORT virtual bool _UseProxyGraphicsFor(DgnAttachmentCR, Converter&) = 0;
-        };
 
     //! Determines where V8 proxy graphics will be stored as elements.
-    struct ProxyGraphicsDrawingFactory : ProxyGraphicsDetector
+    struct ProxyGraphicsDrawingFactory
         {
         //! Create the model where V8 proxy graphics from this attachment should be stored and insert it.
         //! @note the caller is also responsible for mapping the v8Attachment to the drawing element in syncinfo
@@ -1335,8 +1329,7 @@ public:
     
     //! @name Extracted drawing graphics
     //! @{
-    DGNDBSYNC_EXPORT bool _UseProxyGraphicsFor(DgnAttachmentCR ref);
-    DgnAttachmentP GetFirstNeedingCve(ResolvedModelMapping const&, ProxyGraphicsDetector&, ViewportP vp, bset<DgnV8Api::ElementId> const& ignoreList);
+
     DgnCategoryId GetExtractionCategoryId(V8NamedViewType);
     DGNDBSYNC_EXPORT virtual DgnCategoryId _GetExtractionCategoryId(DgnAttachmentCR);
     DGNDBSYNC_EXPORT virtual DgnSubCategoryId _GetExtractionSubCategoryId(DgnCategoryId, DgnV8Api::ClipVolumePass pass,
@@ -1349,7 +1342,6 @@ public:
     //! @param parentModel  The model that has attachments to be checked
     //! @param viewOfParentModel A V8 view of the parent model - determines the visibility and appearance of generated proxy graphics
     //! @praam proxyDetector Helps to detect which attachments should have proxy graphics
-    DGNDBSYNC_EXPORT virtual void _GenerateProxyGraphics(ResolvedModelMapping const& parentModel, DgnV8Api::Viewport& viewOfParentModel, ProxyGraphicsDetector& proxyDetector);
     DGNDBSYNC_EXPORT virtual DgnDbStatus _CreateAndInsertExtractionGraphic(ResolvedModelMapping const& drawingModelMapping,
                                                                            SyncInfo::V8ElementSource const& attachmentMapping,
                                                                            SyncInfo::V8ElementMapping const& originalElementMapping,
@@ -1361,11 +1353,12 @@ public:
     // WIP - Simplified drawing conversion.
     void CreateProxyGraphics (DgnModelRefR modelRef, ViewportR viewport);
     void MergeDrawingGraphics(Bentley::DgnModelRefR baseModelRef, ResolvedModelMapping const& v8mm, ViewportR viewport);
-    void DrawingsConvertModelAndViews2(ResolvedModelMapping const& v8mm);
     void CreateSheetExtractionAttachments(ResolvedModelMapping const& v8SheetModelMapping, ProxyGraphicsDrawingFactory& drawingGenerator, Bentley::ViewInfoCP v8SheetView);
     DgnDbStatus CreateDrawingElement(DgnModelR model, DgnCategoryId categoryId, GeometryBuilder& builder);
+    DGNDBSYNC_EXPORT bool _UseRenderedViewAttachmentFor(DgnAttachmentR ref);
+    DGNDBSYNC_EXPORT bool _GenerateProxyCacheFor(DgnAttachmentR ref);
+    DGNDBSYNC_EXPORT bool HasRenderedViewAttachments(DgnV8ModelR v8ParentModel);
 
-    DGNDBSYNC_EXPORT bool _UseProxyGraphicsFor2(DgnAttachmentCR ref);
 
     //! @}
 
@@ -1531,18 +1524,12 @@ public:
     //! @note The returned model is marked as hidden
     Bentley::RefCountedPtr<DgnV8Api::DgnModel> CopyModel(DgnV8ModelP v8Model, WCharCP newNameSuffix);
 
-    //! Unnest all 2d attachements to the specified sheet.
-    void UnnestAttachments(DgnV8ModelR parentModel);
-
     //! convert any attached sheets into drawings
     void TransformSheetAttachmentsToDrawings(DgnV8ModelR parentModel);
 
     //! Optionally transform attachments to 2d models into attachments to copies of those 2d models.
     typedef std::function<bool(DgnV8Api::DgnAttachment const&)> T_AttachmentCopyFilter;
     void TransformDrawingAttachmentsToCopies(DgnV8ModelR parentModel, T_AttachmentCopyFilter filter);
-
-    //! Get the direct attachments to the specified sheet that might need to be unnested.
-    bvector<DgnV8Api::ElementId> GetAttachmentsToBeUnnested(DgnV8ModelR sheetModel);
 
     //! @}
 
