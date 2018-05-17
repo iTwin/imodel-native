@@ -38,6 +38,7 @@
 
 #include <icu4c/unicode/putil.h>
 #include <icu4c/unicode/ucnv.h>
+#include <icu4c/unicode/ustring.h>
 
 // Conflicts with ICU.
 #define NO_UCHAR_TYPEDEF
@@ -247,13 +248,13 @@ BentleyStatus BeStringUtilities::TranscodeStringDirect(bvector<Byte>& outStringB
     UErrorCode icuError = U_ZERO_ERROR;
 
     // Try and make the converters (early fail).
-    LocalUConverterPointer toUnicodeConverter(ucnv_open(inEncoding, &icuError));
+    icu::LocalUConverterPointer toUnicodeConverter(ucnv_open(inEncoding, &icuError));
     if (toUnicodeConverter.isNull() || U_FAILURE(icuError))
         { BeAssert(false); return ERROR; }
 
     icuError = U_ZERO_ERROR;
     
-    LocalUConverterPointer fromUnicodeConverter(ucnv_open(outEncoding, &icuError));
+    icu::LocalUConverterPointer fromUnicodeConverter(ucnv_open(outEncoding, &icuError));
     if (fromUnicodeConverter.isNull() || U_FAILURE(icuError))
         { BeAssert(false); return ERROR; }
 
