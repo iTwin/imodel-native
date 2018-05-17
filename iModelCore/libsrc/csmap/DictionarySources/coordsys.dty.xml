@@ -6114,10 +6114,7 @@
                 <Name>Atlantic Islands</Name>
                 <Members>
                   <Member>
-                    <KeyName>MADEIRA.UTM-28N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3061</KeyName>
+                    <KeyName>PortoSanto95.UTM-28N</KeyName>
                   </Member>
                   <Member>
                     <KeyName>BNG1957</KeyName>
@@ -7801,13 +7798,10 @@
                     <KeyName>PT-TM06/ETRS89</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:3763</KeyName>
+                    <KeyName>PortoSanto95.UTM-28N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>MADEIRA.UTM-28N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102163</KeyName>
+                    <KeyName>Lisbon1890.LisboaBonne</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:102164</KeyName>
@@ -7816,7 +7810,10 @@
                     <KeyName>EPSG:102165</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:20790</KeyName>
+                    <KeyName>Lisbon37.PortNatGrd</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Lisbon37.PortGrdNew</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Datum73-2.UTM-29N</KeyName>
@@ -7825,46 +7822,31 @@
                     <KeyName>Datum73-2.ModPortgGrd</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2942</KeyName>
+                    <KeyName>Datum73-Mod.UTM-29N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>PortoSanto.UTM-28N</KeyName>
+                    <KeyName>Datum73-Mod.ModPortGrd</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:102167</KeyName>
+                    <KeyName>Datum73-Mod.HayfIGeoE</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2943</KeyName>
+                    <KeyName>Datum73-Mod.HayfIPCC</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>SelvagemGrande.UTM-28N</KeyName>
+                    <KeyName>PortoSanto36.UTM-28N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:102169</KeyName>
+                    <KeyName>Selvagem.UTM-28N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>PortoSanto.LL</KeyName>
+                    <KeyName>PTRA08.UTM-25N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4615</KeyName>
+                    <KeyName>PTRA08.UTM-26N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>SelvagemGrande.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4616</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:5018</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:5014</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:5015</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:5016</KeyName>
+                    <KeyName>PTRA08.UTM-28N</KeyName>
                   </Member>
                   <Member>
                     <KeyName>PTRA08.EuropeLCC</KeyName>
@@ -30888,6 +30870,56 @@
                 </Members>
               </Group>
               <Group>
+                <Name>Portugal</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:3763</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102163</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5018</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:20790</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102167</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>PortoSanto.UTM-28N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>MADEIRA.UTM-28N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:3061</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2942</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5014</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5015</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5016</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>SelvagemGrande.UTM-28N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:102169</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2943</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
                 <Name>Singapore</Name>
                 <Members>
                   <Member>
@@ -34313,22 +34345,19 @@
                 <Name>Portugal</Name>
                 <Members>
                   <Member>
-                    <KeyName>EPSG:4207</KeyName>
+                    <KeyName>Lisbon37/b.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Lisbon37.LL</KeyName>
+                    <KeyName>PortoSanto95.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>PortoSanto1995.LL</KeyName>
+                    <KeyName>Lisbon1890_1.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4663</KeyName>
+                    <KeyName>PTRA08.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Lisbon1890.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4666</KeyName>
+                    <KeyName>LISBOA-7P.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:104105</KeyName>
@@ -34340,10 +34369,19 @@
                     <KeyName>Datum73-2.LL</KeyName>
                   </Member>
                   <Member>
+                    <KeyName>Datum73-Mod.LL</KeyName>
+                  </Member>
+                  <Member>
                     <KeyName>EPSG:4803</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:5013</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>PortoSanto36.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Selvagem.LL</KeyName>
                   </Member>
                 </Members>
                 <Groups>
@@ -36018,12 +36056,6 @@
                     <KeyName>LUZON-MI.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>MADEIRA.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>MARCO.LL</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>MIDWAY.LL</KeyName>
                   </Member>
                   <Member>
@@ -36599,7 +36631,43 @@
               </Member>
               <Member>
                 <KeyName>Tahaa.LL</KeyName>
-              </Member>           
+              </Member>
+              <Member>
+                <KeyName>EPSG:4207</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Lisbon37.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>PortoSanto.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4615</KeyName>
+              </Member>
+              <Member>
+                <KeyName>PortoSanto1995.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4663</KeyName>
+              </Member>
+              <Member>
+                <KeyName>SelvagemGrande.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4616</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Lisbon1890.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4666</KeyName>
+              </Member>
+              <Member>
+                <KeyName>MARCO.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>MADEIRA.LL</KeyName>
+              </Member>
             </Members>
           </Group>
         </Groups>
