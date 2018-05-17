@@ -635,6 +635,10 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(ECClassRemovalContex
     if (!conversionSchema.IsValid())
         conversionSchema = syncContext->LocateSchema(conversionKey, ECN::SchemaMatchType::Latest);
 
+    // Since abstractness was ignored in V8, remove all abstract flags
+    if (inputClass.GetClassModifier() == ECClassModifier::Abstract)
+        inputClass.SetClassModifier(ECClassModifier::None);
+
     if (conversionSchema.IsValid())
         {
         ECN::ECClassCP ecClass = conversionSchema->GetClassCP(inputClass.GetName().c_str());
