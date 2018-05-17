@@ -19,7 +19,7 @@
         <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)TerrainModelCore$(ApiNumber)$(shlibext)</Assemblies>
-            <Libs ProductDirectoryName="TerrainModelNativeCoreLibs" Required="false"> Delivery/$(libprefix)TerrainModelCore$(libext)</Libs>
+            <Libs> Delivery/$(libprefix)TerrainModelCore$(libext)</Libs>
         </Bindings>
     </Part>
 
