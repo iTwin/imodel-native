@@ -23,6 +23,7 @@
     <ClCompile Include="BackDoor\DgnElementHelpers.cpp" />
     <ClCompile Include="BackDoor\DgnPlatformTestDomain.cpp" />
     <ClCompile Include="DgnDbTestUtils\DgnDbTestUtils.cpp" />
+    <ClCompile Include="DgnDbTestUtils\RepositoryManagerUtil.cpp" />
     <ClCompile Include="NonPublished\BackwardCompatibility_Tests.cpp" />
     <ClCompile Include="NonPublished\Category_Test.cpp" />
     <ClCompile Include="NonPublished\ConfigurationManager_Test.cpp" />
@@ -116,6 +117,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\DgnDbTestUtils.h" />
+    <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\RepositoryManagerUtil.h" />
     <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\ScopedDgnHost.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\BackDoor.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnDbUtilities.h" />
