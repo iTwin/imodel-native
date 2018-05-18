@@ -1186,7 +1186,7 @@ void ORDConverter::AssociateGeneratedAlignments()
         Utf8String pointCode(cifGenLine3d->GetName().c_str());
         auto pointDefCPtr = RoadRailPhysical::TypicalSectionPointDefinition::QueryByCode(*roadwayStandardsModelPtr, pointCode);
         if (pointDefCPtr.IsNull())
-            pointDefCPtr = RoadRailPhysical::GenericTypicalSectionPointDef::CreateAndInsert(*roadwayStandardsModelPtr, pointCode.c_str(), pointCode.c_str());
+            pointDefCPtr = RoadRailPhysical::GenericTypicalSectionPointDefinition::CreateAndInsert(*roadwayStandardsModelPtr, pointCode.c_str(), pointCode.c_str());
 
         if (pointDefCPtr.IsNull())
             continue;
