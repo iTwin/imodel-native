@@ -9,7 +9,7 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
-
+#include <Bentley/PerformanceLogger.h>
 #include "Command.h"
 
 USING_NAMESPACE_BENTLEY
@@ -188,7 +188,6 @@ struct Session final
         void Reset() { m_file = nullptr; m_issueListener.Reset(); }
         ECDbIssueListener const& GetIssues() const { return m_issueListener; }
     };
-
 
 //=======================================================================================
 // @bsiclass                                    BentleySystems 
