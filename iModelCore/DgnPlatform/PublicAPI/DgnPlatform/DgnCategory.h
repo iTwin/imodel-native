@@ -144,7 +144,7 @@ public:
         void SetTransparency(double val) {m_flags.m_transparency=true; m_value.SetTransparency(val);}
 
         void ToJson(JsonValueR outValue) const;
-        void FromJson(JsonValueCR inValue);
+        DGNPLATFORM_EXPORT void FromJson(JsonValueCR inValue);
         void ApplyTo(Appearance&) const;
 
         bool GetInvisible(bool& val) const { if (m_flags.m_invisible) val = m_value.IsInvisible(); return m_flags.m_invisible; }

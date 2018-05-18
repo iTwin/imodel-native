@@ -2,13 +2,13 @@
 |
 |     $Source: DgnCore/Annotations/TextAnnotationElement.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
 #include <DgnPlatform/Annotations/Annotations.h>
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
-#include <DgnPlatformInternal/DgnCore/Annotations/TextAnnotationPersistence.h>
+#include <DgnPlatform/Annotations/TextAnnotationPersistence.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -127,21 +127,7 @@ void TextAnnotationData::RemapIds(DgnImportContext& context)
     if (!m_annotation.IsValid())
         return;
     
-    AnnotationTextBlockP text = m_annotation->GetTextP();
-    if (nullptr == text)
-        return;
-
-    for (AnnotationParagraphPtr paragraph : text->GetParagraphs())
-    for (AnnotationRunBasePtr run : paragraph->GetRuns())
-        {
-        if (!run->GetStyleOverrides().HasProperty(AnnotationTextStyleProperty::FontId))
-            continue;
-        
-        DgnFontId srcFontId = DgnFontId((uint64_t)run->GetStyleOverrides().GetIntegerProperty(AnnotationTextStyleProperty::FontId));
-        DgnFontId dstFontId = context.RemapFont(srcFontId);
-        
-        run->GetStyleOverridesR().SetIntegerProperty(AnnotationTextStyleProperty::FontId, (int64_t)dstFontId.GetValue());
-        }
+    m_annotation->RemapIds(context);
     }
 
 //---------------------------------------------------------------------------------------

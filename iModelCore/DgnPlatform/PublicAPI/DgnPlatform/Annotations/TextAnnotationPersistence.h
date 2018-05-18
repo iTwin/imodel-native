@@ -1,12 +1,11 @@
 //-------------------------------------------------------------------------------------- 
-//     $Source: PrivateApi/DgnPlatformInternal/DgnCore/Annotations/TextAnnotationPersistence.h $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//     $Source: PublicAPI/DgnPlatform/Annotations/TextAnnotationPersistence.h $
+//  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
 
 #include <DgnPlatform/Annotations/TextAnnotation.h>
-#include "Annotations.fb.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -22,6 +21,8 @@ public:
     static BentleyStatus EncodeAsFlatBuf(bvector<Byte>&, TextAnnotationCR);
     
     static BentleyStatus DecodeFromFlatBuf(TextAnnotationR, ByteCP, size_t numBytes);
+
+    static DGNPLATFORM_EXPORT BentleyStatus DecodeFromFlatBufWithRemap(TextAnnotationR annotation, ByteCP, size_t numBytes, DgnImportContext&);
 
 }; // TextAnnotationPersistence
 

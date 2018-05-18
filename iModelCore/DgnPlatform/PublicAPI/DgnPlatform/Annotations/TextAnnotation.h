@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/Annotations/TextAnnotation.h $ 
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $ 
+//  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $ 
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -85,6 +85,7 @@ public:
     AnnotationLeaderCollectionCR GetLeaders() const { return m_leaders; }
     AnnotationLeaderCollectionR GetLeadersR() { return m_leaders; }
     DGNPLATFORM_EXPORT void ApplySeed(DgnElementId);
+    DGNPLATFORM_EXPORT void RemapIds(DgnImportContext&);
 };
 
 END_BENTLEY_DGN_NAMESPACE

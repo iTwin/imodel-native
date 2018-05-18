@@ -3457,6 +3457,63 @@ TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value getClipPlaneJson(DVec3dCR dir, double distance)
+    {
+    Json::Value  value(Json::objectValue);
+
+    value["x"] = dir.x;
+    value["y"] = dir.y;
+    value["z"] = dir.z;
+    value["distance"] = fabs(distance);
+
+    return value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value getViewClipJson(ViewDefinitionCR view)
+    {
+    DVec3d      xVector, yVector, negatedXVector, negatedYVector, extents = view.GetExtents();
+    DPoint3d    viewOrigin;
+    
+    view.GetRotation().GetRow(xVector, 0);
+    view.GetRotation().GetRow(yVector, 1);
+    
+    negatedXVector.Negate(xVector);
+    negatedYVector.Negate(yVector);
+    view.GetRotation().Multiply (viewOrigin, view.GetOrigin());
+
+    Json::Value value(Json::arrayValue);
+
+    value.append(getClipPlaneJson(negatedXVector, -viewOrigin.x));
+    value.append(getClipPlaneJson(xVector, viewOrigin.x + extents.x));
+    value.append(getClipPlaneJson(negatedYVector, -viewOrigin.y));
+    value.append(getClipPlaneJson(yVector, viewOrigin.y + extents.y));
+
+    return value;
+    }
+
+#ifdef UNUSED
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value getViewClipJson(DRange3dCR sheetRange)
+    {
+    Json::Value value(Json::arrayValue);
+
+    value.append(getClipPlaneJson(DVec3d::From(-1.0, 0.0, 0.0),  -sheetRange.low.x));
+    value.append(getClipPlaneJson(DVec3d::From(1.0, 0.0, 0.0),  sheetRange.high.x));
+    value.append(getClipPlaneJson(DVec3d::From(0.0, -1.0, 0.0),  -sheetRange.low.y));
+    value.append(getClipPlaneJson(DVec3d::From(0.0, 1.0, 0.0),  sheetRange.high.y));
+
+    return value;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnModelIdSet& attachedModels)
@@ -3508,6 +3565,8 @@ Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnMo
                             tileToSheet = Transform::FromProduct(Transform::FromProduct(addSheetOrigin, scaleToSheet), Transform::FromProduct(viewRotation, subtractViewOrigin));
 
         viewJson["transform"] = TransformToJson(tileToSheet);
+        viewJson["clipPlanes"] = getViewClipJson(*view);
+        
 
         attachmentsJson.append(std::move(viewJson));
         }

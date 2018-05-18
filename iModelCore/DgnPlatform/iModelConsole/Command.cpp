@@ -6,10 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECDb/ECDbApi.h>
+#include <ECObjects/ECJsonUtilities.h>
 #include <Bentley/BeDirectoryIterator.h>
-#include <Bentley/BeTextFile.h>
 #include <Bentley/Nullable.h>
-#include <Bentley/PerformanceLogger.h>
 #include "Command.h"
 #include "iModelConsole.h"
 #include <numeric>
@@ -97,7 +96,7 @@ Utf8String OpenCommand::_GetUsage() const
     {
     return " .open [readonly|readwrite] [attachchanges] <iModel/ECDb/BeSQLite file>\r\n"
         COMMAND_USAGE_IDENT "Opens iModel, ECDb, or BeSQLite file. Default open mode: read-only.\r\n"
-        COMMAND_USAGE_IDENT "if attachchanges is specified, the EC changes cache file is attached (and created if necessary).\r\n";
+        COMMAND_USAGE_IDENT "if attachchanges is specified, the Change Cache file is attached (and created if necessary).\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -151,7 +150,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         }
 
     Utf8CP openModeStr = openMode == Db::OpenMode::Readonly ? "read-only" : "read-write";
-    Utf8CP attachChangeMessage = attachChangeCache ? " and attached EC changes cache file" : "";
+    Utf8CP attachChangeMessage = attachChangeCache ? " and attached Change Cache file" : "";
     //open as plain BeSQlite file first to retrieve profile infos. If file is ECDb or iModel file, we close it
     //again and use respective API to open it higher-level
     std::unique_ptr<BeSQLiteFile> sqliteFile = std::make_unique<BeSQLiteFile>();
@@ -188,7 +187,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             {
             if (BE_SQLITE_OK != iModel->AttachChangeCache(ECDb::GetDefaultChangeCachePath(filePath.GetNameUtf8().c_str())))
                 {
-                IModelConsole::WriteErrorLine("Could not attach Changes cache to file '%s'.", filePath.GetNameUtf8().c_str());
+                IModelConsole::WriteErrorLine("Could not attach Change Cache file to '%s'.", filePath.GetNameUtf8().c_str());
                 return;
                 }
             }
@@ -214,7 +213,7 @@ void OpenCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             {
             if (BE_SQLITE_OK != ecdbFile->GetECDbHandle()->AttachChangeCache(ECDb::GetDefaultChangeCachePath(filePath.GetNameUtf8().c_str())))
                 {
-                IModelConsole::WriteErrorLine("Could not attach Changes cache to file '%s'.", filePath.GetNameUtf8().c_str());
+                IModelConsole::WriteErrorLine("Could not attach Change Cache file to '%s'.", filePath.GetNameUtf8().c_str());
                 return;
                 }
             }
@@ -401,7 +400,7 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
         return;
 
     IModelConsole::WriteLine("Current file: ");
-    IModelConsole::WriteLine("  %s", session.GetFile().GetPath());
+    IModelConsole::WriteLine("  Path: %s", session.GetFile().GetPath());
 
     ProfileVersion initialECDbProfileVersion(0, 0, 0, 0);
     if (session.GetFile().GetType() != SessionFile::Type::BeSQLite)
@@ -469,6 +468,25 @@ void FileInfoCommand::_Run(Session& session, Utf8StringCR args) const
             IModelConsole::WriteLine("    %s: %s", profileInfo.second.m_name.c_str(), profileInfo.second.m_version.ToString().c_str());
         }
 
+    // Table spaces
+    IModelConsole::WriteLine("  Tablespaces:");
+    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), "pragma database_list"))
+        {
+        IModelConsole::WriteErrorLine("Could not execute SQL 'pragma database_list' to retrieve table spaces.");
+        return;
+        }
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Utf8CP tableSpace = stmt.GetValueText(1);
+        Utf8CP path = stmt.GetValueText(2);
+        if (Utf8String::IsNullOrEmpty(path))
+            IModelConsole::WriteLine("    %s", tableSpace);
+        else
+            IModelConsole::WriteLine("    %s \t(%s)", tableSpace, path);
+        }
+
+    stmt.Finalize();
     }
 
 //******************************* CommitCommand ******************
@@ -584,7 +602,14 @@ void AttachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         return;
         }
 
-    if (BE_SQLITE_OK != session.GetFile().GetHandle().AttachDb(filePath, args[1].c_str()))
+    Utf8StringCR tableSpaceName = args[1];
+    if (session.GetFile().IsAttached(tableSpaceName))
+        {
+        IModelConsole::WriteErrorLine("Table space %s is already in use.", tableSpaceName.c_str());
+        return;
+        }
+
+    if (BE_SQLITE_OK != session.GetFile().GetHandle().AttachDb(filePath, tableSpaceName.c_str()))
         {
         IModelConsole::WriteErrorLine("Failed to attach file %s as table space %s: %s", filePath, args[1].c_str(),
                                    session.GetFile().GetHandle().GetLastError().c_str());
@@ -593,6 +618,7 @@ void AttachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     IModelConsole::WriteLine("Attached file %s as table space %s.", filePath, args[1].c_str());
     }
+
 
 //******************************* DetachCommand ******************
 //---------------------------------------------------------------------------------------
@@ -620,7 +646,14 @@ void DetachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     if (!session.IsFileLoaded(true))
         return;
 
-    if (BE_SQLITE_OK != session.GetFile().GetHandle().DetachDb(args[0].c_str()))
+    Utf8StringCR tableSpaceName = args[0];
+    if (!session.GetFile().IsAttached(tableSpaceName))
+        {
+        IModelConsole::WriteErrorLine("Table space %s does not exist.", tableSpaceName.c_str());
+        return;
+        }
+
+    if (BE_SQLITE_OK != session.GetFile().GetHandle().DetachDb(tableSpaceName.c_str()))
         {
         IModelConsole::WriteErrorLine("Failed to detach table space %s and backing file: %s", args[0].c_str(), session.GetFile().GetHandle().GetLastError().c_str());
         return;
@@ -637,7 +670,8 @@ void DetachCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 Utf8String ChangeCommand::_GetUsage() const
     {
     return " .change tracking [on|off]      Enable / pause change tracking. Pausing does not create a revision.\r\n"
-           "         attachcache [cache path] attaches (and creates if necessary) the change cache file.\r\n"
+           "         attachcache [cache path] attaches (and creates if necessary) the Change Cache file.\r\n"
+           "         detachcache            Detaches the Change Cache file, if it was attached.\r\n"
            "         extractsummary [changeset file] if a changeset file is specified, a change summary is created from it.\r\n"
            "                                Otherwise a revision from the current local changes is created and the summary extracted from it.\r\n";
     }
@@ -686,7 +720,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         {
         if (session.GetFileR().GetECDbHandle()->IsChangeCacheAttached())
             {
-            IModelConsole::WriteErrorLine("Change cache file has already been attached.");
+            IModelConsole::WriteErrorLine("A Change Cache file has already been attached.");
             return;
             }
 
@@ -698,11 +732,29 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
         if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->AttachChangeCache(cachePath))
             {
-            IModelConsole::WriteErrorLine("Failed to attach Change cache file %s.", cachePath.GetNameUtf8().c_str());
+            IModelConsole::WriteErrorLine("Failed to attach Change Cache file %s.", cachePath.GetNameUtf8().c_str());
             return;
             }
 
-        IModelConsole::WriteLine("Attached Change cache file %s.", cachePath.GetNameUtf8().c_str());
+        IModelConsole::WriteLine("Attached Change Cache file %s.", cachePath.GetNameUtf8().c_str());
+        return;
+        }
+
+    if (args[0].EqualsIAscii("detachcache"))
+        {
+        if (!session.GetFileR().GetECDbHandle()->IsChangeCacheAttached())
+            {
+            IModelConsole::WriteErrorLine("No Change Cache file has been attached.");
+            return;
+            }
+
+        if (BE_SQLITE_OK != session.GetFileR().GetECDbHandle()->DetachChangeCache())
+            {
+            IModelConsole::WriteErrorLine("Failed to detach Change Cache file.");
+            return;
+            }
+
+        IModelConsole::WriteLine("Detached Change Cache file.");
         return;
         }
 
@@ -710,7 +762,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
         {
         if (!session.GetFileR().GetECDbHandle()->IsChangeCacheAttached())
             {
-            IModelConsole::WriteErrorLine("Failed to extract change summary. No Change cache file is attached. Make sure to attach it first or specify a path to the Change cache file.");
+            IModelConsole::WriteErrorLine("Failed to extract change summary. No Change Cache file is attached. Make sure to attach it first or specify a path to the Change Cache file.");
             return;
             }
 
@@ -1173,13 +1225,6 @@ BentleyStatus ImportCommand::InsertCsvRow(Session& session, Statement& stmt, int
 
 
 //******************************* ExportCommand ******************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     10/2013
-//---------------------------------------------------------------------------------------
-//static
-Utf8CP const ExportCommand::ECSCHEMA_SWITCH = "schema";
-//static
-Utf8CP const ExportCommand::TABLES_SWITCH = "tables";
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
@@ -1188,7 +1233,8 @@ Utf8String ExportCommand::_GetUsage() const
     {
     return " .export schema [v2] <out folder>    Exports all ECSchemas of the file to disk. If 'v2' is specified, ECXML v2 is used.\r\n"
            COMMAND_USAGE_IDENT "Otherwise ECXML v3 is used.\r\n"
-           "         tables <JSON file>     Exports the data in all tables of the file into a JSON file\r\n";
+           "         tables <JSON file>     Exports the data in all tables of the file into a JSON file\r\n"
+           "         changesummary <change summary id> <JSON file> Exports the content of the specified change summary into a JSON file\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1198,7 +1244,7 @@ void ExportCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     {
     std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
     const size_t argCount = args.size();
-    if (!(argCount == 2 || (argCount == 2 && args[1].EqualsI("v2"))))
+    if (argCount == 0)
         {
         IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
         return;
@@ -1207,45 +1253,75 @@ void ExportCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
     if (!session.IsFileLoaded(true))
         return;
 
-    if (args[0].EqualsI(ECSCHEMA_SWITCH))
+    Utf8StringCR switchName = args[0];
+    if (switchName.EqualsIAscii(s_schemaSwitch))
         {
         if (!session.IsECDbFileLoaded(true))
             return;
 
-        Utf8CP outFolder = nullptr;
+        if (argCount < 2 || argCount > 3 || (argCount == 3 && !args[1].EqualsIAscii("v2")))
+            {
+            IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            return;
+            }
+
+        Utf8StringCP outFolder = nullptr;
         bool useECXmlV2 = false;
         if (argCount == 2)
-            outFolder = args[1].c_str();
+            outFolder = &args[1];
         else
             {
             useECXmlV2 = true;
-            outFolder = args[2].c_str();
+            outFolder = &args[2];
             }
 
-        RunExportSchema(session, outFolder, useECXmlV2);
+        RunExportSchema(session, *outFolder, useECXmlV2);
+        return;
+        }    
+
+    if (switchName.EqualsIAscii(s_tablesSwitch))
+        {
+        if (argCount != 2)
+            {
+            IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            return;
+            }
+
+        RunExportTables(session, args[1]);
         return;
         }
 
-    if (args[0].EqualsI(TABLES_SWITCH))
+    if (switchName.EqualsIAscii(s_changeSummarySwitch))
         {
-        RunExportTables(session, args[1].c_str());
+        if (!session.IsECDbFileLoaded(true))
+            return;
+
+        if (argCount != 3)
+            {
+            IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+            return;
+            }
+
+        Utf8StringCR changeSummaryIdStr = args[1];
+        ECInstanceId changeSummaryId;
+        if (SUCCESS != changeSummaryId.FromString(changeSummaryId, changeSummaryIdStr.c_str()))
+            {
+            IModelConsole::WriteErrorLine("Invalid change summary id '%s'. The id must either be specified as decimal or hexadecimal number.", changeSummaryIdStr.c_str());
+            return;
+            }
+
+        RunExportChangeSummary(session, changeSummaryId, args[2]);
         return;
         }
 
     IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Affan.Khan        04/2015
-//---------------------------------------------------------------------------------------
-void ExportCommand::RunExportTables(Session& session, Utf8CP jsonFile) const
-    {
-    ExportTables(session, jsonFile);
-    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle     10/2013
 //---------------------------------------------------------------------------------------
-void ExportCommand::RunExportSchema(Session& session, Utf8CP outFolderStr, bool useECXmlV2) const
+void ExportCommand::RunExportSchema(Session& session, Utf8StringCR outFolderStr, bool useECXmlV2) const
     {
     bvector<ECN::ECSchemaCP> schemas = session.GetFile().GetECDbHandle()->Schemas().GetSchemas(true);
     if (schemas.empty())
@@ -1254,9 +1330,8 @@ void ExportCommand::RunExportSchema(Session& session, Utf8CP outFolderStr, bool 
         return;
         }
 
-    BeFileName outFolder;
-    outFolder.SetNameUtf8(outFolderStr);
-    if (BeFileName::IsDirectory(outFolder.GetName()))
+    BeFileName outFolder(outFolderStr);
+    if (outFolder.IsDirectory())
         {
         IModelConsole::WriteErrorLine("Folder %s already exists. Please delete it or specify and another folder.", outFolder.GetNameUtf8().c_str());
         return;
@@ -1265,7 +1340,7 @@ void ExportCommand::RunExportSchema(Session& session, Utf8CP outFolderStr, bool 
         BeFileName::CreateNewDirectory(outFolder.GetName());
 
     ECN::ECVersion ecxmlVersion = useECXmlV2 ? ECN::ECVersion::V2_0 : ECN::ECVersion::V3_1;
-    for (auto schema : schemas)
+    for (ECSchemaCP schema : schemas)
         {
         WString fileName;
         fileName.AssignUtf8(schema->GetFullSchemaName().c_str());
@@ -1279,14 +1354,197 @@ void ExportCommand::RunExportSchema(Session& session, Utf8CP outFolderStr, bool 
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle     05/2018
+//---------------------------------------------------------------------------------------
+void ExportCommand::RunExportChangeSummary(Session& session, ECInstanceId changeSummaryId, Utf8StringCR jsonFilePath) const
+    {
+    BeAssert(session.GetFile().GetECDbHandle() != nullptr);
+    ChangeSummaryExportContext ctx(*session.GetFile().GetECDbHandle(), changeSummaryId);
+    if (SUCCESS != ctx.InitializeOutput(jsonFilePath))
+        return;
+
+    ECSqlStatement stmt;
+    {
+    ChangeSummaryExportContext::Timer perf(ctx, "InstanceChanges ECSQL (Prepare)");
+    if (ECSqlStatus::Success != stmt.Prepare(ctx.m_ecdb,
+                "SELECT ic.ECInstanceId, s.Name changedInstanceSchemaName, c.Name changedInstanceClassName, ic.ChangedInstance.Id changedInstanceId,"
+                "ic.OpCode, ic.IsIndirect FROM ecchange.change.InstanceChange ic JOIN main.meta.ECClassDef c ON c.ECInstanceId = ic.ChangedInstance.ClassId "
+                "JOIN main.meta.ECSchemaDef s ON c.Schema.Id = s.ECInstanceId WHERE ic.Summary.Id=?") ||
+        ECSqlStatus::Success != stmt.BindId(1, changeSummaryId))
+        {
+        IModelConsole::WriteErrorLine("Failed to retrieve instance changes for change summary id %s.", ctx.m_summaryIdString.c_str());
+        return;
+        }
+    }
+
+    const int icIdIx = 0;
+    const int changedInstanceSchemaNameIx = 1;
+    const int changedInstanceClassNameIx = 2;
+    const int changedInstanceIdIx = 3;
+    const int opCodeIx = 4;
+    const int isIndirectIx = 5;
+
+    if (ECSqlStatus::Success != ctx.m_accessStringStmt.Prepare(ctx.m_ecdb, "SELECT AccessString, RawOldValue, TYPEOF(RawOldValue), RawNewValue, TYPEOF(RawNewValue) FROM ecchange.change.PropertyValueChange WHERE InstanceChange.Id=?"))
+        {
+        IModelConsole::WriteErrorLine("Failed to prepare ECSQL to retrieve property value changes for instance changes.");
+        return;
+        }
+
+    uint64_t instanceChangeCount = 0;
+    ChangeSummaryExportContext::Timer perf(ctx, "Process InstanceChanges");
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        instanceChangeCount++;
+
+        ECInstanceId icId = stmt.GetValueId<ECInstanceId>(icIdIx);
+        ECInstanceId changedInstanceId = stmt.GetValueId<ECInstanceId>(changedInstanceIdIx);
+        Utf8PrintfString changedInstanceClassName("[%s].[%s]", stmt.GetValueText(changedInstanceSchemaNameIx), stmt.GetValueText(changedInstanceClassNameIx));      
+
+        Json::Value& instanceChangeJson = ctx.m_outputJson.append(Json::ValueType::objectValue);
+        instanceChangeJson["id"] = icId.ToHexStr();
+        instanceChangeJson["summaryId"] = ctx.m_summaryIdString;
+        
+        instanceChangeJson["changedInstance"]["id"] = changedInstanceId.ToHexStr();
+        instanceChangeJson["changedInstance"]["className"] = changedInstanceClassName;
+
+        ChangeOpCode opCode = (ChangeOpCode) stmt.GetValueInt(opCodeIx);
+        instanceChangeJson["opCode"] = (int) opCode;
+        instanceChangeJson["isIndirect"] = stmt.GetValueBoolean(isIndirectIx);
+
+        Json::Value& changedPropsJson = instanceChangeJson["changedProperties"];
+        switch (opCode)
+            {
+                case ChangeOpCode::Insert:
+                    if (SUCCESS != PropertyValueChangesToJson(changedPropsJson["after"], ctx, icId, changedInstanceId, changedInstanceClassName, ChangedValueState::AfterInsert))
+                        return;
+
+                    break;
+                case ChangeOpCode::Update:
+                    if (SUCCESS != PropertyValueChangesToJson(changedPropsJson["before"], ctx, icId, changedInstanceId, changedInstanceClassName, ChangedValueState::BeforeUpdate) ||
+                        SUCCESS != PropertyValueChangesToJson(changedPropsJson["after"], ctx, icId, changedInstanceId, changedInstanceClassName, ChangedValueState::AfterUpdate))
+                        return;
+
+                    break;
+                case ChangeOpCode::Delete:
+                    if (SUCCESS != PropertyValueChangesToJson(changedPropsJson["before"], ctx, icId, changedInstanceId, changedInstanceClassName, ChangedValueState::BeforeDelete))
+                        return;
+
+                    break;
+                default:
+                    BeAssert(false && "Need to adjust unhandled ChangedOpCode");
+                    IModelConsole::WriteErrorLine("Programmer error. Need to adjust unhandled ChangedOpCode");
+                    return;
+            }
+        }
+
+    perf.Dispose();
+
+    if (SUCCESS != ctx.WriteOutput())
+        return;
+
+    IModelConsole::WriteLine("Exported ChangeSummary %s with %" PRIu64 " instance changes to '%s'", ctx.m_summaryIdString.c_str(), instanceChangeCount, ctx.m_jsonOutputPath.GetNameUtf8().c_str());
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle     05/2018
+//---------------------------------------------------------------------------------------
+BentleyStatus ExportCommand::PropertyValueChangesToJson(Json::Value& propValJson, ChangeSummaryExportContext& ctx, BeSQLite::EC::ECInstanceId instanceChangeId, BeSQLite::EC::ECInstanceId changedInstanceId, Utf8StringCR changedInstanceClassName, BeSQLite::EC::ChangedValueState changedValueState) const
+    {
+    Utf8String changedInstanceLabel;
+    changedInstanceLabel.Sprintf("%s:%s (%s)", changedInstanceClassName.c_str(), changedInstanceId.ToHexStr().c_str(), ToString(changedValueState));
+
+    if (ECSqlStatus::Success != ctx.m_accessStringStmt.BindId(1, instanceChangeId))
+        {
+        IModelConsole::WriteErrorLine("Failed to retrieve property value changes for %s.", changedInstanceLabel.c_str());
+        return ERROR;
+        }
+
+    ChangeSummaryExportContext::Timer perf(ctx, Utf8PrintfString("Process Changed %s", changedInstanceLabel.c_str()));
+
+    const bool useOldValue = changedValueState == ChangedValueState::BeforeUpdate || changedValueState == ChangedValueState::BeforeDelete;
+    const int rawValueColIx = useOldValue ? 1 : 3;
+    const int rawValueTypeColIx = useOldValue ? 2 : 4;
+
+    propValJson = Json::Value(Json::objectValue);
+    while (BE_SQLITE_ROW == ctx.m_accessStringStmt.Step())
+        {
+        if (ctx.m_accessStringStmt.IsValueNull(rawValueColIx))
+            continue;
+
+        Utf8CP accessString = ctx.m_accessStringStmt.GetValueText(0);
+        Utf8CP valType = ctx.m_accessStringStmt.GetValueText(rawValueTypeColIx);
+
+        if (BeStringUtilities::StricmpAscii("integer", valType) == 0)
+            {
+            int64_t val = ctx.m_accessStringStmt.GetValueInt64(rawValueColIx);
+            propValJson[accessString] = val;
+            continue;
+            }
+
+        if (BeStringUtilities::StricmpAscii("real", valType) == 0)
+            {
+            double val = ctx.m_accessStringStmt.GetValueDouble(rawValueColIx);
+            propValJson[accessString] = val;
+            continue;
+            }
+
+        if (BeStringUtilities::StricmpAscii("text", valType) == 0)
+            {
+            Utf8CP val = ctx.m_accessStringStmt.GetValueText(rawValueColIx);
+            propValJson[accessString] = val;
+            continue;
+            }
+
+        if (BeStringUtilities::StricmpAscii("blob", valType) == 0)
+            {
+            int blobSize = -1;
+            void const* blob = ctx.m_accessStringStmt.GetValueBlob(rawValueColIx, &blobSize);
+            if (SUCCESS != ECN::ECJsonUtilities::BinaryToJson(propValJson[accessString], (Byte const*) blob, (size_t) blobSize))
+                {
+                IModelConsole::WriteErrorLine("Failed to convert BLOB value of property '%s.%s' to JSON.", changedInstanceLabel.c_str(), accessString);
+                return ERROR;
+                }
+
+            continue;
+            }
+        }
+
+    ctx.m_accessStringStmt.Reset();
+    ctx.m_accessStringStmt.ClearBindings();
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle     05/2018
+//---------------------------------------------------------------------------------------
+Utf8CP ExportCommand::ToString(ChangedValueState state)
+    {
+    switch (state)
+        {
+            case ChangedValueState::AfterInsert:
+                return "ChangedValueState::AfterInsert";
+            case ChangedValueState::BeforeUpdate:
+                return "ChangedValueState::BeforeUpdate";
+            case ChangedValueState::AfterUpdate:
+                return "ChangedValueState::AfterUpdate";
+            case ChangedValueState::BeforeDelete:
+                return "ChangedValueState::BeforeDelete";
+            default:
+                BeAssert(false && "Unhandled ChangedValueState enum value. Code needs to be adjusted");
+                return "<programmer error>";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                  Affan.Khan        04/2015
 //---------------------------------------------------------------------------------------
-void ExportCommand::ExportTables(Session& session, Utf8CP jsonFile) const
+void ExportCommand::RunExportTables(Session& session, Utf8StringCR jsonFile) const
     {
     BeFile file;
     if (file.Create(jsonFile, true) != BeFileStatus::Success)
         {
-        IModelConsole::WriteErrorLine("Failed to create JSON file %s", jsonFile);
+        IModelConsole::WriteErrorLine("Failed to create JSON file %s", jsonFile.c_str());
         return;
         }
 
@@ -1299,15 +1557,15 @@ void ExportCommand::ExportTables(Session& session, Utf8CP jsonFile) const
         ExportTable(session, tableData, stmt.GetValueText(0));
         }
 
-    auto jsonString = tableData.toStyledString();
+    Utf8String jsonString = tableData.ToString();
     if (file.Write(nullptr, jsonString.c_str(), static_cast<uint32_t>(jsonString.size())) != BeFileStatus::Success)
         {
-        IModelConsole::WriteErrorLine("Failed to write to JSON file %s", jsonFile);
+        IModelConsole::WriteErrorLine("Failed to write to JSON file %s", jsonFile.c_str());
         return;
         }
 
     file.Flush();
-    IModelConsole::WriteLine("Exported tables to '%s'", jsonFile);
+    IModelConsole::WriteLine("Exported tables to '%s'", jsonFile.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1349,6 +1607,77 @@ void ExportCommand::ExportTable(Session& session, Json::Value& out, Utf8CP table
             }
         }
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     05/2018
+//---------------------------------------------------------------------------------------
+BentleyStatus ExportCommand::ChangeSummaryExportContext::InitializeOutput(Utf8StringCR jsonOutputPath)
+    {
+    m_jsonOutputPath = BeFileName(jsonOutputPath);
+
+    if (m_outputFile.Create(m_jsonOutputPath, true) != BeFileStatus::Success)
+        {
+        IModelConsole::WriteErrorLine("Failed to create JSON file %s", jsonOutputPath.c_str());
+        return ERROR;
+        }
+
+    BeFileName diagnosticsFilePath = m_jsonOutputPath.GetDirectoryName();
+    diagnosticsFilePath.AppendToPath(m_jsonOutputPath.GetFileNameWithoutExtension().c_str());
+    diagnosticsFilePath.AppendExtension(L"diag.csv");
+    if (m_diagnosticsFile.Create(diagnosticsFilePath, true) != BeFileStatus::Success)
+        {
+        IModelConsole::WriteErrorLine("Failed to create diagnostics file %s", diagnosticsFilePath.GetNameUtf8().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     05/2018
+//---------------------------------------------------------------------------------------
+BentleyStatus ExportCommand::ChangeSummaryExportContext::WriteOutput()
+    {
+    Utf8String jsonString = m_outputJson.ToString();
+    if (m_outputFile.Write(nullptr, jsonString.c_str(), (uint32_t) jsonString.size()) != BeFileStatus::Success ||
+        BeFileStatus::Success != m_outputFile.Flush())
+        {
+        IModelConsole::WriteErrorLine("Failed to write ChangeSummary content to JSON file %s", m_jsonOutputPath.GetNameUtf8().c_str());
+        return ERROR;
+        }
+
+    if (m_diagnosticsFile.Flush() != BeFileStatus::Success)
+        {
+        IModelConsole::WriteErrorLine("Failed to write diagnostics file.");
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     05/2018
+//---------------------------------------------------------------------------------------
+void ExportCommand::ChangeSummaryExportContext::Timer::Dispose()
+    {
+    if (m_isDiposed)
+        return;
+
+    m_isDiposed = true;
+    Utf8String line;
+    if (Utf8String::IsNullOrEmpty(m_ecsql))
+        line.Sprintf("%s|%" PRIu64 "\r\n", m_message.c_str(), BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime);
+    else
+        line.Sprintf("%s|%" PRIu64 "|%s|%s\r\n", m_message.c_str(), BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime, m_ecsql, m_nativeSql);
+
+    if (m_ctx.m_diagnosticsFile.Write(nullptr, line.c_str(), (uint32_t) line.size()) != BeFileStatus::Success)
+        {
+        IModelConsole::WriteErrorLine("Failed to write diagnostics to diagnostics file.");
+        return;
+        }
+    }
+
 
 //******************************* CreateClassViewsCommand ******************
 
