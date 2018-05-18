@@ -44,24 +44,24 @@ public:
 //! Point constructs in a Travelway portion definition.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GenericTypicalSectionPointDef : TypicalSectionPointDefinition
+struct EXPORT_VTABLE_ATTRIBUTE GenericTypicalSectionPointDefinition : TypicalSectionPointDefinition
 {
-DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_GenericTypicalSectionPointDef, TypicalSectionPointDefinition);
-friend struct GenericTypicalSectionPointDefHandler;
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_GenericTypicalSectionPointDefinition, TypicalSectionPointDefinition);
+friend struct GenericTypicalSectionPointDefinitionHandler;
 
 protected:
     //! @private
-    explicit GenericTypicalSectionPointDef(CreateParams const& params) : T_Super(params) {}    
+    explicit GenericTypicalSectionPointDefinition(CreateParams const& params) : T_Super(params) {}    
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(GenericTypicalSectionPointDef)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(GenericTypicalSectionPointDef)
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(GenericTypicalSectionPointDefinition)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(GenericTypicalSectionPointDefinition)
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static GenericTypicalSectionPointDefPtr Create(Dgn::DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel = nullptr);
+    ROADRAILPHYSICAL_EXPORT static GenericTypicalSectionPointDefinitionPtr Create(Dgn::DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel = nullptr);
     //! @private
-    ROADRAILPHYSICAL_EXPORT static GenericTypicalSectionPointDefCPtr CreateAndInsert(Dgn::DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel = nullptr);
-}; // GenericTypicalSectionPointDef
+    ROADRAILPHYSICAL_EXPORT static GenericTypicalSectionPointDefinitionCPtr CreateAndInsert(Dgn::DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel = nullptr);
+}; // GenericTypicalSectionPointDefinition
 //__PUBLISH_SECTION_END__
 
 
@@ -78,10 +78,10 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPointDefinition, Typical
 //! ElementHandler for Travelway Point Definitions
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GenericTypicalSectionPointDefHandler : TypicalSectionPointDefinitionHandler
+struct EXPORT_VTABLE_ATTRIBUTE GenericTypicalSectionPointDefinitionHandler : TypicalSectionPointDefinitionHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_GenericTypicalSectionPointDef, GenericTypicalSectionPointDef, GenericTypicalSectionPointDefHandler, TypicalSectionPointDefinitionHandler, ROADRAILPHYSICAL_EXPORT)
-}; // GenericTypicalSectionPointDefHandler
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_GenericTypicalSectionPointDefinition, GenericTypicalSectionPointDefinition, GenericTypicalSectionPointDefinitionHandler, TypicalSectionPointDefinitionHandler, ROADRAILPHYSICAL_EXPORT)
+}; // GenericTypicalSectionPointDefinitionHandler
 
 //__PUBLISH_SECTION_START__
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

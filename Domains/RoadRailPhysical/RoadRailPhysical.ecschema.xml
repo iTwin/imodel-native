@@ -112,7 +112,7 @@
             <Class class="TypicalSectionPointDefinition"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="GenericTypicalSectionPointDef" displayLabel="Typical Section Point Definition" modifier="Sealed" description="Generic Point constructs with unknown nature.">
+    <ECEntityClass typeName="GenericTypicalSectionPointDefinition" displayLabel="Typical Section Point Definition" modifier="Sealed" description="Generic Point constructs with unknown nature.">
         <BaseClass>TypicalSectionPointDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>

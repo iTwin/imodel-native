@@ -12,7 +12,7 @@
 #include <RoadRailPhysical/RoadRailCategory.h>
 
 HANDLER_DEFINE_MEMBERS(TypicalSectionPointDefinitionHandler)
-HANDLER_DEFINE_MEMBERS(GenericTypicalSectionPointDefHandler)
+HANDLER_DEFINE_MEMBERS(GenericTypicalSectionPointDefinitionHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
@@ -54,14 +54,14 @@ TypicalSectionPointDefinitionCPtr TypicalSectionPointDefinition::QueryByCode(Def
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericTypicalSectionPointDefPtr GenericTypicalSectionPointDef::Create(DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel)
+GenericTypicalSectionPointDefinitionPtr GenericTypicalSectionPointDefinition::Create(DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, pointCode));
 
-    GenericTypicalSectionPointDefPtr retVal(new GenericTypicalSectionPointDef(createParams));
+    GenericTypicalSectionPointDefinitionPtr retVal(new GenericTypicalSectionPointDefinition(createParams));
 
     if (userLabel)
         retVal->SetUserLabel(userLabel);
@@ -72,7 +72,7 @@ GenericTypicalSectionPointDefPtr GenericTypicalSectionPointDef::Create(Definitio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-GenericTypicalSectionPointDefCPtr GenericTypicalSectionPointDef::CreateAndInsert(DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel)
+GenericTypicalSectionPointDefinitionCPtr GenericTypicalSectionPointDefinition::CreateAndInsert(DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel)
     {
     auto ptr = Create(model, pointCode, userLabel);
     if (ptr.IsNull())

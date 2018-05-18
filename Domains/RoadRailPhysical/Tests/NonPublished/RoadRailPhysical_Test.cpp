@@ -12,7 +12,7 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
     RoadwayStandardsModelCPtr standardsModel = RoadwayStandardsModel::Query(*projectPtr->Elements().GetRootSubject());
     ASSERT_TRUE(standardsModel.IsValid());
 
-    auto clPointDefPtr = GenericTypicalSectionPointDef::CreateAndInsert(*standardsModel, "CL", "Center-line");
+    auto clPointDefPtr = GenericTypicalSectionPointDefinition::CreateAndInsert(*standardsModel, "CL", "Center-line");
     ASSERT_TRUE(clPointDefPtr.IsValid());
 
     auto alignModelPtr = AlignmentModel::Query(*projectPtr->Elements().GetRootSubject(), RoadRailAlignmentDomain::GetDesignPartitionName());

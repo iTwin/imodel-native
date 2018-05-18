@@ -29,7 +29,7 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(CorridorHandler::GetHandler());    
 
     RegisterHandler(TypicalSectionPointDefinitionHandler::GetHandler());
-    RegisterHandler(GenericTypicalSectionPointDefHandler::GetHandler());
+    RegisterHandler(GenericTypicalSectionPointDefinitionHandler::GetHandler());
     
     RegisterHandler(RailwayStandardsModelHandler::GetHandler());
     RegisterHandler(RoadwayStandardsModelHandler::GetHandler());
