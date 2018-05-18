@@ -335,6 +335,7 @@ bool BisJson1ExporterImpl::OpenDgnDb()
             }
 
         BentleyApi::BeSQLite::DbResult dbResult;
+        StopWatch timer(true);
         DgnIModel::ExtractUsingDefaults(dbResult, dgndbFileName, m_dbPath, true);
 
         if (BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK != dbResult)
@@ -342,6 +343,7 @@ bool BisJson1ExporterImpl::OpenDgnDb()
             LogMessage(TeleporterLoggingSeverity::LOG_ERROR, "Failed to extract dgndb from imodel");
             return false;
             }
+        LogPerformanceMessage(timer, "Extract dgndb from imodel");
 
 
         }
