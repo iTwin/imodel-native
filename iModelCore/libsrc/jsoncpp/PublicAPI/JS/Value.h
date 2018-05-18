@@ -16,7 +16,7 @@
 #include <json/json.h>
 
 BEGIN_BENTLEY_NAMESPACE
-namespace JS 
+namespace Js 
 {
 
 typedef struct ValueHandle__* ValueHandle;
@@ -29,7 +29,6 @@ enum class ValueType : Byte
     {
     String,
     Boolean,
-    Integer,
     Int32,
     UInt32,
     Int64,
@@ -56,6 +55,17 @@ enum class Status
     NullArgument
     };
 
+//=======================================================================================
+//! IntegerOptions
+//  @bsiclass                                           Affan.Khan                05/18
+//=======================================================================================
+enum class IntegerOptions
+    {
+    Auto,
+    Hex,
+    Decimal
+    };
+
 struct IFactory;
 struct Number;
 struct String;
@@ -71,7 +81,6 @@ struct Value
     private:
         ValueHandle m_value;
         IFactory* m_factory;
-        virtual Status _ToJson(Json::Value& v) const;
 
     public:
         Value();
@@ -106,6 +115,15 @@ struct Value
         static Value Null(IFactory& factory);
         static Value Undefined(IFactory& factory);
         
+        int32_t ToInt32(int32_t defaultVal = 0) const;
+        uint32_t ToUInt32(uint32_t defaultVal = 0) const;
+        int64_t ToInt64(int64_t defaultVal = 0) const;
+        uint64_t ToUInt64(uint64_t defaultVal = 0) const;
+        double ToDouble(double defaultVal = 0) const;
+        bool ToBoolean(bool defaultVal = 0) const;
+        Utf8String ToString(Utf8CP defaultVal = "") const;
+
+        
     };
 
 //=======================================================================================
@@ -114,8 +132,6 @@ struct Value
 //=======================================================================================
 struct Number final: Value
     {
-    private:
-        Status _ToJson(Json::Value& v) const override;
     public:
         Number() : Value() {}
         Number(Number const& rhs) : Value(rhs.Factory(), rhs.Handle()) {}
@@ -143,9 +159,6 @@ struct Number final: Value
 //=======================================================================================
 struct Boolean final: Value
     {
-    private:
-        Status _ToJson(Json::Value& v) const override;
-        
     public:
         Boolean() : Value() {}
         Boolean(Boolean const& rhs) : Value(rhs.Factory(), rhs.Handle()) {}
@@ -161,9 +174,6 @@ struct Boolean final: Value
 //=======================================================================================
 struct String final : Value
     {
-    private:
-        Status _ToJson(Json::Value& v) const override;
-        
     public:
         String() : Value() {}
         String(String const& rhs) : Value(rhs.Factory(), rhs.Handle()){}
@@ -171,6 +181,12 @@ struct String final : Value
         Utf8String StringValue() const;
         uint32_t Length() const;
         
+        uint64_t ParseAsUInt64(uint64_t defaultVal = 0, IntegerOptions opts = IntegerOptions::Auto) const;
+        int64_t ParseAsInt64(int64_t defaultVal = 0, IntegerOptions opts = IntegerOptions::Auto) const;
+        uint32_t ParseAsUInt32(uint32_t defaultVal = 0, IntegerOptions opts = IntegerOptions::Auto) const;
+        int32_t ParseAsInt32(int32_t defaultVal = 0, IntegerOptions opts = IntegerOptions::Auto) const;
+        double ParseAsDouble(double defaultVal = 0.0f) const;
+
         operator Utf8String  () { return StringValue(); }
         static String New(IFactory& factory, Utf8CP str);
         static String New(IFactory& factory, Utf8StringCR str);
@@ -182,9 +198,6 @@ struct String final : Value
 //=======================================================================================
 struct  Object final: Value
     {
-    private:
-        Status _ToJson(Json::Value& v) const override;
-        
     public:
         struct LValue final
             {
@@ -233,9 +246,6 @@ struct  Object final: Value
 //=======================================================================================
 struct Array final: Value
     {
-    private:
-        Status _ToJson(Json::Value& v) const override;
-        
     struct LValue final
         {
         friend struct Array;
@@ -307,7 +317,7 @@ struct IFactory : RefCountedBase
         virtual Status GetMemberNames(ValueHandle& members, ValueHandle val) const = 0;
         virtual Status HasMember(bool& found, ValueHandle val, Utf8CP key) const = 0;
         virtual Status RemoveMember(ValueHandle val, ValueHandle key) = 0;
-        virtual Status RemoveMember(ValueHandle val, Utf8CP key) = 0;
+         virtual Status RemoveMember(ValueHandle val, Utf8CP key) = 0;
         virtual Status GetMember(ValueHandle& rt, ValueHandle obj, Utf8CP key) const = 0;
         virtual Status GetMember(ValueHandle& rt, ValueHandle obj, uint32_t index) const = 0;
         virtual Status GetMember(ValueHandle& rt, ValueHandle obj, ValueHandle index) const = 0;
@@ -322,6 +332,41 @@ struct IFactory : RefCountedBase
         virtual ValueHandle GetBoolean(bool b) const = 0;
         virtual ValueHandle GetUndefined() const = 0;
         virtual bool NotifyScopeChanges() const = 0;
+    };
+
+//=======================================================================================
+//! Converter 
+//  @bsiclass                                           Affan.Khan                05/18
+//=======================================================================================
+struct Converter
+    {
+    static bool IsHex(Utf8StringCR str);
+    static bool HasFractionPart(double d);
+    static uint64_t ParseUInt64(Utf8StringCR str, uint64_t defaultVal = 0, IntegerOptions options = IntegerOptions::Auto);
+
+    static uint32_t ParseUInt32(Utf8StringCR str, uint32_t defautlVal = 0, IntegerOptions options = IntegerOptions::Auto);
+    
+    static int64_t ParseInt64(Utf8StringCR str, int64_t defaultVal = 0, IntegerOptions options = IntegerOptions::Auto);
+    static int32_t ParseInt32(Utf8StringCR str, int32_t defaultVal = 0, IntegerOptions options = IntegerOptions::Auto);
+    static double ParseDouble(Utf8StringCR str, double defaultVal = 0);
+    static bool ParseBoolean(Utf8StringCR str, bool defaultVal = true);
+
+    static void ToString(Utf8StringR out, uint64_t i, IntegerOptions options = IntegerOptions::Decimal);
+    static void ToString(Utf8StringR out, uint32_t i, IntegerOptions optiosn = IntegerOptions::Decimal);
+    static void ToString(Utf8StringR out, int64_t i, IntegerOptions optiosn = IntegerOptions::Decimal);
+    static void ToString(Utf8StringR out, int32_t i, IntegerOptions optiosn = IntegerOptions::Decimal);
+    static void ToString(Utf8StringR out, double);
+    static Json::Value ToJson(Value v);
+
+    static int32_t ToInt32(Value val, int32_t defaultVal = 0);
+    static uint32_t ToUInt32(Value val, uint32_t defaultVal = 0);
+    static int64_t ToInt64(Value val, int64_t defaultVal = 0);
+    static uint64_t ToUInt64(Value val, uint64_t defaultVal = 0);
+    static double ToDouble(Value val, double defaultVal = 0);
+    static bool ToBoolean(Value val, bool defaultVal = false);
+    static Utf8String ToString(Value val, Utf8CP defaultVal = "", IntegerOptions options = IntegerOptions::Decimal);
+
+
     };
 
 //=======================================================================================

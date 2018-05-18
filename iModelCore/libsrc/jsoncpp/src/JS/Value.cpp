@@ -12,7 +12,7 @@
 #include <JS/Value.h>
 
 BEGIN_BENTLEY_NAMESPACE
-namespace JS 
+namespace Js 
 {
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
@@ -220,7 +220,13 @@ ValueType Value::Type() const
 
     return type;
     }
-
+int32_t Value::ToInt32(int32_t defaultVal) const { return Converter::ToInt32(*this, defaultVal); }
+uint32_t Value::ToUInt32(uint32_t defaultVal) const { return Converter::ToUInt32(*this, defaultVal); }
+int64_t Value::ToInt64(int64_t defaultVal) const { return Converter::ToInt64(*this, defaultVal); }
+uint64_t Value::ToUInt64(uint64_t defaultVal) const { return Converter::ToUInt64(*this, defaultVal); }
+double Value::ToDouble(double defaultVal) const { return Converter::ToDouble(*this, defaultVal); }
+bool Value::ToBoolean(bool defaultVal) const { return Converter::ToBoolean(*this, defaultVal); }
+Utf8String Value::ToString(Utf8CP defaultVal) const { return Converter::ToString(*this, defaultVal); }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -365,6 +371,12 @@ Number Number::New(IFactory& factory, double d)
 
     return Number(factory, val);
     }
+
+uint64_t String::ParseAsUInt64(uint64_t defaultVal, IntegerOptions opts) const { return Converter::ParseUInt64(StringValue(), defaultVal, opts); }
+int64_t String::ParseAsInt64(int64_t defaultVal, IntegerOptions opts) const { return Converter::ParseInt64(StringValue(), defaultVal, opts); }
+uint32_t String::ParseAsUInt32(uint32_t defaultVal, IntegerOptions opts) const { return Converter::ParseUInt32(StringValue(), defaultVal, opts); }
+int32_t String::ParseAsInt32(int32_t defaultVal, IntegerOptions opts) const { return Converter::ParseInt32(StringValue(), defaultVal, opts); }
+double String::ParseAsDouble(double defaultVal) const { return Converter::ParseDouble(StringValue(), defaultVal); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
@@ -654,7 +666,7 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
         ValueHandle__* m_true;
         ValueHandle__* m_false;
         ValueHandle__* m_undefined;
-        Status TrimUnusedItemCache(CachedObjectType type, float extraTrim = 0)
+        Status TrimUnusedItemCache(CachedObjectType type, float extraTrim)
             {
             auto& q = m_cacheUnused.find(type)->second;
             const int maxUnusedItems = m_cacheMaxSize.find(type)->second;
@@ -670,7 +682,7 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
             return Status::Success;
             }
 
-        Status TrimUnusedItemCache(float extraTrim = 0)
+        Status TrimUnusedItemCache(float extraTrim)
             {
             Status status = Status::Success;
             for (auto itor : m_cacheMaxSize)
@@ -744,7 +756,7 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
                     }
                 }
 
-            v->m_count = 0;
+            v->m_count;
             m_cacheUsed[cacheType].insert(v);
             return Status::Success;
             }
@@ -953,7 +965,7 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
             {
             if (!IsPrimitve(val->m_type))
                 {
-                i32 = 0;
+                i32;
                 return Status::IncorrectType;
                 }
 
@@ -964,7 +976,7 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
             {
             if (!IsPrimitve(val->m_type))
                 {
-                i32 = 0;
+                i32;
                 return Status::IncorrectType;
                 }
 
@@ -975,7 +987,7 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
             {
             if (!IsPrimitve(val->m_type))
                 {
-                i64 = 0;
+                i64;
                 return Status::IncorrectType;
                 }
 
@@ -986,7 +998,7 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
             {
             if (!IsPrimitve(val->m_type))
                 {
-                i64 = 0;
+                i64;
                 return Status::IncorrectType;
                 }
 
@@ -997,7 +1009,7 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
             {
             if (!IsPrimitve(val->m_type))
                 {
-                d = 0;
+                d;
                 return Status::IncorrectType;
                 }
 
@@ -1022,7 +1034,7 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
             if (status != Status::Success)
                 return status;
 
-            uint32_t idx = 0;
+            uint32_t idx;
             for (auto itor = val->m_val.map->begin(); itor != val->m_val.map->end(); ++itor)
                 (*members->m_val.vect)[idx++] = itor->first;
 
@@ -1098,7 +1110,7 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
 
         Status GetSize(uint32_t& n, ValueHandle val) const override
             {
-            n = 0;
+            n;
             if (val->m_type == ValueType::Object)
                 {
                 n = (uint32_t) val->m_val.map->size();
@@ -1273,155 +1285,8 @@ RefCountedPtr<IFactory> GCValueFactory::CreateInstance(Options const& opt)
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------    
 Json::Value Value::ToJson() const
-    {        
-    Json::Value v;
-    if (_ToJson(v) != Status::Success)
-        {
-        BeAssert(false && "Fail to convert Value to Json::Value");
-        return Json::Value(Json::ValueType::nullValue);
-        }
-
-    return v;
-    }
-    
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                      05/2018
-//+---------------+---------------+---------------+---------------+---------------+------    
- Status Value::_ToJson(Json::Value& v) const
-    {        
-    v = Json::Value(Json::ValueType::nullValue);;        
-    ValueType valueType = Type();
-    if (IsEmpty() || valueType != ValueType::Null)
-        {
-        BeAssert(false && "Fail to convert Value to Json::Value");
-        return Status::IncorrectType;
-        }
-    
-    return Status::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                      05/2018
-//+---------------+---------------+---------------+---------------+---------------+------    
- Status Boolean::_ToJson(Json::Value& v) const
-    {        
-    const ValueType valueType = Type();
-    if (IsEmpty() || valueType != ValueType::Boolean)
-        {
-        BeAssert(false && "Fail to convert Boolean to Json::Value");
-        v = Json::Value(Json::ValueType::nullValue);
-        return Status::IncorrectType;
-        }
-    
-    if (valueType == ValueType::Null)
-        v = Json::Value(Json::ValueType::nullValue);
-    else
-        v = Json::Value(Value());
-
-    return Status::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                      05/2018
-//+---------------+---------------+---------------+---------------+---------------+------    
- Status String::_ToJson(Json::Value& v) const
-    {        
-    const ValueType valueType = Type();
-    if (IsEmpty() || valueType != ValueType::String)
-        {
-        BeAssert(false && "Fail to convert String to Json::Value");
-        v = Json::Value(Json::ValueType::nullValue);
-        return Status::IncorrectType;
-        }
-
-    if (valueType == ValueType::Null)
-        v = Json::Value(Json::ValueType::nullValue);
-    else
-        v = Json::Value(Value());
-
-    return Status::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                      05/2018
-//+---------------+---------------+---------------+---------------+---------------+------    
- Status Number::_ToJson(Json::Value& v) const
-    {    
-    if (IsEmpty() || IsNumber())
-        {
-        BeAssert(false && "Fail to convert Number to Json::Value");
-        v = Json::Value(Json::ValueType::nullValue);
-        return Status::IncorrectType;
-        }
-
-    const ValueType valueType = Type();
-    if(valueType == ValueType::Int32)
-        v = Json::Value(Int32Value());
-    else if(valueType == ValueType::UInt32)
-        v = Json::Value(UInt32Value());
-    else if(valueType == ValueType::UInt64)
-        v = Json::Value(Int64Value());
-    else if(valueType == ValueType::Int64)
-        v = Json::Value(UInt64Value());
-    else if(valueType == ValueType::Double)
-        v = Json::Value(DoubleValue());
-    else
-        v = Json::Value(Json::ValueType::nullValue);
-
-    return Status::Success;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                      05/2018
-//+---------------+---------------+---------------+---------------+---------------+------    
- Status Array::_ToJson(Json::Value& v) const
-    {        
-    const ValueType valueType = Type();
-    if (IsEmpty() || valueType != ValueType::Array)
-        {
-        BeAssert(false && "Fail to convert Array to Json::Value");
-        v = Json::Value(Json::ValueType::nullValue);
-        return Status::IncorrectType;
-        }
-
-    if (valueType == ValueType::Null)
-        v = Json::Value(Json::ValueType::nullValue);
-    else
-        {        
-        v = Json::Value(Json::ValueType::arrayValue);
-        const uint32_t n = Length();
-        for(uint32_t i = 0; i < n; ++i)
-            v[i] = Get(i).ToJson();
-        }
-    return Status::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                      05/2018
-//+---------------+---------------+---------------+---------------+---------------+------    
- Status Object::_ToJson(Json::Value& v) const
-    {    
-    const ValueType valueType = Type();           
-    if (IsEmpty() || valueType != ValueType::Object)
-        {
-        BeAssert(false && "Fail to convert Array to Json::Value");
-        v = Json::Value(Json::ValueType::nullValue);
-        return Status::IncorrectType;
-        }
-
-    if (valueType == ValueType::Null)
-        v = Json::Value(Json::ValueType::nullValue);
-    else
-        {        
-        v = Json::Value(Json::ValueType::objectValue);
-        Array members = GetMemberNames();
-        const uint32_t n = members.Length();
-        for(uint32_t i = 0; i < n; ++i)
-            v[i] = Get((Utf8String)members.Get(i).AsString()).ToJson();
-        }
-
-    return Status::Success;
+    {
+    return Converter::ToJson(*this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1453,6 +1318,10 @@ Value Value::FromJson(IFactory& factory, Json::Value const& v)
         return Number::New(factory, v.asUInt());
     else if (v.type() == Json::ValueType::realValue)
         return Number::New(factory, v.asDouble());
+    else if (v.type() == Json::ValueType::stringValue)
+        return String::New(factory, v.asCString());
+    else if (v.type() == Json::ValueType::booleanValue)
+        return Boolean::New(factory, v.asBool());
     else if (v.type() == Json::ValueType::arrayValue)
         {
         Array jsArray = Array::New(factory, (uint32_t)v.size());
@@ -1473,5 +1342,524 @@ Value Value::FromJson(IFactory& factory, Json::Value const& v)
     BeAssert(false && "Unknown type");
     return Value::Null(factory);        
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+bool Converter::IsHex(Utf8StringCR str)
+  {
+  return str.size() > 2 && str[0]=='0' &&  (str[1]=='X' || str[1]=='x');
+  }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+bool Converter::HasFractionPart(double d)
+    {
+    return modf(d, nullptr) != 0.0f;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+uint64_t Converter::ParseUInt64(Utf8StringCR str, uint64_t defaultVal, IntegerOptions options)
+    {
+    if (options == IntegerOptions::Auto)
+        options = IsHex(str) ? IntegerOptions::Hex : IntegerOptions::Decimal;
+
+    uint64_t i = defaultVal;
+    if (options == IntegerOptions::Hex)
+        sscanf(str.c_str(), "%" SCNx64, &i);
+    else
+        sscanf(str.c_str(), "%" SCNu64, &i);
+
+    return i;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+uint32_t Converter::ParseUInt32(Utf8StringCR str, uint32_t defautlVal, IntegerOptions options)
+    {
+    if (options == IntegerOptions::Auto)
+        options = IsHex(str) ? IntegerOptions::Hex : IntegerOptions::Decimal;
+
+    uint32_t i = defautlVal;
+    if (options == IntegerOptions::Hex)
+        sscanf(str.c_str(), "%" SCNx32, &i);
+    else
+        sscanf(str.c_str(), "%" SCNu32, &i);
+
+    return i;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+int64_t Converter::ParseInt64(Utf8StringCR str, int64_t defaultVal, IntegerOptions options)
+    {
+    if (options == IntegerOptions::Auto)
+        options = IsHex(str) ? IntegerOptions::Hex : IntegerOptions::Decimal;
+
+    int64_t i = defaultVal;
+    if (options == IntegerOptions::Hex)
+        sscanf(str.c_str(), "%" SCNx64, &i);
+    else
+        sscanf(str.c_str(), "%" SCNd64, &i);
+
+    return i;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+int32_t Converter::ParseInt32(Utf8StringCR str, int32_t defaultVal, IntegerOptions options)
+    {
+    if (options == IntegerOptions::Auto)
+        options = IsHex(str) ? IntegerOptions::Hex : IntegerOptions::Decimal;
+
+    int32_t i = defaultVal;
+    if (options == IntegerOptions::Hex)
+        sscanf(str.c_str(), "%" SCNx32, &i);
+    else
+        sscanf(str.c_str(), "%" SCNd32, &i);
+
+    return i;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+double Converter::ParseDouble(Utf8StringCR str, double defaultVal)
+    {
+    double i = defaultVal;
+    sscanf(str.c_str(), "%lf", &i);
+    return i;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+bool Converter::ParseBoolean(Utf8StringCR str, bool defaultVal)
+    {
+    if (str.EqualsI("true"))
+        return true;
+
+    if (str.EqualsI("false"))
+        return false;
+
+    return defaultVal;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void Converter::ToString(Utf8StringR out, uint64_t i, IntegerOptions options)
+    {
+    if (options == IntegerOptions::Auto)
+        options = IntegerOptions::Decimal;
+
+    if (options == IntegerOptions::Decimal)
+        out.Sprintf("%" PRIu64, i);
+    else
+        out.Sprintf("%" PRIx64, i);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+
+void Converter::ToString(Utf8StringR out, uint32_t i, IntegerOptions options)
+    {
+    if (options == IntegerOptions::Auto)
+        options = IntegerOptions::Decimal;
+
+    if (options == IntegerOptions::Decimal)
+        out.Sprintf("%" PRIu32, i);
+    else
+        out.Sprintf("%" PRIx32, i);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void Converter::ToString(Utf8StringR out, int64_t i, IntegerOptions options)
+    {
+    if (options == IntegerOptions::Auto)
+        options = IntegerOptions::Decimal;
+
+    if (options == IntegerOptions::Decimal)
+        out.Sprintf("%" PRId64, i);
+    else
+        out.Sprintf("%" PRIx64, i);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void Converter::ToString(Utf8StringR out, int32_t i, IntegerOptions options)
+    {
+    if (options == IntegerOptions::Auto)
+        options = IntegerOptions::Decimal;
+
+    if (options == IntegerOptions::Decimal)
+        out.Sprintf("%" PRId32, i);
+    else
+        out.Sprintf("%" PRIx32, i);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+Json::Value Converter::ToJson(Value v)
+    {
+    Json::Value out;
+    if (v.IsEmpty())
+        {
+        BeAssert(false && "Fail to convert Value to Json::Value");
+        return out;
+        }
+
+    const ValueType vT = v.Type();
+    IFactory& factory = v.Factory();
+    if (vT == ValueType::Null)
+        {
+        out = Json::Value(Json::ValueType::nullValue);
+        }
+    else if (vT == ValueType::Undefined)
+        {
+        BeAssert(false && "Fail to convert Value to Json::Value");
+        out = Json::Value(Json::ValueType::nullValue);        
+        }
+    else if (vT == ValueType::String)
+        {
+        Utf8String str;
+        if (factory.GetString(str, v.Handle()) != Status::Success)
+            {
+            BeAssert(false);
+            }
+
+        out = Json::Value(str.c_str());
+        }
+    else if (vT == ValueType::Int32)
+        {
+        int32_t i32;
+        if (factory.GetInt32(i32, v.Handle()) != Status::Success)
+            {
+            BeAssert(false);
+            }
+
+        out = Json::Value(i32);
+        }
+    else if (vT == ValueType::UInt32)
+        {
+        uint32_t i32;
+        if (factory.GetUInt32(i32, v.Handle()) != Status::Success)
+            {
+            BeAssert(false);
+            }
+
+        out = Json::Value(i32);
+        }
+    else if (vT == ValueType::Int64)
+        {
+        int64_t i64;
+        if (factory.GetInt64(i64, v.Handle()) != Status::Success)
+            {
+            BeAssert(false);
+            }
+
+        out = Json::Value(i64);
+        }
+    else if (vT == ValueType::UInt64)
+        {
+        uint64_t i64;
+        if (factory.GetUInt64(i64, v.Handle()) != Status::Success)
+            {
+            BeAssert(false);
+            }
+
+        out = Json::Value(i64);
+        }
+    else if (vT == ValueType::Double)
+        {
+        double d;
+        if (factory.GetDouble(d, v.Handle()) != Status::Success)
+            {
+            BeAssert(false);
+            }
+
+        out = Json::Value(d);
+        }
+    else if (vT == ValueType::Array)
+        {
+        out = Json::Value(Json::ValueType::arrayValue);
+        Array ary = v.AsArray();
+        const uint32_t length = ary.Length();
+        for (uint32_t i = 0; i < length; ++i)
+            {
+            out[i] = ToJson(ary.Get(i));
+            }
+        }
+    else if (vT == ValueType::Object)
+        {
+        out = Json::Value(Json::ValueType::objectValue);
+        Object obj = v.AsObject();
+        Array members = obj.GetMemberNames();
+        const uint32_t n = members.Length();
+        for (uint32_t i = 0; i < n; ++i)
+            {
+            const Utf8String key = members.Get(i).AsString();
+            out[key.c_str()] = obj.Get(key).ToJson();
+            }
+        }
+    
+    return out;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void Converter::ToString(Utf8StringR out, double d)
+    {
+    out.Sprintf("%lf", d);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+int32_t Converter::ToInt32(Value val, int32_t defaultVal)
+    {
+    if (val.IsEmpty())
+        {
+        BeAssert(val.IsEmpty());
+        return defaultVal;
+        }
+
+    ValueType vT = val.Type();
+    if (vT == ValueType::Null || vT == ValueType::Undefined)
+        return defaultVal;
+
+    if (vT == ValueType::String)
+        {
+        Utf8String str = val.AsString();
+        return Converter::ParseInt32(str, defaultVal);
+        }
+    else if (vT == ValueType::Int32)
+        return static_cast<int32_t>(val.AsNumber().Int32Value());
+    else if (vT == ValueType::UInt32)
+        return static_cast<int32_t>(val.AsNumber().UInt32Value());
+    else if (vT == ValueType::Int64)
+        return static_cast<int32_t>(val.AsNumber().Int64Value());
+    else if (vT == ValueType::UInt64)
+        return static_cast<int32_t>(val.AsNumber().UInt64Value());
+    else if (vT == ValueType::Double)
+        return static_cast<int32_t>(val.AsNumber().DoubleValue());
+
+    return defaultVal;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+uint32_t Converter::ToUInt32(Value val, uint32_t defaultVal)
+    {
+    if (val.IsEmpty())
+        {
+        BeAssert(val.IsEmpty());
+        return defaultVal;
+        }
+
+    ValueType vT = val.Type();
+    if (vT == ValueType::Null || vT == ValueType::Undefined)
+        return defaultVal;
+
+    if (vT == ValueType::String)
+        {
+        Utf8String str = val.AsString();
+        return Converter::ParseUInt32(str, defaultVal);
+        }
+    else if (vT == ValueType::Int32)
+        return static_cast<uint32_t>(val.AsNumber().Int32Value());
+    else if (vT == ValueType::UInt32)
+        return static_cast<uint32_t>(val.AsNumber().UInt32Value());
+    else if (vT == ValueType::Int64)
+        return static_cast<uint32_t>(val.AsNumber().Int64Value());
+    else if (vT == ValueType::UInt64)
+        return static_cast<uint32_t>(val.AsNumber().UInt64Value());
+    else if (vT == ValueType::Double)
+        return static_cast<uint32_t>(val.AsNumber().DoubleValue());
+
+    return defaultVal;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+int64_t Converter::ToInt64(Value val, int64_t defaultVal)
+    {
+    if (val.IsEmpty())
+        {
+        BeAssert(val.IsEmpty());
+        return defaultVal;
+        }
+
+    ValueType vT = val.Type();
+    if (vT == ValueType::Null || vT == ValueType::Undefined)
+        return defaultVal;
+
+    if (vT == ValueType::String)
+        {
+        Utf8String str = val.AsString();
+        return Converter::ParseInt64(str, defaultVal);
+        }
+    else if (vT == ValueType::Int32)
+        return static_cast<int64_t>(val.AsNumber().Int32Value());
+    else if (vT == ValueType::UInt32)
+        return static_cast<int64_t>(val.AsNumber().UInt32Value());
+    else if (vT == ValueType::Int64)
+        return static_cast<int64_t>(val.AsNumber().Int64Value());
+    else if (vT == ValueType::UInt64)
+        return static_cast<int64_t>(val.AsNumber().UInt64Value());
+    else if (vT == ValueType::Double)
+        return static_cast<int64_t>(val.AsNumber().DoubleValue());
+
+    return defaultVal;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+uint64_t Converter::ToUInt64(Value val, uint64_t defaultVal)
+    {
+    if (val.IsEmpty())
+        {
+        BeAssert(val.IsEmpty());
+        return defaultVal;
+        }
+
+    ValueType vT = val.Type();
+    if (vT == ValueType::Null || vT == ValueType::Undefined)
+        return defaultVal;
+
+    if (vT == ValueType::String)
+        {
+        Utf8String str = val.AsString();
+        return Converter::ParseUInt64(str, defaultVal);
+        }
+    else if (vT == ValueType::Int32)
+        return static_cast<uint64_t>(val.AsNumber().Int32Value());
+    else if (vT == ValueType::UInt32)
+        return static_cast<uint64_t>(val.AsNumber().UInt32Value());
+    else if (vT == ValueType::Int64)
+        return static_cast<uint64_t>(val.AsNumber().Int64Value());
+    else if (vT == ValueType::UInt64)
+        return static_cast<uint64_t>(val.AsNumber().UInt64Value());
+    else if (vT == ValueType::Double)
+        return static_cast<uint64_t>(val.AsNumber().DoubleValue());
+
+    return defaultVal;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+double Converter::ToDouble(Value val, double defaultVal)
+    {
+    if (val.IsEmpty())
+        {
+        BeAssert(val.IsEmpty());
+        return defaultVal;
+        }
+
+    ValueType vT = val.Type();
+    if (vT == ValueType::Null || vT == ValueType::Undefined)
+        return defaultVal;
+
+    if (vT == ValueType::String)
+        {
+        Utf8String str = val.AsString();
+        return Converter::ParseDouble(str, defaultVal);
+        }
+    else if (vT == ValueType::Int32)
+        return static_cast<double>(val.AsNumber().Int32Value());
+    else if (vT == ValueType::UInt32)
+        return static_cast<double>(val.AsNumber().UInt32Value());
+    else if (vT == ValueType::Int64)
+        return static_cast<double>(val.AsNumber().Int64Value());
+    else if (vT == ValueType::UInt64)
+        return static_cast<double>(val.AsNumber().UInt64Value());
+    else if (vT == ValueType::Double)
+        return static_cast<double>(val.AsNumber().DoubleValue());
+
+    return defaultVal;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+bool Converter::ToBoolean(Value val, bool defaultVal)
+    {
+    if (val.IsEmpty())
+        {
+        BeAssert(val.IsEmpty());
+        return defaultVal;
+        }
+
+    ValueType vT = val.Type();
+    if (vT == ValueType::Null || vT == ValueType::Undefined)
+        return defaultVal;
+
+    if (vT == ValueType::String)
+        {
+        Utf8String str = val.AsString();
+        return Converter::ParseBoolean(str, defaultVal);
+        }
+    else if (vT == ValueType::Int32)
+        return static_cast<bool>(val.AsNumber().Int32Value());
+    else if (vT == ValueType::UInt32)
+        return static_cast<bool>(val.AsNumber().UInt32Value());
+    else if (vT == ValueType::Int64)
+        return static_cast<bool>(val.AsNumber().Int64Value());
+    else if (vT == ValueType::UInt64)
+        return static_cast<bool>(val.AsNumber().UInt64Value());
+    else if (vT == ValueType::Double)
+        return static_cast<bool>(val.AsNumber().DoubleValue());
+
+    return defaultVal;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String Converter::ToString(Value val, Utf8CP defaultVal, IntegerOptions options)
+    {
+    if (val.IsEmpty())
+        {
+        BeAssert(val.IsEmpty());
+        return defaultVal;
+        }
+
+    Utf8String str;
+    ValueType vT = val.Type();
+    if (vT == ValueType::Null || vT == ValueType::Undefined)
+        return defaultVal;
+
+    if (vT == ValueType::String)
+        str = val.AsString();
+    else if (vT == ValueType::Int32)
+        ToString(str, val.AsNumber().Int32Value(), options);
+    else if (vT == ValueType::UInt32)
+        ToString(str, val.AsNumber().UInt32Value(), options);
+    else if (vT == ValueType::Int64)
+        ToString(str, val.AsNumber().Int64Value(), options);
+    else if (vT == ValueType::UInt64)
+        ToString(str, val.AsNumber().UInt64Value(), options);
+    else if (vT == ValueType::Double)
+        ToString(str, val.AsNumber().DoubleValue());
+    else 
+        return defaultVal;
+
+    return str;
+    }
+
 }
 END_BENTLEY_NAMESPACE
