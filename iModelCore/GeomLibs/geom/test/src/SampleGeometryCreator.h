@@ -408,7 +408,8 @@ static void GetContours (bvector<CurveVectorPtr> &contours, double z = 0.0)
             DPoint3d::From (2.1,2.0, z),
             DPoint3d::From (2,3,z)
             };
-        
+    contours.push_back (CurveVector::Create (CurveVector::BoundaryType::BOUNDARY_TYPE_Open,
+                ICurvePrimitive::CreateLine (DSegment3d::From (4,1,0, -1,0,2))));
     contours.push_back (CurveVector::CreateLinear (points));
     contours.push_back (CurveVector::CreateRectangle (0,0, 4,3, z));
     contours.push_back (CurveVector::CreateDisk (DEllipse3d::From (2,0,z,   2,0,0,   0,1,0,  0.0, Angle::TwoPi ())));
@@ -938,8 +939,7 @@ static CurveVectorPtr CreateAnnulusWithManyArcSectors (uint32_t numOuter, uint32
     }
 
 // 
-// Create one or two disks with each split into many arcs.
-// If two, bundle in parity region
+// Create a bcurve, in xy plane, start and endponits given, with a mild S shape between.
 static ICurvePrimitivePtr CreateSwoosh (double x0, double y0, double x1, double y1)
     {
     DPoint3d xy0 = DPoint3d::From (x0, y0);
@@ -955,9 +955,33 @@ static ICurvePrimitivePtr CreateSwoosh (double x0, double y0, double x1, double 
         4, false);
     return ICurvePrimitive::CreateBsplineCurve (bcurve);
     }
+
+static void CreateXYRegions (bvector<CurveVectorPtr> &regions)
+    {
+    regions.clear ();
+    regions.push_back (
+            CurveVector::CreateRectangle (0,0, 4,3, 0, CurveVector::BOUNDARY_TYPE_Outer));
+    regions.push_back (
+            CurveVector::CreateDisk (DEllipse3d::FromCenterRadiusXY (DPoint3d::From (1,1,0), 1.0)));
+    regions.push_back (CreateAnnulusWithManyArcSectors (2, 1));
+    
+    bvector<DPoint3d> points {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (1,0,0),
+        DPoint3d::From (3,1,0),
+        DPoint3d::From (2,3,0),
+        DPoint3d::From (1,1,0)
+        };
+    // bcurve and line -- easiest and hardest 
+    auto r = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    r->Add (ICurvePrimitive::CreateLine (DSegment3d::From (points.back (), points.front ())));
+    r->Add ( ICurvePrimitive::CreateBsplineCurve (
+                MSBsplineCurve::CreateFromPolesAndOrder (
+                        points, nullptr, nullptr,
+                        3, false, false)));
+    regions.push_back (r);
+    }
 };
-
-
 // Return a bspline surface whose control points are on a doubly sinusoidal surface.
 // @param [in] uOrder u direction order
 // @param [in] vOrder v direction order

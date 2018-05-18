@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_visitorSearch.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -513,4 +513,35 @@ TEST(PolyfaceVisitor,SmallFacetA)
 
 
     Check::ClearGeometry ("PolyfaceVisitor.SmallFacetA");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PolyfaceVisitor,EdgeSearch)
+    {
+    auto polyface = PolyfaceWithSinusoidalGrid (2,3, 0.1, 0.2, 0.1, 3, true);
+    DMatrix4d matrix;
+    matrix.InitIdentity ();
+    Check::SaveTransformed (polyface);
+    PolyfaceEdgeSearcher searcher (*polyface, matrix, 0.1, false);
+    for (auto pickPoint : {DPoint3d::From (0.5,0.2,5),
+                DPoint3d::From (0,0,3),
+                DPoint3d::From (0.5, 0, 1),
+                DPoint3d::From (0.5, 0.01, 1),
+                DPoint3d::From (0.5, 0.08, 1),
+                DPoint3d::From (0.5, 0.15, 1)
+                })
+        {
+        searcher.Reset ();
+        Check::SaveTransformedMarker (pickPoint);
+        bvector<FacetLocationDetail> edgeHits;
+        bvector<FacetLocationDetail> facetHits;
+        searcher.AppendHits (pickPoint, &edgeHits, &facetHits);
+        for (auto &eh : edgeHits)
+            Check::SaveTransformed (DSegment3d::From (pickPoint, eh.point));
+        for (auto &eh : facetHits)
+            Check::SaveTransformed (DSegment3d::From (pickPoint, eh.point));
+        }
+    Check::ClearGeometry("PolyfaceVisitor.EdgeSearch");
     }

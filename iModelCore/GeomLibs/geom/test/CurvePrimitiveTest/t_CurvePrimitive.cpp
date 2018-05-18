@@ -68,6 +68,7 @@ void CheckWireMoments (CurveVectorCR curve)
 
     ExercisePointsAlong (curve, 12);
     ExercisePointsAlong (curve, 28);
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2647,3 +2648,100 @@ TEST(CurveVector, VariableNumberOfArgs)
 		primitives.push_back(curvePrimitive);
 	}
 	}
+
+void ShowRay (DRay3dCR ray, double f0, double f1, int capType, double capRadius = 0.0)
+    {
+    DVec3d xVec, yVec, zVec;
+    ray.direction.GetNormalizedTriad (xVec, yVec, zVec);
+    double a = capRadius;
+    if (a <= 0.0)
+        a = ray.direction.Magnitude ();
+    DPoint3d xyz0 = ray.FractionParameterToPoint (f0);
+    DPoint3d xyz1 = ray.FractionParameterToPoint (f1);
+
+    Check::SaveTransformed (DSegment3d::From (xyz0, xyz1));
+    if (capType == 1)
+        {
+        Check::SaveTransformed (DSegment3d::From (xyz0 + a * xVec, xyz0 - a * xVec));
+        Check::SaveTransformed (DSegment3d::From (xyz1 + a * xVec, xyz1 - a * xVec));
+        }
+    else if (capType == 2)
+        {
+        for (auto xyz : {xyz0, xyz1})
+            {
+            bvector<DPoint3d> rectangle {
+                xyz + a * xVec + a * yVec,
+                xyz - a * xVec + a * yVec,
+                xyz - a * xVec - a * yVec,
+                xyz + a * xVec - a * yVec,
+                };
+            auto cap = CurveVector::CreateLinear (rectangle, CurveVector::BOUNDARY_TYPE_Outer);
+            Check::SaveTransformed (*cap);
+            }
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Earlin.Lutz   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CurveVector, ProjectedParameterRange)
+	{
+    bvector<CurveVectorPtr> contours;
+    SampleGeometryCreator::GetContours (contours);
+    contours.push_back (SampleGeometryCreator::CircleInRectangle ());
+    for (auto ray : {
+            DRay3d::FromOriginAndTarget (DPoint3d::From (1,1,2),  DPoint3d::From (2,1,2)),
+            DRay3d::FromOriginAndTarget (DPoint3d::From (1,1,2),  DPoint3d::From (3,1,-1))
+            })
+        {
+        SaveAndRestoreCheckTransform shifter (0, 50,0);
+        for (auto &cv : contours)
+            {
+            SaveAndRestoreCheckTransform shifter (50,0,0);
+            auto rayRange = cv->ProjectedParameterRange (ray);
+            Check::SaveTransformed (*cv);
+            ShowRay (ray, 0, 1, 0);
+            ShowRay (ray, rayRange.low, rayRange.high, 2, 4.0);
+            }
+        }
+    Check::ClearGeometry ("CurveVector.ProjectedParameterRange");
+    }
+void ShowCentroidArea (DPoint3dCR centroid, double area, DVec3dCR normal)
+    {
+    DVec3d xVec, yVec, zVec;
+    normal.GetNormalizedTriad (xVec, yVec, zVec);
+    double a = 0.5 * sqrt (area);
+    bvector<DPoint3d> rectangle {
+        centroid + a * xVec + a * yVec,
+        centroid - a * xVec + a * yVec,
+        centroid - a * xVec - a * yVec,
+        centroid + a * xVec - a * yVec,
+        centroid + a * xVec + a * yVec
+        };
+    auto cap = CurveVector::CreateLinear (rectangle, CurveVector::BOUNDARY_TYPE_Open);
+    Check::SaveTransformedMarker (centroid, 0.05 * a);
+    Check::SaveTransformed (*cap);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Earlin.Lutz   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CurveVector, Centroid)
+	{
+    bvector<CurveVectorPtr> regions;
+    SampleGeometryCreator::CreateXYRegions (regions);
+    auto transform = YawPitchRollAngles::FromDegrees (10,30,45).ToTransform (DPoint3d::From (0.1, 8.3, 0.4));
+    for (auto &cv : regions)
+        {
+        SaveAndRestoreCheckTransform shifter (10,0,0);
+        Check::SaveTransformed (*cv);
+        DPoint3d centroid;
+        double area;
+        cv->CentroidAreaXY (centroid, area);
+        ShowCentroidArea (centroid, area, DVec3d::From (0,0,1));
+        auto cv1 = cv->Clone (transform);
+        Check::SaveTransformed (*cv1);
+        DVec3d normal;
+        cv1->CentroidNormalArea (centroid, normal, area);
+        ShowCentroidArea (centroid, area, normal);
+        }
+    Check::ClearGeometry ("CurveVector.Centroid");
+    }
