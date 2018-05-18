@@ -15,7 +15,8 @@ class NodeAddonLoader {
         let versionCode;
         const electronVersion = process.versions.electron;
         if (typeof electronVersion !== "undefined") {
-            versionCode = "e_" + electronVersion.replace(/\./g, "_");
+            const electronVersionParts = electronVersion.split(".");
+            versionCode = "e_" + electronVersionParts[0]; // use only major version number
         }
         else {
             const nodeVersion = process.version.substring(1).split("."); // strip off the character 'v' from the start of the string
