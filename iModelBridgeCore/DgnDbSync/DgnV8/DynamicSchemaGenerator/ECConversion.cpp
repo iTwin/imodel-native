@@ -2796,8 +2796,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
                 }
 
             schemaXml = Bentley::Utf8String(schemaXmlW);
-            const size_t xmlByteSize = schemaXml.length() * sizeof(Utf8Char);
-            schemaKey.m_checkSum = BECN::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml.c_str(), xmlByteSize);
+            const size_t xmlByteSize = schemaXmlW.length() * sizeof(WChar);
+            schemaKey.m_checkSum = ECObjectsV8::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXmlW.c_str(), xmlByteSize);
 
             isDynamicSchema = IsDynamicSchema(schemaName, schemaXml);
 
@@ -3173,8 +3173,8 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
                 }
 
             schemaXml = Bentley::Utf8String(schemaXmlW);
-            const size_t xmlByteSize = schemaXml.length() * sizeof(Utf8Char);
-            checksum = BECN::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml.c_str(), xmlByteSize);
+            const size_t xmlByteSize = schemaXmlW.length() * sizeof(WChar);
+            checksum = ECObjectsV8::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXmlW.c_str(), xmlByteSize);
             }
         else
             {
