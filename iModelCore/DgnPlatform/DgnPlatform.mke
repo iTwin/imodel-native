@@ -502,13 +502,13 @@ AnnotationsHeaders = \
     $(AnnotationsApi)AnnotationTextStyle.h \
     $(AnnotationsApi)TextAnnotation.h \
     $(AnnotationsApi)TextAnnotationDraw.h \
+    $(AnnotationsApi)TextAnnotationPersistence.h \
     $(AnnotationsApi)TextAnnotationSeed.h \
     $(AnnotationsPrivateApi)AnnotationFramePersistence.h \
     $(AnnotationsPrivateApi)AnnotationFrameStylePersistence.h \
     $(AnnotationsPrivateApi)Annotations.fb.h \
     $(AnnotationsPrivateApi)AnnotationTextBlockPersistence.h \
     $(AnnotationsPrivateApi)AnnotationTextStylePersistence.h \
-    $(AnnotationsPrivateApi)TextAnnotationPersistence.h \
     $(AnnotationsPrivateApi)TextAnnotationSeedPersistence.h
 
 $(CoreObjs)AnnotationFrame$(oext) :                 $(AnnotationsSrc)AnnotationFrame.cpp $(AnnotationsHeaders) ${MultiCompileDepends}

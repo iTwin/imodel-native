@@ -2,16 +2,16 @@
 |
 |     $Source: DgnCore/Annotations/TextAnnotation.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
 #include <DgnPlatform/Annotations/Annotations.h>
+#include <DgnPlatform/Annotations/TextAnnotationPersistence.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/TextAnnotationSeedPersistence.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationTextBlockPersistence.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationFramePersistence.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationLeaderPersistence.h>
-#include <DgnPlatformInternal/DgnCore/Annotations/TextAnnotationPersistence.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 using namespace flatbuffers;
@@ -95,6 +95,55 @@ void TextAnnotation::ApplySeed(DgnElementId value)
     
     for (auto const& leader : m_leaders)
         leader->SetStyleId(seed->GetLeaderStyleId(), SetAnnotationLeaderStyleOptions::Default);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void TextAnnotation::RemapIds(DgnImportContext& context)
+    {
+    if (m_text.IsValid())
+        {
+        DgnElementId oldDocId = m_text->GetStyleId();
+        DgnElementId targetDocId = context.RemapAnnotationStyleId(oldDocId);
+        m_text->SetStyleId(targetDocId, SetAnnotationTextStyleOptions::Direct);
+
+        for (AnnotationParagraphPtr paragraph : m_text->GetParagraphs())
+            {
+            DgnElementId oldParaId = paragraph->GetStyleId();
+            DgnElementId targetParaId = context.RemapAnnotationStyleId(oldParaId);
+            paragraph->SetStyleId(targetParaId, SetAnnotationTextStyleOptions::Direct);
+            for (AnnotationRunBasePtr run : paragraph->GetRuns())
+                {
+                DgnElementId oldRunId = run->GetStyleId();
+                DgnElementId targetRunId = context.RemapAnnotationStyleId(oldRunId);
+                run->SetStyleId(targetRunId, SetAnnotationTextStyleOptions::Direct);
+
+                if (!run->GetStyleOverrides().HasProperty(AnnotationTextStyleProperty::FontId))
+                    continue;
+
+                DgnFontId srcFontId = DgnFontId((uint64_t) run->GetStyleOverrides().GetIntegerProperty(AnnotationTextStyleProperty::FontId));
+                DgnFontId dstFontId = context.RemapFont(srcFontId);
+
+                run->GetStyleOverridesR().SetIntegerProperty(AnnotationTextStyleProperty::FontId, (int64_t) dstFontId.GetValue());
+                }
+            }
+        }
+
+    if (m_frame.IsValid())
+        {
+        DgnElementId oldFrameId = m_frame->GetStyleId();
+        DgnElementId targetFrameId = context.RemapAnnotationStyleId(oldFrameId);
+        m_frame->SetStyleId(targetFrameId, SetAnnotationFrameStyleOptions::Direct);
+        }
+
+    for (auto const& leader : m_leaders)
+        {
+        DgnElementId oldLeaderId = leader->GetStyleId();
+        DgnElementId targetLeaderId = context.RemapAnnotationStyleId(oldLeaderId);
+        leader->SetStyleId(targetLeaderId, SetAnnotationLeaderStyleOptions::Direct);
+        }
+
     }
 
 //***************************************************************************************************************************************************
@@ -223,3 +272,16 @@ BentleyStatus TextAnnotationPersistence::DecodeFromFlatBuf(TextAnnotationR annot
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus TextAnnotationPersistence::DecodeFromFlatBufWithRemap(TextAnnotationR annotation, ByteCP data, size_t numBytes, DgnImportContext& importContext)
+    {
+    if (SUCCESS != TextAnnotationPersistence::DecodeFromFlatBuf(annotation, data, (size_t) numBytes))
+        return ERROR;
+    annotation.RemapIds(importContext);
+
+    return SUCCESS;
+    }
+

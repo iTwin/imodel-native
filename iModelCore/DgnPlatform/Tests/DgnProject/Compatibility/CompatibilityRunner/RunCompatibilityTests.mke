@@ -1,0 +1,18 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/RunCompatibilityTests.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------
+# Set up all the standard stuff.
+#----------------------------------------------------------
+%include  mdl.mki
+
+# Dir that all the nuget packages should be pulled are in
+NUGET_DIR       = $(OutputRootDir)/iModelSchemaEvolution/Nugets/
+
+always:
+    python $(SrcRoot)/DgnPlatform/RunCompatibilityTests.py $(NUGET_DIR)

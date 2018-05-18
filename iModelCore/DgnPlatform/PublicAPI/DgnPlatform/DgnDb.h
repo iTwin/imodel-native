@@ -229,7 +229,7 @@ protected:
     DGNPLATFORM_EXPORT void DestroyBriefcaseManager();
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
-    void _OnAfterSchemaImport() const override;
+    void _OnBeforeClearECDbCache() const override;
     
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params); //!< @private
     BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params); //!< @private
