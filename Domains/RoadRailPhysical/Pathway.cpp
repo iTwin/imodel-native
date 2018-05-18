@@ -223,17 +223,17 @@ RailwayPtr Railway::Create(CorridorCR corridor)
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 CorridorPortionElementCPtr ILinearElementUtilities::QueryRelatedCorridorPortion(ILinearElementCR linearElement,
-    DgnElementId& significantPointDefId)
+    DgnElementId& typicalSectionPointDefId)
     {
     auto& linearElementCR = linearElement.ToElement();
-    auto stmtPtr = linearElementCR.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId, SignificantPointDef.Id FROM "
+    auto stmtPtr = linearElementCR.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId, TypicalSectionPointDef.Id FROM "
         BRRP_SCHEMA(BRRP_REL_ILinearElementRelatesToCorridorPortion) " WHERE SourceECInstanceId = ?;");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, linearElementCR.GetElementId());
     if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
         {
-        significantPointDefId = stmtPtr->GetValueId<DgnElementId>(1);
+        typicalSectionPointDefId = stmtPtr->GetValueId<DgnElementId>(1);
         return CorridorPortionElement::Get(linearElementCR.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
         }
 
@@ -244,7 +244,7 @@ CorridorPortionElementCPtr ILinearElementUtilities::QueryRelatedCorridorPortion(
 * @bsimethod                                    Diego.Diaz                      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ILinearElementUtilities::SetRelatedCorridorPortion(ILinearElementCR linearElement, CorridorPortionElementCR corridorPortion,
-    SignificantPointDefinitionCR significantPointDef)
+    TypicalSectionPointDefinitionCR significantPointDef)
     {
     if (!linearElement.ToElement().GetElementId().IsValid() || 
         !corridorPortion.GetElementId().IsValid() ||
@@ -264,7 +264,7 @@ DgnDbStatus ILinearElementUtilities::SetRelatedCorridorPortion(ILinearElementCR 
     auto relClassCP = linearElementCR.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_ILinearElementRelatesToCorridorPortion)->GetRelationshipClassCP();
     auto relEnablerPtr = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClassCP);
     auto instancePtr = relEnablerPtr->CreateRelationshipInstance();
-    instancePtr->SetValue("SignificantPointDef", ECValue(significantPointDef.GetElementId()));
+    instancePtr->SetValue("TypicalSectionPointDef", ECValue(significantPointDef.GetElementId()));
 
     ECInstanceKey key;
     if (DbResult::BE_SQLITE_OK != linearElementCR.GetDgnDb().InsertLinkTableRelationship(key,

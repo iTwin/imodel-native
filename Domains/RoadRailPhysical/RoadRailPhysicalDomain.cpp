@@ -28,11 +28,9 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     {    
     RegisterHandler(CorridorHandler::GetHandler());    
 
-    RegisterHandler(SignificantPointDefinitionHandler::GetHandler());
-    RegisterHandler(TravelwaySignificantPointDefHandler::GetHandler());
-    RegisterHandler(TravelwaySideSignificantPointDefHandler::GetHandler());
-    RegisterHandler(TravelwayStructureSignificantPointDefHandler::GetHandler());
-
+    RegisterHandler(TypicalSectionPointDefinitionHandler::GetHandler());
+    RegisterHandler(GenericTypicalSectionPointDefHandler::GetHandler());
+    
     RegisterHandler(RailwayStandardsModelHandler::GetHandler());
     RegisterHandler(RoadwayStandardsModelHandler::GetHandler());
 
@@ -153,7 +151,7 @@ void createCodeSpecs(DgnDbR dgndb)
         BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_SignificantPointDefinition, CodeScopeSpec::CreateModelScope());
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_TypicalSectionPointDefinition, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {

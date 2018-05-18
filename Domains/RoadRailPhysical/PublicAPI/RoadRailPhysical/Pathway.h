@@ -218,13 +218,13 @@ private:
 
 public:
     //! Query for a CorridorPortionElement associated with a given ILinearElement. It also returns the
-    //! significant point associated with such relationship.
+    //! typical section point definition associated with such relationship.
     ROADRAILPHYSICAL_EXPORT static CorridorPortionElementCPtr QueryRelatedCorridorPortion(LinearReferencing::ILinearElementCR linearElement, 
-        Dgn::DgnElementId& significantPointDefId);
+        Dgn::DgnElementId& typicalSectionPointDefId);
 
     //! @private
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetRelatedCorridorPortion(LinearReferencing::ILinearElementCR linearElement, 
-        CorridorPortionElementCR corridorPortion, SignificantPointDefinitionCR significantPointDef);
+        CorridorPortionElementCR corridorPortion, TypicalSectionPointDefinitionCR typicalSectionPointDef);
 }; // ILinearElementUtilities
 
 //=======================================================================================

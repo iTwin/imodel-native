@@ -12,7 +12,7 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
     RoadwayStandardsModelCPtr standardsModel = RoadwayStandardsModel::Query(*projectPtr->Elements().GetRootSubject());
     ASSERT_TRUE(standardsModel.IsValid());
 
-    auto clPointDefPtr = TravelwaySignificantPointDef::CreateAndInsert(*standardsModel, "CL", "Center-line");
+    auto clPointDefPtr = GenericTypicalSectionPointDef::CreateAndInsert(*standardsModel, "CL", "Center-line");
     ASSERT_TRUE(clPointDefPtr.IsValid());
 
     auto alignModelPtr = AlignmentModel::Query(*projectPtr->Elements().GetRootSubject(), RoadRailAlignmentDomain::GetDesignPartitionName());
@@ -67,6 +67,11 @@ TEST_F(RoadRailPhysicalTests, BasicCorridorTest)
     ASSERT_TRUE(leftRoadwayPtr->Insert(PathwayElement::Order::LeftMost).IsValid());
 
     ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedCorridorPortion(*alignmentPtr, *leftRoadwayPtr, *clPointDefPtr));
+
+    DgnElementId typicalSectionPointDefId;
+    auto portionCPtr = ILinearElementUtilities::QueryRelatedCorridorPortion(*alignmentPtr, typicalSectionPointDefId);
+    ASSERT_EQ(portionCPtr->GetElementId(), leftRoadwayPtr->GetElementId());
+    ASSERT_EQ(typicalSectionPointDefId, clPointDefPtr->GetElementId());
 
     auto designSpeedDefPtr = DesignSpeedDefinition::Create(*standardsModel, 50.0);
     ASSERT_TRUE(designSpeedDefPtr->Insert().IsValid());

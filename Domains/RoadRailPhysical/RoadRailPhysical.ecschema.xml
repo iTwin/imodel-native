@@ -88,7 +88,7 @@
             <Class class="PathwayElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="SignificantPointDefinition" displayLabel="Significant Point Definition" modifier="Abstract" description="Base class for point constructs in a TypicalSection portion definition.">
+    <ECEntityClass typeName="TypicalSectionPointDefinition" displayLabel="Typical Section Point Definition" modifier="Abstract" description="Base class for point constructs in a TypicalSection portion definition.">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -102,30 +102,18 @@
         <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
             <Class class="CorridorPortionElement"/>
         </Target>
-        <ECNavigationProperty propertyName="SignificantPointDef" relationshipName="ILinearElementRelatesToSignificantPointDef" direction="Forward"/>
+        <ECNavigationProperty propertyName="TypicalSectionPointDef" relationshipName="ILinearElementRelatesToTypicalSectionPointDef" direction="Forward"/>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ILinearElementRelatesToSignificantPointDef" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+    <ECRelationshipClass typeName="ILinearElementRelatesToTypicalSectionPointDef" strength="referencing" strengthDirection="Forward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
             <Class class="ILinearElementRelatesToCorridorPortion"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referenced by">
-            <Class class="SignificantPointDefinition"/>
+            <Class class="TypicalSectionPointDefinition"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="TravelwaySignificantPointDef" displayLabel="Travelway Significant Point Definition" modifier="Sealed" description="Point constructs in a Travelway portion definition.">
-        <BaseClass>SignificantPointDefinition</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="TravelwaySideSignificantPointDef" displayLabel="TravelwaySide Significant Point Definition" modifier="Sealed" description="Point constructs in a TravelwaySide portion definition.">
-        <BaseClass>SignificantPointDefinition</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-    <ECEntityClass typeName="TravelwayStructureSignificantPointDef" displayLabel="TravelwayStructure Significant Point Definition" modifier="Sealed" description="Point constructs in a TravelwayStructure portion definition.">
-        <BaseClass>SignificantPointDefinition</BaseClass>
+    <ECEntityClass typeName="GenericTypicalSectionPointDef" displayLabel="Typical Section Point Definition" modifier="Sealed" description="Generic Point constructs with unknown nature.">
+        <BaseClass>TypicalSectionPointDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>

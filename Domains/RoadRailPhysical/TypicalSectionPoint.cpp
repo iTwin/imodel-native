@@ -11,24 +11,22 @@
 #include <RoadRailPhysical/TypicalSection.h>
 #include <RoadRailPhysical/RoadRailCategory.h>
 
-HANDLER_DEFINE_MEMBERS(SignificantPointDefinitionHandler)
-HANDLER_DEFINE_MEMBERS(TravelwaySignificantPointDefHandler)
-HANDLER_DEFINE_MEMBERS(TravelwaySideSignificantPointDefHandler)
-HANDLER_DEFINE_MEMBERS(TravelwayStructureSignificantPointDefHandler)
+HANDLER_DEFINE_MEMBERS(TypicalSectionPointDefinitionHandler)
+HANDLER_DEFINE_MEMBERS(GenericTypicalSectionPointDefHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-SignificantPointDefinition::SignificantPointDefinition(CreateParams const& params): T_Super(params)
+TypicalSectionPointDefinition::TypicalSectionPointDefinition(CreateParams const& params): T_Super(params)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-CodeSpecId SignificantPointDefinition::QueryCodeSpecId(DgnDbCR dgndb)
+CodeSpecId TypicalSectionPointDefinition::QueryCodeSpecId(DgnDbCR dgndb)
     {
-    CodeSpecId codeSpecId = dgndb.CodeSpecs().QueryCodeSpecId(BRRP_CODESPEC_SignificantPointDefinition);
+    CodeSpecId codeSpecId = dgndb.CodeSpecs().QueryCodeSpecId(BRRP_CODESPEC_TypicalSectionPointDefinition);
     BeAssert(codeSpecId.IsValid());
     return codeSpecId;
     }
@@ -36,34 +34,34 @@ CodeSpecId SignificantPointDefinition::QueryCodeSpecId(DgnDbCR dgndb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode SignificantPointDefinition::CreateCode(DefinitionModelCR scope, Utf8StringCR value)
+DgnCode TypicalSectionPointDefinition::CreateCode(DefinitionModelCR scope, Utf8StringCR value)
     {
-    return CodeSpec::CreateCode(BRRP_CODESPEC_SignificantPointDefinition, scope, value);
+    return CodeSpec::CreateCode(BRRP_CODESPEC_TypicalSectionPointDefinition, scope, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-SignificantPointDefinitionCPtr SignificantPointDefinition::QueryByCode(DefinitionModelCR model, Utf8StringCR pointCode)
+TypicalSectionPointDefinitionCPtr TypicalSectionPointDefinition::QueryByCode(DefinitionModelCR model, Utf8StringCR pointCode)
     {
     auto pointId = model.GetDgnDb().Elements().QueryElementIdByCode(CreateCode(model, pointCode));
     if (!pointId.IsValid())
         return nullptr;
 
-    return SignificantPointDefinition::Get(model.GetDgnDb(), pointId);
+    return TypicalSectionPointDefinition::Get(model.GetDgnDb(), pointId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TravelwaySignificantPointDefPtr TravelwaySignificantPointDef::Create(DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel)
+GenericTypicalSectionPointDefPtr GenericTypicalSectionPointDef::Create(DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, pointCode));
 
-    TravelwaySignificantPointDefPtr retVal(new TravelwaySignificantPointDef(createParams));
+    GenericTypicalSectionPointDefPtr retVal(new GenericTypicalSectionPointDef(createParams));
 
     if (userLabel)
         retVal->SetUserLabel(userLabel);
@@ -74,67 +72,7 @@ TravelwaySignificantPointDefPtr TravelwaySignificantPointDef::Create(DefinitionM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TravelwaySignificantPointDefCPtr TravelwaySignificantPointDef::CreateAndInsert(DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel)
-    {
-    auto ptr = Create(model, pointCode, userLabel);
-    if (ptr.IsNull())
-        return nullptr;
-
-    return ptr->Insert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TravelwaySideSignificantPointDefPtr TravelwaySideSignificantPointDef::Create(DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel)
-    {
-    if (!model.GetModelId().IsValid())
-        return nullptr;
-
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, pointCode));
-
-    TravelwaySideSignificantPointDefPtr retVal(new TravelwaySideSignificantPointDef(createParams));
-    
-    if (userLabel)
-        retVal->SetUserLabel(userLabel);
-
-    return retVal;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TravelwaySideSignificantPointDefCPtr TravelwaySideSignificantPointDef::CreateAndInsert(DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel)
-    {
-    auto ptr = Create(model, pointCode, userLabel);
-    if (ptr.IsNull())
-        return nullptr;
-
-    return ptr->Insert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TravelwayStructureSignificantPointDefPtr TravelwayStructureSignificantPointDef::Create(DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel)
-    {
-    if (!model.GetModelId().IsValid())
-        return nullptr;
-
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, pointCode));
-
-    TravelwayStructureSignificantPointDefPtr retVal(new TravelwayStructureSignificantPointDef(createParams));
-
-    if (userLabel)
-        retVal->SetUserLabel(userLabel);
-
-    return retVal;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TravelwayStructureSignificantPointDefCPtr TravelwayStructureSignificantPointDef::CreateAndInsert(DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel)
+GenericTypicalSectionPointDefCPtr GenericTypicalSectionPointDef::CreateAndInsert(DefinitionModelCR model, Utf8StringCR pointCode, Utf8CP userLabel)
     {
     auto ptr = Create(model, pointCode, userLabel);
     if (ptr.IsNull())
