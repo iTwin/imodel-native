@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SnapContext.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -10,323 +10,14 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool isPhysicallyClosed(ICurvePrimitiveCR primitive)
-    {
-    switch (primitive.GetCurvePrimitiveType())
-        {
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-            return (primitive.GetLineStringCP()->size() > 3 && primitive.GetLineStringCP()->front().IsEqual(primitive.GetLineStringCP()->back()));
-
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
-            return primitive.GetArcCP()->IsFullEllipse();
-
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
-            return (primitive.GetProxyBsplineCurveCP()->IsClosed());
-
-        default:
-            return false;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool getAreaCentroid(DPoint3dR centroid, CurveVectorCR curve)
-    {
-    Transform   localToWorld, worldToLocal;
-    DRange3d    localRange;
-
-    if (!curve.IsPlanar(localToWorld, worldToLocal, localRange))
-        return false;
-
-    DVec3d      normal;
-    double      area;
-
-    return curve.CentroidNormalArea(centroid, normal, area);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool getCentroid(DPoint3dR centroid, ICurvePrimitiveCR primitive)
-    {
-    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc == primitive.GetCurvePrimitiveType())
-        {
-        // Center snap always uses arc center...
-        centroid = primitive.GetArcCP ()->center;
-
-        return true;
-        }
-    else if (isPhysicallyClosed(primitive))
-        {
-        CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
-        
-        curve->push_back(primitive.Clone());
-
-        // For physically closed/planar curve use area centroid instead of wire centroid...
-        if (getAreaCentroid(centroid, *curve))
-            return true;
-        }
-
-    double  length;
-
-    return primitive.WireCentroid(length, centroid);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-SnapStatus SnapContext::DoSnapUsingCurve(SnapMode snapMode)
-    {
-    SnapDetailCP       snap = GetSnapDetail();
-    GeomDetailCR       detail = snap->GetGeomDetail();
-    ICurvePrimitiveCP  curve;
-
-    if (NULL == (curve = detail.GetCurvePrimitive()))
-        return SnapStatus::NotSnappable;
-
-    switch (snapMode)
-        {
-        case SnapMode::Origin:
-            {
-            DPoint3d    hitPoint;
-
-            if (!curve->GetStartPoint(hitPoint))
-                return SnapStatus::NotSnappable;
-
-            SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
-
-            return SnapStatus::Success;
-            }
-
-        case SnapMode::MidPoint:
-            {
-            switch (detail.GetEffectiveHitGeomType())
-                {
-                case HitGeomType::Point:
-                    {
-                    DPoint3d    hitPoint = detail.GetClosestPoint();
-                    DEllipse3d  arc;
-
-                    // Check for surface interior hit that was closest to arc center...
-                    if (detail.GetArc(arc))
-                        hitPoint = arc.center;
-
-                    SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
-
-                    return SnapStatus::Success;
-                    }
-
-                case HitGeomType::Segment:
-                    {
-                    DSegment3d  segment;
-
-                    if (!detail.GetSegment(segment))
-                        return SnapStatus::NotSnappable;
-
-                    DPoint3d    hitPoint;
-
-                    hitPoint.Interpolate(segment.point[0], 0.5, segment.point[1]);
-                    SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
-
-                    return SnapStatus::Success;
-                    }
-
-                case HitGeomType::Arc:
-                    {
-                    DEllipse3dCP  ellipse = curve->GetArcCP ();
-
-                    if (!ellipse)
-                        return SnapStatus::NotSnappable;
-
-                    DPoint3d    hitPoint;
-
-                    ellipse->FractionParameterToPoint(hitPoint, 0.5);
-                    SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
-
-                    return SnapStatus::Success;
-                    }
-                }
-
-            // Fall through to bisector if not handled...
-            }
-
-        case SnapMode::Bisector:
-            {
-            double  length;
-
-            if (!curve->Length(length))
-                return SnapStatus::NotSnappable;
-
-            CurveLocationDetail location;
-
-            if (!curve->PointAtSignedDistanceFromFraction(0.0, length * 0.5, false, location))
-                return SnapStatus::NotSnappable;
-
-            SetSnapInfo(snapMode, GetSnapSprite(snapMode), location.point, false, false);
-
-            return SnapStatus::Success;
-            }
-
-        case SnapMode::Center:
-            {
-            DPoint3d    centroid;
-
-            if (!getCentroid(centroid, *curve))
-                return SnapStatus::NotSnappable;
-
-            SetSnapInfo(snapMode, GetSnapSprite(snapMode), centroid, true /* force hot */, false);
-
-            return SnapStatus::Success;
-            }
-
-        case SnapMode::Nearest:
-            {
-            DPoint3d    hitPoint = detail.GetClosestPoint(); // Current snap info is for nearest...just need to set snap using current point.
-
-            SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
-
-            return SnapStatus::Success;
-            }
-
-        case SnapMode::NearestKeypoint:
-            {
-            switch (detail.GetEffectiveHitGeomType())
-                {
-                case HitGeomType::Point:
-                    {
-                    DPoint3d    hitPoint = detail.GetClosestPoint();
-                    DEllipse3d  arc;
-
-                    // Check for surface interior hit that was closest to arc center...
-                    if (detail.GetArc(arc))
-                        hitPoint = arc.center;
-                    
-                    SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
-
-                    return SnapStatus::Success;
-                    }
-
-                case HitGeomType::Segment:
-                    {
-                    DSegment3d  segment;
-
-                    if (!detail.GetSegment(segment))
-                        return SnapStatus::NotSnappable;
-
-                    double      keyparam = detail.GetSegmentParam();
-                    DPoint3d    hitPoint;
-
-                    GetSegmentKeypoint(hitPoint, keyparam, GetSnapDivisor(), segment);
-                    SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
-
-                    return SnapStatus::Success;
-                    }
-
-                case HitGeomType::Arc:
-                case HitGeomType::Curve:
-                    {
-                    double      keyparam = detail.GetCloseParam();
-                    DPoint3d    hitPoint;
-
-                    if (!GetParameterKeypoint(hitPoint, keyparam, GetSnapDivisor()))
-                        return SnapStatus::NotSnappable;
-
-                    SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
-
-                    return SnapStatus::Success;
-                    }
-
-                default:
-                    return SnapStatus::NotSnappable;
-                }
-            }
-
-        default:
-            {
-            // Should never be called with "exotic" snap modes...
-            return SnapStatus::NotSnappable;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SnapContext::GetParameterKeypoint(DPoint3dR hitPoint, double& keyParam, int divisor)
-    {
-    SnapDetailCP       snap = GetSnapDetail();
-    GeomDetailCR       detail = snap->GetGeomDetail();
-    ICurvePrimitiveCP  curve;
-
-    if (NULL == (curve = detail.GetCurvePrimitive()))
-        return false;
-
-    double  length, subLength;
-
-    if (!curve->Length(length) || !curve->SignedDistanceBetweenFractions(0.0, keyParam, subLength))
-        return false;
-
-    // NOTE: For a closed curve we want quadrant key points.
-    if (isPhysicallyClosed(*curve))
-        divisor *= 4;
-
-    int     keySeg = int ((subLength / length) * (double) divisor + 0.5);
-    double  keyDist = (keySeg / (double) divisor) * length;
-
-    CurveLocationDetail location;
-
-    if (!curve->PointAtSignedDistanceFromFraction(0.0, keyDist, false, location))
-        return false;
-
-    hitPoint = location.point;
-    keyParam = location.fraction;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  10/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SnapContext::GetSegmentKeypoint(DPoint3dR hitPoint, double& keyParam, int divisor, DSegment3dCR segment)
-    {
-    int numerator = int ((keyParam * (double) divisor) + 0.5);
-    
-    keyParam = (numerator / (double) divisor);
-    hitPoint.Interpolate(segment.point[0], keyParam, segment.point[1]);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  12/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SnapContext::SetSnapInfo(SnapMode snapMode, ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, bool isAdjusted, int nBytes, Byte* customKeypointData)
-    {
-    SnapDetailP snap = GetSnapDetail();
-
-    snap->SetSnapMode(snapMode);
-    snap->SetSprite(sprite);
-
-    snap->SetSnapPoint(snapPoint, forceHot, m_snapAperture);
-    snap->SetAllowAssociations(!isAdjusted);
-
-    if (nBytes && customKeypointData)
-        snap->SetCustomKeypoint(nBytes, customKeypointData);
-    }
-
 BEGIN_BENTLEY_DGN_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct SnapGraphicsProcessor : IGeometryProcessor
+struct SnapGraphicsProcessor : IGeometryProcessor // NOT_NOW_WIP: Delete when SnapGeometryHelper supports all geometry types...
 {
 private:
-
+    
     SnapContextR        m_snapContext;
     CurveLocationDetail m_location;
     bool                m_inProcessFace = false;
@@ -996,7 +687,7 @@ struct BRepFaceHatchProcessor : IParasolidWireOutput
         curve->TransformInPlace(m_entityTransform);
         m_processor.TestCurveLocation(*curve, m_graphic);
 
-        return (m_processor.m_snapContext.CheckStop() ? ERROR : SUCCESS);
+        return (m_processor.m_snapContext._CheckStop() ? ERROR : SUCCESS);
         }
 
     BRepFaceHatchProcessor(SnapGraphicsProcessor& processor, SimplifyGraphic& graphic, TransformCR entityTransform) : m_processor(processor), m_graphic(graphic), m_entityTransform(entityTransform) {}
@@ -1067,7 +758,7 @@ bool _ProcessBody(IBRepEntityCR entity, SimplifyGraphic& graphic) override
 
     for (ISubEntityPtr& edge : faceEdges)
         {
-        if (m_snapContext.CheckStop())
+        if (m_snapContext._CheckStop())
             return true;
 
         GeometricPrimitiveCPtr geom = edge->GetGeometry();
@@ -1205,7 +896,629 @@ static bool DoSnapUsingClosestCurve(SnapContextR snapContext)
     return (SnapStatus::Success == snapContext.DoSnapUsingCurve(snapContext.GetSnapMode()) ? true : false);
     }
 
-}; // SnapEdgeProcessor
+}; // SnapGraphicsProcessor
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct SnapGeometryHelper // NEEDSWORK: Include "off" sub-categories and ViewFlags...can we ignore snappable patterns/linestyles in imodel-js?
+{
+private:
+
+SnapMode                m_snapMode;
+int                     m_snapDivisor;
+double                  m_snapAperture;
+DPoint3d                m_closePtWorld;
+DMap4d                  m_worldToView;
+
+GeometricPrimitivePtr   m_hitGeom;
+Transform               m_hitLocalToWorld = Transform::FromIdentity();
+GeometryStreamEntryId   m_hitEntryId;
+CurveLocationDetail     m_hitCurveDetail;
+HitGeomType             m_hitGeomType = HitGeomType::None;
+
+protected:
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool EvaluateInterior()
+    {
+    if (!m_hitGeom.IsValid() || m_hitGeom->IsWire())
+        return false;
+
+    Transform   worldToLocal;
+
+    worldToLocal.InverseOf(m_hitLocalToWorld);
+
+    DMatrix4d   viewToLocal = GetViewToLocal(worldToLocal);
+    DMatrix4d   localToView;
+
+    localToView.QrInverseOf(viewToLocal);
+
+    // NOTE: Nearest snap tracks surface when edge not within locate aperture...
+    bool        useSpacePt = (HitGeomType::Point != m_hitGeomType && SnapMode::Nearest == m_snapMode && m_hitCurveDetail.a > m_snapAperture);
+    DPoint3d    localPoint = (useSpacePt ? GetSpacePointLocal(worldToLocal) : m_hitCurveDetail.point);
+
+    switch (m_hitGeom->GetGeometryType())
+        {
+        case GeometricPrimitive::GeometryType::CurveVector:
+            {
+            CurveVectorCR curves = *m_hitGeom->GetAsCurveVector();
+
+            if (!curves.IsAnyRegionType())
+                break;
+
+            SolidLocationDetail solidDetail;
+            DRay3d boresite = GetBoresite(localPoint, viewToLocal);
+
+            CurveVector::InOutClassification result = curves.RayPierceInOnOut(boresite, solidDetail);
+
+            if (CurveVector::InOutClassification::INOUT_In == result || CurveVector::InOutClassification::INOUT_On == result)
+                {
+                if (useSpacePt)
+                    {
+                    m_hitGeomType = HitGeomType::Surface;
+                    m_hitCurveDetail.curve = nullptr; // Don't flash single curve primitive when snapping to interior...
+                    m_hitCurveDetail.point = solidDetail.GetXYZ();
+                    }
+
+                // NEEDSWORK: Save surface uv directions...
+                }
+
+            return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool EvaluateArcCenter()
+    {
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != m_hitCurveDetail.curve->GetCurvePrimitiveType())
+        return false;
+
+    DEllipse3dCP arc = m_hitCurveDetail.curve->GetArcCP();
+
+    if (fabs(arc->sweep) < Angle::PiOver2())
+        return false;
+
+    Transform   worldToLocal;
+
+    worldToLocal.InverseOf(m_hitLocalToWorld);
+
+    DMatrix4d   viewToLocal = GetViewToLocal(worldToLocal);
+    DMatrix4d   localToView;
+
+    localToView.QrInverseOf(viewToLocal);
+
+    DPoint3d    localPts[2];
+    DPoint4d    viewPts[2];
+
+    localPts[0] = arc->center;
+    localPts[1] = GetSpacePointLocal(worldToLocal);
+
+    localToView.Multiply(viewPts, localPts, nullptr, 2);
+
+    if (viewPts[0].RealDistance(viewPts[1]) > (m_snapAperture * 1.5))
+        return false;
+
+    m_hitGeomType = HitGeomType::Point;
+    m_hitCurveDetail.point = arc->center;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool EvaluateCurve()
+    {
+    if (nullptr == m_hitCurveDetail.curve)
+        return (SnapMode::Nearest == m_snapMode);
+
+    switch (m_snapMode)
+        {
+        case SnapMode::Nearest:
+            {
+            EvaluateArcCenter();
+            return true;
+            }
+
+        case SnapMode::Origin:
+            {
+            DPoint3d hitPoint;
+
+            if (!m_hitCurveDetail.curve->GetStartPoint(hitPoint))
+                return false;
+
+            m_hitCurveDetail.point = hitPoint;
+            return true;
+            }
+
+        case SnapMode::MidPoint:
+            {
+            switch (m_hitCurveDetail.curve->GetCurvePrimitiveType())
+                {
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+                    {
+                    DSegment3dCP segment = m_hitCurveDetail.curve->GetLineCP();
+
+                    m_hitCurveDetail.point.Interpolate(segment->point[0], 0.5, segment->point[1]);
+                    return true;
+                    }
+
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+                    {
+                    DSegment3d segment;
+
+                    if (!m_hitCurveDetail.curve->TryGetSegmentInLineString(segment, m_hitCurveDetail.componentIndex))
+                        return false;
+
+                    m_hitCurveDetail.point.Interpolate(segment.point[0], 0.5, segment.point[1]);
+                    return true;
+                    }
+
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+                    {
+                    if (EvaluateArcCenter())
+                        return true;
+
+                    DEllipse3dCP ellipse = m_hitCurveDetail.curve->GetArcCP();
+
+                    ellipse->FractionParameterToPoint(m_hitCurveDetail.point, 0.5);
+                    return true;
+                    }
+                }
+
+            // Fall through to bisector if not handled...
+            }
+
+        case SnapMode::Bisector:
+            {
+            double length;
+
+            if (!m_hitCurveDetail.curve->Length(length))
+                return false;
+
+            CurveLocationDetail location;
+
+            if (!m_hitCurveDetail.curve->PointAtSignedDistanceFromFraction(0.0, length * 0.5, false, location))
+                return false;
+
+            m_hitCurveDetail.point = location.point;
+            return true;
+            }
+
+        case SnapMode::Center:
+            {
+            DPoint3d centroid;
+
+            if (m_hitGeom.IsValid() && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != m_hitCurveDetail.curve->GetCurvePrimitiveType() && GeometricPrimitive::GeometryType::CurveVector == m_hitGeom->GetGeometryType())
+                {
+                CurveVectorCR curves = *m_hitGeom->GetAsCurveVector();
+
+                if (curves.IsAnyRegionType() && GetAreaCentroid(centroid, curves))
+                    {
+                    m_hitCurveDetail.point = centroid;
+
+                    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid == curves.HasSingleCurvePrimitive())
+                        {
+                        m_hitGeomType = HitGeomType::Surface;
+                        m_hitCurveDetail.curve = nullptr; // Don't flash single curve primitive when snapping to center of region...
+                        }
+                    
+                    return true;
+                    }
+                }
+
+            if (!GetCentroid(centroid, *m_hitCurveDetail.curve))
+                return false;
+
+            m_hitCurveDetail.point = centroid;
+            return true;
+            }
+
+        case SnapMode::NearestKeypoint:
+            {
+            switch (m_hitCurveDetail.curve->GetCurvePrimitiveType())
+                {
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+                    {
+                    DSegment3dCP segment = m_hitCurveDetail.curve->GetLineCP();
+
+                    SnapContext::GetSegmentKeypoint(m_hitCurveDetail.point, m_hitCurveDetail.componentFraction, m_snapDivisor, *segment);
+                    return true;
+                    }
+
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+                    {
+                    DSegment3d segment;
+
+                    if (!m_hitCurveDetail.curve->TryGetSegmentInLineString(segment, m_hitCurveDetail.componentIndex))
+                        return false;
+
+                    SnapContext::GetSegmentKeypoint(m_hitCurveDetail.point, m_hitCurveDetail.componentFraction, m_snapDivisor, segment);
+                    return true;
+                    }
+
+                case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+                    {
+                    if (EvaluateArcCenter())
+                        return true;
+
+                    // FALL THROUGH...
+                    }
+
+                default:
+                    {
+                    DPoint3d hitPoint;
+
+                    if (!SnapContext::GetParameterKeypoint(*m_hitCurveDetail.curve, hitPoint, m_hitCurveDetail.fraction, m_snapDivisor))
+                        return false;
+
+                    m_hitCurveDetail.point = hitPoint;
+                    return true;
+                    }
+                }
+            }
+
+        default:
+            {
+            // Should never be called with "exotic" snap modes...
+            return false;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UpdateIfCloser(CurveLocationDetailCR curveDetail)
+    {
+    if (nullptr == m_hitCurveDetail.curve || curveDetail.a < m_hitCurveDetail.a)
+        {
+        m_hitCurveDetail = curveDetail;
+        return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d GetSpacePointLocal(Transform worldToLocalTrans)
+    {
+    DPoint3d    spacePointLocal = m_closePtWorld;
+
+    worldToLocalTrans.Multiply(spacePointLocal);
+
+    return spacePointLocal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DMatrix4d GetViewToLocal(Transform worldToLocalTrans)
+    {
+    DMatrix4d   worldToLocal = DMatrix4d::From(worldToLocalTrans);
+    DMatrix4d   viewToWorld = m_worldToView.M1;
+    DMatrix4d   viewToLocal;
+
+    viewToLocal.InitProduct(worldToLocal, viewToWorld);
+
+    return viewToLocal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DRay3d GetBoresite(DPoint3dCR localPoint, DMatrix4dCR viewToLocal)
+    {
+    double      aa;
+    DRay3d      boresite;
+    DPoint4d    eyePoint;
+
+    viewToLocal.GetColumn(eyePoint, 2);
+    boresite.direction.Init(eyePoint.x, eyePoint.y, eyePoint.z);
+    boresite.origin = localPoint;
+
+    if (DoubleOps::SafeDivide(aa, 1.0, eyePoint.w, 1.0))
+        {
+        DPoint3d  xyzEye;
+
+        xyzEye.Scale(boresite.direction, aa);
+        boresite.direction.DifferenceOf(xyzEye, boresite.origin);
+        }
+
+    boresite.direction.Normalize();
+    boresite.direction.Negate();
+
+    return boresite;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR snapElemEntryId, DgnDbP db)
+    {
+    GeometryStreamEntryId elemEntryId = iter.GetGeometryStreamEntryId();
+
+    if (snapElemEntryId.IsValid())
+        return (snapElemEntryId != elemEntryId);
+
+    // NEEDSWORK: Check "off" sub-categories and ViewFlags...
+    DRange3d    localRange = iter.GetSubGraphicLocalRange();
+
+    if (localRange.IsNull() && (nullptr == db || SUCCESS != DgnGeometryPart::QueryGeometryPartRange(localRange, *db, iter.GetGeometryPartId())))
+        return false;
+
+    Transform   localToWorld = iter.GetGeometryToWorld();
+    Transform   worldToLocal;
+
+    worldToLocal.InverseOf(localToWorld);
+
+    DPoint3d    localPoint = GetSpacePointLocal(worldToLocal);
+
+    return (!localRange.IsContained(localPoint));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ProcessEntry(GeometryCollection::Iterator const& iter, bool checkRange, DgnElementCP element)
+    {
+    GeometryStreamEntryId elemEntryId = iter.GetGeometryStreamEntryId();
+    GeometricPrimitivePtr geom;
+
+    if (nullptr != element && GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType())
+        {
+        IBRepEntityPtr entity = BRepDataCache::FindCachedBRepEntity(*element, elemEntryId);
+
+        if (entity.IsValid())
+            geom = GeometricPrimitive::Create(entity);
+        }
+
+    if (!geom.IsValid())
+        {
+        geom = iter.GetGeometryPtr();
+
+        if (!geom.IsValid())
+            return;
+        }
+
+    ProcessGeometry(*geom, iter.GetGeometryToWorld(), elemEntryId, checkRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ProcessGeometry(GeometricPrimitiveR geom, TransformCR localToWorld, GeometryStreamEntryIdCR elemEntryId, bool checkRange)
+    {
+    Transform   worldToLocal;
+
+    worldToLocal.InverseOf(localToWorld);
+
+    DPoint3d    localPoint = GetSpacePointLocal(worldToLocal);
+
+    if (checkRange)
+        {
+        DRange3d    localRange;
+
+        if (geom.GetRange(localRange) && !localRange.IsContained(localPoint))
+            return;
+        }
+
+    DMatrix4d   viewToLocal = GetViewToLocal(worldToLocal);
+    DMatrix4d   localToView;
+
+    localToView.QrInverseOf(viewToLocal);
+
+    switch (geom.GetGeometryType())
+        {
+        case GeometricPrimitive::GeometryType::CurvePrimitive:
+            {
+            ICurvePrimitiveCR curve = *geom.GetAsICurvePrimitive();
+            CurveLocationDetail curveDetail;
+
+            if (!curve.ClosestPointBoundedXY(localPoint, &localToView, curveDetail))
+                return;
+
+            if (!UpdateIfCloser(curveDetail))
+                return;
+
+            m_hitGeom = &geom;
+            m_hitLocalToWorld = localToWorld;
+            m_hitEntryId = elemEntryId;
+            break;
+            }
+
+        case GeometricPrimitive::GeometryType::CurveVector:
+            {
+            CurveVectorCR curves = *geom.GetAsCurveVector();
+            CurveLocationDetail curveDetail;
+
+            if (!curves.ClosestPointBoundedXY(localPoint, &localToView, curveDetail))
+                return;
+
+            if (!UpdateIfCloser(curveDetail))
+                return;
+
+            m_hitGeom = &geom;
+            m_hitLocalToWorld = localToWorld;
+            m_hitEntryId = elemEntryId;
+            break;
+            }
+        }
+    }
+
+public:
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SnapMode GetSnapMode() const {return m_snapMode;}
+int GetSnapDivisor() const {return m_snapDivisor;}
+double GetSnapAperture() const {return  m_snapAperture;}
+DPoint3dCR GetClosePointWorld() const {return m_closePtWorld;}
+DMap4dCR GetWorldToView() const {return m_worldToView;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometricPrimitivePtr GetHitGeometry() {return m_hitGeom;}
+TransformR GetHitLocalToWorld() {return m_hitLocalToWorld;}
+GeometryStreamEntryIdR GetHitGeometryStreamEntryId() {return m_hitEntryId;}
+CurveLocationDetailR GetHitCurveDetail() {return m_hitCurveDetail;}
+HitGeomType GetHitGeomType() const {return m_hitGeomType;}
+DPoint3d GetHitPointWorld() const {DPoint3d hitPtWorld = m_hitCurveDetail.point; m_hitLocalToWorld.Multiply(hitPtWorld); return hitPtWorld;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool IsPhysicallyClosed(ICurvePrimitiveCR primitive)
+    {
+    switch (primitive.GetCurvePrimitiveType())
+        {
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+            return (primitive.GetLineStringCP()->size() > 3 && primitive.GetLineStringCP()->front().IsEqual(primitive.GetLineStringCP()->back()));
+
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+            return primitive.GetArcCP()->IsFullEllipse();
+
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
+            return (primitive.GetProxyBsplineCurveCP()->IsClosed());
+
+        default:
+            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool GetAreaCentroid(DPoint3dR centroid, CurveVectorCR curve)
+    {
+    Transform   localToWorld, worldToLocal;
+    DRange3d    localRange;
+
+    if (!curve.IsPlanar(localToWorld, worldToLocal, localRange))
+        return false;
+
+    DVec3d      normal;
+    double      area;
+
+    return curve.CentroidNormalArea(centroid, normal, area);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool GetCentroid(DPoint3dR centroid, ICurvePrimitiveCR primitive)
+    {
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc == primitive.GetCurvePrimitiveType())
+        {
+        // Center snap always uses arc center...
+        centroid = primitive.GetArcCP ()->center;
+
+        return true;
+        }
+    else if (IsPhysicallyClosed(primitive))
+        {
+        CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
+        
+        curve->push_back(primitive.Clone());
+
+        // For physically closed/planar curve use area centroid instead of wire centroid...
+        if (GetAreaCentroid(centroid, *curve))
+            return true;
+        }
+
+    double  length;
+
+    return primitive.WireCentroid(length, centroid);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ComputeSnapLocation()
+    {
+    if (!EvaluateCurve())
+        return false;
+
+    EvaluateInterior();
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GetClosestCurve(GeometrySourceCR source, CheckStop* stopTester = nullptr)
+    {
+    GeometryCollection     collection(source);
+    GeometryStreamEntryId  snapElemEntryId = m_hitEntryId;
+    GeometryStreamEntryId  snapPartEntryId = m_hitEntryId;
+
+    snapElemEntryId.SetPartIndex(0);
+
+    for (auto iter : collection)
+        {
+        // Quick exclude of geometry that didn't generate the hit...
+        if (SkipEntry(iter, snapElemEntryId, &source.GetSourceDgnDb()))
+            continue;
+
+        if (GeometryCollection::Iterator::EntryType::GeometryPart != iter.GetEntryType())
+            {
+            ProcessEntry(iter, !snapElemEntryId.IsValid(), source.ToElement());
+
+            if (!snapElemEntryId.IsValid() || iter.IsBRepPolyface())
+                continue; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
+            break;
+            }
+
+        DgnGeometryPartCPtr geomPart = iter.GetGeometryPartCPtr();
+
+        if (!geomPart.IsValid())
+            continue; // Shouldn't happen...
+
+        GeometryCollection partCollection(geomPart->GetGeometryStream(), geomPart->GetDgnDb());
+
+        partCollection.SetNestedIteratorContext(iter); // Iterate part GeomStream in context of parent...
+
+        for (auto partIter : partCollection)
+            {
+            // Quick exclude of geometry that didn't generate the hit...
+            if (SkipEntry(partIter, snapPartEntryId, nullptr))
+                continue;
+
+            ProcessEntry(partIter, !snapPartEntryId.IsValid(), geomPart.get());
+
+            if (!snapPartEntryId.IsValid() || partIter.IsBRepPolyface())
+                continue; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
+            break;
+            }
+
+        if (snapPartEntryId.IsValid())
+            break; // Done with part...
+        }
+
+    return (nullptr != m_hitCurveDetail.curve);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SnapGeometryHelper(SnapMode mode, int divisor, double aperture, DPoint3d closePtWorld, DMap4d worldToView) : m_snapMode(mode), m_snapDivisor(divisor), m_snapAperture(aperture), m_closePtWorld(closePtWorld), m_worldToView(worldToView) {}
+
+}; // SnapGeometryHelper
 END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -1213,41 +1526,73 @@ END_BENTLEY_DGN_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus SnapContext::DoDefaultDisplayableSnap()
     {
-    SnapDetailP     snap = GetSnapDetail();
-    SnapMode        snapMode = GetSnapMode();
-    GeomDetailCR    detail = snap->GetGeomDetail();
+#if defined (NOT_NOW_WIP)
+    bool            useFullHitDetail = false;
+#else
+    bool            useFullHitDetail = true;
+#endif
+    GeomDetailCR    detail = GetSnapDetail()->GetGeomDetail();
 
     // Don't require a curve primitive if hit geom is point or mode is nearest because current hit point is correct...
-    if (SnapMode::Nearest == snapMode || HitGeomType::Point == detail.GetGeomType())
+    if (useFullHitDetail && (SnapMode::Nearest == GetSnapMode() || HitGeomType::Point == detail.GetGeomType()))
         {
-        DPoint3d    hitPoint = snap->GetHitPoint();
+        DPoint3d    hitPoint = GetSnapDetail()->GetHitPoint();
 
-        SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
+        SetSnapInfo(*GetSnapDetail(), GetSnapMode(), GetSnapSprite(GetSnapMode()), hitPoint, false, GetSnapAperture(), false);
 
         return SnapStatus::Success;
         }
 
-    if (nullptr == detail.GetCurvePrimitive())
+    if (!useFullHitDetail || nullptr == detail.GetCurvePrimitive())
         {
         // Surface w/o curve is interior hit...only nearest should "track" surface...
-        if (HitGeomType::Surface == detail.GetGeomType())
+        if (!useFullHitDetail || HitGeomType::Surface == detail.GetGeomType())
             {
-            DgnElementCPtr   element = snap->GetElement();
+            bool             usePlacement = true;
+            DgnElementCPtr   element = GetSnapDetail()->GetElement();
             GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
 
-            if (SnapMode::Origin != snapMode || nullptr == source)
+            if (nullptr == source)
                 {
+                IElemTopologyCP elemTopo = GetSnapDetail()->GetElemTopology();
+
+                if (nullptr == (source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
+                    return SnapStatus::NotSnappable;
+
+                // NOTE: Assume placement is not meaningful for non-element hits when it's identity...
+                usePlacement = !source->GetPlacementTransform().IsIdentity();
+                }
+
+            if (SnapMode::Origin != GetSnapMode() || !usePlacement) // Snap to geometry origin for non-element hits without a meaningful placement...
+                {
+#if defined (NOT_NOW_WIP)
+                SnapGeometryHelper helper(GetSnapMode(), GetSnapDivisor(), GetSnapAperture(), GetSnapDetail()->GetGeomDetail().GetClosestPoint(), GetWorldToView());
+
+                if (useFullHitDetail)
+                    helper.GetHitGeometryStreamEntryId() = GetSnapDetail()->GetGeomDetail().GetGeometryStreamEntryId(true); // Supply HitDetail entry id so that we can trivially reject GeometryStream entries...
+
+                // NOTE: This is a fairly expensive proposition...but we need something more meaningful than snap to center of range...
+                if (helper.GetClosestCurve(*source, this) && helper.ComputeSnapLocation())
+                    {
+                    GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(helper.GetHitCurveDetail().curve, &helper.GetHitLocalToWorld(), helper.GetHitGeomType());
+                    SetSnapInfo(*GetSnapDetail(), GetSnapMode(), GetSnapSprite(GetSnapMode()), helper.GetHitPointWorld(), SnapMode::Center == GetSnapMode(), GetSnapAperture(), false);
+
+                    return SnapStatus::Success;
+                    }
+#else
                 // NOTE: This is a fairly expensive proposition...but we need something more meaningful than snap to center of range...
                 if (SnapGraphicsProcessor::DoSnapUsingClosestCurve(*this))
                     return SnapStatus::Success;
-                else if (nullptr == source)
-                    return SnapStatus::NotSnappable; // NOTE: Don't assume placement is meaningful for non-element hits (probably identity)...
+#endif
+
+                if (!usePlacement)
+                    return SnapStatus::NotSnappable;
                 }
 
             DPoint3d hitPoint;
 
             source->GetPlacementTransform().GetTranslation(hitPoint);
-            SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
+            SetSnapInfo(*GetSnapDetail(), GetSnapMode(), GetSnapSprite(GetSnapMode()), hitPoint, false, GetSnapAperture(), false);
 
             return SnapStatus::Success;
             }
@@ -1255,7 +1600,94 @@ SnapStatus SnapContext::DoDefaultDisplayableSnap()
         return SnapStatus::NotSnappable;
         }
 
-    return DoSnapUsingCurve(snapMode);
+    return DoSnapUsingCurve(GetSnapMode());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/12
++---------------+---------------+---------------+---------------+---------------+------*/
+SnapStatus SnapContext::DoSnapUsingCurve(SnapMode snapMode)
+    {
+    SnapGeometryHelper helper(snapMode, GetSnapDivisor(), GetSnapAperture(), GetSnapDetail()->GetGeomDetail().GetClosestPoint(), GetWorldToView());
+
+    if (!GetSnapDetail()->GetGeomDetail().GetCloseDetail(helper.GetHitCurveDetail()))
+        return SnapStatus::NotSnappable;
+
+    if (!helper.ComputeSnapLocation())
+        return SnapStatus::NotSnappable;
+
+    SetSnapInfo(*GetSnapDetail(), snapMode, GetSnapSprite(snapMode), helper.GetHitPointWorld(), SnapMode::Center == snapMode, GetSnapAperture(), false);
+
+    return SnapStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  10/04
++---------------+---------------+---------------+---------------+---------------+------*/
+SnapStatus SnapContext::DoTextSnap()
+    {
+    GeomDetailCR detail = GetSnapDetail()->GetGeomDetail();
+
+    switch (GetSnapMode())
+        {
+        case SnapMode::Origin:
+        case SnapMode::NearestKeypoint:
+            {
+            DgnElementCPtr   element = GetSnapDetail()->GetElement();
+            GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
+
+            if (nullptr == source)
+                return SnapStatus::NotSnappable;
+
+            DPoint3d hitPoint = (nullptr != source->GetAsGeometrySource3d() ? source->GetAsGeometrySource3d()->GetPlacement().GetOrigin() : DPoint3d::From(source->GetAsGeometrySource2d()->GetPlacement().GetOrigin()));
+            
+            SetSnapInfo(*GetSnapDetail(), GetSnapMode(), GetSnapSprite(GetSnapMode()), hitPoint, false, GetSnapAperture(), false);
+
+            return SnapStatus::Success;
+            }
+
+        case SnapMode::MidPoint:
+        case SnapMode::Bisector:
+        case SnapMode::Center:
+            {
+            if (nullptr == detail.GetCurvePrimitive())
+                return DoDefaultDisplayableSnap(); // NOTE: Boundary shape unavailable for origin only...always have for edge/interior hit...
+
+            DPoint3d    centroid;
+
+            if (!SnapGeometryHelper::GetCentroid(centroid, *detail.GetCurvePrimitive()))
+                return SnapStatus::NotSnappable;
+
+            SetSnapInfo(*GetSnapDetail(), GetSnapMode(), GetSnapSprite(GetSnapMode()), centroid, false, GetSnapAperture(), false);
+
+            return SnapStatus::Success;
+            }
+
+        case SnapMode::Nearest:
+            {
+            if (nullptr == detail.GetCurvePrimitive())
+                return DoDefaultDisplayableSnap(); // NOTE: Boundary shape unavailable for origin only...always have for edge/interior hit...
+
+            DSegment3d  segment;
+
+            if (!detail.GetSegment(segment))
+                return SnapStatus::NotSnappable;
+
+            double      keyparam = detail.GetSegmentParam();
+            DPoint3d    hitPoint;
+
+            GetSegmentKeypoint(hitPoint, keyparam, GetSnapDivisor(), segment);
+            SetSnapInfo(*GetSnapDetail(), GetSnapMode(), GetSnapSprite(GetSnapMode()), hitPoint, false, GetSnapAperture(), false);
+
+            return SnapStatus::Success;
+            }
+
+        default:
+            {
+            // Should never be called with "exotic" snap modes...
+            return SnapStatus::NotSnappable;
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1322,75 +1754,42 @@ KeypointType SnapContext::GetSnapKeypointType(SnapMode snapMode)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   05/01
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SnapContext::GetParameterKeypoint(ICurvePrimitiveCR curve, DPoint3dR hitPoint, double& keyParam, int divisor)
+    {
+    double  length, subLength;
+
+    if (!curve.Length(length) || !curve.SignedDistanceBetweenFractions(0.0, keyParam, subLength))
+        return false;
+
+    // NOTE: For a closed curve we want quadrant key points.
+    if (SnapGeometryHelper::IsPhysicallyClosed(curve))
+        divisor *= 4;
+
+    int     keySeg = int ((subLength / length) * (double) divisor + 0.5);
+    double  keyDist = (keySeg / (double) divisor) * length;
+
+    CurveLocationDetail location;
+
+    if (!curve.PointAtSignedDistanceFromFraction(0.0, keyDist, false, location))
+        return false;
+
+    hitPoint = location.point;
+    keyParam = location.fraction;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapStatus SnapContext::DoTextSnap()
+void SnapContext::GetSegmentKeypoint(DPoint3dR hitPoint, double& keyParam, int divisor, DSegment3dCR segment)
     {
-    SnapDetailP     snap = GetSnapDetail();
-    SnapMode        snapMode = GetSnapMode();
-    GeomDetailCR    detail = snap->GetGeomDetail();
-
-    switch (snapMode)
-        {
-        case SnapMode::Origin:
-        case SnapMode::NearestKeypoint:
-            {
-            DgnElementCPtr   element = snap->GetElement();
-            GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
-
-            if (nullptr == source)
-                return SnapStatus::NotSnappable;
-
-            DPoint3d hitPoint = (nullptr != source->GetAsGeometrySource3d() ? source->GetAsGeometrySource3d()->GetPlacement().GetOrigin() : DPoint3d::From(source->GetAsGeometrySource2d()->GetPlacement().GetOrigin()));
-            
-            SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
-
-            return SnapStatus::Success;
-            }
-
-        case SnapMode::MidPoint:
-        case SnapMode::Bisector:
-        case SnapMode::Center:
-            {
-            if (NULL == detail.GetCurvePrimitive())
-                return DoDefaultDisplayableSnap(); // NOTE: Boundary shape unavailable for origin only...always have for edge/interior hit...
-
-            DPoint3d    centroid;
-
-            if (!getCentroid(centroid, *detail.GetCurvePrimitive()))
-                return SnapStatus::NotSnappable;
-
-            SetSnapInfo(snapMode, GetSnapSprite(snapMode), centroid, false, false);
-
-            return SnapStatus::Success;
-            }
-
-        case SnapMode::Nearest:
-            {
-            if (nullptr == detail.GetCurvePrimitive())
-                return DoDefaultDisplayableSnap(); // NOTE: Boundary shape unavailable for origin only...always have for edge/interior hit...
-
-            DSegment3d  segment;
-
-            if (!detail.GetSegment(segment))
-                return SnapStatus::NotSnappable;
-
-            double      keyparam = detail.GetSegmentParam();
-            DPoint3d    hitPoint;
-
-            GetSegmentKeypoint(hitPoint, keyparam, GetSnapDivisor(), segment);
-
-            SetSnapInfo(snapMode, GetSnapSprite(snapMode), hitPoint, false, false);
-
-            return SnapStatus::Success;
-            }
-
-        default:
-            {
-            // Should never be called with "exotic" snap modes...
-            return SnapStatus::NotSnappable;
-            }
-        }
+    int numerator = int ((keyParam * (double) divisor) + 0.5);
+    
+    keyParam = (numerator / (double) divisor);
+    hitPoint.Interpolate(segment.point[0], keyParam, segment.point[1]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1410,3 +1809,19 @@ void SnapDetail::SetCustomKeypoint(int nBytes, Byte* dataP)
             hitPrimitive->SetId(NULL); 
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/04
++---------------+---------------+---------------+---------------+---------------+------*/
+void SnapContext::SetSnapInfo(SnapDetailR snap, SnapMode snapMode, ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, double aperture, bool isAdjusted, int nBytes, Byte* customKeypointData)
+    {
+    snap.SetSnapMode(snapMode);
+    snap.SetSprite(sprite);
+
+    snap.SetSnapPoint(snapPoint, forceHot, aperture);
+    snap.SetAllowAssociations(!isAdjusted);
+
+    if (nBytes && customKeypointData)
+        snap.SetCustomKeypoint(nBytes, customKeypointData);
+    }
+
