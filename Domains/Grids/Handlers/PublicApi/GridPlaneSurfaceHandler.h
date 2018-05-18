@@ -9,7 +9,6 @@
 
 BEGIN_GRIDS_NAMESPACE
 
-
 struct PlanCartesianGridSurfaceHandler : Dgn::dgn_ElementHandler::SpatialLocation
     {
     ELEMENTHANDLER_DECLARE_MEMBERS (GRIDS_CLASS_PlanCartesianGridSurface, PlanCartesianGridSurface, PlanCartesianGridSurfaceHandler, Dgn::dgn_ElementHandler::SpatialLocation, GRIDHANDLERS_EXPORT)

@@ -296,7 +296,10 @@ struct EXPORT_VTABLE_ATTRIBUTE PlanRadialGridSurface : PlanGridPlanarSurface
 //=======================================================================================
 //! plan grid planar surface element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface, BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::IBCSSerializable
+struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : 
+                                GridPlanarSurface, 
+                                BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::IBCSSerializable,
+                                BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::IBCSJsonActionPerformer
     {
     DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_ElevationGridSurface, GridPlanarSurface);
     DEFINE_T_SUPER (GridPlanarSurface);
@@ -340,6 +343,20 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface, BENTLEY
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _SetPlacement (Dgn::Placement3dCR placement) override;
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnUpdate(Dgn::DgnElementCR original) override;
         GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _OnInsert() override;
+        
+        //IBCSJsonActionPerformer
+        //! performs action based on the json message
+        //! @param[in]  actionData JSON object that holds serialized action data
+        GRIDELEMENTS_EXPORT virtual void _PerformJsonAction(Json::Value const& actionData) override;
+        
+        //IBCSSerializable:
+        //! Serializes element data to a JSON object
+        //! @param[in]  elementData JSON object that will hold serialized data
+        GRIDELEMENTS_EXPORT void _SerializeProperties(Json::Value& elementData) const override;
+
+        //! Formats serialized element data in a JSON object
+        //! @param[in]  elementData JSON object that holds serialized data
+        GRIDELEMENTS_EXPORT void _FormatSerializedProperties(Json::Value& elementData) const override;
 
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (ElevationGridSurface, GRIDELEMENTS_EXPORT)
@@ -366,20 +383,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface : GridPlanarSurface, BENTLEY
         //! Sets Surface2d of this ElevationGridSurface
         //! @param[in]   surface        curvevector of gridSurface in local coordinates, on zero Z plane
         GRIDELEMENTS_EXPORT void                SetSurface2d (CurveVectorPtr surface);
-
-        //IBCSSerializable:
-
-        //! Serializes element data to a JSON object
-        //! @param[in]  elementData JSON object that will hold serialized data
-        GRIDELEMENTS_EXPORT void SerializeProperties(Json::Value& elementData) const override;
-
-        //! Updates element from Json properties
-        //! @param[in]  elementData JSON object that holds serialized data
-        GRIDELEMENTS_EXPORT void UpdateFromJson(Json::Value const& elementData) override;
-
-        //! Formats serialized element data in a JSON object
-        //! @param[in]  elementData JSON object that holds serialized data
-        GRIDELEMENTS_EXPORT void FormatSerializedProperties(Json::Value& elementData) const override;
     };
 
 //=======================================================================================

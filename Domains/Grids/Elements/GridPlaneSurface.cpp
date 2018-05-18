@@ -23,6 +23,8 @@ DEFINE_GRIDS_ELEMENT_BASE_METHODS(SketchLineGridSurface)
 #define BCSSERIALIZABLE_ELEVSURFACE_OwnerId                          "OwnerId"
 #define BCSSERIALIZABLE_ELEVSURFACE_Elevation                        "Elevation"
 #define BCSSERIALIZABLE_ELEVSURFACE_Area                             "Area"
+#define BCSSERIALIZABLE_ELEVSURFACE_AxisId                           "AxisId"
+#define BCSSERIALIZABLE_ELEVSURFACE_GridId                           "GridId"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  03/2017
@@ -596,7 +598,6 @@ CreateParams const& params
     return surface;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -747,9 +748,10 @@ CurveVectorPtr                   ElevationGridSurface::GetSurface2d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElevationGridSurface::SerializeProperties (Json::Value& elementData) const
+void ElevationGridSurface::_SerializeProperties (Json::Value& elementData) const
     {
     elementData[BCSSERIALIZABLE_ELEMENT_ClassName] = GetElementClass()->GetName();
+    elementData[BCSSERIALIZABLE_ELEMENT_SchemaName] = GetElementClass()->GetSchema().GetName();
     elementData[BCSSERIALIZABLE_ELEMENT_ElementId] = GetElementId().GetValueUnchecked();
     elementData[BCSSERIALIZABLE_ELEMENT_Name] = GetUserLabel();
     elementData[BCSSERIALIZABLE_ELEMENT_CodeValue] = GetCode().GetValueUtf8();
@@ -757,6 +759,8 @@ void ElevationGridSurface::SerializeProperties (Json::Value& elementData) const
     GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
     elementData[BCSSERIALIZABLE_ELEVSURFACE_OwnerId] = grid->GetCode().GetScopeElementId(GetDgnDb()).GetValueUnchecked();
     elementData[BCSSERIALIZABLE_ELEVSURFACE_Elevation] = GetElevation();
+    elementData[BCSSERIALIZABLE_ELEVSURFACE_AxisId] = GetAxisId().GetValueUnchecked();
+    elementData[BCSSERIALIZABLE_ELEVSURFACE_GridId] = GetGridId().GetValueUnchecked();
 
 
     DPoint3d centroid;
@@ -767,25 +771,35 @@ void ElevationGridSurface::SerializeProperties (Json::Value& elementData) const
         surf2d->CentroidNormalArea(centroid, normal, area);
 
     elementData[BCSSERIALIZABLE_ELEVSURFACE_Area] = area;
-
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElevationGridSurface::UpdateFromJson (Json::Value const& elementData)
+void ElevationGridSurface::_PerformJsonAction (Json::Value const& actionData)
     {
-    BeAssert(GetElementId().GetValueUnchecked() == elementData[BCSSERIALIZABLE_ELEMENT_ElementId].asUInt64());
-    SetElevation(elementData[BCSSERIALIZABLE_ELEVSURFACE_Elevation].asDouble());
-    
-    BuildingLocks_LockElementForOperation(*this, BeSQLite::DbOpcode::Update, "ElevationGridSurface::UpdateFromJson");
-    Update();
+    Utf8String action = actionData[BCSJSONACTIONPERFORMER_ACTION].asString();
+    if (action.Equals(BCSJSONACTIONPERFORMER_ACTION_UPDATE))
+        {
+        Json::Value elementData = actionData[BCSJSONACTIONPERFORMER_ACTIONPARAMS];
+        BeAssert(GetElementId().GetValueUnchecked() == elementData[BCSSERIALIZABLE_ELEMENT_ElementId].asUInt64());
+
+        SetElevation(elementData[BCSSERIALIZABLE_ELEVSURFACE_Elevation].asDouble());
+        
+        BuildingLocks_LockElementForOperation(*this, BeSQLite::DbOpcode::Update, "ElevationGridSurface::UpdateFromJson");
+        Update();
+        }
+    else if (action.Equals(BCSJSONACTIONPERFORMER_ACTION_DELETE))
+        {
+        BuildingLocks_LockElementForOperation(*this, BeSQLite::DbOpcode::Delete, "AllocatedVolume::Delete");
+        Delete();
+        }
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElevationGridSurface::FormatSerializedProperties (Json::Value& elementData) const
+void ElevationGridSurface::_FormatSerializedProperties (Json::Value& elementData) const
     {
     //do nothing
     }
