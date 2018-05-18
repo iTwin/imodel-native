@@ -3211,9 +3211,9 @@ private:
 public:
     ECSchemaElementsOrder() : m_preserveElementOrder(false) {}
 
-    void AddElement(Utf8CP name, ECSchemaElementType type);
+    ECOBJECTS_EXPORT void AddElement(Utf8CP name, ECSchemaElementType type);
     void RemoveElement(Utf8CP name);
-    void CreateAlphabeticalOrder(ECSchemaCR ecSchema);
+    ECOBJECTS_EXPORT void CreateAlphabeticalOrder(ECSchemaCR ecSchema);
     bool GetPreserveElementOrder() const { return m_preserveElementOrder; }
     void SetPreserveElementOrder(bool value) { m_preserveElementOrder = value; }
     bvector<bpair<Utf8String, ECSchemaElementType>>::const_iterator begin() const { return m_elementVector.begin(); } //!< Returns the beginning of the iterator

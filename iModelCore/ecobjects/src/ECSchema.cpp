@@ -26,23 +26,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 static  bool        s_noAssert = false;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool ClassNameComparer(ECClassP class1, ECClassP class2)
-    {
-    // We should never have a NULL ECClass here.
-    // However we will pretend a NULL ECClass is always less than a non-NULL ECClass
-    BeAssert(NULL != class1 && NULL != class2);
-    if (NULL == class1)
-        return NULL != class2;      // class 1 < class2 if class2 non-null, equal otherwise
-    else if (NULL == class2)
-        return false;               // class1 > class2
-
-    int comparison = class1->GetName().CompareTo(class2->GetName());
-    return comparison < 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * Currently this is only used by ECValidatedName and ECSchema.
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2914,7 +2897,7 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     m_elementVector.clear();
     for (ECEnumerationCP pEnum : ecSchema.GetEnumerations())
         {
-        if (NULL == pEnum)
+        if (nullptr == pEnum)
             {
             BeAssert(false);
             continue;
@@ -2923,24 +2906,15 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
             AddElement(pEnum->GetName().c_str(), ECSchemaElementType::ECEnumeration);
         }
 
-    std::list<ECClassP> sortedClasses;
-    // sort the classes by name so the order in which they are written is predictable.
     for (ECClassP pClass : ecSchema.GetClasses())
         {
-        if (NULL == pClass)
+        if (nullptr == pClass)
             {
             BeAssert(false);
             continue;
             }
         else
-            sortedClasses.push_back(pClass);
-        }
-
-    sortedClasses.sort(ClassNameComparer);
-
-    for (ECClassP pClass : sortedClasses)
-        {
-        AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
+            AddElement(pClass->GetName().c_str(), ECSchemaElementType::ECClass);
         }
 
     for (auto pKindOfQuantity : ecSchema.GetKindOfQuantities())

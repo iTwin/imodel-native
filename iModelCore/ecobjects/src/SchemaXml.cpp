@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaXml.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1140,9 +1140,9 @@ SchemaXmlWriter::SchemaXmlWriter(BeXmlWriterR xmlWriter, ECSchemaCR ecSchema, EC
 SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
-    for (auto const& mapPair : m_ecSchema.m_referencedSchemaAliasMap)
+    for (auto const& pair : m_ecSchema.GetReferencedSchemas())
         {
-        ECSchemaP   refSchema = mapPair.first;
+        ECSchemaPtr refSchema = pair.second;
         m_xmlWriter.WriteElementStart(ECXML_SCHEMAREFERENCE_ELEMENT);
         m_xmlWriter.WriteAttribute(SCHEMAREF_NAME_ATTRIBUTE, refSchema->GetName().c_str());
 
@@ -1155,7 +1155,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
             m_xmlWriter.WriteAttribute(SCHEMAREF_VERSION_ATTRIBUTE, refSchema->GetSchemaKey().GetVersionString().c_str());
             }
 
-        const Utf8String alias = mapPair.second;
+        const Utf8String alias = refSchema->GetAlias();
         if (m_ecXmlVersion >= ECVersion::V3_1)
             {
             m_xmlWriter.WriteAttribute(ALIAS_ATTRIBUTE, alias.c_str());
