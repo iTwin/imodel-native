@@ -499,7 +499,8 @@ static bool s_validateIs3dDataState = false;
 
 static unsigned __int64 s_getNbImportedPoints = 0;
 static double s_getImportPointsDuration = -1;
-static double s_getLastBalancingDuration = -1;
+static double s_getLastPointBalancingDuration = -1;
+static double s_getLastMeshBalancingDuration = -1;
 static double s_getLastMeshingDuration = -1;
 static double s_getLastFilteringDuration = -1;
 static double s_getLastStitchingDuration = -1;
@@ -516,9 +517,14 @@ double IScalableMeshSourceCreator::GetImportPointsDuration()
     return s_getImportPointsDuration;
     }
 
-double IScalableMeshSourceCreator::GetLastBalancingDuration()
+double IScalableMeshSourceCreator::GetLastPointBalancingDuration()
     {
-    return s_getLastBalancingDuration;
+    return s_getLastPointBalancingDuration;
+    }
+
+double IScalableMeshSourceCreator::GetLastMeshBalancingDuration()
+    {
+    return s_getLastMeshBalancingDuration;
     }
 
 double IScalableMeshSourceCreator::GetLastMeshingDuration()
@@ -587,7 +593,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #ifdef SCALABLE_MESH_ATP
 
     s_getImportPointsDuration = -1;
-    s_getLastBalancingDuration = -1;
+    s_getLastPointBalancingDuration = -1;
+    s_getLastMeshBalancingDuration = -1;
     s_getLastMeshingDuration = -1;
     s_getLastFilteringDuration = -1;
     s_getLastStitchingDuration = -1;
@@ -735,6 +742,10 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 
 
+#ifdef SCALABLE_MESH_ATP
+    startClock = clock();
+#endif
+
     if (!restrictLevelForPropagation)
         {
         bool splitNode = false;
@@ -757,7 +768,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
 #ifdef SCALABLE_MESH_ATP
-    s_getLastBalancingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
+    s_getLastPointBalancingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
 
     startClock = clock();
 #endif
@@ -784,9 +795,10 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
 
-#ifdef SCALABLE_MESH_ATP    
+#ifdef SCALABLE_MESH_ATP        
     s_getLastStitchingDuration = 0;    
     s_getLastClippingDuration = 0;
+    s_getLastMeshBalancingDuration = 0;
 #endif
 
 
@@ -810,11 +822,16 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
 #ifdef SCALABLE_MESH_ATP
         s_getLastClippingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
+        startClock = clock();
 #endif
      
         // Balance data             
         if (BSISUCCESS != this->template BalanceDown<MeshIndexType>(*pDataIndex, previousDepth, false, false))
             return BSIERROR;
+
+#ifdef SCALABLE_MESH_ATP
+        s_getLastMeshBalancingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;        
+#endif
         }
 
         {

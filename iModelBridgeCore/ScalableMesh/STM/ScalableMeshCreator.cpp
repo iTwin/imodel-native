@@ -238,11 +238,13 @@ const GeoCoords::GCS& IScalableMeshCreator::GetGCS () const
 
 static unsigned __int64 s_getNbImportedPoints = 0;
 static double s_getImportPointsDuration = -1; 
-static double s_getLastBalancingDuration = -1;
+static double s_getLastPointBalancingDuration = -1;
+static double s_getLastMeshBalancingDuration = -1;
 static double s_getLastMeshingDuration = -1;
 static double s_getLastFilteringDuration = -1;
 static double s_getLastStitchingDuration = -1;
 static double s_getLastClippingDuration = -1;
+
 
 unsigned __int64 IScalableMeshCreator::GetNbImportedPoints()
     {
@@ -254,9 +256,14 @@ double IScalableMeshCreator::GetImportPointsDuration()
     return s_getImportPointsDuration;
     }
 
-double IScalableMeshCreator::GetLastBalancingDuration()
+double IScalableMeshCreator::GetLastPointBalancingDuration()
     {
-    return s_getLastBalancingDuration;
+    return s_getLastPointBalancingDuration;
+    }
+
+double IScalableMeshCreator::GetLastMeshBalancingDuration()
+    {
+    return s_getLastMeshBalancingDuration;
     }
 
 double IScalableMeshCreator::GetLastMeshingDuration()

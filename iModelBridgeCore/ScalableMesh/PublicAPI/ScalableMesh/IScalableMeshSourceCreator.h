@@ -76,7 +76,9 @@ struct IScalableMeshSourceCreator : public IScalableMeshCreator
 
         BENTLEY_SM_IMPORT_EXPORT static double GetImportPointsDuration();
 
-        BENTLEY_SM_IMPORT_EXPORT static double GetLastBalancingDuration();
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastPointBalancingDuration();
+
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastMeshBalancingDuration();
 
         BENTLEY_SM_IMPORT_EXPORT static double GetLastMeshingDuration();
 

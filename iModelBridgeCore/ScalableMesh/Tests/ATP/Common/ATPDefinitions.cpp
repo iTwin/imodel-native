@@ -940,7 +940,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     IScalableMeshATP::GetInt(L"chosenAccelerator", acceleratorUseCpu);                                        
 
                     fwprintf(pResultFile,
-                             L"%s,%s,%s,%s,%I64d,%I64d,%.5f%%,%.5f,%s,%.5f,%.5f,%.5f,%.5f,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%s\n",
+                             L"%s,%s,%s,%s,%I64d,%I64d,%.5f%%,%.5f,%s,%.5f,%.5f,%.5f,%.5f,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%s\n",
                              stmFileName.c_str(), mesher.c_str(), filter.c_str(), trimming.c_str(), IScalableMeshSourceCreator::GetNbImportedPoints(), pointCount,
                              (double)pointCount / IScalableMeshSourceCreator::GetNbImportedPoints() * 100.0, (double)fileSize / 1024.0 / 1024.0,
                              acceleratorUseCpu == ACCELERATOR_CPU ? L"CPU" : L"GPU",
@@ -950,17 +950,19 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                              GetGroundDetectionDuration(),                             
                              GetGroundDetectionDuration() / minutes * 100,
                              (IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration()) / minutes * 100, //Import points duration includes ground detection duration.
-                             IScalableMeshSourceCreator::GetLastBalancingDuration() / minutes * 100,
-                             IScalableMeshSourceCreator::GetLastMeshingDuration() / minutes * 100,
+                             IScalableMeshSourceCreator::GetLastPointBalancingDuration() / minutes * 100,
+                             IScalableMeshSourceCreator::GetLastMeshingDuration() / minutes * 100,                             
                              IScalableMeshSourceCreator::GetLastClippingDuration() / minutes * 100,
+                             IScalableMeshSourceCreator::GetLastMeshBalancingDuration() / minutes * 100,
                              IScalableMeshSourceCreator::GetLastFilteringDuration() / minutes * 100,
                              IScalableMeshSourceCreator::GetLastStitchingDuration() / minutes * 100,
                              minutes, hours,
                              GetGroundDetectionDuration(),
                              IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration(),
-                             IScalableMeshSourceCreator::GetLastBalancingDuration(),
+                             IScalableMeshSourceCreator::GetLastPointBalancingDuration(),
                              IScalableMeshSourceCreator::GetLastMeshingDuration(),
                              IScalableMeshSourceCreator::GetLastClippingDuration(),
+                             IScalableMeshSourceCreator::GetLastMeshBalancingDuration(),
                              IScalableMeshSourceCreator::GetLastFilteringDuration(),
                              IScalableMeshSourceCreator::GetLastStitchingDuration(),
                              result.c_str());
