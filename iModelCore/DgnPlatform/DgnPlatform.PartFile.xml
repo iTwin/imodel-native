@@ -265,12 +265,16 @@
         <SubProduct ProductName="GTest-DgnPlatform-Compatibility" />
     </Part>
 
-    <Part Name="RunGtest-DgnPlatform-Compatibility-Backwards" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GTest-DgnPlatform-Compatibility -dGTEST_NAME=DgnCompatibility -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DgnCompatibility" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubPart PartName="RunGtest-DgnPlatform-Compatibility"/>
+    <Part Name="Copy-Datasets" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\CopyDatasets.mke">
         <SubPart PartName="DgnPlatform-Compatibility-Pull-All-Datasets"/>
+        <SubPart PartName="RunGtest-DgnPlatform-Compatibility"/>
+    </Part>
+
+    <Part Name="RunGtest-DgnPlatform-Compatibility-Backwards" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunBackwardsCompatibilityTest.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubPart PartName="Copy-Datasets"/>
     </Part>
  
-    <Part Name="RunGtest-DgnPlatform-Compatibility-Forwards" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunCompatibilityTests.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest-DgnPlatform-Compatibility-Forwards" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunCompatibilityTests.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubPart PartName="RunGtest-DgnPlatform-Compatibility-Backwards"/>
         <SubPart PartName="DgnPlatform-Compatibility-Pull-All-Nugets"/>
     </Part>

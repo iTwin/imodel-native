@@ -1,0 +1,30 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/CopyDatasets.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------
+# Set up all the standard stuff.
+#----------------------------------------------------------
+%include  mdl.mki
+
+#Copy files
+
+COPYDIR_INPUT   = $(OutputRootDir)Product/GTest-DgnPlatform-Compatibility/
+COPYDIR_OUTPUT  = $(OutputRootDir)iModelSchemaEvolution/BackwardsCompatibility/
+
+always:
+    ~mkdir $(COPYDIR_OUTPUT)
+
+%include $(SrcRoot)bsicommon/build/copyDir.mki
+
+COPYDIR_INPUT   = $(OutputRootDir)iModelSchemaEvolution/Data
+COPYDIR_OUTPUT  = $(OutputRootDir)iModelSchemaEvolution/BackwardsCompatibility/run/SeedData
+
+always:
+    ~mkdir $(COPYDIR_OUTPUT)
+    
+%include $(SrcRoot)bsicommon/build/copyDir.mki    

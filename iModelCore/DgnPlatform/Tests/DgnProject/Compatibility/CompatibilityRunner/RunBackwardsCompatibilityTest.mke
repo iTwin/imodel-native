@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #
-#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/PullCompatibilityDatasets.mke $
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/RunBackwardsCompatibilityTest.mke $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -11,11 +11,8 @@
 #----------------------------------------------------------
 %include  mdl.mki
 
-%include $(SrcRoot)DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
-
-#TODO pull from rsync server instead of local symlink
+# Dir that all the nuget packages should be pulled are in
+EXE_DIR       = $(OutputRootDir)/iModelSchemaEvolution/BackwardsCompatibility/
 
 always:
-    ~mkdir $(IMS_DIR)
-    ~mkdir $(DATA_DIR)
-    #$(SrcRoot)bsicommon/build/CopyWithSymlinks.py D:\\Temp\\iModelCompat\\Compatibility $(DATA_DIR)
+    $(EXE_DIR)DgnCompatibility.exe
