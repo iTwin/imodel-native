@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ValueExp.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -130,14 +130,10 @@ struct CastExp final : ValueExp
 //+===============+===============+===============+===============+===============+======
 struct LiteralValueExp final : ValueExp
     {
-    public:
-        static Utf8CP const CURRENT_DATE;
-        static Utf8CP const CURRENT_TIMESTAMP;
-
     private:
-        Utf8String m_value;
+        Utf8String m_rawValue;
 
-        LiteralValueExp(Utf8CP value, ECSqlTypeInfo type);
+        LiteralValueExp(Utf8CP value, ECSqlTypeInfo const&);
 
         BentleyStatus ResolveDataType(ECSqlParseContext&);
 
@@ -145,11 +141,11 @@ struct LiteralValueExp final : ValueExp
         Utf8String _ToString() const override;
 
     public:
-        static BentleyStatus Create(std::unique_ptr<ValueExp>&, ECSqlParseContext&, Utf8CP value, ECSqlTypeInfo type);
+        static BentleyStatus Create(std::unique_ptr<ValueExp>&, ECSqlParseContext&, Utf8CP value, ECSqlTypeInfo const&);
 
-        Utf8StringCR GetValue() const { return m_value; }
-        int64_t GetValueAsInt64() const;
-        bool GetValueAsBoolean() const;
+        Utf8StringCR GetRawValue() const { return m_rawValue; }
+        
+        BentleyStatus TryParse(ECN::ECValue&) const;
 
         static Utf8String EscapeStringLiteral(Utf8StringCR constantStringLiteral);
     };
@@ -179,24 +175,35 @@ struct FunctionCallExp final : ValueExp
     {
     private:
         Utf8String m_functionName;
+        bool m_isGetter = false;
         bool m_isStandardSetFunction = false;
         SqlSetQuantifier m_setQuantifier = SqlSetQuantifier::NotSpecified;
+
+        //don't have to free non-POD static pointers (Bentley coding guideline)
+        static bmap<Utf8CP, ECSqlTypeInfo, CompareIUtf8Ascii>* s_builtInFunctionReturnTypes;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
 
-        static ECN::PrimitiveType DetermineReturnType(ECDbCR, Utf8StringCR functionName, int argCount);
+        void DetermineReturnType(ECDbCR);
+
+        static bmap<Utf8CP, ECSqlTypeInfo, CompareIUtf8Ascii> const& GetBuiltInFunctionReturnTypes();
 
     public:
-        explicit FunctionCallExp(Utf8StringCR functionName, SqlSetQuantifier setQuantifier = SqlSetQuantifier::NotSpecified, bool isStandardSetFunction = false) : ValueExp(Type::FunctionCall), m_functionName(functionName), m_setQuantifier(setQuantifier), m_isStandardSetFunction(isStandardSetFunction) {}
+        explicit FunctionCallExp(Utf8StringCR functionName, SqlSetQuantifier setQuantifier = SqlSetQuantifier::NotSpecified, bool isStandardSetFunction = false, bool isGetter = false) : ValueExp(Type::FunctionCall, false), m_functionName(functionName), m_isGetter(isGetter), m_setQuantifier(setQuantifier), m_isStandardSetFunction(isStandardSetFunction) {}
         virtual ~FunctionCallExp() {}
 
         Utf8StringCR GetFunctionName() const { return m_functionName; }
+        //! If true, function neither has parentheses nor arguments
+        bool IsGetter() const { return m_isGetter; }
         SqlSetQuantifier GetSetQuantifier() const { return m_setQuantifier; }
 
         BentleyStatus AddArgument(std::unique_ptr<ValueExp>);
+
+        static constexpr Utf8CP CURRENT_DATE() { return "CURRENT_DATE"; };
+        static constexpr Utf8CP CURRENT_TIMESTAMP() { return "CURRENT_TIMESTAMP"; }
     };
 
 //=======================================================================================
@@ -219,6 +226,7 @@ struct MemberFunctionCallExp final : ValueExp
 
         Utf8StringCR GetFunctionName() const { return m_functionName; }
         BentleyStatus AddArgument(std::unique_ptr<ValueExp>, Utf8StringR);
+        ValueExp const* GetArgument(size_t index) const;
     };
 
 //=======================================================================================

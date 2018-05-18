@@ -1064,14 +1064,19 @@ BentleyStatus ECSqlParser::ParseDatetimeValueFct(std::unique_ptr<ValueExp>& exp,
     OSQLParseNode const* columnTypeNode = parseNode.getChild(0);
     if (parseNodeChildCount == 1) //Keyword
         {
+        Utf8CP fctName = nullptr;
         if (columnTypeNode->getTokenID() == SQL_TOKEN_CURRENT_DATE)
-            return LiteralValueExp::Create(exp, *m_context, "CURRENT_DATE", ECSqlTypeInfo(ECN::PRIMITIVETYPE_DateTime));
-        
-        if (columnTypeNode->getTokenID() == SQL_TOKEN_CURRENT_TIMESTAMP)
-            return LiteralValueExp::Create(exp, *m_context, "CURRENT_TIMESTAMP", ECSqlTypeInfo(ECN::PRIMITIVETYPE_DateTime));
+            fctName = FunctionCallExp::CURRENT_DATE();
+        else if (columnTypeNode->getTokenID() == SQL_TOKEN_CURRENT_TIMESTAMP)
+            fctName = FunctionCallExp::CURRENT_TIMESTAMP();
+        else
+            {
+            Issues().ReportV("Unrecognized keyword '%s'.", parseNode.getTokenValue().c_str());
+            return ERROR;
+            }
 
-        Issues().ReportV("Unrecognized keyword '%s'.", parseNode.getTokenValue().c_str());
-        return ERROR;
+        exp = std::make_unique<FunctionCallExp>(fctName, SqlSetQuantifier::NotSpecified, false, true);
+        return SUCCESS;
         }
 
     Utf8CP unparsedValue = parseNode.getChild(1)->getTokenValue().c_str();

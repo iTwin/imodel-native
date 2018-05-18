@@ -426,7 +426,35 @@ BentleyStatus MemberFunctionCallExp::AddArgument(std::unique_ptr<ValueExp> argum
     return SUCCESS;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                      05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+ValueExp const* MemberFunctionCallExp::GetArgument(size_t index) const
+    {
+    if (index >= GetChildren().size())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    Exp const* childExp = GetChildren()[index];
+    if (childExp == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+    BeAssert(dynamic_cast<ValueExp const*> (childExp) != nullptr);
+    return childExp->GetAsCP<ValueExp>();
+    }
+
 //****************************** FunctionCallExp *****************************************
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+//static 
+bmap<Utf8CP, ECSqlTypeInfo, CompareIUtf8Ascii>* FunctionCallExp::s_builtInFunctionReturnTypes = nullptr;
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -434,8 +462,7 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        const ECN::PrimitiveType returnType = DetermineReturnType(ctx.GetECDb(), GetFunctionName(), (int) GetChildrenCount());
-        SetTypeInfo(ECSqlTypeInfo(returnType));
+        DetermineReturnType(ctx.GetECDb());
         return FinalizeParseStatus::NotCompleted;
         }
 
@@ -448,19 +475,22 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
         return FinalizeParseStatus::Error;
         }
 
+    if (m_isGetter && argCount != 0)
+        {
+        ctx.Issues().ReportV("Function '%s' is a getter function any may not have any arguments.",
+                             m_functionName.c_str());
+        return FinalizeParseStatus::Error;
+        }
+
     //no validation needed for count as it accepts everything
     if (m_isStandardSetFunction && m_functionName.EqualsI("count"))
         return FinalizeParseStatus::Completed;
 
-    bool allArgsAreConstant = true;
     for (size_t i = 0; i < argCount; i++)
         {
         ValueExp* argExp = GetChildP<ValueExp>(i);
         if (argExp->IsParameterExp())
             continue;
-
-        if (!argExp->IsConstant())
-            allArgsAreConstant = false;
 
         ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
         if (typeKind != ECSqlTypeInfo::Kind::Primitive && typeKind != ECSqlTypeInfo::Kind::Null)
@@ -470,11 +500,6 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
             return FinalizeParseStatus::Error;
             }
         }
-
-    //set functions are never constant per row, as they aggregate. For custom set functions we'd have to do this too,
-    //but we don't know which custom functions are aggregate and which not
-    if (!m_isStandardSetFunction)
-        SetIsConstant(allArgsAreConstant);
 
     return FinalizeParseStatus::Completed;
     }
@@ -507,202 +532,37 @@ BentleyStatus FunctionCallExp::AddArgument(std::unique_ptr<ValueExp> argument)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringCR functionName, int argCount)
+void FunctionCallExp::DetermineReturnType(ECDbCR ecdb)
     {
     DbFunction* func = nullptr;
-    const bool isCustomFunction = ecdb.GetImpl().TryGetSqlFunction(func, functionName.c_str(), argCount);
+    const bool isCustomFunction = ecdb.GetImpl().TryGetSqlFunction(func, m_functionName.c_str(), (int) GetChildrenCount());
     if (isCustomFunction)
         {
         switch (func->GetReturnType())
             {
-                case DbValueType::BlobVal: return ECN::PRIMITIVETYPE_Binary;
-                case DbValueType::IntegerVal: return ECN::PRIMITIVETYPE_Long;
-                case DbValueType::TextVal: return ECN::PRIMITIVETYPE_String;
+                case DbValueType::BlobVal: SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Binary)); return;
+                case DbValueType::IntegerVal: SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Long)); return;
+                case DbValueType::TextVal: SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_String)); return;
 
                 case DbValueType::FloatVal:
-                    //NullVal means that no return type was specified. In that case we use Double to be as generic as possible
+                //NullVal means that no return type was specified. In that case we use Double to be as generic as possible
                 case DbValueType::NullVal:
                 default:
-                    return ECN::PRIMITIVETYPE_Double;
+                    SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+                    return;
             }
         }
 
-    //return type for SQLite built-in functions
-    //TODO: This is SQLite specific and therefore should be moved out of the parser. Maybe an external file
-    //for better maintainability?
-    if (functionName.EqualsIAscii("any"))
-        return PRIMITIVETYPE_Boolean;
+    //return type for standard SQL and SQLite built-in functions
+    auto it = GetBuiltInFunctionReturnTypes().find(m_functionName.c_str());
+    if (it == GetBuiltInFunctionReturnTypes().end())
+        {
+        //all other functions get the default return type 
+        SetTypeInfo(ECSqlTypeInfo(ECN::PRIMITIVETYPE_Double));
+        return;
+        }
 
-    if (functionName.EqualsIAscii("changes"))
-        return PRIMITIVETYPE_Long;
-
-    if (functionName.EqualsIAscii("char"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("count"))
-        return PRIMITIVETYPE_Long;
-
-    if (functionName.EqualsIAscii("date"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("datetime"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("every"))
-        return PRIMITIVETYPE_Boolean;
-
-    if (functionName.EqualsIAscii("glob"))
-        return PRIMITIVETYPE_Boolean;
-
-    if (functionName.EqualsIAscii("group_concat"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("hex"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("instr"))
-        return PRIMITIVETYPE_Integer;
-
-    if (functionName.EqualsIAscii("json"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("json_array"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("json_array_length"))
-        return PRIMITIVETYPE_Long;
-
-    if (functionName.EqualsIAscii("json_extract"))
-        return PRIMITIVETYPE_String; // must be type 'Any'
-
-    if (functionName.EqualsIAscii("json_group_array"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("json_group_object"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("json_insert"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("json_object"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("json_quote"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("json_remove"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("json_replace"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("json_set"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("json_type"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("json_valid"))
-        return PRIMITIVETYPE_Boolean;
-
-    if (functionName.EqualsIAscii("julianday"))
-        return PRIMITIVETYPE_Double;
-
-    if (functionName.EqualsIAscii("last_insert_rowid"))
-        return PRIMITIVETYPE_Long;
-
-    if (functionName.EqualsIAscii("length"))
-        return PRIMITIVETYPE_Long;
-
-    if (functionName.EqualsIAscii("like"))
-        return PRIMITIVETYPE_Boolean;
-
-    if (functionName.EqualsIAscii("lower"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("ltrim"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("match"))
-        return PRIMITIVETYPE_Boolean;
-
-    if (functionName.EqualsIAscii("quote"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("printf"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("random"))
-        return PRIMITIVETYPE_Long;
-
-    if (functionName.EqualsIAscii("randomblob"))
-        return PRIMITIVETYPE_Binary;
-
-    if (functionName.EqualsIAscii("regexp"))
-        return PRIMITIVETYPE_Boolean;
-
-    if (functionName.EqualsIAscii("replace"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("round"))
-        return PRIMITIVETYPE_Double;
-
-    if (functionName.EqualsIAscii("rtrim"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("some"))
-        return PRIMITIVETYPE_Boolean;
-
-    if (functionName.EqualsIAscii("soundex"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("sqlite_compileoption_get"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("sqlite_compileoption_used"))
-        return PRIMITIVETYPE_Boolean;
-
-    if (functionName.EqualsIAscii("sqlite_source_id"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("sqlite_version"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("strftime"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("substr"))
-        return PRIMITIVETYPE_String;
-    
-    if (functionName.EqualsIAscii("time"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("total_changes"))
-        return PRIMITIVETYPE_Long;
-
-    if (functionName.EqualsIAscii("trim"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("typeof"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("unicode"))
-        return PRIMITIVETYPE_Long;
-
-    if (functionName.EqualsIAscii("upper"))
-        return PRIMITIVETYPE_String;
-
-    if (functionName.EqualsIAscii("zeroblob"))
-        return PRIMITIVETYPE_Binary;
-
-    //Functions built-into BeSQLite
-    if (functionName.EqualsIAscii("invirtualset"))
-        return PRIMITIVETYPE_Boolean;
-
-    //all other functions get the default return type 
-    //WIP: Need to deal with functions that return different types
-    return ECN::PRIMITIVETYPE_Double;
+    SetTypeInfo(it->second);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -728,25 +588,109 @@ void FunctionCallExp::_ToECSql(ECSqlRenderContext& ctx) const
     if (HasParentheses())
         ctx.AppendToECSql("(");
 
-    ctx.AppendToECSql(m_functionName).AppendToECSql("(");
-
-    if (m_setQuantifier != SqlSetQuantifier::NotSpecified)
-        ctx.AppendToECSql(ExpHelper::ToSql(m_setQuantifier)).AppendToECSql(" ");
-
-    bool isFirstItem = true;
-    for (Exp const* argExp : GetChildren())
+    ctx.AppendToECSql(m_functionName);
+    
+    if (!m_isGetter)
         {
-        if (!isFirstItem)
-            ctx.AppendToECSql(",");
+        ctx.AppendToECSql("(");
 
-        ctx.AppendToECSql(*argExp);
-        isFirstItem = false;
+        if (m_setQuantifier != SqlSetQuantifier::NotSpecified)
+            ctx.AppendToECSql(ExpHelper::ToSql(m_setQuantifier)).AppendToECSql(" ");
+
+        bool isFirstItem = true;
+        for (Exp const* argExp : GetChildren())
+            {
+            if (!isFirstItem)
+                ctx.AppendToECSql(",");
+
+            ctx.AppendToECSql(*argExp);
+            isFirstItem = false;
+            }
+
+        ctx.AppendToECSql(")");
         }
-
-    ctx.AppendToECSql(")");
 
     if (HasParentheses())
         ctx.AppendToECSql(")");
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    03/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bmap<Utf8CP, ECSqlTypeInfo, CompareIUtf8Ascii> const& FunctionCallExp::GetBuiltInFunctionReturnTypes()
+    {
+    //return type for standard SQL and SQLite built-in functions
+    //TODO: This is partially SQLite specific and therefore should be moved out of the parser. Maybe an external file
+    //for better maintainability?
+
+    if (s_builtInFunctionReturnTypes == nullptr)
+        {
+        s_builtInFunctionReturnTypes = new bmap<Utf8CP, ECSqlTypeInfo, CompareIUtf8Ascii>();
+        bmap<Utf8CP, ECSqlTypeInfo, CompareIUtf8Ascii>& map = *s_builtInFunctionReturnTypes;
+        map["any"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+        map["changes"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
+        map["char"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["count"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
+        DateTime::Info dateInfo = DateTime::Info::CreateForDate();
+        map[CURRENT_DATE()] = ECSqlTypeInfo(PRIMITIVETYPE_DateTime, false, &dateInfo);
+        DateTime::Info utcInfo = DateTime::Info::CreateForDateTime(DateTime::Kind::Utc);
+        map[CURRENT_TIMESTAMP()] = ECSqlTypeInfo(PRIMITIVETYPE_DateTime, false, &utcInfo);
+        map["date"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["datetime"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["every"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+        map["glob"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+        map["group_concat"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["hex"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["instr"] = ECSqlTypeInfo(PRIMITIVETYPE_Integer);
+        map["invirtualset"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+        map["json"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["json_array"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["json_array_length"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
+        map["json_extract"] = ECSqlTypeInfo(PRIMITIVETYPE_String); // must be type 'Any'
+        map["json_group_array"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["json_group_object"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["json_insert"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["json_object"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["json_quote"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["json_remove"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["json_replace"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["json_set"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["json_type"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["json_valid"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+        map["julianday"] = ECSqlTypeInfo(PRIMITIVETYPE_Double);
+        map["last_insert_rowid"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
+        map["length"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
+        map["like"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+        map["lower"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["ltrim"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["match"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+        map["quote"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["printf"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["random"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
+        map["randomblob"] = ECSqlTypeInfo(PRIMITIVETYPE_Binary);
+        map["regexp"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+        map["replace"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["rtrim"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["round"] = ECSqlTypeInfo(PRIMITIVETYPE_Double);
+        map["some"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+        map["soundex"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["sqlite_compileoption_get"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["sqlite_compileoption_used"] = ECSqlTypeInfo(PRIMITIVETYPE_Boolean);
+        map["sqlite_source_id"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["sqlite_version"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["strftime"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["substr"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["time"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["total_changes"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
+        map["trim"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["typeof"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["unicode"] = ECSqlTypeInfo(PRIMITIVETYPE_Long);
+        map["upper"] = ECSqlTypeInfo(PRIMITIVETYPE_String);
+        map["zeroblob"] = ECSqlTypeInfo(PRIMITIVETYPE_Binary);
+        }
+
+    return *s_builtInFunctionReturnTypes;
     }
 
 //****************************** LikeRhsValueExp *****************************************
@@ -837,7 +781,6 @@ void EnumValueExp::_ToECSql(ECSqlRenderContext& ctx) const
     if (HasParentheses())
         ctx.AppendToECSql("(");
 
-    
     ctx.AppendToECSql(m_accessString);
 
     if (HasParentheses())
@@ -862,23 +805,26 @@ Utf8String EnumValueExp::_ToString() const
 
 //*************************** LiteralValueExp ******************************************
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8CP const  LiteralValueExp::CURRENT_DATE = "CURRENT_DATE";
-Utf8CP const  LiteralValueExp::CURRENT_TIMESTAMP = "CURRENT_TIMESTAMP";
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus LiteralValueExp::Create(std::unique_ptr<ValueExp>& exp, ECSqlParseContext& ctx, Utf8CP value, ECSqlTypeInfo typeInfo)
+BentleyStatus LiteralValueExp::Create(std::unique_ptr<ValueExp>& exp, ECSqlParseContext& ctx, Utf8CP value, ECSqlTypeInfo const& typeInfo)
     {
     exp = nullptr;
 
     std::unique_ptr<LiteralValueExp> valueExp(new LiteralValueExp(value, typeInfo));
-    if (SUCCESS != valueExp->ResolveDataType(ctx))
-        return ERROR;
+
+    if (!typeInfo.IsNull() && typeInfo.GetPrimitiveType() == PRIMITIVETYPE_DateTime)
+        {
+        DateTime dt;
+        if (SUCCESS != DateTime::FromString(dt, value))
+            {
+            ctx.Issues().ReportV("Invalid format for DATE/TIMESTAMP in expression '%s'.", valueExp->ToECSql().c_str());
+            return ERROR;
+            }
+
+        valueExp->SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_DateTime, false, &dt.GetInfo()));
+        }
 
     exp = std::move(valueExp);
     return SUCCESS;
@@ -887,65 +833,83 @@ BentleyStatus LiteralValueExp::Create(std::unique_ptr<ValueExp>& exp, ECSqlParse
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-LiteralValueExp::LiteralValueExp(Utf8CP value, ECSqlTypeInfo typeInfo) : ValueExp(Type::LiteralValue, true), m_value(value)
-    {
-    SetTypeInfo(typeInfo);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-int64_t LiteralValueExp::GetValueAsInt64() const
-    {
-    int64_t v = 0;
-    sscanf(m_value.c_str(), "%" PRId64, &v);
-    return v;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool LiteralValueExp::GetValueAsBoolean() const
-    {
-    if (m_value.EqualsIAscii("TRUE"))
-        return true;
-
-    if (m_value.EqualsIAscii("FALSE"))
-        return false;
-
-    BeAssert(false && "value doesn't represent a boolean value of 'true' or 'false'");
-    return false;
-    }
+LiteralValueExp::LiteralValueExp(Utf8CP value, ECSqlTypeInfo const& typeInfo) : ValueExp(Type::LiteralValue, true), m_rawValue(value) { SetTypeInfo(typeInfo); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus LiteralValueExp::ResolveDataType(ECSqlParseContext& ctx)
     {
-    if (GetTypeInfo().GetPrimitiveType() == PRIMITIVETYPE_DateTime)
+    if (!GetTypeInfo().IsNull() && GetTypeInfo().GetPrimitiveType() == PRIMITIVETYPE_DateTime)
         {
-        DateTime::Info dtInfo;
-        if (m_value.EqualsI(CURRENT_DATE))
-            dtInfo = DateTime::Info::CreateForDate();
-        else if (m_value.EqualsI(CURRENT_TIMESTAMP))
-            //deviating from SQL-99 ECSQL considers CURRENT_TIMESTAMP to return a UTC time stamp
-            dtInfo = DateTime::Info::CreateForDateTime(DateTime::Kind::Utc);
-        else
+        DateTime dt;
+        if (SUCCESS != DateTime::FromString(dt, m_rawValue.c_str()))
             {
-            DateTime dt;
-            if (SUCCESS != DateTime::FromString(dt, m_value.c_str()))
-                {
-                ctx.Issues().ReportV("Invalid format for DATE/TIMESTAMP in expression '%s'.", ToECSql().c_str());
-                return ERROR;
-                }
-
-            dtInfo = dt.GetInfo();
+            ctx.Issues().ReportV("Invalid format for DATE/TIMESTAMP in expression '%s'.", ToECSql().c_str());
+            return ERROR;
             }
 
-        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_DateTime, false, &dtInfo));
+        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_DateTime, false, &dt.GetInfo()));
         }
 
     return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus LiteralValueExp::TryParse(ECN::ECValue& val) const
+    {
+    if (GetTypeInfo().IsNull())
+        {
+        val.SetToNull();
+        return SUCCESS;
+        }
+
+    switch (GetTypeInfo().GetPrimitiveType())
+        {
+            case PRIMITIVETYPE_Boolean:
+            {
+            if (m_rawValue.EqualsIAscii("TRUE"))
+                val.SetBoolean(true);
+            else if (m_rawValue.EqualsIAscii("FALSE"))
+                val.SetBoolean(false);
+            else
+                return ERROR;
+
+            return SUCCESS;
+            }
+
+            case PRIMITIVETYPE_DateTime:
+            {
+            DateTime dt;
+            if (SUCCESS != DateTime::FromString(dt, m_rawValue.c_str()))
+                return ERROR;
+
+            return val.SetDateTime(dt);
+            }
+
+            case PRIMITIVETYPE_Integer:
+            {
+            int32_t v = 0;
+            sscanf(m_rawValue.c_str(), "%" SCNd32, &v);
+            return val.SetInteger(v);
+            }
+
+            case PRIMITIVETYPE_Long:
+            {
+            int64_t v = 0;
+            sscanf(m_rawValue.c_str(), "%" SCNd64, &v);
+            return val.SetLong(v);
+            }
+
+            case PRIMITIVETYPE_String:
+            return val.SetUtf8CP(m_rawValue.c_str(), false);
+
+            default:
+                // other types are not supported
+                return ERROR;
+        }
     }
 
 
@@ -973,7 +937,7 @@ void LiteralValueExp::_ToECSql(ECSqlRenderContext& ctx) const
         if (primType == PRIMITIVETYPE_String)
             {
             //escape single quotes again
-            Utf8String escapedLiteral(m_value);
+            Utf8String escapedLiteral(m_rawValue);
             escapedLiteral.ReplaceAll("'", "''");
 
             ctx.AppendToECSql("'").AppendToECSql(escapedLiteral).AppendToECSql("'");
@@ -986,22 +950,13 @@ void LiteralValueExp::_ToECSql(ECSqlRenderContext& ctx) const
 
         if (primType == PRIMITIVETYPE_DateTime)
             {
-            if (BeStringUtilities::Strnicmp(m_value.c_str(), "CURRENT", 7) == 0)
-                {
-                ctx.AppendToECSql(m_value);
-                if (HasParentheses())
-                    ctx.AppendToECSql(")");
-
-                return;
-                }
-
             DateTime::Info const& dtInfo = typeInfo.GetDateTimeInfo();
             if (dtInfo.IsValid() && dtInfo.GetComponent() == DateTime::Component::Date)
                 ctx.AppendToECSql("DATE '");
             else
                 ctx.AppendToECSql("TIMESTAMP '");
 
-            ctx.AppendToECSql(m_value).AppendToECSql("'");
+            ctx.AppendToECSql(m_rawValue).AppendToECSql("'");
             if (HasParentheses())
                 ctx.AppendToECSql(")");
 
@@ -1009,7 +964,7 @@ void LiteralValueExp::_ToECSql(ECSqlRenderContext& ctx) const
             }
         }
 
-    ctx.AppendToECSql(m_value);
+    ctx.AppendToECSql(m_rawValue);
 
     if (HasParentheses())
         ctx.AppendToECSql(")");
@@ -1021,7 +976,7 @@ void LiteralValueExp::_ToECSql(ECSqlRenderContext& ctx) const
 Utf8String LiteralValueExp::_ToString() const
     {
     Utf8String str("LiteralValue [Value: ");
-    str.append(m_value.c_str());
+    str.append(m_rawValue.c_str());
 
     if (GetTypeInfo().IsPrimitive())
         str.append(", Type: ").append(ExpHelper::ToString(GetTypeInfo().GetPrimitiveType()));

@@ -135,7 +135,7 @@ TEST_F(ECSqlStatementFunctionTestFixture, BuiltinFunctions)
         ECN::ECTypeDescriptor const& actualColumnType = stmt.GetColumnInfo(0).GetDataType();
 
         ASSERT_TRUE(actualColumnType.IsPrimitive()) << ecsql;
-        ASSERT_EQ(expectedResult.m_returnType, actualColumnType.GetPrimitiveType()) << ecsql;
+        EXPECT_EQ(expectedResult.m_returnType, actualColumnType.GetPrimitiveType()) << ecsql;
         }
     }
 
