@@ -86,6 +86,8 @@ struct BisJson1ImporterImpl : DgnImportContext
         //DgnDbStatus _RemapGeometryStreamIds(GeometryStreamR geom) override;
         DgnFontId _RemapFont(DgnFontId) override;
         DgnStyleId _RemapLineStyleId(DgnStyleId sourceId) override;
+        DgnElementId _RemapAnnotationStyleId(DgnElementId sourceId) override;
+
         BentleyStatus ImportJson(Json::Value& jsonInput);
         void GenerateThumbnails();
 

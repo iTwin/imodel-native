@@ -13,6 +13,8 @@
 #include <Logging/bentleylogging.h>
 #include <DgnPlatform/GenericDomain.h>
 #include <DgnPlatform/Render.h>
+#include <DgnPlatform/Annotations/TextAnnotationElement.h>
+#include <DgnPlatform/Annotations/TextAnnotationPersistence.h>
 #include <Bentley/Base64Utilities.h>
 #include <Planning/PlanningApi.h>
 #include "SyncInfo.h"
@@ -366,6 +368,57 @@ DgnCode ElementReader::CreateCodeFromJson(Json::Value& element)
 
     DgnCode code(codeSpec, codeScope, element[BIS_ELEMENT_PROP_CodeValue].asString());
     return code;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus GenericElementAspectReader::_Read(Json::Value& aspect)
+    {
+    DgnElementId instanceId = ECJsonUtilities::JsonToId<DgnElementId>(aspect[ECJsonSystemNames::Id()]);
+    if (!instanceId.IsValid())
+        return ERROR;
+
+    DgnElementId elementId = GetMappedElementId(aspect, "Element");
+    if (!elementId.IsValid())
+        return ERROR;
+
+    aspect.removeMember("Element");
+
+    IECInstancePtr ecInstance = _CreateInstance(aspect);
+    if (!ecInstance.IsValid())
+        {
+        GetLogger().errorv("Failed to create IECInstance for elementaspect\n");
+        return ERROR;
+        }
+
+    DgnDbStatus stat;
+    DgnElementPtr element = GetDgnDb()->Elements().GetForEdit<DgnElement>(elementId);
+
+    if (!element.IsValid())
+        {
+        GetLogger().errorv("Unable to get associated Element for ElementAspect.");
+        return ERROR;
+        }
+    stat = DgnElement::GenericMultiAspect::AddAspect(*element, *ecInstance);
+    if (DgnDbStatus::Success != stat)
+        {
+        GetLogger().errorv("Failed to add ElementAspect to Element");
+        return ERROR;
+        }
+
+    element->Update(&stat);
+    if (DgnDbStatus::Success != stat)
+        {
+        GetLogger().errorv("Failed to update Element when adding ElementAspect");
+        return ERROR;
+        }
+
+    // need to record which element class each aspect is associated with.
+    ElementClassToAspectClassMapping::Insert(*GetDgnDb(), element->GetElementClassId(), element->GetElementClass()->GetSchema().GetName().c_str(), element->GetElementClass()->GetName().c_str(),
+                                             ecInstance->GetClass().GetId(), ecInstance->GetClass().GetSchema().GetName().c_str(), ecInstance->GetClass().GetName().c_str());
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1074,6 +1127,26 @@ BentleyStatus ViewDefinitionReader::_Read(Json::Value& viewDefinition)
 
         // WIP: Need to set UserProperties?
 
+        if (viewDefinition.isMember("overrides"))
+            {
+            auto const& subcatJson = viewDefinition["overrides"];
+            for (Json::ArrayIndex i = 0; i < subcatJson.size(); ++i)
+                {
+                JsonValueCR val = subcatJson[i];
+                DgnSubCategoryId subCategoryId(val["subCategoryId"].asUInt64());
+                if (subCategoryId.IsValid())
+                    {
+                    DgnSubCategoryId remapped = DgnSubCategoryId(m_importer->FindElementId(DgnElementId(subCategoryId.GetValue())).GetValue());
+                    if (remapped.IsValid())
+                        {
+                        DgnSubCategory::Override ovr(val);
+                        DisplayStyle3dR disp = viewDef->GetDisplayStyle3d();
+                        disp.OverrideSubCategory(remapped, ovr);
+                        disp.Update();
+                        }
+                    }
+                }
+            }
         DgnDbStatus stat;
         DgnElementCPtr inserted = viewDef->Insert(&stat);
         if (!inserted.IsValid())
@@ -1516,6 +1589,8 @@ void createNavigationPropertyOnConstraints(ECN::ECRelationshipClassP relClass)
             for (ECClassCP constraintClass : relClass->GetTarget().GetConstraintClasses())
                 {
                 ECEntityClassP target = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
+                if (target->GetSchema().GetName().Equals(BIS_ECSCHEMA_NAME))
+                    continue;
                 NavigationECPropertyP navProp = nullptr;
                 if (ECObjectsStatus::Success != target->CreateNavigationProperty(navProp, relClass->GetName(), *relClass, ECRelatedInstanceDirection::Backward, false))
                     toRemove.push_back(target);
@@ -1532,6 +1607,8 @@ void createNavigationPropertyOnConstraints(ECN::ECRelationshipClassP relClass)
             for (ECClassCP constraintClass : relClass->GetSource().GetConstraintClasses())
                 {
                 ECEntityClassP source = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
+                if (source->GetSchema().GetName().Equals(BIS_ECSCHEMA_NAME))
+                    continue;
                 NavigationECPropertyP navProp = nullptr;
                 if (ECObjectsStatus::Success != source->CreateNavigationProperty(navProp, relClass->GetName(), *relClass, ECRelatedInstanceDirection::Forward, false))
                     toRemove.push_back(source);
@@ -1545,15 +1622,46 @@ void createNavigationPropertyOnConstraints(ECN::ECRelationshipClassP relClass)
         relClass->GetSource().SetMultiplicity(ECN::RelationshipMultiplicity::OneOne());
         relClass->GetTarget().SetMultiplicity(ECN::RelationshipMultiplicity::OneMany());
         bvector<ECEntityClassP> toRemove;
+        bool created = false;
         for (ECClassCP constraintClass : relClass->GetTarget().GetConstraintClasses())
             {
             ECEntityClassP target = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
+            if (target->GetSchema().GetName().Equals(BIS_ECSCHEMA_NAME))
+                continue;
+
             NavigationECPropertyP navProp = nullptr;
             if (ECObjectsStatus::Success != target->CreateNavigationProperty(navProp, relClass->GetName(), *relClass, ECRelatedInstanceDirection::Backward, false))
                 toRemove.push_back(target);
+            else
+                created = true;
             }
         for (ECEntityClassP constraintClass : toRemove)
             relClass->GetTarget().RemoveClass(*constraintClass);
+        if (!created)
+            {
+            toRemove.clear();
+            for (ECClassCP constraintClass : relClass->GetSource().GetConstraintClasses())
+                {
+                ECEntityClassP source = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
+                if (source->GetSchema().GetName().Equals(BIS_ECSCHEMA_NAME))
+                    continue;
+
+                NavigationECPropertyP navProp = nullptr;
+                if (ECObjectsStatus::Success != source->CreateNavigationProperty(navProp, relClass->GetName(), *relClass, ECRelatedInstanceDirection::Forward, false))
+                    toRemove.push_back(source);
+                else
+                    created = true;
+                }
+            if (created)
+                {
+                relClass->GetSource().SetMultiplicity(ECN::RelationshipMultiplicity::OneMany());
+                relClass->GetTarget().SetMultiplicity(ECN::RelationshipMultiplicity::OneOne());
+                }
+
+            }
+        for (ECEntityClassP constraintClass : toRemove)
+            relClass->GetSource().RemoveClass(*constraintClass);
+
         }
     }
 
@@ -1572,8 +1680,28 @@ BentleyStatus SchemaReader::ValidateBaseClasses(ECN::ECSchemaP schema)
     // need to confirm that all relationship classes have a base class.  In 0601 we were able to get away with not having a base class.  That doesn't work here
     for (ECN::ECClassCP ecClass : schema->GetClasses())
         {
+        ECN::ECRelationshipClassP relClass = const_cast<ECN::ECRelationshipClassP>(ecClass->GetRelationshipClassCP());
         if (ecClass->GetBaseClasses().size() != 0)
-            continue;
+            {
+            if (relClass != nullptr)
+                {
+                ECN::ECClassCP source = relClass->GetSource().GetConstraintClasses()[0];
+                if (source->Is(uniqueAspectClass) || source->Is(multiAspectClass))
+                    {
+                    for (ECClassCP baseClass : ecClass->GetBaseClasses())
+                        {
+                        if (baseClass == elementToElement || baseClass == elementToMulti || baseClass == elementToUnique)
+                            {
+                            ECClassP nonConst = const_cast<ECClassP>(ecClass);
+                            nonConst->RemoveBaseClass(*baseClass);
+                            break;
+                            }
+                        }
+                    }
+                }
+            if (ecClass->GetBaseClasses().size() != 0)
+                continue;
+            }
 
         if (ecClass->IsEntityClass())
             {
@@ -1588,7 +1716,6 @@ BentleyStatus SchemaReader::ValidateBaseClasses(ECN::ECSchemaP schema)
                 }
             continue;
             }
-        ECN::ECRelationshipClassP relClass = const_cast<ECN::ECRelationshipClassP>(ecClass->GetRelationshipClassCP());
         if (nullptr == relClass)
             continue;
 
@@ -1649,8 +1776,10 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
     {
 
     bvector<Utf8String> knownSchemas = {"Bentley_Standard_CustomAttributes", "ECDbMap", "ECDbFileInfo", "ECDbSystem", "ECDbMeta", "ECDb_FileInfo", "ECDb_System", "EditorCustomAttributes", "Generic", "MetaSchema", "dgn", "Unit_Attributes"};
-    bvector<ECN::ECSchemaCP> schemasToImport;
+    bvector<ECN::SchemaKey> keysToImport;
     BeFileName bimFileName = GetDgnDb()->GetFileName();
+
+    bmap<SchemaKey, bvector<SchemaKey>> originalReferences;
 
     for (Json::Value::iterator iter = schemas.begin(); iter != schemas.end(); iter++)
         {
@@ -1719,28 +1848,32 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
             ecSchema->WriteToXmlFile(outPath.GetName());
 #endif
             if (knownSchemas.end() == std::find(knownSchemas.begin(), knownSchemas.end(), ecSchema->GetName()))
-                schemasToImport.push_back(m_importer->m_schemaReadContext->GetCache().GetSchema(ecSchema->GetSchemaKey(), SchemaMatchType::Latest));
+                keysToImport.push_back(schemaKey);
+
+            bvector<SchemaKey> refs;
+            for (bpair <SchemaKey, ECSchemaPtr> ref : ecSchema->GetReferencedSchemas())
+                refs.push_back(ref.first);
+            originalReferences[schemaKey] = refs;
             }
         }
 
     ECClassCP temp = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
     ECEntityClassP defaultConstraintClass = const_cast<ECClassP>(temp)->GetEntityClassP();
+    bvector<Utf8CP> schemasWithMultiInheritance = {"OpenPlant_3D", "BuildingDataGroup", "StructuralModelingComponents", "OpenPlant", "jclass", "pds", "group",
+        "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals", "Electrical_RCM", "pid_ansi"};
 
     bset<ECClassP> rootClasses;
-    for (ECN::ECSchemaCP constSchema : schemasToImport)
+    SchemaFlattener flattener(m_importer->m_schemaReadContext);
+    for (ECN::SchemaKey key : keysToImport)
         {
-        ECN::ECSchemaP ecSchema = const_cast<ECN::ECSchemaP>(constSchema);
+        ECN::ECSchemaP ecSchema = m_importer->m_schemaReadContext->GetCache().GetSchema(key, SchemaMatchType::Latest);
         // We need to deserialize the known schemas so that they can be used as references, but we don't want to convert or import them.
 
-        SchemaKey key = ecSchema->GetSchemaKey();
-        bvector<Utf8CP> schemasWithMultiInheritance = {"OpenPlant_3D", "BuildingDataGroup", "StructuralModelingComponents", "OpenPlant", "jclass", "pds", "group",
-            "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals", "Electrical_RCM", "pid_ansi"};
         auto found = std::find_if(schemasWithMultiInheritance.begin(), schemasWithMultiInheritance.end(), [key] (Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(key.GetName().c_str(), reserved) == 0; }) != schemasWithMultiInheritance.end();
 
         bool isSP3d = false;
         if (found || ecSchema->GetName().StartsWithI("ECXA_"))
             {
-            SchemaFlattener flattener(m_importer->m_schemaReadContext);
             flattener.FlattenSchemas(ecSchema);
             }
         else if (ecSchema->GetName().StartsWithIAscii("SP3D"))
@@ -1754,7 +1887,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
                 flattener.ProcessSP3DSchema(ecSchema, baseInterface, baseObject, rootClasses, defaultConstraintClass);
                 }
             }
-        ECSchemaP toImport = m_importer->m_schemaReadContext->GetCache().GetSchema(ecSchema->GetSchemaKey(), SchemaMatchType::Latest);
+        ECSchemaP toImport = m_importer->m_schemaReadContext->GetCache().GetSchema(key, SchemaMatchType::Latest);
         if (!isSP3d)
             ValidateBaseClasses(toImport);
 
@@ -1767,15 +1900,16 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
             }
         }
 
-    SchemaFlattener flattener(m_importer->m_schemaReadContext);
+    SchemaFlattener flattener2(m_importer->m_schemaReadContext);
     for (ECClassP rootClass : rootClasses)
         {
-        flattener.CheckForMixinConversion(*rootClass);
+        flattener2.CheckForMixinConversion(*rootClass);
         }
 
-    for (ECN::ECSchemaCP constSchema : schemasToImport)
+    bvector<SchemaKey> schemasToDrop;
+    for (ECN::SchemaKey key : keysToImport)
         {
-        ECSchemaP toImport = m_importer->m_schemaReadContext->GetCache().GetSchema(constSchema->GetSchemaKey(), SchemaMatchType::Latest);
+        ECN::ECSchemaP toImport = m_importer->m_schemaReadContext->GetCache().GetSchema(key, SchemaMatchType::Latest);
 
 //#define EXPORT_FLATTENEDECSCHEMAS 1
 #ifdef EXPORT_FLATTENEDECSCHEMAS
@@ -1807,6 +1941,18 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
             return ERROR;
             }
 
+        bvector<SchemaKey> originalRefs = originalReferences[key];
+        ECSchemaReferenceListCR currentRefs = toImport->GetReferencedSchemas();
+        for (SchemaKey ref : originalRefs)
+            {
+            if (currentRefs.Find(ref, SchemaMatchType::Latest) == currentRefs.end())
+                {
+                auto found = std::find_if(schemasWithMultiInheritance.begin(), schemasWithMultiInheritance.end(), [ref] (Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(ref.GetName().c_str(), reserved) == 0; }) != schemasWithMultiInheritance.end();
+                if (std::find(schemasToDrop.begin(), schemasToDrop.end(), ref) == schemasToDrop.end() && !found && !ref.GetName().StartsWithIAscii("SP3D"))
+                    schemasToDrop.push_back(ref);
+                }
+            }
+
 //#define EXPORT_CONVERTEDECSCHEMAS 1
 #ifdef EXPORT_CONVERTEDECSCHEMAS
         BeFileName convertedFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_converted").c_str());
@@ -1827,6 +1973,29 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
 #endif
         bpair<Utf8String, SchemaKey> pair(toImport->GetName(), toImport->GetSchemaKey());
         m_importer->m_schemaNameToKey.insert(pair);
+        }
+
+    bvector<ECN::ECSchemaP> cachedSchemas;
+    m_importer->m_schemaReadContext->GetCache().GetSchemas(cachedSchemas);
+    for (ECN::SchemaKey refKey : schemasToDrop)
+        {
+        bool isReferenced = false;
+        for (ECN::ECSchemaP schema : cachedSchemas)
+            {
+            for (bpair <SchemaKey, ECSchemaPtr> ref : schema->GetReferencedSchemas())
+                {
+                if (refKey == ref.first)
+                    {
+                    isReferenced = true;
+                    break;
+                    }
+                }
+            if (isReferenced)
+                break;
+            }
+        if (isReferenced)
+            continue;
+        m_importer->m_schemaReadContext->GetCache().DropSchema(refKey);
         }
     if (SchemaStatus::Success != GetDgnDb()->ImportV8LegacySchemas(m_importer->m_schemaReadContext->GetCache().GetSchemas()))
         {
@@ -2038,4 +2207,61 @@ BentleyStatus PropertyDataReader::_Read(Json::Value& propData)
         }
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus TextAnnotationDataReader::_Read(Json::Value& object)
+    {
+    DgnElementId mappedElementId = GetMappedElementId(object, "Element");
+    if (!mappedElementId.IsValid())
+        {
+        Utf8PrintfString error("Failed to map ElementId for TextAnnotationData entry.");
+        GetLogger().warning(error.c_str());
+        return ERROR;
+        }
+
+    bvector<Byte> data;
+    size_t size = object["TextAnnotation"].asString().SizeInBytes();
+    Base64Utilities::Decode(data, object["TextAnnotation"].asString().c_str(), size);
+
+    TextAnnotationPtr annotation = TextAnnotation::Create(*GetDgnDb());
+    if (SUCCESS != TextAnnotationPersistence::DecodeFromFlatBufWithRemap(*annotation, data.data(), size, *m_importer))
+        {
+        GetLogger().warningv("Failed to decode text annotation data");
+        return ERROR;
+        }
+
+    DgnElementCPtr annotationElement = GetDgnDb()->Elements().GetElement(mappedElementId);
+    if (!annotationElement.IsValid())
+        {
+        GetLogger().error("Failed to get AnnotationElement for TextAnnotationData entry");
+        return ERROR;
+        }
+
+    if (annotationElement->GetElementClass()->Is(GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotation2d)))
+        {
+        TextAnnotation2dPtr text2d = GetDgnDb()->Elements().GetForEdit<TextAnnotation2d>(mappedElementId);
+        if (!text2d.IsValid())
+            {
+            GetLogger().error("Failed to get TextAnnotation2d for TextAnnotationData");
+            return ERROR;
+            }
+        text2d->SetAnnotation(annotation.get());
+        text2d->Update();
+        }
+    else
+        {
+        TextAnnotation3dPtr text3d = GetDgnDb()->Elements().GetForEdit<TextAnnotation3d>(mappedElementId);
+        if (!text3d.IsValid())
+            {
+            GetLogger().error("Failed to get TextAnnotation3d for TextAnnotationData");
+            return ERROR;
+            }
+        text3d->SetAnnotation(annotation.get());
+        text3d->Update();
+        }
+    return SUCCESS;
+    }
 END_BIM_TELEPORTER_NAMESPACE
+

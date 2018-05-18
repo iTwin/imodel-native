@@ -125,6 +125,24 @@ BentleyStatus BisClassConverter::CheckBaseAndDerivedClassesForBisification(Schem
                 if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, BisConversionRule::TransformedUnbisifiedAndIgnoreInstances))
                     return BSIERROR;
                 }
+            else if (isBaseClassCheck && BisConversionRule::ToGroup == childRule && (BisConversionRule::ToPhysicalElement == existingRule || BisConversionRule::ToDrawingGraphic == existingRule))
+                {
+                BisConversionRule tempRule;
+                BECN::ECClassId incomingV8ClassId;
+                ECClassName incomingV8ClassName(*childClass);
+                if (V8ECClassInfo::TryFind(incomingV8ClassId, tempRule, context.GetDgnDb(), incomingV8ClassName, hasSecondary))
+                    {
+                    if (BSISUCCESS != V8ECClassInfo::Update(converter, incomingV8ClassId, existingRule))
+                        return BSIERROR;
+                    childRule = existingRule;
+                    }
+                }
+            else if (isBaseClassCheck && BisConversionRule::ToGroup == existingRule && (BisConversionRule::ToPhysicalElement == childRule || BisConversionRule::ToDrawingGraphic == childRule))
+                {
+                if (BSISUCCESS != V8ECClassInfo::Update(converter, existingV8ClassId, childRule))
+                    return BSIERROR;
+
+                }
             }
         else if (BSISUCCESS != V8ECClassInfo::Insert(converter, v8ClassName, childRule))
             return BSIERROR;
@@ -617,6 +635,10 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(ECClassRemovalContex
     if (!conversionSchema.IsValid())
         conversionSchema = syncContext->LocateSchema(conversionKey, ECN::SchemaMatchType::Latest);
 
+    // Since abstractness was ignored in V8, remove all abstract flags
+    if (inputClass.GetClassModifier() == ECClassModifier::Abstract)
+        inputClass.SetClassModifier(ECClassModifier::None);
+
     if (conversionSchema.IsValid())
         {
         ECN::ECClassCP ecClass = conversionSchema->GetClassCP(inputClass.GetName().c_str());
@@ -868,6 +890,11 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
             if (constraintsToRemove.size() > 0)
                 {
                 BECN::ECObjectsStatus status = baseConstraint.AddClass(*defaultConstraintClass);
+                if (ECN::ECObjectsStatus::RelationshipConstraintsNotCompatible == status)
+                    {
+                    if (ECN::ECObjectsStatus::Success == baseConstraint.SetAbstractConstraint(*defaultConstraintClass))
+                        status = baseConstraint.AddClass(*defaultConstraintClass);
+                    }
                 if (BECN::ECObjectsStatus::Success != status)
                     return;
 
@@ -1521,6 +1548,17 @@ bool BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(E
         schema.GetName().EqualsI(DGNDBSYNCV8_ECSCHEMA_NAME) || schema.GetName().EqualsI(BIS_ECSCHEMA_NAME) || 
         schema.GetName().EqualsIAscii("Generic") || schema.GetName().EqualsIAscii("Functional") || 
         schema.GetName().StartsWithI("ecdb") || schema.GetName().EqualsIAscii("ECv3ConversionAttributes");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(Utf8StringCR schemaName)
+    {
+    return ECN::ECSchema::IsStandardSchema(schemaName) ||
+        schemaName.EqualsI(DGNDBSYNCV8_ECSCHEMA_NAME) || schemaName.EqualsI(BIS_ECSCHEMA_NAME) ||
+        schemaName.EqualsIAscii("Generic") || schemaName.EqualsIAscii("Functional") ||
+        schemaName.StartsWithI("ecdb") || schemaName.EqualsIAscii("ECv3ConversionAttributes");
     }
 
 //---------------------------------------------------------------------------------------

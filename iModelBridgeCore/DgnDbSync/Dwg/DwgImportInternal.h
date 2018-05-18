@@ -232,6 +232,8 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct  ViewportFactory
     {
+    static Utf8CP GetSpatialViewNameInsert () { return " Viewport-"; }
+
 private:
     // DWG common viewport data
     DPoint3d            m_center;
@@ -304,6 +306,48 @@ public:
     void    SetBackgroundColor (ColorDefCR color) { m_backgroundColor = color; }
     void    SetViewSourcePrivate (bool viewSourcePrivate) { m_isPrivate = viewSourcePrivate; }
     };  // ViewportFactory
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          05/18
++===============+===============+===============+===============+===============+======*/
+struct LayoutXrefFactory
+    {
+    static Utf8CP GetSpatialViewNamePrefix () { return "XRef "; }
+
+private:
+    DwgImporter&            m_importer;
+    DwgDbBlockReferenceCR   m_xrefInsert;
+    DwgDbObjectId           m_paperspaceId;
+    DgnModelP               m_xrefModel;
+    DwgDbDatabaseP          m_xrefDwg;
+    DefinitionModelP        m_jobDefinitionModel;
+    Utf8String              m_viewName;
+    Transform               m_xrefTransform;
+    DRange3d                m_xrefRange;
+    SpatialViewDefinitionPtr m_spatialView;
+    Sheet::ViewAttachmentPtr m_viewAttachment;
+
+    void    ValidateViewName ();
+    bool    UpdateViewName ();
+    size_t  GetViewportFrozenLayers (DwgDbObjectIdArrayR frozenLayers) const;
+    void    ComputeSpatialDisplayStyle (DisplayStyle3dR displayStyle) const;
+    void    UpdateSpatialCategories (DgnCategoryIdSet& categoryIdSet) const;
+    Utf8String      GetXrefLayerPrefix () const;
+    BentleyStatus   ComputeSpatialView ();
+    BentleyStatus   ComputeViewAttachment (Placement2dR placement);
+    BentleyStatus   UpdateSpatialView (bool updateBim);
+    BentleyStatus   CreateSpatialView ();
+    BentleyStatus   UpdateViewAttachment ();
+    BentleyStatus   CreateViewAttachment (DgnModelR sheetModel);
+
+public:
+    LayoutXrefFactory (DwgImporter& importer, DwgDbBlockReferenceCR xrefInsert);
+    void SetXrefDatabase (DwgDbDatabaseP dwg) { m_xrefDwg = dwg; }
+    void SetPaperspace (DwgDbObjectIdCR id) { m_paperspaceId = id; }
+    void SetXrefModel (DgnModelP model) { m_xrefModel = model; }
+    void SetXrefTransform (TransformCR trans) { m_xrefTransform = trans; }
+    BentleyStatus ConvertToBim (DwgImporter::ElementImportResults&, DwgImporter::ElementImportInputs&);
+    };  // LayoutXrefFactory
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          02/17

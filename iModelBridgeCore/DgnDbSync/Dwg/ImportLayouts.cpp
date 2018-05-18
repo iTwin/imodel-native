@@ -135,6 +135,16 @@ DwgDbObjectId   LayoutFactory::FindOverallViewport (DwgDbBlockTableRecordCR bloc
 
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgImporter::AlignSheetToPaperOrigin (TransformR trans, DwgDbObjectIdCR layoutId)
+    {
+    // WIP - when/if Sheet::Border supports location in the future, switching code to set the origin, instead of moving geometry:
+    LayoutFactory   factory(*this, layoutId);
+    factory.AlignSheetToPaperOrigin (trans);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgDbBlockTableRecordR block, DwgDbLayoutCR layout)
@@ -184,14 +194,6 @@ BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgD
     this->_ImportPaperspaceViewport (*sheetModel, modelMap.GetTransform(), layout);
 
     auto trans = modelMap.GetTransform ();
-
-    // WIP - when/if Sheet::Border supports location in the future, switching code to set the origin, instead of moving geometry:
-    LayoutFactory*  factory = new LayoutFactory (*this, layout.GetObjectId());
-    if (nullptr != factory)
-        {
-        factory->AlignSheetToPaperOrigin (trans);
-        delete factory;
-        }
 
     ElementImportInputs     inputs (*sheetModel);
     inputs.SetClassId (this->_GetElementType(block));

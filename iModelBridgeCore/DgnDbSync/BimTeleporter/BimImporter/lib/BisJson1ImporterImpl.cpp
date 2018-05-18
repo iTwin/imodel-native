@@ -236,6 +236,10 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
         reader = new BaselineReader(this);
     else if (objectType.Equals(JSON_TYPE_PropertyData))
         reader = new PropertyDataReader(this);
+    else if (objectType.Equals(JSON_TYPE_GenericElementAspect))
+        reader = new GenericElementAspectReader(this);
+    else if (objectType.Equals(JSON_TYPE_TextAnnotationData))
+        reader = new TextAnnotationDataReader(this);
 
     if (nullptr == reader)
         return ERROR;
@@ -255,6 +259,8 @@ void BisJson1ImporterImpl::FinalizeImport()
     {
     m_dgndb->GeoLocation().InitializeProjectExtents();
 //    m_dgndb->Schemas().CreateClassViewsInDb();
+
+    ElementClassToAspectClassMapping::CreatePresentationRules(*m_dgndb);
 
     GenerateThumbnails();
     m_dgndb->SaveChanges();
@@ -417,6 +423,21 @@ DgnTextureId BisJson1ImporterImpl::_RemapTextureId(DgnTextureId sourceId)
         return m_remap.Add(sourceId, DgnTextureId(destTexture.GetValue()));
 
     return DgnTextureId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnElementId BisJson1ImporterImpl::_RemapAnnotationStyleId(DgnElementId sourceId)
+    {
+    DgnElementId dest = m_remap.Find(sourceId);
+    if (dest.IsValid())
+        return dest;
+
+    DgnElementId destStyle = m_syncInfo->LookupElement(sourceId);
+    if (destStyle.IsValid())
+        return m_remap.Add(sourceId, destStyle);
+    return DgnElementId();
     }
 
 //---------------------------------------------------------------------------------------

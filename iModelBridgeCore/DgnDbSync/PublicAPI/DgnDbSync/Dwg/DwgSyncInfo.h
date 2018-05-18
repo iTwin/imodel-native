@@ -389,6 +389,7 @@ struct DwgSyncInfo
             ModelspaceViewport,     // vport table record
             PaperspaceViewport,     // the "overall" layout viewport
             ViewportEntity,         // viewport entity in a layout
+            XrefAttachment,         // xRef inserted in a layout
             };  // Type
         DgnViewId   m_id;
         uint64_t    m_dwgId;

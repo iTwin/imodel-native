@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/DgnDbServerClientUtils.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnDbServerClientUtils.h"
@@ -67,7 +67,7 @@ static ServiceLocalState* getLocalState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WebServices::ClientInfoPtr getClientInfo()
+static WebServices::ClientInfoPtr getDefaultClientInfo()
     {
     static Utf8CP s_productId = "1654"; // Navigator Desktop
     // MT Note: C++11 guarantees that the following line of code will be executed only once and in a thread-safe manner:
@@ -79,11 +79,14 @@ static WebServices::ClientInfoPtr getClientInfo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbServerClientUtils::DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment, uint8_t nretries)
+DgnDbServerClientUtils::DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment, uint8_t nretries, WebServices::ClientInfoPtr info)
+    :m_clientInfo(info)
     {
     m_maxRetryCount = nretries;
     UrlProvider::Initialize(environment, UrlProvider::DefaultTimeout, getLocalState());
-    ClientHelper::Initialize(getClientInfo(), getLocalState());
+    if (nullptr == info)
+        m_clientInfo = getDefaultClientInfo();
+    ClientHelper::Initialize(m_clientInfo, getLocalState());
     }
 
 /*---------------------------------------------------------------------------------**//**

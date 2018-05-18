@@ -859,11 +859,6 @@ BentleyStatus   ViewportFactory::UpdateSpatialView (DgnViewId viewId, Utf8String
     if (!spatialView.IsValid())
         return  static_cast<BentleyStatus>(DgnDbStatus::ViewNotFound);
 
-    // check view type change
-    auto cameraView = dynamic_cast<SpatialViewDefinitionP> (spatialView.get());
-    if (nullptr == cameraView)
-        return  BSIERROR;
-
     // if the view name has been changed, reset it in affected elements which will be updated as follows
     this->UpdateViewName (*spatialView, proposedName);
   
@@ -1074,7 +1069,7 @@ BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context
 
     // set the view name as "LayoutName Viewport-ID":
     DgnModelR           sheetModel = context.GetModel ();
-    Utf8PrintfString    viewName ("%s Viewport-%llx", sheetModel.GetName().c_str(), viewport->GetObjectId().ToUInt64());
+    Utf8PrintfString    viewName ("%s%s%llx", sheetModel.GetName().c_str(), ViewportFactory::GetSpatialViewNameInsert(), viewport->GetObjectId().ToUInt64());
 
     // this method gets called for either creating a new or updating existing element.
     if (importer.IsUpdating() && context.GetElementResults().GetExistingElement().IsValid())
@@ -1453,37 +1448,49 @@ void            DwgImporter::_PostProcessViewports ()
 
         if (nullptr == sheetView)
             {
-            // a modelpace view or a spatial view for a viewport entity
+            // a modelspace view, a spatial view for a viewport entity, or a spatial view for an xref in a paperspace.
             auto spatialView = viewController->ToSpatialViewP ();
-            if (nullptr != spatialView)
+            if (nullptr == spatialView)
+                continue;
+
+            /*---------------------------------------------------------------------------
+            We can ignore xref spatial views in paperspace in the post process, as we have
+            handled them through updating xref insert entities.  Adding a new DWG layer in 
+            mater file's layer table has no impact on xref layer status.  And we don't want 
+            thumbnail for xref view.
+            ---------------------------------------------------------------------------*/
+            auto viewName =  view->GetName ();
+            if (viewName.StartsWith(LayoutXrefFactory::GetSpatialViewNamePrefix()))
+                continue;
+            
+            // either a modelspace view or a spatial view for a viewport entity
+            if (!m_modelspaceXrefs.empty())
                 {
-                if (!m_modelspaceXrefs.empty())
+                // add xref models in modelspace into the modelspace viewport and viewport entity:
+                auto&   modelSelector = spatialView->GetSpatialViewDefinition().GetModelSelector ();
+                modelSelector.GetModelsR().insert (m_modelspaceXrefs.begin(), m_modelspaceXrefs.end());
+                modelSelector.Update ();
+                }
+            if (this->IsUpdating() && m_layersImported > 0)
+                {
+                // new layers are imported - update spatial categories from a viewport entity:
+                auto handle = this->GetSyncInfo().FindViewportHandle (viewId);
+                DwgDbObjectId   objId;
+                if (!handle.IsNull() && (objId = m_dwgdb->GetObjectId(handle)).IsValid())
                     {
-                    // add xref models into the modelspace viewport:
-                    auto&   modelSelector = spatialView->GetSpatialViewDefinition().GetModelSelector ();
-                    modelSelector.GetModelsR().insert (m_modelspaceXrefs.begin(), m_modelspaceXrefs.end());
-                    modelSelector.Update ();
-                    }
-                if (this->IsUpdating() && m_layersImported > 0)
-                    {
-                    // new layers are imported - update spatial categories from a viewport entity:
-                    auto handle = this->GetSyncInfo().FindViewportHandle (viewId);
-                    DwgDbObjectId   objId;
-                    if (!handle.IsNull() && (objId = m_dwgdb->GetObjectId(handle)).IsValid())
+                    DwgDbViewportPtr    viewport(objId, DwgDbOpenMode::ForRead);
+                    if (viewport.OpenStatus() == DwgDbStatus::Success)
                         {
-                        DwgDbViewportPtr    viewport(objId, DwgDbOpenMode::ForRead);
-                        if (viewport.OpenStatus() == DwgDbStatus::Success)
-                            {
-                            ViewportFactory factory (*this, *viewport.get());
-                            factory.UpdateSpatialCategories (spatialView->GetSpatialViewDefinition().GetCategorySelector().GetCategoriesR());
-                            changed = true;
-                            }
+                        ViewportFactory factory (*this, *viewport.get());
+                        factory.UpdateSpatialCategories (spatialView->GetSpatialViewDefinition().GetCategorySelector().GetCategoriesR());
+                        changed = true;
                         }
                     }
                 }
 
-            if (wantThumbnails && thumbnailConfig.WantPhysicalThumbnail() && nullptr != spatialView && !view->GetName().Contains("Viewport"))
+            if (wantThumbnails && thumbnailConfig.WantPhysicalThumbnail() && !viewName.Contains(ViewportFactory::GetSpatialViewNameInsert()))
                 {
+                // create thumbnail for the modelspace view
                 this->SetTaskName (ProgressMessage::TASK_CREATING_THUMBNAIL(), view->GetName().c_str());
                 this->Progress ();
                 view->RenderAndSaveThumbnail (size, thumbnailConfig.IsRenderModeOverridden() ? &mode : nullptr, timeout);
@@ -1539,14 +1546,6 @@ void            DwgImporter::_PostProcessViewports ()
                     }
                 }
 
-#ifdef WIP_ADD_XREFMODELS_INSHEETVIEW
-            // add xref models attached to this paperspace:
-            for (auto const& xref : m_paperspaceXrefs)
-                {
-                if (xref.m_paperspaceId == paperspaceId)
-                    models.insert (xref.m_dgnModelId);
-                }
-#endif
             if (wantThumbnails && thumbnailConfig.WantSheetThumbnail() && nullptr != sheetView)
                 {
                 this->SetTaskName (ProgressMessage::TASK_CREATING_THUMBNAIL(), view->GetName().c_str());
