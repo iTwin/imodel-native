@@ -11,10 +11,11 @@
 #----------------------------------------------------------
 %include  mdl.mki
 
+%include $(SrcRoot)DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
+
 #TODO pull from rsync server instead of local symlink
-IMS_DIR = $(OutputRootDir)iModelSchemaEvolution
-DATA_DIR = $(IMS_DIR)/Data
+
 always:
     ~mkdir $(IMS_DIR)
     ~mkdir $(DATA_DIR)
-    #$(SrcRoot)bsicommon/build/CopyWithSymlinks.py D:\\Temp\\iModelCompat\\Compatibility $(DATA_DIR)
+    $(SrcRoot)bsicommon/build/CopyWithSymlinks.py D:\\Temp\\iModelCompat\\Compatibility $(DATA_DIR)

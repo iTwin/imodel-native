@@ -15,4 +15,4 @@
 NUGET_DIR       = $(OutputRootDir)/iModelSchemaEvolution/Nugets/
 
 always:
-    python $(SrcRoot)/DgnPlatform/RunCompatibilityTests.py $(NUGET_DIR)
+    python $(SrcRoot)/DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/RunCompatibilityTests.py $(NUGET_DIR)

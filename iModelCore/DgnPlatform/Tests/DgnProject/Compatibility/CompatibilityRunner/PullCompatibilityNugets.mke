@@ -11,6 +11,8 @@
 #----------------------------------------------------------
 %include  mdl.mki
 
+%include $(SrcRoot)DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
+
 #----------------------------------------------------------
 # Make a subdir for the nuget packages, pull them from server
 # link them to the product directory so they are set up to run
@@ -18,14 +20,14 @@
 #----------------------------------------------------------
 
 NUGET_DIR = $(SrcRoot)/nuget/iModelCompatibility/
-IMS_DIR = $(OutputRootDir)iModelSchemaEvolution
 ASSETS_DIR = $(IMS_DIR)/Assets
 IMS_NUGETS_DIR = $(IMS_DIR)/Nugets
-CURRENT_DATASET_DIR = $(OutputRootDir)Product/GTest-DgnPlatform-Compatibility/run/Temp/Compatibility
+CURRENT_DATASET_DIR = $(OutputRootDir)Product/GTest-DgnPlatform-Compatibility/run/SeedData
 always:
     ~mkdir $(NUGET_DIR)
     ~mkdir $(IMS_DIR)
     ~mkdir $(ASSETS_DIR)
     $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(BuildContext)Delivery/Gtest/DgnCompatibility/Assets/ $(ASSETS_DIR)
-    python PullCompatibilityNugets.py $(NUGET_DIR)
+    python Tests/DgnProject/Compatibility/CompatibilityRunner/PullCompatibilityNugets.py $(NUGET_DIR)
     $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(NUGET_DIR) $(IMS_NUGETS_DIR)
+    python Tests/DgnProject/Compatibility/CompatibilityRunner/CopyEXE.py $(NUGET_DIR) $(IMS_NUGETS_DIR) $(CURRENT_DATASET_DIR)

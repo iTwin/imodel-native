@@ -116,8 +116,7 @@ bool ProfileManager::Profile::GenerateSeedFile(TestFile* testFile, BeVersion con
 
     //Create the file
     BeFileName& fl = testFile->m_resolvedFileName;
-    BeTest::GetHost().GetTempDir(fl);
-    fl.AppendSeparator().AppendUtf8(m_fileExtension.c_str());
+    fl = GetSeedFolder();
     fl.AppendSeparator().AppendUtf8(ver.ToString().c_str());
 
     BeDirectoryIterator it(GetSeedFolder());

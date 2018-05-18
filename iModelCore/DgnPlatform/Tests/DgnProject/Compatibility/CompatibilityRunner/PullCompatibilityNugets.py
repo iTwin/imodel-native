@@ -16,15 +16,15 @@ from shutil import copyfile, rmtree
 def pullAllNugets(path):
     rmtree(path)
     os.makedirs(path)
-    #copyfile("C:\\Users\\kyle.abramowitz\\OneDrive - Bentley Systems, Inc\\Desktop\\ecobjects.nupkg", path + "ecobjects.nupkg")
+    copyfile("C:\\Users\\kyle.abramowitz\\OneDrive - Bentley Systems, Inc\\Desktop\\ecobjects.nupkg", path + "ecobjects.nupkg")
     #copyfile("C:\\Users\\kyle.abramowitz\\OneDrive - Bentley Systems, Inc\\Desktop\\bim0200.nupkg", path + "bim0200.nupkg")
 
 #------------------------------------------------------------------------
 # bsimethod                         Kyle.Abramowitz             05/2018
 #------------------------------------------------------------------------
 def main():
-    if len(sys.argv) < 2:
-        print "Must give the nuget path"
+    if len(sys.argv) < 3:
+        print "Must give the <nuget path>"
         return
     
     nugetPath = sys.argv[1]
