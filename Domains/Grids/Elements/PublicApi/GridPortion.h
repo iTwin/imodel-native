@@ -77,6 +77,9 @@ public:
     //! @return name of model this grid is in
     GRIDELEMENTS_EXPORT Utf8CP  GetName() const;
 
+    //! Sets a new name for this grid. This changes the DgnCode of this element.
+    GRIDELEMENTS_EXPORT void SetName(Utf8String);
+
     //---------------------------------------------------------------------------------------
     // Queries
     //---------------------------------------------------------------------------------------

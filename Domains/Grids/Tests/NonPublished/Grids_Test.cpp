@@ -3237,6 +3237,28 @@ TEST_F(GridsTestFixture, GridAxis_Created)
     ASSERT_EQ(0, gridAxis1->MakeIterator().BuildIdList<DgnElementId>().size()) << "Grid axis should no longer contain the grid plane";
     }
 
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GridsTestFixture, SetName)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+
+    SketchGridPtr grid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "Grid", 0.0, 10.0);
+    ASSERT_TRUE(grid->Insert().IsValid()) << "Failed to insert grid";
+
+    ASSERT_EQ(SUCCESS, db.SaveChanges());
+
+    ASSERT_STREQ(grid->GetName(), "Grid");
+
+    grid->SetName("NewName");
+    ASSERT_TRUE(grid->Update().IsValid());
+
+    ASSERT_EQ(SUCCESS, db.SaveChanges());
+
+    ASSERT_STREQ(grid->GetName(), "NewName");
+    }
+
 //---------------------------------------------------------------------------------------
 // @betest                                      Haroldas.Vitunskas              12/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
