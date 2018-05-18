@@ -147,6 +147,8 @@ public:
         BENTLEY_SM_EXPORT static double GetLastFilteringDuration();
 
         BENTLEY_SM_EXPORT static double GetLastStitchingDuration();
+
+        BENTLEY_SM_EXPORT static double GetLastClippingDuration();
 #endif                           
     };
 
