@@ -430,7 +430,7 @@ int             nPoint
 +----------------------------------------------------------------------------*/
 
 
-static bool    bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
+Public bool    bsiDPoint3d_barycentricFromDPoint2dTriangleVectors
 
 (
 DPoint3dP pInstance,
@@ -756,7 +756,7 @@ DPoint3dP pUnboundedUVW
 * @group "DPoint3d Barycentric"
 * @bsihdr                                                                       DavidAssaf      10/98
 +---------------+---------------+---------------+---------------+------*/
-static void transformBarycentric3dSystemTo2d
+Public void transformBarycentric3dSystemTo2d
 
 (
 DPoint3dCP pInstance,
