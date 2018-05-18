@@ -141,6 +141,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _RemapGeometryStreamIds(GeometryStreamR geom);
     DGNPLATFORM_EXPORT virtual DgnFontId _RemapFont(DgnFontId);
     DGNPLATFORM_EXPORT virtual DgnStyleId _RemapLineStyleId(DgnStyleId sourceId);
+    DGNPLATFORM_EXPORT virtual DgnElementId _RemapAnnotationStyleId(DgnElementId sourceId);
 
 public:
     //! Construct a DgnImportContext object.
@@ -203,7 +204,12 @@ public:
     LsComponentId FindLineStyleComponentId(LsComponentId sourceId) const;
     //! Register a copy of a LineStyle component
     void AddLineStyleComponentId(LsComponentId sourceId, LsComponentId targetId);
-    //! Look up a copy of a Material
+    //! Look up a copy of an AnnotationTextStyle
+    DgnElementId FindAnnotationTextStyleId(DgnElementId sourceId) const { return m_remap.Find(sourceId); }
+    //! Register a copy of an AnnotationTextStyleI
+    DgnElementId AddAnnotationTextStyleId(DgnElementId sourceId, DgnElementId targetId);
+    // Register a copy of an AnnotationTextStyleId
+    DgnElementId RemapAnnotationStyleId(DgnElementId sourceId) { return _RemapAnnotationStyleId(sourceId); }
     //! Make sure that any ids referenced by the supplied GeometryStream have been imported
     DgnDbStatus RemapGeometryStreamIds(GeometryStreamR geom) {return _RemapGeometryStreamIds(geom);}
     //! Remap a font between databases. If it exists by-type and -name, the Id is simply remapped; if not, a deep copy is made. If a deep copy is made and the source database contained the font data, the font data is also deep copied.

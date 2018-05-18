@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/DgnProject/prewire.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
@@ -28,6 +28,9 @@ $(BuildContext)Delivery/UnitTests/DgnPlatformTestDomain.h : $(DgnPlatformAPISrc)
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)Delivery/UnitTests/PerfTestDomain.h : $(DgnPlatformAPISrc)UnitTests/PerfTestDomain.h
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/UnitTests/RepositoryManagerUtil.h : $(DgnPlatformAPISrc)UnitTests/RepositoryManagerUtil.h
     $(LinkFirstDepToFirstTarget)
 
 #------------------------------------------------------------------------------------------
