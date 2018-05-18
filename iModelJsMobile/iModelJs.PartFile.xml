@@ -20,8 +20,7 @@
     </Part>
 
     <Part Name="iModelJsWindows-Only-SubParts" OnlyPlatforms="x64,x86">
-        <RequiredRepository>BePortableUi</RequiredRepository>
-        <SubPart PartName="google_v8-Windows" PartFile="BePortableUi" Repository="BePortableUi"/>
+        <SdkSource>google_v8_winx64</SdkSource>
     </Part>
 
     <Part Name="node-addon-api" BentleyBuildMakeFile="prewirenapi.mke">
@@ -30,7 +29,7 @@
         </Bindings>
     </Part>
 
-    <!-- ======================================================================================================== 
+    <!-- ========================================================================================================
       Platform-specific apps
      ======================================================================================================== -->
     <!-- This is a fake product that allows for testing of the mobile architecture on Windows desktop -->
@@ -68,9 +67,9 @@
     <Part Name="imodeljsiosapp" BentleyBuildMakeFile="nonport/iOS/iModelJsApp/iModelJsApp.mke">
         <SubPart PartName="iModelJs" LibType="Static" />
     </Part>
-    
-    <!-- ======================================================================================================== 
-      Build Unit Tests 
+
+    <!-- ========================================================================================================
+      Build Unit Tests
      ======================================================================================================== -->
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
         <Bindings>
