@@ -116,7 +116,28 @@ bool ProfileManager::Profile::GenerateSeedFile(TestFile* testFile, BeVersion con
 
     //Create the file
     BeFileName& fl = testFile->m_resolvedFileName;
-    fl = GetSeedFolder(ver);
+    fl = GetSeedFolder();
+    fl.AppendSeparator().AppendUtf8(ver.ToString().c_str());
+
+    BeDirectoryIterator it(GetSeedFolder());
+    do
+        {
+        BeFileName entry;
+        bool isDir;
+        if (it.GetCurrentEntry(entry, isDir, false) == 0 && isDir)
+            {
+            BeVersion version;
+            version.FromString(entry.GetNameUtf8().c_str());
+            if (1 == version.CompareTo(ver))
+                {
+                fl = GetSeedFolder(version);
+                fl.AppendSeparator().AppendUtf8(testFile->GetFileName());
+                fl.AppendExtension(WString(m_fileExtension.c_str(), BentleyCharEncoding::Utf8).c_str());
+                return true;
+                }
+            }
+        } while (it.ToNext() == 0);
+
     if (!fl.DoesPathExist())
         {
         BeFileNameStatus status = BeFileName::CreateNewDirectory(fl.GetName());
@@ -440,8 +461,8 @@ BeFileName const& ProfileManager::GetSeedFolder() const
     {
     if(m_testSeedFolder.empty())
         {
-        BeTest::GetHost().GetDocumentsRoot(m_testSeedFolder);
-        m_testSeedFolder.AppendSeparator().AppendUtf8("compatibility");
+        BeTest::GetHost().GetOutputRoot(m_testSeedFolder);
+        m_testSeedFolder.PopDir().AppendSeparator().append(L"SeedData");
         }
 
     return m_testSeedFolder;
