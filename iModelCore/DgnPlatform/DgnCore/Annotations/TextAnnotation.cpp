@@ -116,7 +116,7 @@ void TextAnnotation::RemapIds(DgnImportContext& context)
             for (AnnotationRunBasePtr run : paragraph->GetRuns())
                 {
                 DgnElementId oldRunId = run->GetStyleId();
-                DgnElementId targetRunId = context.RemapAnnotationStyleId(oldParaId);
+                DgnElementId targetRunId = context.RemapAnnotationStyleId(oldRunId);
                 run->SetStyleId(targetRunId, SetAnnotationTextStyleOptions::Direct);
 
                 if (!run->GetStyleOverrides().HasProperty(AnnotationTextStyleProperty::FontId))
