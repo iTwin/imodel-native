@@ -1643,7 +1643,7 @@ Utf8String TilePublisher::AddTextureImage (PublishTileData& tileData, TileTextur
     tileData.m_json["textures"][textureId] = Json::objectValue;
     tileData.m_json["textures"][textureId]["format"] = hasAlpha ? static_cast<int32_t>(Gltf::DataType::Rgba) : static_cast<int32_t>(Gltf::DataType::Rgb);
     tileData.m_json["textures"][textureId]["internalFormat"] = hasAlpha ? static_cast<int32_t>(Gltf::DataType::Rgba) : static_cast<int32_t>(Gltf::DataType::Rgb);
-    tileData.m_json["textures"][textureId]["sampler"] = "sampler_0";
+    tileData.m_json["textures"][textureId]["sampler"] = textureImage->GetRepeat() ? "sampler_0" : "sampler_2";
     tileData.m_json["textures"][textureId]["source"] = imageId;
 
     tileData.m_json["images"][imageId] = Json::objectValue;
@@ -2219,16 +2219,18 @@ void TileMaterial::AddTextureTechniqueParameters(Json::Value& technique, Json::V
     BeAssert (IsTextured());
     if (IsTextured())
         {
+        Utf8String      sampler = m_texture->GetRepeat() ? "sampler_0" : "sampler_2";
+
         TilePublisher::AddTechniqueParameter(technique, "tex", Gltf::DataType::Sampler2d, "_3DTILESDIFFUSE");
         TilePublisher::AddTechniqueParameter(technique, "texc", Gltf::DataType::FloatVec2, "TEXCOORD_0");
 
-        data.m_json["samplers"]["sampler_0"] = Json::objectValue;
-        data.m_json["samplers"]["sampler_0"]["minFilter"] = Gltf::Linear;
-        data.m_json["samplers"]["sampler_0"]["magFilter"] = Gltf::Linear;
+        data.m_json["samplers"][sampler] = Json::objectValue;
+        data.m_json["samplers"][sampler]["minFilter"] = Gltf::Linear;
+        data.m_json["samplers"][sampler]["magFilter"] = Gltf::Linear;
         if (!m_texture->GetRepeat())
             {
-            data.m_json["samplers"]["sampler_0"]["wrapS"] = Gltf::ClampToEdge;
-            data.m_json["samplers"]["sampler_0"]["wrapT"] = Gltf::ClampToEdge;
+            data.m_json["samplers"][sampler]["wrapS"] = Gltf::ClampToEdge;
+            data.m_json["samplers"][sampler]["wrapT"] = Gltf::ClampToEdge;
             }
         technique["uniforms"]["u_tex"] = "tex";
         technique["attributes"]["a_texc"] = "texc";
