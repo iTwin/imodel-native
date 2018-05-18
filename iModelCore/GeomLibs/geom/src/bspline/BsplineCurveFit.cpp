@@ -142,7 +142,7 @@ double                  tolerance
         return false;
 
     pInCast->GetPoleRange (range);
-    if (bsiDRange3d_extentSquared (&range) <= tolerance * tolerance)
+    if (range.ExtentSquared () <= tolerance * tolerance)
         {
         if (pOut)
             {

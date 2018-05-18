@@ -1609,15 +1609,15 @@ int numB
 
     bsiTransform_multiplyDPoint3dArray (&worldToLocalB, pXYZA_localB, pPointArrayA, numA);
 
-    bsiDRange3d_initFromArray (&rangeA_localB, pXYZA_localB, numA);
-    bsiDRange3d_initFromArray (&rangeB_localB, pXYZB_localB, numB);
+    rangeA_localB.InitFrom(pXYZA_localB, numA);
+    rangeB_localB.InitFrom(pXYZB_localB, numB);
 
     zvecB = worldToLocalB.GetMatrixColumn (2);
 
-    largeCoordinate = bsiDRange3d_getLargestCoordinate (&rangeA_localB)
-                    + bsiDRange3d_getLargestCoordinate (&rangeB_localB);
+    largeCoordinate = rangeA_localB.LargestCoordinate ()
+                    + rangeB_localB.LargestCoordinate ();
 
-    if (!bsiDRange3d_checkOverlap (&rangeA_localB, &rangeB_localB))
+    if (!rangeA_localB.IntersectsWith (rangeB_localB))
         return false;
 
     tol = bsiTrig_smallAngle() * largeCoordinate;
@@ -1683,22 +1683,22 @@ int numB
     bsiTransform_multiplyDPoint3dArray (&worldToLocalB, pXYZA_localB, pXYZA_world, numA);
     bsiTransform_multiplyDPoint3dArray (&worldToLocalA, pXYZB_localA, pXYZB_world, numB);
 
-    bsiDRange3d_initFromArray (&rangeA_localB, pXYZA_localB, numA);
-    bsiDRange3d_initFromArray (&rangeB_localA, pXYZB_localA, numB);
+    rangeA_localB.InitFrom(pXYZA_localB, numA);
+    rangeB_localA.InitFrom(pXYZB_localA, numB);
 
     zvecA = worldToLocalA.GetMatrixColumn (2);
     zvecB = worldToLocalB.GetMatrixColumn (2);
 
-    largeCoordinate = bsiDRange3d_getLargestCoordinate (&rangeA_localA)
-                    + bsiDRange3d_getLargestCoordinate (&rangeB_localA);
+    largeCoordinate = rangeA_localA.LargestCoordinate ()
+                    + rangeB_localA.LargestCoordinate ();
 
-    if (!bsiDRange3d_checkOverlap (&rangeA_localA, &rangeB_localA))
+    if (!rangeA_localA.IntersectsWith (rangeB_localA))
         return false;
-    if (!bsiDRange3d_checkOverlap (&rangeA_localB, &rangeB_localB))
+    if (!rangeA_localB.IntersectsWith (rangeB_localB))
         return false;
 
     tol = bsiTrig_smallAngle () * largeCoordinate;
-    bsiDRange3d_combineRange (&rangeAB_localA, &rangeA_localA, &rangeB_localA);
+    rangeAB_localA = DRange3d::FromUnion (rangeA_localA, rangeB_localA);
 
     if (bsiDVec3d_areParallel (&zvecA, &zvecB))
         {

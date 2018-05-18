@@ -315,9 +315,9 @@ const   DPoint4d    *pPoles,
     int numRoot;
     bsiBezierDPoint4d_pseudoTangent (tangentPoles, &tangentOrder, MAX_BEZIER_ORDER,
                             pPoles, order, 3);
-    bsiDRange3d_init (pRange);
-    bsiDRange3d_extendByDPoint4d (pRange, pPoles);
-    bsiDRange3d_extendByDPoint4d (pRange, pPoles + order - 1);
+    pRange->Init ();
+    pRange->Extend (pPoles[0]);
+    pRange->Extend (pPoles[ order - 1]);
 
     if (order <= 2)
         return;
@@ -329,7 +329,7 @@ const   DPoint4d    *pPoles,
         for (j = 0; j < numRoot; j++)
             {
             bsiBezier_functionAndDerivative ((double*)&extremePoint, NULL, (double *)pPoles, order, 4, root[j]);
-            bsiDRange3d_extendByDPoint4d (pRange, &extremePoint);
+            pRange->Extend (extremePoint);
             }
         }
     }
@@ -354,7 +354,7 @@ int         order
     DPoint3d extremePoint;
     int numRoot;
 
-    bsiDRange3d_init (pRange);
+    pRange->Init ();
 
     if (order < 1)
         return;
@@ -367,8 +367,8 @@ int         order
         tangentPoles[2][i] = pPoles[i+1].z - pPoles[i].z;
         }
 
-    bsiDRange3d_extendByDPoint3d (pRange, pPoles);
-    bsiDRange3d_extendByDPoint3d (pRange, pPoles + order - 1);
+    pRange->Extend (pPoles[0]);
+    pRange->Extend (pPoles[ order - 1]);
 
     for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
@@ -376,7 +376,7 @@ int         order
         for (int rootIndex = 0; rootIndex < numRoot; rootIndex++)
             {
             bsiBezier_functionAndDerivative ((double*)&extremePoint, NULL, (double *)pPoles, order, 3, root[rootIndex]);
-            bsiDRange3d_extendByDPoint3d (pRange, &extremePoint);
+            pRange->Extend (extremePoint);
             }
         }
     }
@@ -402,9 +402,9 @@ const   DPoint4d    *pPoles,
     {
     DRange3d range;
 
-    bsiDRange3d_init (&range);
-    bsiDRange3d_extendByDPoint4dArray (&range, pPoles, order);
-    return bsiDRange3d_isNull (&range) ? 1.0 : bsiDRange3d_getLargestCoordinate (&range);
+    range.Init ();
+    range.Extend (pPoles, order);
+    return range.IsNull () ? 1.0 : range.LargestCoordinate ();
     }
 
 typedef struct

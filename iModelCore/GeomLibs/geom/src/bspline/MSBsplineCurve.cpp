@@ -580,8 +580,7 @@ double MSBsplineCurve::PolygonLength () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MSBsplineCurve::GetPoleRange (DRange3dR range) const
     {
-    range.Init();
-    bsiDRange3d_initFromWeightedArray (&range, poles, weights, params.numPoles);
+    range.InitFrom (poles, weights, params.numPoles);
     }
 
 

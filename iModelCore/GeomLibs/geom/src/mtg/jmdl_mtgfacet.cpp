@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/mtg/jmdl_mtgfacet.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -215,19 +215,19 @@ void _MTGFacets::SetNormalMode (MTGFacets_NormalMode _normalMode, int numVertex,
         case MTG_Facets_VertexOnly:
             vertexLabelOffset = jmdlMTGGraph_defineLabel ((&graphHdr), -1, MTG_LabelMask_VertexProperty, -1);
             normalLabelOffset = -1;
-            jmdlVArrayDPoint3d_extend ((&vertexArrayHdr), numVertex);
+            vertexArrayHdr.reserve (numVertex);
             break;
         case MTG_Facets_NormalPerVertex:
             vertexLabelOffset = jmdlMTGGraph_defineLabel ((&graphHdr), -1, MTG_LabelMask_VertexProperty, -1);
             normalLabelOffset = vertexLabelOffset;
-            jmdlVArrayDPoint3d_extend ((&vertexArrayHdr), numVertex);
-            jmdlVArrayDPoint3d_extend ((&normalArrayHdr), numVertex);
+            vertexArrayHdr.reserve (numVertex);
+            normalArrayHdr.reserve (numVertex);
             break;
         case MTG_Facets_SeparateNormals:
             vertexLabelOffset = jmdlMTGGraph_defineLabel ((&graphHdr), -1, MTG_LabelMask_VertexProperty, -1);
             normalLabelOffset = jmdlMTGGraph_defineLabel ((&graphHdr), -2, MTG_LabelMask_SectorProperty, -1);
-            jmdlVArrayDPoint3d_extend ((&vertexArrayHdr), numVertex);
-            jmdlVArrayDPoint3d_extend ((&normalArrayHdr), numNormal);
+            vertexArrayHdr.reserve (numVertex);
+            normalArrayHdr.reserve (numNormal);
             break;
         case MTG_Facets_NoData:
             normalLabelOffset = -1;
@@ -2565,10 +2565,8 @@ double                  tol
         absTol = tol;
     else
         {
-        DRange3d range;
-        jmdlVArrayDPoint3d_getRange ((&pFacetHeader->vertexArrayHdr), &range);
-        double maxCoordinate =
-                bsiDPoint3d_getLargestCoordinate ((DPoint3d *)&range, 2 );
+        DRange3d range = DRange3d::From (pFacetHeader->vertexArrayHdr);
+        double maxCoordinate = range.LargestCoordinate ();
         absTol = tol * maxCoordinate;
         }
 
@@ -2617,7 +2615,9 @@ const MTGFacets *pFacetHeader,
       DRange3d   *pRange
 )
     {
-    return pFacetHeader ? (SUCCESS == jmdlVArrayDPoint3d_getRange (&pFacetHeader->vertexArrayHdr, pRange)) : false;
+    *pRange = DRange3d::From (pFacetHeader->vertexArrayHdr);
+    return pFacetHeader->vertexArrayHdr.size () > 0;
+//    return pFacetHeader ? (SUCCESS == jmdlVArrayDPoint3d_getRange (&pFacetHeader->vertexArrayHdr, pRange)) : false;
     }
 
 

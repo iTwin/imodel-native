@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/regions/rg_merge.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -741,7 +741,7 @@ int                             auxIndex
     pEdgeData->isReversed = false;
     pEdgeData->auxIndex = auxIndex;
 
-    bsiDRange3d_initFrom2Points (pRange, pPoint0, pPoint1);
+    pRange->InitFrom(*pPoint0, *pPoint1);
     }
 
 /*---------------------------------------------------------------------------------**//**

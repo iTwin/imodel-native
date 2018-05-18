@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/dsegment3d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -278,7 +278,7 @@ DSegment3dCP pSegment,
 DRange3dP pRange
 )
     {
-    bsiDRange3d_initFrom2Points (pRange, &pSegment->point[0], &pSegment->point[1]);
+    pRange->InitFrom(pSegment->point[0], pSegment->point[1]);
     return true;
     }
 

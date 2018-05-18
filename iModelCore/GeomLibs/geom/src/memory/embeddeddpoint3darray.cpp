@@ -867,7 +867,6 @@ int                     index
     bsiDPoint3d_initFromDPoint2d (&fPoint, pInPoint);
     return jmdlEmbeddedDPoint3dArray_setDPoint3d (pHeader, &fPoint, index);
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @description Return the range of the points in the array.
@@ -898,6 +897,7 @@ const   EmbeddedDPoint3dArray   *pHeader,
         }
     return boolstat;
     }
+#endif
 
 
 /*---------------------------------------------------------------------------------**//**

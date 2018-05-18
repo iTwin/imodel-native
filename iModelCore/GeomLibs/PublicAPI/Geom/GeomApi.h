@@ -840,13 +840,11 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #include "dmap4d.fdf"
 #include "dmatrix4d.fdf"
 #include "doublefuncs.fdf"
-#include "dplane3d.fdf"
 #include "dpoint3d.fdf"
 #include "dpoint3darray.fdf"
 #include "dpoint3dconvertedtodvec3d.fdf"
 #include "dpoint3ddvec3d.fdf"
 #include "dpoint4d.fdf"
-#include "drange2d.fdf"
 #include "drange3d.fdf"
 #include "dray3d.fdf"
 

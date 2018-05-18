@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bsppolyface.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -519,9 +519,9 @@ double globalRelTol
     double a, b;
     DRange3d range;
     DVec3d diagonal;
-    bsiDRange3d_initFromArray (&range, pXYZ, numXYZ);
+    range.InitFrom(pXYZ, numXYZ);
     bsiDVec3d_subtractDPoint3dDPoint3d (&diagonal, &range.low, &range.high);
-    maxAbs = bsiDRange3d_getLargestCoordinate (&range);
+    maxAbs = range.LargestCoordinate ();
     maxDiagonal = bsiDVec3d_maxAbs (&diagonal);
 
     if (absTol < sDefaultAbsTol)

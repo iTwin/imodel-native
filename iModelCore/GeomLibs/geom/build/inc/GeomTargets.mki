@@ -72,13 +72,7 @@ $(OUT_DIR)dvec3drotmatrix$(OUT_EXT) : $(geomSrcStructs)dvec3drotmatrix.cpp  $(OT
 
 $(OUT_DIR)dpoint4d$(OUT_EXT)        : $(geomSrcStructs)dpoint4d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)drange3d$(OUT_EXT)        : $(geomSrcStructs)drange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)drange2d$(OUT_EXT)        : $(geomSrcStructs)drange2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)dtransform3d$(OUT_EXT)    : $(geomSrcStructs)dtransform3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#bg3 cover$(OUT_DIR)dplane3d$(OUT_EXT)        : $(geomSrcStructs)dplane3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)drange3d$(OUT_EXT)        : $(geomSrcStructs)drange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)transform$(OUT_EXT)       : $(geomSrcStructs)transform.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -369,8 +363,6 @@ $(OUT_DIR)bsprsurf$(OUT_EXT)    : $(geomSrcBspline)bsprsurf.cpp $(OTHER_DEPENDEN
 #$(OUT_DIR)qsic$(OUT_EXT)            : $(geomSrcFuncs)qsic.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)rctree$(OUT_EXT)          : $(geomSrcFuncs)rctree.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)rotconic$(OUT_EXT)        : $(geomSrcFuncs)rotconic.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)triquad$(OUT_EXT)         : $(geomSrcFuncs)triquad.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 

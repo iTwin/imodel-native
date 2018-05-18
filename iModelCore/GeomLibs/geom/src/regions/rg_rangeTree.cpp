@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/regions/rg_rangeTree.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -694,9 +694,7 @@ DRange3d    *pRange
 )
     {
     XYRangeTreeNode *pLeaf = (XYRangeTreeNode *)pVoidLeaf;
-    bsiDRange3d_initFrom2Components
-            (
-            pRange,
+    pRange->InitFrom(
             pLeaf->header.range.xmin,
             pLeaf->header.range.ymin,
             0.0,
