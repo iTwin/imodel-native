@@ -1153,7 +1153,7 @@ void ORDConverter::CreatePathways(bset<DgnCategoryId>& additionalCategoriesForSe
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void setGeneratedAlignmentLabel(Dgn::DgnElementId alignmentId, RoadRailBim::PathwayElementCR pathway,
-    RoadRailBim::SignificantPointDefinitionCR significantPointDef)
+    RoadRailBim::TypicalSectionPointDefinitionCR typicalSectionPointDef)
     {
     auto pathwayAlignmentCPtr = pathway.GetMainLinearElementAs<RoadRailAlignment::Alignment>();
 
@@ -1164,7 +1164,7 @@ void setGeneratedAlignmentLabel(Dgn::DgnElementId alignmentId, RoadRailBim::Path
         genAlgLabel.append("/");
         }
 
-    genAlgLabel.append(significantPointDef.GetCode().GetValueUtf8CP());
+    genAlgLabel.append(typicalSectionPointDef.GetCode().GetValueUtf8CP());
 
     auto alignmentPtr = RoadRailAlignment::Alignment::GetForEdit(pathway.GetDgnDb(), alignmentId);
     alignmentPtr->SetUserLabel(genAlgLabel.c_str());
@@ -1184,9 +1184,9 @@ void ORDConverter::AssociateGeneratedAlignments()
             continue;
 
         Utf8String pointCode(cifGenLine3d->GetName().c_str());
-        auto pointDefCPtr = RoadRailPhysical::SignificantPointDefinition::QueryByCode(*roadwayStandardsModelPtr, pointCode);
+        auto pointDefCPtr = RoadRailPhysical::TypicalSectionPointDefinition::QueryByCode(*roadwayStandardsModelPtr, pointCode);
         if (pointDefCPtr.IsNull())
-            pointDefCPtr = RoadRailPhysical::TravelwaySignificantPointDef::CreateAndInsert(*roadwayStandardsModelPtr, pointCode.c_str(), pointCode.c_str());
+            pointDefCPtr = RoadRailPhysical::GenericTypicalSectionPointDef::CreateAndInsert(*roadwayStandardsModelPtr, pointCode.c_str(), pointCode.c_str());
 
         if (pointDefCPtr.IsNull())
             continue;
