@@ -647,6 +647,20 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 		}
 #endif
 	}
+
+    static bool s_flushNodeAfterFiltering = false;
+
+    if (s_flushNodeAfterFiltering)
+        {
+        for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
+            {
+            if (subNodes[indexNodes] != NULL)
+                {
+                subNodes[indexNodes]->Discard();
+                }
+            }
+        }
+
 	return true;
 }
 
