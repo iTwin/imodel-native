@@ -244,6 +244,7 @@ static double s_getLastMeshingDuration = -1;
 static double s_getLastFilteringDuration = -1;
 static double s_getLastStitchingDuration = -1;
 static double s_getLastClippingDuration = -1;
+static double s_getLastFinalStoreDuration = -1;
 
 
 unsigned __int64 IScalableMeshCreator::GetNbImportedPoints()
@@ -284,6 +285,11 @@ double IScalableMeshCreator::GetLastStitchingDuration()
 double IScalableMeshCreator::GetLastClippingDuration()
     {
     return s_getLastClippingDuration;
+    }
+
+double IScalableMeshCreator::GetLastFinalStoreDuration()
+    {
+    return s_getLastFinalStoreDuration;
     }
 
 #endif
