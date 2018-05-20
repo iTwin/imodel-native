@@ -957,7 +957,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                              IScalableMeshSourceCreator::GetLastFilteringDuration() / minutes * 100,
                              IScalableMeshSourceCreator::GetLastStitchingDuration() / minutes * 100,
                              IScalableMeshSourceCreator::GetLastFinalStoreDuration() / minutes * 100,                        
-                             minutes, hours,
+                             minutes, hours, 
                              GetGroundDetectionDuration(),
                              IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration(),
                              IScalableMeshSourceCreator::GetLastPointBalancingDuration(),

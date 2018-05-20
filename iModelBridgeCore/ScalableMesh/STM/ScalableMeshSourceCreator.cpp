@@ -798,7 +798,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #ifdef SCALABLE_MESH_ATP
     s_getLastMeshingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
 #endif
-
+      
     
     GetProgress()->Progress() = 1.0;
 	GetProgress()->UpdateListeners();
@@ -810,7 +810,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     s_getLastClippingDuration = 0;
     s_getLastMeshBalancingDuration = 0;    
 #endif
-
+     
 
     if (m_sourceCreationMethod == SCM_SOURCE_CREATION_BIG_SPLIT_CUT)
         {        
