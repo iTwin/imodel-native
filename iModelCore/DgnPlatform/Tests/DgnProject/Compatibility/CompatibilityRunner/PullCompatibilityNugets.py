@@ -24,7 +24,7 @@ def pullAllNugets(path):
 #------------------------------------------------------------------------
 def main():
     if len(sys.argv) < 2:
-        print "Must give the nuget path"
+        print "Must give the <nuget path>"
         return
     
     nugetPath = sys.argv[1]

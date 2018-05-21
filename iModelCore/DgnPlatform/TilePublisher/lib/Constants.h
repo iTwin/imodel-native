@@ -348,6 +348,7 @@ static std::string s_tesselatedTexturedPolylineVertexCommon = s_octDecode + R"RA
     attribute vec3  a_texScalePnt; 
     uniform mat4    u_mv;
     uniform mat4    u_proj;
+    uniform mat4    u_model;
     uniform float   u_width;
     uniform float   u_texLength;
     varying vec2    v_texc;
@@ -368,7 +369,7 @@ static std::string s_tesselatedTexturedPolylineVertexCommon = s_octDecode + R"RA
             imagesPerPixel = imagesPerMeter * metersPerPixel;
             }
 
-        v_texc.x = a_distance * imagesPerMeter.x;
+        v_texc.x = a_distance * imagesPerMeter.x * length(u_model[0].xyz);
         v_texc.y = .5;
 
 )RAW_STRING"
@@ -424,6 +425,7 @@ static std::string s_simpleTexturedPolylineVertexCommon = R"RAW_STRING(
     attribute float a_distance;
     uniform mat4    u_mv;
     uniform mat4    u_proj;
+    uniform mat4    u_model;
     uniform float   u_texLength;
     varying vec2    v_texc;
                                                                                                                                                                                       
@@ -443,7 +445,7 @@ static std::string s_simpleTexturedPolylineVertexCommon = R"RAW_STRING(
             imagesPerPixel = imagesPerMeter * metersPerPixel;
             }
 
-        v_texc = vec2(a_distance * imagesPerMeter, .5);
+        v_texc = vec2(a_distance * imagesPerMeter * length(u_model[0].xyz), .5);
         gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);
         v_color =  computeColor();
         }
