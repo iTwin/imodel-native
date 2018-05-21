@@ -1648,6 +1648,7 @@ RevisionStatus RevisionManager::ReverseRevision(DgnRevisionCR revision)
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::DoReverseRevision(DgnRevisionCR revision)
     {
+    PRECONDITION(!m_dgndb.IsReadonly() && "Cannot reverse changes in a Readonly database", RevisionStatus::CannotMergeIntoReadonly);
     TxnManagerR txnMgr = m_dgndb.Txns();
 
     if (txnMgr.HasLocalChanges())
