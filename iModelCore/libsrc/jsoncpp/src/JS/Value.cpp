@@ -1527,9 +1527,20 @@ Json::Value Converter::ToJson(Value v)
         }
     else if (vT == ValueType::Undefined)
         {
-        BeAssert(false && "Fail to convert Value to Json::Value");
+        //Undefined would be consider null in JSON
         out = Json::Value(Json::ValueType::nullValue);        
         }
+    else if (vT == ValueType::Boolean)
+        {
+        bool b;
+        if (factory.GetBoolean(b, v.Handle()) != Status::Success)
+            {
+            BeAssert(false);
+            }
+
+        out = Json::Value(b);
+        }
+
     else if (vT == ValueType::String)
         {
         Utf8String str;
