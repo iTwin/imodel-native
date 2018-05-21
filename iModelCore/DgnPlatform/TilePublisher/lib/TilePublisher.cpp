@@ -1944,7 +1944,7 @@ PolylineMaterial::PolylineMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix)
     {
     TileDisplayParamsCR displayParams = mesh.GetDisplayParams();
 
-    m_type = displayParams.GetRasterWidth() <= 1 ? PolylineType::Simple : PolylineType::Tesselated;
+    m_type = (displayParams.GetRasterWidth() <= 1 && 0 == displayParams.GetLinePixels()) ? PolylineType::Simple : PolylineType::Tesselated;     // Don't use simple for linecodes (civil sheets).
 
     ColorIndexMapCR map = mesh.GetColorIndexMap();
     m_hasAlpha = map.HasTransparency();         // || IsTesselated(); // Turn this on if we use alpha in tesselated polylines.
@@ -2377,7 +2377,6 @@ PolylineMaterial TilePublisher::AddPolylineMaterial(PublishTileData& tileData, T
     auto& matJson = tileData.m_json["materials"][mat.GetName().c_str()];
     matJson["technique"] = AddPolylineTechnique(tileData, mat, doBatchIds);
 
-
     if (mat.IsTextured())
         {
         TileTextureImageCPtr    texture = mat.GetTexture();
@@ -2410,6 +2409,7 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
     Json::Value technique(Json::objectValue);
     AddTechniqueParameter(technique, "mv", Gltf::DataType::FloatMat4, "CESIUM_RTC_MODELVIEW");
     AddTechniqueParameter(technique, "proj", Gltf::DataType::FloatMat4, "PROJECTION");
+    AddTechniqueParameter(technique, "model", Gltf::DataType::FloatMat4, "MODEL");
     AddTechniqueParameter(technique, "pos", Gltf::DataType::FloatVec3, "POSITION");
     if (doBatchIds)
         AddTechniqueParameter(technique, "batch", Gltf::DataType::Float, "_BATCHID");
@@ -2425,6 +2425,7 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
     auto& uniforms = technique["uniforms"];
     uniforms["u_mv"] = "mv";
     uniforms["u_proj"] = "proj";
+    uniforms["u_model"] = "model";
 
     Utf8String programName = prefix + "Program",
                vertexShaderName = prefix + "VertexShader",
@@ -2913,7 +2914,7 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
     if (mesh.Polylines().empty())
         return;
 
-    if (mesh.GetDisplayParams().GetRasterWidth() <= 1)
+    if (mesh.GetDisplayParams().GetRasterWidth() <= 1 && 0 == mesh.GetDisplayParams().GetLinePixels())
         AddSimplePolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
     else
         AddTesselatedPolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
