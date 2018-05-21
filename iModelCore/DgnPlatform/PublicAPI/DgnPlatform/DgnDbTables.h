@@ -156,7 +156,7 @@
 #include "ECSqlClassParams.h"
 #include "ECSqlStatementIterator.h"
 #include <Bentley/HeapZone.h>
-
+#include <JS/Value.h>
 namespace IModelJsNative {struct JsInterop;}
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -344,6 +344,7 @@ public:
     BE_JSON_NAME(value)
     DGNPLATFORM_EXPORT Json::Value ToJson2() const; //!< Convert to json, format 2. This is the imodeljs wire format. Do not change.
     DGNPLATFORM_EXPORT static DgnCode FromJson2(JsonValueCR value); //!< Attempt to initialize from json, format 2. This is the imodeljs wire format. Do not change.
+    DGNPLATFORM_EXPORT static DgnCode FromJsValue(Js::Object value); 
 };
 
 typedef bset<DgnCode> DgnCodeSet;

@@ -10,6 +10,7 @@
 
 #include <Bentley/BeAssert.h>
 #include "RepositoryManager.h"
+#include <JS/Value.h>
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 struct Graphic;
@@ -1172,6 +1173,13 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_FromJson()
     DGNPLATFORM_EXPORT virtual void _FromJson(JsonValueR props);
 
+    //! Convert this DgnElement to a Js::Value.
+    //! @note If you override this method, you @em must call T_Super::_ToJsValue()
+    DGNPLATFORM_EXPORT virtual void _ToJsValue(Js::Object out, Js::Object opts) const;
+
+    //! Update this DgnElement from a Js::Value.
+    //! @note If you override this method, you @em must call T_Super::_FromJson()
+    DGNPLATFORM_EXPORT virtual void _FromJsValue(Js::Object props);
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
     //! @note If you override this method, you @em must call T_Super::_LoadFromDb() first, forwarding its status
@@ -1934,6 +1942,12 @@ public:
     Json::Value ToJson(JsonValueCR opts = Json::Value()) const { Json::Value val; _ToJson(val, opts); return val; }
 
     void FromJson(JsonValueR props) {_FromJson(props);}
+
+    //! Create a Json::Value that represents the state of this element.
+    //! @param[in] opts options for customizing the value. If opts["wantGeometry"] != true, geometry stream Json::Value is not included.
+    Js::Object ToJsValue(Js::IFactory& factory, Js::Object opts) const { Js::Object val = Js::Object::New(factory) ; _ToJsValue(val, opts); return val; }
+
+    void FromJsValue(Js::Object props) { FromJsValue(props); }
     //! @}
 
     //! Make an iterator over all ElementAspects owned by this element
