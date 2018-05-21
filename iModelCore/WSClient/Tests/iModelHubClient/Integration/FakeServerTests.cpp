@@ -25,10 +25,7 @@ class FakeServerFixture : public testing::Test
             {
             static bool s_initialized = false;
             if (s_initialized)
-                {
-                Http::HttpClient::Reinitialize();
                 return;
-                }
 
             iModelHubHost& host = iModelHubHost::Instance();
             host.CleanOutputDirectory();
@@ -69,7 +66,7 @@ class FakeServerFixture : public testing::Test
             {
             /*WCharCP serverPath = outPath.GetWCharCP();
             EXPECT_EQ(BeFileNameStatus::Success, FakeServer::DeleteAlliModels(serverPath));*/
-            Http::HttpClient::Uninitialize();
+
             }
     };
 
@@ -191,7 +188,8 @@ TEST_F(FakeServerFixture, AcquireLocks)
     Request request(urlGetInfo, method, handlePtr);
     request.SetRequestBody(HttpStringBody::Create(seedFileInstanceBody));
     RequestHandler reqHandler;
-    reqHandler.PushAcquiredLocks(request);
+    Response resp =  reqHandler.PushAcquiredLocks(request);
+    ASSERT_EQ(HttpStatus::OK, resp.GetHttpStatus());
     }
 
 bvector<Utf8String> ParseUrl(Utf8String requestUrl, Utf8CP delimiter)
@@ -216,6 +214,7 @@ TEST_F(FakeServerFixture, MultiLocks)
     HttpBodyPtr respBody = respContent->GetBody();
     printf("reponse is %s\n", respBody->AsString().c_str());
     }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -250,6 +249,23 @@ TEST_F(FakeServerFixture, DeleteLocks)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FakeServerFixture, GetBriefcaseInfo) 
+    {
+    Utf8String urlBriefcaseInfo("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--79e54bc3-a944-4fa8-9db3-9ba02af99b31/iModelScope/Briefcase/3");
+    Utf8String method = "GET";
+    IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
+    //RequestHandler reqHandler;
+    Request request(urlBriefcaseInfo, method, handlePtr);
+    Response response = request.PerformAsync()->GetResult();
+    HttpResponseContentPtr respContent = response.GetContent();
+    HttpBodyPtr respBody = respContent->GetBody();
+    printf("reponse is %s\n", respBody->AsString().c_str());
+    }
+
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, GetChangeSetInfo)
     {
     //Utf8String urlChangeSet("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--28cea910-ad8c-4240-92cb-501aaa7e61c6/iModelScope/ChangeSet");
@@ -263,7 +279,7 @@ TEST_F(FakeServerFixture, GetChangeSetInfo)
     /*Response responseChangeSetCreated = reqHandler.PushChangeSetMetadata(requestCreateChangeSet);
     ASSERT_EQ(HttpStatus::Created, responseChangeSetCreated.GetHttpStatus());*/
 
-    Utf8String urlGetLocksInfo("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--28cea910-ad8c-4240-92cb-501aaa7e61c6/iModelScope/ChangeSet?$select=Id,Index,ParentId,SeedFileId,FileAccessKey-forward-AccessKey.DownloadURl&$filter=SeedFileId+eq+'f14595ba-ee80-4669-b246-97c3eea43b89'");
+    Utf8String urlGetLocksInfo("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--bb3a3a0c-57b8-4bcd-9fdf-e41d30dd101d/iModelScope/ChangeSet?$select=Id,Index,ParentId,SeedFileId,FileAccessKey-forward-AccessKey.DownloadURl&$filter=SeedFileId+eq+'1ed549cd-eff3-46c8-a21d-d41f685e0844'");
     method = "GET";
     Request request(urlGetLocksInfo, method, handlePtr);
     Response response = reqHandler.GetChangeSetInfo(request);
@@ -390,6 +406,7 @@ TEST_F(FakeServerFixture, DownloadiModel)
     Utf8String fileName = Utf8String(json["changedInstance"]["instanceAfterChange"]["properties"]["FileName"].asString());
 
     method = "GET";
+
     Utf8String urlDownloadBriefcase("https://imodelhubqasa01.blob.core.windows.net/imodelhub-");
     urlDownloadBriefcase += iModelId + "/BriefcaseTestm-" + fileId +".bim?sv=2016-05-31&sr=b&sig=1BI8ULlcZoN7WPnjkIfPTbLWZsz";
     Request requestDownload(urlDownloadBriefcase, method, handlePtr);
