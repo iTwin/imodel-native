@@ -28,11 +28,8 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
     public:
         MockWSRepositoryClient()
             {
-            WSRepository repository;
-            repository.SetId("testId");
-            repository.SetServerUrl("testUrl");
             ON_CALL(*this, GetInfo(_)).WillByDefault(
-                Return(CreateCompletedAsyncTask(WSRepositoryResult::Success(repository))));
+                Return(CreateCompletedAsyncTask(WSRepositoryResult::Success(StubWSRepository()))));
             }
 
         static std::shared_ptr<NiceMock<MockWSRepositoryClient>> Create(Utf8StringCR id = "test")
