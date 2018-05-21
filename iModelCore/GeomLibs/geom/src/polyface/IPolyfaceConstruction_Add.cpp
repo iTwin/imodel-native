@@ -1438,7 +1438,7 @@ void IPolyfaceConstruction::AddParamIndexStrip (bvector<size_t> &indexA, bvector
         numQuad = n - 1;
 
     for (size_t i = 0; i < numQuad; i++)
-        AddNormalIndexQuad (indexA[i], indexA[i+1], indexB[i+1], indexB[i]);
+        AddParamIndexQuad (indexA[i], indexA[i+1], indexB[i+1], indexB[i]);
 
     }
 
@@ -1634,7 +1634,7 @@ void IPolyfaceConstruction::AddFullDisk (DEllipse3dCR ellipse, size_t numPerQuad
             AddPointIndexStrip (false, pointIndexB, false, pointIndexA, i == numRadius, false, numChord, reversed);
 
             if (NeedNormals ())
-                AddNormalIndexPlanarFan (normalIndex, numChord);
+                AddNormalIndexPlanarStrip (normalIndex, numChord);
 
             if (NeedParams ())
                 {

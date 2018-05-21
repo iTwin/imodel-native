@@ -4017,3 +4017,122 @@ TEST(Polyface,PunchOverlapB)
     Check::ClearGeometry("Polyface.PunchOverlapC");
 
     }
+
+
+bvector<DPoint3d> SweepPoints (bool clockwise)
+    {
+    const double Elevation = 0.8;
+    const double HalfWidth = 1.0;
+    const double Height = 4.0;
+    if (clockwise)
+        {
+        return bvector<DPoint3d>
+            {
+            DPoint3d::From (0.0, Elevation),
+            DPoint3d::From (-HalfWidth, Elevation),
+            DPoint3d::From (-HalfWidth, Height),
+            DPoint3d::From (HalfWidth, Height),
+            DPoint3d::From (HalfWidth, Elevation),
+            DPoint3d::From (0.0, Elevation)
+            };
+        }
+    else
+        {
+        return bvector<DPoint3d>
+            {
+            DPoint3d::From (0.0, Elevation),
+            DPoint3d::From (HalfWidth, Elevation),
+            DPoint3d::From (HalfWidth, Height),
+            DPoint3d::From (-HalfWidth, Height),
+            DPoint3d::From (-HalfWidth, Elevation),
+            DPoint3d::From (0.0, Elevation)
+            };
+        }
+    }
+
+RotMatrix Frame1 ()
+    {
+    auto rotationCCWAroundX = RotMatrix::FromAxisAndRotationAngle(0, Angle::DegreesToRadians (90.0));
+    auto rotationCCWAroundZ = RotMatrix::FromAxisAndRotationAngle(2, Angle::DegreesToRadians(90.0));
+    return rotationCCWAroundZ *rotationCCWAroundX;
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz    11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ TEST(Polyface,PiotrSweep)
+    {
+    for (auto axes :
+        {
+        RotMatrix::FromIdentity (),
+        Frame1 (),
+        })
+        {
+        SaveAndRestoreCheckTransform shifter (20,0,0);
+        for (bool clockwise : {false, true})
+            {
+            SaveAndRestoreCheckTransform shifter (0,20,0);
+            auto points = SweepPoints (clockwise);
+            Check::SaveTransformed (points);
+            IFacetOptionsPtr options = CreateFacetOptions ();
+            IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+            Transform placement = Transform::From (axes);
+            DVec3d direction;
+            axes.GetColumn (direction, 2);
+            placement.Multiply (points, points);
+            builder->AddLinearSweep (points, nullptr, direction, true);
+            Check::SaveTransformed (builder->GetClientMeshR ());
+            }
+        }
+    Check::ClearGeometry ("Polyface.PiotrSweep");
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz    11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ TEST(Polyface,FilledDisk)
+    {
+    static int s_clearMode = 2;
+    double radiusA = 5.0;
+    IFacetOptionsPtr options = CreateFacetOptions ();
+    options->SetParamsRequired (true); 
+    options->SetNormalsRequired (true); 
+    int counter = 0;
+    char title[1024];
+    for (double maxEdgeLength : {10.0, 5.0, 1.0})
+        {
+        SaveAndRestoreCheckTransform shifter (3.0 * radiusA, 0, 0);
+        options->SetMaxEdgeLength (maxEdgeLength);
+        for (double radiusB : {5.0, 4.0, 1.0, 8.0, 12.0})
+            {
+            counter++;
+            SaveAndRestoreCheckTransform shifter (0.0, 8.0 * radiusB, 0);
+            IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+            auto ellipse = DEllipse3d::From (
+                    radiusA, radiusB, 0,
+                    radiusA, 0, 0,
+                    0, radiusB, 0,
+                    0, Angle::TwoPi ());
+            builder->AddFullDiskTriangles (ellipse, 4);
+            Check::SaveTransformed (builder->GetClientMeshR ());
+            if (s_clearMode == 1)
+                {
+                sprintf (title, "Polyface.FilledDiskTriangles%d", counter);
+                Check::ClearGeometry (title);
+                }
+
+            Check::Shift (0, 3.0 * radiusB, 0);
+            IPolyfaceConstructionPtr builderB = IPolyfaceConstruction::Create (*options);
+            builderB->AddFullDisk (ellipse, 4);
+            Check::SaveTransformed (builderB->GetClientMeshR ());
+            if (s_clearMode == 1)
+                {
+                sprintf (title, "Polyface.FilledDisk%d", counter);
+                Check::ClearGeometry (title);
+                }
+            }
+        }
+    Check::ClearGeometry ("Polyface.FilledDisk");
+    }
