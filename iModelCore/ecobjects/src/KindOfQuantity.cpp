@@ -537,7 +537,7 @@ ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchema
             persistenceFormat = GetSchema().LookupFormat(formatName.c_str());
             if (nullptr == persistenceFormat)
                 {
-                LOG.errorv("Failed to find format with name '%s' in standard formats schema", formatName.c_str());
+                LOG.errorv("EC3.2 upgrade failed: Failed to find format with name '%s' in standard formats schema", formatName.c_str());
                 return ECObjectsStatus::Error;
                 }
             }
@@ -601,13 +601,13 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
             bvector<Nullable<Utf8String>> localUnitLabels;
             if (SUCCESS != Formatting::Format::ParseFormatString(localformatName, precision, localUnitNames, localUnitLabels, formatName))
                 {
-                LOG.errorv("Failed to parse format string '%s' on KoQ '%s'", descriptor, GetFullName().c_str());
+                LOG.errorv("EC3.2 upgrade failed: Failed to parse format string '%s' on KoQ '%s'", descriptor, GetFullName().c_str());
                 return ECObjectsStatus::Error;
                 }
             format = GetSchema().LookupFormat(localformatName.c_str());
             if (nullptr == format)
                 {
-                LOG.errorv("FormatString '%s' on KindOfQuantity '%s' has an invalid format, '%s'.", descriptor, GetFullName().c_str(), formatName.c_str());
+                LOG.errorv("EC3.2 upgrade failed: FormatString '%s' on KindOfQuantity '%s' has an invalid format, '%s'.", descriptor, GetFullName().c_str(), formatName.c_str());
                 return ECObjectsStatus::Error;
                 }
             }
@@ -627,20 +627,22 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
 
         if (nullptr == unit)
             {
-            LOG.errorv("FormatString '%s' on KindOfQuantity '%s' has a Unit '%s' that could not be located in the standard Units schema.",
+            LOG.errorv("EC3.2 upgrade failed: FormatString '%s' on KindOfQuantity '%s' has a Unit '%s' that could not be located in the standard Units schema.",
                 descriptor, GetFullName().c_str(), unitName.c_str());
             return ECObjectsStatus::Error;
             }
 
         if (format->HasCompositeMajorUnit() && !Units::Unit::AreEqual(unit, format->GetCompositeMajorUnit()))
             {
-            LOG.errorv("On KOQ '%s' presentation unit '%s' must be compatible with parent format '%s' major unit", GetFullName().c_str(), unit->GetFullName().c_str(), format->GetParentFormat()->GetFullName().c_str());
-            return ECObjectsStatus::Error;
+            LOG.warningv("EC3.2 upgrade: Dropping the presentation input unit '%s' from FUS '%s' on KindOfQuantity '%s' because the format '%s' has a major unit that is not equal to the original FUS Unit '%s'.", 
+                descriptor, GetFullName().c_str(), format->GetFullName().c_str(), unit->GetFullName().c_str(), format->GetParentFormat()->GetFullName().c_str());
+            unit = nullptr; // Dropping the FUS unit.
             }
 
-        if (!Units::Unit::AreCompatible(unit, m_persistenceUnit))
+        // Check compatibility between the format's Unit and the persistence Unit. The format's Unit is sometimes an override and other times will be the Major Unit.
+        if (!Units::Unit::AreCompatible(nullptr == unit ? format->GetCompositeMajorUnit() : unit, m_persistenceUnit))
             {
-            LOG.errorv("On KOQ '%s' presentation unit '%s' is incompatible with persistence unit '%s'", GetFullName().c_str(), unit->GetFullName().c_str(), m_persistenceUnit->GetFullName().c_str());
+            LOG.errorv("EC3.2 upgrade failed: On KOQ '%s' presentation unit '%s' is incompatible with persistence unit '%s'", GetFullName().c_str(), unit->GetFullName().c_str(), m_persistenceUnit->GetFullName().c_str());
             return ECObjectsStatus::Error;
             }
         ECUnitCP unitOverride = format->HasCompositeMajorUnit() ? nullptr : unit;

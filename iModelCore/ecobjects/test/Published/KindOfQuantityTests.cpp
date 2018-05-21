@@ -1707,6 +1707,33 @@ TEST_F(KindOfQuantityUpgradeTest, ec31_ValidKindOfQuantityInReferencedSchema)
     ASSERT_EQ(propKoq, arrayPropKoq);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    05/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityUpgradeTest, ec31_IncompatibleFUSPresentationUnitAndFormat)
+    {
+    SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="Short Length" persistenceUnit="M(DefaultReal)" presentationUnits="IN(fi8)"
+                    relativeError="0.01" />
+        </ECSchema>)xml");
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    DeserializeSchema(schema, *schemaContext, schemaItem);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(schema->Validate());
+
+    KindOfQuantityCP koq = schema->GetKindOfQuantityCP("LENGTH_SHORT");
+    EXPECT_EQ(1, koq->GetPresentationFormats().size());
+    NamedFormatCP format = koq->GetDefaultPresentationFormat();
+    EXPECT_TRUE(format->HasCompositeMajorUnit());
+    EXPECT_STREQ("FT", format->GetCompositeMajorUnit()->GetName().c_str());
+    EXPECT_TRUE(format->HasCompositeMiddleUnit());
+    EXPECT_STREQ("IN", format->GetCompositeMiddleUnit()->GetName().c_str());
+    }
+
 //=======================================================================================
 //! KindOfQuantityCompatibilityTest
 //=======================================================================================
