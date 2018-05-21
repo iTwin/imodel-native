@@ -442,10 +442,11 @@ BentleyStatus   DwgHelper::UpdateViewFlagsFromVisualStyle (ViewFlags& viewFlags,
         DwgGiVisualStyleProperties::EdgeModel visibleEdges = var.AsEnum ();
         switch (visibleEdges)
             {
+            // WIP - support displaying isolines around a round body?
+            case DwgGiVisualStyleProperties::EdgeModel::Isolines:
             case DwgGiVisualStyleProperties::EdgeModel::NoEdges:
                 viewFlags.SetShowVisibleEdges (false);
                 break;
-            case DwgGiVisualStyleProperties::EdgeModel::Isolines:
             case DwgGiVisualStyleProperties::EdgeModel::FacetEdges:
             default:
                 viewFlags.SetShowVisibleEdges (true);
@@ -1311,15 +1312,11 @@ ClipVectorPtr   DwgHelper::CreateClipperFromEntity (DwgDbObjectId entityId, doub
     if (curve.IsNull())
         return  nullptr;
 
-    GPArraySmartP   gpa;
-    if (BSISUCCESS != gpa->Add(*curve, false))
-        return  nullptr;
-
-    // the clipper constructor expects GPA in model/world coordinate system:
+    // the clipper constructor expects CurveVector in model/world coordinate system:
     if (nullptr != clipperToModel)
-        gpa->Transform (clipperToModel);
+        curve->TransformInPlace (*clipperToModel);
 
-    return ClipVector::CreateFromGPA (*gpa, 0.001, 0.1, frontClip, backClip, clipperToModel);
+    return  ClipVector::CreateFromCurveVector(*curve, 0.001, 0.1, frontClip, backClip);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1529,4 +1526,36 @@ bool    DwgHelper::SniffDxfFile (BeFileNameCR dxfName, DwgFileVersion* versionOu
         }
     
     return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgHelper::CanOpenForWrite (BeFileNameCR path)
+    {
+#ifdef BENTLEY_WIN32
+    ::FILE* stream = nullptr;
+    bool check = ::_wfopen_s(&stream, path.c_str(), L"r+") == 0;
+    if (nullptr != stream)
+        ::fclose (stream);
+    return check;
+#else
+    BeAssert (false && "Unsupported platform!");
+    return  false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t    DwgHelper::GetDwgImporterVersion ()
+    {
+    uint32_t    toolkitVersion = 0, importerVersion = 0;
+#ifdef DLM_API_NUMBER
+    // parse the DLL suffix "####b#"
+    BeAssert (::sscanf(DLM_API_NUMBER, "%db%d", &toolkitVersion, &importerVersion) == 2);
+#else
+    BeAssert (false && "DLM_API_NUMBER should be passed through the makefile!");
+#endif
+    return  importerVersion;
     }

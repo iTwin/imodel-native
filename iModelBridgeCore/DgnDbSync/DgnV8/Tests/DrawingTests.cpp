@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/DrawingTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -1111,17 +1111,18 @@ TEST_F(DrawingTests, Cyclic2dModels_AttachToSheet)
         v8editor.Open(m_v8FileName);
         DgnV8Api::DgnModelStatus modelStatus;
         Bentley::DgnModelP twoDModel = v8editor.m_defaultModel;
+        v8editor.AddLine(&eid, twoDModel);  // make sure the model has something in it. Otherwise, the view will be empty, and the sheet will not create a ViewAttachment to an empty view.
 
-        // Create a DrawingModel1 ...
-        Bentley::DgnModelP DrawingModel1 = v8editor.m_file->CreateNewModel(&modelStatus, L"drawing1", DgnV8Api::DgnModelType::Drawing, /*is3D*/ false);
+        // Create a drawingModel1 ...
+        Bentley::DgnModelP drawingModel1 = v8editor.m_file->CreateNewModel(&modelStatus, L"drawing1", DgnV8Api::DgnModelType::Drawing, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
-        v8editor.AddLine(&eid, DrawingModel1);
-        // Create a SheetModel1 ...
-        Bentley::DgnModelP SheetModel1 = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet1", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
+        v8editor.AddLine(&eid, drawingModel1);
+        // Create a sheetModel1 ...
+        Bentley::DgnModelP sheetModel1 = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet1", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
         // and attach the 2D rootmodel as a reference to the 2D Drawing1
         DgnV8Api::DgnAttachment* attachment1 = NULL;
-        AddAttachment(m_v8FileName, DrawingModel1, twoDModel->GetModelName(), attachment1);
+        AddAttachment(m_v8FileName, drawingModel1, twoDModel->GetModelName(), attachment1);
         attachment1->SetNestDepth(1);
         ASSERT_EQ(BentleyApi::SUCCESS, attachment1->WriteToModel());
         // and attach the 2D drawing1 as a reference to the 2D rootmodel
@@ -1131,7 +1132,7 @@ TEST_F(DrawingTests, Cyclic2dModels_AttachToSheet)
         ASSERT_EQ(BentleyApi::SUCCESS, attachment2->WriteToModel());
         // and attach the 2D rootmodel as a reference to the sheet
         DgnV8Api::DgnAttachment* attachment3 = NULL;
-        AddAttachment(m_v8FileName, SheetModel1, twoDModel->GetModelName(), attachment3);
+        AddAttachment(m_v8FileName, sheetModel1, twoDModel->GetModelName(), attachment3);
         attachment3->SetNestDepth(1);
         ASSERT_EQ(BentleyApi::SUCCESS, attachment3->WriteToModel());
         v8editor.Save();
@@ -1140,20 +1141,25 @@ TEST_F(DrawingTests, Cyclic2dModels_AttachToSheet)
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-        countModels(*db, 3, 2);// 2 drawing and 1 sheet
+        // We expect 3 DrawingModels and 1 SheetModel, making four 2-D models in total.
+        // The 3 drawings are: "drawing1", the default model, and the sheet's private copy of the default model.
+        countModels(*db, 4, -1);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 4);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 4);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 4);
-        ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
-        ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+        ASSERT_EQ(3, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
+        ASSERT_EQ(3, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
 
+        // Root model "Test2d". We expect 2 DrawingGraphics.
+        // (Why 2? The root model's line, plus the line from "Test2d" that the converter merged in.)
         DgnElementCPtr ele = db->Elements().GetElement(FindElementByCodeValue(*db, BIS_CLASS_Drawing, "Test2d"));
         ASSERT_TRUE(ele.IsValid());
         auto eleModel = ele->GetSub<DrawingModel>();
         ASSERT_TRUE(eleModel.IsValid());
-        countElements(*eleModel, 1);
-        //There should be 1 DrawingGrapic in toatal maps on  on root2dmodel
-        countElementsInModelByClass(*eleModel, getBisClassId(*db, "DrawingGraphic"), 1);
+        countElements(*eleModel, 2);
+        countElementsInModelByClass(*eleModel, getBisClassId(*db, "DrawingGraphic"), 2);
+        
+        // Sheet1. We expect 2 Sheet.ViewAttachment elements.
         auto ele1 = db->Elements().Get<Sheet::Element>(FindElementByCodeValue(*db, BIS_CLASS_Sheet, "sheet1"));
         ASSERT_TRUE(ele1.IsValid());
         Sheet::ModelPtr sheetmodel1 = ele1->GetSub<Sheet::Model>();
@@ -1161,3 +1167,114 @@ TEST_F(DrawingTests, Cyclic2dModels_AttachToSheet)
         countElementsInModelByClass(*sheetmodel1, getBisClassId(*db, "ViewAttachment"), 2);
         }
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct SheetCompositionTests : public ConverterTestBaseFixture
+    {
+    Bentley::SheetDefCP GetV8SheetDef (Bentley::WString sheetName)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open (m_v8FileName);
+        Bentley::DgnPlatform::ModelId sheetModelId = v8editor.m_file->FindModelIdByName (L"Section_Case1");
+        Bentley::DgnModelPtr v8Model = v8editor.m_file->LoadModelById (sheetModelId);
+        return v8Model->GetModelInfoCP ()->GetSheetDefCP ();
+        }
+
+    BentleyApi::Dgn::Sheet::ModelCP GetSheetModel (BentleyApi::Utf8String sheetName)
+        {
+        DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+        BentleyApi::Dgn::DgnModelPtr model;
+        for (auto const& modelEntry : db->Models ().MakeIterator (BIS_SCHEMA (BIS_CLASS_GeometricModel)))
+            {
+            model = db->Models ().GetModel (modelEntry.GetModelId ());
+            if (0 == model->GetName ().CompareTo (sheetName))
+                break;
+            }
+
+        return model.IsValid () ? model->ToSheetModel () : nullptr;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 03/2018
+* Test name of the converted sheet
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SheetCompositionTests, SheetNameTest)
+    {
+    LineUpFiles (L"SheetNameTest.ibim", L"DVTest_Case1.dgn", true);
+    m_wantCleanUp = true;
+    BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel ("Section_Case1");
+
+    ASSERT_TRUE (nullptr != sheetModel);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 03/2018
+* Test size of the converted sheet
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SheetCompositionTests, SheetSizeTest)
+    {
+    LineUpFiles (L"SheetSizeTest.ibim", L"DVTest_Case1.dgn", true);
+    m_wantCleanUp = true;
+
+    Bentley::SheetDefCP v8SheetDef = GetV8SheetDef(L"Section_Case1");
+    double v8SheetWidth = 0.0;
+    double v8SheetHeight = 0.0;
+    v8SheetDef->GetSize (v8SheetWidth, v8SheetHeight);
+    DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+
+    auto sheetElement = db->Elements ().Get<BentleyApi::Dgn::Sheet::Element> (findFirstElementByClass (*db, getBisClassId (*db, BIS_CLASS_Sheet)));
+    double height = sheetElement->GetHeight ();
+    double width = sheetElement->GetWidth ();
+    double unitsScaleFactor = height / v8SheetHeight;
+
+    ASSERT_DOUBLE_EQ (height, v8SheetHeight*unitsScaleFactor);
+    ASSERT_DOUBLE_EQ (width, v8SheetWidth*unitsScaleFactor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 03/2018
+* Test if the attachement came through
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SheetCompositionTests, HasDgnAttachment)
+    {
+    LineUpFiles (L"HasDgnAttachment.ibim", L"DVTest_Case1.dgn", true);
+    m_wantCleanUp = true;
+    DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+    BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel ("Section_Case1");
+    auto attachments = sheetModel->GetSheetAttachmentViews (*db);
+    ASSERT_TRUE (0 != attachments.size ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 03/2018
+* Test sheet has a border
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SheetCompositionTests, HasSheetBorder)
+    {
+    LineUpFiles (L"HasSheetBorder.ibim", L"DVTest_Case1.dgn", true);
+    m_wantCleanUp = true;
+    DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+    auto sheetElement = db->Elements ().Get<BentleyApi::Dgn::Sheet::Element> (findFirstElementByClass (*db, getBisClassId (*db, BIS_CLASS_Sheet)));
+    auto borderElementId = sheetElement->GetBorder ();
+
+    auto borderElementGraphics = db->Elements ().Get<BentleyApi::Dgn::DrawingGraphic> (borderElementId);
+    ASSERT_TRUE (borderElementGraphics.IsValid ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 03/2018
+* Test sheet has a drawing boundary in it
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SheetCompositionTests, HasDrawingBoundary)
+    {
+    LineUpFiles (L"HasDrawingBoundary.ibim", L"DVTest_Case1.dgn", true);
+    m_wantCleanUp = true;
+    DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+    
+    auto drawingBoundary= db->Elements ().Get<BentleyApi::Dgn::GenericViewAttachmentLabel> (findFirstElementByClass (*db, db->Schemas ().GetClassId (GENERIC_DOMAIN_NAME, GENERIC_CLASS_ViewAttachmentLabel)));
+    ASSERT_TRUE (drawingBoundary.IsValid ());
+    }
+

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/TiledFileConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -72,7 +72,7 @@ DgnV8Api::DgnFileStatus TiledFileConverter::_InitRootModel()
         return openStatus;
 
     //  Note that, for now, we do not support reprojection in a tiled file conversion
-    ComputeTransformAndGlobalOriginFromRootModel(*m_rootModelRef->GetDgnModelP());
+    ComputeTransformAndGlobalOriginFromRootModel(*m_rootModelRef->GetDgnModelP(), true);
 
     if (!ShouldConvertToPhysicalModel(*GetRootModelP()))
         {

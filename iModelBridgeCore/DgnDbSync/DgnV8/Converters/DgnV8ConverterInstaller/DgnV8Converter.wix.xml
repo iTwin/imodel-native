@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildInstallSet>
+    <Product>
+        <ProductName>DgnV8Converter</ProductName>
+        <ProductShortName>DgnV8Converter</ProductShortName>
+        <ProductCode>${REL_V}.${MAJ_V}.${MIN_V}.${PartName}.${Platform}.DgnV8Converter.MSI</ProductCode>
+        <UpgradeCode>{19C2BF93-46B1-4C15-ABB3-9033CE6E8399}</UpgradeCode>
+        <MkiBeforeCompile>DgnV8ConverterInstallerOpts.mki</MkiBeforeCompile>
+        <WxsElementRefs>UIRef=WixUI_WithInstallLocations</WxsElementRefs>
+    </Product>
+</BuildInstallSet>

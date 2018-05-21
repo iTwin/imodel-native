@@ -66,6 +66,8 @@ struct DwgHelper : NonCopyableClass
     DGNDBSYNC_EXPORT static Utf8String       GetStringFromDwgVersion (DwgFileVersion dwgVersion);
     DGNDBSYNC_EXPORT static bool             SniffDwgFile (BeFileNameCR dwgName, DwgFileVersion* versionOut = nullptr);
     DGNDBSYNC_EXPORT static bool             SniffDxfFile (BeFileNameCR dxfName, DwgFileVersion* versionOut = nullptr);
+    DGNDBSYNC_EXPORT static bool             CanOpenForWrite (BeFileNameCR path);
+    DGNDBSYNC_EXPORT static uint32_t         GetDwgImporterVersion ();
     };  // DwgHelper
 
 END_DGNDBSYNC_DWG_NAMESPACE

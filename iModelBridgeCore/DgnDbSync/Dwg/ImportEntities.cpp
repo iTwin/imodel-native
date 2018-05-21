@@ -1453,7 +1453,10 @@ virtual void    _Shell (size_t nPoints, DPoint3dCP points, size_t nFaceList, int
             if (nVertices > maxFaceVertices)
                 {
                 BeDataAssert (false && L"unexpected max face vertices!");
-                importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), Utf8PrintfString("skipped a shell having face vertex count of %d [expected %d]", nVertices, maxFaceVertices).c_str());
+                Utf8PrintfString msg("skipped a shell having face vertex count of %d [expected %d]", nVertices, maxFaceVertices);
+                if (m_entity != nullptr)
+                    msg += Utf8PrintfString(" ID=%ls", m_entity->GetObjectId().ToAscii().c_str());
+                importer.ReportIssue (DwgImporter::IssueSeverity::Warning, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), msg.c_str());
                 return;
                 }
 
@@ -1533,13 +1536,15 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
     DwgImporter&    importer = m_drawParams.GetDwgImporter ();
     if (string.IsEmpty())
         {
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), "skipped an empty text!");
+        Utf8PrintfString    msg ("skipped empty text entity, ID=%ls!", m_entity == nullptr ? L"?" : m_entity->GetObjectId().ToAscii().c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), msg.c_str());
         return  BSIERROR;
         }
 
     if (!importer.ArePointsValid(&position, 1, m_drawParams.GetSourceEntity()))
         {
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::InvalidRange(), "skipped a text out of range!");
+        Utf8PrintfString    msg ("skipped out of range text entity, ID=%ls!", m_entity == nullptr ? L"?" : m_entity->GetObjectId().ToAscii().c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::InvalidRange(), msg.c_str());
         return  BSIERROR;
         }
 
@@ -1547,7 +1552,8 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
     textString.Trim ();
     if (textString.empty())
         {
-        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), "skipped a text of all white spaces!");
+        Utf8PrintfString    msg ("skipped text containing all white spaces, ID=%ls!", m_entity == nullptr ? L"?" : m_entity->GetObjectId().ToAscii().c_str());
+        importer.ReportIssue (DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Message(), msg.c_str());
         return  BSIERROR;
         }
 
@@ -2181,8 +2187,16 @@ BentleyStatus   CreateGeometryPart (BuilderInfoR builderInfo, DRange3dR partRang
     if (!geomBuilder.IsValid())
         return  BSIERROR;
 
+    auto partsModel = m_createParams.GetGeometryPartsModel ();
+    if (!partsModel.IsValid())
+        {
+        // should not occur!
+        importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "GeometryParts");
+        partsModel = &db.GetDictionaryModel ();
+        }
+
     // create a new geometry part:
-    DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create (db, partCode);
+    DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create (*partsModel, partCode.GetValueUtf8());
     if (!geomPart.IsValid())
         return  BSIERROR;
 
@@ -2196,20 +2210,54 @@ BentleyStatus   CreateGeometryPart (BuilderInfoR builderInfo, DRange3dR partRang
         geomPart->SetUserLabel (label.c_str());
         }
 
-    // insert the part to DgnDb, and append its ID to our output builder:
-    if (BSISUCCESS == geomBuilder->Finish(*geomPart) && db.Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
-        {
-        partRange = geomPart->GetBoundingBox ();
+    m_status = geomBuilder->Finish (*geomPart);
+    if (BSISUCCESS != m_status)
+        return  m_status;
 
-        builderInfo.m_partId = geomPart->GetId ();
+    m_status = BSIERROR;
+
+    builderInfo.m_partId = DgnGeometryPart::QueryGeometryPartId (*partsModel, partCode.GetValueUtf8());
+    if (!builderInfo.m_partId.IsValid())
+        {
+        // insert the part to DgnDb, and append its ID to our output builder:
+        if (db.Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+            {
+            partRange = geomPart->GetBoundingBox ();
+            builderInfo.m_partId = geomPart->GetId ();
+            m_status = BSISUCCESS;
+            }
+        }
+    else
+        {
+        // update the part
+        DgnElementCPtr      existingElm = db.Elements().GetElement (builderInfo.m_partId);
+        DgnGeometryPartCP   partElm;
+        if (existingElm.IsValid() && nullptr != (partElm = dynamic_cast<DgnGeometryPartCP>(existingElm.get())))
+            {
+            // get an editable element
+            DgnElementPtr   writable = existingElm->CopyForEdit ();
+            if (writable.IsValid())
+                {
+                writable->CopyFrom (*geomPart);
+
+                DgnDbStatus status = DgnDbStatus::Success;
+                if (db.Elements().Update(*writable, &status).IsValid() && nullptr != (partElm = dynamic_cast<DgnGeometryPartCP>(writable.get())))
+                    {
+                    BeAssert (DgnDbStatus::Success == status);
+                    partRange = partElm->GetBoundingBox ();
+                    m_status = BSISUCCESS;
+                    }
+                }
+            }
+        }
+
+    if (BSISUCCESS == m_status)
+        {
         builderInfo.m_transform = m_worldToElement;
         builderInfo.m_partNamespace = nameSpace;
         builderInfo.m_geometryHashVal = m_geometryHash.GetHashVal ();
-
-        return  BSISUCCESS;
         }
 
-    m_status = BSIERROR;
     return  BSIERROR;
     }
 
@@ -2502,15 +2550,15 @@ static bool     PrepareEntityForImport (DrawParameters& drawParams, GeometryFact
         if (DwgDbStatus::Success == insert->OpenSpatialFilter(spatialFilter, DwgDbOpenMode::ForRead))
             factory.SetSpatialFilter (spatialFilter.get());
 
-        // create shared parts for the block
-        factory.SetIsAssembly (true);
-
         // set outermost part namespace as "blockname-fileId"
         DwgDbBlockTableRecordPtr    block(insert->GetBlockTableRecordId(), DwgDbOpenMode::ForRead);
         if (block.OpenStatus() == DwgDbStatus::Success)
             {
             Utf8PrintfString    partNamespace("%ls-%d", block->GetName().c_str(), DwgSyncInfo::GetDwgFileId(*block->GetDatabase()));
             factory.PushPartNamespace (partNamespace);
+
+            // create shared parts for named blocks
+            factory.SetIsAssembly (!block->IsAnonymous());
             }
         }
 
@@ -2739,7 +2787,8 @@ BentleyStatus   DwgImporter::_CreateOrUpdateElement (ElementImportResults& resul
 
         if (failed > 0)
             {
-            this->ReportError (IssueCategory::VisualFidelity(), Issue::Error(), Utf8PrintfString("%lld out of %lld individual geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, geometryBuilders.size(), label.c_str(), entityId).c_str());
+            Utf8PrintfString msg("%lld out of %lld individual geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, geometryBuilders.size(), label.c_str(), entityId);
+            this->ReportError (IssueCategory::VisualFidelity(), Issue::Error(), msg.c_str());
             if (BSISUCCESS == status)
                 status = BSIERROR;
             }
@@ -2766,7 +2815,8 @@ BentleyStatus   DwgImporter::_CreateOrUpdateElement (ElementImportResults& resul
 
         if (failed > 0)
             {
-            this->ReportError (IssueCategory::VisualFidelity(), Issue::Error(), Utf8PrintfString("%lld out of %lld shared part geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, partIndices.size(), label.c_str(), entityId).c_str());
+            Utf8PrintfString msg("%lld out of %lld shared part geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, partIndices.size(), label.c_str(), entityId);
+            this->ReportError (IssueCategory::VisualFidelity(), Issue::Error(), msg.c_str());
             if (BSISUCCESS == status)
                 status = BSIERROR;
             }
@@ -2842,6 +2892,9 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
     if (nullptr != xrefDwg && xrefDwg == m_dwgdb.get())
         xrefDwg = nullptr;
 
+    // GeometryParts 
+    params.m_geometryPartsModel = this->GetGeometryPartsModel ();
+
     if (model.Is3d())
         {
         // get spatial category & subcategory from the syncInfo:
@@ -2857,7 +2910,8 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
 
     if (!params.m_categoryId.IsValid())
         {
-        this->ReportError(IssueCategory::CorruptData(), Issue::ImportFailure(), Utf8PrintfString("[%s] - Invalid layer %llx", IssueReporter::FmtEntity(ent).c_str(), ent.GetLayerId().ToUInt64()).c_str());
+        Utf8PrintfString msg("[%s] - Invalid layer %llx", IssueReporter::FmtEntity(ent).c_str(), ent.GetLayerId().ToUInt64());
+        this->ReportError(IssueCategory::CorruptData(), Issue::ImportFailure(), msg.c_str());
         return BSIERROR;
         }
 
@@ -2880,76 +2934,6 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
     return  BSISUCCESS;
     }
 
-#ifdef CHECK_XDATA
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void     CheckXData (DwgDbEntityCR entity)
-    {
-    DwgResBufIterator   xdata = entity.GetXData (DwgString());
-    if (xdata.IsValid())
-        {
-        LOG_ENTITY.tracev("Checking XDATA for %ls:", entity.GetDxfName().c_str());
-
-        for (DwgResBufP curr = xdata->Start(); curr != xdata->End(); curr = curr->Next())
-            {
-            switch (curr->GetDataType())
-                {
-                case DwgResBuf::DataType::Integer8:
-                    LOG_ENTITY.tracev ("XDATA Int8= %d", curr->GetInteger8());
-                    break;
-                case DwgResBuf::DataType::Integer16:
-                    LOG_ENTITY.tracev ("XDATA Int16= %d", curr->GetInteger16());
-                    break;
-                case DwgResBuf::DataType::Integer32:
-                    LOG_ENTITY.tracev ("XDATA Int32= %d", curr->GetInteger32());
-                    break;
-                case DwgResBuf::DataType::Integer64:
-                    LOG_ENTITY.tracev ("XDATA Int64= %I64d", curr->GetInteger64());
-                    break;
-                case DwgResBuf::DataType::Double:
-                    LOG_ENTITY.tracev ("XDATA Double= %g", curr->GetDouble());
-                    break;
-                case DwgResBuf::DataType::Text:
-                    LOG_ENTITY.tracev ("XDATA String= %ls", curr->GetString().c_str());
-                    break;
-                case DwgResBuf::DataType::BinaryChunk:
-                    {
-                    DwgBinaryData   data;
-                    if (DwgDbStatus::Success == curr->GetBinaryData(data))
-                        LOG_ENTITY.tracev ("XDATA Binary data size = %ld", data.GetSize());
-                    else
-                        BeDataAssert(false && "failed extracting binary xdata!");
-                    break;
-                    }
-                case DwgResBuf::DataType::Handle:
-                    LOG_ENTITY.tracev ("XDATA Handle= %ls", curr->GetHandle().AsAscii().c_str());
-                    break;
-                case DwgResBuf::DataType::HardOwnershipId:
-                case DwgResBuf::DataType::SoftOwnershipId:
-                case DwgResBuf::DataType::HardPointerId:
-                case DwgResBuf::DataType::SoftPointerId:
-                    LOG_ENTITY.tracev ("XDATA ObjectId= %ls", curr->GetObjectId().ToAscii().c_str());
-                    break;
-                case DwgResBuf::DataType::Point3d:
-                    {
-                    DPoint3d    p;
-                    if (DwgDbStatus::Success == curr->GetPoint3d(p))
-                        LOG_ENTITY.tracev ("XDATA Point3d= %g, %g, %g", p.x, p.y, p.z);
-                    else
-                        BeDataAssert(false && "failed extracting Point3d xdata!");
-                    break;
-                    }
-                case DwgResBuf::DataType::None:
-                case DwgResBuf::DataType::NotRecognized:
-                default:
-                    LOG_ENTITY.tracev ("XDATA Unexpected type!!!");
-                }
-            }
-        }
-    }
-#endif  // CHECK_XDATA
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2962,10 +2946,6 @@ bool            DwgImporter::_FilterEntity (DwgDbEntityCR entity, DwgDbSpatialFi
     // trivial reject clipped away entity:
     if (nullptr != spatialFilter && spatialFilter->IsEntityFilteredOut(entity))
         return  true;
-
-#ifdef CHECK_XDATA
-    CheckXData (entity);
-#endif
 
     return  false;
     }
@@ -2989,7 +2969,7 @@ BentleyStatus   DwgImporter::ImportEntity (ElementImportResults& results, Elemen
 
     DwgDbBlockReferenceP    insert = DwgDbBlockReference::Cast (entity);
     if (nullptr != insert && insert->IsXAttachment())
-        return  this->_ImportXReference (*insert, inputs);
+        return  this->_ImportXReference (results, inputs);
     else if (nullptr != insert)
         return  this->_ImportBlockReference (results, inputs);
 
@@ -3282,238 +3262,6 @@ BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& result
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::_ImportXReference (DwgDbBlockReferenceCR xrefInsert, ElementImportInputs& inputs)
-    {
-    /*-----------------------------------------------------------------------------------
-    This method imports an xref insert entity during entity importing phase.  Do not try
-    to skip model during updating.
-
-    All xref files should have been loaded during model discovering phase in the block section.
-    If an xref file is not loaded, it is a serious error and we should not bother to try
-    loading the file.
-
-    However, xref instances may not all be seen in the block section, therefore there is 
-    a chance that this xref insert could be new and a model will need to be created.
-    It gets trickier if the root transform has been changed from iModelBridge as we have
-    to invert the current root transform in order to find the model from the syncInfo.
-    -----------------------------------------------------------------------------------*/
-    DwgDbObjectId               xrefblockId = xrefInsert.GetBlockTableRecordId ();
-    DwgDbBlockTableRecordPtr    xrefBlock(xrefblockId, DwgDbOpenMode::ForRead);
-    if (xrefBlock.IsNull())
-        {
-        this->ReportError (IssueCategory::CorruptData(), Issue::CantOpenObject(), "xref block %ls");
-        return  BSIERROR;
-        }
-
-    // skip overlaid xRef if it is nested in another xRef:
-    if (xrefBlock->IsOverlayReference() && m_currentXref.IsValid() && m_currentXref.GetDatabaseP() != m_dwgdb.get())
-        return  BSISUCCESS;
-
-    // save currentXref before recurse into a nested xref:
-    DwgXRefHolder   savedCurrentXref = m_currentXref;
-
-    auto found = std::find_if (m_loadedXrefFiles.begin(), m_loadedXrefFiles.end(), [&](DwgXRefHolder const& xh){ return xrefblockId==xh.GetBlockIdInParentFile(); });
-    if (found != m_loadedXrefFiles.end())
-        {
-        // this xref has been previously loaded - set it as current:
-        m_currentXref = *found;
-        }
-    else
-        {
-        // the xref file has not been be loaded in block section - skip it!
-        m_currentXref = savedCurrentXref;
-        return  BSIERROR;
-        }
-
-    // get or create a model for the xRefBlock with the blockReference's transformation:
-    Transform   xtrans = inputs.GetTransform ();
-    this->CompoundModelTransformBy (xtrans, xrefInsert);
-    
-    /*-----------------------------------------------------------------------------------
-    We take 3 steps in order to catch potential missing xRef inserts in model dicovery phase
-    and also to take account of possible change of root transformation:
-
-    Step 1 - try to look the model up in the cached model list only - an xref insert not 
-    found in the list is a potential missing xref instance.
-    -----------------------------------------------------------------------------------*/
-    DgnModelP               model = nullptr;
-    ResolvedModelMapping    modelMap= this->FindModel (xrefInsert.GetObjectId(), xtrans, DwgSyncInfo::ModelSourceType::XRefAttachment);
-    if (!modelMap.IsValid() || nullptr == (model = modelMap.GetModel()))
-        {
-        // Step2 - decide on if we need to look it up in syncInfo using old or new transform:
-        RootTransformInfo const&    rootTransInfo = this->GetRootTransformInfo ();
-        bool    searchByOldTransform = this->IsUpdating() && rootTransInfo.HasChanged ();
-        // the change of the root transform has no impact on paperspace:
-        if (searchByOldTransform && this->IsXrefInsertedInPaperspace(xrefInsert.GetObjectId()))
-            searchByOldTransform = false;
-
-        Transform   searchTrans;
-        if (searchByOldTransform)
-            {
-            Transform   fromNewToOld = rootTransInfo.GetChangeTransformFromNewToOld ();
-            searchTrans.InitProduct (fromNewToOld, xtrans);
-            }
-        else
-            {
-            // new import or no change in root transform - search by current xref transform:
-            searchTrans = xtrans;
-            }
-
-        // Step 3 - second try finding the model using the desired transform, create new one if not found:
-        modelMap = this->GetOrCreateModelFromBlock (*xrefBlock.get(), searchTrans, &xrefInsert, m_currentXref.GetDatabaseP());
-        if (!modelMap.IsValid() || nullptr == (model = modelMap.GetModel()))
-            {
-            this->ReportError (IssueCategory::UnexpectedData(), Issue::CantCreateModel(), IssueReporter::FmtModel(*xrefBlock).c_str());
-            m_currentXref = savedCurrentXref;
-            return  BSIERROR;
-            }
-
-        if (searchByOldTransform)
-            {
-            // update model map with the new transform
-            modelMap.SetTransform (xtrans);
-            modelMap.GetMapping().Update (this->GetDgnDb());
-            }
-        }
-
-    // and or update the model in current as well as the loaded xref cache:
-    m_currentXref.AddDgnModelId (model->GetModelId());
-    if (found != m_loadedXrefFiles.end())
-        found->AddDgnModelId (model->GetModelId());
-
-    this->SetTaskName (ProgressMessage::TASK_IMPORTING_MODEL(), model->GetName().c_str());
-    this->Progress ();
-
-    // get the modelspace block from the xRef DwgDb
-    DwgDbBlockTableRecordPtr    xModelspace (m_currentXref.GetModelspaceId(), DwgDbOpenMode::ForRead);
-    if (xModelspace.IsNull())
-        {
-        this->ReportError (IssueCategory::CorruptData(), Issue::CantOpenObject(), Utf8PrintfString("modelspace of the xref %s", m_currentXref.GetPath().c_str()).c_str());
-        m_currentXref = savedCurrentXref;
-        return  BSIERROR;
-        }
-
-    // clipped xReference
-    DwgDbSpatialFilterPtr   spatialFilter;
-    if (DwgDbStatus::Success == xrefInsert.OpenSpatialFilter(spatialFilter, DwgDbOpenMode::ForRead))
-        LOG_ENTITY.tracev ("xRef %ls is clipped!", xrefBlock->GetPath().c_str());
-
-    ElementImportInputs     childInputs (*model);
-    childInputs.SetClassId (this->_GetElementType(*xrefBlock.get()));
-    childInputs.SetTransform (xtrans);
-    childInputs.SetSpatialFilter (spatialFilter.get());
-    childInputs.SetModelMapping (modelMap);
-
-    // SortEnts table
-    DwgDbSortentsTablePtr   sortentsTable;
-    if (DwgDbStatus::Success == xModelspace->OpenSortentsTable(sortentsTable, DwgDbOpenMode::ForRead))
-        {
-        // import entities in sorted order:
-        DwgDbObjectIdArray  entities;
-        if (DwgDbStatus::Success == sortentsTable->GetFullDrawOrder(entities))
-            {
-            for (DwgDbObjectIdCR id : entities)
-                {
-                childInputs.SetEntityId (id);
-                this->OpenAndImportEntity (childInputs);
-                }
-            }
-        }
-    else
-        {
-        // import entities in database order:
-        DwgDbBlockChildIterator     entityIter = xModelspace->GetBlockChildIterator ();
-        if (entityIter.IsValid())
-            {
-            // fill the xref model with entities
-            for (entityIter.Start(); !entityIter.Done(); entityIter.Step())
-                {
-                childInputs.SetEntityId (entityIter.GetEntityId());
-                this->OpenAndImportEntity (childInputs);
-                }
-            }
-        }
-
-    // restore current xref
-    m_currentXref = savedCurrentXref;
-
-    return  BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xrefBlock, DwgImporter& importer)
-    {
-    if (xrefBlock.IsExternalReference())
-        {
-        m_path.assign (xrefBlock.GetPath().c_str());
-
-        // try to use existing xRef DwgDb
-        m_xrefDatabase = xrefBlock.GetXrefDatabase ();
-        
-        if (m_xrefDatabase.IsNull())
-            {
-            DwgImportHost&  host = DwgImportHost::GetHost ();
-            BeFileName      found;
-
-            // try resolving the file path
-            if (!m_path.DoesPathExist() && DwgDbStatus::Success == host._FindFile(found, m_path.c_str(), xrefBlock.GetDatabase().get(), AcadFileType::XRefDrawing))
-                m_path = found;
-
-            if (m_path.DoesPathExist())
-                {
-                // if the DWG file has been previously loaded, use it
-                m_xrefDatabase = importer.FindLoadedXRef (m_path);
-
-                // try creating a new DwgDb for the xref, but do not allow circular referencing:
-                if (!m_xrefDatabase.IsValid() && !m_path.EqualsI(importer.GetRootDwgFileName()))
-                    {
-                    importer.SetStepName (DwgImporter::ProgressMessage::STEP_OPENINGFILE(), m_path.c_str());
-                    m_xrefDatabase = host.ReadFile (m_path, false, false, FileShareMode::DenyNo);
-                    }
-                }
-            }
-
-        if (m_xrefDatabase.IsValid())
-            {
-            // the nested block name should propagated into root file
-            m_prefixInRootFile = xrefBlock.GetName().GetWCharCP ();
-            m_blockIdInParentFile = xrefBlock.GetObjectId ();
-            m_spaceIdInRootFile = importer.GetCurrentSpaceId ();
-            return  BSISUCCESS;
-            }
-        }
-
-    m_path.clear ();
-    m_prefixInRootFile.clear ();
-    m_blockIdInParentFile.SetNull ();
-    m_spaceIdInRootFile.SetNull ();
-
-    return  BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbDatabaseP  DwgImporter::FindLoadedXRef (BeFileNameCR path)
-    {
-    struct FindXrefPredicate
-        {
-        BeFileName  m_filePath;
-        FindXrefPredicate (BeFileNameCR inPath) : m_filePath (inPath) {}
-        bool operator () (DwgXRefHolder const& xh) { return m_filePath.CompareTo(xh.GetPath()) == 0; }
-        };
-
-    FindXrefPredicate   pred(path);
-    auto found = std::find_if (m_loadedXrefFiles.begin(), m_loadedXrefFiles.end(), pred);
-
-    return found == m_loadedXrefFiles.end() ? nullptr : found->GetDatabaseP();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus     DwgImporter::InsertResults (ElementImportResults& results)
@@ -3595,7 +3343,8 @@ BentleyStatus   DwgImporter::InsertOrUpdateResultsInSyncInfo (ElementImportResul
     if (BSISUCCESS != status)
         {
         uint64_t    entityId = entity.GetObjectId().ToUInt64 ();
-        this->ReportError (IssueCategory::Sync(), Issue::Error(), Utf8PrintfString("failed inserting element into DwgSynchInfo for entityId=%llx!", entityId).c_str());
+        Utf8PrintfString msg("failed inserting element into DwgSynchInfo for entityId=%llx!", entityId);
+        this->ReportError (IssueCategory::Sync(), Issue::Error(), msg.c_str());
         }
 
     // insert or update children

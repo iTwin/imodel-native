@@ -8,14 +8,14 @@
     <Models>
         <UnspecifiedUnits units="Meters" />
         <ImportRules>
-            <If name="*ModelSpace">
-                <Then newName="%file"/>
+            <If name="Model">
+                <Then newName="Model[%file]"/>
             </If>
-            <If name="*PaperSpace">
-                <Then newName="%file"/>
+            <If name="Layout1">
+                <Then newName="Layout1[%file]"/>
             </If>
-            <If name="Default">
-                <Then newName="%file"/>
+            <If name="Layout2">
+                <Then newName="Layout2[%file]"/>
             </If>
         </ImportRules>
     </Models>
@@ -49,7 +49,7 @@
             -->
         </PreLoadModules>
     </ObjectEnablers>
-    <Thumbnails viewTypes="Physical Drawing" pixelResolution="768" renderModeOverride="None"/>
+    <Thumbnails viewTypes="Physical Sheet" pixelResolution="768" renderModeOverride="None"/>
     <Fonts searchPaths="$(AppRoot)Fonts/">
         <!--
         Wild cards can be used for defaults; any explicitly-named entry takes precedence over wildcards.

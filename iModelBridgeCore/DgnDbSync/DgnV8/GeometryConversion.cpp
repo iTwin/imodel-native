@@ -57,6 +57,127 @@ static BentleyApi::TransformR DoInterop(Bentley::Transform&source) { return (Ben
 static BentleyApi::TransformCR DoInterop(Bentley::Transform const&source) { return (BentleyApi::TransformCR)source; }
 static Bentley::TransformCR DoInterop(BentleyApi::Transform const&source) { return (Bentley::TransformCR)source; }
 
+
+//#define TEST_AUXDATA_FILE
+#ifdef TEST_AUXDATA_FILE
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Ray.Bentley     04/2018
+//---------------------------------------------------------------------------------------
+static GeometricPrimitivePtr createFromTestFile ()
+    {
+    BeFile          beFile;
+    bvector<Byte>   bytes;
+    
+//  if (BeFileStatus::Success == beFile.Open(L"g:\\BulentAnalysis\\Model1982.json", BeFileAccess::Read) &&
+    if (BeFileStatus::Success == beFile.Open(L"g:\\BulentAnalysis\\ExpansionJoint.json", BeFileAccess::Read) &&
+        BeFileStatus::Success == beFile.ReadEntireFile(bytes))
+        {
+        Utf8String              string((Utf8CP) bytes.data());
+        Json::Value             value = Json::Reader::DoParse(string);
+        JsonValueCR             nodes = value["Nodes"];
+        JsonValueCR             elements = value["Elements"];
+        JsonValueCR             results = value["Results"];
+        bmap<int32_t, int32_t>  idToIndex;
+        PolyfaceHeaderPtr       polyface = PolyfaceHeader::CreateVariableSizeIndexed();
+
+        // Points...
+        for (int32_t i=0, count = nodes.size(); i<count; i++)
+            {
+            JsonValueCR     node = nodes[i];
+            JsonValueCR     coords = node["Coordinates"];
+            
+            polyface->Point().push_back(DPoint3d::From(coords[0].asDouble(), coords[1].asDouble(), coords[2].asDouble()));
+            idToIndex.Insert(node["Id"].asInt(), (int32_t) polyface->Point().size());
+            }
+        // Point Indices...
+        for (int32_t i=0, count = elements.size(); i<count; i++)
+            {
+            JsonValueCR     nodeIds = elements[i]["NodeIds"];
+
+            for (int32_t j=0, nodeCount = std::min(4, (int) nodeIds.size()); j<nodeCount; j++)
+                polyface->PointIndex().push_back(idToIndex[nodeIds[j].asInt()]);
+
+            polyface->PointIndex().push_back(0);
+            }
+        if (results.isArray())
+            {
+            PolyfaceAuxData::Channels     channels;
+
+            // Results...
+            for (int32_t i=0, count = results.size(); i<count; i++)
+                {
+                JsonValueCR     result = results[i]; 
+                JsonValueCR     nodeResults = result["NodeResults"];
+                bvector<double> displacementValues(3 * polyface->Point().size(), 0.0);
+                bvector<double> reactionValues(polyface->Point().size(), 0.0); 
+                
+                for (int32_t j=0, nodeCount = nodeResults.size(); j<nodeCount; j++)
+                    {
+                    JsonValueCR     nodeResult = nodeResults[j];
+
+                    if (nodeResult.isMember("Displacement"))
+                        {
+                        int32_t index = idToIndex[nodeResult["NodeId"].asInt()];
+                        int32_t displacementIndex = 3 * index;
+                        JsonValueCR     displacementValue = nodeResult["Displacement"];
+
+                        displacementValues[displacementIndex++] = displacementValue["Ux"].asDouble();
+                        displacementValues[displacementIndex++] = displacementValue["Uy"].asDouble();
+                        displacementValues[displacementIndex++] = displacementValue["Uz"].asDouble();
+
+                        reactionValues[index] = displacementValue["Uy"].asDouble();
+                        }
+                    
+#ifdef USE_REACTION
+                    if (nodeResult.isMember("Reaction"))
+                        {
+                        int32_t index = idToIndex[nodeResult["NodeId"].asInt()];
+                        JsonValueCR     reactionValue = nodeResult["Reaction"];
+
+                        reactionValues[index++] = reactionValue["Fy"].asDouble();
+                        }
+#endif
+                    }
+
+                if (!displacementValues.empty())
+                    {
+                    // Add a zero for animation...
+                    bvector<double>     zeroValues(displacementValues.size(), 0.0);
+                    bvector<PolyfaceAuxChannel::DataPtr>   dataVector;
+                    
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroValues)));
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(displacementValues)));
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroValues)));
+
+                    channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::Vector, Utf8PrintfString("Displacement_%d", i).c_str(), "", std::move(dataVector)));
+                    }
+                if (!reactionValues.empty())
+                    {
+                    // Add a zero for animation...
+                    bvector<double>     zeroValues(reactionValues.size(), 0.0);
+                    bvector<PolyfaceAuxChannel::DataPtr>   dataVector;
+                    
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroValues)));
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(reactionValues)));
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroValues)));
+
+                    channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::Scalar, Utf8PrintfString("Reaction_%d", i).c_str(), "", std::move(dataVector)));
+                    }
+                }
+            if (!channels.empty())
+                {
+                bvector<int32_t>        indices = polyface->PointIndex();
+                PolyfaceAuxDataPtr      auxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
+
+                polyface->SetAuxData(auxData);
+                }
+            }
+        return GeometricPrimitive::Create(polyface);
+        }
+    return nullptr;
+    }
+#endif
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2015
 //---------------------------------------------------------------------------------------
@@ -393,6 +514,33 @@ void Converter::ConvertPolyface(BentleyApi::PolyfaceHeaderPtr& clone, Bentley::P
 
     clone = BentleyApi::PolyfaceHeader::New();
     clone->CopyFrom(sourceData);
+
+//#define TEST_AUXDATA_HEIGHT
+#ifdef TEST_AUXDATA_HEIGHT
+    bvector<double>      zeroData, heightData;
+    bvector<int32_t>    indices(clone->PointIndex().size());
+
+    memcpy (indices.data(), clone->PointIndex().data(), indices.size() * sizeof(int32_t));
+    for(auto& point : clone->Point())
+        {
+        zeroData.push_back(0.0);
+        heightData.push_back(point.z);
+        }
+
+    bvector<PolyfaceAuxChannel::DataPtr>   heightDataVector;
+
+#ifdef ANIMATE_FROM_ZERO
+    heightDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroData)));
+#endif
+    heightDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(heightData)));
+
+    PolyfaceAuxChannelPtr         heightChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Distance, "Height", nullptr, std::move(heightDataVector));
+    PolyfaceAuxData::Channels           channels;
+    channels.push_back (heightChannel);
+    PolyfaceAuxDataPtr              auxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
+    
+    clone->SetAuxData(auxData);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -733,7 +881,7 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
 
     GeometricPrimitivePtr elemGeom = GeometricPrimitive::Create(clone);
 
-    AddSymbolGeometry(elemGeom);
+    AddSymbolGeometry(elemGeom, isFilled && curves.IsAnyRegionType());
 
     return Bentley::SUCCESS;
     }
@@ -749,7 +897,7 @@ virtual Bentley::BentleyStatus _ProcessTextString(Bentley::TextStringCR v8Text)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AddSymbolGeometry(GeometricPrimitivePtr& geometry)
+void AddSymbolGeometry(GeometricPrimitivePtr& geometry, bool isFilled)
     {
     Transform   v8ToDgnDbTrans = DoInterop(Bentley::Transform::FromProduct(m_conversionScale, m_currentTransform));
 
@@ -761,8 +909,11 @@ void AddSymbolGeometry(GeometricPrimitivePtr& geometry)
         return;
 
     Render::GeometryParams geomParams;
-
     m_converter.InitGeometryParams(geomParams, m_currentDisplayParams, *m_context, true, m_v8Model);
+
+    if (isFilled && Render::FillDisplay::Never == geomParams.GetFillDisplay())
+        geomParams.SetFillDisplay(Render::FillDisplay::Always); // Dropped glyph regions should always be drawn filled...
+
     m_symbolParams.push_back(geomParams);
     }
 
@@ -800,7 +951,7 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
         nameStr.Assign(patternV8.cellName);
         Utf8PrintfString partCodeValue("PatternV8-%ld-%s-%lld", Converter::GetV8FileSyncInfoIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()), nameStr.c_str(), patternV8.cellId);
         DgnCode partCode = CreateCode(partCodeValue);
-        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(GetDgnDb(), partCode);
+        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*GetJobDefinitionModel(), partCode.GetValueUtf8());
 
         if (!partId.IsValid())
             {
@@ -835,7 +986,7 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
                 builder->Append(*geom);
                 }
 
-            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(GetDgnDb(), partCode);
+            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*GetJobDefinitionModel(), partCodeValue);
 
             if (SUCCESS != builder->Finish(*geomPart) || !GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                 return false;
@@ -978,7 +1129,7 @@ LineStyleStatus LineStyleConverter::ConvertPointSymbol(LsComponentId& v10Id, Dgn
         builder->Append(*elemGeom);
         }
 
-    DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(GetDgnDb().GetDictionaryModel());
+    DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()));
     if (SUCCESS != builder->Finish(*geomPart))
         return LINESTYLE_STATUS_ConvertingComponent;
 
@@ -2444,7 +2595,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 
             Transform         geomToLocal = Transform::FromProduct(invBasisTrans, pathEntry.m_geomToWorld);
             DgnCode           partCode = GetPartCode(instanceElRef, nullptr == scDefElRef ? "XGSymbV8" : "SCDefV8", sequenceNo, pathEntry.m_partScale);
-            DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(m_model.GetDgnDb(), partCode);
+            DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
             DRange3d          localRange = DRange3d::NullRange();
 
             if (!partId.IsValid())
@@ -2458,7 +2609,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 
                 partBuilder->Append(*geometry);
 
-                DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(m_model.GetDgnDb(), partCode);
+                DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
 
                 if (SUCCESS == partBuilder->Finish(*geomPart) && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                     {
@@ -2576,7 +2727,7 @@ void PostInstanceGeometry(Dgn::GeometryBuilderR builder, GeometricPrimitiveR geo
     if (!partId.IsValid())
         {
         DgnCode partCode = GetPartCode(instanceElRef, "CvtV8", sequenceNo, 1.0);
-        DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(m_model.GetDgnDb(), partCode);
+        DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
         GeometryBuilderPtr partBuilder = GeometryBuilder::CreateGeometryPart(m_model.GetDgnDb(), true);
 
         partBuilder->Append(geometry);
@@ -2863,6 +3014,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
 
     bool        isValidBasis = false;
     bool        isValidBasisAndScale = false;
+    bool        haveSCOverrides = false;
     double      v8SymbolScale = 0.0;
     Transform   basisTransform;
 
@@ -2900,6 +3052,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
                 // Make sure part cache has geometry params that aren't affected by SCOverride...
                 scOvr->level = scOvr->color = scOvr->style = scOvr->weight = false;
                 DgnV8Api::ElementGraphicsOutput::Process(v8ehNoOvr, *this);
+                haveSCOverrides = true;
                 }
             else
                 {
@@ -2979,10 +3132,18 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
             if (0 == (++iEntry % 10))
                 m_converter.ReportProgress();
 
+#ifdef TEST_AUXDATA_FILE
+            GeometricPrimitivePtr geometry = createFromTestFile();
+#else
             GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, 0.0);
+#endif
 
             if (!geometry.IsValid())
                 continue;
+
+            // Apply SCOverride now for a shared cell that was rejected for a GeometryPart...
+            if (haveSCOverrides)
+                ApplySharedCellInstanceOverrides(v8eh, pathEntry.m_geomParams);
 
             // If category changes or GeometryStream is getting un-wieldy, need to create a new element/assembly...
             if (builder.IsValid() && (builder->GetGeometryParams().GetCategoryId() != pathEntry.m_geomParams.GetCategoryId() || builder->GetCurrentSize() > 20000000))
@@ -3257,12 +3418,25 @@ void CveConverter::DetectAttachment()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Bentley::BentleyStatus CveConverter::_ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isFilled)
     {
-    if (nullptr == m_context->GetDisplayStyleHandler()) // If this is not from the proxy graphics cache, it's a normal element in the drawing. The converter already pulled that in.
-        return Bentley::SUCCESS;
+    DgnV8Api::ClipVolumePass        clipVolumePass      = DgnV8Api::ClipVolumePass::None;
+    DgnV8Api::ProxyGraphicsType     proxyGraphicsType   = DgnV8Api::ProxyGraphicsType_VisibleEdge;
 
-    auto proxyInfo = m_converter.GetProxyDisplayHitInfo(*m_context);
-    if (nullptr == proxyInfo)
-        return Bentley::SUCCESS;
+    if (nullptr == m_context->GetDisplayStyleHandler()) // If this is not from the proxy graphics cache, it's a normal element in the drawing. The converter already pulled that in.
+        {
+        auto model = m_context->GetCurrentModel();
+        DgnAttachmentCP attachment = model->AsDgnAttachmentCP();
+        if (nullptr == attachment || !Converter::IsSimpleWireframeAttachment(*attachment))
+            return Bentley::SUCCESS;
+        }
+    else
+        {
+        auto proxyInfo = m_converter.GetProxyDisplayHitInfo(*m_context);
+        if (nullptr == proxyInfo)
+            return Bentley::SUCCESS;
+
+        proxyGraphicsType = proxyInfo->m_graphicsType;
+        clipVolumePass    = proxyInfo->m_viewHandlerPass.m_pass;
+        }
 
     // Right off the bat, make sure that the type-100 itself is recorded in syncinfo and check if it is new or has changed. 
     // If the type 100 was seen before and has not changed, there's nothing to do.
@@ -3271,7 +3445,7 @@ Bentley::BentleyStatus CveConverter::_ProcessCurveVector(Bentley::CurveVectorCR 
     if (!m_currentAttachmentInfo.m_hasChanged || m_currentAttachmentInfo.m_failed)
         {
         m_attachmentsUnchanged.insert(m_currentAttachmentInfo.m_mapping);
-        return Bentley::SUCCESS;
+            return Bentley::SUCCESS;
         }
 
     m_converter.ShowProgress();
@@ -3280,16 +3454,23 @@ Bentley::BentleyStatus CveConverter::_ProcessCurveVector(Bentley::CurveVectorCR 
     CurveVectorPtr bimcurves;
     Converter::ConvertCurveVector(bimcurves, v8curves, &m_parentModelMapping.GetTransform());   
 
+    // CVE graphics are defined in 3-D coordinates. The ViewContext's "current transform" gets them into the parent V8 drawing or sheet model's coordinates.
+
     if (m_currentAttachment->IsCameraOn())
         {
-        Bentley::DMap4d      parentMap;
+        Bentley::DMap4d     parentMap, currentAndFromParent, composite;
+        Bentley::Transform  fromParentTransform;
 
+        m_currentAttachment->GetTransformFromParent (fromParentTransform, false);
+
+        currentAndFromParent.InitFromTransform(Bentley::Transform::FromProduct(fromParentTransform, m_currentTransform), false);
         m_currentAttachment->GetMapToParent(parentMap, false);
-        bimcurves = bimcurves->Clone ((DMatrix4dCR) parentMap.M0);
+
+        composite.InitProduct(parentMap, currentAndFromParent); 
+        bimcurves = bimcurves->Clone ((DMatrix4dCR) composite.M0);          
         } 
     else
         {
-        // CVE graphics are defined in 3-D coordinates. The ViewContext's "current transform" gets them into the parent V8 drawing or sheet model's coordinates.
         bimcurves->TransformInPlace(DoInterop(m_currentTransform));
         }
 
@@ -3303,7 +3484,7 @@ Bentley::BentleyStatus CveConverter::_ProcessCurveVector(Bentley::CurveVectorCR 
     bimcurves->TransformInPlace(m_parentModelMapping.GetTransform());
 
     //  Remap the symbology, etc.
-    DgnSubCategoryId subCategoryId = m_converter.GetExtractionSubCategoryId(m_currentAttachmentInfo.m_categoryId, proxyInfo->m_viewHandlerPass.m_pass, proxyInfo->m_graphicsType);
+    DgnSubCategoryId subCategoryId = m_converter.GetExtractionSubCategoryId(m_currentAttachmentInfo.m_categoryId, clipVolumePass, proxyGraphicsType);
     if (!subCategoryId.IsValid())
         {
         BeAssert(false);
@@ -4631,7 +4812,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
                     Transform         geomToLocal = Transform::FromProduct(invBasisTrans, pathEntry.m_geomToWorld);
                     DgnCode           partCode = GetPartCode(instanceElRef, nullptr == scDefElRef ? "XGSymbV8" : "SCDefV8", sequenceNo, pathEntry.m_partScale);
-                    DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(m_model.GetDgnDb(), partCode);
+                    DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
                     DRange3d          localRange = DRange3d::NullRange();
 
                     if (!partId.IsValid())
@@ -4645,7 +4826,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
                         partBuilder->Append(*geometry);
 
-                        DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(m_model.GetDgnDb(), partCode);
+                        DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
 
                         if (SUCCESS == partBuilder->Finish(*geomPart) && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                             {
@@ -5230,7 +5411,7 @@ bool LightWeightConverter::InitPatternParams(PatternParamsR pattern, DgnV8Api::P
 
         Utf8PrintfString partCodeValue("PatternV8-%ld-%s-%lld", m_converterId, nameStr.c_str(), patternV8.cellId);
         DgnCode partCode = CreateCode(partCodeValue);
-        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(GetDgnDb(), partCode);
+        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*GetJobDefinitionModel(), partCode.GetValueUtf8());
 
         if (!partId.IsValid())
             {
@@ -5264,7 +5445,7 @@ bool LightWeightConverter::InitPatternParams(PatternParamsR pattern, DgnV8Api::P
                 builder->Append(*geom);
                 }
 
-            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(GetDgnDb(), partCode);
+            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*GetJobDefinitionModel(), partCode.GetValueUtf8());
 
             if (SUCCESS != builder->Finish(*geomPart) || !GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                 return false;
@@ -5686,6 +5867,5 @@ void LightWeightConverter::ConvertTextString(TextStringPtr& clone, Bentley::Text
 
     clone = dbText.Clone();
     }
-
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

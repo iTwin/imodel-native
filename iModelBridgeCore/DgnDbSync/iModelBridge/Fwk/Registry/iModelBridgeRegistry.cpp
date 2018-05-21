@@ -393,6 +393,8 @@ BentleyStatus iModelBridgeRegistry::_AssignFileToBridge(BeFileNameCR sourceFileP
     //!Lets insert default document properties for this 
     EnsureDocumentPropertiesFor(sourceFilePath);
 
+    m_stateDb.SaveChanges();
+
     return SUCCESS;
     }
 
@@ -887,7 +889,7 @@ int iModelBridgeRegistry::AssignMain(int argc, WCharCP argv[])
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<iModelBridgeRegistry> iModelBridgeRegistry::OpenForFwk(BeFileNameCR stagingDir, Utf8StringCR iModelName)
+RefCountedPtr<iModelBridgeRegistry> iModelBridgeRegistry::OpenForFwk(BeSQLite::DbResult& res, BeFileNameCR stagingDir, Utf8StringCR iModelName)
     {
     // Staging dir is probably a subdirectory of the main job work directory. The registry db is stored in the main job work dir.
     // Look up the parent directory chain until we find it.
@@ -905,9 +907,10 @@ RefCountedPtr<iModelBridgeRegistry> iModelBridgeRegistry::OpenForFwk(BeFileNameC
         {
         LOG.errorv(L"%ls - cannot find fwk registry db in this directory or any of its parents. Creating an empty db.", stagingDir.c_str());
         }
-
+    
+    dbname = MakeDbName(stagingDir, iModelName);
     RefCountedPtr<iModelBridgeRegistry> reg = new iModelBridgeRegistry(stagingDir, dbname);
-    if (BE_SQLITE_OK != reg->OpenOrCreateStateDb())
+    if (BE_SQLITE_OK != (res = reg->OpenOrCreateStateDb()))
         return nullptr;
     return reg;
     }

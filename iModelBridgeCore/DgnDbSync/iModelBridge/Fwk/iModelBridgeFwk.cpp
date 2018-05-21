@@ -473,7 +473,27 @@ BentleyStatus iModelBridgeFwk::ParseDocProps()
         return BSISUCCESS;
 
     iModelBridgeDocumentProperties docProps;
-    _GetDocumentProperties(docProps, m_jobEnvArgs.m_inputFileName);
+
+    try
+        {
+        _GetDocumentProperties(docProps, m_jobEnvArgs.m_inputFileName);
+        }
+    catch (const std::exception& ex)
+        {
+        fprintf(stdout, "ERROR - %s\n", ex.what());
+        return BSIERROR;
+        }
+    catch (const std::string& exdesc)
+        {
+        fprintf(stdout, "ERROR - %s\n", exdesc.c_str());
+        return BSIERROR;
+        }
+    catch (...)
+        {
+        fwprintf(stdout, L"Unknown exception thrown from iModelBridgeRegistry!");
+        return BSIERROR;
+        }
+
     if (docProps.m_spatialRootTransformJSON.empty())
         return BSISUCCESS;
 
@@ -1270,9 +1290,15 @@ int iModelBridgeFwk::ProcessSchemaChange()
 Utf8String   iModelBridgeFwk::GetRevisionComment()
     {
     //Revision comment override from command line has the first priority
-    if (!m_jobEnvArgs.m_revisionComment.empty())
-        return m_jobEnvArgs.m_revisionComment;
+    Utf8String trunCastedCommentString;
+    //if (!m_jobEnvArgs.m_revisionComment.empty())
+        trunCastedCommentString = m_jobEnvArgs.m_revisionComment;
 
+    //See TFS#819945: IMBridgeFwk - must truncate changeset description < 400 chars
+    if (trunCastedCommentString.size() > 399)
+        trunCastedCommentString.erase(399, std::string::npos);
+    return trunCastedCommentString;
+    /* Disabled until iModelHub changeset suppports a json blob property for the info below.
     bvector<BeFileName> inputFiles;
     GetRegistry()._QueryAllFilesAssignedToBridge(inputFiles, m_jobEnvArgs.m_bridgeRegSubKey.c_str());
 
@@ -1296,6 +1322,7 @@ Utf8String   iModelBridgeFwk::GetRevisionComment()
         auditArray.append(auditLogs);
         }
     return auditArray.ToString();
+    */
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1709,16 +1736,23 @@ void iModelBridgeFwk::SetRegistryForTesting(IModelBridgeRegistry& reg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
     {
+    if (m_registry.IsValid())
+        return *m_registry;
+    
+    if (nullptr != s_registryForTesting)
+        return *(m_registry = s_registryForTesting);
+     
+    BeSQLite::DbResult res;
+    m_registry = iModelBridgeRegistry::OpenForFwk(res, m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
+
     if (!m_registry.IsValid())
         {
-        if (s_registryForTesting)
-            m_registry = s_registryForTesting;
-        else
-            m_registry = iModelBridgeRegistry::OpenForFwk(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
-
-        if (!m_registry.IsValid())
-            throw "iModelBridgeRegistry statedb open error";
+        std::string str (Utf8String(iModelBridgeRegistry::MakeDbName(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName)).c_str());
+        str.append(": ");
+        str.append(BeSQLite::Db::InterpretDbResult(res));
+        throw str;
         }
+
     return *m_registry;
     }
 

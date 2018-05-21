@@ -2,11 +2,10 @@
 |
 |     $Source: BimTeleporter/BimImporter/lib/BisJson1Importer.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include <windows.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/GenericDomain.h>
@@ -21,62 +20,36 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BIM_TELEPORTER_NAMESPACE
-
-struct KnownDesktopLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
-    {
-    BeFileName m_tempDirectory;
-    BeFileName m_executableDirectory;
-    BeFileName m_assetsDirectory;
-
-    virtual BeFileNameCR _GetLocalTempDirectoryBaseName() override { return m_tempDirectory; }
-    virtual BeFileNameCR _GetDgnPlatformAssetsDirectory() override { return m_assetsDirectory; }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   BentleySystems
-    //---------------------------------------------------------------------------------------
-    KnownDesktopLocationsAdmin()
-        {
-        // use the standard Windows temporary directory
-        wchar_t tempPathW[MAX_PATH];
-        ::GetTempPathW(_countof(tempPathW), tempPathW);
-        m_tempDirectory.SetName(tempPathW);
-        m_tempDirectory.AppendSeparator();
-
-        // the application directory is where the executable is located
-        wchar_t moduleFileName[MAX_PATH];
-        ::GetModuleFileNameW(NULL, moduleFileName, _countof(moduleFileName));
-        BeFileName moduleDirectory(BeFileName::DevAndDir, moduleFileName);
-        m_executableDirectory = moduleDirectory;
-        m_executableDirectory.AppendSeparator();
-
-        m_assetsDirectory = m_executableDirectory;
-        m_assetsDirectory.AppendToPath(L"Assets");
-        }
-    };
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                   Carole.MacDonald            04/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-struct BimImporterHost : DgnPlatformLib::Host
-    {
-    virtual void                        _SupplyProductName(Utf8StringR name) override { name.assign("BimTeleporter"); }
-    virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); };
-    virtual L10N::SqlangFiles _SupplySqlangFiles() override
-        {
-        BeFileName sqlangFile(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-        sqlangFile.AppendToPath(L"sqlang");
-        sqlangFile.AppendToPath(L"BisJson1Importer_en-US.sqlang.db3");
-
-        return L10N::SqlangFiles(sqlangFile);
-        }
-    };
-
 struct PCQueue
     {
     public:
         folly::ProducerConsumerQueue<Json::Value> m_objectQueue;
         PCQueue() : m_objectQueue(65536) {}
     };
+
+struct DgnDbPtrHolder
+    {
+    public:
+        DgnDbPtr dgndb;
+        DgnDbPtrHolder(BeFileName outputPath);
+        void Finalize();
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbPtrHolder::DgnDbPtrHolder(BeFileName outputPath)
+    {
+    //Utf8String subjectName(m_outputPath.GetFileNameWithoutExtension());
+    Utf8String subjectName("TBD");
+
+    DbResult dbStatus;
+    Dgn::CreateDgnDbParams params;
+    params.SetOverwriteExisting(true);
+    params.SetRootSubjectName(subjectName.c_str());
+
+    dgndb = DgnDb::CreateDgnDb(&dbStatus, outputPath, params);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2016
@@ -91,8 +64,10 @@ BisJson1Importer::BisJson1Importer(const wchar_t* bimPath) : m_outputPath(bimPat
 //---------------+---------------+---------------+---------------+---------------+-------
 BisJson1Importer::~BisJson1Importer()
     {
-    //delete m_importer;
-    //delete m_host;
+    // This is a hack - When a schema that references the ECv3CustomAttributes schema is imported, the copy being held by this helper receives an ECSchemaId.  Since that is a static
+    // helper, if the converter attempts to import that schema into a different ecdb, it will fail.
+    ECN::ConversionCustomAttributeHelper::Reset();
+
     delete m_queue;
     }
 
@@ -101,38 +76,37 @@ BisJson1Importer::~BisJson1Importer()
 //---------------+---------------+---------------+---------------+---------------+-------
 bool BisJson1Importer::CreateBim()
     {
-    m_host = new BimImporterHost();
-    DgnPlatformLib::Initialize(*m_host, false);
 
-    //Utf8String subjectName(m_outputPath.GetFileNameWithoutExtension());
-    Utf8String subjectName("TBD");
-
-    DbResult dbStatus;
-    Dgn::CreateDgnDbParams params;
-    params.SetOverwriteExisting(true);
-    params.SetRootSubjectName(subjectName.c_str());
-
-    DgnDbPtr dgndb = DgnDb::CreateDgnDb(&dbStatus, m_outputPath, params);
-
-    if (!dgndb.IsValid())
+    m_holder = new DgnDbPtrHolder(m_outputPath);
+    if (!m_holder->dgndb.IsValid())
         {
         // Report Error
         return false;
         }
-    m_importer = new BisJson1ImporterImpl(dgndb.get());
+    m_importer = new BisJson1ImporterImpl(m_holder->dgndb.get());
     if (SUCCESS != m_importer->InitializeSchemas())
         return false;
 
     if (SUCCESS != m_importer->CreateAndAttachSyncInfo())
         return false;
-
-    if (SUCCESS != m_importer->ImportJson(m_queue->m_objectQueue))
-        return false;
-    dgndb->CloseDb();
-    dgndb->Release();
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool BisJson1Importer::ImportJson(folly::Future<bool>& exporterFuture)
+    {
+    if (SUCCESS != m_importer->ImportJson(m_queue->m_objectQueue, exporterFuture))
+        return false;
+    m_holder->dgndb->CloseDb();
+    m_holder->dgndb->Release();
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2017
+//---------------+---------------+---------------+---------------+---------------+-------
 void BisJson1Importer::AddToQueue(const char* entry)
     {
     Json::Value record;
@@ -143,6 +117,9 @@ void BisJson1Importer::AddToQueue(const char* entry)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2017
+//---------------+---------------+---------------+---------------+---------------+-------
 void BisJson1Importer::SetDone()
     {
     while (nullptr == m_importer)

@@ -2,9 +2,8 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-    <Part Name="DgnDb0601Assemblies" BentleyBuildMakeFile="BimTeleporter/DgnDb0601AssembliesPrewire.mke">
-        <SdkSource>DgnClientSdk-Minimal-Winx64-DgnDb</SdkSource>
-        <!-- <SubPart PartName="google_v8-Windows" PartFile="google_v8_5_7_wip" Repository="Thirdparty-google_v8_5_7_wip"/> -->
+    <Part Name="DgnDb0601Assemblies" BentleyBuildMakeFile="BimTeleporter/DgnDb0601AssembliesPrewire.mke" OnlyPlatforms="x64,WinRTX64" ApiNumber="B02" ExcludeLibType="Static">
+        <NuGetPackage targetFramework="native">DgnDb_1_6_ForUpgraderNuget</NuGetPackage>
         <Bindings>
             <Assemblies ProductDirectoryName="DgnDbAssemblies" Required="false">
                 Delivery/*.dll,
@@ -15,12 +14,22 @@
         </Bindings>
     </Part>
 
-    <Part Name="BisJson1Exporter0601" BentleyBuildMakeFile="BimTeleporter/BimExporter0601/lib/BisJson1Exporter0601.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="DgnDb0601Assemblies-static" BentleyBuildMakeFile="BimTeleporter/DgnDb0601AssembliesPrewire.mke" OnlyPlatforms="iOSARM64" ApiNumber="B02">
+        <NuGetPackage targetFramework="native">DgnDb_1_6_ForUpgraderNuget</NuGetPackage>
+        <Bindings>
+            <Directory SourceName="Delivery/DgnDbLibs" ProductDirectoryName="DgnDb06Libs" SubPartDirectory="DgnDbLibs" Required="false"/>
+            <Directory SourceName="Delivery/DgnDbPlatformAssets" ProductDirectoryName="DgnDb06PlatformAssets" SubPartDirectory="DgnDbPlatformAssets" Required="false"/>
+            <VendorAPI Domain="DgnDb06Api"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="BisJson1Exporter0601" BentleyBuildMakeFile="BimTeleporter/BimExporter0601/lib/BisJson1Exporter0601.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
         <SubPart PartName="DgnDb0601Assemblies"/>
+        <SubPart PartName="DgnDb0601Assemblies-static"/>
         <SubPart PartFile="DgnDbSync" PartName="TeleporterPublicAPI"/>
         <Bindings>
             <Libs ProductDirectoryName="BimTeleporterLibs" Required="false">Delivery/$(libprefix)BisJson1Exporter0601$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BisJson1Exporter0601$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)BisJson1Exporter0601$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 

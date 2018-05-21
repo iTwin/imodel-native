@@ -432,10 +432,10 @@
                                                     </xs:documentation>
                                                 </xs:annotation>
                                             </xs:enumeration>
-                                            <xs:enumeration value="Drawing">
+                                            <xs:enumeration value="Sheet">
                                                 <xs:annotation>
                                                     <xs:documentation>
-                                                        View of a drawing, 2d project model
+                                                        View of a sheet, 2d project model
                                                     </xs:documentation>
                                                 </xs:annotation>
                                             </xs:enumeration>
@@ -466,13 +466,10 @@
                             <xs:simpleType>
                                 <xs:restriction base="xs:token">
                                     <xs:enumeration value="None"/>
-                                    <xs:enumeration value="WIREFRAME"/>
-                                    <xs:enumeration value="CROSSSECTION"/>
-                                    <xs:enumeration value="WIREMESH"/>
-                                    <xs:enumeration value="HIDDENLINE"/>
-                                    <xs:enumeration value="SOLIDFILL"/>
-                                    <xs:enumeration value="CONSTANTSHADE"/>
-                                    <xs:enumeration value="SMOOTHSHADE"/>
+                                    <xs:enumeration value="Wireframe"/>
+                                    <xs:enumeration value="HiddenLine"/>
+                                    <xs:enumeration value="SolidFill"/>
+                                    <xs:enumeration value="SmoothShade"/>
                                 </xs:restriction>
                             </xs:simpleType>
                         </xs:attribute>

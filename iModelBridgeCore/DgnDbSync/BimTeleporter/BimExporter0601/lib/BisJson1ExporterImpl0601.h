@@ -2,12 +2,11 @@
 |
 |     $Source: BimTeleporter/BimExporter0601/lib/BisJson1ExporterImpl0601.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
-#include <windows.h>
 #include <BimTeleporter/BimTeleporter.h>
 
 #include <DgnDb06Api/Bentley/Bentley.h>
@@ -37,22 +36,12 @@ struct KnownDesktopLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     //---------------------------------------------------------------------------------------
     // @bsiclass                                                   BentleySystems
     //---------------------------------------------------------------------------------------
-    KnownDesktopLocationsAdmin()
+    KnownDesktopLocationsAdmin(BeFileName tempPath, BeFileName assetsPath) : m_tempDirectory(tempPath)
         {
-        // use the standard Windows temporary directory
-        wchar_t tempPathW[MAX_PATH];
-        ::GetTempPathW(_countof(tempPathW), tempPathW);
-        m_tempDirectory.SetName(tempPathW);
-        m_tempDirectory.AppendSeparator();
-
-        // the application directory is where the executable is located
-        wchar_t moduleFileName[MAX_PATH];
-        ::GetModuleFileNameW(NULL, moduleFileName, _countof(moduleFileName));
-        BeFileName moduleDirectory(BeFileName::DevAndDir, moduleFileName);
-        m_executableDirectory = moduleDirectory;
-        m_executableDirectory.AppendSeparator();
-
-        m_assetsDirectory = m_executableDirectory;
+        WString tmpStr;
+        BeFileName::FixPathName(tmpStr, assetsPath.GetName(), false);
+        BeFileName tmp(tmpStr);
+        m_assetsDirectory = tmp.GetDirectoryName();
         m_assetsDirectory.AppendToPath(L"Assets06");
         }
     };
@@ -66,6 +55,8 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         T_LogPerformanceMessage m_performanceLog;
         T_QueueJson QueueJson;
         BeFileName m_dbPath;
+        BeFileName m_tempPath;
+        BeFileName m_assetsPath;
 
         DgnElementId        m_nextAvailableId;
         ECN::ECClassCP      m_viewDefinition3dClass;
@@ -79,14 +70,27 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         ECN::ECClassCP      m_linkModelClass;
         ECN::ECClassCP      m_annotationTextStyle;
         ECN::ECClassCP      m_textureClass;
+        ECN::ECClassCP      m_planningModelClass;
+        ECN::ECClassCP      m_planningElementClass;
+        ECN::ECClassCP      m_workbreakDownClass;
+        ECN::ECClassCP      m_activityClass;
+        ECN::ECClassCP      m_timeSpanClass;
+        ECN::ECClassCP      m_cameraKeyFrameClass;
+        ECN::ECClassCP      m_elementAspectClass;
+        ECN::ECClassCP      m_elementClass;
 
         Dgn::DgnElementId        m_jobSubjectId;
         Dgn::DgnElementId        m_documentListModelId;
         Dgn::DgnElementId        m_sheetListModelId;
+        Dgn::DgnElementId       m_jobDefinitionModelId;
         bmap<Utf8String, Utf8String> m_authorityIds;
+        bmap<Utf8String, Dgn::DgnElementId> m_disciplineIds;
+        bmap<Utf8String, Dgn::DgnElementId> m_namespaceDefinitionModels;
 
         bmap<DgnElementId, int> m_insertedElements;
-        bmap<DgnModelId, int> m_insertedModels;
+        bmap<BentleyApi::BeSQLite::EC::ECInstanceId, int> m_insertedAspects;
+        bmap<DgnModelId, DgnElementId> m_insertedModels;
+        bmap<DgnCategoryId, DgnCategoryId> m_mappedDrawingCategories;
 
         BENTLEY_TRANSLATABLE_STRINGS_START(ProgressMessage, export_progress)
             L10N_STRING(STEP_EXPORT_SCHEMAS)         // =="Exporting ECSchemas"==
@@ -102,37 +106,48 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, uint64_t id);
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, Utf8CP id);
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, Json::Value& id);
-        BentleyStatus ExportFonts(Json::Value& out);
-        BentleyStatus ExportGeometryParts(Json::Value& out);
-        BentleyStatus ExportLineStyles(Json::Value& out);
-        BentleyStatus ExportTextures(Json::Value& out);
-        BentleyStatus ExportAuthorities(Json::Value& out);
-        BentleyStatus ExportViews(Json::Value& out);
-        BentleyStatus ExportCategories(Json::Value& out);
-        BentleyStatus ExportCategories(Json::Value& out, Utf8CP tableName, Utf8CP bisClassName, Utf8CP bisAuthorityStr);
-        DgnElementId CreateModelSelector(Json::Value& out, ViewControllerCR vc, Utf8CP name);
-        DgnElementId CreateCategorySelector(Json::Value& out, ViewControllerCR vc, Utf8CP name);
-        DgnElementId CreateDisplayStyle(Json::Value& out, ViewControllerCR vc, Utf8CP name, bool is3d);
-        BentleyStatus ExportModels(Json::Value& out);
-        BentleyStatus ExportModel(Json::Value& out, Utf8CP schemaName, Utf8CP className, Utf8CP whereClause = nullptr);
-        BentleyStatus ExportElements(Json::Value& out);
-        BentleyStatus ExportElements(Json::Value& out, DgnModelId parentModel);
-        BentleyStatus ExportElements(Json::Value& out, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause = nullptr, bool sendToQueue = true);
-        BentleyStatus ExportNamedGroups(Json::Value& out);
-        BentleyStatus ExportElementHasLinks(Json::Value& out);
-        BentleyStatus ExportV8Relationships(Json::Value& out);
-        DgnElementId CreateCodeSpec(Json::Value& out, uint8_t codeSpecType, Utf8CP name);
-        DgnElementId CreateSubjectElement(Utf8CP subjectName, Json::Value& out);
-        DgnElementId CreatePartitionElement(DgnModelCR model, DgnElementId subject, Json::Value& out);
-        DgnElementId CreatePartitionElement(Utf8CP partitionName, Utf8CP partitionType, DgnElementId subject, Json::Value& out);
-        DgnElementId CreateDrawingElement(Json::Value& out, Utf8CP name);
-        DgnElementId CreateSheetElement(Json::Value& out, DgnModelCR model);
-        BentleyStatus ExportSchemas(Json::Value& out) const;
-        DgnElementId InitListModel(Json::Value& out, Utf8CP name);
-        BentleyStatus InitDrawingListModel(Json::Value& out);
-        BentleyStatus InitSheetListModel(Json::Value& out);
-        Utf8String RemapResourceAuthority(Json::Value& obj, ECN::ECClassCP elementClass);
+        void CalculateEntities();
+        BentleyStatus ExportFonts();
+        BentleyStatus ExportGeometryParts();
+        BentleyStatus ExportLineStyles();
+        BentleyStatus ExportTextures();
+        BentleyStatus ExportAuthorities();
+        BentleyStatus ExportViews();
+        BentleyStatus ExportCategories();
+        BentleyStatus ExportCategories(Utf8CP tableName, Utf8CP bisClassName, Utf8CP bisAuthorityStr, bvector<DgnCategoryId>& duplicateIds);
+        DgnElementId CreateModelSelector(ViewControllerCR vc, Utf8CP name);
+        DgnElementId CreateCategorySelector(ViewControllerCR vc, Utf8CP name);
+        DgnElementId CreateDisplayStyle(ViewControllerCR vc, Utf8CP name, bool is3d);
+        BentleyStatus ExportModels();
+        BentleyStatus ExportModel(Utf8CP schemaName, Utf8CP className, Utf8CP whereClause = nullptr);
+        BentleyStatus ExportElements();
+        BentleyStatus ExportElements(DgnModelId parentModel);
+        BentleyStatus ExportElements(Json::Value& out, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause = nullptr, bool sendToQueue = true, bool allowDuplicates = false);
+        BentleyStatus ExportElementAspects();
+        BentleyStatus ExportElementAspects(ECN::ECClassId classId, BentleyApi::BeSQLite::EC::ECInstanceId aspectId);
+        BentleyStatus ExportTextAnnotationData();
+        BentleyStatus ExportNamedGroups();
+        BentleyStatus ExportElementHasLinks();
+        BentleyStatus ExportConstraint(ECN::ECClassId constraintClassId, BentleyApi::BeSQLite::EC::ECInstanceId constraintId);
+        BentleyStatus ExportLinkTables(Utf8CP schemaName, Utf8CP className, Utf8CP newClassName = nullptr);
+        BentleyStatus ExportPropertyData();
+        DgnElementId CreateCodeSpec(uint8_t codeSpecType, Utf8CP name);
+        DgnElementId CreateSubjectElement(Utf8CP subjectName);
+        DgnElementId CreatePartitionElement(DgnModelCR model, DgnElementId subject);
+        DgnElementId CreatePartitionElement(Utf8CP partitionName, Utf8CP partitionType, DgnElementId subject);
+        DgnElementId CreateDrawingElement(Utf8CP name);
+        DgnElementId CreateSheetElement(DgnModelCR model);
+        DgnElementId CreateDefinitionModel(Utf8CP modelName);
+        BentleyStatus ExportSchemas() const;
+        DgnElementId InitListModel(Utf8CP name);
+        BentleyStatus InitDrawingListModel();
+        BentleyStatus InitSheetListModel();
+        BentleyStatus InitJobDefinitionModel();
+        Utf8String RemapResourceAuthority(ECN::ECClassCP elementClass);
         void HandleAnnotationTextStyle(Json::Value& obj, DgnElementId id);
+        
+        // Planning schema specific exports
+        BentleyStatus ExportTimelines();
 
         //! Report progress and detect if user has indicated that he wants to cancel.
         void ReportProgress() const;
@@ -151,13 +166,12 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         //! Get the progress meter, if any.
 
         virtual void                        _SupplyProductName(Utf8StringR name) override { name.assign("BimTeleporter"); }
-        virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); };
+        virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(m_tempPath, m_assetsPath); };
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 
 
     public:
-        BisJson1ExporterImpl(wchar_t const* dbPath);
-        ~BisJson1ExporterImpl();
+        BisJson1ExporterImpl(wchar_t const* dbPath, wchar_t const* tempPath, wchar_t const* assetsPath);
         bool OpenDgnDb();
         void SetProgressMeter(DgnProgressMeter* meter) { m_meter = meter; }
         bool ExportDgnDb();

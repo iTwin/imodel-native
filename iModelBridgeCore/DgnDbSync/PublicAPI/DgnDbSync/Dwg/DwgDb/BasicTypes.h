@@ -125,11 +125,14 @@ public:
     DWGROOTCLASS_ADD_CONSTRUCTORS (String)
 
     DWGDB_EXPORT DwgString (WCharCP chars);
+    DWGDB_EXPORT DwgString (DwgString const& in) : DwgString(in.c_str()) {}
     DWGDB_EXPORT ~DwgString ();
 
     DWGDB_EXPORT void       Assign (WCharCP chars);
     DWGDB_EXPORT void       Append (WChar oneChar);
+    DWGDB_EXPORT int        Insert (int index, WCharCP chars);
     DWGDB_EXPORT int        GetLength () const;
+    DWGDB_EXPORT int        Find (WCharCP chars) const;
     DWGDB_EXPORT bool       IsEmpty () const;
     DWGDB_EXPORT bool       EqualsI (WCharCP other) const;
     DWGDB_EXPORT bool       StartsWithI (WCharCP suffix) const;

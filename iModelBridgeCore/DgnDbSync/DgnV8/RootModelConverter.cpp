@@ -121,10 +121,12 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             }
 
         ECN::ECClassCP targetClass = GetDgnDb().Schemas().GetClass(targetInstanceKey.GetClassId());
+        ECN::ECClassCP sourceClass = GetDgnDb().Schemas().GetClass(sourceInstanceKey.GetClassId());
         // Otherwise, the converter should have created a navigation property on the target class, so we need to set the target instance's ECValue
         ECN::ECPropertyP prop = nullptr;
         
         // If the class is an ElementOwnsMultiAspects base, then need to use the NavigationProperty 'Element' that is defined on the base MultiAspect class.
+        bool navPropOnSource = false;
         if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects))
             {
             prop = targetClass->GetPropertyP("Element");
@@ -134,7 +136,8 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
             prop = targetClass->GetPropertyP(relClass->GetName().c_str());
             if (nullptr == prop)
                 {
-                prop = GetDgnDb().Schemas().GetClass(sourceInstanceKey.GetClassId())->GetPropertyP(relClass->GetName().c_str());
+                prop = sourceClass->GetPropertyP(relClass->GetName().c_str());
+                navPropOnSource = true;
                 }
             }
 
@@ -182,7 +185,7 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
         ECN::ECValue val;
         val.SetNavigationInfo((BeInt64Id) targetInstanceKey.GetInstanceId().GetValue(), relClass->GetRelationshipClassCP());
 
-        if (targetClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect))
+        if (targetClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect) && !navPropOnSource)
             {
             DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(sourceInstanceKey.GetInstanceId().GetValue()));
             if (!element.IsValid())
@@ -223,6 +226,48 @@ BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHan
                 }
             element->Update();
             }
+        else if (sourceClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect) && navPropOnSource)
+            {
+            DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(targetInstanceKey.GetInstanceId().GetValue()));
+            if (!element.IsValid())
+                continue;
+            DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*element, *sourceClass, sourceInstanceKey.GetInstanceId());
+            if (nullptr == aspect)
+                {
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Unable to get ElementAspect from Element."
+                                 "Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
+                                 "Insertion into target BIM file failed.",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                continue;
+                }
+            if (DgnDbStatus::Success != aspect->SetPropertyValue(navProp->GetName().c_str(), val))
+                {
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Failed to set NavigationECProperty on Source ElementAspect ECInstance for ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). ",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                continue;
+                }
+            element->Update();
+            }
+
         else
             {
             DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(targetInstanceKey.GetInstanceId().GetValue()));
@@ -362,7 +407,7 @@ DgnV8Api::DgnFileStatus RootModelConverter::_InitRootModel()
     auto rootModelId = _GetRootModelId();
 
     //  Load the root model and all of its reference attachments. Let V8 do this, so that we know that it's done correctly and in the same way that MicroStation would do it.
-    m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId, /*fillCache*/true, /*loadRefs*/true, /*processAffected*/false);
+    m_rootModelRef = m_rootFile->LoadRootModelById((Bentley::StatusInt*)&openStatus, rootModelId, /*fillCache*/true, /*loadRefs*/true, GetParams().GetProcessAffected());
     if (NULL == m_rootModelRef)
         return openStatus;
 
@@ -580,29 +625,7 @@ void SpatialConverterBase::ComputeDefaultImportJobName()
         return;
         }
 
-    // Use the document GUID, if available, to ensure a unique Job subject name.
-    Utf8String docIdStr;
-    auto docGuid = _GetParams().QueryDocumentGuid(_GetParams().GetInputFileName());
-    if (docGuid.IsValid())
-        docIdStr = docGuid.ToString();
-    else
-        docIdStr = Utf8String(_GetParams().GetInputFileName());
-
-    Utf8String jobName(_GetParams().GetBridgeRegSubKey());
-    jobName.append(":");
-    jobName.append(docIdStr.c_str());
-    jobName.append(", ");
-    jobName.append(Utf8String(GetRootModelP()->GetModelName()));
-
-    DgnCode code = Subject::CreateCode(*GetDgnDb().Elements().GetRootSubject(), jobName.c_str());
-    int i = 0;
-    while (GetDgnDb().Elements().QueryElementIdByCode(code).IsValid())
-        {
-        Utf8String uniqueJobName(jobName);
-        uniqueJobName.append(Utf8PrintfString("%d", ++i).c_str());
-        code = Subject::CreateCode(*GetDgnDb().Elements().GetRootSubject(), uniqueJobName.c_str());
-        }
-
+    Utf8String jobName = iModelBridge::ComputeJobSubjectName(GetDgnDb(), _GetParams(), Utf8String(GetRootModelP()->GetModelName()));
     _GetParamsR().SetBridgeJobName(jobName);
     }
 
@@ -1229,13 +1252,16 @@ void RootModelConverter::CreatePresentationRules()
 //---------------------------------------------------------------------------------------
 BentleyApi::BentleyStatus RootModelConverter::ConvertNamedGroupsRelationships()
     {
+    if (BentleyApi::SUCCESS != m_syncInfo.CheckNamedGroupTable())
+        return BSIERROR;
+
     for (auto const& modelMapping : m_v8ModelMappings)
         {
         if (BentleyApi::SUCCESS != ConvertNamedGroupsRelationshipsInModel(modelMapping.GetV8Model()))
             return BSIERROR;
         }
 
-    return BentleyApi::SUCCESS;
+    return m_syncInfo.FinalizeNamedGroups();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1260,7 +1286,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                     Utf8String error;
                     error.Sprintf("No BIS grouping relationship created for v8 NamedGroup Member element (%s) because the member element was not converted.",
                                   Converter::IssueReporter::FmtElement(memberEh).c_str());
-                    m_converter.ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+                    m_converter.ReportIssue(IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                     return DgnV8Api::MemberTraverseStatus::Continue;
                     }
                 m_visitedMembers.insert(childElementId);
@@ -1284,7 +1310,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                     }
 
                 GroupInformationElementCPtr group = elementTable.Get<GroupInformationElement>(m_parentId);
-                if (group.IsValid()/* && !ElementGroupsMembers::HasMember(*group, *child)*/)
+                if (group.IsValid() && ! m_converter.GetSyncInfo().IsElementInNamedGroup(m_parentId, childElementId))
                     {
                     DgnDbStatus status;
                     if (DgnDbStatus::BadRequest == (status = ElementGroupsMembers::Insert(*group, *child, 0)))
@@ -1293,6 +1319,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
                         error.Sprintf("Failed to add child element %s to group %" PRIu64 "", Converter::IssueReporter::FmtElement(memberEh).c_str(), m_parentId.GetValue());
                         m_converter.ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                         }
+                    m_converter.GetSyncInfo().AddNamedGroupEntry(m_parentId, childElementId);
                     }
 
                 return DgnV8Api::MemberTraverseStatus::Continue;
@@ -1346,7 +1373,7 @@ BentleyApi::BentleyStatus Converter::ConvertNamedGroupsRelationshipsInModel(DgnV
             Utf8String error;
             error.Sprintf("No BIS grouping created for v8 NamedGroup element (%s) because the NamedGroup was not converted.",
                           Converter::IssueReporter::FmtElement(v8eh).c_str());
-            ReportIssue(IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+            ReportIssue(IssueSeverity::Info, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
             continue;
             }
 
@@ -1443,27 +1470,34 @@ BentleyApi::BentleyStatus RootModelConverter::RecreateElementRefersToElementsInd
         StopWatch timer(true);
         for (auto const& index : indexDdlList)
             {
-            if (BE_SQLITE_OK != GetDgnDb().TryExecuteSql(index.second.c_str()))
+            DbResult result = GetDgnDb().TryExecuteSql(index.second.c_str());
+            if (BE_SQLITE_OK != result)
                 {
-                Utf8String error;
-                error.Sprintf("Failed to recreate index '%s' for BisCore:ElementRefersToElements class hierarchy: %s", index.second.c_str(), GetDgnDb().GetLastError().c_str());
-                ReportIssue(IssueSeverity::Info, IssueCategory::Sync(), Issue::Message(), error.c_str());
-                CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("DELETE FROM ec_Index WHERE Name=?");
-                if (stmt == nullptr)
+                // If we have a constraint violation, try to delete all of the duplicate rows and then try re-applying the index
+                if (BE_SQLITE_CONSTRAINT_UNIQUE == result)
                     {
-                    BeAssert(false && "Could not retrieve cached statement.");
-                    return BentleyApi::ERROR;
+                    bvector<Utf8String> tokens;
+                    BeStringUtilities::Split(index.second.c_str(), "=", tokens);
+                    if (tokens.size() == 2)
+                        {
+                        uint64_t classId;
+                        BeStringUtilities::ParseUInt64(classId, tokens[1].c_str());
+                        if (classId != 0)
+                            {
+                            Utf8PrintfString sql("delete from bis_ElementRefersToElements where rowid not in (select min(rowid) from bis_ElementRefersToElements where ECClassId=% " PRIu64 " group by SourceId, TargetId) and ECClassId=% " PRIu64, classId, classId);
+                            result = GetDgnDb().TryExecuteSql(sql.c_str());
+                            if (BE_SQLITE_OK == result)
+                                result = GetDgnDb().TryExecuteSql(index.second.c_str());
+                            }
+                        }
                     }
-                if (BE_SQLITE_OK != stmt->BindText(1, index.first, Statement::MakeCopy::No))
+                // If we didn't succeed, fatally end as we can't make schema changes at this point in the process
+                if (BE_SQLITE_OK != result)
                     {
-                    BeAssert(false && "Could not bind to statement.");
-                    return BentleyApi::ERROR;
-                    }
-
-                if (BE_SQLITE_DONE != stmt->Step())
-                    {
-                    error.Sprintf("Failed to delete index '%s' from table ec_Index: %s", index.first.c_str(), GetDgnDb().GetLastError().c_str());
-                    ReportError(IssueCategory::Sync(), Issue::Message(), error.c_str());
+                    Utf8String error;
+                    error.Sprintf("Failed to recreate index '%s' for BisCore:ElementRefersToElements class hierarchy: %s", index.second.c_str(), GetDgnDb().GetLastError().c_str());
+                    ReportIssue(IssueSeverity::Fatal, IssueCategory::Sync(), Issue::Message(), error.c_str());
+                	OnFatalError(Converter::IssueCategory::CorruptData());
                     return BentleyApi::ERROR;
                     }
                 }
@@ -1482,18 +1516,21 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships()
     if (m_skipECContent)
         return BentleyApi::SUCCESS;
 
+    bvector<DgnV8ModelP> visitedModels;
     for (auto& modelMapping : m_v8ModelMappings)
         {
         ConvertECRelationshipsInModel(modelMapping.GetV8Model());
         if (WasAborted())
             return BentleyApi::ERROR;
+        visitedModels.push_back(&modelMapping.GetV8Model());
         }
 
     //analyze named groups in dictionary models
     for (DgnV8FileP v8File : m_v8Files)
         {
         DgnV8ModelR dictionaryModel = v8File->GetDictionaryModel();
-        ConvertECRelationshipsInModel(dictionaryModel);
+        if (std::find(visitedModels.begin(), visitedModels.end(), &dictionaryModel) == visitedModels.end())
+            ConvertECRelationshipsInModel(dictionaryModel);
         if (WasAborted())
             return BentleyApi::ERROR;
         }
@@ -1555,6 +1592,9 @@ void RootModelConverter::_BeginConversion()
 void RootModelConverter::_FinishConversion()
     {
     ConvertNamedGroupsAndECRelationships();   // Now that we know all elements, work on the relationships between elements.
+    if (WasAborted())
+        return;
+
     if (IsUpdating())
         UpdateCalculatedProperties();
     _RemoveUnusedMaterials();

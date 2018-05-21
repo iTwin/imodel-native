@@ -155,7 +155,7 @@ public:
     virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
 
 private:
-    BentleyStatus   UpdateBim (ProtocalExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel);
+    BentleyStatus   UpdateBim (ProtocalExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel, Utf8StringCR viewName);
     };  // DwgViewportExt
 
 /*=================================================================================**//**

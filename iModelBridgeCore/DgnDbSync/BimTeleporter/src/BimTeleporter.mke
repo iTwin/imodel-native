@@ -2,7 +2,7 @@
 #
 #     $Source: BimTeleporter/src/BimTeleporter.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 
@@ -16,7 +16,7 @@ o = $(OutputRootDir)Build/DgnDbSync/$(appName)/
 always:
     ~mkdir $(o)
 
-PublicApi = $(SrcRoot)DgnDbSync\PublicApi\BimTeleporter/
+PublicApi = $(SrcRoot)DgnDbSync/PublicApi/BimTeleporter/
 
 HeaderFiles = $(PublicApi)BimTeleporter.h $(PublicApi)BisJson1Exporter0601.h $(PublicApi)BisJson1Importer.h
 
@@ -35,6 +35,7 @@ EXE_OBJS     = $(o)BimTeleporter.obj
 EXE_LOPT1    = -entry:wmainCRTStartup
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BisJson1Exporter0601.lib
 LINKER_LIBRARIES  + $(BuildContext)Delivery/BisJson1Importer.lib
+LINKER_LIBRARIES  + $(BuildContext)Delivery/DgnDbToBimConverter.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLite.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLiteEC.lib
@@ -44,6 +45,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeFolly.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES  + user32.lib
 
 EXE_TMP_DIR  = $(o)

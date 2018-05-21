@@ -26,6 +26,12 @@ DWGDB_OBJECT_DEFINE_MEMBERS2 (SpatialIndex)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (SortentsTable)
 DWGDB_OBJECT_DEFINE_MEMBERS2 (Xrecord)
 
+#ifdef DWGTOOLKIT_RealDwg
+// An unpublished API in acdbxx.dll
+typedef Acad::ErrorStatus (*acdbGetPaperImageOriginFunc)(AcDbPlotSettings* p, double& x, double& y);
+static char s_acdbGetPaperImageOrigin[] = "?acdbGetPaperImageOrigin@@YA?AW4ErrorStatus@Acad@@PEAVAcDbPlotSettings@@AEAN1@Z";
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -69,7 +75,10 @@ DwgString       DwgDbObjectId::GetDwgClassName () const
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbObjectPtr   obj = T_Super::safeOpenObject ();
     if (obj.isNull())
+        {
+        BeAssert (false && "Null object opened from OdDbObjectId");
         return  L"NullObject";
+        }
     return obj->isA()->name();
 #elif DWGTOOLKIT_RealDwg
     const ACHAR*    className = T_Super::objectClass()->name ();
@@ -82,12 +91,33 @@ DwgString       DwgDbObjectId::GetDwgClassName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DWG_TypeP(RxClass) DwgDbObjectId::GetDwgClass () const
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDbObjectPtr   obj = T_Super::safeOpenObject ();
+    if (obj.isNull())
+        {
+        BeAssert (false && "Null object opened from OdDbObjectId");
+        return  nullptr;
+        }
+    return obj->isA ();
+#elif DWGTOOLKIT_RealDwg
+    return T_Super::objectClass ();
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 bool            DwgDbObjectId::IsObjectDerivedFrom (DWG_TypeCP(RxClass) rxClass) const
     {
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbObjectPtr   obj = T_Super::safeOpenObject ();
     if (obj.isNull())
+        {
+        BeAssert (false && "Null object opened from OdDbObjectId");
         return  false;
+        }
     return obj->isA()->isDerivedFrom (rxClass);
 #elif DWGTOOLKIT_RealDwg
     return T_Super::objectClass()->isDerivedFrom(rxClass);
@@ -547,6 +577,43 @@ DwgDbStatus     DwgDbLayout::GetCustomScale (double& numerator, double& denomina
     return  status;
     }
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbLayout::GetPaperImageOrigin (DPoint2dR origin) const
+    {
+    // get DXF groud codes 148 and 149 in negative so they are read the same as in ACAD:
+    origin.Zero ();
+#ifdef DWGTOOLKIT_OpenDwg
+    BeAssert (false && "DwgDbLayout::GetPaperImageOrigin not implemented for Teigha!");
+    return  DwgDbStatus::NotSupported;
+
+#elif DWGTOOLKIT_RealDwg
+    // need to call unpublished API acdbGetPaperImageOrigin, in acdbxx.dll.
+    auto dllHandle = Util::GetOrLoadToolkitDll (L"acdb");
+    if (nullptr != dllHandle)
+        {
+        static acdbGetPaperImageOriginFunc acdbGetPaperImageOrigin = (Acad::ErrorStatus(*)(AcDbPlotSettings*,double&,double&)) ::GetProcAddress (dllHandle, s_acdbGetPaperImageOrigin);
+        if (nullptr != acdbGetPaperImageOrigin)
+            {
+            AcDbPlotSettings*   ps = dynamic_cast<AcDbPlotSettings*>(const_cast<DwgDbLayout*>(this));
+            Acad::ErrorStatus   es = (*acdbGetPaperImageOrigin)(ps, origin.x, origin.y);
+            if (Acad::eOk == es)
+                {
+                // negate the readout values
+                origin.x = -origin.x;
+                origin.y = -origin.y;
+                return  ToDwgDbStatus(es);
+                }
+            }
+        else
+            {
+            BeAssert (false && "Unpublished function acdbGetPaperImageOrigin not found in acdbxx.dll!");
+            }
+        }
+    return  DwgDbStatus::UnknownError;
+#endif
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 double          DwgDbLayout::GetStandardScale () const
@@ -561,6 +628,136 @@ DwgDbObjectId   DwgDbLayout::GetBlockTableRecordId () const { return T_Super::ge
 bool            DwgDbLayout::IsStandardScale () const { return T_Super::useStandardScale(); }
 double          DwgDbLayout::GetCustomScale () const { double n=1.0,d=1.0; T_Super::getCustomPrintScale(n,d); return d!=0.0 ? n/d : 1.0; }
 DwgDbLayout::PaperOrientation DwgDbLayout::GetPaperOrientation () const { return static_cast<PaperOrientation>(T_Super::plotRotation()); }
+DwgDbLayout::PlotBy DwgDbLayout::GetPlotBy () const { return DWGDB_UPWARDCAST(Layout::PlotBy)(T_Super::plotType()); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectId  DwgDbLayoutManager::FindLayoutByName (DwgStringCR name, DwgDbDatabaseCP dwg) const
+    {
+    DwgDbObjectId   layoutId;
+    if (this->IsValid())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        layoutId = m_layoutManager->findLayoutNamed (dwg, name);
+#elif DWGTOOLKIT_RealDwg
+    #if VendorVersion > 2017
+        layoutId = m_layoutManager->findLayoutNamed (name.c_str(), dwg);
+    #else
+        AcDbLayout* layout = m_layoutManager->findLayoutNamed (name.c_str(), false, dwg);
+        if (nullptr != layout)
+            layoutId = layout->objectId ();
+    #endif
+#endif
+        }
+    return  layoutId;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectId  DwgDbLayoutManager::FindActiveLayout (DwgDbDatabaseCP dwg) const
+    {
+    DwgDbObjectId   layoutId;
+    if (this->IsValid())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        layoutId = m_layoutManager->findLayoutNamed (dwg, m_layoutManager->findActiveLayout(dwg, true));
+#elif DWGTOOLKIT_RealDwg
+    #if VendorVersion > 2017
+        layoutId = m_layoutManager->findLayoutNamed (m_layoutManager->findActiveLayout(true, dwg), dwg);
+    #else
+        AcDbLayout* layout = m_layoutManager->findLayoutNamed (m_layoutManager->findActiveLayout(true, dwg), false, dwg);
+        if (nullptr != layout)
+            layoutId = layout->objectId ();
+    #endif
+#endif
+        }
+    return  layoutId;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus    DwgDbLayoutManager::ActivateLayout (DwgDbObjectId layoutId)
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        status = DwgDbStatus::InvalidInput;
+        if (layoutId.isValid())
+            {
+            m_layoutManager->setCurrentLayout (layoutId.database(), layoutId);
+            status = DwgDbStatus::Success;
+            }
+#elif DWGTOOLKIT_RealDwg
+        status = ToDwgDbStatus (m_layoutManager->setCurrentLayoutId(layoutId));
+#endif
+        }
+    return  status;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus    DwgDbLayoutManager::CreateLayout (DwgDbObjectIdR layoutId, DwgDbObjectIdR blockId, DwgStringCR name, DwgDbDatabaseP dwg)
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        layoutId = m_layoutManager->createLayout(dwg, name, &blockId);
+        status = layoutId.isValid() ? DwgDbStatus::Success : DwgDbStatus::NotPersistentObject;
+#elif DWGTOOLKIT_RealDwg
+        status = ToDwgDbStatus (m_layoutManager->createLayout(name.c_str(), layoutId, blockId, dwg));
+#endif
+        }
+    return  status;
+    }    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus    DwgDbLayoutManager::DeleteLayout (DwgStringCR name, DwgDbDatabaseP dwg)
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        status = DwgDbStatus::InvalidInput;
+        if (!name.isEmpty() && nullptr != dwg)
+            {
+            m_layoutManager->deleteLayout (dwg, name);
+            status = DwgDbStatus::Success;
+            }
+#elif DWGTOOLKIT_RealDwg
+        status = ToDwgDbStatus (m_layoutManager->deleteLayout(name.c_str(), dwg));
+#endif
+        }
+    return  status;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus    DwgDbLayoutManager::RenameLayout (DwgStringCR oldName, DwgStringCR newName, DwgDbDatabaseP dwg)
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        status = DwgDbStatus::InvalidInput;
+        if (!oldName.isEmpty() && !newName.isEmpty() && nullptr != dwg)
+            {
+            m_layoutManager->renameLayout (dwg, oldName, newName);
+            status = DwgDbStatus::Success;
+            }
+#elif DWGTOOLKIT_RealDwg
+        status = ToDwgDbStatus (m_layoutManager->renameLayout(oldName.c_str(), newName.c_str(), dwg));
+#endif
+        }
+    return  status;
+    }
+DwgDbLayoutManager::DwgDbLayoutManager (DWGDB_TypeP(LayoutManager) manager) : m_layoutManager(manager) {}
+bool DwgDbLayoutManager::IsValid () const { return nullptr != m_layoutManager; }
+int  DwgDbLayoutManager::CountLayouts (DwgDbDatabaseP dwg) const { if (IsValid()) return m_layoutManager->countLayouts(dwg); else return -1; }
+DwgDbObjectId  DwgDbLayoutManager::GetActiveLayoutBlock (DwgDbDatabaseCP dwg) const { if (IsValid()) return m_layoutManager->getActiveLayoutBTRId(dwg); else return DwgDbObjectId(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/16
@@ -768,3 +965,51 @@ DwgResBufIterator DwgDbXrecord::GetRbChain (DwgDbDatabaseP dwg, DwgDbStatus* sta
     return  DwgResBufIterator::CreateFromAndFree(resbuf);
 #endif
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbXrefGraphNode::DwgDbXrefGraphNode (WCharCP name, DwgDbObjectIdCR id, DwgDbDatabaseP dwg, DwgDbXrefStatus status) { DWGDB_CALLSDKMETHOD(, T_Super(name, id, dwg, DWGDB_CASTTOENUM_DB(XrefStatus)(status))); }
+DwgString      DwgDbXrefGraphNode::GetName () const { return T_Super::name(); }
+DwgDbObjectId  DwgDbXrefGraphNode::GetBlockId () const { return DWGDB_CALLSDKMETHOD(T_Super::blockId(), T_Super::btrId()); }
+DwgDbDatabaseP DwgDbXrefGraphNode::GetDatabase () const { return static_cast<DwgDbDatabaseP>(T_Super::database()); }
+bool    DwgDbXrefGraphNode::IsNested () const { return T_Super::isNested(); }
+void    DwgDbXrefGraphNode::SetName (DwgStringCR name) { T_Super::setName(name.c_str()); }
+void    DwgDbXrefGraphNode::SetBlockId (DwgDbObjectIdCR id) { DWGDB_CALLSDKMETHOD(T_Super::setBlockId(id),T_Super::setBtrId(id)); }
+void    DwgDbXrefGraphNode::SetDatabase (DwgDbDatabaseP dwg) { T_Super::setDatabase(dwg); }
+int     DwgDbXrefGraphNode::GetNumIncoming () const { return T_Super::numIn(); }
+int     DwgDbXrefGraphNode::GetNumOutgoing () const { return T_Super::numOut(); }
+int     DwgDbXrefGraphNode::GetNumCycleIn () const { return T_Super::numCycleIn(); }
+int     DwgDbXrefGraphNode::GetNumCycleOut () const { return T_Super::numCycleOut(); }
+bool    DwgDbXrefGraphNode::IsCycleNode () const { return T_Super::isCycleNode(); }
+DwgDbXrefStatus     DwgDbXrefGraphNode::GetXrefStatus () const { return DWGDB_UPWARDCAST(XrefStatus)(T_Super::xrefStatus()); }
+DwgDbXrefGraphNodeP DwgDbXrefGraphNode::GetIncomingNode (int index) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::in(index)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraphNode::GetOutgoingNode (int index) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::out(index)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraphNode::GetCycleIn (int index) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::cycleIn(index)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraphNode::GetCycleOut (int index) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::cycleOut(index)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraphNode::GetNextCycleNode () const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::nextCycleNode()); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbXrefGraph::Build (DwgDbXrefGraphR graphOut, DwgDbDatabaseP hostDwg, bool includeGhosts)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDbXrefGraph::getFrom (hostDwg, graphOut, includeGhosts);
+#elif DWGTOOLKIT_RealDwg
+    Acad::ErrorStatus   es = acdbGetHostDwgXrefGraph (hostDwg, graphOut, includeGhosts);
+    status = ToDwgDbStatus (es);
+#endif
+    return  status;
+    }
+DwgDbXrefGraphNodeP DwgDbXrefGraph::GetXrefNode (DwgStringCR name) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::xrefNode(name.c_str())); }
+DwgDbXrefGraphNodeP DwgDbXrefGraph::GetXrefNode (DwgDbObjectIdCR blockId) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::xrefNode(blockId)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraph::GetXrefNode (DwgDbDatabaseP dwg) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::xrefNode(dwg)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraph::GetXrefNode (int index) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::xrefNode(index)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraph::GetHostDwg () const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::hostDwg()); }
+bool    DwgDbXrefGraph::IsEmpty () const { return T_Super::isEmpty(); }
+size_t  DwgDbXrefGraph::GetNodeCount () const { return T_Super::numNodes(); }
+bool    DwgDbXrefGraph::MarkUnresolvedTrees () { return T_Super::markUnresolvedTrees(); }
+bool    DwgDbXrefGraph::FindCycles (DwgDbXrefGraphNodeP start) { return T_Super::findCycles(start); }
+void    DwgDbXrefGraph::Reset () { T_Super::reset(); }

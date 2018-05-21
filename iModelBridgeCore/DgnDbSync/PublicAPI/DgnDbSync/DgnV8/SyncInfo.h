@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/DgnV8/SyncInfo.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,6 +37,7 @@ BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 #define SYNC_TABLE_ECSchema     SYNCINFO_TABLE("ECSchema")
 #define SYNC_TABLE_Discards     SYNCINFO_TABLE("Discards")
 #define SYNC_TABLE_ImportJob    SYNCINFO_TABLE("ImportJob")
+#define SYNC_TABLE_NamedGroups  SYNCINFO_TABLE("NamedGroups")
 
 struct Converter;
 struct SyncInfo;
@@ -597,6 +598,7 @@ protected:
 
 public:
     BentleyStatus CreateTables();
+    BentleyStatus CreateNamedGroupTable(bool createIndex);
     void CreateECTables();
 
     DGNDBSYNC_EXPORT BeSQLite::DbResult InsertFont (DgnFontId newId, V8FontId oldId);
@@ -733,6 +735,29 @@ public:
     DGNDBSYNC_EXPORT BeSQLite::DbResult RetrieveECSchemaChecksums(bmap<Utf8String, uint32_t>& syncInfoChecksums) const;
     //! @}
 
+    //! @name NamedGroups - The index is dropped on the ElementRefersToElements table while inserting named group members.  This was to allow for fast inserts, but as a result, lookups are slow and so
+    //! the converter can no longer check for an existing entry before calling ElementGroupsElement::Insert.  Therefore, we use an indexed table in SyncInfo for checking whether an element is already a
+    //! member of the given group.
+    //! @{
+
+    //! If doing an update against an older syncinfo table, the NamedGroup table won't exist.  This will check for its existence.  If it doesn't exist, it will create it and populate it from the
+    //! ElementRefersToElements table in the dgndb
+    DGNDBSYNC_EXPORT BentleyStatus CheckNamedGroupTable();
+
+    //! Check to see if the given element is already a member of the group
+    //! @param[in] sourceId - ElementId of the group owner
+    //! @param[in] targetId - ElementId of the potential new member element
+    //! @return true if the element is already a member of the group
+    DGNDBSYNC_EXPORT bool IsElementInNamedGroup(DgnElementId sourceId, DgnElementId targetId);
+
+    //! Adds the given element to the group.
+    //! @param[in] sourceId - ElementId of the group owner
+    //! @param[in] targetId - ElementId of the new member element
+    DGNDBSYNC_EXPORT BentleyStatus AddNamedGroupEntry(DgnElementId sourceId, DgnElementId targetId);
+
+    //! Insertions are stored in a temporary table.  Upon completion of processing the named groups, the temp table must be merged into the SyncInfo table.
+    DGNDBSYNC_EXPORT BentleyStatus FinalizeNamedGroups();
+    //! @}
     Converter& GetConverter() const {return m_converter;}
 
     //! Create sync info for a DgnV8 model

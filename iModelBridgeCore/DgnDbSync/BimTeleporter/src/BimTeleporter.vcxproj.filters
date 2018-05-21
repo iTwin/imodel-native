@@ -7,8 +7,11 @@
   <ItemGroup>
     <ClInclude Include="..\..\PublicAPI\BimTeleporter\BimTeleporter.h" />
     <ClInclude Include="BimTeleporterInternal.h" />
+    <ClInclude Include="InteropHostProvider.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BimTeleporter.cpp" />
+    <ClCompile Include="DgnDbToBimConverter.cpp" />
+    <ClCompile Include="InteropHostProvider.cpp" />
   </ItemGroup>
 </Project>

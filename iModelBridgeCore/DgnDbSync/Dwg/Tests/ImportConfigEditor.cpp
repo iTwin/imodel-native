@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Tests/ImportConfigEditor.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -26,7 +26,7 @@ ImportConfigEditor::ImportConfigEditor()
      m_modelImportRules.push_back(ModelImportRule("*PaperSpace", "%file"));
      m_modelImportRules.push_back(ModelImportRule("Default", "%file"));
      
-     m_thumbnailsViewTypes = "Physical Drawing";
+     m_thumbnailsViewTypes = "Physical Sheet";
      m_thumbnailsPixelResolution = "768";
      m_thumbnailsRenderModeOverride = "None";
 

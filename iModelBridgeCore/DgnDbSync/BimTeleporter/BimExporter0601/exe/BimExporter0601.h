@@ -2,11 +2,11 @@
 |
 |     $Source: BimTeleporter/BimExporter0601/exe/BimExporter0601.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+//__BENTLEY_INTERNAL_ONLY__
 #pragma once
-//__PUBLISH_SECTION_START__
 
 #include <windows.h>
 #include <BimTeleporter/BimTeleporter.h>

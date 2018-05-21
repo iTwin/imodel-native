@@ -24,8 +24,37 @@
 #include <BeJpeg/BeJpeg.h>
 #include <DgnPlatform/DgnTexture.h>
 
+
 USING_NAMESPACE_IMAGEPP
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
+
+
+static char const* s_relevantV8Tags[] = 
+    {
+    RENDER_MATERIAL_Diffuse,               
+    RENDER_MATERIAL_Reflect,               
+    RENDER_MATERIAL_Transmit,              
+    RENDER_MATERIAL_Refract,               
+    RENDER_MATERIAL_Specular,              
+    RENDER_MATERIAL_Finish,                
+    RENDER_MATERIAL_Map,                   
+    RENDER_MATERIAL_Flags, 
+    RENDER_MATERIAL_Ambient,                 
+    RENDER_MATERIAL_Glow,    
+    };
+
+static char const* s_relevantV8ColorTags[] = 
+    {
+    RENDER_MATERIAL_Color,                 
+    RENDER_MATERIAL_SpecularColor,         
+    RENDER_MATERIAL_ReflectColor,          
+#ifdef CURRENTLY_UNUSED       
+    RENDER_MATERIAL_GlowColor, 
+    RENDER_MATERIAL_TransparentColor,            
+    RENDER_MATERIAL_TranslucencyColor,
+#endif
+    };
+
 
 /*=================================================================================**//**
 * @bsiclass                                                     Mathieu.Marchand 08/2015
@@ -667,6 +696,24 @@ BentleyStatus Converter::ConvertMaterial(Json::Value& renderMaterial, DgnV8Api::
     if (v8MaterialJson.isNull())
         return ERROR;
 
+    bset<Utf8String>    relevantMap;
+
+    for (size_t i=0, nRelevant = sizeof(s_relevantV8Tags)/sizeof(s_relevantV8Tags[0]); i<nRelevant; i++)
+        relevantMap.insert(Utf8String(s_relevantV8Tags[i]));
+
+    for (size_t i=0, nRelevant = sizeof(s_relevantV8ColorTags)/sizeof(s_relevantV8ColorTags[0]); i<nRelevant; i++)
+        {
+        relevantMap.insert(Utf8String(s_relevantV8ColorTags[i]) + ".r");
+        relevantMap.insert(Utf8String(s_relevantV8ColorTags[i]) + ".g");
+        relevantMap.insert(Utf8String(s_relevantV8ColorTags[i]) + ".b");
+        }
+
+    Json::Value::Members     v8Members = v8MaterialJson.getMemberNames();
+
+    for (auto& v8Member : v8Members)
+        if (relevantMap.find(v8Member.data()) == relevantMap.end())
+            v8MaterialJson.removeMember (v8Member.data());
+
     Json::Value rootNode = Json::Value(Json::ValueType::objectValue);
 
     convertV8MaterialToDgnDb(rootNode, v8MaterialJson, RenderMaterial::json_renderMaterial(), NULL);
@@ -714,8 +761,9 @@ void Converter::ConvertModelMaterials(DgnV8ModelR dgnModel)
             continue;
             }
 
-        Utf8String utfMaterialName(v8Material.GetName().c_str()), utfPaletteName(v8Material.GetPalette().GetName().c_str());
-        RenderMaterial material(*definitionModel, utfPaletteName, utfMaterialName);
+        Utf8String      utfMaterialName(v8Material.GetName().c_str()), utfPaletteName(v8Material.GetPalette().GetName().c_str());
+        RenderMaterial  material(*definitionModel, utfPaletteName, utfMaterialName);
+
         material.SetRenderingAsset(renderMaterialJson);
 
         RenderMaterialCPtr dbMaterial = material.Insert();

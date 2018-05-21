@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/BimImporter/lib/BisJson1ImporterImpl.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -60,6 +60,7 @@ struct BisJson1ImporterImpl : DgnImportContext
         BeFile m_file;
         bool m_isDone;
         SchemaRemapper m_remapper;
+        int64_t m_entityCount;
 
     protected:
         ECN::ECSchemaReadContextPtr m_schemaReadContext;
@@ -86,14 +87,15 @@ struct BisJson1ImporterImpl : DgnImportContext
         DgnFontId _RemapFont(DgnFontId) override;
         DgnStyleId _RemapLineStyleId(DgnStyleId sourceId) override;
         BentleyStatus ImportJson(Json::Value& jsonInput);
+        void GenerateThumbnails();
 
     public:
-        BisJson1ImporterImpl(DgnDb* dgndb);
+        BisJson1ImporterImpl(DgnDb* dgndb, bool setQuietAssertions = false);
         ~BisJson1ImporterImpl();
         BentleyStatus InitializeSchemas();
         BentleyStatus CreateAndAttachSyncInfo();
         BentleyStatus AttachSyncInfo();
-        BentleyStatus ImportJson(folly::ProducerConsumerQueue<BentleyB0200::Json::Value>& objectQueue);
+        BentleyStatus ImportJson(folly::ProducerConsumerQueue<BentleyB0200::Json::Value>& objectQueue, folly::Future<bool>& exporterFuture);
         void AddToQueue(const char* entry);
         void SetDone() { m_isDone = true; }
         void FinalizeImport();

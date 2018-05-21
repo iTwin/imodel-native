@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgSyncInfo.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
@@ -133,6 +133,14 @@ BentleyStatus DwgSyncInfo::CreateTables()
                     "CONSTRAINT FileModelId UNIQUE(DwgFile,DwgModel,DwgObjectId)");
 
     m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Linetype) "NativeIdx ON "  SYNC_TABLE_Linetype "(Id)");
+
+    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_View),
+                    "Id INT,"
+                    "DwgObjectId BIGINT,"
+                    "ViewportType INT,"
+                    "DwgName CHAR");
+
+    m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_View) "NativeIdx ON "  SYNC_TABLE_View "(Id)");
 
     m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_Material),
                     "Id INT,"
@@ -664,7 +672,7 @@ DbResult DwgSyncInfo::DwgModelMapping::Insert(Db& db) const
     stmt.BindId(col++, m_id);
     stmt.BindInt(col++, m_source.GetDwgFileId().GetValue());
     stmt.BindInt64(col++, m_source.GetDwgModelId().GetValue());
-    stmt.BindInt(col++, m_instanceId);
+    stmt.BindInt64(col++, m_instanceId);
     stmt.BindText(col++, m_dwgName, Statement::MakeCopy::No);
     stmt.BindInt(col++, static_cast<int>(m_sourceType));
     if (m_transform.IsIdentity())
@@ -696,7 +704,7 @@ DbResult DwgSyncInfo::DwgModelMapping::Update (Db& db) const
     stmt.BindId(col++, m_id);
     stmt.BindInt(col++, m_source.GetDwgFileId().GetValue());
     stmt.BindInt(col++, m_source.GetDwgModelId().GetValue());
-    stmt.BindInt(col++, m_instanceId);
+    stmt.BindInt64(col++, m_instanceId);
     stmt.BindText(col++, m_dwgName, Statement::MakeCopy::No);
     stmt.BindInt(col++, static_cast<int>(m_sourceType));
     if (m_transform.IsIdentity())
@@ -1168,6 +1176,14 @@ DwgSyncInfo::DwgObjectProvenance::DwgObjectProvenance (DwgDbObjectCR obj, DwgSyn
         {
         // the primary hash is from the object data itself.
         obj.DxfOut (filer);
+        // Aec objects do not dxfOut actual data - add range for now - TFS 853852:
+        if (obj.GetDwgClassName().StartsWithI(L"AecDb"))
+            {
+            DwgDbEntityCP   ent = DwgDbEntity::Cast(&obj);
+            DRange3d        range;
+            if (nullptr != ent && ent->GetRange(range) == DwgDbStatus::Success)
+                m_hasher.Add(&range, sizeof(range));
+            }
         m_primaryHash = m_hasher.GetHashVal ();
 
         if (hash2nd)
@@ -1626,6 +1642,126 @@ BentleyStatus   DwgSyncInfo::UpdateLinetype (DgnStyleId lstyleId, DwgDbLinetypeT
     Linetype        ltypeProv (lstyleId, modelSource, ltypeId, name.c_str());
 
     return (ltypeProv.Update(*m_dgndb) == BE_SQLITE_DONE) ? BSISUCCESS : BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::View DwgSyncInfo::InsertView (DgnViewId viewId, DwgDbObjectIdCR objId, View::Type type, Utf8StringCR name)
+    {
+    uint64_t    vportId = objId.ToUInt64 ();
+    View        vportProv (viewId, vportId, type, name);
+
+    if (BE_SQLITE_DONE != vportProv.Insert(*m_dgndb))
+        {
+        vportProv.m_id = DgnViewId ();
+        m_dwgImporter.ReportIssueV(DwgImporter::IssueSeverity::Error, DwgImporter::IssueCategory::Sync(), DwgImporter::Issue::ViewportError(), Utf8PrintfString("inserting %s (%lld)", name.c_str(), vportId).c_str());
+        }
+
+    return vportProv;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DwgSyncInfo::View::Insert (BeSQLite::Db& db) const
+    {
+    if (!m_id.IsValid() || 0 == m_dwgId)
+        {
+        BeAssert(false && "Null DwgObjectId!");
+        return BE_SQLITE_ERROR;
+        }
+
+    Statement   stmt;
+    stmt.Prepare (db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_View) " (Id,DwgObjectId,ViewportType,DwgName) VALUES (?,?,?,?)");
+
+    int col = 1;
+    stmt.BindId (col++, m_id);       // NativeId
+    stmt.BindInt64 (col++, m_dwgId); // DWG vport object handle
+    stmt.BindInt (col++, static_cast<int>(m_type)); // Viewport type
+    stmt.BindText (col++, m_name.c_str(), Statement::MakeCopy::No); // VPort name
+
+    return stmt.Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DwgSyncInfo::View::Update (BeSQLite::Db& db) const
+    {
+    if (!m_id.IsValid() || 0 == m_dwgId)
+        {
+        BeAssert(false && "Null DwgObjectId!");
+        return BE_SQLITE_ERROR;
+        }
+
+    Statement   stmt;
+    stmt.Prepare (db, "UPDATE " SYNCINFO_ATTACH(SYNC_TABLE_View) " SET DwgObjectId=?,ViewportType=?,DwgName=? WHERE Id=?");
+
+    int col = 1;
+    stmt.BindId (col++, m_id);
+    stmt.BindInt64 (col++, m_dwgId);
+    stmt.BindInt (col++, static_cast<int>(m_type));
+    stmt.BindText (col++, m_name.c_str(), Statement::MakeCopy::No);
+
+    return stmt.Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgSyncInfo::UpdateView (DgnViewId viewId, DwgDbObjectIdCR objId, View::Type type, Utf8StringCR name)
+    {
+    uint64_t    vportId = objId.ToUInt64 ();
+    View        vportProv (viewId, vportId, type, name);
+
+    return vportProv.Update(*m_dgndb) == BE_SQLITE_DONE ? BSISUCCESS : BSIERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewId   DwgSyncInfo::FindView (DwgDbObjectIdCR vportId, View::Type type)
+    {
+    CachedStatementPtr  stmt;
+    m_dgndb->GetCachedStatement(stmt, "SELECT Id FROM " SYNCINFO_ATTACH(SYNC_TABLE_View) " WHERE DwgObjectId=? AND ViewportType=?");
+
+    uint64_t    dwgId = vportId.ToUInt64 ();
+    int         col = 1;
+    stmt->BindInt64 (col++, dwgId);
+    stmt->BindInt (col++, static_cast<int>(type));
+
+    DgnViewId  dgnId;
+    if (stmt->Step() == BE_SQLITE_ROW)
+        dgnId = stmt->GetValueId<DgnViewId>(0);
+
+    return dgnId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbHandle DwgSyncInfo::FindViewportHandle (DgnViewId viewId)
+    {
+    CachedStatementPtr  stmt;
+    m_dgndb->GetCachedStatement(stmt, "SELECT DwgObjectId FROM " SYNCINFO_ATTACH(SYNC_TABLE_View) " WHERE Id=?");
+    stmt->BindId (1, viewId);
+
+    if (stmt->Step() == BE_SQLITE_ROW)
+        return DwgDbHandle(stmt->GetValueInt64(0));
+
+    return DwgDbHandle();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgSyncInfo::DeleteView (DgnViewId viewId)
+    {
+    CachedStatementPtr stmt;
+    m_dgndb->GetCachedStatement(stmt, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_View) " WHERE Id=?");
+    stmt->BindId (1, viewId);
+    return (stmt->Step() == BE_SQLITE_DONE)? BSISUCCESS: BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/iModelBridge.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridge.h>
@@ -129,6 +129,9 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
         LOG.fatalv(L"Failed to create repository [%s] with error %x", _GetParams().GetBriefcaseName().c_str(), createStatus);
         return nullptr;
         }
+
+    if (nullptr != rootSubjectDescription)
+        db->SavePropertyString(DgnProjectProperty::Description(), rootSubjectDescription);
 
     bvector<DgnModelId> baseModels;
     queryAllModels(baseModels, *db);
@@ -793,4 +796,38 @@ Transform iModelBridge::GetSpatialDataTransform(Params const& params, SubjectCR 
         }
 
     return jobTrans;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      iModelBridge::ComputeJobSubjectName(DgnDbCR db, Params const& params, Utf8StringCR bridgeSpecificSuffix)
+    {
+    // Use the document GUID, if available, to ensure a unique Job subject name.
+    Utf8String docIdStr;
+    auto docGuid = params.QueryDocumentGuid(params.GetInputFileName());
+    if (docGuid.IsValid())
+        docIdStr = docGuid.ToString();
+    else
+        docIdStr = Utf8String(params.GetInputFileName());
+
+    Utf8String jobName(params.GetBridgeRegSubKey());
+    jobName.append(":");
+    jobName.append(docIdStr.c_str());
+    if (!bridgeSpecificSuffix.empty())
+        {
+        jobName.append(", ");
+        jobName.append(bridgeSpecificSuffix);
+        }
+
+    DgnCode code = Subject::CreateCode(*db.Elements().GetRootSubject(), jobName.c_str());
+    int i = 0;
+    while (db.Elements().QueryElementIdByCode(code).IsValid())
+        {
+        Utf8String uniqueJobName(jobName);
+        uniqueJobName.append(Utf8PrintfString("%d", ++i).c_str());
+        code = Subject::CreateCode(*db.Elements().GetRootSubject(), uniqueJobName.c_str());
+        }
+    jobName = code.GetValueUtf8();
+    return jobName;
     }

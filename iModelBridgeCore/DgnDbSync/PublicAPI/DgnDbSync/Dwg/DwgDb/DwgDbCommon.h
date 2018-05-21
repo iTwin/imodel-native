@@ -36,7 +36,11 @@
 #include    <Teigha/Drawing/Include/DbClass.h>
 #include    <Teigha/Drawing/Include/DbObjectId.h>
 #include    <Teigha/Drawing/Include/DbDatabase.h>
+#include    <Teigha/Drawing/Include/DbLayoutManager.h>
 #include    <Teigha/Drawing/Include/DbXrecord.h>
+#include    <Teigha/Drawing/Include/DbXrefGraph.h>
+#include    <Teigha/Drawing/Include/ModelDocObj/DbViewBorder.h>
+#include    <Teigha/Drawing/Include/ModelDocObj/DbViewRepBlockReference.h>
 #include    <Teigha/Kernel/Include/OdString.h>
 #include    <Teigha/Drawing/Extensions/ExServices/ExHostAppServices.h>
 #include    <Teigha/Kernel/Extensions/ExServices/ExSystemServices.h>
@@ -50,6 +54,7 @@
 #include    <Realdwg/Base/adesk.h>
 #include    <Realdwg/Base/acadstrc.h>
 #include    <Realdwg/Base/dbmain.h>
+#include    <Realdwg/Base/dbents.h>
 #include    <Realdwg/Base/dbapserv.h>
 #include    <Realdwg/Base/rxclass.h>
 #include    <Realdwg/Base/rxobject.h>
@@ -59,6 +64,9 @@
 #include    <RealDwg/Base/dbboiler.h>
 #include    <Realdwg/Base/dbobjptr2.h>
 #include    <Realdwg/Base/dbxrecrd.h>
+#include    <RealDwg/Base/dbViewBorder.h>
+#include    <RealDwg/Base/dbViewRepBlockReference.h>
+#include    <RealDwg/Base/AcDbLMgr.h>
 #include    <RealDwg/Base/AcString.h>
 
 #else
@@ -99,6 +107,7 @@
     #define DWGDB_Type(_dbType_)            OdDb##_dbType_
     #define DWGGE_Type(_geomType_)          OdGe##_geomType_
     #define DWGGI_Type(_giType_)            OdGi##_giType_
+    #define DWGSTR_NAME(_name_)             ODDB_##_name_
 
     // call OpenDwg method
     #define DWGDB_CALLSDKMETHOD(_opendwgMethod_, _realdwgMethod_) _opendwgMethod_
@@ -125,7 +134,8 @@
         DWGDB_EXPORT static OdRxObjectPtr   CreateObject ();                    \
         DWGDB_EXPORT static _className_*    Cast (OdRxObject const* rxObj);     \
         DWGDB_EXPORT OdRxObject*            QueryX (OdRxClass const* c) const;  \
-        DWGDB_EXPORT OdRxObject*            GetX (OdRxClass const* c) const;
+        DWGDB_EXPORT OdRxObject*            GetX (OdRxClass const* c) const;    \
+        DWGDB_EXPORT OdRxClass*             IsA () const;
 
     #define DWGRX_DEFINE_SMARTPTR_BASE()    \
         void addRef() {;}                   \
@@ -157,6 +167,7 @@
     #define DWGDB_Type(_dbType_)            AcDb##_dbType_
     #define DWGGE_Type(_geomType_)          AcGe##_geomType_
     #define DWGGI_Type(_giType_)            AcGi##_giType_
+    #define DWGSTR_NAME(_name_)             ACDB_##_name_
 
     // call RealDwg method
     #define DWGDB_CALLSDKMETHOD(_opendwgMethod_, _realdwgMethod_) _realdwgMethod_
@@ -189,7 +200,8 @@
         DWGDB_EXPORT static AcRxObject*     CreateObject ();                    \
         DWGDB_EXPORT static _className_*    Cast (AcRxObject const* rxObj);     \
         DWGDB_EXPORT AcRxObject*            QueryX (AcRxClass const* c) const;  \
-        DWGDB_EXPORT AcRxObject*            GetX (AcRxClass const* c) const;
+        DWGDB_EXPORT AcRxObject*            GetX (AcRxClass const* c) const;    \
+        DWGDB_EXPORT AcRxClass*             IsA () const;
     // OpenDWG specific
     #define DWGRX_DEFINE_SMARTPTR_BASE()
     #define DWGRX_CONS_DEFINE_MEMBERS(_class_,_parent_)     ACRX_CONS_DEFINE_MEMBERS(##_class_##,##_parent_##,1);
@@ -211,13 +223,14 @@
     virtual DwgDbStatus _OpenObject(DwgDbObjectId id,DwgDbOpenMode mode,bool openErased=false, bool openLocked=false) override; \
     virtual DwgDbStatus _AcquireObject (Dwg##_classSuffix_## *& obj) override;                                                  \
     virtual DwgDbStatus _CreateObject () override;                                                                              \
-    virtual DwgDbStatus _CloseObject () override;                                                                               \
+    virtual DwgDbStatus _CloseObject () override;
+
+#define DWGDB_PUBLIC_SMARTPTR_METHODS(_classSuffix_)                                                                            \
     DWGDB_EXPORT bool IsNull () const;                                                                                          \
     DWGDB_EXPORT Dwg##_classSuffix_##CP get () const;                                                                           \
     DWGDB_EXPORT Dwg##_classSuffix_##P get ();                                                                                  \
     DWGDB_EXPORT DwgDbStatus OpenObject (DwgDbObjectId id,DwgDbOpenMode mode,bool openErased=false, bool openLocked=false);     \
     DWGDB_EXPORT DwgDbStatus AcquireObject (Dwg##_classSuffix_## *& obj);                                                       \
-    DWGDB_EXPORT DwgDbStatus CreateObject ();                                                                                   \
     DWGDB_EXPORT DwgDbStatus CloseObject ();
 
 // declare common methods of a DbObject derivative which may be used by our consumers:
@@ -256,9 +269,12 @@
 #define DWGDB_DEFINE_OBJECTPTR(_classSuffix_)                                                                                           \
     class DwgDb##_classSuffix_##Ptr : public DWGDB_EXTENDSMARTPTR(Db##_classSuffix_##), public IDwgDbSmartPtr<DwgDb##_classSuffix_##>   \
         {                                                                                                                               \
-        public:                                                                                                                         \
-        DWGDB_ADD_SMARTPTR_CONSTRUCTORS (Db##_classSuffix_##)                                                                           \
+        friend class DwgDbObjectId;                                                                                                     \
+        protected:                                                                                                                      \
         DWGDB_OVERRIDE_SMARTPTR_INTERFACE (Db##_classSuffix_##)                                                                         \
+        public:                                                                                                                         \
+        DWGDB_PUBLIC_SMARTPTR_METHODS (Db##_classSuffix_##)                                                                             \
+        DWGDB_ADD_SMARTPTR_CONSTRUCTORS (Db##_classSuffix_##)                                                                           \
         DWGDB_EXPORT DwgDb##_classSuffix_##Ptr (DwgDbObjectId id, DwgDbOpenMode mode = DwgDbOpenMode::ForRead, bool openErased = false, \
                                                 bool openLocked = false);                                                               \
         DWGDB_EXPORT DwgDb##_classSuffix_##Ptr (DwgDb##_classSuffix_##* obj);                                                           \
@@ -300,11 +316,13 @@ DEFINE_DWGDB_TYPEDEFS (DwgDbArc)
 DEFINE_DWGDB_TYPEDEFS (DwgDbCircle)
 DEFINE_DWGDB_TYPEDEFS (DwgDb3dSolid)
 DEFINE_DWGDB_TYPEDEFS (DwgDbBlockReference)
+DEFINE_DWGDB_TYPEDEFS (DwgDbViewRepBlockReference)
 DEFINE_DWGDB_TYPEDEFS (DwgDbBody)
 DEFINE_DWGDB_TYPEDEFS (DwgDbCamera)
 DEFINE_DWGDB_TYPEDEFS (DwgDbCurve)
 DEFINE_DWGDB_TYPEDEFS (DwgDbDimension)
 DEFINE_DWGDB_TYPEDEFS (DwgDbFace)
+DEFINE_DWGDB_TYPEDEFS (DwgDbFaceRecord)
 DEFINE_DWGDB_TYPEDEFS (DwgDbFcf)
 DEFINE_DWGDB_TYPEDEFS (DwgDbFrame)
 DEFINE_DWGDB_TYPEDEFS (DwgDbGeoPositionMarker)
@@ -341,6 +359,8 @@ DEFINE_DWGDB_TYPEDEFS (DwgDbText)
 DEFINE_DWGDB_TYPEDEFS (DwgDbTrace)
 DEFINE_DWGDB_TYPEDEFS (DwgDbUnderlayReference)
 DEFINE_DWGDB_TYPEDEFS (DwgDbVertex)
+DEFINE_DWGDB_TYPEDEFS (DwgDbPolyFaceMeshVertex)
+DEFINE_DWGDB_TYPEDEFS (DwgDbPolygonMeshVertex)
 DEFINE_DWGDB_TYPEDEFS (DwgDbViewBorder)
 DEFINE_DWGDB_TYPEDEFS (DwgDbViewport)
 DEFINE_DWGDB_TYPEDEFS (DwgDbViewSymbol)
@@ -381,6 +401,8 @@ DEFINE_DWGDB_TYPEDEFS (DwgDbIBLBackground)
 DEFINE_DWGDB_TYPEDEFS (DwgDbImageBackground)
 DEFINE_DWGDB_TYPEDEFS (DwgDbSkyBackground)
 DEFINE_DWGDB_TYPEDEFS (DwgDbSolidBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbXrefGraph)
+DEFINE_DWGDB_TYPEDEFS (DwgDbXrefGraphNode)
 
 
 enum class DwgDbStatus
@@ -398,6 +420,7 @@ enum class DwgDbStatus
     FilerError,
     NotSupported,
     UrlCacheError,
+    NotPersistentObject,
     };
 #define ToDwgDbStatus(status)   static_cast<DwgDbStatus> (##status)
 
@@ -740,6 +763,16 @@ enum class SnapIsoPair
     TopIsoplane             = 1,
     RightIsoplane           = 2
     };  // snapIsoPair
+
+enum class DwgDbXrefStatus
+    {
+    NotAnXref               = DWGDB_SDKENUM_DB(kXrfNotAnXref),
+    Resolved                = DWGDB_SDKENUM_DB(kXrfResolved),
+    Unloaded                = DWGDB_SDKENUM_DB(kXrfUnloaded),
+    Unreferenced            = DWGDB_SDKENUM_DB(kXrfUnreferenced),
+    FileNotFound            = DWGDB_SDKENUM_DB(kXrfFileNotFound ),
+    Unresolved              = DWGDB_SDKENUM_DB(kXrfUnresolved),
+    };  // XrefStatus
 
 // platform types commonly used across OpenDWG & RealDWG
 typedef DWGDB_SDKNAME(bool,     Adesk::Boolean)     DwgDbBool;

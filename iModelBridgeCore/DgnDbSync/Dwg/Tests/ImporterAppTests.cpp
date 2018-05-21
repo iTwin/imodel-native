@@ -15,6 +15,7 @@ struct ImporterAppTests : public ImporterTests, public ImporterCommandBuilder
 {
     BentleyApi::StatusInt RunCMD(BentleyApi::WString);
 };
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar Hayat      05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -40,6 +41,10 @@ TEST_F(ImporterAppTests, createIBim)
     createCommand();
     addInputFile(inFile.c_str());
     addOutputFile(GetOutputDir() );
+#ifndef WIP_GENRATE_THUMBNAILS
+    // don't generate thumbnails for now
+    addNoThumbnails();
+#endif
     ASSERT_EQ( SUCCESS, RunCMD(m_command));
 
     BeFileName outFile = GetIBimFileName(inFile);
@@ -59,6 +64,10 @@ TEST_F(ImporterAppTests, createIBIMandIModel)
     addInputFile(inFile.c_str());
     addOutputFile(GetOutputDir());
     addCompressFlag();
+#ifndef WIP_GENRATE_THUMBNAILS
+    // don't generate thumbnails for now
+    addNoThumbnails();
+#endif
     ASSERT_EQ(SUCCESS, RunCMD(m_command));
 
     BeFileName outFile = GetIBimFileName(inFile);
@@ -78,6 +87,10 @@ TEST_F(ImporterAppTests, createIBIMandIModelFromDxf)
     addInputFile(inFile.c_str());
     addOutputFile(GetOutputDir());
     addCompressFlag();
+#ifndef WIP_GENRATE_THUMBNAILS
+    // don't generate thumbnails for now
+    addNoThumbnails();
+#endif
     ASSERT_EQ(SUCCESS, RunCMD(m_command));
 
     BeFileName outFile = GetIBimFileName(inFile);
@@ -98,6 +111,10 @@ TEST_F(ImporterAppTests, Description)
     addInputFile(inFile.c_str());
     addOutputFile(GetOutputDir());
     addDescription(L"TestDescription");
+#ifndef WIP_GENRATE_THUMBNAILS
+    // don't generate thumbnails for now
+    addNoThumbnails();
+#endif
     ASSERT_EQ(SUCCESS, RunCMD(m_command));
 
     BeFileName outFile = GetIBimFileName(inFile);
@@ -131,6 +148,10 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
     addInputFile(inFile.c_str());
     addOutputFile(GetOutputDir());
     addCompressFlag();
+#ifndef WIP_GENRATE_THUMBNAILS
+    // don't generate thumbnails for now
+    addNoThumbnails();
+#endif
     ASSERT_EQ(SUCCESS, RunCMD(m_command));
 
     BeFileName outFile = GetIBimFileName(inFile);
@@ -157,6 +178,18 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
         count++;
         }
     EXPECT_EQ(1, count);
+
+    // check GeometryParts model
+    count = 0;
+    for (auto const& entry : models.MakeIterator(BIS_SCHEMA(BIS_CLASS_DefinitionModel)))
+        {
+        auto model = models.GetModel (entry.GetModelId());
+        ASSERT_TRUE(model.IsValid());
+        auto name = model->GetName ();
+        if (name.StartsWithI("DwgGeometryParts"))
+            count++;
+        }
+    EXPECT_EQ(1, count) << "Should always & only have 1 DwgGeometryParts model!";
 
     // check sheet models
     count = 0;
@@ -204,4 +237,14 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
     for (auto entry : db->Elements().MakeAspectIterator(BIS_SCHEMA(BIS_CLASS_ElementMultiAspect)))
         count++;
     EXPECT_EQ(2, count);
+
+    // check the default view: it should be the modelspace viewport and should be a SpatialView named "Model - Active":
+    DgnViewId   viewId = ViewDefinition::QueryDefaultViewId (*db);
+    EXPECT_TRUE (viewId.IsValid()) << "The default view is not set!";
+    ViewDefinitionCPtr  view = ViewDefinition::Get (*db, viewId);
+    EXPECT_TRUE (view.IsValid()) << "The default view is invalid!";
+    EXPECT_TRUE (view->IsSpatialView()) << "The default view is not a SpatialView!";
+    Utf8String  name = view->GetName ();
+    auto expected = BuildModelspaceModelname (inFile);
+    EXPECT_TRUE (name.EqualsI(expected.c_str())) << "The default view should be \"Model[filename]\"!";
     }

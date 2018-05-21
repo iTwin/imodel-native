@@ -58,6 +58,7 @@ void UpdaterChangeDetector::_Cleanup (DwgImporter& importer)
     DELETE_AND_CLEAR (m_byIdIter);
     m_elementsSeen.clear();
     m_dwgModelsSeen.clear ();
+    m_viewsSeen.clear ();
     m_dwgModelsSkipped.clear ();
     m_newlyDiscoveredModels.clear ();
     m_elementsDiscarded = 0;
@@ -210,6 +211,37 @@ bool    CreatorChangeDetector::_IsElementChanged (DetectionResults& results, Dwg
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    UpdaterChangeDetector::IsUpdateRequired (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR obj) const
+    {
+    /*-----------------------------------------------------------------------------------
+    Cases we need to force an element update:
+
+    1) If the root transform has been changed, we need to update all elements, even those in 
+        a papserspace.  A paperspace element is not impacted by the root transform change, but
+        we have to record it as a seen element so it won't get deleted at the end.
+    2) For an Xref insert entity in a paperspace, we need to recurse into xref's entity section
+        such that we can detect element changes made in the xref file.
+    -----------------------------------------------------------------------------------*/
+    if (results.GetChangeType() == ChangeType::None)
+        {
+        // case 1 - root transform has changed
+        if (importer.HasRootTransformChanged())
+            return  true;
+
+        // case 2 - an xref insert in a paperspace
+        if (importer.GetCurrentSpaceId() != importer.GetModelSpaceId())
+            {
+            DwgDbBlockReferenceP insert = DwgDbBlockReference::Cast (&obj);
+            return insert != nullptr && insert->IsXAttachment();
+            }
+        }
+
+    return  false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    UpdaterChangeDetector::_IsElementChanged (DetectionResults& results, DwgImporter& importer, DwgDbObjectCR obj, ResolvedModelMapping const& modelMap, T_DwgSyncInfoElementFilter* filter)
@@ -277,12 +309,7 @@ bool    UpdaterChangeDetector::_IsElementChanged (DetectionResults& results, Dwg
         }
 #endif
 
-    /*-----------------------------------------------------------------------------------
-    If the root transform has been changed, we need to update all elements, even those in 
-    a papserspace.  A paperspace element is not impacted by the root transform change, but
-    we have to record it as a seen element so it won't get deleted at the end.
-    -----------------------------------------------------------------------------------*/
-    if (importer.HasRootTransformChanged() && results.GetChangeType() == ChangeType::None)
+    if (this->IsUpdateRequired(results, importer, obj))
         results.SetChangeType (ChangeType::Update);
 
     // if new & old don't match, we will have to either import anew or update it:
@@ -501,7 +528,7 @@ void UpdaterChangeDetector::_OnModelSeen (DwgImporter& importer, ResolvedModelMa
 void UpdaterChangeDetector::_DetectDeletedModels(DwgImporter& importer, DwgSyncInfo::ModelIterator& iter)
     {
     // *** NB: This alogorithm *infers* that a model was deleted in DWG if we did not see it or its file during processing.
-    //          This inference is valid only if we know that a) we saw all models and/or files, and b) they were all registered in m_dwgFiles/ModelsSkipped or m_dwgModelsSeen.
+    //          This inference is valid only if we know that a) we saw all models and/or files, and b) they were all registered in Files/ModelsSkipped or m_dwgModelsSeen.
 
     // iterate over all of the previously found models to determine if any of 
     // them were missing this time around. Those models and their constituent Models must to be deleted.
@@ -541,23 +568,23 @@ void UpdaterChangeDetector::_DetectDeletedModelsInFile (DwgImporter& importer, D
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpdaterChangeDetector::_DetectDeletedElements (DwgImporter& importer, DwgSyncInfo::ElementIterator& iter)
     {
-    // *** NB: This alogorithm *infers* that an element was deleted in V8 if we did not see it, its model, or its file during processing.
-    //          This inference is valid only if we know that a) we saw all models and/or files, and b) they were all registered in m_v8Files/ModelsSkipped or m_elementsSeen.
+    // *** NB: This alogorithm *infers* that an element was deleted in DWG if we did not see it, its model, or its file during processing.
+    //          This inference is valid only if we know that a) we saw all models and/or files, and b) they were all registered in Files/ModelsSkipped or m_elementsSeen.
 
     // iterate over all of the previously converted elements from the syncinfo.
     for (auto elementInSyncInfo=iter.begin(); elementInSyncInfo!=iter.end(); ++elementInSyncInfo)
         {
         auto previouslyConvertedElementId = elementInSyncInfo.GetElementId();
-        if (m_elementsSeen.Contains(previouslyConvertedElementId)) // if update encountered at least one Dwg element that was mapped to this BIM element,
+        if (m_elementsSeen.Contains(previouslyConvertedElementId)) // if update encountered at least one DWG entity that was mapped to this BIM element,
             continue;   // keep this BIM element alive
 
         if (m_dwgModelsSkipped.find(elementInSyncInfo.GetDwgModelSyncInfoId()) != m_dwgModelsSkipped.end()) // if we skipped this whole DWG model (e.g., because it was unchanged),
             continue;   // we don't expect any element from it to be in m_elementsSeen. Keep them all alive.
 
-        if (importer.GetSyncInfo().IsMappedToSameDwgObject(previouslyConvertedElementId, m_elementsSeen)) // if update encountered at least one DWG element that this element was mapped to, 
+        if (importer.GetSyncInfo().IsMappedToSameDwgObject(previouslyConvertedElementId, m_elementsSeen)) // if update encountered at least one DWG entity that this element was mapped to, 
             continue;   // infer that this is a child of an assembly, and the assembly parent is in m_elementsSeen.
 
-        // We did not encounter the Dwg element that was mapped to this BIM element. We infer that the Dwg element 
+        // We did not encounter the DWG entity that was mapped to this BIM element. We infer that the DWG entity 
         // was deleted. Therefore, the update to the BIM is to delete the corresponding BIM element.
         LOG.tracev ("Delete element %lld", previouslyConvertedElementId.GetValue());
 
@@ -607,7 +634,7 @@ void UpdaterChangeDetector::_OnElementSeen (DwgImporter& importer, DgnElementId 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UpdaterChangeDetector::_DeleteDeletedMaterials (DwgImporter& importer)
+void UpdaterChangeDetector::_DetectDeletedMaterials (DwgImporter& importer)
     {
     // collect materials from syncInfo:
     DwgSyncInfo::MaterialIterator syncMaterials (importer.GetDgnDb());
@@ -637,6 +664,56 @@ void UpdaterChangeDetector::_DeleteDeletedMaterials (DwgImporter& importer)
             syncInfo.DeleteMaterial (id);
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_OnViewSeen (DwgImporter& importer, DgnViewId viewId)
+    {
+    if (viewId.IsValid())
+        m_viewsSeen.insert (viewId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
+    {
+    auto&   elements = importer.GetDgnDb().Elements ();
+    auto&   syncInfo = importer.GetSyncInfo ();
+    auto    jobModelId = importer.GetOrCreateJobDefinitionModel()->GetModelId ();
+
+    for (auto const& entry : ViewDefinition::MakeIterator(importer.GetDgnDb()))
+        {
+        auto viewId = entry.GetId ();
+        if (m_viewsSeen.find(viewId) == m_viewsSeen.end())
+            {
+            // don't delete views not created by us:
+            auto view = entry.GetSpatialViewDefinition ();
+            if (view.IsValid() && view->GetModel()->GetModelId() != jobModelId)
+                continue;
+
+            // a special case for a SpatialView: if attached to a Sheet::ViewAttachment, do not delete it:
+            bool    isAttached = false;
+            for (auto va : elements.MakeIterator(BIS_SCHEMA(BIS_CLASS_ViewAttachment)))
+                {
+                auto viewAttachment = elements.Get<Sheet::ViewAttachment>(va.GetElementId());
+                if (viewAttachment.IsValid() && viewAttachment->GetAttachedViewId() == viewId)
+                    {
+                    isAttached = true;
+                    break;
+                    }
+                }
+            if (!isAttached)
+                {
+                elements.Delete (viewId);
+                syncInfo.DeleteView (viewId);
+                }
+            }
+        }
+
+    m_viewsSeen.clear ();
     }
 
 /*---------------------------------------------------------------------------------**//**

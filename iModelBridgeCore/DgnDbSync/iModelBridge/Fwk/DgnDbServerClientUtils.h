@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/Fwk/DgnDbServerClientUtils.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -75,9 +75,10 @@ protected:
     iModel::Hub::Error m_lastServerError;
 	Utf8String m_projectId;
     uint8_t m_maxRetryCount {};
+    WebServices::ClientInfoPtr m_clientInfo;
 
 public:
-    DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment, uint8_t nretries);
+    DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment, uint8_t nretries, WebServices::ClientInfoPtr info);
     ~DgnDbServerClientUtils() {}
 
     //! Sign in to iModel Hub Services via Connect. If sign in succeeds, that moves this object to a valid state.

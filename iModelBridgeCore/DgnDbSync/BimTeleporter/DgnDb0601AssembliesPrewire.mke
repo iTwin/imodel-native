@@ -2,7 +2,7 @@
 #
 #     $Source: BimTeleporter/DgnDb0601AssembliesPrewire.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 PolicyFile=$(SrcRoot)bsicommon/sharedmki/AssertCommonCompileLinkPolicy.mki
@@ -12,10 +12,16 @@ PolicyFile=$(SrcRoot)bsicommon/sharedmki/AssertCommonCompileLinkPolicy.mki
 
 # See $(DGNDB_VER) for the version suffix
 
-.dll.dll : 
+.dll.dll :
     $(LinkFirstDepToFirstTarget)
 
-.lib.lib :
+.lib.lib : 
+    $(LinkFirstDepToFirstTarget)
+	
+.a.a :
+    $(LinkFirstDepToFirstTarget)
+
+.pdb.pdb :
     $(LinkFirstDepToFirstTarget)
 
 Delivery=$(BuildContext)Delivery/
@@ -24,12 +30,12 @@ DeliveryDgnDbPlatformLibs=$(Delivery)DgnDbLibs/
 SourceAssets = $(DgnDbDgnPlatformBase)assets/
 
 DgnDbDlls = $(DgndbDgnPlatformLibDir)
-%warn DgnDbDlls=$(DgnDbDlls)
 
 %if !defined (ApiNumber)
     ApiNumber = G06
 %endif
 
+%if "iOSARM64" != $(TARGET_PROCESSOR_ARCHITECTURE)
 $(Delivery)Bentley$(ApiNumber).dll : $(DgnDbDlls)Bentley$(ApiNumber).dll
 
 $(Delivery)BeIcu4c$(ApiNumber).dll : $(DgnDbDlls)BeIcu4c$(ApiNumber).dll
@@ -58,67 +64,72 @@ $(Delivery)freetype2$(ApiNumber).dll : $(DgnDbDlls)freetype2$(ApiNumber).dll
 
 $(Delivery)BeOpenSSL$(ApiNumber).dll : $(DgnDbDlls)BeOpenSSL$(ApiNumber).dll
 
-$(Delivery)DgnView$(ApiNumber).dll : $(DgnDbDlls)DgnView$(ApiNumber).dll
+#$(Delivery)DgnView$(ApiNumber).dll : $(DgnDbDlls)DgnView$(ApiNumber).dll
 
-$(Delivery)libv8.dll : $(DgnDbDlls)libv8.dll
-
-$(Delivery)qvision$(ApiNumber).dll : $(DgnDbDlls)qvision$(ApiNumber).dll
-
-$(Delivery)System.Json.dll : $(DgnDbDlls)System.Json.dll
+#$(Delivery)qvision$(ApiNumber).dll : $(DgnDbDlls)qvision$(ApiNumber).dll
 
 $(Delivery)BeHttp$(ApiNumber).dll : $(DgnDbDlls)BeHttp$(ApiNumber).dll
 
 $(Delivery)BeFolly$(ApiNumber).dll : $(DgnDbDlls)BeFolly$(ApiNumber).dll
 
+%if "x64" == $(TARGET_PROCESSOR_ARCHITECTURE)
 $(Delivery)bentleylog4cxx$(ApiNumber).dll : $(DgnDbDlls)bentleylog4cxx$(ApiNumber).dll
 
-$(Delivery)BeSecurity$(ApiNumber).dll : $(DgnDbDlls)BeSecurity$(ApiNumber).dll
+%endif
+
+#$(Delivery)BeSecurity$(ApiNumber).dll : $(DgnDbDlls)BeSecurity$(ApiNumber).dll
 
 $(Delivery)Units$(ApiNumber).dll : $(DgnDbDlls)Units$(ApiNumber).dll
 
+$(Delivery)Planning$(ApiNumber).dll : $(DgnDbDlls)Planning$(ApiNumber).dll
+%endif
 
 always:
    !~@mkdir ${DeliveryDgnDbPlatformLibs}
 
-$(DeliveryDgnDbPlatformLibs)Bentley.lib : $(DgnDbDlls)Bentley.lib
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)Bentley$(stlibext) : $(DgnDbDlls)$(stlibprefix)Bentley$(stlibext)
 
-$(DeliveryDgnDbPlatformLibs)BeSQLite.lib : $(DgnDbDlls)BeSQLite.lib
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeSQLite$(stlibext) : $(DgnDbDlls)$(stlibprefix)BeSQLite$(stlibext)
 
-$(DeliveryDgnDbPlatformLibs)BeSQLiteEC.lib : $(DgnDbDlls)BeSQLiteEC.lib
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeSQLiteEC$(stlibext) : $(DgnDbDlls)$(stlibprefix)BeSQLiteEC$(stlibext)
 
-$(DeliveryDgnDbPlatformLibs)ECObjects.lib : $(DgnDbDlls)ECObjects.lib
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)ECObjects$(stlibext) : $(DgnDbDlls)$(stlibprefix)ECObjects$(stlibext)
 
-$(DeliveryDgnDbPlatformLibs)BentleyGeom.lib : $(DgnDbDlls)BentleyGeom.lib
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)BentleyGeom$(stlibext) : $(DgnDbDlls)$(stlibprefix)BentleyGeom$(stlibext)
 
-$(DeliveryDgnDbPlatformLibs)BentleyGeomSerialization.lib : $(DgnDbDlls)BentleyGeomSerialization.lib
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)BentleyGeomSerialization$(stlibext) : $(DgnDbDlls)$(stlibprefix)BentleyGeomSerialization$(stlibext)
 
-$(DeliveryDgnDbPlatformLibs)DgnPlatform.lib : $(DgnDbDlls)DgnPlatform.lib
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)DgnPlatform$(stlibext) : $(DgnDbDlls)$(stlibprefix)DgnPlatform$(stlibext)
 
-$(DeliveryDgnDbPlatformLibs)BaseGeoCoord.lib : $(DgnDbDlls)BaseGeoCoord.lib
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)BaseGeoCoord$(stlibext) : $(DgnDbDlls)$(stlibprefix)BaseGeoCoord$(stlibext)
 
-$(DeliveryDgnDbPlatformLibs)BeXml.lib : $(DgnDbDlls)BeXml.lib
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)Planning$(stlibext) : $(DgnDbDlls)$(stlibprefix)Planning$(stlibext)
 
-$(DeliveryDgnDbPlatformLibs)BeLibXml2.lib : $(DgnDbDlls)BeLibXml2.lib
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeXml$(stlibext) : $(DgnDbDlls)$(stlibprefix)BeXml$(stlibext)
 
-$(DeliveryDgnDbPlatformLibs)BeHttp.lib : $(DgnDbDlls)BeHttp.lib
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeLibXml2$(stlibext) : $(DgnDbDlls)$(stlibprefix)BeLibXml2$(stlibext)
 
-$(DeliveryDgnDbPlatformLibs)BeJsonCpp.lib : $(DgnDbDlls)BeJsonCpp.lib
+#$(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeHttp$(stlibext) : $(DgnDbDlls)$(stlibprefix)BeHttp$(stlibext)
 
-$(DeliveryDgnDbPlatformLibs)BeFolly.lib : $(DgnDbDlls)BeFolly.lib
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeJsonCpp$(stlibext) : $(DgnDbDlls)$(stlibprefix)BeJsonCpp$(stlibext)
 
+$(DeliveryDgnDbPlatformLibs)$(stlibprefix)BeJsonCpp$(stlibdebugext) : $(DgnDbDlls)$(stlibprefix)BeJsonCpp$(stlibdebugext)
+
+#$(DeliveryDgnDbPlatformLibs)BeFolly$(stlibext) : $(DgnDbDlls)BeFolly$(stlibext)
 
 always:
    !~@mkdir ${DeliveryDgnDbPlatformAssets}
    CreateSymLinks.py -d"$(DeliveryDgnDbPlatformAssets)ECSchemas=$(SourceAssets)ECSchemas"
    CreateSymLinks.py -d"$(DeliveryDgnDbPlatformAssets)sqlang=$(SourceAssets)sqlang"
    CreateSymLinks.py -f"$(DeliveryDgnDbPlatformAssets)icudt55l.dat=$(SourceAssets)icudt55l.dat"
+%if "x64" == $(TARGET_PROCESSOR_ARCHITECTURE)
    CreateSymLinks.py -f"$(DeliveryDgnDbPlatformAssets)lastresortfonts=$(SourceAssets)lastresortfonts"
    CreateSymLinks.py -f"$(DeliveryDgnDbPlatformLibs)BeJsonCpp.pdb=$(DgnDbDlls)BeJsonCpp.pdb"
+%endif
 
 DGNDB_VERSIONEDAPI_INPUTDIR = $(DgndbDgnPlatformIncludeDir)
 DGNDB_VERSIONEDAPI_OUTPUTDIR = $(OutputRootDir)build/SdkDistribution/
 
-%warn including $(DGNDB_VERSIONEDAPI_INPUTDIR)
 always:
     ~mkdir $(DGNDB_VERSIONEDAPI_INPUTDIR)
     ~mkdir $(DGNDB_VERSIONEDAPI_OUTPUTDIR)

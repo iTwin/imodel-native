@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/BimImporter/lib/Readers.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -40,12 +40,18 @@ static Utf8CP const JSON_TYPE_Category = "Category";
 static Utf8CP const JSON_TYPE_SubCategory = "SubCategory";
 static Utf8CP const JSON_TYPE_ViewDefinition3d = "ViewDefinition3d";
 static Utf8CP const JSON_TYPE_ViewDefinition2d = "ViewDefinition2d";
-static Utf8CP const JSON_TYPE_ElementRefersToElement = "ElementRefersToElement";
+static Utf8CP const JSON_TYPE_LinkTable = "LinkTable";
 static Utf8CP const JSON_TYPE_ElementGroupsMembers = "ElementGroupsMembers";
 static Utf8CP const JSON_TYPE_ElementHasLinks = "ElementHasLinks";
 static Utf8CP const JSON_TYPE_AnnotationTextStyle = "AnnotationTextStyle";
 static Utf8CP const JSON_TYPE_LineStyleElement = "LineStyleElement";
 static Utf8CP const JSON_TYPE_Texture = "Texture";
+static Utf8CP const JSON_TYPE_Plan = "Plan";
+static Utf8CP const JSON_TYPE_WorkBreakdown = "WorkBreakdown";
+static Utf8CP const JSON_TYPE_Activity = "Activity";
+static Utf8CP const JSON_TYPE_Baseline = "Baseline";
+static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
+static Utf8CP const JSON_TYPE_GenericElementAspect = "GenericElementAspect";
 
 static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec = "CodeSpec";
 static Utf8CP const  BIS_ELEMENT_PROP_CodeScope = "CodeScope";
@@ -185,15 +191,13 @@ struct GeometryReader : ElementReader
 struct GeometricElementReader : GeometryReader
     {
     DEFINE_T_SUPER(GeometryReader);
-    private:
-        bool m_is3d;
 
     protected:
         BentleyStatus _OnElementCreated(DgnElementR element, ECN::IECInstanceR properties) override;
         Utf8CP _GetElementType() override { return "GeometricElement"; }
 
     public:
-        GeometricElementReader(BisJson1ImporterImpl* importer, bool is3d) : GeometryReader(importer), m_is3d(is3d) {}
+        GeometricElementReader(BisJson1ImporterImpl* importer) : GeometryReader(importer) {}
 
     };
 
@@ -288,14 +292,14 @@ struct ModelSelectorReader : Reader
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-struct DisplayStyleReader : Reader
+struct DisplayStyleReader : ElementReader
     {
     protected:
         BentleyStatus _Read(Json::Value& object) override;
         Utf8CP _GetElementType() override { return "DisplayStyle"; }
 
     public:
-        using Reader::Reader;
+        using ElementReader::ElementReader;
     };
 
 //---------------------------------------------------------------------------------------
@@ -347,6 +351,7 @@ struct SchemaReader : Reader
     {
     private:
         BentleyStatus ImportSchema(ECN::ECSchemaP schema);
+        BentleyStatus ValidateBaseClasses(ECN::ECSchemaP schema);
 
     protected:
         BentleyStatus _Read(Json::Value& object) override;
@@ -379,7 +384,7 @@ struct PartitionReader : Reader
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-struct ElementRefersToElementReader : Reader
+struct LinkTableReader : Reader
     {
     protected:
         BentleyStatus _Read(Json::Value& relationship) override;
@@ -418,5 +423,73 @@ struct TextureReader : ElementReader
         BentleyStatus _Read(Json::Value& texture) override;
     public:
         using ElementReader::ElementReader;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct PlanReader : ElementReader
+    {
+    protected:
+        BentleyStatus _OnInstanceCreated(ECN::IECInstanceR instance) override;
+
+    public:
+        using ElementReader::ElementReader;
+
+    };
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct WorkbreakdownReader : PlanReader
+    {
+    protected:
+        Utf8String _GetRelationshipClassName() override { return PLANNING_SCHEMA(BP_REL_WorkBreakdownOwnsWorkBreakdowns); }
+    public:
+        using PlanReader::PlanReader;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct ActivityReader : PlanReader
+    {
+    protected:
+        Utf8String _GetRelationshipClassName() override { return PLANNING_SCHEMA(BP_REL_WorkBreakdownOwnsActivities); }
+    public:
+        using PlanReader::PlanReader;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct BaselineReader : Reader
+    {
+    protected:
+        BentleyStatus _Read(Json::Value& baseline) override;
+    public:
+        using Reader::Reader;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct PropertyDataReader : Reader
+    {
+    protected:
+        BentleyStatus _Read(Json::Value& propData) override;
+
+    public:
+        using Reader::Reader;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct GenericElementAspectReader : Reader
+    {
+    protected:
+        BentleyStatus _Read(Json::Value& object) override;
+    public:
+        using Reader::Reader;
     };
 END_BIM_TELEPORTER_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/SheetConverter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -104,7 +104,7 @@ void Converter::SheetsConvertModelAndViews(ResolvedModelMapping const& v8mm, Vie
 
     SheetsConvertViewAttachments(v8mm, firstViewInfo.get(), nvvf);
 
-    v8model.Empty();
+    //v8model.Empty(); Since XDomains and bridges may need to cache elementRefs, v8Models shouldn't be freed prematurely. Thus, commenting this line out.
     }
 
 struct ScaleVote
@@ -146,7 +146,7 @@ double Converter::SheetsComputeScale(DgnV8ModelCR v8SheetModel)
             }
         else
             {
-            if (!HasProxyGraphicsCache(*v8DgnAttachment))
+            if (!HasProxyGraphicsCache(*v8DgnAttachment, nullptr))
                 continue;
             }
 

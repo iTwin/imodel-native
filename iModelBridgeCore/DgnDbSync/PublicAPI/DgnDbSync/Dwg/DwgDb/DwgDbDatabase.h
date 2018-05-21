@@ -38,10 +38,18 @@ class DwgDbDatabase : public DWGDB_EXTENDCLASS(Database)
 public:
     DWGDB_EXPORT DwgDbDatabase(bool buildDefaultDrawing = true, bool noDocument = false) : OdDbDatabase () {}
 
+    DWGDB_EXPORT DwgDbStatus    ResolveXrefs (bool useThreadEngine = true, bool newXrefsOnly = false);
+
 #elif DWGTOOLKIT_RealDwg
                     , public DwgDbRefCounted<IDwgDbRefCounted>
     {
     DEFINE_T_SUPER (AcDbDatabase)
+//__PUBLISH_SECTION_END__
+private:
+    // hide this method - when RealDWG resolves xref's, it creates AcDbDatabase's outside of our RefCounted pointer!
+    DwgDbStatus ResolveXrefs (bool useThreadEngine = true, bool newXrefsOnly = false);
+//__PUBLISH_SECTION_START__
+
 public:
     DWGDB_EXPORT DwgDbDatabase(bool buildDefaultDrawing = true, bool noDocument = false) : AcDbDatabase (buildDefaultDrawing, noDocument) {}
 #endif
@@ -93,6 +101,8 @@ public:
     DWGDB_EXPORT size_t             GetISOLINES () const;
     DWGDB_EXPORT double             GetTEXTSIZE () const;
     DWGDB_EXPORT DwgDbObjectId      GetTEXTSTYLE () const;
+    DWGDB_EXPORT bool               GetTILEMODE () const;
+    DWGDB_EXPORT bool               GetVISRETAIN () const;
     DWGDB_EXPORT bool               GetLineweightDisplay () const;
     DWGDB_EXPORT DwgDbObjectId      GetActiveUserViewportId ();         // active viewport entity in active layout
     DWGDB_EXPORT DwgDbObjectId      GetActiveModelspaceViewportId ();   // active viewport table record in modelspace
@@ -112,6 +122,9 @@ public:
     DWGDB_EXPORT DwgFileVersion     GetFileVersion () const;
     DWGDB_EXPORT DwgDbStatus        SaveAs (WCharCP newFileName, DwgFileVersion ver = DwgFileVersion::Current, bool createBakFile = false);
     DWGDB_EXPORT DwgDbStatus        SaveAsDxf (WCharCP dxfFileName, DwgFileVersion ver = DwgFileVersion::Current, int precision = 6);
+    DWGDB_EXPORT DwgDbStatus        BindXrefs (DwgDbObjectIdArrayCR xrefBlocks, bool insertBind = true, bool allowUnresolved = false, bool quiet = true);
+    //! Create a new xRef block from a path and block name, and get the block ID back if succeeded.
+    DWGDB_EXPORT DwgDbObjectId      CreateXrefBlock (DwgStringCR xrefPath, DwgStringCR blockName);
     };  // DwgDbDatabase
 
 /*=================================================================================**//**

@@ -55,6 +55,8 @@ DwgDbStatus         DwgDbDatabase::SetPDSIZE (double s) { DWGDB_CALLSDKMETHOD(T_
 size_t              DwgDbDatabase::GetISOLINES () const { return DWGDB_CALLSDKMETHOD(T_Super::getISOLINES, T_Super::isolines)(); }
 double              DwgDbDatabase::GetTEXTSIZE () const { return DWGDB_CALLSDKMETHOD(T_Super::getTEXTSIZE, T_Super::textsize)(); }
 DwgDbObjectId       DwgDbDatabase::GetTEXTSTYLE () const { return DWGDB_CALLSDKMETHOD(T_Super::getTEXTSTYLE, T_Super::textstyle)(); }
+bool                DwgDbDatabase::GetTILEMODE () const { return DWGDB_CALLSDKMETHOD(T_Super::getTILEMODE, T_Super::tilemode)(); }
+bool                DwgDbDatabase::GetVISRETAIN () const { return DWGDB_CALLSDKMETHOD(T_Super::getVISRETAIN, T_Super::visretain)(); }
 bool                DwgDbDatabase::GetLineweightDisplay () const { return DWGDB_CALLSDKMETHOD(T_Super::getLWDISPLAY, T_Super::lineWeightDisplay)(); }
 DwgDbObjectId       DwgDbDatabase::GetLinetypeByBlockId () const { return DWGDB_CALLSDKMETHOD(T_Super::getLinetypeByBlockId(), T_Super::byBlockLinetype()); }
 DwgDbObjectId       DwgDbDatabase::GetLinetypeByLayerId () const { return DWGDB_CALLSDKMETHOD(T_Super::getLinetypeByLayerId(), T_Super::byLayerLinetype()); }
@@ -93,8 +95,8 @@ DwgDbObjectId       DwgDbDatabase::GetActiveUserViewportId ()
 #ifdef DWGTOOLKIT_OpenDwg
     anyvportId = this->activeViewportId ();
 #elif DWGTOOLKIT_RealDwg
-    if (Acad::eOk != acdbGetCurUserViewportId(this, anyvportId))
-        anyvportId = DwgDbObjectId ();
+    // the method returns the active viewport entity ID, not necessarily the overall viewport entity.
+    anyvportId = ::acdbGetCurVportId (this);
 #endif
     return  anyvportId;
     }
@@ -396,4 +398,137 @@ DwgDbStatus DwgDbDatabase::SaveAsDxf (WCharCP dxfFileName, DwgFileVersion versio
         }
 
     return  DwgDbStatus::InvalidInput;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbDatabase::BindXrefs (DwgDbObjectIdArrayCR xrefBlocks, bool insertBind, bool allowUnresolved, bool quiet)
+    {
+    DwgDbStatus status = DwgDbStatus::UnknownError;
+#if DWGTOOLKIT_OpenDwg
+    for (auto id : xrefBlocks)
+        {
+        OdDbBlockTableRecordPtr xref = id.safeOpenObject (OdDb::kForWrite);
+        if (!xref.isNull())
+            {
+            OdResult result = OdDbXRefMan::bind (xref, insertBind);
+            if (result != OdResult::eOk)
+                status = ToDwgDbStatus (result);
+            }
+        }
+
+#elif DWGTOOLKIT_RealDwg
+    AcDbObjectIdArray   acArray;
+    if (Util::GetObjectIdArray(acArray, xrefBlocks) > 0)
+        {
+        Acad::ErrorStatus es = ::acdbBindXrefs(this, acArray, insertBind, allowUnresolved, quiet);
+        status = ToDwgDbStatus (es);
+        }
+#endif
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbDatabase::ResolveXrefs (bool useThreadEngine, bool newXrefsOnly)
+    {
+    DwgDbStatus status = DwgDbStatus::UnknownError;
+#if DWGTOOLKIT_OpenDwg
+    status = ToDwgDbStatus (OdDbXRefMan::loadAll(this, false));
+    
+#elif DWGTOOLKIT_RealDwg
+#ifndef NDEBUG
+    // track xref events
+    class XrefEventReactor : public AcRxEventReactor
+        {
+        public:
+        void beginRestore (AcDbDatabase* to, const ACHAR* name, AcDbDatabase* from) override
+            {
+            std::cout << "Restoring AcDbDatabase: " << name << " 0x" << from << " 0x" << to << std::endl;
+            }
+        void databaseConstructed (AcDbDatabase* db) override
+            {
+            std::cout << "Created an xRef AcDbDatabase: 0x" << db << std::endl;
+            }
+        void databaseToBeDestroyed (AcDbDatabase* db) override
+            {
+            const ACHAR* name = nullptr;
+            if (Acad::eOk == db->getFilename(name))
+                std::cout << "Destroying AcDbDatabase: 0x" << db << ", " << name << std::endl;
+            }
+        };  // XrefEventReactor
+
+    AcRxEvent* arxEvent = AcRxEvent::cast (acrxSysRegistry()->at(ACRX_EVENT_OBJ));
+    XrefEventReactor* xrefReactor = new XrefEventReactor ();
+    arxEvent->addReactor (xrefReactor);
+#endif  // NDEBUG
+
+    Acad::ErrorStatus   es = ::acdbResolveCurrentXRefs (this, useThreadEngine, newXrefsOnly);
+    status = ToDwgDbStatus (es);
+
+#ifndef NDEBUG
+    if (nullptr != arxEvent && nullptr != xrefReactor)
+        arxEvent->removeReactor (xrefReactor);
+    if (nullptr != xrefReactor)
+        delete xrefReactor;
+#endif  // NDEBUG
+#endif
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectId   DwgDbDatabase::CreateXrefBlock (DwgStringCR xrefPath, DwgStringCR blockName)
+    {
+    DwgDbObjectId   blockId;
+#if DWGTOOLKIT_OpenDwg
+    OdDbBlockTableRecordPtr block = OdDbXRefManExt::addNewXRefDefBlock (this, xrefPath, blockName, false);
+    if (!block.isNull())
+        blockId = block->objectId ();
+
+#elif DWGTOOLKIT_RealDwg
+    Acad::ErrorStatus es = ::acdbAttachXref (this, xrefPath.c_str(), blockName.c_str(), blockId);
+    if (Acad::eOk == es)
+        {
+        // attempt to fix path names of nested xref blocks created from above call, due to likely a RealDWG bug!
+        AcDbBlockTableIterator* iter = nullptr;
+        AcDbBlockTablePointer   table(T_Super::blockTableId(), AcDb::kForRead);
+        if (table.openStatus() == Acad::eOk && table->newIterator(iter) == Acad::eOk)
+            {
+            for (iter->start(); !iter->done(); iter->step())
+                {
+                AcDbObjectId    currId;
+                if (iter->getRecordId(currId) != Acad::eOk || currId == blockId)
+                    continue;
+
+                ACHAR*  path = nullptr;
+                AcDbBlockTableRecordPointer block(currId, AcDb::kForWrite);
+                if (block.openStatus() != Acad::eOk || !block->isFromExternalReference() || block->pathName(path) != Acad::eOk && nullptr != path)
+                    continue;
+                
+                auto size = ::wcslen (path);
+                if (size < 4)
+                    continue;
+
+                // check if the end of the path has been appended by bad characters!
+                AcString str(path);
+                str.makeLower ();
+                auto extra = size - (str.findRev(L".dwg") + 4);
+                if (extra > 0)
+                    {
+                    // remove the bad characters:
+                    path[size-extra] = 0;
+                    // reset the xref path:
+                    block->setPathName (path);
+                    }
+                acdbFree (path);
+                }
+            delete iter;
+            }
+        }
+#endif  // TOOLKIT
+    return  blockId;
     }

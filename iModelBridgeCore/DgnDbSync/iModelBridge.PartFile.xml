@@ -6,12 +6,14 @@
     <!-- iModelBridge    The bridge DLL. -->
     <!-- ........................................................................................................................................ -->
 
-    <Part Name="iModelBridgeLibrary" BentleyBuildMakeFile="iModelBridge/iModelBridge.mke" >
+    <Part Name="iModelBridgeLibrary" BentleyBuildMakeFile="iModelBridge/iModelBridge.mke" ApiNumber="B02">
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="WebServicesClient-PublicAPI" PartFile="WSClient" Repository="WSClient" />
         <SubPart PartName="PublicAPI" />
-        <Bindings>
+      
+      <Bindings>
             <Libs Required="false">Delivery/$(libprefix)iModelBridge$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)iModelBridge$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)iModelBridge$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -106,14 +108,14 @@
       </Bindings>
     </Part>
 
-    <Part Name="iModelBridgeFwkLib" BentleyBuildMakeFile="iModelBridge/Fwk/iModelBridgeFwkLib.mke">
+    <Part Name="iModelBridgeFwkLib" BentleyBuildMakeFile="iModelBridge/Fwk/iModelBridgeFwkLib.mke" ApiNumber="B02">
       <SubPart PartName="PublicAPI"/>
       <SubPart PartName="iModelHubClient" PartFile="WSClient" Repository="WSClient"/>
       <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync"/>
       <SubPart PartName="iModelBridgeFwk-en"/>
       <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>
       <Bindings>
-        <Files ProductDirectoryName="Assemblies">Delivery/$(libprefix)iModelBridgeFwkLib$(shlibext)</Files>
+        <Assemblies>Delivery/$(libprefix)iModelBridgeFwkLib$(ApiNumber)$(shlibext)</Assemblies>
         <Libs Required="false">Delivery/$(libprefix)iModelBridgeFwkLib$(libext)</Libs>
         <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/iModelBridgeFwkLib/iModelBridgeFwk.logging.config.xml</Files>
       </Bindings>

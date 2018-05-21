@@ -286,6 +286,7 @@ SyncInfo::V8FileProvenance RootModelConverter::_GetV8FileIntoSyncInfo(DgnV8FileR
     {
     auto prov = T_Super::_GetV8FileIntoSyncInfo(file, policy);
     m_v8Files.push_back(&file);
+    _KeepFileAlive(file);
     return prov;
     }
 
@@ -1601,8 +1602,14 @@ void Converter::OnCreateComplete()
     // *** NEEDS WORK: What is this for? m_rootScaleFactor is never set anywhere in the converter
     //m_dgndb->SaveProperty(PropertySpec("SourceRootScaleFactor", "dgn_Proj"), &m_rootScaleFactor, sizeof(m_rootScaleFactor));
 
-    if (m_defaultViewId.IsValid() && IsCreatingNewDgnDb())
-        GetDgnDb().SaveProperty(DgnViewProperty::DefaultView(), &m_defaultViewId, sizeof(m_defaultViewId));
+    if (m_defaultViewId.IsValid())
+        {
+        // check and add the DefaultView ID if not found in DB:
+        PropertySpec    prop = DgnViewProperty::DefaultView ();
+        DgnElementId    existingId;
+        if (m_dgndb->QueryProperty(&existingId, sizeof(existingId), prop) != DbResult::BE_SQLITE_OK || !existingId.IsValid())
+            m_dgndb->SaveProperty (prop, &m_defaultViewId, sizeof(m_defaultViewId));
+        }
     // else
     //  ensureAUserView
 
@@ -2132,8 +2139,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
         {
         if (nullptr == m_elementConverter)
             m_elementConverter = new ElementConverter(*this);
-        if (BentleyApi::SUCCESS != m_elementConverter->ConvertToElementItem(results, ecContent.m_primaryV8Instance.get(), &ecContent.m_elementConversionRule))
-            return BSIERROR;
+        m_elementConverter->ConvertToElementItem(results, ecContent.m_primaryV8Instance.get(), &ecContent.m_elementConversionRule);
 
         Bentley::WString displayLabel;
         ecContent.m_primaryV8Instance->GetDisplayLabel(displayLabel);

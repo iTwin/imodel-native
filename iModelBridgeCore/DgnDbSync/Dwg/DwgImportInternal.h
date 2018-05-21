@@ -149,6 +149,7 @@ public:
     virtual void            _Alert (WCharCP message) const override;
     virtual void            _Message (WCharCP message, int numChars) const override;
     virtual void            _DebugPrintf (WCharCP format, ...) const override;
+    virtual bool            _IsValid () const override;
 
     void                    Initialize (DwgImporter& importer);
     void                    NewProgressMeter ();
@@ -192,6 +193,9 @@ public:
     static bool     IsValidBulgeFactor (double bulge);
     };  // PolylineFactory
 
+// ECClass requires unique property names
+typedef bset<Utf8String>    ECPropertyNameSet;
+
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          09/16
 +===============+===============+===============+===============+===============+======*/
@@ -205,6 +209,7 @@ private:
     IECInstancePtr                      m_ecInstance;
     size_t                              m_propertyCount;
     size_t                              m_adhocCount;
+    ECPropertyNameSet                   m_ecPropertyNames;
 
     bool            AddPropertyOrAdhocFromAttribute (DwgDbAttributeCR attrib);
     ECObjectsStatus AddConstantProperty (DwgDbAttributeDefinitionCR attrdef);
@@ -227,6 +232,8 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct  ViewportFactory
     {
+    static Utf8CP GetSpatialViewNameInsert () { return " Viewport-"; }
+
 private:
     // DWG common viewport data
     DPoint3d            m_center;
@@ -258,6 +265,7 @@ private:
     Transform           m_transform;
     CategorySelectorPtr m_categories;
     DwgImporter&        m_importer;
+    DwgSyncInfo::View::Type m_viewportType;
 
     void ComputeSpatialView (SpatialViewDefinitionR dgnView);
     void ComputeSheetView (SheetViewDefinitionR dgnView);
@@ -266,11 +274,15 @@ private:
     bool ComputeViewAttachment (Placement2dR placement);
     bool ComposeLayoutTransform (TransformR trans, DwgDbObjectIdCR blockId);
     void TransformDataToBim ();
-    void AddSpatialCategories (DgnDbR dgndb, Utf8StringCR viewName);
+    void AddSpatialCategories (Utf8StringCR viewName);
+    // clip SpatialView attached to ViewAttachment - legacy clipping, may be removed.
     void ApplyViewportClipping (SpatialViewDefinitionR dgnView, double frontClip, double backClip);
+    // clip Sheet::ViewAttachment directly.
+    void ApplyViewportClipping (Sheet::ViewAttachmentR viewAttachment);
     bool ComputeClipperTransformation (TransformR toClipper, RotMatrixCR viewRotation);
     void ComputeEnvironment (DisplayStyle3dR displayStyle);
     bool FindEnvironmentImageFile (BeFileNameR filename) const;
+    bool UpdateViewName (ViewDefinitionR view, Utf8StringCR proposedName);
 
 public:
     // constructor for a modelspace viewport
@@ -285,27 +297,75 @@ public:
     // create a view attachment element in a sheet model for a viewport entity in a paperspace
     DgnElementPtr   CreateViewAttachment (DgnModelCR sheetModel, DgnViewId viewId);
     // Corresponding Update methods
-    BentleyStatus   UpdateSpatialView (DgnViewId viewId);
+    BentleyStatus   UpdateSpatialView (DgnViewId viewId, Utf8StringCR proposedName);
+    BentleyStatus   UpdateSheetView (DgnViewId viewId, Utf8StringCR proposedName);
     DgnElementPtr   UpdateViewAttachment (DgnElementId attachId, DgnViewId viewId);
+    void            UpdateSpatialCategories (DgnCategoryIdSet& categoryIds) const;
 
-    bool    ValidateViewName (Utf8StringR viewNameInOut, DgnViewId& viewIdOut);
+    bool    ValidateViewName (Utf8StringR viewNameInOut);
     void    SetBackgroundColor (ColorDefCR color) { m_backgroundColor = color; }
     void    SetViewSourcePrivate (bool viewSourcePrivate) { m_isPrivate = viewSourcePrivate; }
     };  // ViewportFactory
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          05/18
++===============+===============+===============+===============+===============+======*/
+struct LayoutXrefFactory
+    {
+    static Utf8CP GetSpatialViewNamePrefix () { return "XRef "; }
+
+private:
+    DwgImporter&            m_importer;
+    DwgDbBlockReferenceCR   m_xrefInsert;
+    DwgDbObjectId           m_paperspaceId;
+    DgnModelP               m_xrefModel;
+    DwgDbDatabaseP          m_xrefDwg;
+    DefinitionModelP        m_jobDefinitionModel;
+    Utf8String              m_viewName;
+    Transform               m_xrefTransform;
+    DRange3d                m_xrefRange;
+    SpatialViewDefinitionPtr m_spatialView;
+    Sheet::ViewAttachmentPtr m_viewAttachment;
+
+    void    ValidateViewName ();
+    bool    UpdateViewName ();
+    size_t  GetViewportFrozenLayers (DwgDbObjectIdArrayR frozenLayers) const;
+    void    ComputeSpatialDisplayStyle (DisplayStyle3dR displayStyle) const;
+    void    UpdateSpatialCategories (DgnCategoryIdSet& categoryIdSet) const;
+    Utf8String      GetXrefLayerPrefix () const;
+    BentleyStatus   ComputeSpatialView ();
+    BentleyStatus   ComputeViewAttachment (Placement2dR placement);
+    BentleyStatus   UpdateSpatialView (bool updateBim);
+    BentleyStatus   CreateSpatialView ();
+    BentleyStatus   UpdateViewAttachment ();
+    BentleyStatus   CreateViewAttachment (DgnModelR sheetModel);
+
+public:
+    LayoutXrefFactory (DwgImporter& importer, DwgDbBlockReferenceCR xrefInsert);
+    void SetXrefDatabase (DwgDbDatabaseP dwg) { m_xrefDwg = dwg; }
+    void SetPaperspace (DwgDbObjectIdCR id) { m_paperspaceId = id; }
+    void SetXrefModel (DgnModelP model) { m_xrefModel = model; }
+    void SetXrefTransform (TransformCR trans) { m_xrefTransform = trans; }
+    BentleyStatus ConvertToBim (DwgImporter::ElementImportResults&, DwgImporter::ElementImportInputs&);
+    };  // LayoutXrefFactory
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          02/17
 +===============+===============+===============+===============+===============+======*/
 struct LayoutFactory
     {
+private:
     bool                m_isValid;
     DwgImporter&        m_importer;
     DwgDbLayoutPtr      m_layout;
+
 public:
     LayoutFactory (DwgImporter& importer, DwgDbObjectId layoutId);
     bool            IsValid () const { return m_isValid; }
     double          GetUserScale () const;
     BentleyStatus   CalculateSheetSize (DPoint2dR sheetSize) const;
+    BentleyStatus   AlignSheetToPaperOrigin (TransformR transform) const;
+    static DwgDbObjectId FindOverallViewport (DwgDbBlockTableRecordCR block);
     };  // LayoutFactory
 
 END_DGNDBSYNC_DWG_NAMESPACE

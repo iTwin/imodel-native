@@ -2,11 +2,11 @@
 |
 |     $Source: BimTeleporter/BimImporter/lib/SyncInfo.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+//__BENTLEY_INTERNAL_ONLY__
 #pragma once
-//__PUBLISH_SECTION_START__
 
 #include <Bentley/BeId.h>
 #include <BimTeleporter/BimTeleporter.h>
@@ -279,4 +279,23 @@ struct SyncInfo
         DgnModelId LookupModel(DgnModelId oldId);
 
     };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+struct ElementClassToAspectClassMapping : NonCopyableClass
+    {
+    private:
+        ElementClassToAspectClassMapping();
+        ~ElementClassToAspectClassMapping();
+
+        static bool TryFind(DgnDbR db, DgnClassId elementId, ECN::ECClassId aspectId);
+
+    public:
+        static BentleyStatus CreateTable(DgnDbR db);
+        static BentleyStatus Insert(DgnDbR db, DgnClassId elementId, Utf8CP elementSchemaName, Utf8CP elementClassName, ECN::ECClassId aspectId, Utf8CP aspectSchemaName, Utf8CP aspectClassName);
+        static void CreatePresentationRules(DgnDbR db);
+    };
+
+
 END_BIM_TELEPORTER_NAMESPACE

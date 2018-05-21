@@ -58,6 +58,14 @@ DwgImportHost&  DwgImportHost::GetHost ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool            DwgImportHost::_IsValid () const
+    {
+    return  nullptr != s_dwgImportHostInstance && nullptr != s_dwgImportHostInstance->m_importer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImportHost::_FatalError (WCharCP format, ...)
     {
     va_list     varArgs;
@@ -105,6 +113,78 @@ void            DwgImportHost::_DebugPrintf (WCharCP format, ...) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ResolveProjectWiseDms (WStringR outFile, BeFileNameCR inFile, WStringCR masterPath)
+    {
+    // looks for XML file, refs.prp, on the folder of the master file:
+    BeFileName  refprpFile(masterPath);
+    refprpFile.AppendToPath (L"refs.prp");
+
+    BeXmlStatus status = BEXML_Success;
+    IBeXmlReader::ReadResult result;
+    WString errmsg;
+
+    BeXmlReaderPtr  reader = BeXmlReader::CreateAndReadFromFile (status, refprpFile.c_str(), &errmsg);
+    if (!reader.IsValid() || status != BEXML_Success)
+        return  false;
+
+    // get the xref file name from the input file name:
+    BeFileName xrefName = inFile.GetBaseName ();
+
+    // popup a dir from master file's path:
+    BeFileName baseDir(masterPath);
+    baseDir.PopDir ();
+    baseDir.AppendSeparator ();
+
+    bool    started = false;
+    while ((result = reader->Read()) == IBeXmlReader::READ_RESULT_Success) 
+        {
+        if (reader->GetCurrentNodeType() != IBeXmlReader::NODE_TYPE_Element)
+            continue;
+
+        Utf8String  nodeName;
+        if (BEXML_Success != reader->GetCurrentNodeName(nodeName))
+            break;
+
+        // only care about node "References"
+        if (nodeName.EqualsI("References"))
+            {
+            started = true;
+            continue;
+            }
+
+        // walk through "Reference" nodes and parse and check their attributes:
+        if (started && nodeName.EqualsI("Reference"))
+            {
+            Utf8String  key, value, vaultId, docId;
+            while (BEXML_Success == reader->ReadToNextAttribute(&key, &value))
+                {
+                if (key.EqualsI("VaultID"))
+                    vaultId = value;
+                else if (key.EqualsI("DocID"))
+                    docId = value;
+
+                // if we have got both attribute values we need, stop reading rest of them:
+                if (vaultId.empty() || docId.empty())
+                    continue;
+
+                // build a full path candidate and check its existence
+                outFile = baseDir + WString(vaultId.c_str(), true) + L"_" + WString(docId.c_str(), true) + L"\\" + xrefName;
+                if (BeFileName::DoesPathExist(outFile.c_str()))
+                    return  true;
+
+                // try next node, if any.
+                outFile.clear ();
+                break;
+                }
+            }
+        }
+
+    return  false;    
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            DwgImportHost::FindXrefFile (WStringR outFile, WCharCP inFile, DwgDbDatabaseP dwg)
@@ -123,9 +203,29 @@ bool            DwgImportHost::FindXrefFile (WStringR outFile, WCharCP inFile, D
     else
         return  false;
     
-    // if looks like a relative path, try to resolve it
-    if (checkFile.StartsWith(L"..") && BSISUCCESS == BeFileName::ResolveRelativePath(outFile, inFile, basePath.c_str()))
-        return  true;
+    // if the importer is run from ProjectWise, or the path is relative to a DMS folder, try resolving path per PW rule:
+    auto    isDmsFolder = checkFile.StartsWith (L"..\\dms");
+    if (isDmsFolder || !m_importer->GetOptions().IsRunAsStandaloneApp())
+        {
+        if (ResolveProjectWiseDms(outFile, checkFile, basePath))
+            return  true;
+
+        // Not resolved per PW rule - remove the DMS folder if present and fall through to other scenarios:
+        if (isDmsFolder)
+            checkFile.assign (checkFile.substr(checkFile.find(L'\\', 6) + 1, checkFile.size() - 1));
+        }
+
+    // if looks like a standard relative path, try resolving it to the full path:
+    if (checkFile.StartsWith(L".."))
+        {
+        BeFileName  resolved;
+        if (BSISUCCESS == BeFileName::ResolveRelativePath(resolved, inFile, basePath.c_str())&& resolved.DoesPathExist())
+            {
+            outFile.assign (resolved);
+            return  true;
+            }
+        // fall through to try other scenarios
+        }
 
     // look for the file on the same folder of the base file
     WString     name, ext;
@@ -140,6 +240,7 @@ bool            DwgImportHost::FindXrefFile (WStringR outFile, WCharCP inFile, D
         outFile.assign (checkFile.c_str());
         return  true;
         }
+
     return  false;
     }
 
@@ -471,9 +572,10 @@ void            DwgImporter::MessageCenter::DisplayAndFlush ()
         // a LIST property has started message collection, add it to the collection:
         m_listMessageCollection->push_back (m_displayMessage);
         }
-    else if (LOG_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
+    else if (LOG_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE) && m_displayedMessageCollection.find(m_displayMessage) == m_displayedMessageCollection.end())
         {
         LOG.infov ("From Toolkit: %ls", m_displayMessage.c_str());
+        m_displayedMessageCollection.insert (m_displayMessage);
         }
 
     // flush the string

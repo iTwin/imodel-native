@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportLayouts.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -63,8 +63,86 @@ BentleyStatus   LayoutFactory::CalculateSheetSize (DPoint2dR sheetSize) const
 
     return  BSISUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   LayoutFactory::AlignSheetToPaperOrigin (TransformR transform) const
+    {
+    /*-----------------------------------------------------------------------------------
+    Currently, Sheet::Border can only be placed at 0,0 in the sheet model.  To make the
+    sheet geometry & view attachments appear relative to the border correctly, we have to
+    relocate the geometry & viewports.  This method aligns DWG paper origin to Sheet::Border
+    origin by adding a translation in the output transformation.
+    
+    In the future if/when Sheet::Border can be moved, we shall set the border origin from 
+    the paper origin, instead of moving geometry.
+
+    The way to find the DWG paper origin turns out to be simple: it is the lower-left corner
+    of the LIMITS of the layout.  Apparently the paper origin is the final product of margins,
+    plot origin, scale and all other settings from the Page Setup Manager in ACAD.  It is
+    different than printable origin, which varies with those parameters.
+    -----------------------------------------------------------------------------------*/
+    if (!this->IsValid())
+        return  BSIERROR;
+
+    // get the paper range, in layout units:
+    DRange2d    limits = m_layout->GetLimits ();
+    if (limits.IsEmpty())
+        return  BSIERROR;
+
+    // the lower-left cornor is the paper origin, regardless how the layout gets set up:
+    DPoint2d    paperOrigin = limits.low;
+    if (paperOrigin.MaxAbs() > 1.e-4)
+        {
+        // apply the translation to the sheet transformation:
+        DPoint3d    offset = DPoint3d::From (paperOrigin);
+        transform.MultiplyMatrixOnly (offset);
+
+        DPoint3d    translation;
+        transform.GetTranslation (translation);
+
+        translation.Subtract (offset);
+        transform.SetTranslation (translation);
+        }
+
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectId   LayoutFactory::FindOverallViewport (DwgDbBlockTableRecordCR block)
+    {
+    // an inactive layout does not have viewport, so we have to iterate through layout block and find the first viewport:
+    DwgDbObjectId   firstViewportId;
+    auto iter = block.GetBlockChildIterator ();
+    if (iter.IsValid())
+        {
+        for (iter.Start(); !iter.Done(); iter.Step())
+            {
+            auto id = iter.GetEntityId ();
+            if (id.IsValid() && id.GetDwgClass() == DwgDbViewport::SuperDesc())
+                {
+                firstViewportId = id;
+                break;
+                }
+            }
+        }
+    return  firstViewportId;
+    }
     
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgImporter::AlignSheetToPaperOrigin (TransformR trans, DwgDbObjectIdCR layoutId)
+    {
+    // WIP - when/if Sheet::Border supports location in the future, switching code to set the origin, instead of moving geometry:
+    LayoutFactory   factory(*this, layoutId);
+    factory.AlignSheetToPaperOrigin (trans);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
@@ -80,7 +158,7 @@ BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgD
     if (layout.GetViewports(viewports) > 0)
         overallViewportId = viewports.front ();
     else
-        overallViewportId.SetNull ();
+        overallViewportId = LayoutFactory::FindOverallViewport (block);
 
     // update current viewportID for geometry drawing:
     currOptions.SetViewportId (overallViewportId);
@@ -115,9 +193,11 @@ BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgD
     // import the overall paperspace viewport
     this->_ImportPaperspaceViewport (*sheetModel, modelMap.GetTransform(), layout);
 
+    auto trans = modelMap.GetTransform ();
+
     ElementImportInputs     inputs (*sheetModel);
     inputs.SetClassId (this->_GetElementType(block));
-    inputs.SetTransform (modelMap.GetTransform());
+    inputs.SetTransform (trans);
     inputs.SetSpatialFilter (nullptr);
     inputs.SetModelMapping (modelMap);
 
@@ -183,6 +263,11 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
     DwgDbObjectId   savedviewportId = this->_GetCurrentGeometryOptions().GetViewportId ();
     IDwgChangeDetector& changeDetector = this->_GetChangeDetector ();
 
+    DwgDbObjectId   savedLayoutId;
+    auto layoutManager = DwgImportHost::GetHost().GetLayoutManager ();
+    if (layoutManager.IsValid())
+        savedLayoutId =layoutManager->FindActiveLayout (m_dwgdb.get());
+
     // begin processing DwgModelMap - do not add layout's xref models into m_dwgModelMap, add them in m_paperspaceXrefs!
     m_isProcessingDwgModelMap = true;
 
@@ -209,7 +294,36 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
 
         if (block->IsLayout() && !block->IsExternalReference())
             {
+            // activate the layout such that its viewports etc can work correctly (specifically DwgDbLayout::GetViewports() fails otherwise):
+            if (layoutManager.IsValid())
+                {
+                // must close & re-open block as otherwise RealDWG will fail:
+                auto layoutId = block->GetLayoutId ();
+                block.CloseObject ();
+                layoutManager->ActivateLayout (layoutId);
+                block.OpenObject (modelId, DwgDbOpenMode::ForRead);
+                BeAssert (block.OpenStatus() == DwgDbStatus::Success);
+                }
+
             if (changeDetector._ShouldSkipModel(*this, entry))
+                {
+                // before we skip this layout, record its viewport as seen:
+                DwgDbObjectIdArray  ids;
+                DwgDbLayoutPtr  layout (block->GetLayoutId(), DwgDbOpenMode::ForRead);
+                if (layout.OpenStatus() == DwgDbStatus::Success && layout->GetViewports(ids) > 0)
+                    changeDetector._OnViewSeen (*this, this->GetSyncInfo().FindView(ids.front(), DwgSyncInfo::View::Type::PaperspaceViewport));
+                continue;
+                }
+
+            // don't import an empty layout:
+            auto iter = block->GetBlockChildIterator ();
+            iter.Start ();
+            if (iter.Done())
+                continue;
+
+            // even if the overall viewport exists, and it's the only entity in the block, the layout is treated as empty:
+            iter.Step ();
+            if (iter.Done() && !iter.GetEntityId().IsValid())
                 continue;
 
             DwgDbLayoutPtr  layout (block->GetLayoutId(), DwgDbOpenMode::ForRead);
@@ -223,6 +337,9 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
     // restore current model/layout information
     m_currentspaceId = savedspaceId;
     this->_GetCurrentGeometryOptions().SetViewportId (savedviewportId);
+
+    if (layoutManager.IsValid() && savedLayoutId.IsValid())
+        layoutManager->ActivateLayout (savedLayoutId);
 
     m_isProcessingDwgModelMap = false;
 

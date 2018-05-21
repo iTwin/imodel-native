@@ -9,6 +9,37 @@
 
 USING_NAMESPACE_DWGDB
 
+#ifdef DWGTOOLKIT_OpenDwg
+    #define     VendorDllSuffix     L"4.3_14"
+
+#elif DWGTOOLKIT_RealDwg
+    #if VendorVersion == 2017
+    #define     VendorDllSuffix     L"21"
+    #elif VendorVersion == 2018
+    #define     VendorDllSuffix     L"22"
+    #elif VendorVersion == 2019
+    #define     VendorDllSuffix     L"23"
+    #else
+    #error Must define RealDWG DLL suffix!!
+    #endif
+#endif  // DWGTOOLKIT_
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+::HMODULE       Util::GetOrLoadToolkitDll (DwgStringCR dllPrefix)
+    {
+    // append the version suffix to dll name:
+    DwgString   dllName = dllPrefix + VendorDllSuffix + L".dll";
+    // try finding or loading the dll
+    ::HMODULE   dllHandle = ::GetModuleHandle (dllName);
+    if (nullptr == dllHandle)
+        dllHandle = ::LoadLibrary (dllName);
+    BeAssert (nullptr != dllHandle && "A toolkit DLL cannot be loaded (is the suffix up to date?)");
+    return  dllHandle;
+    }
+
 DPoint3d    Util::DPoint3dFrom (DWGGE_TypeCR(Point3d) gePoint) { return DPoint3d::From(gePoint.x, gePoint.y, gePoint.z); }
 DPoint3d    Util::DPoint3dFrom (DWGGE_TypeCR(Point2d) gePoint) { return DPoint3d::From(gePoint.x, gePoint.y, 0.0); }
 DPoint3d    Util::DPoint3dFrom (DWGGE_TypeCR(Vector3d) geVector) { return DPoint3d::From(geVector.x, geVector.y, geVector.z); }
@@ -18,6 +49,7 @@ DPoint2d    Util::DPoint2dFrom (DWGGE_TypeCR(Vector2d) geVector) { return DPoint
 DPoint2dCP  Util::DPoint2dCPFrom (DWGGE_TypeCP(Point2d) gePoints) { return reinterpret_cast<DPoint2dCP>(gePoints); }
 DVec3d      Util::DVec3dFrom (DWGGE_TypeCR(Vector3d) geVector) { return DVec3d::From(geVector.x, geVector.y, geVector.z); }
 DVec3d      Util::DVec3dFrom (DWGGE_TypeCR(Vector2d) geVector) { return DVec3d::From(geVector.x, geVector.y, 0.0); }
+DVec3d      Util::DVec3dFrom (DWGGE_TypeCR(Scale3d) geScale) { return DVec3d::From(geScale.sx, geScale.sy, geScale.sz); }
 DVec3dCP    Util::DVec3dCPFrom (DWGGE_TypeCP(Vector3d) geVectors) { return reinterpret_cast<DVec3dCP>(geVectors); }
 DVec2d      Util::DVec2dFrom (DWGGE_TypeCR(Vector2d) geVector) { return DVec2d::From(geVector.x, geVector.y); }
 DRange3d    Util::DRange3dFrom (DWGDB_SDKNAME(OdGeExtents3d,AcDbExtents) const& extents) { return DRange3d::From (Util::DPoint3dFrom(extents.minPoint()), Util::DPoint3dFrom(extents.maxPoint())); }
@@ -26,6 +58,8 @@ DRange2d    Util::DRange2dFrom (DWGGE_TypeCR(Point2d) extents) { return DRange2d
 DWGGE_Type(Point3d)     Util::GePoint3dFrom (DPoint3dCR p) { return DWGGE_Type(Point3d)(p.x, p.y, p.z); }
 DWGGE_Type(Point2d)     Util::GePoint2dFrom (DPoint2dCR p) { return DWGGE_Type(Point2d)(p.x, p.y); }
 DWGGE_Type(Vector3d)    Util::GeVector3dFrom (DVec3dCR v) { return DWGGE_Type(Vector3d)(v.x, v.y, v.z); }
+DWGGE_Type(Vector2d)    Util::GeVector2dFrom (DVec2dCR v) { return DWGGE_Type(Vector2d)(v.x, v.y); }
+DWGGE_Type(Scale3d)     Util::GeScale3dFrom (DVec3dCR v) { return DWGGE_Type(Scale3d)(v.x, v.y, v.z); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -76,6 +110,21 @@ size_t      Util::GetGePointArray (DWGGE_TypeR(Point2dArray) pointsOut, DPoint2d
     for (DPoint2dCR point : pointsIn)
         pointsOut.append (DWGGE_Type(Point2d)(point.x, point.y));
     return  pointsIn.size();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t      Util::GetObjectIdArray (DWGDB_TypeR(ObjectIdArray) idsOut, DwgDbObjectIdArrayCR idsIn)
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    idsOut.clear ();
+#elif DWGTOOLKIT_RealDwg
+    idsOut.removeAll ();
+#endif
+    for (auto id : idsIn)
+        idsOut.append (id);
+    return  idsOut.length ();
     }
 
 /*---------------------------------------------------------------------------------**//**

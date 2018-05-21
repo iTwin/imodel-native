@@ -31,7 +31,7 @@ struct ScalableMeshModelInfo
     Bentley::bvector<bool>                               m_linkedModelIdResolved;
     };
 
-static bvector<ScalableMeshModelInfo> s_modelInfos;
+static std::vector<ScalableMeshModelInfo> s_modelInfos;
 
 
 void ResolveLinkedModelId(ScalableMeshModel* model, DGNV8_BENTLEY_NAMESPACE_NAME::DgnPlatform::ElementId elemId, Bentley::bvector<Bentley::bpair<uint64_t, uint64_t>>& linksToModelsV8)
@@ -150,12 +150,10 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
 
     Bentley::BentleyStatus clipInfoStatus(ExtractClipDefinitionsInfo(&clipDefs, v8el));
     
-    assert(clipInfoStatus == SUCCESS);
-
     bmap <uint64_t, SMModelClipInfo> clipInfoMap;
 
     for (auto& clipDefIter : clipDefs)
-        { 
+        {    
         SMModelClipInfo clipInfo;
 
         clipInfo.m_shape.resize(clipDefIter.second.second.size());

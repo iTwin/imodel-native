@@ -15,6 +15,14 @@ USING_NAMESPACE_DGNDBSYNC_DWG
 // Use the same file names created by the makefile:
 static WCharCP      s_configFileName = L"DwgImporter.logging.config.xml";
 static WCharCP      s_sqlangFileName = L"sqlang/DwgImporter_en-US.sqlang.db3";
+static DwgBridge*   s_dwgBridgeInstance = nullptr;
+
+// Need different registry keys for OpenDWG and RealDWG bridge installers to avoid conflicts uninstalling the products.
+#ifdef DWGTOOLKIT_OpenDwg
+    static wchar_t* s_dwgBridgeRegKey = L"OpenDwgBridge";
+#elif DWGTOOLKIT_RealDwg
+    static wchar_t* s_dwgBridgeRegKey = L"RealDwgBridge";
+#endif
 
 
 BEGIN_DGNDBSYNC_DWG_NAMESPACE
@@ -208,7 +216,7 @@ void DwgBridge::_Terminate (BentleyStatus convertStatus)
 BentleyStatus   DwgBridge::_Initialize (int argc, WCharCP argv[])
     {
     if (_GetParams().GetBridgeRegSubKey().empty())
-        _GetParams().SetBridgeRegSubKey(DwgImporter::GetRegistrySubKey());
+        _GetParams().SetBridgeRegSubKey(s_dwgBridgeRegKey);
 
     auto host = DgnPlatformLib::QueryHost ();
     if (nullptr == host)
@@ -346,6 +354,9 @@ BentleyStatus   DwgBridge::RunAsStandaloneExe (int argc, WCharCP argv[])
         return status;
         }
 
+    // tell the importer that it will be run from a standalone app:
+    GetImportOptions().SetRunAsStandaloneApp (true);
+
     // Run the bridge
     status = iModelBridgeSacAdapter::Execute (*this, params);
 
@@ -360,8 +371,23 @@ END_DGNDBSYNC_DWG_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
     {
-    // Supply a generic DwgBridge
-    return  new DwgBridge();
+    // Instiate and supply a generic DwgBridge, for either OpenDwgBridge or RealDwgBridge
+    s_dwgBridgeInstance = new DwgBridge ();
+    return  s_dwgBridgeInstance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus iModelBridge_releaseInstance(iModelBridge* bridgeInstance)
+    {
+    if (dynamic_cast<DwgBridge*>(bridgeInstance) != nullptr)
+        {
+        delete s_dwgBridgeInstance;
+        s_dwgBridgeInstance = nullptr;
+        return  BentleyStatus::SUCCESS;
+        }
+    return  BentleyStatus::ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -369,11 +395,24 @@ iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeRegSubKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, iModelBridgeAffinityLevel& affinityLevel, WCharCP affinityLibPath, WCharCP dwgdxfName)
     {
+    // default the affinity to None:
+    affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::None;
+
     // A generic DwgBridge supports any valid DWG, DXF and DXB file type.
     BeFileName  filename(dwgdxfName);
     if (DwgHelper::SniffDwgFile(filename) || DwgHelper::SniffDxfFile(filename))
         {
-        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Low;
-        BeStringUtilities::Wcsncpy(buffer, bufferSize, L"DwgBridge");
+        affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Medium;
+        BeStringUtilities::Wcsncpy(buffer, bufferSize, s_dwgBridgeRegKey);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+EXPORT_ATTRIBUTE bool DwgBridge_getBridgeRegistryKey (WCharP regKey, const size_t size)
+    {
+    // DwgBridge is the module who knows which the registry key is in effective:
+    regKey[0] = 0;
+    return nullptr != BeStringUtilities::Wcsncpy(regKey, size, s_dwgBridgeRegKey);
     }

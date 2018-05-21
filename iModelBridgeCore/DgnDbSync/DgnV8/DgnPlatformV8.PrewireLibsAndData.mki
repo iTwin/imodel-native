@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #     $Source: DgnV8/DgnPlatformV8.PrewireLibsAndData.mki $
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
 
 # A workaround for transitioning from RealDWG2017 to 2018, to allow both work for PRG and developers.
@@ -84,6 +84,12 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/fbxfileioImp.dll : $(DgnV8Sdk)Dlls/fbxfileioImp
         $(LinkFirstDepToFirstTarget)
 %endif
 
+$(Delivery)DgnPlatformV8Sdk/Dlls/IfcFileIO.dll : $(DgnV8Sdk)Dlls/IfcFileIO.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/IfcFileIO.log.xml : $(DgnV8Sdk)Dlls/IfcFileIO.log.xml
+    $(LinkFirstDepToFirstTarget)
+
 $(Delivery)DgnPlatformV8Sdk/Dlls/ImageLib2.dll : $(DgnV8Sdk)Dlls/ImageLib2.dll
     $(LinkFirstDepToFirstTarget)
 
@@ -145,6 +151,9 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/rhinolib.dll : $(DgnV8Sdk)Dlls/rhinolib.dll
     $(LinkFirstDepToFirstTarget)
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/RmgrTools3.dll : $(DgnV8Sdk)Dlls/RmgrTools3.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/sdaidlm.dll : $(DgnV8Sdk)Dlls/sdaidlm.dll
     $(LinkFirstDepToFirstTarget)
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/SketchUpAPI.dll : $(DgnV8Sdk)Dlls/SketchUpAPI.dll

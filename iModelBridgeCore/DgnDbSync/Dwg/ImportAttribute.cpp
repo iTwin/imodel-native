@@ -9,9 +9,62 @@
 
 USING_NAMESPACE_DGNDBSYNC_DWG
 
+// Invalid property names taken from SchemaValidator::ValidPropertyRule::ValidatePropertyName:
+#ifndef ECDBSYS_PROPALIAS_Id
+#define ECDBSYS_PROPALIAS_Id "Id"
+#endif
+#ifndef ECDBSYS_PROP_ECClassId
+#define ECDBSYS_PROP_ECClassId "ECClassId"
+#endif
+#ifndef ECDBSYS_PROP_ECInstanceId
+#define ECDBSYS_PROP_ECInstanceId "ECInstanceId"
+#endif
+
 
 static Utf8CP   s_blankTagName = "BLANKTAG";
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GetPropertyNameFromAttributeName (Utf8StringR propName, DwgStringCR tagName, ECPropertyNameSet& uniqueNames)
+    {
+    // replace blank tag name with "BLANKTAG"
+    bool    validated = false;
+    Utf8String  proposed (tagName.c_str());
+    if (proposed.empty())
+        {
+        proposed.assign (s_blankTagName);
+        validated = true;
+        }
+
+    ECNameValidation::EncodeToValidName (propName, proposed);
+    
+    // above validation allows "id", but SchemaValidator::ValidPropertyRule::ValidatePropertyName does not, resulting in failure importing our schema:
+    if (propName.EqualsI(ECDBSYS_PROPALIAS_Id) || propName.EqualsI(ECDBSYS_PROP_ECInstanceId) || propName.EqualsI(ECDBSYS_PROP_ECClassId))
+        propName += "_";
+
+    // ECClass requires unique property names - de-duplicate tag names:
+    if (uniqueNames.find(propName) != uniqueNames.end())
+        {
+        Utf8String  baseName = propName;
+        if (baseName.EndsWith("_"))
+            baseName.erase (baseName.find_last_of('_'));
+        
+        for (size_t count = 1; uniqueNames.find(propName) != uniqueNames.end(); count++)
+            {
+            Utf8PrintfString suffix("_%d", count);
+            propName = baseName + suffix;
+            }
+
+        }
+
+    uniqueNames.insert (propName);
+
+    if (!validated && !propName.EqualsI(proposed))
+        validated = true;
+
+    return  validated;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
@@ -21,6 +74,7 @@ AttributeFactory::AttributeFactory (DwgImporter& importer, DgnElementR hostEleme
     {
     m_propertyCount = 0;
     m_adhocCount = 0;
+    m_ecPropertyNames.clear ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -28,14 +82,9 @@ AttributeFactory::AttributeFactory (DwgImporter& importer, DgnElementR hostEleme
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            AttributeFactory::AddPropertyOrAdhocFromAttribute (DwgDbAttributeCR attrib)
     {
-    // extrat tag name from attribute, replacing blank name with "BLANKTAG":
-    Utf8String  tag (DwgHelper::ToUtf8CP(attrib.GetTag(), true));
-    if (tag.empty())
-        tag.assign (s_blankTagName);
-
     // build an internal EC property name from the tag name
     Utf8String  propName;
-    ECNameValidation::EncodeToValidName (propName, tag.c_str());
+    GetPropertyNameFromAttributeName (propName, attrib.GetTag(), m_ecPropertyNames);
 
     Utf8String  valueString;
     DwgString   text;
@@ -65,6 +114,10 @@ bool            AttributeFactory::AddPropertyOrAdhocFromAttribute (DwgDbAttribut
         {
         // missing attrdef - create an Adhoc property
         uint32_t    count = 0;
+        Utf8String  tag (attrib.GetTag().c_str());
+        if (tag.empty())
+            tag.assign (s_blankTagName);
+
         while (!m_hostElement.GetUserProperties(tag.c_str()).isNull())
             {
             Utf8PrintfString    tryName("%s%d", tag.c_str(), ++count);
@@ -87,7 +140,9 @@ bool            AttributeFactory::AddPropertyOrAdhocFromAttribute (DwgDbAttribut
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus AttributeFactory::AddConstantProperty (DwgDbAttributeDefinitionCR attrdef)
     {
-    Utf8String  tag (attrdef.GetTag().c_str());
+    Utf8String  tag;
+    GetPropertyNameFromAttributeName (tag, attrdef.GetTag(), m_ecPropertyNames);
+    
     Utf8String  valueString;
     DwgString   text;
     if (attrdef.GetValueString(text))
@@ -283,7 +338,18 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
     // create attredef schema if not already created:
     if (attrdefSchema.IsNull())
         {
-        ECObjectsStatus status = ECSchema::CreateSchema (attrdefSchema, SCHEMAName_AttributeDefinitions, SCHEMAAlias_AttributeDefinitions, 1, 0, 0);
+        Utf8String  schemaName = SCHEMAName_AttributeDefinitions;
+
+        auto dwg = block.GetDatabase ();
+        if (dwg != nullptr)
+            {
+            Utf8String  filename(BeFileName::GetFileNameWithoutExtension (dwg->GetFileName().c_str()).c_str());
+            schemaName += "_" + filename;
+            if (!ECNameValidation::IsValidName(schemaName.c_str()))
+                ECNameValidation::EncodeToValidName (schemaName, schemaName.c_str());
+            }
+
+        status = ECSchema::CreateSchema (attrdefSchema, schemaName, SCHEMAAlias_AttributeDefinitions, 1, 0, 0);
         if (ECObjectsStatus::Success == status)
             {
             // set label
@@ -341,6 +407,7 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
             return  ECObjectsStatus::Error;
 
         ConstantBlockAttrdefs       constantAttrdefs(block.GetObjectId());
+        ECPropertyNameSet           uniqueNames;
 
         // get all attrdefs in the block and create a string property for each and everyone of them:
         for (entityIter.Start(); !entityIter.Done(); entityIter.Step())
@@ -349,16 +416,9 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
             if (attrdef.IsNull())
                 continue;
 
-            // replace blank tag name with "BLANKTAG"
-            Utf8String  tagName (DwgHelper::ToUtf8CP(attrdef->GetTag(), true));
-            if (tagName.empty())
-                tagName.assign (s_blankTagName);
-
             PrimitiveECPropertyP    prop = nullptr;
             Utf8String              propName;
-
-            // build an internal EC property name from attrdef tag
-            ECNameValidation::EncodeToValidName (propName, tagName.c_str());
+            GetPropertyNameFromAttributeName (propName, attrdef->GetTag(), uniqueNames);
 
             // Property tag
             status = attrdefClass->CreatePrimitiveProperty (prop, propName.c_str(), PRIMITIVETYPE_String);
@@ -424,7 +484,7 @@ BentleyStatus   DwgImporter::AddPresentationRuleContent (DgnElementCR hostElemen
     -----------------------------------------------------------------------------------*/
     ECClassCP   elementClass = hostElement.GetElementClass ();
     if (nullptr == elementClass)
-        return  BentleyStatus::SUCCESS;
+        return  BentleyStatus::BSIERROR;
 
     PresentationRuleContent content(attrdefName, elementClass->GetName(),  elementClass->GetSchema().GetName());
 
@@ -432,7 +492,7 @@ BentleyStatus   DwgImporter::AddPresentationRuleContent (DgnElementCR hostElemen
     if (found == m_presentationRuleContents.end())
         m_presentationRuleContents.push_back (content);
 
-    return  BSIERROR;
+    return  BentleyStatus::SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: SyncInfo.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -169,6 +169,7 @@ BentleyStatus SyncInfo::CreateTables()
 
     MUSTBEOK(m_dgndb->ExecuteSql("CREATE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_Discards) "V8Idx ON " SYNC_TABLE_Discards "(V8ModelSyncInfoId, V8Id)"));
 
+    CreateNamedGroupTable(true);
     CreateECTables();
 
     m_dgndb->SaveChanges();
@@ -1604,4 +1605,109 @@ bool SyncInfo::V8ModelSource::operator<(V8ModelSource const& rhs) const
     return m_modelId.GetValue() < rhs.m_modelId.GetValue();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SyncInfo::CreateNamedGroupTable(bool createIndex)
+    {
+    m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups), "SourceId INTEGER NOT NULL, TargetId INTEGER NOT NULL");
+    if (createIndex)
+        MUSTBEOK(m_dgndb->ExecuteSql("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) "_ng_uix ON " SYNC_TABLE_NamedGroups "(SourceId, TargetId);"));
+
+    return BentleyApi::SUCCESS;
+    }
+
+#define SYNC_TABLE_master SYNCINFO_ATTACH("sqlite_master")
+#define TEMPTABLE_ATTACH(name) "temp." name
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SyncInfo::CheckNamedGroupTable()
+    {
+    Statement stmt;
+    Utf8PrintfString query("SELECT name, tbl_name FROM %s WHERE type='table' AND name='%s'", SYNC_TABLE_master, SYNC_TABLE_NamedGroups);
+
+    if (BE_SQLITE_OK != stmt.Prepare(*m_dgndb, query.c_str()))
+        return BentleyApi::ERROR;
+
+    if (BE_SQLITE_ROW == stmt.Step())
+        {
+        // create the temp table for storing new entries
+        MUSTBEOK(m_dgndb->ExecuteSql("CREATE TABLE " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) " (SourceId INTEGER NOT NULL, TargetId INTEGER NOT NULL);"));
+        return SUCCESS;
+        }
+
+    // If we didn't find an existing NamedGroups table, that means this is an update using an older syncinfo database.  We need to create a new NamedGroups table and populate it
+    // with existing named group members.
+    if (BentleyApi::SUCCESS != CreateNamedGroupTable(false))
+        return BentleyApi::ERROR;
+
+    Utf8CP sql = "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) "(SourceId, TargetId) SELECT SourceId, TargetId from bis_ElementRefersToElements b, ec_Class e, ec_Schema s where b.ECClassId = e.Id and e.Name='ElementGroupsMembers' and e.SchemaId = s.Id and s.Name='BisCore'";
+    Statement groups;
+    if (BE_SQLITE_OK != groups.Prepare(*m_dgndb, sql))
+        return BentleyApi::ERROR;
+
+    if (BE_SQLITE_DONE != groups.Step())
+        {
+        return ERROR;
+        }
+    MUSTBEOK(m_dgndb->ExecuteSql("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) "_ng_uix ON " SYNC_TABLE_NamedGroups "(SourceId, TargetId);"));
+
+    // create the temp table for storing new entries
+    MUSTBEOK(m_dgndb->ExecuteSql("CREATE TABLE " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) " (SourceId INTEGER NOT NULL, TargetId INTEGER NOT NULL);"));
+
+    return BentleyApi::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SyncInfo::IsElementInNamedGroup(DgnElementId sourceId, DgnElementId targetId)
+    {
+    CachedStatementPtr stmt;
+    m_dgndb->GetCachedStatement(stmt, "SELECT 1 FROM " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) " WHERE SourceId=? AND TargetId=?");
+    if (!stmt.IsValid())
+        return BentleyApi::ERROR;
+
+    stmt->BindId(1, sourceId);
+    stmt->BindId(2, targetId);
+
+    return (BE_SQLITE_ROW == stmt->Step());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SyncInfo::AddNamedGroupEntry(DgnElementId sourceId, DgnElementId targetId)
+    {
+    CachedStatementPtr stmt;
+    m_dgndb->GetCachedStatement(stmt, "INSERT INTO " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups) " (SourceId, TargetId) VALUES(?, ?)");
+    if (!stmt.IsValid())
+        return BentleyApi::ERROR;
+
+    stmt->BindId(1, sourceId);
+    stmt->BindId(2, targetId);
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+    return BentleyApi::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SyncInfo::FinalizeNamedGroups()
+    {
+    MUSTBEOK(m_dgndb->ExecuteSql("DROP INDEX " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) "_ng_uix"));
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(*m_dgndb, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) " (SourceId, TargetId) SELECT SourceId, TargetId FROM " TEMPTABLE_ATTACH(SYNC_TABLE_NamedGroups)))
+        return BentleyApi::ERROR;
+
+    if (BE_SQLITE_DONE != stmt.Step())
+        return ERROR;
+
+    MUSTBEOK(m_dgndb->ExecuteSql("CREATE UNIQUE INDEX " SYNCINFO_ATTACH(SYNC_TABLE_NamedGroups) "_ng_uix ON " SYNC_TABLE_NamedGroups "(SourceId, TargetId);"));
+    return BentleyApi::SUCCESS;
+    }
 END_DGNDBSYNC_DGNV8_NAMESPACE

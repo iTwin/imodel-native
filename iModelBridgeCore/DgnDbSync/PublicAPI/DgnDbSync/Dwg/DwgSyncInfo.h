@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbSync/Dwg/DwgSyncInfo.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -380,6 +380,28 @@ struct DwgSyncInfo
         bool IsValid() const { return m_id.IsValid(); }
         bool IsModelSpecific() const { return m_fm.GetDwgModelId().IsValid(); }
         };  // Linetype
+
+    //! Sync info for a view created from a viewport table record, a layout viewport, or a viewport entity
+    struct View
+        {
+        enum class Type
+            {
+            ModelspaceViewport,     // vport table record
+            PaperspaceViewport,     // the "overall" layout viewport
+            ViewportEntity,         // viewport entity in a layout
+            XrefAttachment,         // xRef inserted in a layout
+            };  // Type
+        DgnViewId   m_id;
+        uint64_t    m_dwgId;
+        Type        m_type;
+        Utf8String  m_name;
+        
+        View (DgnViewId id, uint64_t oid, Type t, Utf8StringCR n) : m_id(id), m_dwgId(oid), m_type(t), m_name(n) {}
+        BeSQLite::DbResult Insert (BeSQLite::Db&) const;
+        BeSQLite::DbResult Update (BeSQLite::Db&) const;
+
+        bool IsValid() const { return m_id.IsValid(); }
+        };  // View
 
     struct DwgObjectHash : BentleyApi::MD5::HashVal
         {
@@ -792,12 +814,27 @@ public:
     //! Record sync info for a linetype.
     //! @param[in]  id          DgnDb linestyle ID
     //! @param[in]  model       DWG model source
-    //! @param[in]  ltype       DWG linetype object ID
+    //! @param[in]  ltype       DWG linetype object
     DGNDBSYNC_EXPORT Linetype       InsertLinetype (DgnStyleId id, DwgModelSource const& model, DwgDbLinetypeTableRecordCR ltype);
     DGNDBSYNC_EXPORT Linetype       InsertLinetype (DgnStyleId id, DwgDbLinetypeTableRecordCR ltype);
     DGNDBSYNC_EXPORT BentleyStatus  UpdateLinetype (DgnStyleId id, DwgDbLinetypeTableRecordCR ltype);
     DGNDBSYNC_EXPORT DgnStyleId     FindLineStyle (DwgDbObjectIdCR linetypId, DwgModelSource const& model);
     DGNDBSYNC_EXPORT DgnStyleId     FindLineStyle (DwgDbObjectIdCR linetypId);
+    //! @}
+    
+    //! Record sync info for a ViewDefinition created from a modelspace viewport, the paperspace viewport, or a viewport entity
+    //! @param[in]  id          DgnDb ViewDefinition ID
+    //! @param[in]  objId       object ID of a DWG viewport table record or a viewport entity
+    //! @param[in]  type        Source viewport type - modelspace, paperspace, or viewport entity
+    //! @param[in]  name        View name
+    DGNDBSYNC_EXPORT View           InsertView (DgnViewId id, DwgDbObjectIdCR objId, View::Type type, Utf8StringCR name);
+    DGNDBSYNC_EXPORT BentleyStatus  UpdateView (DgnViewId id, DwgDbObjectIdCR objId, View::Type type, Utf8StringCR name);
+    //! Query syncInfo by DWG ID and source
+    //! @param[in]  vportId     entityId of a viewport table record or a viewport entity
+    //! @param[in]  type        viewport table record, paperspace viewport or viewport entity
+    DGNDBSYNC_EXPORT DgnViewId      FindView (DwgDbObjectIdCR vportId, View::Type type);
+    DGNDBSYNC_EXPORT DwgDbHandle    FindViewportHandle (DgnViewId viewId);
+    DGNDBSYNC_EXPORT BentleyStatus  DeleteView (DgnViewId viewId);
     //! @}
     
     //! @name ImportJobs - When we convert a DgnV8-based project and store its contents in a DgnDb, that's an "import job".
@@ -806,7 +843,7 @@ public:
     //! @{
 
     //! Look up a record in the ImportJob table
-    //! @param[out] importJob       The gtest data, if found
+    //! @param[out] importJob   The gtest data, if found
     //! @param[in] dwgModel      Identifies the DWG root model in syncinfo
     DGNDBSYNC_EXPORT BentleyStatus FindImportJobById(ImportJob& importJob, DwgModelSyncInfoId const& dwgModel);
 

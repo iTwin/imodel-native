@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/src/BimTeleporter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,15 +12,14 @@
 #endif
 
 #include <Bentley/BeTimeUtilities.h>
-#include <BimTeleporter/BisJson1Importer.h>
-#include <BimTeleporter/BisJson1Exporter0601.h>
 #include <BimTeleporter/BimTeleporter.h>
 #include "BimTeleporterInternal.h"
-
-#include <folly/futures/Future.h>
-#include <folly/ProducerConsumerQueue.h>
-#include <Bentley/BeThread.h>
-#include <folly/BeFolly.h>
+#include <BimTeleporter/DgnDbToBimConverter.h>
+#include <DgnPlatform/DgnPlatformLib.h>
+#include <DgnPlatform/DgnIModel.h>
+#include <BeSQLite/L10N.h>
+#include <DgnView/DgnViewAPI.h>
+#include <DgnView/DgnViewLib.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY
@@ -35,7 +34,67 @@ USING_NAMESPACE_BENTLEY
 static WCharCP s_configFileName = L"BimTeleporter.logging.config.xml";
 #define BIM_EXT L"bim"
 
-using namespace BentleyB0200::Dgn::BimTeleporter;
+BEGIN_BIM_TELEPORTER_NAMESPACE
+
+struct KnownDesktopLocationsAdmin : BentleyB0200::Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin
+    {
+    BeFileName m_tempDirectory;
+    BeFileName m_executableDirectory;
+    BeFileName m_assetsDirectory;
+
+    virtual BeFileNameCR _GetLocalTempDirectoryBaseName() override { return m_tempDirectory; }
+    virtual BeFileNameCR _GetDgnPlatformAssetsDirectory() override { return m_assetsDirectory; }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                                   BentleySystems
+    //---------------------------------------------------------------------------------------
+    KnownDesktopLocationsAdmin()
+        {
+        // use the standard Windows temporary directory
+        wchar_t tempPathW[MAX_PATH];
+        ::GetTempPathW(_countof(tempPathW), tempPathW);
+        m_tempDirectory.SetName(tempPathW);
+        m_tempDirectory.AppendSeparator();
+
+        // the application directory is where the executable is located
+        wchar_t moduleFileName[MAX_PATH];
+        ::GetModuleFileNameW(NULL, moduleFileName, _countof(moduleFileName));
+        BeFileName moduleDirectory(BeFileName::DevAndDir, moduleFileName);
+        m_executableDirectory = moduleDirectory;
+        m_executableDirectory.AppendSeparator();
+
+        m_assetsDirectory = m_executableDirectory;
+        m_assetsDirectory.AppendToPath(L"Assets");
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct BimTeleporterViewManager : ViewManager
+    {
+    bool _DoesHostHaveFocus() override { return true; }
+    virtual Display::SystemContext* _GetSystemContext() override { return nullptr; }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                   Carole.MacDonald            04/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+struct BimTeleporterHost : BentleyB0200::Dgn::DgnViewLib::Host
+    {
+    virtual void                        _SupplyProductName(Utf8StringR name) override { name.assign("BimTeleporter"); }
+    virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); };
+    ViewManager& _SupplyViewManager() override { return *new BimTeleporterViewManager(); }
+
+    virtual BentleyB0200::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
+        {
+        BeFileName sqlangFile(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+        sqlangFile.AppendToPath(L"sqlang");
+        sqlangFile.AppendToPath(L"BisJson1Importer_en-US.sqlang.db3");
+
+        return BentleyB0200::BeSQLite::L10N::SqlangFiles(sqlangFile);
+        }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -142,6 +201,7 @@ BentleyStatus BimTeleporter::_ParseCommandLine(WStringR errmsg, int argc, WCharC
     if (argc < 2)
         return ERROR;
 
+    m_compress = false;
     for (int iArg = 1; iArg < argc; ++iArg)
         {
         if (argv[iArg] == wcsstr(argv[iArg], L"--input=") || argv[iArg] == wcsstr(argv[iArg], L"-i="))
@@ -156,6 +216,12 @@ BentleyStatus BimTeleporter::_ParseCommandLine(WStringR errmsg, int argc, WCharC
         if (argv[iArg] == wcsstr(argv[iArg], L"--output=") || argv[iArg] == wcsstr(argv[iArg], L"-o="))
             {
             m_outputPath.SetName(GetArgValueW(argv[iArg]));
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--compress="))
+            {
+            m_compress = true;
             continue;
             }
         }
@@ -198,6 +264,8 @@ BentleyStatus BimTeleporter::_Initialize(int argc, WCharCP argv[])
         }
     InitLogging(argv[0]);
 
+    m_host = new BimTeleporterHost();
+    DgnViewLib::Initialize(*m_host, false);
     return SUCCESS;
 
     }
@@ -222,13 +290,6 @@ Usage: %ls -i|--input= -o|--output= \
     return 1;
     }
 
-folly::Future<bool> BimTeleporter::ExportDgnDb(BisJson1Exporter0601* exporter)
-    {
-    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=] ()
-        {
-        return exporter->ExportDgnDb();
-        });
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2016
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -260,50 +321,31 @@ int BimTeleporter::Run(int argc, WCharCP argv[])
         return _PrintUsage(argv[0]);
         }
 
-    BisJson1Exporter0601 exporter(m_inputFileName.GetName());
-    auto logFunc = [] (TeleporterLoggingSeverity severity, const char* message)
-        {
-        GetLogger().message((SEVERITY) severity, message);
-        };
-    exporter.SetLogger(logFunc);
+    bool converted = BentleyApi::DgnDbToBim::DgnDbToBimConverter::Convert(m_inputFileName.GetName(), m_outputPath.GetName());
 
-    auto perfLogFunc = [] (const char* message)
-        {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger("BimTeleporter.Performance")->info(message);
-        };
-    exporter.SetPerformanceLogger(perfLogFunc);
+    if (!converted)
+        return 1;
 
-    BisJson1Importer importer(m_outputPath.GetName());
-    exporter.SetQueueWrite([&importer] (const char* jsonEntry)
-        {
-        importer.AddToQueue(jsonEntry);
-        });
+    if (!m_compress)
+        return 0;
 
-    StopWatch totalTimer(true);
-    std::thread consumer([&importer] { importer.CreateBim(); });
-    auto future = ExportDgnDb(&exporter);
-    bool stat = future.get();
-    importer.SetDone();
-    consumer.join();
-    totalTimer.Stop();
-    Utf8PrintfString message("Total teleportation|%.0f millisecs", totalTimer.GetElapsedSeconds() * 1000.0);
-    BentleyApi::NativeLogging::LoggingManager::GetLogger("BimTeleporter.Performance")->info(message.c_str());
+    CreateIModelParams createImodelParams;
+    createImodelParams.SetOverwriteExisting(true);
+    BeFileName bimName(m_outputPath);
+    BeFileName imodelName(bimName);
+    imodelName.OverrideNameParts(L".imodel");
 
-    //if (SUCCESS == importer.ImportDatabase(jsonInput))
-    //    fwprintf(stdout, L"Successfully teleported %ls into %ls\n", m_inputFileName.GetName(), m_outputPath.GetName());
-    //else
-    //    fwprintf(stdout, L"Failed to teleport %ls into %ls\n", m_inputFileName.GetName(), m_outputPath.GetName());
-
-    //dgndb->Schemas().CreateClassViewsInDb(); // Failing to create the views should not cause errors for the rest of the conversion
+    BeSQLite::DbResult rc = DgnIModel::Create(imodelName, bimName, createImodelParams);
 
     return 0;
     }
+END_BIM_TELEPORTER_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 int wmain (int argc, wchar_t const* argv[])
     {
-    BimTeleporter app;
+    BentleyB0200::Dgn::BimTeleporter::BimTeleporter app;
     return app.Run(argc, argv);
     }

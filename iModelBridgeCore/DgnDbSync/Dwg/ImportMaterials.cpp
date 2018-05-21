@@ -30,6 +30,9 @@ USING_NAMESPACE_IMAGEPP
 
 BEGIN_DGNDBSYNC_DWG_NAMESPACE
 
+static const double     s_finishExponent = 0.016;
+static const double     s_finishFactor = 2.5;
+
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          10/16
 +===============+===============+===============+===============+===============+======*/
@@ -382,8 +385,13 @@ BentleyStatus   MaterialFactory::CreateTextureFromImageFile (Json::Value& mapJso
 
     // create a DGN texture and added to DB:
     DgnDbStatus     status = DgnDbStatus::Success;
-    DictionaryModelR model = m_importer.GetDgnDb().GetDictionaryModel ();
-    DgnTexture      texture(DgnTexture::CreateParams(model, utf8Name, imageSource, image.GetWidth(), image.GetHeight()));
+    DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
+    if (nullptr == model)
+        {
+        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "DgnTexture");
+        model = &m_importer.GetDgnDb().GetDictionaryModel ();
+        }
+    DgnTexture      texture(DgnTexture::CreateParams(*model, utf8Name, imageSource, image.GetWidth(), image.GetHeight()));
 
     if (texture.Insert(&status).IsNull() || DgnDbStatus::Success != status)
         {
@@ -441,8 +449,10 @@ BentleyStatus   MaterialFactory::CreateTextureMap (Json::Value& mapJson, DwgGiMa
 
     mapJson[RENDER_MATERIAL_PatternOff] = !isOn;
     mapJson[RENDER_MATERIAL_PatternMapping] = static_cast<int> (this->GetMapMode(mapper));
+#ifdef REMOVED
     mapJson[RENDER_MATERIAL_Layer] = m_mapLayer;
     mapJson[RENDER_MATERIAL_AntialiasStrength] = 100;
+#endif
     mapJson[RENDER_MATERIAL_Antialiasing] = true;
 
     Transform   transform;
@@ -531,12 +541,17 @@ void            MaterialFactory::ConvertSpecular ()
 
     double  scale = m_dwgMaterial->GetSpecular (dwgColor, dwgMap);
 
+    if (DwgGiMaterialColor::Override == dwgColor.GetMethod())
+        scale = dwgColor.GetFactor ();
+    // WIP - convert specular scale?
+    scale /= 100.0;
+
     m_materialJson[RENDER_MATERIAL_Specular] = scale;
     m_materialJson[RENDER_MATERIAL_FlagHasSpecularColor] = DwgGiMaterialColor::Override == dwgColor.GetMethod();
 
     bool    hasSpecular = m_materialJson[RENDER_MATERIAL_FlagHasSpecularColor].asBool ();
-    // missing "specular_color" causes Gist to hit an assert!
-    m_materialJson[RENDER_MATERIAL_SpecularColor] = this->GetRGBFrom (dwgColor);
+    if (hasSpecular)
+        m_materialJson[RENDER_MATERIAL_SpecularColor] = this->GetRGBFrom (dwgColor);
 
     m_materialJson[RENDER_MATERIAL_FlagLockFinishToSpecular] = false;
 
@@ -606,7 +621,9 @@ void            MaterialFactory::ConvertTranslucency ()
     {
     double  scale = m_dwgMaterial->GetTranslucence ();
 
+#ifdef REMOVED
     m_materialJson[RENDER_MATERIAL_Translucency] = scale;
+#endif
     m_materialJson[RENDER_MATERIAL_FlagHasTranslucencyColor] = false;
     }
 
@@ -628,8 +645,11 @@ void            MaterialFactory::ConvertShinness ()
     {
     double      scale = fabs (100 * m_dwgMaterial->GetShininess());
 
-    if (scale > 100.0)
-        scale = 100.0;
+    // apply V8 scale factor conversion:
+    if (scale > 2000.0)
+        scale = 2000.0;
+
+    scale = ::pow (10.0, s_finishExponent * scale) / s_finishFactor;
 
     m_materialJson[RENDER_MATERIAL_Finish] = scale;
     m_materialJson[RENDER_MATERIAL_FlagHasFinish] = scale > 1.e-5;
@@ -651,6 +671,7 @@ void            MaterialFactory::ConvertAmbient ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            MaterialFactory::ConvertNormal ()
     {
+#ifdef RENDER_MATERIAL_MAP_Normal_REMOVED
     if (0 == (m_dwgMaterial->GetChannelFlags() & DwgDbMaterial::UseNormalMap))
         return;
 
@@ -665,6 +686,7 @@ void            MaterialFactory::ConvertNormal ()
         if (this->CreateTextureMap(mapJson, dwgMap, true) == BSISUCCESS)
             m_mapNodeJson[RENDER_MATERIAL_MAP_Normal] = mapJson;
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -722,10 +744,15 @@ BentleyStatus   MaterialFactory::Create (RenderMaterialId& idOut)
     {
     this->Convert ();
 
-    DictionaryModelR model = m_importer.GetDgnDb().GetDictionaryModel ();
+    DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
+    if (nullptr == model)
+        {
+        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "RenderMaterial");
+        model = &m_importer.GetDgnDb().GetDictionaryModel ();
+        }
 
     // create a DGN material
-    RenderMaterial dgnMaterial(model, m_paletteName, m_materialName);
+    RenderMaterial dgnMaterial(*model, m_paletteName, m_materialName);
 
     // WIP - need a description?
     // Utf8String  description (m_dwgMaterial->GetDescription().c_str());

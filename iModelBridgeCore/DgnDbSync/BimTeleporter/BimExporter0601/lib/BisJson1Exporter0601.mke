@@ -2,7 +2,7 @@
 #
 #     $Source: BimTeleporter/BimExporter0601/lib/BisJson1Exporter0601.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 
@@ -20,9 +20,9 @@ o = $(OutputRootDir)Build/DgnDbSync/$(appName)/
 always:
     ~mkdir $(o)
 
-$(o)BisJson1Exporter0601.obj: $(baseDir)BisJson1Exporter0601.cpp 
+$(o)BisJson1Exporter0601$(oext): $(baseDir)BisJson1Exporter0601.cpp 
 
-$(o)BisJson1ExporterImpl0601.obj:   $(baseDir)BisJson1ExporterImpl0601.cpp $(baseDir)BisJson1ExporterImpl0601.h
+$(o)BisJson1ExporterImpl0601$(oext):   $(baseDir)BisJson1ExporterImpl0601.cpp $(baseDir)BisJson1ExporterImpl0601.h
 
 #----------------------------------------------------------------------
 #   Link the library
@@ -34,17 +34,18 @@ DLM_NAME            = $(appName)
 DLM_DEST            = $(o)
 DLM_OBJECT_DEST     = $(o)
 DLM_EXPORT_DEST     = $(o)
-DLM_OBJECT_FILES    = $(o)BisJson1Exporter0601.obj $(o)BisJson1ExporterImpl0601.obj
+DLM_OBJECT_FILES    = $(o)BisJson1Exporter0601$(oext) $(o)BisJson1ExporterImpl0601$(oext)
 DLM_NOINITFUNC          = 1
 DLM_NOENTRY             = 1
-LINKER_LIBRARIES  + $(DgnDbLibs)Bentley.lib
-LINKER_LIBRARIES  + $(DgnDbLibs)BeSQLite.lib
-LINKER_LIBRARIES  + $(DgnDbLibs)BeSQLiteEC.lib
-LINKER_LIBRARIES  + $(DgnDbLibs)ECObjects.lib
-LINKER_LIBRARIES  + $(DgnDbLibs)BentleyGeom.lib
-LINKER_LIBRARIES  + $(DgnDbLibs)DgnPlatform.lib
-LINKER_LIBRARIES  + $(DgnDbLibs)BaseGeoCoord.lib
-LINKER_LIBRARIES  + $(DgnDbLibs)BeJsonCpp.lib
+LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)Bentley$(libext)
+LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)BaseGeoCoord$(libext)
+LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)BeJsonCpp$(stlibext)
+LINKER_LIBRARIES  + $(DgnDbLibs)$(libprefix)Planning$(libext)
 LINKER_LIBRARIES  + user32.lib
 
 %include $(sharedMki)LinkLibrary.mki

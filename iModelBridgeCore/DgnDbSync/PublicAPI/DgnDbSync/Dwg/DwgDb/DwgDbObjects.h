@@ -123,6 +123,7 @@ public:
     DWGDB_EXPORT DwgDbDatabaseP     GetDatabase () const;
     DWGDB_EXPORT DwgDbHandle        GetHandle () const;
     DWGDB_EXPORT DwgString          GetDwgClassName () const;
+    DWGDB_EXPORT DWG_TypeP(RxClass) GetDwgClass () const;
     DWGDB_EXPORT bool               IsObjectDerivedFrom (DWG_TypeCP(RxClass) rxClass) const;
     DWGDB_EXPORT uint64_t           ToUInt64 () const;
     DWGDB_EXPORT DwgString          ToAscii () const;
@@ -156,20 +157,26 @@ DWGDB_DEFINE_OBJECTPTR (Object)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbObjectIterator
     {
+//__PUBLISH_SECTION_END__
 private:
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbObjectIteratorPtr           m_objectIterator;
+//__PUBLISH_SECTION_START__
 
 public:
     DwgDbObjectIterator (OdDbObjectIterator* newIter) : m_objectIterator(newIter) {}
 
+//__PUBLISH_SECTION_END__
 #elif DWGTOOLKIT_RealDwg
     AcDbObjectIterator*             m_objectIterator;
+//__PUBLISH_SECTION_START__
 
 public:
     DwgDbObjectIterator (AcDbObjectIterator* newIter) { m_objectIterator = newIter; }
     DwgDbObjectIterator () : m_objectIterator(nullptr) {}
+//__PUBLISH_SECTION_END__
 #endif  // DWGTOOLKIT_
+//__PUBLISH_SECTION_START__
 
     DWGDB_EXPORT ~DwgDbObjectIterator ();
 
@@ -187,20 +194,26 @@ public:
 +===============+===============+===============+===============+===============+======*/
 class DwgDbDictionaryIterator
     {
+//__PUBLISH_SECTION_END__
 private:
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbDictionaryIteratorPtr       m_dictionaryIterator;
+//__PUBLISH_SECTION_START__
 
 public:
     DwgDbDictionaryIterator (OdDbDictionaryIterator* newIter) : m_dictionaryIterator(newIter) {}
 
+//__PUBLISH_SECTION_END__
 #elif DWGTOOLKIT_RealDwg
     AcDbDictionaryIterator*         m_dictionaryIterator;
+//__PUBLISH_SECTION_START__
 
 public:
     DwgDbDictionaryIterator (AcDbDictionaryIterator* newIter) { m_dictionaryIterator = newIter; }
     DwgDbDictionaryIterator () : m_dictionaryIterator(nullptr) {}
+//__PUBLISH_SECTION_END__
 #endif  // DWGTOOLKIT_
+//__PUBLISH_SECTION_START__
 
     DWGDB_EXPORT ~DwgDbDictionaryIterator ();
 
@@ -483,6 +496,16 @@ public:
         RotateBy270     = DWGDB_Type(PlotSettings::PlotRotation::k270degrees),
         };
 
+    enum PlotBy
+        {
+        Display         = DWGDB_Type(PlotSettings::PlotType::kDisplay),
+        Extents         = DWGDB_Type(PlotSettings::PlotType::kExtents),
+        Limits          = DWGDB_Type(PlotSettings::PlotType::kLimits),
+        View            = DWGDB_Type(PlotSettings::PlotType::kView),
+        Window          = DWGDB_Type(PlotSettings::PlotType::kWindow),
+        Layout          = DWGDB_Type(PlotSettings::PlotType::kLayout),
+        };
+
     DWGDB_EXPORT DwgString              GetName () const;
     DWGDB_EXPORT DRange3d               GetExtents () const;
     DWGDB_EXPORT DRange2d               GetLimits () const;
@@ -493,14 +516,53 @@ public:
     DWGDB_EXPORT DwgDbUnits             GetPlotPaperUnits () const;
     DWGDB_EXPORT DwgDbStatus            GetPlotPaperSize (DPoint2dR origin) const;
     DWGDB_EXPORT DwgDbStatus            GetPlotPaperMargins (double& left, double& bottom, double& right, double& top) const;
+    //! Get the plot origin in mm, an offset applied to the printable origin set by a user via the Page Setup Manager in ACAD.
     DWGDB_EXPORT DwgDbStatus            GetPlotOrigin (DPoint2dR) const;
     DWGDB_EXPORT bool                   IsStandardScale () const;
     DWGDB_EXPORT double                 GetStandardScale () const;
     DWGDB_EXPORT double                 GetCustomScale () const;
     DWGDB_EXPORT DwgDbStatus            GetCustomScale (double& numerator, double& denominator) const;
     DWGDB_EXPORT PaperOrientation       GetPaperOrientation () const;
+    DWGDB_EXPORT PlotBy                 GetPlotBy () const;
+    //! Get the printable origin of the paper set up for the layout, always in mm.
+    //! @note   DXF group codes 148 & 149 are stored with inverted sign. The origin returned by this method is negated, such that the coordinate readout is consistent in ACAD.
+    DWGDB_EXPORT DwgDbStatus            GetPaperImageOrigin (DPoint2dR origin) const;
     };  // DwgDbLayout
 DWGDB_DEFINE_OBJECTPTR (Layout)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbLayoutManager : public RefCountedBase
+    {
+//__PUBLISH_SECTION_END__
+private:
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDbLayoutManagerPtr    m_layoutManager;
+#elif DWGTOOLKIT_RealDwg
+    AcDbLayoutManager*      m_layoutManager;
+public:
+    DwgDbLayoutManager () : m_layoutManager(nullptr) {}
+#endif  // DWGTOOLKIT_
+//__PUBLISH_SECTION_START__
+public:
+    //! Constructors
+    DWGDB_EXPORT DwgDbLayoutManager (DWGDB_TypeP(LayoutManager) manager);
+    
+    DWGDB_EXPORT bool   IsValid () const;
+    DWGDB_EXPORT int    CountLayouts (DwgDbDatabaseP dwg) const;
+    DWGDB_EXPORT DwgDbObjectId  FindLayoutByName (DwgStringCR name, DwgDbDatabaseCP dwg) const;
+    DWGDB_EXPORT DwgDbObjectId  FindActiveLayout (DwgDbDatabaseCP dwg) const;
+    DWGDB_EXPORT DwgDbObjectId  GetActiveLayoutBlock (DwgDbDatabaseCP dwg) const;
+    //! Switch active layout to layoutId.
+    //! @note Make sure the layout block is closed before calling this method as otherwise this call fails in RealDWG.
+    DWGDB_EXPORT DwgDbStatus    ActivateLayout (DwgDbObjectId layoutId);
+    DWGDB_EXPORT DwgDbStatus    CreateLayout (DwgDbObjectIdR layoutId, DwgDbObjectIdR blockId, DwgStringCR name, DwgDbDatabaseP);
+    DWGDB_EXPORT DwgDbStatus    DeleteLayout (DwgStringCR name, DwgDbDatabaseP dwg);
+    DWGDB_EXPORT DwgDbStatus    RenameLayout (DwgStringCR oldName, DwgStringCR newName, DwgDbDatabaseP dwg);
+    };  // DwgDbLayoutManager
+typedef RefCountedPtr<DwgDbLayoutManager> DwgDbLayoutManagerPtr;
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbLayoutManager)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          05/16
@@ -527,20 +589,26 @@ DWGDB_DEFINE_OBJECTPTR (SpatialFilter)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbFilteredBlockIterator
     {
+//__PUBLISH_SECTION_END__
 private:
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbFilteredBlockIteratorPtr     m_filteredBlockIterator;
+//__PUBLISH_SECTION_START__
 
 public:
     DwgDbFilteredBlockIterator (OdDbFilteredBlockIterator* newIter) : m_filteredBlockIterator(newIter) {}
 
+//__PUBLISH_SECTION_END__
 #elif DWGTOOLKIT_RealDwg
     AcDbFilteredBlockIterator*       m_filteredBlockIterator;
+//__PUBLISH_SECTION_START__
 
 public:
     DwgDbFilteredBlockIterator (AcDbFilteredBlockIterator* newIter) { m_filteredBlockIterator = newIter; }
     DwgDbFilteredBlockIterator () : m_filteredBlockIterator(nullptr) {}
+//__PUBLISH_SECTION_END__
 #endif  // DWGTOOLKIT_
+//__PUBLISH_SECTION_START__
 
     DWGDB_EXPORT ~DwgDbFilteredBlockIterator ();
 
@@ -587,6 +655,63 @@ public:
     DWGDB_EXPORT DwgResBufIterator  GetRbChain (DwgDbDatabaseP = nullptr, DwgDbStatus* status = nullptr) const;
     };  // DwgDbXrecord
 DWGDB_DEFINE_OBJECTPTR (Xrecord)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          04/18
++===============+===============+===============+===============+===============+======*/
+class DwgDbXrefGraphNode : public DWGDB_EXTENDCLASS(XrefGraphNode)
+    {
+public:
+    DEFINE_T_SUPER (DWGDB_SUPER_CONSTRUCTOR(XrefGraphNode))
+
+    DWGDB_EXPORT DwgDbXrefGraphNode (WCharCP name = nullptr, DwgDbObjectIdCR id = DwgDbObjectId(), DwgDbDatabaseP dwg = nullptr, DwgDbXrefStatus status = DwgDbXrefStatus::Resolved);
+
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetIncomingNode (int index) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetOutgoingNode (int index) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetCycleIn (int index) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetCycleOut (int index) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetNextCycleNode () const;
+    DWGDB_EXPORT int                    GetNumIncoming () const;
+    DWGDB_EXPORT int                    GetNumOutgoing () const;
+    DWGDB_EXPORT int                    GetNumCycleIn () const;
+    DWGDB_EXPORT int                    GetNumCycleOut () const;
+    DWGDB_EXPORT DwgDbXrefStatus        GetXrefStatus () const;
+    DWGDB_EXPORT DwgString      GetName () const;
+    DWGDB_EXPORT DwgDbObjectId  GetBlockId () const;
+    DWGDB_EXPORT DwgDbDatabaseP GetDatabase () const;
+    DWGDB_EXPORT bool           IsCycleNode () const;
+    DWGDB_EXPORT bool           IsNested () const;
+    DWGDB_EXPORT void           SetName (DwgStringCR name);
+    DWGDB_EXPORT void           SetBlockId (DwgDbObjectIdCR id);
+    DWGDB_EXPORT void           SetDatabase (DwgDbDatabaseP dwg);
+    };  // DwgDbXrefGraphNode
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbXrefGraphNode)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          04/18
++===============+===============+===============+===============+===============+======*/
+class DwgDbXrefGraph : public DWGDB_EXTENDCLASS(XrefGraph)
+    {
+//__PUBLISH_SECTION_START__
+private:
+    // Only effective for RealDWG if xref's are resolved by acdbResolveCurrentXRefs, but database's created this way are NOT ref counted!
+    DWGDB_EXPORT static DwgDbStatus     Build (DwgDbXrefGraph& graphOut, DwgDbDatabaseP hostDwg, bool includeGhosts = false);
+//__PUBLISH_SECTION_START__
+public:
+    DEFINE_T_SUPER (DWGDB_SUPER_CONSTRUCTOR(XrefGraph))
+
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetXrefNode (DwgStringCR name) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetXrefNode (DwgDbObjectIdCR blockId) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetXrefNode (DwgDbDatabaseP dwg) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetXrefNode (int index) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetHostDwg () const;
+    DWGDB_EXPORT bool   IsEmpty () const;
+    DWGDB_EXPORT size_t GetNodeCount () const;
+    DWGDB_EXPORT bool   MarkUnresolvedTrees ();
+    DWGDB_EXPORT bool   FindCycles (DwgDbXrefGraphNodeP start = nullptr);
+    DWGDB_EXPORT void   Reset ();
+    };  // DwgDbXrefGraph
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbXrefGraph)
 
 END_DWGDB_NAMESPACE
 //__PUBLISH_SECTION_END__

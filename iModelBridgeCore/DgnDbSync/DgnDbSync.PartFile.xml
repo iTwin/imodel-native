@@ -358,6 +358,7 @@
     <Part Name="FontConverterAppExe" BentleyBuildMakeFile="DgnV8/Converters/FontConverterApp.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
         <SubPart PartName="DgnV8ConverterDLL"/>
         <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk"/>
+        <SubPart PartName="RmgrToolsDll" PartFile="RmgrTools" Repository="RmgrTools"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery\FontConverter.exe</Files>
             <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/FontConverter.logging.config.xml</Files>
@@ -369,7 +370,6 @@
         <SubPart PartName="FontConverterAppExe" />
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
         <Directories DirectoryListName="DgnV8ConverterDirList" />
-        <FeatureExclude>ImagePP,PointCloud</FeatureExclude>
     </Product>
 
     <Part Name="Converters-Untested" >
@@ -379,18 +379,21 @@
         <SubPart PartName="DwgConverter" PartFile="DwgConverter"/>
     </Part>
 
-    <Part Name="TeleporterPublicApi" BentleyBuildMakeFile="BimTeleporter/BimTeleporter.prewire.mke">
+    <Part Name="TeleporterPublicApi" BentleyBuildMakeFile="BimTeleporter/BimTeleporter.prewire.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64">
         <Bindings>
             <PublicAPI Domain="BimTeleporter" />
         </Bindings>
     </Part>
 
-    <Part Name="BisJson1Importer" BentleyBuildMakeFile="BimTeleporter/BimImporter/lib/BisJson1Importer.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+    <Part Name="BisJson1Importer" BentleyBuildMakeFile="BimTeleporter/BimImporter/lib/BisJson1Importer.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"      Repository="DgnPlatform"/>
+        <SubPart PartName="ECPresentation"  PartFile="ECPresentation"   Repository="ECPresentation"/>
+        <SubPart PartName="DgnView"         PartFile="DgnDisplay"       Repository="DgnDisplay" />
+        <SubPart PartName="Planning"        PartFile="Planning"         Repository="DgnDomains-Planning"/>
         <SubPart PartName="TeleporterPublicAPI"/>
         <Bindings>
             <Libs ProductDirectoryName="BimTeleporterLibs" Required="false">Delivery/$(libprefix)BisJson1Importer$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BisJson1Importer$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)BisJson1Importer$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/BisJson1Importer_en-US.sqlang.db3</Files>
         </Bindings>
     </Part>
@@ -408,15 +411,25 @@
         </Bindings>
     </Part>
 
-    <Part Name="BimTeleporterExe" BentleyBuildMakeFile="BimTeleporter/src/BimTeleporter.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="BimTeleporterExe" BentleyBuildMakeFile="BimTeleporter/src/BimTeleporter.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static">
         <SubPart PartName="BisJson1Importer"/>
         <SubPart PartName="BisJson1Exporter0601" PartFile="BimTeleporter" />
+        <SubPart PartName="DgnDb0601ToBimConverter" />
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery\BimTeleporter.exe</Files>
             <!--
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/BimImporter_en-US.sqlang.db3</Files>
             -->
             <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/BimTeleporter.logging.config.xml</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="DgnDb0601ToBimConverter" BentleyBuildMakeFile="BimTeleporter/src/DgnDbToBimConverter.mke" OnlyPlatforms="x64,WinRTX64,iOSARM64" ApiNumber="B02">
+        <SubPart PartName="BisJson1Importer"/>
+        <SubPart PartName="BisJson1Exporter0601" PartFile="BimTeleporter" />
+        <Bindings>
+            <Libs ProductDirectoryName="BimTeleporterLibs" Required="false">Delivery/$(libprefix)DgnDbToBimConverter$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)DgnDbToBimConverter$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -464,5 +477,67 @@
         <SubPart PartName="BisJson"/>
         <Directories DirectoryListName="BisJsonDirList"/>
     </Product>
+
+    <!-- VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV -->
+    <!-- The below parts exist to work around a `bb buildinstallset` deficiency that ignores <VendorNotice> bindings. -->
+
+    <ProductDirectoryList ListName="DgnV8ConverterNoticesDirList">
+        <ProductDirectory Name="ApplicationRoot" Deliver="false"/>
+        <ProductDirectory Name="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
+        <ProductDirectory Name="Assets" Deliver="false"/>
+        <ProductDirectory Name="DgnV8Dlls" Deliver="false"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
+        
+        <ProductDirectory Name="VendorNotices" Path=""/>
+        <ProductDirectory Name="VendorNotices" LibType="Static" Path=""/>
+    </ProductDirectoryList>
+
+    <Product Name="__DgnV8ConverterNotices" SaveProduct="false">
+        <Directories DirectoryListName="DgnV8ConverterNoticesDirList"/>
+        <SubPart PartName="DgnV8ConverterExe"/>
+    </Product>
+
+    <Part Name="__GatherDgnV8ConverterNotices" BentleyBuildMakeFile="DgnV8/Converters/DgnV8ConverterInstaller/GatherNotices.mke">
+        <SubProduct ProductName="__DgnV8ConverterNotices"/>
+        <Bindings>
+            <Files ProductDirectoryName="VendorNotices">
+                Delivery/DgnV8ConverterNotices/*.*
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ -->
+
+    <Product Name="DgnV8ConverterMsi" BuildInstallSet="true" SaveProduct="false">
+        <SubPart PartName="DgnV8ConverterExe"/>
+        <SubPart PartName="DgnV8ConverterMsiFiles"/>
+        <SubPart PartName="__GatherDgnV8ConverterNotices"/>
+        
+        <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
+        <InstallerWixFile SourceFile="DgnV8/Converters/DgnV8ConverterInstaller/DgnV8Converter"/>
+        
+        <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
+        <Directories DirectoryListName="DgnV8ConverterDirList"/>
+        <Directories DirectoryListName="DgnV8ConverterMsiDirList"/>
+    </Product>
+
+    <ProductDirectoryList ListName="DgnV8ConverterMsiDirList">
+        <ProductDirectory Name="ConfigDir" Deliver="false"/>
+    </ProductDirectoryList>
+
+    <Part Name="DgnV8ConverterMsiFiles" OnlyPlatforms="x64" BentleyBuildMakeFile="DgnV8/Converters/DgnV8ConverterInstaller/DgnV8ConverterMsiFiles.mke">
+        <RequiredRepository>Mergemodule-Microsoft_VC_14.0</RequiredRepository>
+        <SubPart Repository="Miscdev-Eula" PartFile="Eula" PartName="Eula"/>
+        <Bindings>
+            <Files BindToWixBuild="true" SubPartDirectory="installer">
+                DgnV8ConverterMsiFiles/DgnV8ConverterInstallerOpts.mki
+                DgnV8ConverterMsiFiles/DgnV8Converter.wix.xml
+            </Files>
+            <MergeModules ProductDirectoryName="Assemblies" BindToWixBuild="true">
+                DgnV8ConverterMsiFiles/msvc140/*x64.msm
+            </MergeModules>
+        </Bindings>
+    </Part>
 
 </BuildContext>

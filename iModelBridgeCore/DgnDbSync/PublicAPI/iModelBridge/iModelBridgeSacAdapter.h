@@ -158,7 +158,8 @@ struct iModelBridgeSacAdapter
 public:
     //! Initialize the DgnPlatform host
     //! @param[in] bridge           The bridge that will be run.
-    IMODEL_BRIDGE_EXPORT static void InitializeHost(iModelBridge& bridge);
+    //! @param[in] productName      Name of the product.  This will be used for the LastEditor field in the bim file's be_prop table.
+    IMODEL_BRIDGE_EXPORT static void InitializeHost(iModelBridge& bridge, Utf8CP productName="");
 
     //! Tell the specified bridge to update an existing BIM or to create a new one. This is called by stand-alone converters only.
     //! @param[in] bridge           The bridge to run
