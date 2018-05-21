@@ -105,7 +105,7 @@ void RequestHandler::CreateTables(BentleyB0200::BeSQLite::Db *m_db)
     if (!m_db->TableExists("SeedFile"))
         CreateTable("SeedFile", *m_db, "Id STRING, FileName STRING, FileDescription STRING, FileSize INTEGER, iModelId STRING, IsUploaded BOOLEAN, UserUploaded STRING, UploadedDate STRING");
     if (!m_db->TableExists("Locks"))
-        CreateTable("Locks", *m_db, "ObjectId STRING, iModelId STRING, LockType INTEGER, LockLevel INTEGER, BriefcaseId INTEGER, ReleasedWithChangeSetIndex INTEGER");
+        CreateTable("Locks", *m_db, "ObjectId STRING, iModelId STRING, LockType INTEGER, LockLevel INTEGER, BriefcaseId INTEGER, ReleasedWithChangeSet STRING, ReleasedWithChangeSetIndex INTEGER");
     if (!m_db->TableExists("Briefcases"))
         CreateTable("Briefcases", *m_db, "BriefcaseId INTEGER, iModelId STRING, MergedChangeSetId STRING");
     }
@@ -133,9 +133,9 @@ Utf8CP ParseUrlFilter(Utf8String filter)
     {
     bvector<Utf8String> tokens, tokens2;
     BeStringUtilities::Split(filter.c_str(), "=", nullptr, tokens);
-    if (filter.Contains("$select")) BeStringUtilities::Split(tokens[2].c_str(), "(+)", nullptr, tokens2);
-    else BeStringUtilities::Split(tokens[1].c_str(), "(+)", nullptr, tokens2);
-
+    if (filter.Contains("$select")) BeStringUtilities::Split(tokens[2].c_str(), "$(+)", nullptr, tokens2);
+    else BeStringUtilities::Split(tokens[1].c_str(), "$(+)", nullptr, tokens2);
+    tokens.clear();
     Utf8String filterQuery("");
     for (size_t i = 0; i < (tokens2.size() + 1) / 4; i++)
         {
@@ -145,7 +145,16 @@ Utf8CP ParseUrlFilter(Utf8String filter)
         if (tokens2[4 * i + 1].Contains("eq")) filterQuery.append(" = ");
         else if (tokens2[4 * i + 1].Contains("ne")) filterQuery.append(" != ");
         else if (tokens2[4 * i + 1].Contains("gt")) filterQuery.append(" > ");
-        filterQuery.append(tokens2[4 * i + 2]);
+        else if (tokens2[4 * i + 1].Contains("in")) filterQuery.append(" IN ");
+        
+        if (tokens2[4 * i + 2].Contains("%5B"))
+            {
+            BeStringUtilities::Split(filter.c_str(), "'", nullptr, tokens);
+            filterQuery.append("('");
+            filterQuery.append(tokens[1]);
+            filterQuery.append("')");
+            }
+        else filterQuery.append(tokens2[4 * i + 2]);
         filterQuery.append(" ");
         }
     return filterQuery.c_str();
@@ -339,9 +348,10 @@ Response RequestHandler::FileCreationConfirmation(Request req)
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         Statement insertSt;
-        insertSt.Prepare(m_db, "Update SeedFile SET IsUploaded = ? where Id = ?");
+        insertSt.Prepare(m_db, "Update SeedFile SET IsUploaded = ? where Id = ? AND iModelid = ?");
         insertSt.BindBoolean(1, true);
         insertSt.BindText(2, input[0], Statement::MakeCopy::No);
+        insertSt.BindText(3, iModelid, Statement::MakeCopy::No);
         if (BE_SQLITE_DONE != insertSt.Step())
             return Response();
 
@@ -370,7 +380,7 @@ Response RequestHandler::FileCreationConfirmation(Request req)
     }
 Response RequestHandler::GetInitializationState(Request req)
     {
-    
+
     //https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--0794d7ec-fc1d-4677-9831-dddbf2dbef24/iModelScope/SeedFile?$filter=FileId+eq+'0d45d871-bda7-40fa-b9d3-dfa9904ccaa7'
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = GetInstanceid(args[4]);
@@ -530,13 +540,18 @@ Response RequestHandler::CreateBriefcaseInstance(Request req)
         stInsert.BindText(2, instanceid, Statement::MakeCopy::No);
         stInsert.Step();
         stInsert.Finalize();
+        stInsert.Prepare(m_db, "INSERT INTO Briefcases(BriefcaseId, iModelId) VALUES (?,?)");
+        stInsert.BindInt(1, briefcaseCount);
+        stInsert.BindText(2, instanceid, Statement::MakeCopy::No);
+        stInsert.Step();
+        stInsert.Finalize();
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::Created);
         }
 
     return Response();
     }
-Response RequestHandler::DeleteBriefcaseInstance(Request req) 
+Response RequestHandler::DeleteBriefcaseInstance(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String instanceid = GetInstanceid(args[4]);
@@ -550,35 +565,44 @@ Response RequestHandler::DeleteBriefcaseInstance(Request req)
 Response RequestHandler::GetBriefcaseInfo(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
-    Utf8String instanceid = GetInstanceid(args[4]);
+    Utf8String iModelId = GetInstanceid(args[4]);
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
+
+    int briefcaseId = 0;
+    Utf8String sql("SELECT B.BriefcaseId, S.Id, S.FileName, S.FileDescription, S.FileSize FROM Briefcases As B Inner Join SeedFile As S ON B.iModelid = S.iModelid where B.iModelid = ? ");
+    if (args.size() == 8)
+        {
+        sscanf(args[7].c_str(), "%d", &briefcaseId);
+        sql.append(" AND B.BriefcaseId = ");
+        sql.append(args[7]);
+        }
+    printf("%s\n", sql.c_str());
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         Statement st;
-        st.Prepare(m_db, "Select * from SeedFile where iModelId = ? ");
-        st.BindText(1, instanceid, Statement::MakeCopy::No);
+        st.Prepare(m_db, sql.c_str());
+        st.BindText(1, iModelId, Statement::MakeCopy::No);
         DbResult result = DbResult::BE_SQLITE_ROW;
         result = st.Step();
-        int briefcaseId;
-        sscanf(args[7].c_str(), "%d", &briefcaseId);
+        
         Json::Value instancesinfo(Json::objectValue);
         JsonValueR instanceArray = instancesinfo[ServerSchema::Instances] = Json::arrayValue;
         for (int i = 0; result == DbResult::BE_SQLITE_ROW; i++)
             {
             JsonValueR instance = instanceArray[i] = Json::objectValue;
-            instance[ServerSchema::InstanceId] = args[7].c_str();
+            instance[ServerSchema::InstanceId] = st.GetValueText(0);
             instance[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
             instance[ServerSchema::ClassName] = ServerSchema::Class::Briefcase;
             JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
-            properties[ServerSchema::Property::FileName] = st.GetValueText(1);
-            properties[ServerSchema::Property::FileDescription] = st.GetValueText(2);
-            properties[ServerSchema::Property::FileSize] = st.GetValueText(3);
-            properties[ServerSchema::Property::FileId] = st.GetValueText(0);
-            properties[ServerSchema::Property::BriefcaseId] = briefcaseId;
+            properties[ServerSchema::Property::FileName] = st.GetValueText(2);
+            properties[ServerSchema::Property::FileDescription] = st.GetValueText(3);
+            properties[ServerSchema::Property::FileSize] = st.GetValueText(4);
+            properties[ServerSchema::Property::FileId] = st.GetValueText(1);
+            properties[ServerSchema::Property::BriefcaseId] = st.GetValueInt(0);
             properties[ServerSchema::Property::UserOwned] = "";
             properties["AcquiredDate"] = "";
-            properties[ServerSchema::Property::IsReadOnly] = true;
+            properties[ServerSchema::Property::IsReadOnly] = false;
             result = st.Step();
             }
         st.Finalize();
@@ -692,30 +716,28 @@ Response RequestHandler::DeleteiModels(Request req)
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
 
-    if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
-        return Response();
-        }
+        if (BeFileNameStatus::Success == FakeServer::DeleteiModel(serverPath, iModelId))
+            {
+            Statement stDelete;
+            stDelete.Prepare(m_db, "Delete from Instances where Id = ?");
+            stDelete.BindText(1, iModelId, Statement::MakeCopy::No);
+            stDelete.Step();
+            stDelete.Finalize();
 
-    if (BeFileNameStatus::Success == FakeServer::DeleteiModel(serverPath, iModelId))
-        {
-        Statement stDelete;
-        stDelete.Prepare(m_db, "Delete from Instances where Id = ?");
-        stDelete.BindText(1, iModelId, Statement::MakeCopy::No);
-        stDelete.Step();
-        stDelete.Finalize();
+            Json::Value instanceDeletion(Json::objectValue);
+            JsonValueR changedInstance = instanceDeletion[ServerSchema::ChangedInstance] = Json::objectValue;
+            changedInstance["change"] = "Deleted";
+            JsonValueR instanceAfterChange = changedInstance[ServerSchema::InstanceAfterChange] = Json::objectValue;
+            instanceAfterChange[ServerSchema::InstanceId] = iModelId;
+            instanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
+            instanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::iModel;
 
-        Json::Value instanceDeletion(Json::objectValue);
-        JsonValueR changedInstance = instanceDeletion[ServerSchema::ChangedInstance] = Json::objectValue;
-        changedInstance["change"] = "Deleted";
-        JsonValueR instanceAfterChange = changedInstance[ServerSchema::InstanceAfterChange] = Json::objectValue;
-        instanceAfterChange[ServerSchema::InstanceId] = iModelId;
-        instanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
-        instanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::iModel;
-
-        Utf8String contentToWrite(Json::FastWriter().write(instanceDeletion));
-        auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
-        return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+            Utf8String contentToWrite(Json::FastWriter().write(instanceDeletion));
+            auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
+            return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+            }
         }
     return Response();
     }
@@ -739,15 +761,17 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
     BentleyB0200::BeSQLite::Db m_db;
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
-        Statement stIndex;
-        stIndex.Prepare(m_db, "Select IndexNo from ChangeSets where Id = ?");
-        stIndex.BindText(1, input[2], Statement::MakeCopy::No);
-        stIndex.Step();
+        Statement st;
+        st.Prepare(m_db, "Select IndexNo from ChangeSets where Id = ? AND iModelid = ?");
+        st.BindText(1, input[2], Statement::MakeCopy::No);
+        st.BindText(2, iModelid, Statement::MakeCopy::No);
+        st.Step();
         int index;
         if (settings["instance"]["properties"]["BriefcaseId"].empty())
             index = 1;
         else
-            index = stIndex.GetValueInt(0); index += 1;
+            index = st.GetValueInt(0);
+        index += 1;
 
         char buffer[50];
         sprintf(buffer, "%d", index);
@@ -784,16 +808,15 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
         uploadUrl += iModelid + "/" + input[0] + ".cs";
         propertiesl1[ServerSchema::Property::UploadUrl] = uploadUrl.c_str();
         propertiesl1[ServerSchema::Property::DownloadUrl] = NULL;
-        stIndex.Finalize();
+        st.Finalize();
 
-        Statement st;
         st.Prepare(m_db, "INSERT INTO ChangeSets(Id, Description, iModelId, FileSize, BriefcaseId, ParentId, SeedFileId, IndexNo, IsUploaded) VALUES (?,?,?,?,?,?,?,?,?)");
         st.BindText(1, input[0], Statement::MakeCopy::No);
         st.BindText(2, input[1], Statement::MakeCopy::No);
         st.BindText(3, iModelid, Statement::MakeCopy::No);
         st.BindInt(4, settings["instance"]["properties"]["FileSize"].asInt());
         st.BindInt(5, settings["instance"]["properties"]["BriefcaseId"].asInt());
-        st.BindText(6, input[4], Statement::MakeCopy::No);
+        st.BindText(6, input[2], Statement::MakeCopy::No);
         st.BindText(7, input[5], Statement::MakeCopy::No);
         st.BindInt(8, index);
         st.BindBoolean(9, false);
@@ -813,36 +836,22 @@ Response RequestHandler::GetChangeSetInfo(Request req)
     BentleyB0200::BeSQLite::Db m_db;
 
     int fileAccessKey = 0;
-    if (args[6].Contains("filter"))
+    if (args[6].Contains("FileAccessKey"))
         fileAccessKey = 1;
 
-    bool flag = false;
-    bvector<Utf8String> tokens;
-    bvector<Utf8String> tokens2;
-    if (args[6].Contains("filter"))
+    Utf8String sql("Select * from ChangeSets where iModelId = ?");
+    if (args[6].Contains("$filter"))
         {
-        BeStringUtilities::Split(args[6].c_str(), "=", nullptr, tokens);
-        BeStringUtilities::Split(tokens[2].c_str(), "+", nullptr, tokens2);
-        flag = true;
+        sql.append(" AND ");
+        sql.append(ParseUrlFilter(req.GetUrl()));
         }
-
+    printf("%s\n", sql.c_str());
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
-        if (!flag)
-            {
-            st.Prepare(m_db, "Select * from ChangeSets where iModelId = ?");
-            st.BindText(1, iModelId, Statement::MakeCopy::No);
-            printf("%s\n", iModelId.c_str());
-            }
-        else
-            {
-            st.Prepare(m_db, "Select * from ChangeSets where SeedFileId = ?");
-            bvector<Utf8String> tokens3;
-            BeStringUtilities::Split(tokens2[2].c_str(), "'", nullptr, tokens3);
-            Utf8String bind1(tokens3[0]);
-            st.BindText(1, bind1, Statement::MakeCopy::No);
-            }
+        st.Prepare(m_db, sql.c_str());
+        st.BindText(1, iModelId, Statement::MakeCopy::No);
+
         DbResult result = DbResult::BE_SQLITE_ROW;
         result = st.Step();
         Json::Value instancesinfo(Json::objectValue);
@@ -894,6 +903,21 @@ Response RequestHandler::GetChangeSetInfo(Request req)
         }
     return Response();
     }
+bool CheckConflict(BentleyB0200::BeSQLite::Db* m_db, Json::Value properties, Utf8String iModelid, Utf8String ObjectId)
+    {
+    Statement st;
+    Utf8P sql = "";
+    if (properties["LockLevel"].asInt() == 1) sql = "Select * from Locks where iModelId = ? AND ObjectId = ? AND LockType = ? AND LockLevel = 2";
+    else if (properties["LockLevel"].asInt() == 2) sql = "Select * from Locks where iModelId = ? AND ObjectId = ? AND LockType = ? AND LockLevel IN (1,2)";
+    st.Prepare(*m_db, sql);
+    st.BindText(1, iModelid, Statement::MakeCopy::No);
+    st.BindText(2, ObjectId, Statement::MakeCopy::No);
+    st.BindInt(3, properties["LockType"].asInt());
+    DbResult res = st.Step();
+    st.Finalize();
+    if (res == DbResult::BE_SQLITE_ROW) return true;
+    return false;
+    }
 Response RequestHandler::PushAcquiredLocks(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req, "/");
@@ -902,7 +926,6 @@ Response RequestHandler::PushAcquiredLocks(Request req)
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
     CheckDb();
-
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         Statement st;
@@ -918,46 +941,53 @@ Response RequestHandler::PushAcquiredLocks(Request req)
             return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
             }
 
-        Statement stGetCount;
         int records;
         Json::Value properties;
         for (Json::ArrayIndex i = 0; i < settings["instances"].size(); i++)
             {
             properties = settings["instances"][i]["properties"];
+
             if (settings["instances"][i]["className"] == "MultiLock")
                 {
                 for (Json::ArrayIndex j = 0; j < properties["ObjectIds"].size(); j++)
                     {
-                    stGetCount.Prepare(m_db, "Select Count(*) from Locks where iModelId = ? AND ObjectId = ? AND BriefcaseId = 0");
-                    stGetCount.BindText(1, iModelid, Statement::MakeCopy::No);
-                    stGetCount.BindText(2, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
-                    stGetCount.BindInt(3, properties["BriefcaseId"].asInt());
-                    stGetCount.Step();
-                    records = stGetCount.GetValueInt(0);
-                    stGetCount.Finalize();
-                    if (records == 0)
+                    if (CheckConflict(&m_db, properties, iModelid, properties["ObjectIds"][j].asString()))
                         {
-                        stGetCount.Prepare(m_db, "INSERT INTO Locks(ObjectId, iModelId, LockType, LockLevel, BriefcaseId) VALUES (?,?,?,?,?)");
-                        stGetCount.BindText(1, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
-                        stGetCount.BindText(2, iModelid, Statement::MakeCopy::No);
-                        stGetCount.BindInt(3, properties["LockType"].asInt());
-                        stGetCount.BindInt(4, properties["LockLevel"].asInt());
-                        stGetCount.BindInt(5, properties["BriefcaseId"].asInt());
-                        stGetCount.Step();
-                        stGetCount.Finalize();
-                        }
-                    else 
-                        {
-                        stGetCount.Prepare(m_db, "UPDATE Locks Set LockType = ?, LockLevel = ?, BriefcaseId = ? where iModelId = ? AND BriefcaseId = 0");
-                        stGetCount.BindInt(1, properties["LockType"].asInt());
-                        stGetCount.BindInt(2, properties["LockLevel"].asInt());
-                        stGetCount.BindInt(3, properties["BriefcaseId"].asInt());
-                        stGetCount.BindText(4, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
-                        stGetCount.BindText(5, iModelid, Statement::MakeCopy::No);
-                        stGetCount.Step();
-                        stGetCount.Finalize();
+                        auto content = HttpResponseContent::Create(HttpStringBody::Create(Utf8String()));
+                        return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::Conflict);
                         }
 
+                    st.Prepare(m_db, "Select Count(*) from Locks where iModelId = ? AND ObjectId = ? AND LockType = ? AND BriefcaseId = 0");
+                    st.BindText(1, iModelid, Statement::MakeCopy::No);
+                    st.BindText(2, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
+                    st.BindInt(3, properties["LockType"].asInt());
+                    st.Step();
+                    records = st.GetValueInt(0);
+                    st.Finalize();
+                    if (records == 0)
+                        {
+                        st.Prepare(m_db, "INSERT INTO Locks(ObjectId, iModelId, LockType, LockLevel, BriefcaseId, ReleasedWithChangeSet) VALUES (?,?,?,?,?,?)");
+                        st.BindText(1, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
+                        st.BindText(2, iModelid, Statement::MakeCopy::No);
+                        st.BindInt(3, properties["LockType"].asInt());
+                        st.BindInt(4, properties["LockLevel"].asInt());
+                        st.BindInt(5, properties["BriefcaseId"].asInt());
+                        st.BindText(6, properties["ReleasedWithChangeSet"].asString(), Statement::MakeCopy::No);
+                        st.Step();
+                        st.Finalize();
+                        }
+                    else
+                        {
+                        st.Prepare(m_db, "UPDATE Locks Set LockLevel = ?, BriefcaseId = ?, ReleasedWithChangeSet = ? where iModelId = ? AND ObjectId = ? AND LockType = ? AND BriefcaseId = 0");
+                        st.BindInt(1, properties["LockLevel"].asInt());
+                        st.BindInt(2, properties["BriefcaseId"].asInt());
+                        st.BindText(3, properties["ReleasedWithChangeSet"].asString(), Statement::MakeCopy::No);
+                        st.BindText(4, iModelid, Statement::MakeCopy::No);
+                        st.BindText(5, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
+                        st.BindInt(6, properties["LockType"].asInt());
+                        st.Step();
+                        st.Finalize();
+                        }
                     }
                 }
             else if (settings["instances"][i]["className"] == "Lock" && settings["instances"][i]["changeState"] == "deleted")
@@ -1118,7 +1148,6 @@ Response RequestHandler::CodesInfo(Request req)
 Response RequestHandler::PerformGetRequest(Request req)
     {
     Utf8String urlExpected("https://qa-imodelhubapi.bentley.com/v2.0/Plugins");
-    bvector<Utf8String> args = ParseUrl(req, "/");
 
     if (!req.GetUrl().CompareTo(urlExpected))
         return RequestHandler::PluginRequest(req);
