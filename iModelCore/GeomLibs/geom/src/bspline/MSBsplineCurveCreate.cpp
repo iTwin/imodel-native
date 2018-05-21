@@ -371,7 +371,7 @@ void FindMaximalBasisFunctionKnots (bvector<double> const &knots, size_t order, 
         } 
     }
 
-static size_t s_dump = 0;
+//static size_t s_dump = 0;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Peter.Yu                        12/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
