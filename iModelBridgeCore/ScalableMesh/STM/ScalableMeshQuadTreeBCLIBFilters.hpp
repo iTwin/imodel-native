@@ -647,6 +647,18 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 		}
 #endif
 	}
+
+    
+    //Flushing tiles to disk during filtering result in less tiles being flushed sequentially at the end of the generation process, leading to potential huge performance gain.
+    for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
+        {
+        if (subNodes[indexNodes] != NULL)
+            {
+            subNodes[indexNodes]->Discard();
+            }
+        }
+    
+
 	return true;
 }
 

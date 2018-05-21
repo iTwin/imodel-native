@@ -505,6 +505,7 @@ static double s_getLastMeshingDuration = -1;
 static double s_getLastFilteringDuration = -1;
 static double s_getLastStitchingDuration = -1;
 static double s_getLastClippingDuration = -1;
+static double s_getLastFinalStoreDuration = -1;
 
 
 unsigned __int64 IScalableMeshSourceCreator::GetNbImportedPoints()
@@ -546,6 +547,12 @@ double IScalableMeshSourceCreator::GetLastClippingDuration()
     {
     return s_getLastClippingDuration;
     }
+
+double IScalableMeshSourceCreator::GetLastFinalStoreDuration()
+    {
+    return s_getLastFinalStoreDuration;
+    }
+
 
 void IScalableMeshSourceCreator::ImportRastersTo(const IScalableMeshPtr& scmPtr)
     {    
@@ -599,6 +606,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     s_getLastFilteringDuration = -1;
     s_getLastStitchingDuration = -1;
     s_getLastClippingDuration = -1;
+    s_getLastFinalStoreDuration = -1;
+    
     pDataIndex->m_nbInputPoints = 0;
 
     clock_t startClock = clock();
@@ -789,7 +798,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #ifdef SCALABLE_MESH_ATP
     s_getLastMeshingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
 #endif
-
+      
+    
     GetProgress()->Progress() = 1.0;
 	GetProgress()->UpdateListeners();
     if (GetProgress()->IsCanceled()) return BSISUCCESS;
@@ -798,9 +808,9 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #ifdef SCALABLE_MESH_ATP        
     s_getLastStitchingDuration = 0;    
     s_getLastClippingDuration = 0;
-    s_getLastMeshBalancingDuration = 0;
+    s_getLastMeshBalancingDuration = 0;    
 #endif
-
+     
 
     if (m_sourceCreationMethod == SCM_SOURCE_CREATION_BIG_SPLIT_CUT)
         {        
@@ -951,8 +961,16 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     GetProgress()->Progress() = 0.0;
 	GetProgress()->UpdateListeners();
 
+#ifdef SCALABLE_MESH_ATP
+    startClock = clock();    
+#endif
+
     pDataIndex->Store();
     m_smSQLitePtr->Save();
+
+#ifdef SCALABLE_MESH_ATP
+    s_getLastFinalStoreDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
+#endif
 
     pDataIndex = 0;
 
