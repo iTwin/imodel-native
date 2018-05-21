@@ -906,7 +906,7 @@ Response RequestHandler::GetChangeSetInfo(Request req)
 bool CheckConflict(BentleyB0200::BeSQLite::Db* m_db, Json::Value properties, Utf8String iModelid, Utf8String ObjectId)
     {
     Statement st;
-    CharP sql = "";
+    CharCP sql = "";
     if (properties["LockLevel"].asInt() == 1) sql = "Select * from Locks where iModelId = ? AND ObjectId = ? AND LockType = ? AND LockLevel = 2";
     else if (properties["LockLevel"].asInt() == 2) sql = "Select * from Locks where iModelId = ? AND ObjectId = ? AND LockType = ? AND LockLevel IN (1,2)";
     st.Prepare(*m_db, sql);
