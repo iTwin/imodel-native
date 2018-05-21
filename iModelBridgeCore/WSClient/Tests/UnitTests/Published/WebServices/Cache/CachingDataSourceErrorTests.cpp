@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingDataSourceErrorTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -40,6 +40,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_SuccessStatus_EmptyMessageAndDescriptio
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_ANDROID) // TFS#894647
 TEST_F(CachingDataSourceErrorTests, Ctor_InternalCacheError_NotEmptyMessageAndEmptyDescription)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::InternalCacheError);
@@ -69,6 +70,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_DataNotCached_NotEmptyMessageAndEmptyDe
     ASSERT_NE("", error.GetMessage());
     EXPECT_EQ("", error.GetDescription());
     }
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
@@ -149,6 +151,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusFileLockedAndEmptyAsyncError
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_ANDROID) // TFS#894647
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorAndEmptyAsyncError_StatusAndMessageSet)
     {
     auto error = CachingDataSource::Error(CacheStatus::Error, AsyncError());
@@ -178,6 +181,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_NotCanceledCancellationTokenPassed_Sets
     ASSERT_EQ(ICachingDataSource::Status::InternalCacheError, error.GetStatus());
     EXPECT_FALSE(error.GetMessage().empty());
     }
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
@@ -206,6 +210,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusOKStatusPassed_SetsSuccessWi
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_ANDROID) // TFS#894647
 TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorStatusPassed_SetsInternalCacheErrorWithMessage)
     {
     auto error = CachingDataSource::Error(CacheStatus::Error);
@@ -238,6 +243,7 @@ TEST_F(CachingDataSourceErrorTests, Ctor_CacheStatusErrorStatusPassed_NotCancele
     EXPECT_FALSE(error.GetMessage().empty());
     EXPECT_TRUE(error.GetDescription().empty());
     }
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
