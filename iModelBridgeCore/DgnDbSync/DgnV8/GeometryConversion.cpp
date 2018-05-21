@@ -15,7 +15,7 @@ DGNV8_BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct SolidUtil
-{
+{                                                      
 static BentleyStatus DisjoinBody (bvector<ISolidKernelEntityPtr>& out, ISolidKernelEntityCR in);
 };
 
@@ -58,125 +58,6 @@ static BentleyApi::TransformCR DoInterop(Bentley::Transform const&source) { retu
 static Bentley::TransformCR DoInterop(BentleyApi::Transform const&source) { return (Bentley::TransformCR)source; }
 
 
-//#define TEST_AUXDATA_FILE
-#ifdef TEST_AUXDATA_FILE
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Ray.Bentley     04/2018
-//---------------------------------------------------------------------------------------
-static GeometricPrimitivePtr createFromTestFile ()
-    {
-    BeFile          beFile;
-    bvector<Byte>   bytes;
-    
-//  if (BeFileStatus::Success == beFile.Open(L"g:\\BulentAnalysis\\Model1982.json", BeFileAccess::Read) &&
-    if (BeFileStatus::Success == beFile.Open(L"g:\\BulentAnalysis\\ExpansionJoint.json", BeFileAccess::Read) &&
-        BeFileStatus::Success == beFile.ReadEntireFile(bytes))
-        {
-        Utf8String              string((Utf8CP) bytes.data());
-        Json::Value             value = Json::Reader::DoParse(string);
-        JsonValueCR             nodes = value["Nodes"];
-        JsonValueCR             elements = value["Elements"];
-        JsonValueCR             results = value["Results"];
-        bmap<int32_t, int32_t>  idToIndex;
-        PolyfaceHeaderPtr       polyface = PolyfaceHeader::CreateVariableSizeIndexed();
-
-        // Points...
-        for (int32_t i=0, count = nodes.size(); i<count; i++)
-            {
-            JsonValueCR     node = nodes[i];
-            JsonValueCR     coords = node["Coordinates"];
-            
-            polyface->Point().push_back(DPoint3d::From(coords[0].asDouble(), coords[1].asDouble(), coords[2].asDouble()));
-            idToIndex.Insert(node["Id"].asInt(), (int32_t) polyface->Point().size());
-            }
-        // Point Indices...
-        for (int32_t i=0, count = elements.size(); i<count; i++)
-            {
-            JsonValueCR     nodeIds = elements[i]["NodeIds"];
-
-            for (int32_t j=0, nodeCount = std::min(4, (int) nodeIds.size()); j<nodeCount; j++)
-                polyface->PointIndex().push_back(idToIndex[nodeIds[j].asInt()]);
-
-            polyface->PointIndex().push_back(0);
-            }
-        if (results.isArray())
-            {
-            PolyfaceAuxData::Channels     channels;
-
-            // Results...
-            for (int32_t i=0, count = results.size(); i<count; i++)
-                {
-                JsonValueCR     result = results[i]; 
-                JsonValueCR     nodeResults = result["NodeResults"];
-                bvector<double> displacementValues(3 * polyface->Point().size(), 0.0);
-                bvector<double> reactionValues(polyface->Point().size(), 0.0); 
-                
-                for (int32_t j=0, nodeCount = nodeResults.size(); j<nodeCount; j++)
-                    {
-                    JsonValueCR     nodeResult = nodeResults[j];
-
-                    if (nodeResult.isMember("Displacement"))
-                        {
-                        int32_t index = idToIndex[nodeResult["NodeId"].asInt()];
-                        int32_t displacementIndex = 3 * index;
-                        JsonValueCR     displacementValue = nodeResult["Displacement"];
-
-                        displacementValues[displacementIndex++] = displacementValue["Ux"].asDouble();
-                        displacementValues[displacementIndex++] = displacementValue["Uy"].asDouble();
-                        displacementValues[displacementIndex++] = displacementValue["Uz"].asDouble();
-
-                        reactionValues[index] = displacementValue["Uy"].asDouble();
-                        }
-                    
-#ifdef USE_REACTION
-                    if (nodeResult.isMember("Reaction"))
-                        {
-                        int32_t index = idToIndex[nodeResult["NodeId"].asInt()];
-                        JsonValueCR     reactionValue = nodeResult["Reaction"];
-
-                        reactionValues[index++] = reactionValue["Fy"].asDouble();
-                        }
-#endif
-                    }
-
-                if (!displacementValues.empty())
-                    {
-                    // Add a zero for animation...
-                    bvector<double>     zeroValues(displacementValues.size(), 0.0);
-                    bvector<PolyfaceAuxChannel::DataPtr>   dataVector;
-                    
-                    dataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroValues)));
-                    dataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(displacementValues)));
-                    dataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroValues)));
-
-                    channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::Vector, Utf8PrintfString("Displacement_%d", i).c_str(), "", std::move(dataVector)));
-                    }
-                if (!reactionValues.empty())
-                    {
-                    // Add a zero for animation...
-                    bvector<double>     zeroValues(reactionValues.size(), 0.0);
-                    bvector<PolyfaceAuxChannel::DataPtr>   dataVector;
-                    
-                    dataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroValues)));
-                    dataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(reactionValues)));
-                    dataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroValues)));
-
-                    channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::Scalar, Utf8PrintfString("Reaction_%d", i).c_str(), "", std::move(dataVector)));
-                    }
-                }
-            if (!channels.empty())
-                {
-                bvector<int32_t>        indices = polyface->PointIndex();
-                PolyfaceAuxDataPtr      auxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
-
-                polyface->SetAuxData(auxData);
-                }
-            }
-        return GeometricPrimitive::Create(polyface);
-        }
-    return nullptr;
-    }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2015
@@ -498,6 +379,19 @@ void Converter::ConvertMSBsplineSurface(BentleyApi::MSBsplineSurfacePtr& clone, 
 
     clone->CopyFrom((BentleyApi::MSBsplineSurfaceCR) v8Entity);
     }
+//#define TEST_AUXDATA
+//#define TEST_AUXDATA_HEIGHT
+//#define TEST_AUXDATA_RADIAL_WAVES
+//#define TEST_AUXDATA_WAVES
+//#define TEST_AUXDATA_FILE
+//#define TEST_AUXDATA_CANTILEVER
+
+#ifdef TEST_AUXDATA
+PolyfaceAuxDataPtr              s_testAuxData;
+ThematicGradientSettingsPtr     s_testAuxDataSettings;
+static void getTestAuxData(Bentley::PolyfaceQueryCR polyface);
+#endif
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/16
@@ -515,31 +409,8 @@ void Converter::ConvertPolyface(BentleyApi::PolyfaceHeaderPtr& clone, Bentley::P
     clone = BentleyApi::PolyfaceHeader::New();
     clone->CopyFrom(sourceData);
 
-//#define TEST_AUXDATA_HEIGHT
-#ifdef TEST_AUXDATA_HEIGHT
-    bvector<double>      zeroData, heightData;
-    bvector<int32_t>    indices(clone->PointIndex().size());
-
-    memcpy (indices.data(), clone->PointIndex().data(), indices.size() * sizeof(int32_t));
-    for(auto& point : clone->Point())
-        {
-        zeroData.push_back(0.0);
-        heightData.push_back(point.z);
-        }
-
-    bvector<PolyfaceAuxChannel::DataPtr>   heightDataVector;
-
-#ifdef ANIMATE_FROM_ZERO
-    heightDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroData)));
-#endif
-    heightDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(heightData)));
-
-    PolyfaceAuxChannelPtr         heightChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Distance, "Height", nullptr, std::move(heightDataVector));
-    PolyfaceAuxData::Channels           channels;
-    channels.push_back (heightChannel);
-    PolyfaceAuxDataPtr              auxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
-    
-    clone->SetAuxData(auxData);
+#ifdef TEST_AUXDATA
+    clone->SetAuxData(s_testAuxData);
 #endif
     }
 
@@ -766,6 +637,10 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
         if (DgnV8Api::STYLE_BYLEVEL != rawStyle || (lsParamsV8 && 0 != lsParamsV8->modifiers))
             InitLineStyle(params, *styleModelRef, paramsV8.GetLineStyle(), lsParamsV8);
         }
+    else if (DgnV8Api::STYLE_BYLEVEL != rawStyle)
+        {
+        params.SetLineStyle(nullptr);
+        }
 
     params.SetTransparency(paramsV8.GetTransparency());
 
@@ -843,6 +718,14 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
                 }
             }
         }
+
+#ifdef TEST_AUXDATA
+    params.SetFillDisplay(FillDisplay::Always);
+
+//  thematicSettings.SetMode(GradientSymb::ThematicSettings::Mode::SteppedWithDelimiter);
+//  thematicSettings.SetColorScheme(GradientSymb::ThematicSettings::ColorScheme::SeaMountain);
+    params.SetGradient(new GradientSymb(*s_testAuxDataSettings));
+#endif
 
     params.Resolve(GetDgnDb()); // Need to be able to check for a stroked linestyle...
     }
@@ -1809,7 +1692,7 @@ static GeometricPrimitivePtr GetPart(DgnGeometryPartId partId, DgnDbR db)
 
     return found->second;
     }
-
+                                                
 }; // PostInstancePartCacheAppData
 
 /*=================================================================================**//**
@@ -1980,6 +1863,10 @@ virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR meshData,
     {
     DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
+
+#ifdef TEST_AUXDATA
+    getTestAuxData(meshData);
+#endif   
 
     m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
 
@@ -3277,385 +3164,6 @@ BentleyApi::CurveVectorPtr Converter::ConvertV8Curve(Bentley::CurveVectorCR v8Cu
     return curve;
     }
 
-//=======================================================================================
-// Converts CVE (aka proxy graphics) into drawing graphic elements.
-//! @bsiclass                                                    Sam.Wilson      09/16
-//=======================================================================================
-struct CveConverter : DgnV8Api::IElementGraphicsProcessor
-{
-    typedef
-        bmap<SyncInfo::V8ElementSource,                             // key=V8 attachment, value=
-            bmap<SyncInfo::V8ElementMapping,                        //   map with key=V8 "original" element, value=
-                bmap<DgnCategoryId, GeometryBuilderPtr>,            //      map with key=CategoryId, value=builder
-                SyncInfo::CompareV8ElementMappingByElementId>,                  
-            SyncInfo::CompareV8ElementSource>      T_BuilderMap;
-
-    struct AttachmentInfo
-        {
-        DgnCategoryId               m_categoryId;
-        bool                        m_hasChanged;
-        bool                        m_failed;
-        SyncInfo::V8ElementMapping  m_mapping;
-
-        AttachmentInfo() : m_hasChanged(false), m_failed(false) {}
-        };
-
-    Converter& m_converter;
-    ResolvedModelMapping const& m_parentModelMapping;
-    DgnV8Api::ViewContext*      m_context;
-    Bentley::Transform          m_conversionScale;
-    Bentley::Transform          m_currentTransform;
-    DgnV8Api::ElemDisplayParams m_currentDisplayParams;
-    DgnAttachmentCP             m_currentAttachment;
-    AttachmentInfo              m_currentAttachmentInfo;
-    bmap<DgnAttachmentCP, AttachmentInfo> m_attachmentsSeen;
-    T_BuilderMap                m_builders;
-    SyncInfo::T_V8ElementSourceSet m_attachmentsUnchanged;
-    Converter::ProxyGraphicsDrawingFactory& m_drawingGenerator;
-
-    // We want only wires!
-    virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
-    virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
-
-    virtual bool        _WantClipping () const {return false;}
-    virtual Bentley::IFacetOptionsP _GetFacetOptionsP() override { return nullptr;}
-    virtual Bentley::BentleyStatus _ProcessSolidPrimitive(Bentley::ISolidPrimitiveCR) override { return Bentley::BSIERROR;}
-    virtual Bentley::BentleyStatus _ProcessSurface(Bentley::MSBsplineSurfaceCR) override {  return Bentley::BSIERROR; }
-    virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR, bool) override {  return Bentley::BSIERROR; }
-    virtual Bentley::BentleyStatus _ProcessBody(Bentley::ISolidKernelEntityCR, Bentley::IFaceMaterialAttachmentsCP) {  return Bentley::BSIERROR; }
-    virtual Bentley::BentleyStatus _ProcessCurvePrimitive(Bentley::ICurvePrimitiveCR curve, bool isClosed, bool isFilled) override {  return Bentley::BSIERROR; }
-
-    virtual DgnV8Api::DrawPurpose _GetDrawPurpose() override { return DgnV8Api::DrawPurpose::DgnDbConvert; } // Required so that xg symbols get pushed onto DisplayPath...
-    virtual void _AnnounceContext(DgnV8Api::ViewContext& context) override { m_context = &context; }
-    virtual void _AnnounceTransform(Bentley::TransformCP trans) override { if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity(); }
-    virtual void _AnnounceElemDisplayParams(DgnV8Api::ElemDisplayParams const& displayParams) override { m_currentDisplayParams = displayParams; }
-    virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves, bool isFilled) override;
-    virtual Bentley::BentleyStatus _ProcessTextString(Bentley::TextStringCR v8Text) override;
-
-    void DetectAttachment();
-
-    CveConverter(Converter& converter, ResolvedModelMapping const& v8mm, Converter::ProxyGraphicsDrawingFactory& dg) 
-        : m_converter(converter), m_parentModelMapping(v8mm), m_currentAttachment(nullptr), m_drawingGenerator(dg)
-        {}
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CveConverter::DetectAttachment()
-    {
-    auto model = m_context->GetCurrentModel();
-    DgnAttachmentCP attachment = model->AsDgnAttachmentCP();
-    if (nullptr == attachment)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    // I am only interested in the immediate attachment to the V8 drawing model. That's the one that has the 
-    // proxygraphics cache which we are converting and tracking. I don't care about nested attachments that
-    // are internal to the proxygraphics cache.
-    DgnV8Api::DgnAttachment const* parentAttachment;
-    while (nullptr != (parentAttachment = attachment->GetParentModelRefP()->AsDgnAttachmentCP()))
-        attachment = parentAttachment;
-
-    if (attachment == m_currentAttachment)
-        return;
-
-    auto i = m_attachmentsSeen.find(attachment);
-    if (i != m_attachmentsSeen.end())
-        {
-        //  We've seen this attachment before. Return previously computed info for it.
-        m_currentAttachment = attachment;
-        m_currentAttachmentInfo = i->second;
-        return;
-        }
-
-    // We haven't seen this attachment before. Make sure that we have a drawing model for it.
-    AttachmentInfo info;
-
-    m_currentAttachment = attachment;
-    info.m_categoryId = m_converter.GetExtractionCategoryId(*attachment);
-    BeAssert(info.m_categoryId.IsValid());
-
-    // *** 
-    // *** NB: Be sure to call ChangeDetector._OnElementSeen, no matter what!
-    // ***
-
-    DgnV8Api::EditElementHandle v8eh(attachment->GetElementId(), &m_parentModelMapping.GetV8Model());
-    auto chooseDrawing = ElementFilters::GetDrawingElementFiter();
-    IChangeDetector::SearchResults syncInfoSearch;
-    info.m_hasChanged = m_converter.GetChangeDetector()._IsElementChanged(syncInfoSearch, m_converter, v8eh, m_parentModelMapping, &chooseDrawing);
-    if (!info.m_hasChanged)
-        {
-        // The existing V8 attachment is unchanged, and CveConverter will skip it. Just to record the fact 
-        // that we have found a mapping to the BIM Drawing element.
-        m_converter.GetChangeDetector()._OnElementSeen(m_converter, syncInfoSearch.GetExistingElementId());
-        }
-    else if (IChangeDetector::ChangeType::Update == syncInfoSearch.m_changeType)
-        {
-        // The existing V8 attachment has changed. At this stage of the update, we just update its provenance in syncinfo 
-        // AND record the fact that we've found a mapping to the BIM drawing element. We also tell CveConverter to go ahead and
-        // harvest the proxies. Later, the caller (ConvertExtractionAttachments), will update the elements in the DrawingModel from the harvested geometry.
-        m_converter.UpdateMappingInSyncInfo(syncInfoSearch.GetExistingElementId(), v8eh, m_parentModelMapping);
-        m_converter.GetChangeDetector()._OnElementSeen(m_converter, syncInfoSearch.GetExistingElementId());
-        }
-    else
-        {
-        // This is a new attachment. Ask the factory to create a Drawing for this attachment and record a mapping for it in syncinfo
-        ResolvedModelMappingWithElement newModel = m_drawingGenerator._CreateAndInsertDrawing(*attachment, m_parentModelMapping, m_converter);
-        syncInfoSearch.m_v8ElementMapping = newModel.GetModeledElementMapping();
-        }
-
-    info.m_mapping = syncInfoSearch.m_v8ElementMapping;
-    if (info.m_mapping.IsValid())
-        info.m_failed = false;
-    else
-        {
-        m_converter.ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), 
-                    Utf8PrintfString("%s - CveConverter _CreateAndInsertDrawing failed", 
-                                    Converter::IssueReporter::FmtAttachment(*attachment).c_str()).c_str());
-        info.m_failed = true;
-        }
-
-    m_attachmentsSeen[m_currentAttachment] = m_currentAttachmentInfo = info;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::BentleyStatus CveConverter::_ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isFilled)
-    {
-    DgnV8Api::ClipVolumePass        clipVolumePass      = DgnV8Api::ClipVolumePass::None;
-    DgnV8Api::ProxyGraphicsType     proxyGraphicsType   = DgnV8Api::ProxyGraphicsType_VisibleEdge;
-
-    if (nullptr == m_context->GetDisplayStyleHandler()) // If this is not from the proxy graphics cache, it's a normal element in the drawing. The converter already pulled that in.
-        {
-        auto model = m_context->GetCurrentModel();
-        DgnAttachmentCP attachment = model->AsDgnAttachmentCP();
-        if (nullptr == attachment || !Converter::IsSimpleWireframeAttachment(*attachment))
-            return Bentley::SUCCESS;
-        }
-    else
-        {
-        auto proxyInfo = m_converter.GetProxyDisplayHitInfo(*m_context);
-        if (nullptr == proxyInfo)
-            return Bentley::SUCCESS;
-
-        proxyGraphicsType = proxyInfo->m_graphicsType;
-        clipVolumePass    = proxyInfo->m_viewHandlerPass.m_pass;
-        }
-
-    // Right off the bat, make sure that the type-100 itself is recorded in syncinfo and check if it is new or has changed. 
-    // If the type 100 was seen before and has not changed, there's nothing to do.
-    // This call to DetectAttachment also sets m_currentAttachmentCategoryId
-    DetectAttachment();
-    if (!m_currentAttachmentInfo.m_hasChanged || m_currentAttachmentInfo.m_failed)
-        {
-        m_attachmentsUnchanged.insert(m_currentAttachmentInfo.m_mapping);
-            return Bentley::SUCCESS;
-        }
-
-    m_converter.ShowProgress();
-
-    //  Convert the CurveVector itself
-    CurveVectorPtr bimcurves;
-    Converter::ConvertCurveVector(bimcurves, v8curves, &m_parentModelMapping.GetTransform());   
-
-    // CVE graphics are defined in 3-D coordinates. The ViewContext's "current transform" gets them into the parent V8 drawing or sheet model's coordinates.
-
-    if (m_currentAttachment->IsCameraOn())
-        {
-        Bentley::DMap4d     parentMap, currentAndFromParent, composite;
-        Bentley::Transform  fromParentTransform;
-
-        m_currentAttachment->GetTransformFromParent (fromParentTransform, false);
-
-        currentAndFromParent.InitFromTransform(Bentley::Transform::FromProduct(fromParentTransform, m_currentTransform), false);
-        m_currentAttachment->GetMapToParent(parentMap, false);
-
-        composite.InitProduct(parentMap, currentAndFromParent); 
-        bimcurves = bimcurves->Clone ((DMatrix4dCR) composite.M0);          
-        } 
-    else
-        {
-        bimcurves->TransformInPlace(DoInterop(m_currentTransform));
-        }
-
-    // Flatten 3D -> 2D
-    Transform   flattenTrans;
-    flattenTrans.InitIdentity();
-    flattenTrans.form3d[2][2] = 0.0;
-    bimcurves->TransformInPlace(flattenTrans);
-
-    // Convert to meters
-    bimcurves->TransformInPlace(m_parentModelMapping.GetTransform());
-
-    //  Remap the symbology, etc.
-    DgnSubCategoryId subCategoryId = m_converter.GetExtractionSubCategoryId(m_currentAttachmentInfo.m_categoryId, clipVolumePass, proxyGraphicsType);
-    if (!subCategoryId.IsValid())
-        {
-        BeAssert(false);
-        return Bentley::SUCCESS;
-        }
-
-    Render::GeometryParams params;
-    params.SetCategoryId(m_currentAttachmentInfo.m_categoryId);
-    params.SetSubCategoryId(subCategoryId);
-    m_converter.InitGeometryParams(params, m_currentDisplayParams, *m_context, false, m_parentModelMapping.GetV8ModelSource());
-
-    //  Accumulate the builders in our map. We'll create elements later.
-    SyncInfo::V8ElementMapping original = m_converter.FindFirstElementMappedTo(*m_context->GetCurrDisplayPath(), false);
-    if (!original.IsValid())
-        original = m_currentAttachmentInfo.m_mapping;  // if we can't find the V8 original, then map all extracted graphics to the attachment itself.
-
-    auto& byattachment = m_builders[m_currentAttachmentInfo.m_mapping];
-    bmap<DgnCategoryId, GeometryBuilderPtr>& byelement = byattachment[original];
-    GeometryBuilderPtr& builder = byelement[m_currentAttachmentInfo.m_categoryId];
-    if (!builder.IsValid())
-        {
-        builder = GeometryBuilder::Create(m_parentModelMapping.GetDgnModel(), m_currentAttachmentInfo.m_categoryId, DPoint2d::FromZero());
-        if (!builder.IsValid())
-            return Bentley::SUCCESS;
-        }
-
-    builder->Append(params);
-    builder->Append(*GeometricPrimitive::Create(bimcurves), GeometryBuilder::CoordSystem::World);
-    return Bentley::BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::BentleyStatus CveConverter::_ProcessTextString(Bentley::TextStringCR v8Text)
-    {
-    if (nullptr == m_context->GetDisplayStyleHandler()) // If this is not from the proxy graphics cache, it's a normal element in the drawing. The converter already pulled that in.
-        return Bentley::SUCCESS;
-
-    // Right off the bat, make sure that the type-100 itself is recorded in syncinfo and check if it is new or has changed. 
-    // If the type 100 was seen before and has not changed, there's nothing to do.
-    // This call to DetectAttachment also sets m_currentAttachmentCategoryId
-    DetectAttachment();
-    if (!m_currentAttachmentInfo.m_hasChanged || m_currentAttachmentInfo.m_failed)
-        return Bentley::SUCCESS;
-
-    // *** WIP_CONVERT_CVE - create a 2d text annotation element
-
-    return Bentley::ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::ConvertExtractionAttachments(ResolvedModelMapping const& v8ParentModelMapping, ProxyGraphicsDrawingFactory& drawingGenerator, 
-                                             Bentley::ViewInfoCP drawingViewInfo)
-    {
-    DgnV8ModelR v8ParentModel = v8ParentModelMapping.GetV8Model();
-
-    // NB: We must be sure that we have all of the attachments loaded and filled if we want to create proxy graphics. Don't leave
-    //      that to chance. And don't assume that if v8ParentModel.GetDgnAttachmentsP() returns non-null then we have all the attachments.
-    //      we might not have all nested refs loaded, and we might not have them filled. They must all be loaded and filled!
-        {
-        DgnV8Api::DgnAttachmentLoadOptions loadOptions;
-        loadOptions.SetTopLevelModel(true);
-        loadOptions.SetShowProgressMeter(false); // turn this off for now. It seems to increment the task count for every ref, but it doesn't decrement the count afterward.
-        v8ParentModel.ReadAndLoadDgnAttachments(loadOptions);
-        }
-
-
-    auto attachments = GetAttachments(v8ParentModel);
-    if (nullptr == attachments)
-        return;
-
-    bool anyProxyGraphics = false;
-    for (auto v8Attachment : *attachments)
-        {
-        if (drawingGenerator._UseProxyGraphicsFor(*v8Attachment, *this))
-            {
-            anyProxyGraphics = true;
-            break;
-            }
-        }
-
-    if (!anyProxyGraphics)
-        return;
-
-    DgnV8Api::ViewInfoPtr fakeViewInfo;
-    if (nullptr == drawingViewInfo)
-        {
-        Bentley::DRange3d sheetModelRange;
-        v8ParentModel.GetRange(sheetModelRange);
-        if (sheetModelRange.IsEmpty() || sheetModelRange.IsNull() || sheetModelRange.IsPoint())
-            {
-            Bentley::DPoint3d pts[2] {Bentley::DPoint3d::From(-1000000,-1000000,-1000000), Bentley::DPoint3d::From(+1000000,+1000000,+1000000)};
-            sheetModelRange = Bentley::DRange3d::From(pts, 2);
-            }
-        fakeViewInfo = CreateV8ViewInfo(v8ParentModel, sheetModelRange);
-        // *** WIP_SHEETS - how to generate fake DynamicViewSettings? Is this important?
-        drawingViewInfo = fakeViewInfo.get();
-        }
-
-    // Create a fake viewport pointing at the original V8 drawing or sheet model. We will then
-    // process all of the CVE graphics from all of its dgn attachments.
-    // *** WIP_CONVERT_CVE -- tell the viewport to ignore the viewrect and range -- we don't want to skip any CVE graphics!
-    DgnV8Api::ViewInfoPtr v8ViewInfo = DgnV8Api::ViewInfo::CopyFrom(*drawingViewInfo, true, true, true);
-
-    // MyViewport to return non-negative viewport so that ViewContext this this "IsRealView..."
-    struct MyViewport : DgnV8Api::NonVisibleViewport
-        {
-        MyViewport(DgnV8Api::ViewInfo& viewInfo) :  DgnV8Api::NonVisibleViewport(viewInfo) { m_viewNumber = 0; m_backgroundColor.m_int = 0xffffff; }
-        };
-
-    MyViewport fakeVp(*v8ViewInfo);
-
-    _GenerateProxyGraphics(v8ParentModelMapping, fakeVp, drawingGenerator);
-
-    if (!HasProxyGraphicsCache(v8ParentModel))
-        return;
-
-    CveConverter cveConverter(*this, v8ParentModelMapping, drawingGenerator);
-    DgnV8Api::ElementGraphicsOutput::Process(cveConverter, fakeVp);
-
-    SyncInfo::T_V8ElementMapOfV8ElementSourceSet v8OriginalsSeen;
-    for (auto& byattachment : cveConverter.m_builders)
-        {
-        SyncInfo::V8ElementSource const& attachmentMapping = byattachment.first;
-        auto& attachmentSeen = v8OriginalsSeen[attachmentMapping];
-
-        ResolvedModelMapping drawingModel = drawingGenerator._GetDrawing(attachmentMapping.m_v8ElementId, v8ParentModelMapping, *this);
-        if (!drawingModel.IsValid())
-            {
-            continue;
-            }
-
-        for (auto& byelement : byattachment.second)
-            {
-            SyncInfo::V8ElementMapping const& originalMapping = byelement.first;
-            if (IsUpdating())
-                attachmentSeen.insert(originalMapping);
-
-            for (auto& bycategory : byelement.second)
-                {
-                auto status = _CreateAndInsertExtractionGraphic(drawingModel, attachmentMapping, originalMapping, bycategory.first, *bycategory.second);
-                if (DgnDbStatus::Success != status)
-                    {
-                    BeAssert((DgnDbStatus::LockNotHeld != status) && "Failed to get or retain necessary locks");
-                    ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), "drawing extraction");
-                    BeAssert(false);
-                    }
-                }
-            }
-        }
-
-    if (IsUpdating())
-        _DetectDeletedExtractionGraphics(v8ParentModelMapping, v8OriginalsSeen, cveConverter.m_attachmentsUnchanged);
-    }
-
-
-
-
-
-
 
 //--------------------------------------------------------------------------------------
 //! The following code is a clone of the method used in the Converter class. These
@@ -3675,7 +3183,7 @@ void LightWeightConverter::InitGeometryParams(Render::GeometryParams& params, Dg
     // NOTE: Resolve loses information like WEIGHT_BYLEVEL and we may be called multiple times (ex. disjoint brep)...
     AutoRestore<DgnV8Api::ElemDisplayParams> saveParamsV8(&paramsV8);
 
-    UInt32  rawColor = paramsV8.GetLineColor();
+    UInt32  rawColor = paramsV8.GetLineColor();                                                                                                                  
     UInt32  rawFill = paramsV8.GetFillColor();
     UInt32  rawWeight = paramsV8.GetWeight();
     Int32   rawStyle = paramsV8.GetLineStyle();
@@ -5876,4 +5384,311 @@ void LightWeightConverter::ConvertTextString(TextStringPtr& clone, Bentley::Text
     clone = dbText.Clone();
     }
 
+
+#ifdef TEST_AUXDATA
+
+#ifdef TEST_AUXDATA_FILE
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Ray.Bentley     04/2018
+//---------------------------------------------------------------------------------------
+static GeometricPrimitivePtr createFromTestFile ()
+    {
+    BeFile          beFile;
+    bvector<Byte>   bytes;
+    
+//  if (BeFileStatus::Success == beFile.Open(L"g:\\BulentAnalysis\\Model1982.json", BeFileAccess::Read) &&
+    if (BeFileStatus::Success == beFile.Open(L"g:\\BulentAnalysis\\ExpansionJoint.json", BeFileAccess::Read) &&
+        BeFileStatus::Success == beFile.ReadEntireFile(bytes))
+        {
+        Utf8String              string((Utf8CP) bytes.data());
+        Json::Value             value = Json::Reader::DoParse(string);
+        JsonValueCR             nodes = value["Nodes"];
+        JsonValueCR             elements = value["Elements"];
+        JsonValueCR             results = value["Results"];
+        bmap<int32_t, int32_t>  idToIndex;
+        PolyfaceHeaderPtr       polyface = PolyfaceHeader::CreateVariableSizeIndexed();
+
+        // Points...
+        for (int32_t i=0, count = nodes.size(); i<count; i++)
+            {
+            JsonValueCR     node = nodes[i];
+            JsonValueCR     coords = node["Coordinates"];
+            
+            polyface->Point().push_back(DPoint3d::From(coords[0].asDouble(), coords[1].asDouble(), coords[2].asDouble()));
+            idToIndex.Insert(node["Id"].asInt(), (int32_t) polyface->Point().size());
+            }
+        // Point Indices...
+        for (int32_t i=0, count = elements.size(); i<count; i++)
+            {
+            JsonValueCR     nodeIds = elements[i]["NodeIds"];
+
+            for (int32_t j=0, nodeCount = std::min(4, (int) nodeIds.size()); j<nodeCount; j++)
+                polyface->PointIndex().push_back(idToIndex[nodeIds[j].asInt()]);
+
+            polyface->PointIndex().push_back(0);
+            }
+        if (results.isArray())
+            {
+            PolyfaceAuxData::Channels     channels;
+
+            // Results...
+            for (int32_t i=0, count = results.size(); i<count; i++)
+                {
+                JsonValueCR     result = results[i]; 
+                JsonValueCR     nodeResults = result["NodeResults"];
+                bvector<double> displacementValues(3 * polyface->Point().size(), 0.0);
+                bvector<double> reactionValues(polyface->Point().size(), 0.0); 
+                
+                for (int32_t j=0, nodeCount = nodeResults.size(); j<nodeCount; j++)
+                    {
+                    JsonValueCR     nodeResult = nodeResults[j];
+
+                    if (nodeResult.isMember("Displacement"))
+                        {
+                        int32_t index = idToIndex[nodeResult["NodeId"].asInt()];
+                        int32_t displacementIndex = 3 * index;
+                        JsonValueCR     displacementValue = nodeResult["Displacement"];
+
+                        displacementValues[displacementIndex++] = displacementValue["Ux"].asDouble();
+                        displacementValues[displacementIndex++] = displacementValue["Uy"].asDouble();
+                        displacementValues[displacementIndex++] = displacementValue["Uz"].asDouble();
+
+                        reactionValues[index] = displacementValue["Uy"].asDouble();
+                        }
+                    
+#ifdef USE_REACTION
+                    if (nodeResult.isMember("Reaction"))
+                        {
+                        int32_t index = idToIndex[nodeResult["NodeId"].asInt()];
+                        JsonValueCR     reactionValue = nodeResult["Reaction"];
+
+                        reactionValues[index++] = reactionValue["Fy"].asDouble();
+                        }
+#endif
+                    }
+
+                if (!displacementValues.empty())
+                    {
+                    // Add a zero for animation...
+                    bvector<double>     zeroValues(displacementValues.size(), 0.0);
+                    bvector<PolyfaceAuxChannel::DataPtr>   dataVector;
+                    
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroValues)));
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(displacementValues)));
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroValues)));
+
+                    channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::Vector, Utf8PrintfString("Displacement_%d", i).c_str(), "", std::move(dataVector)));
+                    }
+                if (!reactionValues.empty())
+                    {
+                    // Add a zero for animation...
+                    bvector<double>     zeroValues(reactionValues.size(), 0.0);
+                    bvector<PolyfaceAuxChannel::DataPtr>   dataVector;
+                    
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroValues)));
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(reactionValues)));
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroValues)));
+
+                    channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::Scalar, Utf8PrintfString("Reaction_%d", i).c_str(), "", std::move(dataVector)));
+                    }
+                }
+            if (!channels.empty())
+                {
+                bvector<int32_t>        indices = polyface->PointIndex();
+                PolyfaceAuxDataPtr      auxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
+
+                polyface->SetAuxData(auxData);
+                }
+            }
+        return GeometricPrimitive::Create(polyface);
+        }
+    return nullptr;
+    }
+#endif
+
+#ifdef TEST_AUXDATA_RADIAL_WAVES
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getTestAuxData(BentleyApi::PolyfaceQueryCR polyface)
+    {
+    bvector<int32_t>    indices(polyface.PointIndex().size());
+    bvector<double>     zeroScalarData(polyface.Point().size(), 0.0), scalarData;
+    bvector<double>     zeroDisplacementData(3*polyface.Point().size(), 0.0), displacementData;
+    DRange3d            range = DRange3d::From(polyface.Point());
+    DPoint3d            center = DPoint3d::FromInterpolate(range.low, .5, range.high);
+    double              radius = range.DiagonalDistance() / 2.0;
+    double              maxHeight = radius/10.0;
+
+    memcpy (indices.data(), polyface.PointIndex().data(), indices.size() * sizeof(int32_t));
+    for(auto& point : polyface.Point())
+        {
+        double      height = maxHeight * sin(point.Distance(center) / radius * msGeomConst_2pi);
+
+        scalarData.push_back(height);
+        displacementData.push_back(0.0);
+        displacementData.push_back(0.0);
+        displacementData.push_back(height);
+        }
+    scalarRange = DRange1d::From(scalarData.data(), scalarData.size());
+
+    bvector<PolyfaceAuxChannel::DataPtr>   displacementDataVector, scalarDataVector;
+
+    displacementDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroDisplacementData)));
+    displacementDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(displacementData)));
+    displacementDataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroDisplacementData)));
+
+    scalarDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroScalarData)));
+    scalarDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(scalarData)));
+    scalarDataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroScalarData)));
+
+
+    PolyfaceAuxChannelPtr       displacementChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Vector, "Displacement", nullptr, std::move(displacementDataVector));
+    PolyfaceAuxChannelPtr       scalarChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Scalar, "scalar", nullptr, std::move(scalarDataVector));
+    PolyfaceAuxData::Channels   channels;
+
+    channels.push_back (displacementChannel);
+    channels.push_back (scalarChannel);
+    s_testAuxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
+    }
+#endif
+
+#ifdef TEST_AUXDATA_WAVES
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getTestAuxData(PolyfaceQueryCR polyface, DRange1dR scalarRange)
+    {
+    bvector<int32_t>  indices(polyface.PointIndex().size());
+    bvector<PolyfaceAuxChannel::DataPtr>   displacementDataVector, scalarDataVector;
+    DRange3d            range = DRange3d::From(polyface.Point());
+    double              rangeDiagonal = range.DiagonalDistance();
+
+    static double       s_waveHeight = rangeDiagonal / 20.0;
+    static double       s_waveLength = rangeDiagonal / 2.0;
+    static size_t       s_frameCount = 10;
+
+    memcpy (indices.data(), polyface.PointIndex().data(), indices.size() * sizeof(int32_t));
+
+    for (size_t i=0; i<s_frameCount; i++)
+        {
+        double              fraction = (double) i / (double) (s_frameCount - 1);
+        double              waveCenter = s_waveLength * fraction;
+        bvector<double>     scalarData, displacementData;
+
+        for(auto& point : polyface.Point())
+            {
+            double      height = s_waveHeight * sin(msGeomConst_2pi * (point.x - waveCenter) / s_waveLength);
+
+            scalarData.push_back(height);
+            displacementData.push_back(height);
+            displacementData.push_back(height);
+            displacementData.push_back(height);
+            }
+        displacementDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(displacementData)));
+        scalarDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(scalarData)));
+        }
+    scalarRange = DRange1d::From(scalarData.data(), scalarData.size());
+
+
+    PolyfaceAuxChannelPtr       displacementChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Vector, "Displacement", nullptr, std::move(displacementDataVector));
+    PolyfaceAuxChannelPtr       scalarChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Scalar, "scalar", nullptr, std::move(scalarDataVector));
+    PolyfaceAuxData::Channels   channels;
+
+    channels.push_back (displacementChannel);
+    channels.push_back (scalarChannel);
+    PolyfaceAuxDataPtr          auxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
+    
+    polyface.SetAuxData(auxData);
+    }
+#endif
+
+#ifdef TEST_AUXDATA_HEIGHT
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getTestAuxData(PolyfaceQueryCR polyface, DRange1dCR scalarRange)
+    {
+    bvector<double>      zeroData, heightData;
+    bvector<int32_t>    indices(polyface.PointIndex().size());
+
+    memcpy (indices.data(), polyface.PointIndex().data(), indices.size() * sizeof(int32_t));
+    for(auto& point : polyface.Point())
+        {
+        zeroData.push_back(0.0);
+        heightData.push_back(point.z);
+        }
+    scalarRange = DRange1d::From(heightData.data(), heightData.size());
+
+    bvector<PolyfaceAuxChannel::DataPtr>   heightDataVector;
+
+    heightDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(heightData)));
+
+    PolyfaceAuxChannelPtr         heightChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Distance, "Height", nullptr, std::move(heightDataVector));
+    PolyfaceAuxData::Channels           channels;
+    channels.push_back (heightChannel);
+    PolyfaceAuxDataPtr              auxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
+    
+    polyface.SetAuxData(auxData);
+    }
+#endif
+#ifdef TEST_AUXDATA_CANTILEVER
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getTestAuxData(Bentley::PolyfaceQueryCR polyface)
+    {
+    static              double s_aluminumModulus = 10.0E6;      // PSI.
+    static              double s_inchesPerMeter = 39.37;
+    static              double s_loadPounds = 400.0;
+    size_t              nPoints = polyface.GetPointCount();
+    bvector<double>     zeroStress(nPoints, 0.0), zeroDisplacement(3*nPoints, 0.0), stressData, displacementData;
+    bvector<int32_t>    indices(polyface.GetPointIndexCount());
+    DRange3d            range = DRange3d::From((DPoint3dCP) polyface.GetPointCP(), polyface.GetPointCount());
+    double              width =  (range.high.y - range.low.y) / s_inchesPerMeter;
+    double              height = (range.high.z - range.low.z) / s_inchesPerMeter;
+    double              length = (range.high.x - range.low.x) / s_inchesPerMeter;
+    double              momentOfInertia = width * height / 12.0;
+    double              zOrigin = (range.low.z + range.high.z) / 2.0;
+    static double       s_exageration = 5.0;
+
+    memcpy (indices.data(), polyface.GetPointIndexCP(), sizeof(int32_t) * polyface.GetPointIndexCount());
+    for(uint32_t i=0; i<nPoints; i++)
+        {                            
+        Bentley::DPoint3dCR point = polyface.GetPointCP()[i];             
+
+        double      x = (point.x - range.low.x) / s_inchesPerMeter;
+        double      z = (point.z - zOrigin) / s_inchesPerMeter;
+        stressData.push_back(z * s_loadPounds * (length - x) / (6.0 * momentOfInertia));
+        displacementData.push_back(0.0);
+        displacementData.push_back(0.0);
+        displacementData.push_back(-s_exageration * s_loadPounds * x * x * (3.0 * length - x) / (6.0 * s_aluminumModulus * momentOfInertia));
+        }
+
+    bvector<PolyfaceAuxChannel::DataPtr>   displacementDataVector, stressDataVector;
+
+    displacementDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroDisplacement)));
+    displacementDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(displacementData)));
+    displacementDataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroDisplacement)));
+
+    stressDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroStress)));
+    stressDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(stressData)));
+    stressDataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroStress)));
+
+    PolyfaceAuxChannelPtr       displacementChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Vector, "Displacement", nullptr, std::move(displacementDataVector));
+    PolyfaceAuxChannelPtr       stressChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Scalar, "Stress", nullptr, std::move(stressDataVector));
+    PolyfaceAuxData::Channels   channels;
+
+    channels.push_back (displacementChannel);
+    channels.push_back (stressChannel);
+
+    s_testAuxDataSettings = new ThematicGradientSettings(DRange1d::From(stressData.data(), stressData.size()));
+    s_testAuxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
+    }
+#endif
+
+
+#endif
 END_DGNDBSYNC_DGNV8_NAMESPACE

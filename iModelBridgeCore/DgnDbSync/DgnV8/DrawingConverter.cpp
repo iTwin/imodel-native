@@ -7,31 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
 #include <VersionedDgnV8Api/PSolid/PSolidCore.h>
+#include <VersionedDgnV8Api/VisEdgesLib/VisEdgesLib.h>
+#include <VersionedDgnV8Api/DgnPlatform/CVEHandler.h>
+#include <DgnPlatform/AutoRestore.h>
+
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct DrawingHoldsProxyGraphics : Converter::ProxyGraphicsDrawingFactory
-    {
-    ResolvedModelMapping const& m_drawingModelMapping;
-
-    DrawingHoldsProxyGraphics(ResolvedModelMapping const& v8mm) : m_drawingModelMapping(v8mm) {}
-    
-    ResolvedModelMappingWithElement _CreateAndInsertDrawing(DgnAttachmentCR v8Attachment, ResolvedModelMapping const& parentModel, Converter& converter) override
-        {
-        DgnV8Api::EditElementHandle v8eh(v8Attachment.GetElementId(), &parentModel.GetV8Model());
-        return ResolvedModelMappingWithElement(parentModel, converter.RecordMappingInSyncInfo(parentModel.GetDgnModel().GetModeledElementId(), v8eh, parentModel));
-        }
-
-    ResolvedModelMapping _GetDrawing(DgnV8Api::ElementId, ResolvedModelMapping const& parentModel, Converter&) override
-        {
-        return parentModel;
-        }
-
-    bool _UseProxyGraphicsFor(DgnAttachmentCR attachment, Converter&) override {return attachment.Is3d() && !attachment.IsTemporary();}
-    };
 
 /*=================================================================================**//**
 * @bsiclass
@@ -178,7 +159,7 @@ void RootModelConverter::_ConvertDrawings()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bpair<ResolvedModelMapping,bool> Converter::Import2dModel(DgnV8ModelR v8model)
+bpair<ResolvedModelMapping, bool> Converter::Import2dModel(DgnV8ModelR v8model)
     {
     BeAssert(GetV8FileSyncInfoIdFromAppData(*v8model.GetDgnFileP()).IsValid() && "All V8 files should have been found discovered by _InitRootModel");
 
@@ -363,12 +344,14 @@ void Converter::ImportDrawingModel(ResolvedModelMapping& rootModelMapping, DgnV8
     auto importres = Import2dModel(v8model);
     
     ResolvedModelMapping const& resolvedMapping = importres.first;
+#ifdef UNUSED
     if (!resolvedMapping.IsValid()) // if the import failed,
         return;                     // there is nothing more we can do
 
     // Since there is no such thing as an attachment to a drawing, we must merge any V8 attachments
     // into the imported parent drawing model.
     DrawingRegisterAttachmentsToBeMerged(v8model, importres.first);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -629,64 +612,6 @@ void            Converter::MakeAttachmentsMatchRootAnnotationScale(DgnModelRefR 
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<DgnV8Api::ElementId> Converter::GetAttachmentsToBeUnnested(DgnV8ModelR sheetModel)
-    {
-    bvector<DgnV8Api::ElementId> attachmentIds;
-
-    auto attachments = sheetModel.GetDgnAttachmentsP();
-    if (nullptr == attachments)
-        return attachmentIds;
-
-    for (auto attachment : *attachments)
-        {
-        if (nullptr == attachment->GetDgnModelP())
-            continue;
-        if (attachment->Is3d())
-            continue;
-            
-        attachmentIds.push_back(attachment->GetElementId());
-        }
-
-    return attachmentIds;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::UnnestAttachments(DgnV8ModelR parentModel)
-    {
-    parentModel.SetReadOnly(false);
-    
-    //  First, unnest all 2D attachments
-    auto vg = FindFirstViewGroupShowing(parentModel);
-    for (auto attachmentId : GetAttachmentsToBeUnnested(parentModel))
-        {
-        auto attachment = DgnV8Api::DgnAttachment::FindByElementId(&parentModel, attachmentId);
-        if (nullptr == attachment)
-            {
-            BeAssert(false);
-            continue;
-            }
-        if (0 != attachment->MoveNestedAttachmentsToParent(-1, vg.get()))
-            {
-            BeAssert(false);
-            }
-        }
-
-    auto attachments = GetAttachments(parentModel);
-    if (nullptr == attachments)
-        return;
-
-    // Make sure all (new) attachments are classified.
-    for (auto attachment : *attachments)
-        {
-        if (attachment->GetDgnModelP())
-            Classify2dModelIfNormal(*attachment->GetDgnModelP(), nullptr);
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
@@ -762,7 +687,9 @@ void RootModelConverter::Transform2dAttachments(DgnV8ModelR v8ParentModel)
     if (!ScaledCopyMarker::IsFoundOn(v8ParentModel))    // *** NEEDS WORK: not sure why we need this check
         MakeAttachmentsMatchRootAnnotationScale(v8ParentModel);
     
+#ifdef DO_UNNEST_TO_SHEET
     UnnestAttachments(v8ParentModel);
+#endif
     
     TransformSheetAttachmentsToDrawings(v8ParentModel);
     }
@@ -894,79 +821,809 @@ void Converter::DoConvertDrawingElementsInModel(ResolvedModelMapping const& v8mm
         }
     }
 
+
+static BentleyApi::TransformCR DoInterop(Bentley::Transform const&source) { return (BentleyApi::TransformCR)source; }
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     05/2018
++===============+===============+===============+===============+===============+======*/
+struct MergeProxyGraphicsDrawGeom : public DgnV8Api::SimplifyViewDrawGeom
+{
+    typedef
+        bmap<Bentley::DgnModelRefP,                            
+            bmap<DgnV8Api::ElementId,                          
+                bmap<DgnCategoryId, GeometryBuilderPtr>>>    T_BuilderMap;
+
+
+    struct ModelRefInfo
+        {
+        DgnCategoryId                           m_categoryId;
+        bool                                    m_hasChanged;
+        bool                                    m_failed;
+        SyncInfo::V8ElementMapping              m_attachElementMapping;
+
+        ModelRefInfo() : m_hasChanged(false), m_failed(false) {}
+        };
+
+    typedef bmap<DgnModelRefP, ModelRefInfo>    T_ModelRefInfoMap;
+
+    DEFINE_T_SUPER(SimplifyViewDrawGeom)
+
+    T_BuilderMap                                m_builders;
+    ResolvedModelMapping const&                 m_parentModelMapping;
+    Bentley::DgnModelRefP                       m_currentModelRef;
+    ModelRefInfo                                m_currentModelRefInfo;
+    Converter&                                  m_converter;
+    SyncInfo::T_V8ElementSourceSet              m_attachmentsUnchanged;
+    T_ModelRefInfoMap                           m_modelRefInfoMap;
+    bool                                        m_doClip = true;
+    bool                                        m_processingProxy = false;
+    bool                                        m_processingText = false;
+
+protected:
+    virtual bool        _DoClipping () const override {return !m_processingProxy; }         // Proxy is already clipped and clipping is expensive.
+    virtual bool        _DoTextGeometry () const override {return true;}
+    virtual bool        _DoSymbolGeometry () const override {return true;}
+    virtual bool        _ProcessAsFacets (bool isPolyface) const override {return false; }
+    virtual bool        _ProcessAsBody (bool isCurved) const override {return false; }
+    virtual StatusInt   _ProcessSolidPrimitive (Bentley::ISolidPrimitiveCR primitive) override  { return Bentley::BSIERROR;}
+    virtual StatusInt   _ProcessSurface (Bentley::MSBsplineSurfaceCR surface) override  { return Bentley::BSIERROR;}
+    virtual StatusInt   _ProcessFacetSet (Bentley::PolyfaceQueryCR facets, bool filled) override { return Bentley::BSIERROR;}
+    virtual StatusInt   _ProcessBody (Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMaterialAttachmentsCP attachments) override  { return Bentley::BSIERROR;}
+
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/16
+* @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::DrawingRegisterModelToBeMerged(bvector<ResolvedModelMapping>& tbm, DgnAttachmentR v8DgnAttachment, DgnModelR targetBimModel, TransformCR transformToParent)
+Transform   GetCurrentTransform()
     {
-    auto attachedV8model = v8DgnAttachment.GetDgnModelP();
+    return (nullptr == m_context->GetCurrLocalToFrustumTransformCP()) ? Transform::FromIdentity() : DoInterop(*m_context->GetCurrLocalToFrustumTransformCP());
+    }
 
-    auto& referenceFile = *attachedV8model->GetDgnFileP();
-    SyncInfo::V8FileSyncInfoId v8FileId = GetV8FileSyncInfoId(referenceFile);
-    if (!v8FileId.IsValid())
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool InitGeometryParams(Render::GeometryParams& params)
+    {
+    DgnV8Api::ProxyDisplayHitInfo const*    proxyInfo = nullptr;
+    DgnCategoryId                           categoryId;
+    DgnSubCategoryId                        subCategoryId;
+
+    if (nullptr != m_context->GetDisplayStyleHandler() &&
+        nullptr != (proxyInfo = m_converter.GetProxyDisplayHitInfo(*m_context)))
         {
-        BeAssert(false);
-        ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), "reference file not found");
-        return;
-        }
+        // Proxy Graphics...
+        if (!m_currentModelRefInfo.m_hasChanged || m_currentModelRefInfo.m_failed)
+            {
+            m_attachmentsUnchanged.insert(m_currentModelRefInfo.m_attachElementMapping);
+            return false;
+            }
 
-    auto refTrans = ComputeAttachmentTransform(transformToParent, v8DgnAttachment);
-
-    ResolvedModelMapping mergedModelMapping = GetModelFromSyncInfo(*attachedV8model, refTrans);
-    if (!mergedModelMapping.IsValid())
-        {
-        SyncInfo::V8ModelMapping refSyncInfoMapping;
-
-        if (BSISUCCESS != GetSyncInfo().InsertModel(refSyncInfoMapping, targetBimModel.GetModelId(), *attachedV8model, refTrans))
+        categoryId = m_currentModelRefInfo.m_categoryId;
+        subCategoryId = m_converter.GetExtractionSubCategoryId(m_currentModelRefInfo.m_categoryId, proxyInfo->m_viewHandlerPass.m_pass, proxyInfo->m_graphicsType);
+        if (!subCategoryId.IsValid())
             {
             BeAssert(false);
-            LOG.infov("DrawingRegisterModelToBeMerged %s -> %s failed - duplicate attachments??", IssueReporter::FmtModel(*attachedV8model).c_str(), IssueReporter::FmtModel(targetBimModel).c_str());
-            return;
+            return Bentley::SUCCESS;
             }
+        }
+    else
+        {
+        auto   v8Model = m_currentModelRef->GetDgnModelP();
+        if (nullptr == v8Model || nullptr == v8Model->GetDgnFileP())
+            {
+            BeAssert(false);
+            }
+        else
+            {
+            auto    levelId = m_context->GetCurrentDisplayParams()->GetLevel();
 
-        mergedModelMapping = ResolvedModelMapping (targetBimModel, *attachedV8model, refSyncInfoMapping, &v8DgnAttachment);
+            categoryId =    m_converter.ConvertDrawingLevel(*v8Model->GetDgnFileP(), levelId);
+            subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId);
+            }
         }
 
-    tbm.push_back(mergedModelMapping);
+    params.SetCategoryId(categoryId);
+    params.SetSubCategoryId(subCategoryId);
+    m_converter.InitGeometryParams(params, *m_context->GetCurrentDisplayParams(), *m_context, false, m_parentModelMapping.GetV8ModelSource());
 
-    if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
-        LOG.tracev("DrawingRegisterModelToBeMerged %s -> %s", IssueReporter::FmtModel(*attachedV8model).c_str(), IssueReporter::FmtModel(targetBimModel).c_str());
-
-    // recurse over nested attachments -- NEEDS WORK: All nested attachments should have been un-nested before this function is called!
-    DrawingRegisterAttachmentsToBeMerged(tbm, v8DgnAttachment, targetBimModel, refTrans);
+    if (m_processingText)
+        {
+        params.SetFillDisplay(FillDisplay::Always);
+        params.SetFillColor(params.GetLineColor());
+        }
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/16
+* @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::DrawingRegisterAttachmentsToBeMerged(bvector<ResolvedModelMapping>& tbm, DgnV8ModelRefR v8modelRef, DgnModelR targetBimModel, TransformCR transformToParent)
+void _DrawTextString (Bentley::TextStringCR v8Text, double* zDepth)  override
     {
-    auto attachments = GetAttachments(v8modelRef);
-    if (nullptr == attachments)
+    AutoRestore<bool>   saveInText(&m_processingText, true);
+
+    InitCurrentModel();
+
+    DgnAttachmentCP     currentAttachment = m_currentModelRef->AsDgnAttachmentCP();
+    Transform           currentTransform = GetCurrentTransform();
+
+    if (nullptr != currentAttachment && currentAttachment->IsCameraOn())
+        return T_Super::_DrawTextString(v8Text, zDepth);
+
+    Bentley::DVec3d         zVector, zAxis = Bentley::DVec3d::From(0.0, 0.0, 1.0);
+    v8Text.GetRotMatrix().GetColumn(zVector, 2);
+    currentTransform.MultiplyMatrixOnly(*((DPoint3dP) &zVector));
+
+    if (!zVector.IsParallelTo(zAxis))
+        return T_Super::_DrawTextString(v8Text, zDepth);
+
+    m_converter.ShowProgress();
+
+    Render::GeometryParams geometryParams;
+
+    if (!InitGeometryParams(geometryParams) || nullptr == m_currentModelRef->GetDgnFileP())
+        return T_Super::_DrawTextString(v8Text, zDepth);
+
+    TextStringPtr textString;
+    Converter::ConvertTextString(textString, v8Text, *m_currentModelRef->GetDgnFileP(), m_converter);
+    
+    // Flatten 3D -> 2D
+    Transform   flattenTrans;
+    flattenTrans.InitIdentity();
+    flattenTrans.form3d[2][2] = 0.0;
+
+    textString->ApplyTransform(Transform::FromProduct(flattenTrans, m_parentModelMapping.GetTransform(), currentTransform));
+
+    auto primitive = GeometricPrimitive::Create(*textString);
+    AddToBuilder(primitive, geometryParams);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Bentley::StatusInt _ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isFilled) override
+    {
+    m_converter.ShowProgress();
+
+    InitCurrentModel();
+    Render::GeometryParams geometryParams;
+
+    if (!InitGeometryParams(geometryParams))
+        return Bentley::SUCCESS;
+
+    Bentley::Transform  currentTransform = (nullptr == m_context->GetCurrLocalToFrustumTransformCP()) ? Bentley::Transform::FromIdentity() : *m_context->GetCurrLocalToFrustumTransformCP();
+
+    CurveVectorPtr bimcurves;
+    Converter::ConvertCurveVector(bimcurves, v8curves, &m_parentModelMapping.GetTransform());   
+
+    // Graphics are defined in 3-D coordinates. The ViewContext's "current transform" gets them into the parent V8 drawing or sheet model's coordinates.
+    DgnAttachmentCP     currentAttachment = m_currentModelRef->AsDgnAttachmentCP();
+
+    if (nullptr != currentAttachment && currentAttachment->IsCameraOn())
+        {
+        Bentley::DMap4d     parentMap, currentAndFromParent, composite;
+        Bentley::Transform  fromParentTransform;
+
+        currentAttachment->GetTransformFromParent (fromParentTransform, false);
+
+        currentAndFromParent.InitFromTransform(Bentley::Transform::FromProduct(fromParentTransform, currentTransform), false);
+        currentAttachment->GetMapToParent(parentMap, false);
+
+        composite.InitProduct(parentMap, currentAndFromParent); 
+        bimcurves = bimcurves->Clone ((DMatrix4dCR) composite.M0);          
+        } 
+    else
+        {
+        bimcurves->TransformInPlace(DoInterop(currentTransform));
+        }
+
+    // Flatten 3D -> 2D
+    Transform   flattenTrans;
+    flattenTrans.InitIdentity();
+    flattenTrans.form3d[2][2] = 0.0;
+    bimcurves->TransformInPlace(Transform::FromProduct(flattenTrans, m_parentModelMapping.GetTransform())); 
+
+    auto    primitive = GeometricPrimitive::Create(bimcurves);
+    return AddToBuilder(primitive, geometryParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Bentley::StatusInt  AddToBuilder(GeometricPrimitivePtr& primitive, Render::GeometryParams& geometryParams)
+    {
+    if (!primitive.IsValid())
+        return Bentley::BSIERROR;
+
+    auto&               byattachment = m_builders[m_currentModelRef];
+    auto                elementRef = m_context->GetCurrDisplayPath()->GetHeadElem();
+    auto&               byelement = byattachment[nullptr == elementRef ? 0 : elementRef->GetElementId()];
+    GeometryBuilderPtr& builder = byelement[geometryParams.GetCategoryId()];
+    if (!builder.IsValid())
+        {
+        builder = GeometryBuilder::Create(m_parentModelMapping.GetDgnModel(), geometryParams.GetCategoryId(), DPoint2d::FromZero());
+        if (!builder.IsValid())
+            return Bentley::SUCCESS;
+        }
+
+    builder->Append(geometryParams);
+    builder->Append(*primitive, GeometryBuilder::CoordSystem::World);
+    return Bentley::BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void _DrawShape3d (int numPoints, Bentley::DPoint3dCP points, bool filled, Bentley::DPoint3dCP range) override
+    {
+    if (!filled)
+        T_Super::_DrawLineString3d(numPoints, points, range);       // Avoid clipping with parasolid and potentially exposing facets if nonplanar (Civil profiles).
+    else
+        T_Super::_DrawShape3d(numPoints, points,filled, range);
+    }
+public:
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void InitCurrentModel()
+    {
+    m_currentModelRef = m_context->GetCurrentModel();
+    auto  foundInfo = m_modelRefInfoMap.find(m_currentModelRef);
+    
+    if (foundInfo != m_modelRefInfoMap.end())
+        {
+        m_currentModelRefInfo = foundInfo->second;
+        return;
+        }
+
+    auto    attachment = m_currentModelRef->AsDgnAttachmentCP();
+    ModelRefInfo info;
+
+    if (nullptr == attachment)
+        {
+        m_modelRefInfoMap[m_currentModelRef] = info;
+        m_currentModelRefInfo = info;
+        return;
+        }
+    
+    if (m_processingProxy)
+        {
+        DgnV8Api::DgnAttachment const* parentAttachment;
+        while (nullptr != (parentAttachment = attachment->GetParentModelRefP()->AsDgnAttachmentCP()))
+            attachment = parentAttachment;
+
+        info.m_categoryId = m_converter.GetExtractionCategoryId(*attachment);
+        }
+
+    DgnV8Api::EditElementHandle         v8eh(attachment->GetElementId(), attachment->GetParent().GetDgnModelP());
+    auto                                chooseDrawing = ElementFilters::GetDrawingElementFilter();
+    IChangeDetector::SearchResults      syncInfoSearch;
+
+    info.m_hasChanged = m_converter.GetChangeDetector()._IsElementChanged(syncInfoSearch, m_converter, v8eh, m_parentModelMapping, &chooseDrawing);
+    if (!info.m_hasChanged)
+        {
+        // The existing V8 attachment is unchanged, and MergeDrawGraphicsConverter will skip it. Just to record the fact
+        // that we have found a mapping to the BIM Drawing element.
+        m_converter.GetChangeDetector()._OnElementSeen(m_converter, syncInfoSearch.GetExistingElementId());
+        }
+    else if (IChangeDetector::ChangeType::Update == syncInfoSearch.m_changeType)
+        {
+        // The existing V8 attachment has changed. At this stage of the update, we just update its provenance in syncinfo
+        // AND record the fact that we've found a mapping to the BIM drawing element. We also tell MergeDrawGraphicsConverter to go ahead and
+        // harvest the proxies. Later, the caller (ConvertExtractionAttachments), will update the elements in the DrawingModel from the harvested geometry.
+        m_converter.UpdateMappingInSyncInfo(syncInfoSearch.GetExistingElementId(), v8eh, m_parentModelMapping);
+        m_converter.GetChangeDetector()._OnElementSeen(m_converter, syncInfoSearch.GetExistingElementId());
+        }
+    else
+        {
+        ResolvedModelMappingWithElement newModel = ResolvedModelMappingWithElement(m_parentModelMapping, m_converter.RecordMappingInSyncInfo(m_parentModelMapping.GetDgnModel().GetModeledElementId(), v8eh, m_parentModelMapping));
+        syncInfoSearch.m_v8ElementMapping = newModel.GetModeledElementMapping();
+        }
+
+    info.m_attachElementMapping = syncInfoSearch.m_v8ElementMapping;
+    if (info.m_attachElementMapping.IsValid())
+        info.m_failed = false;
+    else
+        {
+        m_converter.ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(),
+                    Utf8PrintfString("%s - MergeDrawGraphicsConverter DetectAttachment failed", Converter::IssueReporter::FmtAttachment(*attachment).c_str()).c_str());
+
+        info.m_failed = true;
+        }
+
+    m_modelRefInfoMap[m_currentModelRef] = info;
+    m_currentModelRefInfo = info;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CreateDrawingElements()
+    {
+    SyncInfo::T_V8ElementMapOfV8ElementSourceSet v8OriginalsSeen;
+
+    for (auto& byModelRef : m_builders)
+        {
+        auto                    modelRef = byModelRef.first;
+        auto&                   modelRefInfo = m_modelRefInfoMap[modelRef];
+
+        for (auto& byElement : byModelRef.second)
+            {
+            SyncInfo::V8ElementMapping originalElementMapping;
+            
+            if (nullptr != modelRef && nullptr != modelRef->GetDgnModelP())
+                originalElementMapping = m_converter.FindFirstElementMappedTo(*modelRef->GetDgnModelP(), byElement.first);
+            
+            for (auto& bycategory : byElement.second)
+                {
+                DgnDbStatus     status;
+
+                if (modelRefInfo.m_attachElementMapping.IsValid() && originalElementMapping.IsValid())
+                    status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, modelRefInfo.m_attachElementMapping, originalElementMapping, bycategory.first, *bycategory.second);
+                else
+                    status = m_converter.CreateDrawingElement(m_parentModelMapping.GetDgnModel(), bycategory.first, *bycategory.second);
+
+                if (DgnDbStatus::Success != status)
+                    {
+#ifdef NEEDS_WORK
+                    BeAssert((DgnDbStatus::LockNotHeld != status) && "Failed to get or retain necessary locks");
+                    ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), "drawing extraction");
+                    BeAssert(false);
+#endif
+                    }
+                }
+            }
+        }
+
+#ifdef NEEDS_WORK
+    if (IsUpdating())
+        _DetectDeletedExtractionGraphics(v8mm., v8OriginalsSeen, drawGeom.m_attachmentsUnchanged);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+MergeProxyGraphicsDrawGeom(Converter& converter, ResolvedModelMapping const& parentModelMapping)
+                           : m_converter(converter), m_parentModelMapping(parentModelMapping)
+    { 
+    }
+
+}; // MergeProxyGraphicsDrawGeom
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     05/2018
++===============+===============+===============+===============+===============+======*/
+struct MergeDrawingContext : public DgnV8Api::NullContext
+{
+    DEFINE_T_SUPER(NullContext)
+
+protected:
+
+MergeProxyGraphicsDrawGeom&             m_output;
+Converter&                              m_converter;
+bool                                    m_mergeGraphicsForRenderedViews;
+
+virtual bool _WantUndisplayed () { return false; }
+virtual bool _HandleRefAsViewlet (DgnAttachmentCR thisRef) override  { return false; }
+
+
+virtual void _SetupOutputs () override {SetIViewDraw (m_output);}
+
+public:
+
+MergeDrawingContext(MergeProxyGraphicsDrawGeom& output, Converter& converter, bool mergeGraphicsForRenderedViews) : m_output (output), m_converter(converter), m_mergeGraphicsForRenderedViews(mergeGraphicsForRenderedViews)
+    {
+    m_setupScan = true;
+    m_purpose = DgnV8Api::DrawPurpose::DgnDbConvert;
+    m_wantMaterials = true; 
+
+    SetBlockAsynchs (true);
+    _SetupOutputs ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual void _DrawTextString (DgnV8Api::TextString const& text) override
+    {
+    // NOTE: When IElementGraphicsProcessor handles TextString we don't want to spew background/adornment geometry!
+    text.GetGlyphSymbology(*GetCurrentDisplayParams());
+    CookDisplayParams();
+
+    double priority = GetDisplayPriority();
+
+    GetIDrawGeom().DrawTextString (text, text.Is3d() ? NULL : &priority);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/12
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual void _DrawSymbol (DgnV8Api::IDisplaySymbol* symbolDef, Bentley::Transform const* trans, Bentley::ClipPlaneSet* clipPlanes, bool ignoreColor, bool ignoreWeight) override
+    {
+    // Pass along any symbol that is drawn from _ExpandPatterns/_ExpandLineStyles, etc.
+    m_output.ClipAndProcessSymbol (symbolDef, trans, clipPlanes, ignoreColor, ignoreWeight);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  02/13
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual void _CookDisplayParams (ElemDisplayParamsR elParams, ElemMatSymbR elMatSymb) override
+    {
+    DgnV8Api::ElemDisplayParams tmpElParams(elParams);
+
+    tmpElParams.Resolve (*this);
+    elMatSymb.FromResolvedElemDisplayParams (tmpElParams, *this, m_startTangent, m_endTangent);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Bentley::StatusInt       _OnNewModelRef (DgnModelRefP modelRef) override
+    {
+    Bentley::StatusInt   status = T_Super::_OnNewModelRef(modelRef);
+    auto        viewFlags = *GetViewFlags();
+
+    viewFlags.text_nodes = false;
+    SetViewFlags(&viewFlags);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void _DrawModelRef (DgnV8Api::DgnModelRef* baseModelRef, DgnV8Api::DgnModelRefList* includeList, bool useUpdateSequence, bool includeRefs) override
+    {
+    if (nullptr == baseModelRef->GetDgnModelP())
+        return;
+    
+    if (!m_mergeGraphicsForRenderedViews &&
+        nullptr != baseModelRef->AsDgnAttachmentP() &&
+        m_converter._UseRenderedViewAttachmentFor(*baseModelRef->AsDgnAttachmentP()))
         return;
 
-    for (auto attachment : *attachments)
+    AutoRestore <bool> saveInProxy(&m_output.m_processingProxy, nullptr != baseModelRef->AsDgnAttachmentCP() && nullptr != baseModelRef->AsDgnAttachmentCP()->FindProxyHandler(nullptr, GetViewport()));
+
+    T_Super::_DrawModelRef(baseModelRef, includeList, useUpdateSequence, includeRefs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   _VisitElemHandle (DgnV8Api::ElementHandle const& inEl, bool checkRange, bool checkScanCriteria) override
+    {
+    // *** TRICKY: For drawings, we do not convert all levels ahead of time. We wait until we see which ones are used.
+    //              That's how we tell which should be DrawingCategories instead of SpatialCategories. We must therefore
+    //              visit complex children and ensure that their levels are converted.
+    m_converter.ConvertLevels(inEl);
+
+    return T_Super::_VisitElemHandle(inEl, checkRange, checkScanCriteria);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void Process(ViewportR viewport, DgnV8Api::DgnModelRef* baseModelRef)
+    {
+    Attach (&viewport,  DgnV8Api::DrawPurpose::DgnDbConvert);
+    InitScanRangeAndPolyhedron ();
+    GetCurrentDisplayParams()->Init ();
+    SetScanReturn();
+
+    if (SUCCESS == PushModelRef(baseModelRef, true))
+        _DrawModelRef(baseModelRef, nullptr, false, true);
+
+    Detach ();
+    }
+
+}; // MergeDrawingContext
+
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     02/2013
++===============+===============+===============+===============+===============+======*/
+struct CreateCveMeter : DgnV8Api::VisEdgesProgressMeter
+{
+    Converter&              m_converter;
+    DgnProgressMeter::Abort m_aborted;
+
+    CreateCveMeter(Converter& c) : m_converter(c), m_aborted(DgnProgressMeter::ABORT_No) {}
+
+    virtual void            _SetTaskName (WCharCP taskName)  override       { m_aborted = m_converter.GetProgressMeter().ShowProgress(); }
+    virtual void            _IndicateProgress (double fraction) override    { m_aborted = m_converter.GetProgressMeter().ShowProgress(); }
+    virtual void            _Terminate () override                          {}
+    virtual bool            _WasAborted () override                         { return DgnProgressMeter::ABORT_Yes == m_aborted; }
+    virtual void            _DisplayMessageCenter (DgnV8Api::OutputMessagePriority priority, DgnV8Api::OutputMessageAlert openAlert, Bentley::WStringCR brief, Bentley::WStringCR detailed) override
         {
-        if (!attachment->Is3d() && !attachment->IsTemporary())
+        Utf8String msg(brief.c_str());
+        msg.append(" - ");
+        msg.append(Utf8String(detailed.c_str()));
+
+        Converter::IssueSeverity sev = (DgnV8Api::OutputMessagePriority::Error == priority || DgnV8Api::OutputMessagePriority::Fatal == priority)?
+                                        Converter::IssueSeverity::Error: 
+                                        (DgnV8Api::OutputMessagePriority::Warning == priority)?
+                                        Converter::IssueSeverity::Warning:
+                                        Converter::IssueSeverity::Info;
+
+        m_converter.ReportIssue(sev, Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), msg.c_str());
+        }
+};  
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static StatusInt generateCve (DgnAttachmentP refP, ViewportP viewport, CachedVisibleEdgeOptionsCP pInputOptions, CreateCveMeter* meter, bool setAlwaysValid)
+    {
+    DgnV8Api::VisibleEdgeCache*           currentCache;
+
+    if (NULL == refP ||
+        NULL == viewport)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    DgnModelRefP modelRef = refP;
+
+    if (NULL != (currentCache = dynamic_cast <DgnV8Api::VisibleEdgeCache*> (refP->GetProxyCache())) && (NULL != viewport && currentCache->IsValidForViewport (*viewport)))
+        return SUCCESS;
+
+    BeAssert (refP->IsDisplayedInViewport (*viewport, true));
+
+    DgnV8Api::CachedVisibleEdgeOptions    options;
+
+    // if we got options passed in, we use those.
+    DgnV8Api::Tcb const* tcb = modelRef->GetDgnFileP()->GetPersistentTcb();
+    if (NULL == pInputOptions)
+        {
+        if (NULL == currentCache)
+            options = DgnV8Api::CachedVisibleEdgeOptions (*tcb, modelRef);
+        else
+            options = currentCache->GetOptions();
+        }
+    else
+        {
+        options = *pInputOptions;
+        }
+
+    DgnV8Api::VisibleEdgeCache*           proxyCache = DgnV8Api::VisibleEdgeCache::Create (modelRef, options);
+                              
+    if (SUCCESS ==  DgnV8Api::VisibleEdgesLib::CreateProxyCache (*proxyCache, NULL, modelRef, viewport, meter))
+        {
+        proxyCache->Resolve ();
+
+        if (!setAlwaysValid)
+            proxyCache->ComputeHash (modelRef, viewport);
+        else
+            proxyCache->ClearElementModifiedTimes (false);
+        }
+
+
+    // it's valid for the view we created it for. It might be valid for other views, depending on what levels, etc., they are displaying. We have to run the test.
+    //UInt32  thisView = viewport->GetViewNumber();
+    UInt32  thisView = 0; // *** we always use a fake view
+    proxyCache->SetValidForView (thisView, true);
+
+    refP->SetProxyCache (proxyCache, DgnV8Api::ProxyDgnAttachmentHandlerManager::GetManager().GetHandler (DgnV8Api::CachedVisibleEdgeHandlerId()));
+
+    // write the proxy cache as XAttributes to the reference element.
+    return proxyCache->Save (modelRef);
+
+    // Note: It is up to the caller to make sure that the reference element itself is saved.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::HasRenderedViewAttachments(DgnV8ModelR v8ParentModel)
+    {
+    auto                    attachments = GetAttachments(v8ParentModel);
+
+    if (nullptr != attachments)
+        for (auto attachment : *attachments)
+            if (_UseRenderedViewAttachmentFor(*attachment))
+                return true;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::_UseRenderedViewAttachmentFor(DgnAttachmentR ref)
+    {
+    if (!ref.Is3d() || ref.IsTemporary() || IsSimpleWireframeAttachment(ref) || nullptr != ref.GetProxyCache() || nullptr == ref.GetDgnModelP())
+        return false;
+
+    auto const&                 dynamicViewSettings = ref.GetDynamicViewSettingsCR();
+
+    if (nullptr !=  dynamicViewSettings.GetClipBoundElementRef(&ref) &&
+        dynamicViewSettings.ShouldDisplayCut())
+        return false;
+        
+    for (int i=0; i<8; i++)
+        if (ref.GetViewFlags(i).renderMode  >= (UInt32) DgnV8Api::MSRenderMode::SmoothShade)
+            return true;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::IsSimpleWireframeAttachment(DgnAttachmentCR ref)
+    {
+    static bool s_forceDisable = false;
+
+    if (s_forceDisable)
+        return false;
+
+    if (!ref.Is3d() || ref.IsTemporary())
+        return false;
+
+    if (nullptr != ref.GetDynamicViewSettingsCR().GetClipBoundElementRef(ref.GetDgnModelP()) ||
+        nullptr != ref.GetDynamicViewSettingsCR().GetClipMaskElementRef(ref.GetDgnModelP()))
+        return false;
+
+    for (int i=0; i<8; i++)
+        if (ref.GetViewFlags(i).renderMode != (UInt32) DgnV8Api::MSRenderMode::Wireframe)
+            return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::_GenerateProxyCacheFor(DgnAttachmentR ref)
+    {
+    if (!ref.Is3d() || ref.IsTemporary() || IsSimpleWireframeAttachment(ref) || _UseRenderedViewAttachmentFor(ref)) 
+        return false;
+    
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void  createProxyGraphics (Converter& converter, DgnModelRefR modelRef, ViewportR viewport, bool createProxyGraphicsForRenderedViews)
+    {
+    auto attachedV8Model = modelRef.GetDgnModelP();
+
+    if (attachedV8Model == nullptr)
+        return;
+
+    DgnAttachmentP      attachment = modelRef.AsDgnAttachmentP();
+    if (nullptr  != attachment)
+        {
+        if((converter._GenerateProxyCacheFor(*attachment) || (createProxyGraphicsForRenderedViews && converter._UseRenderedViewAttachmentFor(*attachment))) && !converter.HasProxyGraphicsCache(*attachment, &viewport))
             {
-            DrawingRegisterModelToBeMerged(tbm, *attachment, targetBimModel, transformToParent);
+            CreateCveMeter meter(converter);
+
+            attachedV8Model->SetReadOnly(false);
+            if (SUCCESS == generateCve(attachment, &viewport, nullptr, &meter, true))
+                {
+                attachment->SetProxyCachingOption(DgnV8Api::ProxyCachingOption::Cached);
+                attachment->Rewrite(true, true);
+                return;
+                }
             }
         }
+    DgnAttachmentArrayP childAttachments = converter.GetAttachments(modelRef);
+    if (nullptr != childAttachments)
+        for (auto& childAttachment : *childAttachments)
+                createProxyGraphics (converter, *childAttachment, viewport, createProxyGraphicsForRenderedViews);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
+* @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::DrawingRegisterAttachmentsToBeMerged(DgnV8ModelRefR v8modelRef, ResolvedModelMapping const& drawingModelMapping)
+static void mergeDrawingGraphics(Converter& converter, Bentley::DgnModelRefR baseModelRef, ResolvedModelMapping const& v8mm, ViewportR viewport, bool mergeGraphicsForRenderedViews)
     {
-    bvector<ResolvedModelMapping> tbm;
-    DrawingRegisterAttachmentsToBeMerged(tbm, v8modelRef, drawingModelMapping.GetDgnModel(), drawingModelMapping.GetTransform());
-    if (!tbm.empty())
-        ModelsToBeMerged::AddTo(*v8modelRef.GetDgnModelP(), tbm);
+    MergeProxyGraphicsDrawGeom      drawGeom(converter, v8mm);
+    MergeDrawingContext             mergeDrawingContext(drawGeom, converter, mergeGraphicsForRenderedViews);
+
+    drawGeom.SetViewContext(&mergeDrawingContext);
+    mergeDrawingContext.Process(viewport, &baseModelRef);
+    drawGeom.CreateDrawingElements();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Converter::CreateDrawingElement(DgnModelR model, DgnCategoryId categoryId, GeometryBuilder& builder)
+    {
+    DgnCode code;
+    if (WantDebugCodes())
+        {
+        // *** WIP_CONVERT_CVE code = CreateCode(defaultCodeValue, defaultCodeScope);
+        }
+
+    // *** WIP_CONVERT_CVE - what bis element class to use? Will it always be the same for all kinds of drawing extractions?
+    DgnClassId elementClassId(GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic));
+    DgnElementPtr drawingGraphic = CreateNewElement(model, elementClassId, categoryId, code);
+
+    if (!drawingGraphic.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    if (!drawingGraphic.IsValid())
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadRequest;
+        }
+    if (BSISUCCESS != builder.Finish(*drawingGraphic->ToGeometrySourceP()))
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadRequest;
+        }
+
+    ShowProgress();
+    ++m_elementsConverted;
+
+    DgnDbStatus status = DgnDbStatus::Success;
+
+#ifdef NEEDS_WORK
+    if (IsUpdating())
+        {
+        auto existingDrawingGraphicId = GetSyncInfo().FindExtractedGraphic(attachmentSource, originalElementMapping, categoryId);
+        if (existingDrawingGraphicId.IsValid())
+            {
+            // We already have a graphic for this element. Update it.
+            DgnElementCPtr existingEl = GetDgnDb().Elements().GetElement(existingDrawingGraphicId);
+
+            if (existingEl.IsValid())
+                {
+                DgnElementPtr writeEl = MakeCopyForUpdate(*drawingGraphic, *existingEl);
+                writeEl->Update(&status);
+                // There's no need to "update" the syncinfo record for this drawing graphic, as syncinfo does not store anything like a date or a hash
+                // for drawing graphics. (We track only the dgnattachment's hash as a proxy for *all* drawing graphics in the attachment.)
+                return status;
+                }
+            else 
+                {
+                BeAssert (!"ExistingDrawingGraphic missing. Possibly previously deleted in ChangeDetector::_DetectDeletedModels.");
+                }
+            }
+        }
+#endif
+
+    // This is a new graphic for this element.
+    drawingGraphic->Insert(&status);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+#ifdef NEEDS_WORK
+    GetSyncInfo().InsertElement();
+#endif
+
+    return DgnDbStatus::Success;
+
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnV8Api::ViewInfoPtr  createFakeViewInfo(DgnV8ModelR v8ParentModel, Converter& converter)
+    {
+    Bentley::DRange3d sheetModelRange;
+
+    v8ParentModel.GetRange(sheetModelRange);
+    if (sheetModelRange.IsEmpty() || sheetModelRange.IsNull() || sheetModelRange.IsPoint())
+        sheetModelRange = Bentley::DRange3d::FromMinMax(-1000000, 1000000);
+
+    return converter.CreateV8ViewInfo(v8ParentModel, sheetModelRange);
+    }
+
+struct FakeViewport : DgnV8Api::NonVisibleViewport
+    {
+    FakeViewport(DgnV8Api::ViewInfo& viewInfo) :  DgnV8Api::NonVisibleViewport(viewInfo) { m_viewNumber = 0; m_backgroundColor.m_int = 0xffffff; }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm)
     {
@@ -975,55 +1632,79 @@ void Converter::DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm)
         BeAssert(false);
         return;
         }
-
-    DgnV8ModelR v8model = v8mm.GetV8Model();
+    DgnV8ModelR v8ParentModel = v8mm.GetV8Model();
 
     if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
-        LOG.tracev("DrawingsConvertModelAndViews %s -> %s", IssueReporter::FmtModel(v8model).c_str(), IssueReporter::FmtModel(v8mm.GetDgnModel()).c_str());
+        LOG.tracev("DrawingsConvertModelAndViews %s -> %s", IssueReporter::FmtModel(v8ParentModel).c_str(), IssueReporter::FmtModel(v8mm.GetDgnModel()).c_str());
 
-    // Convert the elements in the drawing. This also converts the levels that are actually used by the elements.
-    DoConvertDrawingElementsInModel(v8mm);
-    if (WasAborted())
-        return;
-
-
-    //  We do not merge anything into a drawing and we do not convert any views of a drawing
-    //  except in the special case where it is an "orphan", that is, it is not shown on any sheet.
-    if (SheetAttachmentMarker::IsFoundOn(v8model))
-        return;
-
-    // Convert the elements in the drawing's attachments, merging them into the drawing.
-    auto tbm = ModelsToBeMerged::GetFrom(v8model);
-    if (nullptr != tbm)
+    // NB: We must be sure that we have all of the attachments loaded and filled if we want to create proxy graphics. Don't leave
+    //      that to chance. And don't assume that if v8ParentModel.GetDgnAttachmentsP() returns non-null then we have all the attachments.
+    //      we might not have all nested refs loaded, and we might not have them filled. They must all be loaded and filled!
         {
-        for (auto mergemm : tbm->m_models)
+        DgnV8Api::DgnAttachmentLoadOptions loadOptions;
+        loadOptions.SetTopLevelModel(true);
+        loadOptions.SetShowProgressMeter(false); // turn this off for now. It seems to increment the task count for every ref, but it doesn't decrement the count afterward.
+        v8ParentModel.ReadAndLoadDgnAttachments(loadOptions);
+        }
+
+    
+    DgnV8Api::ViewInfo const*   foundViewInfo = nullptr;
+    auto                        vg = FindFirstViewGroupShowing(v8ParentModel);
+    if (vg.IsValid())
+        {
+        for (int i=0; i<DgnV8Api::MAX_VIEWS; ++i)
             {
-            DoConvertDrawingElementsInModel(mergemm);
-            if (WasAborted())
-                return;
+            if (vg->GetViewInfo(i).GetRootModelId() == v8ParentModel.GetModelId())
+                {
+                foundViewInfo = &vg->GetViewInfo(i);
+                break;
+                }
             }
         }
 
-    //  Now that we know levels and styles ...
+    DgnV8Api::ViewInfoPtr       viewInfo = (nullptr == foundViewInfo) ? createFakeViewInfo(v8ParentModel, *this):  DgnV8Api::ViewInfo::CopyFrom(*foundViewInfo, true, true, true);
+    FakeViewport                fakeVp(*viewInfo);
+
+    if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
+        LOG.tracev("DrawingsConvertModelAndViews %s -> %s", IssueReporter::FmtModel(v8ParentModel).c_str(), IssueReporter::FmtModel(v8mm.GetDgnModel()).c_str());
+
+    bool isThisIndependentDrawing = !ConverterMadeCopyMarker::IsFoundOn(v8ParentModel);
+
+    createProxyGraphics(*this, v8ParentModel, fakeVp, isThisIndependentDrawing /* If independent generate proxy for rendered views */);
+    mergeDrawingGraphics(*this, v8ParentModel, v8mm, fakeVp, isThisIndependentDrawing /* If independent merge proxy for rendered views */);
 
     //  Convert all views of this model
-    DgnV8Api::ViewInfoPtr firstViewInfo;
-    for (DgnV8Api::ViewGroupPtr const& vg : v8model.GetDgnFileP()->GetViewGroups())
+    for (DgnV8Api::ViewGroupPtr const& vg : v8ParentModel.GetDgnFileP()->GetViewGroups())
         {
         DrawingViewFactory svf(v8mm);
-        Convert2dViewsOf(firstViewInfo, *vg, v8model, svf); 
+        Convert2dViewsOf(viewInfo, *vg, v8ParentModel, svf); 
         }
-
-    //  Now that we have a view ...
-
-    //  Convert proxy graphics on attachments in the drawing
-        {
-        DrawingHoldsProxyGraphics intoDrawing(v8mm);
-        ConvertExtractionAttachments(v8mm, intoDrawing, firstViewInfo.get());
-        }
-
-    //v8model.Empty(); Since XDomains and bridges may need to cache elementRefs, v8Models shouldn't be freed prematurely. Thus, commenting this line out.
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::CreateSheetExtractionAttachments(ResolvedModelMapping const& v8SheetModelMapping, ProxyGraphicsDrawingFactory& drawingGenerator, Bentley::ViewInfoCP v8SheetView)
+    {
+    DgnV8ModelR             v8ParentModel = v8SheetModelMapping.GetV8Model();
+    auto                    attachments = GetAttachments(v8ParentModel);
+    DgnV8Api::ViewInfoPtr   viewInfo = (nullptr == v8SheetView) ? createFakeViewInfo(v8ParentModel, *this):  DgnV8Api::ViewInfo::CopyFrom(*v8SheetView, true, true, true);
+    FakeViewport            fakeVp(*viewInfo);
+    
+    if (nullptr != attachments)
+        for (auto attachment : *attachments)
+            {
+            if (attachment->Is3d() && !_UseRenderedViewAttachmentFor(*attachment) && nullptr != attachment->GetDgnModelP())             // NEEDS_WORK -- rendered attachment.
+                {
+                auto                createdDrawing = drawingGenerator._CreateAndInsertDrawing(*attachment, v8SheetModelMapping, *this);
+
+                createdDrawing.SetTransform(v8SheetModelMapping.GetTransform());
+                createProxyGraphics(*this, *attachment, fakeVp, false);
+                mergeDrawingGraphics(*this, *attachment, createdDrawing, fakeVp, false);
+                }
+            }
+    }
+
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
 

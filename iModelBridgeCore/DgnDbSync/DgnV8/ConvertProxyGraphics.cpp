@@ -250,6 +250,7 @@ DgnElementIdSet GraphicDerivedFromElement::QueryGraphics(GeometricElement const&
 
     return elementIdSet;
     }
+#ifdef UNUSED
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     02/2013
@@ -368,7 +369,7 @@ static StatusInt generateCve (DgnAttachmentP refP, ViewportP viewport, CachedVis
 
     //CompletionBarVisibleEdgesProgressMeter       progressMeter;
 
-    StatusInt   status =createProxyCache (*proxyCache, NULL, modelRef, viewport, meter);
+    StatusInt   status = createProxyCache (*proxyCache, NULL, modelRef, viewport, meter);
 
     //ustnmdl_callRefProxyHooks (refP, REFPROXYEVENT_AfterProxyCacheCalculation, ProxyCachingOption::Cached);
 
@@ -492,41 +493,6 @@ void Converter::_GenerateProxyGraphics(ResolvedModelMapping const& v8ModelMappin
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnV8Api::ProxyDisplayHitInfo const* Converter::GetProxyDisplayHitInfo(DgnV8Api::ViewContext& context)
-    {
-    auto hitInfo = (DgnV8Api::ProxyDisplayHitInfo*)context.GetDisplayStyleHandler()->GetViewHandlerHitInfo(nullptr, Bentley::DPoint3d::FromZero());
-    if (nullptr != hitInfo)
-        return hitInfo;
-
-    BeAssert(false);
-    return nullptr;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     03/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Converter::IsSimpleWireframeAttachment(DgnAttachmentCR ref)
-    {
-    static bool s_forceDisable = false;
-
-    if (s_forceDisable)
-        return false;
-
-    if (!ref.Is3d() || ref.IsTemporary())
-        return false;
-
-    if (nullptr != ref.GetDynamicViewSettingsCR().GetClipBoundElementRef(ref.GetDgnModelP()) ||
-        nullptr != ref.GetDynamicViewSettingsCR().GetClipMaskElementRef(ref.GetDgnModelP()))
-        return false;
-
-    for (int i=0; i<8; i++)
-        if (ref.GetViewFlags(i).renderMode != (UInt32) DgnV8Api::MSRenderMode::Wireframe)
-            return false;
-
-    return true;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
@@ -570,30 +536,6 @@ bool Converter::_UseProxyGraphicsFor(DgnAttachmentCR ref)
     return false;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Converter::V8NamedViewType Converter::GetV8NamedViewTypeOfFirstAttachment(DgnV8ModelR v8Model)
-    {
-    auto attachments = GetAttachments(v8Model);
-
-    if (nullptr == attachments)
-        return V8NamedViewType::None;
-
-    for (DgnAttachmentP attachment : *attachments)
-        {
-        DgnV8Api::EditElementHandle viewEEH;
-        if (!attachment->GetNamedViewElement(viewEEH))
-            continue;
-
-        auto vt = GetV8NamedViewType(viewEEH);
-        if (V8NamedViewType::Other != vt)
-            return vt;
-        }
-
-    return V8NamedViewType::None;
-    }
-
 /*
 bim                         v8
 DefnModel(1)                DgnModel(drawing)(1)
@@ -631,6 +573,44 @@ SpatialModel(3)
 
 
 */
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnV8Api::ProxyDisplayHitInfo const* Converter::GetProxyDisplayHitInfo(DgnV8Api::ViewContext& context)
+    {
+    auto hitInfo = (DgnV8Api::ProxyDisplayHitInfo*)context.GetDisplayStyleHandler()->GetViewHandlerHitInfo(nullptr, Bentley::DPoint3d::FromZero());
+    if (nullptr != hitInfo)
+        return hitInfo;
+
+    BeAssert(false);
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Converter::V8NamedViewType Converter::GetV8NamedViewTypeOfFirstAttachment(DgnV8ModelR v8Model)
+    {
+    auto attachments = GetAttachments(v8Model);
+
+    if (nullptr == attachments)
+        return V8NamedViewType::None;
+
+    for (DgnAttachmentP attachment : *attachments)
+        {
+        DgnV8Api::EditElementHandle viewEEH;
+        if (!attachment->GetNamedViewElement(viewEEH))
+            continue;
+
+        auto vt = GetV8NamedViewType(viewEEH);
+        if (V8NamedViewType::Other != vt)
+            return vt;
+        }
+
+    return V8NamedViewType::None;
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -1312,5 +1292,6 @@ void ConvertDetailingSymbolExtension::RelateCalloutToDrawing(Converter& converte
     UNUSED_VARIABLE(status);
     UNUSED_VARIABLE(updateReturn);
     }
+
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
