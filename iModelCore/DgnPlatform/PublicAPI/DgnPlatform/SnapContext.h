@@ -75,7 +75,7 @@ public:
     //! @param[in] sprite Sprite to use to decorate snap.
     //! @param[in] snapPoint Location for snap in world coordinates.
     //! @param[in] forceHot true to make snap active even if cursor is not within locate tolerance of snap location.
-    //! @param[in] aperature Hot distance to use when forceHot is false.
+    //! @param[in] aperture Hot distance to use when forceHot is false.
     //! @param[in] isAdjusted true if snap is not suitable for creating assoc points (pass false if customKeypointData is supplied or snap not overriden).
     //! @param[in] nBytes Size in bytes of customKeypointData, or 0 if none.
     //! @param[in] customKeypointData Pointer to customKeypointData to save for this snap or NULL.
