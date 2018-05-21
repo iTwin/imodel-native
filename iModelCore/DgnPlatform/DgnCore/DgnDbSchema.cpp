@@ -693,12 +693,6 @@ SchemaStatus DgnDb::PickSchemasToImport(bvector<ECSchemaCP>& importSchemas, bvec
         if (status == SchemaStatus::SchemaTooNew || status == SchemaStatus::SchemaTooOld)
             return status;
 
-        if (status == SchemaStatus::SchemaUpgradeRequired && isImportingFromV8)
-            {
-            BeAssert(false && "Cannot upgrade when importing legacy schemas");
-            return status;
-            }
-
         BeAssert(status == SchemaStatus::SchemaNotFound || status == SchemaStatus::SchemaUpgradeRequired);
         importSchemas.push_back(appSchema);
         }
