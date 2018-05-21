@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/SnapContext.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,9 +55,9 @@ public:
     //! @return ISpriteP default sprite.
     DGNPLATFORM_EXPORT static Render::ISpriteP GetSnapSprite(SnapMode mode);
 
-    DGNPLATFORM_EXPORT void GetSegmentKeypoint(DPoint3dR hitPoint, double& keyParam, int divisor, DSegment3dCR segment);
+    DGNPLATFORM_EXPORT static void GetSegmentKeypoint(DPoint3dR hitPoint, double& keyParam, int divisor, DSegment3dCR segment);
 
-    DGNPLATFORM_EXPORT bool GetParameterKeypoint(DPoint3dR hitPoint, double& keyParam, int divisor);
+    DGNPLATFORM_EXPORT static bool GetParameterKeypoint(ICurvePrimitiveCR curve, DPoint3dR hitPoint, double& keyParam, int divisor);
 
     //! Define the current snap information for text using default processing.
     DGNPLATFORM_EXPORT SnapStatus DoTextSnap();
@@ -70,14 +70,16 @@ public:
     DGNPLATFORM_EXPORT SnapStatus DoSnapUsingCurve(SnapMode mode);
 
     //! Define the current snap information for this hit.
+    //! @param[in] snap SnapDetail to update.
     //! @param[in] mode Snap mode used for this snap.
     //! @param[in] sprite Sprite to use to decorate snap.
     //! @param[in] snapPoint Location for snap in world coordinates.
     //! @param[in] forceHot true to make snap active even if cursor is not within locate tolerance of snap location.
+    //! @param[in] aperature Hot distance to use when forceHot is false.
     //! @param[in] isAdjusted true if snap is not suitable for creating assoc points (pass false if customKeypointData is supplied or snap not overriden).
     //! @param[in] nBytes Size in bytes of customKeypointData, or 0 if none.
     //! @param[in] customKeypointData Pointer to customKeypointData to save for this snap or NULL.
-    DGNPLATFORM_EXPORT void SetSnapInfo(SnapMode mode, Render::ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = nullptr);
+    DGNPLATFORM_EXPORT static void SetSnapInfo(SnapDetailR snap, SnapMode mode, Render::ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, double aperature, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = nullptr);
 };
 
 END_BENTLEY_DGN_NAMESPACE

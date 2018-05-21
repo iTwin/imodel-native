@@ -161,6 +161,7 @@ public:
     DGNPLATFORM_EXPORT size_t GetPointCount() const;
     DGNPLATFORM_EXPORT bool IsValidSurfaceHit() const; // Test for HitGeomType::Surface with valid normal (i.e. not a QVElem wireframe edge hit)...
     DGNPLATFORM_EXPORT bool IsValidEdgeHit() const; // Check hit types, HitGeomType::Segment/HitGeomType::Curve/HitGeomType::Arc (is GetCloseParam, etc. meaningful?)...
+    DGNPLATFORM_EXPORT bool GetCloseDetail(CurveLocationDetailR location) const;
 
     DGNPLATFORM_EXPORT ICurvePrimitiveCP GetCurvePrimitive() const;
     DGNPLATFORM_EXPORT CurvePrimitiveIdCP GetCurvePrimitiveId() const;

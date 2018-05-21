@@ -79,7 +79,12 @@ void GeomDetail::SetCurvePrimitive(ICurvePrimitiveCP curve, TransformCP localToW
     m_geomType  = HitGeomType::None;
 
     if (!curve)
+        {
+        // Set geometry type override, HitGeomType::Point and HitGeomType::Surface are valid w/o curve...
+        if (HitGeomType::Point == geomType || HitGeomType::Surface == geomType)
+            m_geomType = geomType;
         return;
+        }
 
     switch (curve->GetCurvePrimitiveType())
         {
@@ -476,6 +481,27 @@ bool GeomDetail::IsValidEdgeHit() const
         }
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeomDetail::GetCloseDetail(CurveLocationDetailR location) const
+    {
+    if (!m_primitive.IsValid())
+        return false;
+
+    size_t pointCount = GetPointCount();
+
+    location.curve = GetCurvePrimitive();
+    location.fraction = GetCloseParam();
+    location.point = GetClosestPoint();
+    location.componentIndex = GetSegmentNumber();
+    location.numComponent = (pointCount > 2 ? pointCount-1 : 1);
+    location.componentFraction = GetSegmentParam();
+    location.a = GetScreenDist();
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

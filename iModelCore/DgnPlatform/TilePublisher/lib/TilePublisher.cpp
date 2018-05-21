@@ -1643,7 +1643,7 @@ Utf8String TilePublisher::AddTextureImage (PublishTileData& tileData, TileTextur
     tileData.m_json["textures"][textureId] = Json::objectValue;
     tileData.m_json["textures"][textureId]["format"] = hasAlpha ? static_cast<int32_t>(Gltf::DataType::Rgba) : static_cast<int32_t>(Gltf::DataType::Rgb);
     tileData.m_json["textures"][textureId]["internalFormat"] = hasAlpha ? static_cast<int32_t>(Gltf::DataType::Rgba) : static_cast<int32_t>(Gltf::DataType::Rgb);
-    tileData.m_json["textures"][textureId]["sampler"] = "sampler_0";
+    tileData.m_json["textures"][textureId]["sampler"] = textureImage->GetRepeat() ? "sampler_0" : "sampler_2";
     tileData.m_json["textures"][textureId]["source"] = imageId;
 
     tileData.m_json["images"][imageId] = Json::objectValue;
@@ -1944,7 +1944,7 @@ PolylineMaterial::PolylineMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix)
     {
     TileDisplayParamsCR displayParams = mesh.GetDisplayParams();
 
-    m_type = displayParams.GetRasterWidth() <= 1 ? PolylineType::Simple : PolylineType::Tesselated;
+    m_type = (displayParams.GetRasterWidth() <= 1 && 0 == displayParams.GetLinePixels()) ? PolylineType::Simple : PolylineType::Tesselated;     // Don't use simple for linecodes (civil sheets).
 
     ColorIndexMapCR map = mesh.GetColorIndexMap();
     m_hasAlpha = map.HasTransparency();         // || IsTesselated(); // Turn this on if we use alpha in tesselated polylines.
@@ -2219,16 +2219,18 @@ void TileMaterial::AddTextureTechniqueParameters(Json::Value& technique, Json::V
     BeAssert (IsTextured());
     if (IsTextured())
         {
+        Utf8String      sampler = m_texture->GetRepeat() ? "sampler_0" : "sampler_2";
+
         TilePublisher::AddTechniqueParameter(technique, "tex", Gltf::DataType::Sampler2d, "_3DTILESDIFFUSE");
         TilePublisher::AddTechniqueParameter(technique, "texc", Gltf::DataType::FloatVec2, "TEXCOORD_0");
 
-        data.m_json["samplers"]["sampler_0"] = Json::objectValue;
-        data.m_json["samplers"]["sampler_0"]["minFilter"] = Gltf::Linear;
-        data.m_json["samplers"]["sampler_0"]["magFilter"] = Gltf::Linear;
+        data.m_json["samplers"][sampler] = Json::objectValue;
+        data.m_json["samplers"][sampler]["minFilter"] = Gltf::Linear;
+        data.m_json["samplers"][sampler]["magFilter"] = Gltf::Linear;
         if (!m_texture->GetRepeat())
             {
-            data.m_json["samplers"]["sampler_0"]["wrapS"] = Gltf::ClampToEdge;
-            data.m_json["samplers"]["sampler_0"]["wrapT"] = Gltf::ClampToEdge;
+            data.m_json["samplers"][sampler]["wrapS"] = Gltf::ClampToEdge;
+            data.m_json["samplers"][sampler]["wrapT"] = Gltf::ClampToEdge;
             }
         technique["uniforms"]["u_tex"] = "tex";
         technique["attributes"]["a_texc"] = "texc";
@@ -2375,7 +2377,6 @@ PolylineMaterial TilePublisher::AddPolylineMaterial(PublishTileData& tileData, T
     auto& matJson = tileData.m_json["materials"][mat.GetName().c_str()];
     matJson["technique"] = AddPolylineTechnique(tileData, mat, doBatchIds);
 
-
     if (mat.IsTextured())
         {
         TileTextureImageCPtr    texture = mat.GetTexture();
@@ -2408,6 +2409,7 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
     Json::Value technique(Json::objectValue);
     AddTechniqueParameter(technique, "mv", Gltf::DataType::FloatMat4, "CESIUM_RTC_MODELVIEW");
     AddTechniqueParameter(technique, "proj", Gltf::DataType::FloatMat4, "PROJECTION");
+    AddTechniqueParameter(technique, "model", Gltf::DataType::FloatMat4, "MODEL");
     AddTechniqueParameter(technique, "pos", Gltf::DataType::FloatVec3, "POSITION");
     if (doBatchIds)
         AddTechniqueParameter(technique, "batch", Gltf::DataType::Float, "_BATCHID");
@@ -2423,6 +2425,7 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
     auto& uniforms = technique["uniforms"];
     uniforms["u_mv"] = "mv";
     uniforms["u_proj"] = "proj";
+    uniforms["u_model"] = "model";
 
     Utf8String programName = prefix + "Program",
                vertexShaderName = prefix + "VertexShader",
@@ -2911,7 +2914,7 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
     if (mesh.Polylines().empty())
         return;
 
-    if (mesh.GetDisplayParams().GetRasterWidth() <= 1)
+    if (mesh.GetDisplayParams().GetRasterWidth() <= 1 && 0 == mesh.GetDisplayParams().GetLinePixels())
         AddSimplePolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
     else
         AddTesselatedPolylinePrimitive(primitivesNode, tileData, mesh, index, doBatchIds);
@@ -3457,6 +3460,63 @@ TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value getClipPlaneJson(DVec3dCR dir, double distance)
+    {
+    Json::Value  value(Json::objectValue);
+
+    value["x"] = dir.x;
+    value["y"] = dir.y;
+    value["z"] = dir.z;
+    value["distance"] = fabs(distance);
+
+    return value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value getViewClipJson(ViewDefinitionCR view)
+    {
+    DVec3d      xVector, yVector, negatedXVector, negatedYVector, extents = view.GetExtents();
+    DPoint3d    viewOrigin;
+    
+    view.GetRotation().GetRow(xVector, 0);
+    view.GetRotation().GetRow(yVector, 1);
+    
+    negatedXVector.Negate(xVector);
+    negatedYVector.Negate(yVector);
+    view.GetRotation().Multiply (viewOrigin, view.GetOrigin());
+
+    Json::Value value(Json::arrayValue);
+
+    value.append(getClipPlaneJson(negatedXVector, -viewOrigin.x));
+    value.append(getClipPlaneJson(xVector, viewOrigin.x + extents.x));
+    value.append(getClipPlaneJson(negatedYVector, -viewOrigin.y));
+    value.append(getClipPlaneJson(yVector, viewOrigin.y + extents.y));
+
+    return value;
+    }
+
+#ifdef UNUSED
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value getViewClipJson(DRange3dCR sheetRange)
+    {
+    Json::Value value(Json::arrayValue);
+
+    value.append(getClipPlaneJson(DVec3d::From(-1.0, 0.0, 0.0),  -sheetRange.low.x));
+    value.append(getClipPlaneJson(DVec3d::From(1.0, 0.0, 0.0),  sheetRange.high.x));
+    value.append(getClipPlaneJson(DVec3d::From(0.0, -1.0, 0.0),  -sheetRange.low.y));
+    value.append(getClipPlaneJson(DVec3d::From(0.0, 1.0, 0.0),  sheetRange.high.y));
+
+    return value;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnModelIdSet& attachedModels)
@@ -3508,6 +3568,8 @@ Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnMo
                             tileToSheet = Transform::FromProduct(Transform::FromProduct(addSheetOrigin, scaleToSheet), Transform::FromProduct(viewRotation, subtractViewOrigin));
 
         viewJson["transform"] = TransformToJson(tileToSheet);
+        viewJson["clipPlanes"] = getViewClipJson(*view);
+        
 
         attachmentsJson.append(std::move(viewJson));
         }
