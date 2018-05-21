@@ -273,9 +273,10 @@ bool MeshTraversalQueue::TryStartTraversal(bool& needProjectionToFindFirstTriang
         DRange2d nodeRange2d = DRange2d::From(DPoint2d::From(nodeRange.low.x, nodeRange.low.y), DPoint2d::From(nodeRange.high.x, nodeRange.high.y));
         DPoint2d pt1 = DPoint2d::From(m_polylineToDrape[segment].x, m_polylineToDrape[segment].y);
         DPoint2d pt2 = DPoint2d::From(m_polylineToDrape[segment+1].x - m_polylineToDrape[segment].x, m_polylineToDrape[segment+1].y - m_polylineToDrape[segment].y);
-        DPoint2d intersect;
-
-        if (!bsiDRange2d_intersectRay(&nodeRange2d, NULL, NULL, &intersect, NULL, &pt1, &pt2)) return false;
+        DPoint2d intersect, intersect1;
+        double param0, param1;
+        // replacement for bsiDRange2d_intersectRay .. ELutz 05/2018
+        if (!nodeRange2d.IntersectRay (param0, param1, intersect, intersect1, pt1, pt2)) return false;
         firstStep.startPoint.x = intersect.x;
         firstStep.startPoint.y = intersect.y;
         firstStep.startPoint.z = nodeRange.high.z;
