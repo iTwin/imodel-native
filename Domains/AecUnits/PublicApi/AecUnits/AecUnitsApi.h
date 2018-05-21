@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/AecUnits/AecUnitsApi.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,8 +29,7 @@ namespace AecUnits
     //=======================================================================================
     struct  AecUnitsUtilities
         {
-        AEC_UNITS_EXPORT static Units::UnitCP                                    GetUnitCPFromProperty(Dgn::DgnElementCR element, Utf8StringCR propertyName);
-        AEC_UNITS_EXPORT static BentleyStatus                                    SetDoublePropertyFromStringWithUnits(Dgn::DgnElementR element, Utf8StringCR propertyName, Utf8StringCR propertyValueString);
+        AEC_UNITS_EXPORT static ECN::ECUnitCP                                    GetUnitCPFromProperty(Dgn::DgnElementCR element, Utf8StringCR propertyName);
         AEC_UNITS_EXPORT static BentleyStatus                                    SetDoublePropertyUsingUnitString(Dgn::DgnElementR element, Utf8StringCR propertyName, Utf8StringCR unitString, double value);
         AEC_UNITS_EXPORT static BentleyStatus                                    GetDoublePropertyUsingUnitString(Dgn::DgnElementCR element, Utf8StringCR propertyName, Utf8StringCR unitString, double& value);
         };

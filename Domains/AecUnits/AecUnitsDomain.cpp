@@ -2,7 +2,7 @@
 |
 |     $Source: AecUnitsDomain.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -62,7 +62,7 @@ namespace AecUnits
     // @bsimethod                                   Bentley.Systems
     //---------------------------------------------------------------------------------------
 
-    Units::UnitCP    AecUnitsUtilities::GetUnitCPFromProperty(Dgn::DgnElementCR element, Utf8StringCR propertyName)
+    ECN::ECUnitCP    AecUnitsUtilities::GetUnitCPFromProperty(Dgn::DgnElementCR element, Utf8StringCR propertyName)
         {
         ECN::ECClassCP elementClass = element.GetElementClass();
 
@@ -79,56 +79,7 @@ namespace AecUnits
         if (nullptr == propUnit)
             return nullptr;
 
-        Formatting::FormatUnitSetCR unit = propUnit->GetPersistenceUnit();
-
-        Units::UnitCP u = unit.GetUnit();
-
-        return u;
-        }
-
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                   Bentley.Systems
-    //---------------------------------------------------------------------------------------
-
-    BentleyStatus   AecUnitsUtilities::SetDoublePropertyFromStringWithUnits(Dgn::DgnElementR element, Utf8StringCR propertyName, Utf8StringCR propertyValueString)
-        {
-
-        Units::UnitCP u = GetUnitCPFromProperty(element, propertyName);
-
-        if (nullptr == u)
-            return BentleyStatus::ERROR;
-
-        Utf8String numbers = "-1234567890.+";
-
-        int pos = propertyValueString.find_first_not_of(numbers, 0);
-
-        Utf8String valueString = propertyValueString.substr(0, pos);
-        Utf8String unitSuffix = propertyValueString.substr(pos, propertyValueString.length());
-
-        unitSuffix = unitSuffix.Trim();
-
-        Units::UnitCP u1 = Units::UnitRegistry::Instance().LookupUnit(unitSuffix.c_str());
-
-        double value = atof(valueString.c_str());
-
-        double converted;
-        Units::UnitsProblemCode code = u1->Convert(converted, value, u);
-
-        if (Units::UnitsProblemCode::NoProblem != code)
-            return BentleyStatus::ERROR;
-
-        ECN::ECValue doubleValue;
-
-        doubleValue.SetDouble(converted);
-
-        Dgn::DgnDbStatus status = element.SetPropertyValue(propertyName.c_str(), doubleValue);
-
-        if (Dgn::DgnDbStatus::Success != status)
-            return BentleyStatus::ERROR;
-
-        return BentleyStatus::SUCCESS;
-
+        return propUnit->GetPersistenceUnit();
         }
 
     //---------------------------------------------------------------------------------------
@@ -137,12 +88,17 @@ namespace AecUnits
 
     BentleyStatus   AecUnitsUtilities::GetDoublePropertyUsingUnitString(Dgn::DgnElementCR element, Utf8StringCR propertyName, Utf8StringCR unitString, double& value)
         {
-        Units::UnitCP u = GetUnitCPFromProperty(element, propertyName);
+        ECN::ECUnitCP u = GetUnitCPFromProperty(element, propertyName);
 
         if (nullptr == u)
             return BentleyStatus::ERROR;
 
-        Units::UnitCP u1 = Units::UnitRegistry::Instance().LookupUnit(unitString.c_str());
+        // Excepting unitString to be a fully qualified Unit name, {SchemaName}:{UnitName}.
+        Utf8String unitSchemaName;
+        Utf8String unitName;
+        ECN::ECClass::ParseClassName(unitSchemaName, unitName, unitString);
+
+        ECN::ECUnitCP u1 = element.GetDgnDb().Schemas().GetUnit(unitSchemaName, unitName);
 
         ECN::ECValue propVal;
 
@@ -169,12 +125,17 @@ namespace AecUnits
 
     BentleyStatus   AecUnitsUtilities::SetDoublePropertyUsingUnitString(Dgn::DgnElementR element, Utf8StringCR propertyName, Utf8StringCR unitString, double value)
         {
-        Units::UnitCP u = GetUnitCPFromProperty(element, propertyName);
+        ECN::ECUnitCP u = GetUnitCPFromProperty(element, propertyName);
 
         if (nullptr == u)
             return BentleyStatus::ERROR;
 
-        Units::UnitCP u1 = Units::UnitRegistry::Instance().LookupUnit(unitString.c_str());
+        // Excepting unitString to be a fully qualified Unit name, {SchemaName}:{UnitName}.
+        Utf8String unitSchemaName;
+        Utf8String unitName;
+        ECN::ECClass::ParseClassName(unitSchemaName, unitName, unitString);
+
+        ECN::ECUnitCP u1 = element.GetDgnDb().Schemas().GetUnit(unitSchemaName, unitName);
 
         double converted;
         Units::UnitsProblemCode code = u1->Convert(converted, value, u);
@@ -194,8 +155,6 @@ namespace AecUnits
         return BentleyStatus::SUCCESS;
         }
 
-
-
-	} // End AecUnits namespace
+    } // End AecUnits namespace
 
 END_BENTLEY_NAMESPACE

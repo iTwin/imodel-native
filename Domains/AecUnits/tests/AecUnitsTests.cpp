@@ -2,7 +2,7 @@
 |
 |     $Source: tests/AecUnitsTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AecUnitsBaseFixture.h"
@@ -5801,7 +5801,7 @@ TEST_F(AecUnitsTestFixture, frequencyUnitsTest)
 
     ASSERT_TRUE(queriedElement.IsValid());
 
-    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_VELOCITY_NAME));
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedElement->GetPropertyValue(propVal, DYNAMIC_FREQUENCY_NAME));
     testDouble = propVal.GetDouble();
     ASSERT_NEAR(testDouble, 1000.0, 0.00001);
     
