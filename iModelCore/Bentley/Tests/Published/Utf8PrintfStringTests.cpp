@@ -77,6 +77,7 @@ TEST_F(Utf8PrintfStringTests, Ctor_PositionalFormatWithMixedTypes_FormattedStrin
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Vincas.Razma                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_ANDROID) // TFS#894638
 TEST_F(Utf8PrintfStringTests, Sprintf_BadFormat_DoesNotCrash)
     {
     Utf8CP a = "a";
@@ -97,3 +98,4 @@ TEST_F(Utf8PrintfStringTests, Sprintf_BadFormat_DoesNotCrash)
     EXPECT_STREQ("", str.c_str());
 #endif
     }
+#endif

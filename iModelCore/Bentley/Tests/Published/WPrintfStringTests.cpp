@@ -57,6 +57,7 @@ TEST_F(WPrintfStringTests, Ctor_PositionalFormatWithMixedTypes_FormattedString)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Vincas.Razma                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_ANDROID) // TFS#894638
 TEST_F(WPrintfStringTests, Sprintf_BadFormat_DoesNotCrash)
     {
     WCharCP a = L"a";
@@ -77,3 +78,4 @@ TEST_F(WPrintfStringTests, Sprintf_BadFormat_DoesNotCrash)
     EXPECT_STREQ(L"", str.c_str());
 #endif
     }
+#endif

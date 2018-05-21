@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/DateTime_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/DateTime.h>
@@ -753,6 +753,7 @@ TEST(DateTimeTests, FromStringWCharCPTests)
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/12
 //---------------------------------------------------------------------------------------
+#if !defined(BENTLEYCONFIG_OS_ANDROID) // TFS#895026
 TEST(DateTimeTests, GetCurrentTimeTests)
     {
     DateTime currentTimeLocal = DateTime::GetCurrentTime();
@@ -767,7 +768,8 @@ TEST(DateTimeTests, GetCurrentTimeTests)
     //Simple check only to avoid drasticly wrong implementations (as were seen on iOS)
     EXPECT_GE(static_cast<int> (currentTimeUtc.GetYear()), 2013) << Utf8PrintfString("currentTimeUtc is %s", currentTimeUtc.ToString().c_str()).c_str();
     }
-
+#endif
+    
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/12
 //---------------------------------------------------------------------------------------
