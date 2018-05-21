@@ -5581,8 +5581,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
     // set up data set
     ECClassCP classA = GetClass("ClassA");
     ECClassCP classC = GetClass("ClassC");
-    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("UserLabel", ECValue("ClassC_UserLabel"));});
-    IECInstancePtr instanceA1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("ClassA1_CodeValue"));});
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance) {instance.SetValue("UserLabel", ECValue("1_Instance_C"));});
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {instance.SetValue("CodeValue", ECValue("2_Instance_A"));});
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -5592,7 +5592,6 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
 
     RootNodeRule* rule = new RootNodeRule();
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, BeTest::GetNameOfCurrentTest());
-    allInstanceNodesSpecification->SetDoNotSort(true);
     rule->AddSpecification(*allInstanceNodesSpecification);
     rules->AddPresentationRule(*rule);
 
@@ -5600,6 +5599,6 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
     RulesDrivenECPresentationManager::NavigationOptions options(BeTest::GetNameOfCurrentTest(), TargetTree_MainTree);
     DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(s_project->GetECDb(), PageOptions(), options.GetJson()).get();
     ASSERT_EQ(2, rootNodes.GetSize());
-    EXPECT_STREQ("ClassC_UserLabel", rootNodes[0]->GetLabel().c_str());
-    EXPECT_STREQ("ClassA1_CodeValue", rootNodes[1]->GetLabel().c_str());
+    EXPECT_STREQ("1_Instance_C", rootNodes[0]->GetLabel().c_str());
+    EXPECT_STREQ("2_Instance_A", rootNodes[1]->GetLabel().c_str());
     }
