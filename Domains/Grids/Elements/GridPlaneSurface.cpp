@@ -135,7 +135,7 @@ GridPlanarSurfaceCR otherSurface
     {
     DPlane3d bottomPlane = GetPlane();
     DPlane3d topPlane = otherSurface.GetPlane();
-    CML::DimensionHandler::Insert(GetDgnDb(), GetElementId(), otherSurface.GetElementId(), 0, 0, bottomPlane.normal, bsiDPlane3d_evaluate(&bottomPlane, &topPlane.origin));
+    CML::DimensionHandler::Insert(GetDgnDb(), GetElementId(), otherSurface.GetElementId(), 0, 0, bottomPlane.normal, bottomPlane.Evaluate(topPlane.origin));
     return BSISUCCESS;
     }
 
