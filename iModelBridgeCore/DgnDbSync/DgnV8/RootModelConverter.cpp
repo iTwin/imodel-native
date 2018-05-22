@@ -1799,7 +1799,7 @@ BentleyStatus  RootModelConverter::Process()
     _OnConversionComplete();
     ConverterLogging::LogPerformance(timer, "Finish conversion");
 
-    ConverterLogging::LogPerformance(totalTimer, "Total conversion time");
+    ConverterLogging::LogPerformance(totalTimer, "Total conversion time (%" PRIu32 " element(s))", (uint32_t) GetElementsConverted());
     return WasAborted() ? ERROR : SUCCESS;
     }
 

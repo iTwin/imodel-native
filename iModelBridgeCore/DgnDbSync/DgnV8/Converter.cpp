@@ -2689,14 +2689,14 @@ void Converter::DoConvertControlElement(ElementConversionResults& results, DgnV8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void convertLevels(Converter& converter, DgnV8EhCR v8eh)
+void Converter::ConvertLevels(DgnV8EhCR v8eh)
     {
-    converter.ConvertDrawingLevel(*v8eh.GetDgnFileP(), converter.GetV8Level(v8eh));
+    ConvertDrawingLevel(*v8eh.GetDgnFileP(), GetV8Level(v8eh));
 
     // *** TRICKY: Keep this consistent with V8GraphicsCollector::ProcessElement
     for (DgnV8Api::ChildElemIter childIt(v8eh, DgnV8Api::ExposeChildrenReason::Query); childIt.IsValid(); childIt = childIt.ToNext())
         {
-        convertLevels(converter, childIt);
+        ConvertLevels(childIt);
         }
     }
 
@@ -2713,8 +2713,8 @@ void Converter::DoConvertDrawingElement(ElementConversionResults& results, DgnV8
     // *** TRICKY: For drawings, we do not convert all levels ahead of time. We wait until we see which ones are used.
     //              That's how we tell which should be DrawingCategories instead of SpatialCategories. We must therefore
     //              visit complex children and ensure that their levels are converted.
-    convertLevels(*this, v8eh);
-
+    ConvertLevels(v8eh);
+                    
     DgnCategoryId catid = ConvertDrawingLevel(*v8eh.GetDgnFileP(), GetV8Level(v8eh));
     ConvertElement(results, v8eh, v8mm, catid, false, isNewElement);
     }

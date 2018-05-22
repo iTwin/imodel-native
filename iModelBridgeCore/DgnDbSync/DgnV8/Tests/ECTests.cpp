@@ -602,11 +602,19 @@ TEST_F(ECConversionTests, UpdateWithChangedSchema_VersionUpdate)
 
     {
     schema->SetVersionMinor(3);
+    ECObjectsV8::ECClassP newClass;
+    schema->CreateClass(newClass, L"NewClass");
     EXPECT_EQ(DgnV8Api::SCHEMAUPDATE_Success, DgnV8Api::DgnECManager::GetManager().UpdateSchema(*schema, *(v8editor.m_file)));
     v8editor.Save();
     }
 
-    DoUpdate(m_dgnDbFileName, m_v8FileName, true);
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
+
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("TestSchema");
+    ASSERT_TRUE(nullptr != ecSchema);
+
+    ASSERT_TRUE(nullptr != ecSchema->GetClassCP("NewClass"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -778,11 +786,17 @@ TEST_F(ECConversionTests, UpdateWithNewSchemaAndChangedOldSchemas)
     {
     ECObjectsV8::ECClassP newClass;
     refSchema->CreateClass(newClass, L"NewClass");
+    refSchema->SetVersionMinor(refSchema->GetVersionMinor() + 1);
     EXPECT_EQ(DgnV8Api::SCHEMAUPDATE_Success, DgnV8Api::DgnECManager::GetManager().UpdateSchema(*refSchema, *(v8editor.m_file)));
     v8editor.Save();
     }
 
-    DoUpdate(m_dgnDbFileName, m_v8FileName, true);
+    DoUpdate(m_dgnDbFileName, m_v8FileName, false);
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    BentleyApi::ECN::ECSchemaCP ecSchema = db->Schemas().GetSchema("RefSchema");
+    ASSERT_TRUE(nullptr != ecSchema);
+
+    ASSERT_TRUE(nullptr != ecSchema->GetClassCP("NewClass"));
     }
 
 //---------------------------------------------------------------------------------------

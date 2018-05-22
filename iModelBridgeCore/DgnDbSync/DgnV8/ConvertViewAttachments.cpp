@@ -22,12 +22,10 @@ struct AttachedDrawingGenerator : Converter::ProxyGraphicsDrawingFactory
     ResolvedModelMapping const& m_sheetModelMapping;
     bmap<DgnV8Api::ElementId, ResolvedModelMappingWithElement> m_drawingsForAttachments;
 
-    bool _UseProxyGraphicsFor(DgnAttachmentCR att, Converter& cvt) override {return cvt._UseProxyGraphicsFor(att);}
     ResolvedModelMappingWithElement _CreateAndInsertDrawing(DgnAttachmentCR, ResolvedModelMapping const&, Converter&) override;
     ResolvedModelMapping _GetDrawing(DgnV8Api::ElementId v8AttachmentId, ResolvedModelMapping const& parentModel, Converter& converter) override;
 
-    AttachedDrawingGenerator(Converter& sc, ResolvedModelMapping const& smm) 
-        : m_sheetConverter(sc), m_sheetModelMapping(smm) {}
+    AttachedDrawingGenerator(Converter& sc, ResolvedModelMapping const& smm) : m_sheetConverter(sc), m_sheetModelMapping(smm) {}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -51,43 +49,6 @@ bool Converter::DrawingHas3DAttachment(DgnV8ModelR drawingModel)
     return false;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnV8Api::DgnAttachment const* Converter::GetDrawingGeneratorAttachment(DgnModelRefCR drawingModel)
-    {
-    if (drawingModel.GetDgnModelP()->Is3D()) // Only (generated) drawings
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    auto v8Attachments = drawingModel.GetDgnAttachmentsCP();
-    if (nullptr == v8Attachments)
-        return nullptr;
-
-    size_t count = 0;
-    DgnV8Api::DgnAttachment const* nvAttachment = nullptr;
-    for (auto v8Attachment : *v8Attachments)
-        {
-        ++count;
-        if (!_UseProxyGraphicsFor(*v8Attachment)) // Check if the attachment is based on one of the special kinds of named views
-            return nullptr;
-
-        nvAttachment = v8Attachment;
-        }
-
-    // There must be exactly one namedview-based attachment.
-    if ((nullptr == nvAttachment) || (1 != count))
-        return nullptr;
-
-    //  Return the named view.
-    DgnV8Api::NamedViewPtr nv = nvAttachment->GetNamedView();
-    if (!nv.IsValid())
-        return nullptr;
-
-    return nvAttachment;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
@@ -126,7 +87,8 @@ BentleyStatus Converter::GetRangeFromSectionView(DRange3dR range, DgnAttachmentC
             return BSIERROR;
 
         Bentley::Transform toV8Parent;
-        v8Attachment.GetTransformToParent(toV8Parent, true);
+        Bentley::mdlRefFile_getTransformToParent(&toV8Parent, &v8Attachment, nullptr);
+        //v8Attachment.GetTransformToParent(toV8Parent, true);
         toV8Parent.Multiply(&nvRange.low, 2);
 
         // TRICKY: The range of the section cut will be both 3D and flipped.
@@ -296,7 +258,7 @@ void Converter::SheetsCreateViewAttachment(ElementConversionResults& results,
         bimToV8Design.InverseOf(refModelMapping.GetTransform());
 
         Transform v8DesignToV8Sheet;
-        v8DgnAttachment.GetTransformToParent((Bentley::Transform&)v8DesignToV8Sheet, true);
+        Bentley::mdlRefFile_getTransformToParent((Bentley::Transform*) &v8DesignToV8Sheet , &v8DgnAttachment, nullptr);
         auto bimDesignToBimSheet = Transform::FromProduct(v8SheetToBimSheet, v8DesignToV8Sheet, bimToV8Design);
 
         RotMatrix rot = attachedView->GetRotation();
@@ -409,7 +371,7 @@ void Converter::SheetsConvertViewAttachment(ResolvedModelMapping const& v8SheetM
 
     //  Finally, create (or update) the ViewAttachment element on the sheet
     IChangeDetector::SearchResults prov;
-    DgnV8Api::EditElementHandle v8AttachmentEh(v8DgnAttachment.GetElementId(), &v8SheetModelMapping.GetV8Model());
+    DgnV8Api::EditElementHandle v8AttachmentEh(v8DgnAttachment.GetElementId(), v8DgnAttachment.GetParentModelRefP());
     ElementConversionResults results;
     auto chooseViewAttachment = ElementFilters::GetViewAttachmentElementFiter();
     if (GetChangeDetector()._IsElementChanged(prov, *this, v8AttachmentEh, v8SheetModelMapping, &chooseViewAttachment))
@@ -474,11 +436,9 @@ void Converter::SheetsConvertViewAttachments(ResolvedModelMapping const& v8Sheet
     auto& sheetModel = *v8SheetModelMapping.GetDgnModel().ToSheetModelP();
     auto& v8SheetModel = v8SheetModelMapping.GetV8Model();
 
-    // Each generated section, elevation, or plan that is attached *directly* to the sheet must be
-    // converted to a separate drawing model that captures its proxy graphics. Do that now. 
-    // Below, we will create views for the drawings and attach them to the sheet.
     AttachedDrawingGenerator drawingGenerator(*this, v8SheetModelMapping);
-    ConvertExtractionAttachments(v8SheetModelMapping, drawingGenerator, v8SheetView);
+
+    CreateSheetExtractionAttachments(v8SheetModelMapping, drawingGenerator, v8SheetView);
 
     auto attachments = GetAttachments(v8SheetModel);
     if (nullptr == attachments)
@@ -489,7 +449,7 @@ void Converter::SheetsConvertViewAttachments(ResolvedModelMapping const& v8Sheet
     // Convert the V8 attachments to view attachments
     for (DgnV8Api::DgnAttachment* v8DgnAttachment : *attachments)
         {
-        if (!v8DgnAttachment->IsDisplayed())
+        if (!v8DgnAttachment->IsDisplayed() || nullptr == v8DgnAttachment->GetDgnModelP())
             continue;
 
         auto i = drawingGenerator.m_drawingsForAttachments.find(v8DgnAttachment->GetElementId());
@@ -500,6 +460,20 @@ void Converter::SheetsConvertViewAttachments(ResolvedModelMapping const& v8Sheet
         int seq = it == updSeq.end() ? 0 : it->second;
         SheetsConvertViewAttachment(v8SheetModelMapping, *v8DgnAttachment, proxyModel, nvvf, v8SheetView, seq);
         _OnSheetsConvertViewAttachment(v8SheetModelMapping, *v8DgnAttachment);
+
+        auto childAttachments = GetAttachments(*v8DgnAttachment);
+
+        if (nullptr != childAttachments)
+            {
+            for (auto childAttachment : *childAttachments)
+                {
+                if (_UseRenderedViewAttachmentFor(*childAttachment))
+                    {
+                    SheetsConvertViewAttachment(v8SheetModelMapping, *childAttachment, nullptr, nvvf, v8SheetView, 0);
+                    _OnSheetsConvertViewAttachment(v8SheetModelMapping, *childAttachment);
+                    }
+                }
+            }
         }
     }
 
@@ -528,3 +502,6 @@ Notes:
 
     Note that the V8 ref transform also includes the desired scale factor that shrinks the design to the sheet.
 */
+
+
+                        
