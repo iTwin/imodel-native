@@ -653,7 +653,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
         return PrepareNullExp(nativeSqlSnippets, ctx, exp, 1);
         }
 
-    Utf8StringCR expValue = exp.GetValue();
+    Utf8StringCR expRawValue = exp.GetRawValue();
 
     if (exp.HasParentheses())
         nativeSqlBuilder.AppendParenLeft();
@@ -664,36 +664,35 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
             {
                 case PRIMITIVETYPE_Boolean:
                 {
-                Utf8CP nativeSqlBooleanVal = exp.GetValueAsBoolean() ? "1" : "0";
+                ECValue val;
+                if (SUCCESS != exp.TryParse(val))
+                    {
+                    ctx.Issues().ReportV("Invalid boolean literal in expression '%s'", exp.ToECSql().c_str());
+                    return ECSqlStatus::InvalidECSql;
+                    }
+
+                Utf8CP nativeSqlBooleanVal = val.GetBoolean() ? SQLVAL_True : SQLVAL_False;
                 nativeSqlBuilder.Append(nativeSqlBooleanVal);
                 break;
                 }
 
                 case PRIMITIVETYPE_DateTime:
                 {
-                //Note: CURRENT_TIMESTAMP in SQLite returns a UTC timestamp. ECSQL specifies CURRENT_TIMESTAMP as UTC, too,
-                //so no conversion needed.
-                nativeSqlBuilder.Append("JULIANDAY (");
-                if (expValue.StartsWithIAscii("CURRENT"))
-                    nativeSqlBuilder.Append(expValue.c_str());
-                else
-                    nativeSqlBuilder.AppendQuoted(expValue.c_str());
-
-                nativeSqlBuilder.AppendParenRight();
+                nativeSqlBuilder.Append("JULIANDAY(").AppendQuoted(expRawValue.c_str()).AppendParenRight();
                 break;
                 }
 
                 case PRIMITIVETYPE_String:
-                    nativeSqlBuilder.AppendQuoted(LiteralValueExp::EscapeStringLiteral(expValue).c_str());
+                    nativeSqlBuilder.AppendQuoted(LiteralValueExp::EscapeStringLiteral(expRawValue).c_str());
                     break;
 
                 default:
-                    nativeSqlBuilder.Append(expValue.c_str());
+                    nativeSqlBuilder.Append(expRawValue.c_str());
                     break;
             }
         }
     else
-        nativeSqlBuilder.Append(expValue.c_str());
+        nativeSqlBuilder.Append(expRawValue.c_str());
 
     if (exp.HasParentheses())
         nativeSqlBuilder.AppendParenRight();
@@ -1274,6 +1273,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     const bool isAnyOrSomeFunction = functionName.EqualsIAscii("any") || functionName.EqualsIAscii("some");
     const bool isEveryFunction = !isAnyOrSomeFunction && functionName.EqualsIAscii("every");
     const bool isAnyEveryOrSomeFunction = isAnyOrSomeFunction || isEveryFunction;
+    const bool isCurrentDateTimeFunction = functionName.EqualsIAscii(FunctionCallExp::CURRENT_DATE()) || functionName.EqualsIAscii(FunctionCallExp::CURRENT_TIMESTAMP());
     if (isAnyEveryOrSomeFunction)
         {
         BeAssert(exp.GetChildrenCount() == 1 && "ANY, SOME, EVERY functions expect a single arg");
@@ -1283,28 +1283,38 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
         //EVERY: checks whether all rows in the specified BOOLEAN column are TRUE -> MIN(Col) <> 0
         nativeSql.Append(isEveryFunction ? "MIN" : "MAX");
         }
+    else if (isCurrentDateTimeFunction)
+        {
+        BeAssert(exp.IsGetter() && "CURRENT_DATE or CURRENT_TIMESTAMP are expected to not have args and parentheses");
+        //Note: CURRENT_TIMESTAMP in SQLite returns a UTC timestamp. ECSQL specifies CURRENT_TIMESTAMP as UTC, too,
+        //so no conversion needed.
+        nativeSql.Append("JULIANDAY(").Append(functionName).AppendParenRight();
+        }
     else
         nativeSql.Append(functionName);
 
-    nativeSql.AppendParenLeft();
-
-    if (exp.GetSetQuantifier() != SqlSetQuantifier::NotSpecified)
-        nativeSql.Append(ExpHelper::ToSql(exp.GetSetQuantifier())).AppendSpace();
-
-    NativeSqlBuilder::List argSqlSnippets;
-    ECSqlStatus stat = PrepareFunctionArgList(argSqlSnippets, ctx, exp);
-    if (stat != ECSqlStatus::Success)
-        return stat;
-
-    nativeSql.Append(argSqlSnippets, ",");
-
-    if (isAnyEveryOrSomeFunction)
+    if (!exp.IsGetter())
         {
-        BeAssert(argSqlSnippets.size() == 1);
-        nativeSql.Append(" <> 0");
-        }
+        nativeSql.AppendParenLeft();
 
-    nativeSql.AppendParenRight(); //function arg list parent
+        if (exp.GetSetQuantifier() != SqlSetQuantifier::NotSpecified)
+            nativeSql.Append(ExpHelper::ToSql(exp.GetSetQuantifier())).AppendSpace();
+
+        NativeSqlBuilder::List argSqlSnippets;
+        ECSqlStatus stat = PrepareFunctionArgList(argSqlSnippets, ctx, exp);
+        if (stat != ECSqlStatus::Success)
+            return stat;
+
+        nativeSql.Append(argSqlSnippets, ",");
+
+        if (isAnyEveryOrSomeFunction)
+            {
+            BeAssert(argSqlSnippets.size() == 1);
+            nativeSql.Append(" <> 0");
+            }
+
+        nativeSql.AppendParenRight(); //function arg list parent
+        }
 
     if (exp.HasParentheses())
         nativeSql.AppendParenRight();

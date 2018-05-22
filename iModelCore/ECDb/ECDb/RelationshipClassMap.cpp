@@ -595,14 +595,33 @@ ForeignKeyPartitionView::Partition const* ForeignKeyPartitionView::FindCompatibl
     {
     for (std::unique_ptr<Partition> const& partition : m_partitions)
         {
-        if (!navigationPropertyMap.GetClassMap().IsMappedTo(partition->GetECInstanceIdColumn().GetTable()))
+        const ClassMap& navClassMap = navigationPropertyMap.GetClassMap();
+        const DbTable& partitionTable = partition->GetECInstanceIdColumn().GetTable();
+        if (!navClassMap.IsMappedTo(partitionTable))
+            {
+            if (navClassMap.GetOverflowTable() == nullptr && partitionTable.GetType() == DbTable::Type::Overflow)
+                {
+                const DbTable::LinkNode* linkNode = navClassMap.GetJoinedOrPrimaryTable().GetLinkNode().FindOverflowTable();
+                if (linkNode && &linkNode->GetTable()== &partitionTable)
+                    {
+                    if (const_cast<ClassMap&>(navClassMap).SetOverflowTable(linkNode->GetTableR()) != SUCCESS)
+                        {
+                        BeAssert(false && "SetOverflowTable() failed");
+                        return nullptr;
+                        }
+
+                    return partition.get();
+                    }
+                }
+
             continue;
+            }
 
         NavigationInfo navColumns = partition->GetNavigationColumns();
-        if (navigationPropertyMap.GetClassMap().GetColumnFactory().IsColumnInUse(navColumns.GetIdColumn()))
+        if (navClassMap.GetColumnFactory().IsColumnInUse(navColumns.GetIdColumn()))
             continue;
 
-        if (navigationPropertyMap.GetClassMap().GetColumnFactory().IsColumnInUse(navColumns.GetRelECClassIdColumn()))
+        if (navClassMap.GetColumnFactory().IsColumnInUse(navColumns.GetRelECClassIdColumn()))
             continue;
 
         return partition.get();
