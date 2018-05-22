@@ -766,6 +766,12 @@ void PondAnalysis::IsSump(long prevPnt, long pnt, long nextPnt, bool& isSump, bo
     while (true)
         {
         long np = bcdtmList_nextAntDtmObject(dtmP, pnt, prevPnt);
+        BeAssert(np != -99);
+        if (np == -99)
+            {
+            SetError();
+            return;
+            }
         if (np == nextPnt)
             break;
 
