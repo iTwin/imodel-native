@@ -233,6 +233,7 @@
         <SubPart PartName="DgnPlatform-Compatibility-Static" />
         <SubPart PartName="DgnPlatform-Compatibility-Dynamic" />
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <FeatureExclude>GeoCoordAssets</FeatureExclude> <!-- Exclude geocoord assets because we don't need them for schema evolution tests -->
     </Product>
 
     <Part Name="Gtest-DgnPlatform-Compatibility" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnCompatibility -dTEST_COLLECTION_PRODUCT=DgnPlatform-Compatibility -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
@@ -265,11 +266,11 @@
         <SubPart PartName="RunGtest-DgnPlatform-Compatibility"/>
     </Part>
 
-    <Part Name="RunGtest-DgnPlatform-Compatibility-Backwards" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunBackwardsCompatibilityTest.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest-DgnPlatform-Compatibility-Backwards" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunBackwardsCompatibilityTest.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubPart PartName="Copy-Datasets"/>
     </Part>
  
-    <Part Name="RunGtest-DgnPlatform-Compatibility-Forwards" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunCompatibilityTests.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest-DgnPlatform-Compatibility-Forwards" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunCompatibilityTests.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubPart PartName="RunGtest-DgnPlatform-Compatibility-Backwards"/>
         <SubPart PartName="DgnPlatform-Compatibility-Pull-All-Nugets"/>
     </Part>
@@ -278,6 +279,23 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="GTest-DgnPlatform-Compatibility"/>
     </NuGetProduct>
+
+    <Product Name="iModelSchemaEvolutionTestFiles" SaveProduct="true">
+        <SubPart PartName="SaveSchemaEvolutionTestFiles"/>
+        <Directories DirectoryListName="SchemaEvolutionTestFiles"/>
+    </Product>
+
+    <ProductDirectoryList ListName="SchemaEvolutionTestFiles" >
+        <ProductDirectory Name="Datasets" Path="Datasets"/>
+    </ProductDirectoryList>
+
+    <Part Name="SaveSchemaEvolutionTestFiles" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\SaveDatasets.mke">
+        <!-- Must run after the tests are complete -->
+        <SubPart PartName="RunGtest-DgnPlatform-Compatibility" />
+        <Bindings>
+            <Directory ProductDirectoryName="Datasets" SourceName="iModelSchemaEvolutionDatasets" />
+        </Bindings>
+    </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->

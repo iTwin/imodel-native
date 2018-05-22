@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidBSpline.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -174,47 +174,46 @@ double          tolerance   /* => tolerance used to check degenercy */
 void            PSolidUtil::NormalizeBsplineCurve (MSBsplineCurveR curve)
     {
     // NOTE: Hopefully this does the same thing as the old implementation that used functions in nlib...
-    bvector<MSBsplineCurve> beziers;
+    bvector<MSBsplineCurvePtr> beziers;
 
-    curve.MakeBeziers (beziers);
+    curve.CopyAsBeziers (beziers);
 
     for (size_t i = 0; i < beziers.size (); ++i)
         {
         DRange3d range;
-        beziers[i].GetPoleRange (range);
+        beziers[i]->GetPoleRange (range);
         // If all points are identical, remove from array.
         if (range.low.AlmostEqual (range.high))
             {
-            beziers[i].ReleaseMem ();
+            beziers[i]->ReleaseMem ();    // maybe not needed? ctor dtor on Ptr would do it anyway?
             beziers.erase (beziers.begin () + i);
             continue;
             }
         // ??? (EDL) If this bezier has poles in a line, rebuild it as a 2-point order 2 curve (line segment) and raise the degree back to its original.
         //  This makes it the simplest parameterization.
-        if (!bsputil_isLinearArray (beziers[i].poles, beziers[i].weights, beziers[i].rational, beziers[i].params.numPoles, COSINE_TOLERANCE))
+        if (!bsputil_isLinearArray (beziers[i]->poles, beziers[i]->weights, beziers[i]->rational, beziers[i]->params.numPoles, COSINE_TOLERANCE))
             continue;
 
         DPoint3d    points[2];
 
-        beziers[i].ExtractEndPoints (points[0], points[1]);
-        beziers[i].ReleaseMem ();
-        beziers[i].InitFromPoints (points, 2);
-        beziers[i].ElevateDegree (curve.params.order - 1);
+        beziers[i]->ExtractEndPoints (points[0], points[1]);
+        beziers[i]->ReleaseMem ();
+        beziers[i]->InitFromPoints (points, 2);
+        beziers[i]->ElevateDegree (curve.params.order - 1);
 
         if (curve.rational)
-            beziers[i].MakeRational ();
+            beziers[i]->MakeRational ();
         }
 
     bool    closed = TO_BOOL (curve.params.closed);
 
     curve.ReleaseMem ();
-    curve.InitFromBeziers (beziers);
+    auto newCurve = MSBsplineCurve::CreateFromBeziers (beziers);
+    curve.SwapContents (*newCurve);
 
     if (closed)
         curve.CopyClosed (curve);
 
-    for (size_t i = 0; i < beziers.size (); ++i)
-        beziers[i].ReleaseMem ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1230,7 +1229,7 @@ bool                 normalizeSurface
 
     DRange3d    poleRange;
 
-    mdlBspline_surfacePoleRange (&poleRange, &surface);
+    surface.GetPoleRange (poleRange);
 
     double          surfaceSize = poleRange.low.Distance (poleRange.high);
     double          surfaceTol = tolerance;
