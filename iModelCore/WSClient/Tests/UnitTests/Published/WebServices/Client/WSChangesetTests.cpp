@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSChangesetTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1361,6 +1361,7 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_CreatedRelationship_CallsHand
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_ANDROID) // TFS#894648
 TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_OneFailedAndOneSuccessInstance_CallsErrorAndSuccessHandler)
     {
     WSChangeset changeset;
@@ -1523,6 +1524,7 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_OneFailedDeletedInstance_Call
     EXPECT_EQ(0, successCount);
     EXPECT_EQ(1, errorCount);
     }
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
@@ -1561,6 +1563,7 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_OneFailedInstanceAndDefaultEr
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_ANDROID) // TFS#894648
 TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_FailedRelationshipInstance_CallsErrorHandler)
     {
     WSChangeset changeset;
@@ -1714,7 +1717,8 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_MultipleErrorInstances_CallsE
     EXPECT_EQ(0, successCount);
     EXPECT_EQ(3, errorCount);
     }
-
+#endif
+    
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/

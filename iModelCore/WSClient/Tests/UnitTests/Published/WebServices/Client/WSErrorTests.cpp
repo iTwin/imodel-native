@@ -39,6 +39,7 @@ TEST_F(WSErrorTests, Ctor_Default_IdUnknown)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_ANDROID) // TFS#894649
 TEST_F(WSErrorTests, CreateServerNotSupported_NewError_SetsStatusAndLocalizedMessage)
     {
     auto error = WSError::CreateServerNotSupportedError();
@@ -59,6 +60,7 @@ TEST_F(WSErrorTests, CreateFunctionalityNotSupportedError_NewError_SetsStatusAnd
     EXPECT_NE("", error.GetDisplayMessage());
     EXPECT_EQ("", error.GetDisplayDescription());
     }
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
@@ -172,6 +174,7 @@ TEST_F(WSErrorTests, Ctor_XmlErrorFormatMissingOptionalFields_ParsesXmlAndSetsEr
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_ANDROID) // TFS#894649
 TEST_F(WSErrorTests, Ctor_XmlErrorFormatCorrectAndContentTypeXml_ParsesXmlAndSetsError)
     {
     auto body = R"( <ModelError
@@ -210,10 +213,12 @@ TEST_F(WSErrorTests, Ctor_XmlErrorFormatCorrectWithNullDescription_ParsesXmlAndS
     EXPECT_NE("", error.GetDisplayMessage());
     EXPECT_EQ("Foo", error.GetDisplayDescription());
     }
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_ANDROID) // TFS#894649
 TEST_F(WSErrorTests, Ctor_XmlAzureBlobNotFoundError_ParsesXmlAndSetsError)
     {
     auto body = R"(<?xml version="1.0" encoding="utf-8"?>
@@ -229,6 +234,7 @@ TEST_F(WSErrorTests, Ctor_XmlAzureBlobNotFoundError_ParsesXmlAndSetsError)
     EXPECT_NE("", error.GetDisplayMessage());
     EXPECT_EQ("TestMessage", error.GetDisplayDescription());
     }
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
