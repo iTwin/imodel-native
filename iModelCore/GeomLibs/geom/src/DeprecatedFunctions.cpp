@@ -2019,5 +2019,285 @@ int         cluster1
     return  parent1;
     }
 
+/*----------------------------------------------------------------------+
+|FUNC           compareDPoint2dX                                        |
+|AUTHOR         EarlinLutz                              06/00           |
++----------------------------------------------------------------------*/
+static int compareDPoint2dX
+(
+const void    *pElem1,
+const void    *pElem2
+)
+    {
+    DPoint2d *pA = (DPoint2d*) pElem1;
+    DPoint2d *pB= (DPoint2d*) pElem2;
+    if (pA->x < pB->x)
+        return -1;
+    if (pA->x > pB->x)
+        return 1;
+    return 0;
+    }
+
+/*----------------------------------------------------------------------+
+|FUNC           arePointsClose_absXYZ                                   |
+|AUTHOR         EarlinLutz                              07/01           |
++----------------------------------------------------------------------*/
+static bool    arePointsClose_absXYZ
+(
+const DPoint3d *pPoint0,
+const DPoint3d *pPoint1,
+double epsilon
+)
+    {
+    return  fabs (pPoint0->x - pPoint1->x) <= epsilon
+        &&  fabs (pPoint0->y - pPoint1->y) <= epsilon
+        &&  fabs (pPoint0->z - pPoint1->z) <= epsilon
+        ;
+    }
+
+/*----------------------------------------------------------------------+
+|FUNC           arePointsClose_absXY                                    |
+|AUTHOR         EarlinLutz                              07/01           |
++----------------------------------------------------------------------*/
+static bool    arePointsClose_absXY
+(
+const DPoint3d *pPoint0,
+const DPoint3d *pPoint1,
+double epsilon
+)
+    {
+    return  fabs (pPoint0->x - pPoint1->x) <= epsilon
+        &&  fabs (pPoint0->y - pPoint1->y) <= epsilon
+        ;
+    }
+
+typedef bool    (*PointComparisonFunction)
+    (
+    const DPoint3d *pPoint0,
+    const DPoint3d *pPoint1,
+    double epsilon
+    );
+
+/*--------------------------------------------------------------------*//*
+* @param pXYZArray => array of n points, containing possibly matched points.
+* @param pCycleArray => array of n indices, arranged as cyclic linked lists
+*               joining points with identical points.  May be null pointer.
+* @param pBlockedIndexArray => array containing packed blocks of point indices,
+*               each terminated by index -1.  This will contain at least n+1
+*               and at most 2n indices.  May be null pointer.
+* @param absTol = absolute tolerance for common points.
+* @param relTol = relative tolerance for common points.
+* @return number of distinct points, hence number of cycles and blocks
+*               in the index arrays.
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+static int jmdlVArrayDPoint3d_identifyMatchedVertices_generic
+(
+const EmbeddedDPoint3dArray *pXYZArray,
+EmbeddedIntArray      *pCycleArray,
+EmbeddedIntArray      *pBlockedIndexArray,
+double          absTol,
+double          relTol,
+DPoint3d        *pSortVector,
+PointComparisonFunction cb_pointsClose
+)
+    {
+    const DPoint3d *pXYZBuffer = pXYZArray->data ();
+    int numXYZ = (int)pXYZArray->size ();
+
+    bvector<DPoint2d> sortArray;
+    DPoint3d normalizedSortVector;
+    DPoint2d *pSortBuffer;
+    int *pCycleBuffer;
+    DPoint3d point0, point1;
+    double lowerBlockCoordinate, upperBlockCoordinate;
+    int i0, i1;
+    int k0, k1, k2;
+    int numBlock = 0;
+
+    double LargestCoordinate = bsiDPoint3d_getLargestCoordinateDifference (pXYZBuffer, numXYZ);
+    double epsilon;
+
+    if (numXYZ == 0)
+        {
+        if (pBlockedIndexArray)
+            IntArrayWrapper::empty (pBlockedIndexArray);
+        if (pCycleArray)
+            IntArrayWrapper::empty (pCycleArray);
+        return 0;
+        }
+
+    if (absTol <= 0.0)
+        absTol = 0.0;
+    if (relTol <= 0.0)
+        relTol = 0.0;
+
+    epsilon = absTol + relTol * LargestCoordinate;
+    bsiDPoint3d_normalize (&normalizedSortVector, pSortVector);
+
+    sortArray.reserve (numXYZ);
+    /* Force data into the sort area.. */
+    {
+    DPoint2d zero;
+    zero.Zero ();
+    for (int i = 0; i < numXYZ; i++)
+        sortArray.push_back (zero);
+    }
+    pSortBuffer = sortArray.data ();
+
+    if (pBlockedIndexArray)
+        {
+        IntArrayWrapper::empty (pBlockedIndexArray);
+        }
+
+    /* Search for non-disconnect reference point */
+    for (k0 = 0; k0 < numXYZ; k0++)
+        {
+        if (!bsiDPoint3d_isDisconnect (pXYZBuffer + k0))
+            break;
+        }
+
+    point0 = pXYZBuffer[k0];
+    /* Initialize sort indices as identity permutation with dot product along
+        skewed dimension as sort quantity. */
+    for (;k0 < numXYZ; k0++)
+        {
+        if (!bsiDPoint3d_isDisconnect (pXYZBuffer + k0))
+            {
+            pSortBuffer[k0].x = bsiDPoint3d_dotDifference (pXYZBuffer + k0, &point0, (DVec3d *) &normalizedSortVector);
+            pSortBuffer[k0].y = (double)k0;
+            }
+        }
+
+    if (pCycleArray)
+        {
+        IntArrayWrapper::empty (pCycleArray);
+        for (k0 = 0; k0 < numXYZ; k0++)
+            {
+            IntArrayWrapper::add (pCycleArray, k0);
+            }
+        pCycleBuffer = IntArrayWrapper::getPtr (pCycleArray, 0);
+        }
+    else
+        {
+        pCycleBuffer = NULL;
+        }
+
+    qsort ((void*) pSortBuffer, numXYZ, sizeof (DPoint2d), compareDPoint2dX);
+
+    for (i0 = 0; i0 < numXYZ; i0++)
+        {
+        k0 = (int)pSortBuffer[i0].y;
+        if (k0 >= 0)
+            {
+            lowerBlockCoordinate = pSortBuffer[i0].x;
+            upperBlockCoordinate = lowerBlockCoordinate + epsilon;
+            /* This coordinate starts a new block.
+               Record it and all succeeding near points into a block of the index array.
+               The points that are near in ALL directions are clustered in a block
+               with almost the same sort coordinate;  walk through the block
+               of points with similar sort coordinate, begin aware that there may
+               be (a) points previously picked out from prior blocks, (index -1)
+                    (b) points far away but not yet recorded.
+               In the cycle index array, each index is initially a singleton cycle.
+               When a point is identified as part of a block, it is still a singleton
+               cycle.  The singleton cycle is spliced together with the growing block
+               cycle by swapping successor indices athe the new point and the base
+               point of the block.
+            */
+            if (pBlockedIndexArray)
+                IntArrayWrapper::add (pBlockedIndexArray, k0);
+            point0 = pXYZBuffer[k0];
+            numBlock++;
+            for (i1 = i0 + 1;
+                 i1 < numXYZ && pSortBuffer[i1].x < upperBlockCoordinate;
+                 i1++)
+                {
+                k1 = (int)pSortBuffer[i1].y;
+                if (k1 >= 0)
+                    {
+                    point1 = pXYZBuffer[k1];
+                    if (cb_pointsClose (&point0, &point1, epsilon))
+                        {
+                        pSortBuffer[i1].y = -1;
+                        if (pBlockedIndexArray)
+                            IntArrayWrapper::add (pBlockedIndexArray, k1);
+                        if (pCycleBuffer)
+                            {
+                            k2 = pCycleBuffer[k0];
+                            pCycleBuffer[k0] = k1;
+                            pCycleBuffer[k1] = k2;
+                            }
+                        }
+                    }
+                }
+            if (pBlockedIndexArray)
+                IntArrayWrapper::add (pBlockedIndexArray, -1);
+            }
+        }
+    return numBlock;
+    }
+
+
+/*--------------------------------------------------------------------*//*
+* @param pXYZArray => array of n points, containing possibly matched points.
+* @param pCycleArray => array of n indices, arranged as cyclic linked lists
+*               joining points with identical points.  May be null pointer.
+* @param pBlockedIndexArray => array containing packed blocks of point indices,
+*               each terminated by index -1.  This will contain at least n+1
+*               and at most 2n indices.  May be null pointer.
+* @param absTol = absolute tolerance for common points.
+* @param relTol = relative tolerance for common points.
+* @return number of distinct points, hence number of cycles and blocks
+*               in the index arrays.
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlVArrayDPoint3d_identifyMatchedVertices
+(
+const EmbeddedDPoint3dArray *pXYZArray,
+EmbeddedIntArray      *pCycleArray,
+EmbeddedIntArray      *pBlockedIndexArray,
+double          absTol,
+double          relTol
+)
+    {
+    DPoint3d sortVector;
+    sortVector.x = 0.5677470545;
+    sortVector.y = 1.8340234005;
+    sortVector.z = 1.3472498290;
+    return jmdlVArrayDPoint3d_identifyMatchedVertices_generic (pXYZArray, pCycleArray, pBlockedIndexArray,
+                    absTol, relTol, &sortVector, arePointsClose_absXYZ);
+    }
+
+
+/*--------------------------------------------------------------------*//*
+* @param pXYZArray => array of n points, containing possibly matched points.
+* @param pCycleArray => array of n indices, arranged as cyclic linked lists
+*               joining points with identical points.  May be null pointer.
+* @param pBlockedIndexArray => array containing packed blocks of point indices,
+*               each terminated by index -1.  This will contain at least n+1
+*               and at most 2n indices.  May be null pointer.
+* @param absTol = absolute tolerance for common points.
+* @param relTol = relative tolerance for common points.
+* @return number of distinct points, hence number of cycles and blocks
+*               in the index arrays.
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int jmdlVArrayDPoint3d_identifyMatchedVerticesXY
+(
+const EmbeddedDPoint3dArray *pXYZArray,
+EmbeddedIntArray      *pCycleArray,
+EmbeddedIntArray      *pBlockedIndexArray,
+double          absTol,
+double          relTol
+)
+    {
+    DPoint3d sortVector;
+    sortVector.x = 0.5677470545;
+    sortVector.y = 1.8340234005;
+    sortVector.z = 0.0;
+    return jmdlVArrayDPoint3d_identifyMatchedVertices_generic (pXYZArray, pCycleArray, pBlockedIndexArray,
+                    absTol, relTol, &sortVector, arePointsClose_absXY);
+    }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

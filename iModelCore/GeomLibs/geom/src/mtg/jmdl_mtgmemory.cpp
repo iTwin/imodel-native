@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/mtg/jmdl_mtgmemory.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -10,7 +10,6 @@
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 // EDL March 31 2009 -- EmbeddedIntArray substitution looks easy -- no conditionals.
 END_BENTLEY_GEOMETRY_NAMESPACE
-#include "../memory/jmdl_iarray.fdf"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /*----------------------------------------------------------------------+
 |                                                                       |
