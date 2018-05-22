@@ -1,0 +1,20 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: iModelDmsSupport/pwsdkprewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+always:
+    CreateSymLinks.py -d"$(BuildContext)PublicAPI/ProjectWise_InternalSDK/Include=$(BuildContext)SdkSources/ProjectWise_InternalSDK/Include"
+	CreateSymLinks.py -d"$(BuildContext)PublicAPI/ProjectWise_InternalSDK/PrivateSDK/aaapi=$(BuildContext)SdkSources/ProjectWise_InternalSDK/PrivateSDK/Include/aaapi"
+	CreateSymLinks.py -d"$(BuildContext)PublicAPI/ProjectWise_InternalSDK/PrivateSDK/utils=$(BuildContext)SdkSources/ProjectWise_InternalSDK/PrivateSDK/Include/utils"
+	CreateSymLinks.py -d"$(BuildContext)PublicAPI/ProjectWise_InternalSDK/PrivateSDK/butil=$(BuildContext)SdkSources/ProjectWise_InternalSDK/PrivateSDK/Include/butil"
+	CreateSymLinks.py -d"$(BuildContext)PublicAPI/ProjectWise_InternalSDK/PrivateSDK/aadmsapi=$(BuildContext)SdkSources/ProjectWise_InternalSDK/PrivateSDK/Include/aadmsapi"
+	CreateSymLinks.py -d"$(BuildContext)PublicAPI/ProjectWise_InternalSDK/PrivateSDK/aaodsapi=$(BuildContext)SdkSources/ProjectWise_InternalSDK/PrivateSDK/Include/aaodsapi"
+	CreateSymLinks.py -d"$(BuildContext)Delivery/ProjectWise_InternalSDK/=$(BuildContext)SdkSources/ProjectWise_InternalSDK/Libs"
+#	CreateSymLinks.py -d"$(BuildContext)PublicAPI/ProjectWise_InternalSDK/PrivateAPI=$(BuildContext)SdkSources/ProjectWise_InternalSDK/Include"
+
+
