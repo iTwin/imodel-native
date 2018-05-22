@@ -842,13 +842,19 @@ TEST(SupplementalRuleSetLocater, FindsSupplementalRuleSetsAndSetsProvidedId)
     ASSERT_EQ(2, rulesets.size());
 
     //Using StyleOverride as ruleset identification, because ruleset id was changed
-    ASSERT_STREQ("Ruleset1", rulesets[0]->GetRuleSetId().c_str());
-    EXPECT_STREQ("Red", rulesets[0]->GetStyleOverrides()[0]->GetForeColor().c_str());
-    EXPECT_STREQ("Green", rulesets[0]->GetStyleOverrides()[0]->GetBackColor().c_str());
+    ASSERT_STREQ("Ruleset1", rulesets[0]->GetRuleSetId().c_str())
+        << "Got: " << rulesets[0]->GetRuleSetId().c_str();
+    EXPECT_STREQ("Red", rulesets[0]->GetStyleOverrides()[0]->GetForeColor().c_str())
+        << "Got: " << rulesets[0]->GetStyleOverrides()[0]->GetForeColor().c_str();
+    EXPECT_STREQ("Green", rulesets[0]->GetStyleOverrides()[0]->GetBackColor().c_str())
+        << "Got: " << rulesets[0]->GetStyleOverrides()[0]->GetBackColor().c_str();
 
-    ASSERT_STREQ("Ruleset1", rulesets[1]->GetRuleSetId().c_str());
-    EXPECT_STREQ("Blue", rulesets[1]->GetStyleOverrides()[0]->GetForeColor().c_str());
-    EXPECT_STREQ("Orange", rulesets[1]->GetStyleOverrides()[0]->GetBackColor().c_str());
+    ASSERT_STREQ("Ruleset1", rulesets[1]->GetRuleSetId().c_str())
+        << "Got: " << rulesets[1]->GetRuleSetId().c_str();
+    EXPECT_STREQ("Blue", rulesets[1]->GetStyleOverrides()[0]->GetForeColor().c_str())
+        << "Got: " << rulesets[1]->GetStyleOverrides()[0]->GetForeColor().c_str();
+    EXPECT_STREQ("Orange", rulesets[1]->GetStyleOverrides()[0]->GetBackColor().c_str())
+        << "Got: " << rulesets[1]->GetStyleOverrides()[0]->GetBackColor().c_str();
     }
 
 /*=================================================================================**//**
