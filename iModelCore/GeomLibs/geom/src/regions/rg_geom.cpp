@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/regions/rg_geom.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -22,7 +22,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public  int      jmdlRG_intersectCircleSegmentXY
 (
-EmbeddedDoubleArray     *pParamArray,
+bvector<double>         *pParamArray,
 EmbeddedDPoint3dArray   *pPointArray,
 DPoint3d    *pStart,
 DPoint3d    *pEnd,
@@ -49,7 +49,7 @@ bool        bounded
 
     numRoot = bsiMath_solveConvexQuadratic (vv, uu, a0, 2.0 * a1, a2);
     if (pParamArray)
-        jmdlEmbeddedDoubleArray_empty (pParamArray);
+        pParamArray->clear();
 
     if (pPointArray)
         jmdlEmbeddedDPoint3dArray_empty (pPointArray);
@@ -60,7 +60,7 @@ bool        bounded
             {
             numOut++;
             if (pParamArray)
-                jmdlEmbeddedDoubleArray_addDouble (pParamArray, uu[i]);
+                pParamArray->push_back (uu[i]);
             if (pPointArray)
                 {
                 bsiDPoint3d_add2ScaledDPoint3d (&point, NULL,

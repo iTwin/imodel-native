@@ -1659,7 +1659,7 @@ MTGNodeId           node0Id
 Public bool        jmdlRG_edgeCircleXYIntersection
 (
 RG_Header           *pRG,
-EmbeddedDoubleArray *pParameterArray,
+bvector<double>     *pParameterArray,
 EmbeddedDPoint3dArray *pPointArray,
 int                 nodeId,
 DPoint3d            *pCenter,
@@ -1689,13 +1689,8 @@ double              radius
                         );
             if (edgeData.isReversed)
                 {
-                int i;
-                double param;
-                for (i = 0; jmdlEmbeddedDoubleArray_getDouble (pParameterArray, &param, i); i++)
-                    {
+                for (double &param : *pParameterArray)
                     param = 1.0 - param;
-                    jmdlEmbeddedDoubleArray_setDouble (pParameterArray, param, i);
-                    }
                 }
             }
         }
@@ -4133,7 +4128,7 @@ const char                      *pTitle
 Public bool        jmdlRG_linkToCurveCircleXYIntersection
 (
 RG_Header           *pRG,
-EmbeddedDoubleArray *pParameterArray,
+bvector<double>     *pParameterArray,
 EmbeddedDPoint3dArray *pPointArray,
 RG_EdgeData         *pEdgeData,
 DPoint3d            *pCenter,

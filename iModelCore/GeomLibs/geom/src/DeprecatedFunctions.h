@@ -820,6 +820,75 @@ DPoint3dCP pOrigin,
 DPoint3dCP pNormal
 );
 
+/**
+* @param pDestArray array where shuffled data is placed
+* @param pSourceArray original array
+* @param pIndexArray index information
+* @see
+* @return SUCCESS if
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP StatusInt jmdlVArrayInt_shuffleArray
+(
+        EmbeddedDPoint3dArray     *pDestArray,    /* array where shuffled data is placed */
+const   EmbeddedDPoint3dArray     *pSourceArray,  /* original array */
+const   EmbeddedIntArray            *pIndexArray    /* index information */
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Create a new cluster index for a union-find algorithm.
+*
+* @param    pInstance IN      int array being used for union find.
+* @return
+* @bsimethod                                                    BentleySystems  06/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      jmdlVArrayInt_newClusterIndex
+(
+EmbeddedIntArray  *pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search upwards in the union-find structure for a parent cluster.
+* Fixup indices along the way!!!   The parent index always is a root (i.e. is its own parent)
+* @param    pInstance IN OUT  int array being used for union find.
+* @param cluster0 IN      first cluster id
+* @return the merged cluster index.
+* @bsimethod                                                    BentleySystems  06/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int  jmdlVArrayInt_getMergedClusterIndexExt
+(
+EmbeddedIntArray  *pInstance,
+int         cluster,
+int         depth
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search upwards in the union-find structure for a parent cluster.
+* Fixup indices along the way!!!   The parent index always is a root (i.e. is its own parent)
+* @param    pInstance IN OUT  int array being used for union find.
+* @param cluster0 IN      first cluster id
+* @return the merged cluster index.
+* @bsimethod                                                    BentleySystems  06/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int  jmdlVArrayInt_getMergedClusterIndex
+(
+EmbeddedIntArray  *pInstance,
+int         cluster
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @param    pInstance IN OUT  int array being used for union find.
+* @param cluster0 IN      first cluster id
+* @param cluster1 IN      second cluster id
+* @return the merged cluster index (may be different from both!!)
+* @bsimethod                                                    BentleySystems  06/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      jmdlVArrayInt_mergeClusters
+(
+EmbeddedIntArray  *pInstance,
+int         cluster0,
+int         cluster1
+);
 
 
 END_BENTLEY_GEOMETRY_NAMESPACE

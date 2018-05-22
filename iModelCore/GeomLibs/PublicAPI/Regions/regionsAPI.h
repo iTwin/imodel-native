@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Regions/regionsAPI.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -126,7 +126,7 @@ typedef void (*RG_FaceLoopFunction)
 typedef bool    (*RGC_IntersectCurveCircleXYFunction)
         (
         RIMSBS_Context     *pContext,                     /* => application context */
-        EmbeddedDoubleArray *pParamArray,       /* <= array of intersection parameters */
+        bvector<double> *pParamArray,       /* <= array of intersection parameters */
         EmbeddedDPoint3dArray *pPointArray,     /* <= array of intersection parameters */
         RG_EdgeData *pEdgeData,                 /* => first edge, with curve id */
         const DPoint3d *pCenter,                /* => circle center */
@@ -136,7 +136,7 @@ typedef bool    (*RGC_IntersectCurveCircleXYFunction)
 typedef bool    (*RGC_IntersectCurvePlaneFunction)
         (
         RIMSBS_Context     *pContext,                     /* => application context */
-        EmbeddedDoubleArray *pParamArray,       /* <= array of intersection parameters */
+        bvector<double> *pParamArray,       /* <= array of intersection parameters */
         EmbeddedDPoint3dArray *pPointArray,     /* <= array of intersection parameters */
         RG_EdgeData *pEdgeData,                 /* => first edge, with curve id */
         const DPoint3d *pPoint,                 /* => any point on plane */

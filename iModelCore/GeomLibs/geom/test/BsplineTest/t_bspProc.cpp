@@ -88,6 +88,9 @@ TEST(MSBspline,RecursiveOffset)
     }
 #endif
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,InflectionsXYZ)
     {
     for (double zTwist : {0.0, 0.7, 1.1})
@@ -200,6 +203,9 @@ TEST(BsplineCurve,InflectionsXYZ)
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,MakeBezier)
     {
     for (double zTwist : {0.0, 1.1})
@@ -251,6 +257,9 @@ TEST(BsplineCurve,MakeBezier)
     Check::ClearGeometry ("BsplineCurve.MakeBezier");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,Cusps)
     {
     // with zero z, the full and projected curves both have cusps. 
@@ -319,6 +328,10 @@ void ShowWithStartEnd (double dy, MSBsplineCurvePtr const &curve)
         Check::SaveTransformed (strokes);
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,Closed)
     {
     // with zero z, the full and projected curves both have cusps. 
@@ -367,6 +380,9 @@ double fraction
     conic.start = alpha0;
     conic.sweep = alpha1 - alpha0;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,DConic4d)
     {
     // with zero z, the full and projected curves both have cusps. 
@@ -415,6 +431,9 @@ TEST(BsplineCurve,DConic4d)
     Check::ClearGeometry ("BsplineCurve.DConic4d");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,Copy)
     {
     bvector<DPoint3d> poles
@@ -449,5 +468,40 @@ TEST(BsplineCurve,Copy)
             DPoint3d::From (5,0,0)); 
     ShowWithStartEnd (2, curve->CreateCopyTransformed(transform));
     Check::ClearGeometry ("BsplineCurve.Copy");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BsplineCurve,FixedChordLength)
+    {
+    bvector<DPoint3d> poles
+            {
+            DPoint3d::From (0,0),
+            DPoint3d::From (3,0),
+            DPoint3d::From (5,1),
+            DPoint3d::From (7,2),
+            DPoint3d::From (9,0),
+            DPoint3d::From (10,2),
+            DPoint3d::From (11,0)
+            };
+    auto curve = MSBsplineCurve::CreateFromPolesAndOrder
+            (
+            poles.data (), (int)poles.size (),
+            4,
+            false
+            );
+    bvector<DPoint3d> points;
+    bvector<double> params;
+    for (double a : {0.5, 1.0, 2.0})
+        {
+        SaveAndRestoreCheckTransform shifter (0, 5, 0);
+        Check::SaveTransformed (curve);
+        curve->StrokeWithFixedChordLength (points, params, a);
+        Check::SaveTransformed (points);
+        for (size_t i = 0; i + 1 < points.size (); i++)
+            Check::Near (a, points[i].Distance (points[i+1]));
+        }
+    Check::ClearGeometry ("BsplineCurve.FixedChordLength");
     }
 

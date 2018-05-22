@@ -219,7 +219,7 @@ MSBsplineSurfaceCP   input
     return SUCCESS;
     }
 
-
+#ifdef CompileComputeBoundarySpans
 /*----------------------------------------------------------------------+
 |                                                                       |
 | name          bspsurf_computeBoundarySpans                            |
@@ -236,18 +236,17 @@ int                        horizontal
 )
     {
     EmbeddedDoubleArray *pFractionArray = jmdlEmbeddedDoubleArray_grab ();
-    int numIntersect, numBytes;
     bspsurf_intersectBoundariesWithUVLine (pFractionArray, value, bspline, horizontal);
-    numIntersect = jmdlEmbeddedDoubleArray_getCount (pFractionArray);
-    numBytes     = numIntersect * sizeof (double);
+    size_t numIntersect = pFractionArray->size();
+    size_t numBytes     = numIntersect * sizeof (double);
     if (NULL == (*spans = (double*)BSIBaseGeom::Malloc (numBytes)))
         numIntersect = 0;
     if (numIntersect > 0)
         memcpy (*spans, jmdlEmbeddedDoubleArray_getPtr (pFractionArray, 0), numBytes);
     jmdlEmbeddedDoubleArray_drop (pFractionArray);
-    return numIntersect;
+    return (int)numIntersect;
     }
-
+#endif
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   Surface Compatiblity Routines                                       |
