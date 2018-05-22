@@ -591,6 +591,16 @@ BentleyStatus GltfReader::ReadPolylines(bvector<MeshPolyline>& polylines, Json::
                 CopyAndIncrement(&index, pData, sizeof(index));
                 indices[j] = index;
                 }
+
+            // TFS#895336: We were previously failing to align polyline data.
+            // Each polyline outputs:
+            //  32-bit start distance
+            //  32-bit num indices
+            //  indices[nIndices] where every index is either 16- or 32-bits
+            // In the case where indices are 16-bits and there are an odd number of them, we added 2 bytes of padding after the last index in order to
+            // align to 32-bit boundary for next polyline. Need to skip that padding here.
+            if (0 != (nIndices & 1))
+                Increment(pData, sizeof(uint16_t));
             }
         else
             {

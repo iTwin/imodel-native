@@ -1,0 +1,10 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+
+IMS_DIR = $(OutputRootDir)iModelSchemaEvolution
+DATA_DIR = $(IMS_DIR)/Data

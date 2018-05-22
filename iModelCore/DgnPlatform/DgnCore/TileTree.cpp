@@ -1016,10 +1016,7 @@ void Root::DrawInView(DrawArgsR args)
     bvector<TileCPtr> selectedTiles = SelectTiles(args);
 
     for (auto const& selectedTile : selectedTiles)
-        {
-        BeAssert(!selectedTile->IsRegionCulled(args));
         selectedTile->_DrawGraphics(args);
-        }
 
 #if defined(DEBUG_TILE_SELECTION)
     if (!selectedTiles.empty())

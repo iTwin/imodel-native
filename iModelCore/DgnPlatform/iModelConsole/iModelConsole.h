@@ -192,42 +192,6 @@ struct Session final
 //=======================================================================================
 // @bsiclass                                    BentleySystems 
 //=======================================================================================
-struct PerfLogger final
-    {
-    private:
-        Utf8CP m_application = nullptr;
-        Utf8CP m_feature = nullptr;
-        Utf8String m_message;
-        uint64_t m_startTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-        bool m_isDisposed = false;
-        PerfLogger(PerfLogger const&) = delete;
-        PerfLogger& operator=(PerfLogger const&) = delete;
-        PerfLogger(PerfLogger&&) = delete;
-        PerfLogger& operator=(PerfLogger&&) = delete;
-
-    public:
-        PerfLogger(Utf8CP application, Utf8CP feature) : m_application(application), m_feature(feature) {}
-        explicit PerfLogger(Utf8StringCR message) : m_message(message) {}
-        ~PerfLogger() { Dispose(); }
-
-        void Dispose() 
-            {
-            if (m_isDisposed)
-                return;
-
-            if (m_feature != nullptr)
-                PERFLOG.infov("%s,%s,%" PRIu64, m_application, m_feature, BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime);
-            else
-                PERFLOG.infov("%s,%" PRIu64, m_message.c_str(), BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_startTime);
-
-            m_isDisposed = true;
-            }
-    };
-
-
-//=======================================================================================
-// @bsiclass                                    BentleySystems 
-//=======================================================================================
 struct IModelConsole final : Dgn::DgnPlatformLib::Host
     {
     private:

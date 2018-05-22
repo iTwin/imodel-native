@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Annotations/AnnotationTextStyle.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -370,6 +370,23 @@ AnnotationTextStyle::Iterator AnnotationTextStyle::MakeIterator(DgnDbR db)
     iter.Prepare(db, "SELECT ECInstanceId,[CodeValue],Description FROM " BIS_SCHEMA(BIS_CLASS_AnnotationTextStyle), 0);
 
     return iter;
+    }
+
+//*****************************************************************************************************************************************************************************************************
+//*****************************************************************************************************************************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+AnnotationTextStyleId DgnImportContext::_RemapAnnotationStyleId(AnnotationTextStyleId sourceId)
+    {
+    if (!IsBetweenDbs())
+        return sourceId;
+
+    AnnotationTextStyleId dest = m_remap.Find(sourceId);
+    if (dest.IsValid())
+        return dest;
+
+    return dest;
     }
 
 //*****************************************************************************************************************************************************************************************************
