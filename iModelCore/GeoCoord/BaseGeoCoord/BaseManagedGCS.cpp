@@ -3001,6 +3001,7 @@ ECL::LightweightDoubleType^ m_doubleType;
 ECL::LightweightInt32Type^  m_int32Type;
 ECL::ReadOnlyDelegate^      m_classReadOnlyDelegate;
 ECL::LightweightClass^      m_CSBaseClass;
+ECL::LightweightClass^      m_gcsDescriptionClass;
 ECL::LightweightClass^      m_projectedCSBaseClass;
 ECL::LightweightClass^      m_geographicCSBaseClass;
 ECL::LightweightClass^      m_latLongOriginClass;
@@ -3968,7 +3969,7 @@ property ECL::LightweightClass^     CSBaseClass
 
             ECL::LightweightClass^  ecClass = gcnew ECL::LightweightClass ("CSBaseClass");
                             AddProperty (ecClass, "Name",             nullptr,          Priority::Name,                m_csCategory, PropIndex::Name,              false, stringType);
-                            AddProperty (ecClass, "Description",      nullptr,          Priority::Description,         m_csCategory, PropIndex::Description,       false, stringType);
+//                          AddProperty (ecClass, "Description",      nullptr,          Priority::Description,         m_csCategory, PropIndex::Description,       false, stringType);
 //                          AddProperty (ecClass, "Group",            nullptr,          Priority::Group,               m_csCategory, PropIndex::Group,             true, stringType);
 //                          AddProperty (ecClass, "Location",         nullptr,          Priority::Location,            m_csCategory, PropIndex::Location,          true, stringType);
 //                          AddProperty (ecClass, "Country",          nullptr,          Priority::Country,             m_csCategory, PropIndex::Country,           true, stringType);
@@ -4030,6 +4031,24 @@ property ECL::LightweightClass^     CSBaseClass
             m_CSBaseClass = ecClass;
             }
         return m_CSBaseClass;
+        }
+    }
+
+property ECL::LightweightClass^     GCSDescriptionClass
+    {
+    ECL::LightweightClass^ get ()
+        {
+        if (nullptr == m_gcsDescriptionClass)
+            {
+            ECL::LightweightProperty^   gcsDescriptionProp;
+            ECL::LightweightStringType^ stringType = CSStringType;
+
+            m_gcsDescriptionClass = gcnew ECL::LightweightClass("GCSDescriptionClass");
+
+            gcsDescriptionProp = AddProperty(m_gcsDescriptionClass, "Description", nullptr, Priority::Description, m_csCategory, PropIndex::Description, false, stringType);
+            }
+
+        return m_gcsDescriptionClass;
         }
     }
 
@@ -5205,6 +5224,7 @@ property ECS::ECSchema^     Schema
             ECUI::ECPropertyPane::SetExtendedTypeTypeConverter (m_datumTypeET,      DatumTypeTypeConverter::typeid);
 
             m_schema->AddClass (CSBaseClass);
+            m_schema->AddClass (GCSDescriptionClass);
             m_schema->AddClass (ProjectedCSBaseClass);
             m_schema->AddClass (GeographicCSBaseClass);
             m_schema->AddClass (OriginLongitudeClass);
@@ -5469,6 +5489,7 @@ ECI::ECInstanceList^   GetCoordinateSystemProperties (BaseGCS^ coordSys)
         default:
             instanceList->Add (ProjectedCSBaseClass->CreateInstance (coordSys));
         }
+    instanceList->Add (GCSDescriptionClass->CreateInstance(coordSys));
     instanceList->Add (DatumIndexClass->CreateInstance (coordSys));
     instanceList->Add (BaseDatumClass->CreateInstance (coordSys));
     bool    deltaValid, rotationValid, scaleValid;
