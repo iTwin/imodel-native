@@ -298,7 +298,7 @@ bool createDimensions
             planeThis = gridPlane->GetPlane ();
             if (lastGridPlane.IsValid () && createDimensions)
                 {
-                DimensionHandler::Insert (GetDgnDb(), lastGridPlane->GetElementId (), gridPlane->GetElementId (), 0, 0, planeThis.normal, planeLast.Evaluate(planeThis.origin));
+                DimensionHandler::Insert(GetDgnDb(), lastGridPlane->GetElementId(), gridPlane->GetElementId(), 0, 0, planeThis.normal, planeLast.Evaluate(planeThis.origin));
                 }
             planeLast = planeThis;
             lastGridPlane = gridPlane;
