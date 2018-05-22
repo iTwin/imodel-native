@@ -792,10 +792,6 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
         if (designSpeedPtr->Insert().IsNull())
             return BentleyStatus::ERROR;
         }
-    else
-        {
-        BeAssert(false);
-        }
 
     return BentleyStatus::SUCCESS;
     }
