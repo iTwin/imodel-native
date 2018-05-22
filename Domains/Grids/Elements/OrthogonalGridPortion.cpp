@@ -92,6 +92,8 @@ int ySurfaceCount
 )
     {
     OrthogonalGridPtr thisGrid = OrthogonalGrid::CreateAndInsert(params);
+    if (thisGrid.IsNull())
+        return nullptr;
 
     Dgn::SpatialLocationModelPtr subModel = thisGrid->GetSurfacesModel();
 

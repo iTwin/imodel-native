@@ -3259,6 +3259,24 @@ TEST_F(GridsTestFixture, SetName)
     ASSERT_STREQ(grid->GetName(), "NewName");
     }
 
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(GridsTestFixture, Orthogonal_CreateAndInsertWithSurfaces_NotUniqueNameReturnsNullInsteadOfCrashing)
+    {
+    DgnDbR db = *DgnClientApp::App().Project();
+
+    Utf8String name = "TestName";
+
+    OrthogonalGrid::CreateParams params1(*m_model, m_model->GetModeledElementId(), name.c_str(), 0, 0, 0, 0, 0, 0, 0, 0);
+    ASSERT_TRUE(OrthogonalGrid::CreateAndInsertWithSurfaces(params1, 0, 0).IsValid());
+
+    OrthogonalGrid::CreateParams params2(*m_model, m_model->GetModeledElementId(), name.c_str(), 0, 0, 0, 0, 0, 0, 0, 0);
+    ASSERT_FALSE(OrthogonalGrid::CreateAndInsertWithSurfaces(params1, 0, 0).IsValid());
+
+    ASSERT_EQ(SUCCESS, db.SaveChanges());
+    }
+
 //---------------------------------------------------------------------------------------
 // @betest                                      Haroldas.Vitunskas              12/2017
 //--------------+---------------+---------------+---------------+---------------+-------- 
