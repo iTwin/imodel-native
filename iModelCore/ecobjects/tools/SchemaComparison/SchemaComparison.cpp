@@ -13,6 +13,8 @@
 #include <BeSQLite/L10N.h>
 
 #define SCHEMA_COMPARISON_EXIT_DIFFERENCES_DETECTED 1
+#define SCHEMA_COMPARISON_EXIT_DIFFERENCES_CHECKSUMS_MATCH 2
+#define SCHEMA_COMPARISON_EXIT_IDENTICAL_CHECKSUMS_NOT_MATCH -2
 #define SCHEMA_COMPARISON_EXIT_FAILURE -1
 #define NSCHEMAS 2
 #define CSTR_HR "----------------------------------------"
@@ -148,6 +150,7 @@ int CompareSchemas(SchemaComparisonOptions& options)
     {
     ECN::ECSchemaReadContextPtr contexts[NSCHEMAS];
     ECN::ECSchemaPtr schemas[NSCHEMAS];
+    uint32_t checksums[NSCHEMAS]; // TODO - After EC32 merge, change checksum type to Utf8String
     for (int i = 0; i < NSCHEMAS; ++i)
         {
         contexts[i] = ECN::ECSchemaReadContext::CreateContext(true, true);
@@ -172,6 +175,15 @@ int CompareSchemas(SchemaComparisonOptions& options)
             return SCHEMA_COMPARISON_EXIT_FAILURE;
             }
         s_logger->infov("Located schema: %s\n", schemas[i]->GetName().c_str());
+
+        // TODO - After EC32 merge, change lines below to: checksums[i] = schemas[i]->ComputeCheckSum();
+        Utf8String xmlStr;
+        if (ECN::SchemaWriteStatus::Success != schemas[i]->WriteToXmlString(xmlStr))
+            checksums[i] = 0;
+        else
+            checksums[i] = ECN::ECSchema::ComputeSchemaXmlStringCheckSum(xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length());
+
+        s_logger->infov("Checksum for %s = %d\n", schemas[i]->GetFullSchemaName(), checksums[i]);
         }
 
     bvector<ECN::ECSchemaCP> cpSchemas[NSCHEMAS] = {{schemas[0].get()}, {schemas[1].get()}};
@@ -186,7 +198,20 @@ int CompareSchemas(SchemaComparisonOptions& options)
     if (changes.IsEmpty())
         {
         s_logger->info("The schemas are identical");
-        return SUCCESS;
+
+        if (checksums[0] == 0 || checksums[1] == 0)
+            {
+            s_logger->error("Checksum computation for one or both of the schemas failed because of a serialization error. See errors above for more info.");
+            return SCHEMA_COMPARISON_EXIT_FAILURE;
+            }
+
+        if (checksums[0] == checksums[1])
+            return SUCCESS;
+        else
+            {
+            s_logger->error("The checksums do not match");
+            return SCHEMA_COMPARISON_EXIT_IDENTICAL_CHECKSUMS_NOT_MATCH;
+            }
         }
     for (size_t i = 0; i < changes.Count(); ++i)
         {
@@ -195,6 +220,19 @@ int CompareSchemas(SchemaComparisonOptions& options)
         LogError(s);
         }
     s_logger->info("The schemas are different (see log)");
+
+    if (checksums[0] == 0 || checksums[1] == 0)
+        {
+        s_logger->error("Checksum computation for one or both of the schemas failed because of a serialization error. See errors above for more info.");
+        return SCHEMA_COMPARISON_EXIT_FAILURE;
+        }
+
+    if (checksums[0] == checksums[1])
+        {
+        s_logger->error("The checksums should not match");
+        return SCHEMA_COMPARISON_EXIT_DIFFERENCES_CHECKSUMS_MATCH;
+        }
+
     return SCHEMA_COMPARISON_EXIT_DIFFERENCES_DETECTED;
     }
 

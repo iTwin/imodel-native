@@ -1032,9 +1032,9 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut)
 SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
-    for (auto const& mapPair : m_ecSchema.m_referencedSchemaAliasMap)
+    for (auto const& pair : m_ecSchema.GetReferencedSchemas())
         {
-        ECSchemaP   refSchema = mapPair.first;
+        ECSchemaPtr refSchema = pair.second;
         m_xmlWriter.WriteElementStart(ECXML_SCHEMAREFERENCE_ELEMENT);
         m_xmlWriter.WriteAttribute(NAME_ATTRIBUTE, refSchema->GetName().c_str());
 
@@ -1043,7 +1043,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
         else
             m_xmlWriter.WriteAttribute(SCHEMAREF_VERSION_ATTRIBUTE, refSchema->GetSchemaKey().GetVersionString().c_str());
 
-        const Utf8String alias = mapPair.second;
+        const Utf8String alias = refSchema->GetAlias();
         if (m_ecXmlVersion >= ECVersion::V3_1)
             m_xmlWriter.WriteAttribute(ALIAS_ATTRIBUTE, alias.c_str());
         else

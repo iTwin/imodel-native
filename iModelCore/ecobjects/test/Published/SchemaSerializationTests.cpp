@@ -8,6 +8,7 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 #include "BeXml/BeXml.h"
+#include <regex>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -396,6 +397,157 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     ASSERT_TRUE(derivedProp3 != nullptr);
     ASSERT_TRUE(derivedProp3->IsKindOfQuantityDefinedLocally());
     ASSERT_STREQ("OverrideKindOfQuantity", derivedProp3->GetKindOfQuantity()->GetName().c_str());
+    }
+
+
+void extendTargetXmlRegex(Utf8StringR regexStrOut, Utf8String str)
+    {
+    regexStrOut.append(".*" + str + ".*\n");
+    }
+
+std::regex generateTargetXmlRegex(Utf8StringR regexStrOut, bvector<Utf8String> orderedNames, Utf8String prefix = "")
+    {
+    for (Utf8String name : orderedNames)
+        extendTargetXmlRegex(regexStrOut, prefix + name);
+
+    std::regex r(regexStrOut.c_str(), std::regex::extended);
+    return r;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                            Joseph.Urbano                          05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaXmlSerializationTest, ExpectReferencedSchemasSerializedInOrder)
+    {
+    ECSchemaPtr schema1, schema2;
+    bvector<ECSchemaPtr> refSchemas(4);
+
+    bvector<Utf8String> refSchemaNames;
+    refSchemaNames.push_back("aRefSchema");
+    refSchemaNames.push_back("bRefSchema");
+    refSchemaNames.push_back("cRefSchema");
+    refSchemaNames.push_back("dRefSchema");
+
+    Utf8String targetXmlRegexStr;
+    std::regex targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, refSchemaNames, "<ECSchemaReference name=\"");
+
+    int i = 0;
+    for(Utf8String name : refSchemaNames)
+        ECSchema::CreateSchema(refSchemas[i++], name, "rs", 1, 0, 0);
+
+    // add references in order, serialize, and make sure they're still in order
+    ECSchema::CreateSchema(schema1, "testSchema1", "ts", 1, 0, 0);
+    
+    i = 0;
+    for (ECSchemaPtr refSchema : refSchemas)
+        schema1->AddReferencedSchema(*refSchema);
+
+    Utf8String schemaXml;
+    schema1->WriteToXmlString(schemaXml);
+
+    EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
+
+    // add references in reverse order, serialize, and make sure they're still in order
+    bvector<ECSchemaPtr> refSchemasReversed;
+    refSchemasReversed.resize(refSchemas.size());
+    std::reverse_copy(refSchemas.begin(), refSchemas.end(), refSchemasReversed.begin());
+
+    ECSchema::CreateSchema(schema2, "testSchema2", "ts", 1, 0, 0);
+
+    for (ECSchemaPtr refSchema : refSchemasReversed)
+        schema2->AddReferencedSchema(*refSchema);
+
+    schema2->WriteToXmlString(schemaXml);
+
+    EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                            Joseph.Urbano                          05/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaXmlSerializationTest, ExpectCustomAttributesSerializedInOrder)
+    {
+    bvector<Utf8String> caClassNames;
+    caClassNames.push_back("aCustomClass");
+    caClassNames.push_back("bCustomClass");
+    caClassNames.push_back("cCustomClass");
+    caClassNames.push_back("dCustomClass");
+
+    // create custom attribute classes and instances in order, verify they serialize in order
+    {
+    ECSchemaPtr schema;
+    bvector<ECCustomAttributeClassP> caClasses(4);
+    bvector<IECInstancePtr> caInstances(4);
+
+    Utf8String targetXmlRegexStr;
+    std::regex targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, caClassNames, "<ECCustomAttributeClass typeName=\"");
+
+    ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
+
+    int i = 0;
+    for (Utf8String name : caClassNames)
+        schema->CreateCustomAttributeClass(caClasses[i++], name);
+
+    Utf8String schemaXml;
+    schema->WriteToXmlString(schemaXml);
+
+    EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
+
+    extendTargetXmlRegex(targetXmlRegexStr, "<ECCustomAttributes>");
+    targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, caClassNames, "<");
+    extendTargetXmlRegex(targetXmlRegexStr, "</ECCustomAttributes>");
+
+    i = 0;
+    for (ECCustomAttributeClassP caClass : caClasses)
+        {
+        StandaloneECEnablerPtr enabler = caClass->GetDefaultStandaloneEnabler();
+        caInstances[i] = enabler->CreateInstance().get();
+        schema->SetCustomAttribute(*caInstances[i++]);
+        }
+
+    schema->WriteToXmlString(schemaXml);
+
+    EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
+    }
+
+    // create custom attribute classes and instances in reverse order, verify they serialize in order
+    {
+    ECSchemaPtr schema;
+    bvector<ECCustomAttributeClassP> caClasses(4);
+    bvector<IECInstancePtr> caInstances(4);
+
+    Utf8String targetXmlRegexStr;
+    std::regex targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, caClassNames, "<ECCustomAttributeClass typeName=\"");
+
+    ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
+
+    int i = (int)caClassNames.size();
+    for (Utf8String name : caClassNames)
+        schema->CreateCustomAttributeClass(caClasses[--i], name);
+
+    Utf8String schemaXml;
+    schema->WriteToXmlString(schemaXml);
+
+    EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
+
+    extendTargetXmlRegex(targetXmlRegexStr, "<ECCustomAttributes>");
+    targetXmlRegex = generateTargetXmlRegex(targetXmlRegexStr, caClassNames, "<");
+    extendTargetXmlRegex(targetXmlRegexStr, "</ECCustomAttributes>");
+
+    i = 0;
+    for (ECCustomAttributeClassP caClass : caClasses)
+        {
+        StandaloneECEnablerPtr enabler = caClass->GetDefaultStandaloneEnabler();
+        caInstances[i++] = enabler->CreateInstance().get();
+        }
+
+    for (i = (int)caClassNames.size()-1; i >= 0; i--)
+        schema->SetCustomAttribute(*caInstances[i]);
+
+    schema->WriteToXmlString(schemaXml);
+
+    EXPECT_TRUE(std::regex_search(schemaXml.c_str(), targetXmlRegex));
+    }
     }
 
 //---------------------------------------------------------------------------------------
