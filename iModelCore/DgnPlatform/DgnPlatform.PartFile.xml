@@ -2,11 +2,6 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-    <Part Name="DgnPlatformLib">
-        <RequiredRepository>DgnPlatformExamples</RequiredRepository> <!-- Many developers of higher-level parts will want to see the examples. -->
-        <SubPart PartName="DgnPlatformDLL" />
-    </Part>
-
     <Part Name="Readme" BentleyBuildMakeFile="ProcessReadme.mke">
         <Bindings>
             <Files ProductDirectoryName="DgnPlatform_PublishedAPI_Scope1_Doc">
@@ -705,7 +700,7 @@
     </Part>
 
     <Part Name="iModelConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="iModelConsole/iModelConsole.mke" >
-        <SubPart PartName="DgnPlatformLib"/>
+        <SubPart PartName="DgnPlatformDll"/>
         <SubPart PartName="DgnPlatformSqlang"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">
