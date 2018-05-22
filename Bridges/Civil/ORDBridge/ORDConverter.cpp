@@ -784,9 +784,18 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
             return BentleyStatus::ERROR;
         }
 
-    auto designSpeedPtr = RoadRailBim::DesignSpeed::Create(RoadRailBim::DesignSpeed::CreateFromToParams(*roadwayPtr, *m_defaultDesignSpeedDef, 0, bimMainAlignmentPtr->GetLength()));
-    if (designSpeedPtr->Insert().IsNull())
-        return BentleyStatus::ERROR;
+    if (bimMainAlignmentPtr.IsValid())
+        {
+        auto designSpeedPtr = 
+            RoadRailBim::DesignSpeed::Create(RoadRailBim::DesignSpeed::CreateFromToParams(
+                *roadwayPtr, *m_defaultDesignSpeedDef, 0, bimMainAlignmentPtr->GetLength()));
+        if (designSpeedPtr->Insert().IsNull())
+            return BentleyStatus::ERROR;
+        }
+    else
+        {
+        BeAssert(false);
+        }
 
     return BentleyStatus::SUCCESS;
     }
