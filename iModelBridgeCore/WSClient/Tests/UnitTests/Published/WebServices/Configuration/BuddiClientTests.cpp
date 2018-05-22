@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Configuration/BuddiClientTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BuddiClientTests.h"
@@ -229,6 +229,7 @@ TEST_F(BuddiClientTests, GetUrl_ResponseContainsUrl_ReturnsUrl)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_ANDROID) // TFS#894646
 TEST_F(BuddiClientTests, GetUrl_ResponseContainsEmptyUrl_ReturnsUrlNotConfiguredErrorWithMessage)
     {
     BuddiClient client(GetHandlerPtr());
@@ -275,3 +276,4 @@ TEST_F(BuddiClientTests, GetUrl_ResponseUrlNotFound_ReturnsUrlNotConfiguredError
     EXPECT_EQ(BuddiError::UrlNotConfigured, result.GetError().GetStatus());
     EXPECT_FALSE(result.GetError().GetMessage().empty());
     }
+#endif
