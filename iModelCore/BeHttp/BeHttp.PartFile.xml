@@ -40,7 +40,7 @@
         <Bindings>
             <Libs>Delivery/$(libprefix)BeHttp$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)BeHttp$(ApiNumber)$(shlibext)</Assemblies>
-            <Directory ProductDirectoryName="Assets" ProductSubDirectory="http" SourceName="Delivery/http"/>
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="http" SourceName="Delivery/http" SubPartDirectory="BeHttpLibraryAssets"/>
         </Bindings>
     </Part>
 
