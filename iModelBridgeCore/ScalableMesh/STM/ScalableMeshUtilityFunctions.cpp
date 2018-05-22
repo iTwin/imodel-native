@@ -6,7 +6,7 @@
 |       $Date: 2013/03/27 15:53:21 $
 |     $Author: Jean-Francois.Cote $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -70,7 +70,7 @@ static void InitPlane (DPlane3d & plane, DPoint3d const & xyz0, DPoint3d const &
     bsiDVec3d_subtractDPoint3dDPoint3d (&vector01, &xyz1, &xyz0);
     bsiDVec3d_subtractDPoint3dDPoint3d (&vector02, &xyz2, &xyz0);
     bsiDVec3d_normalizedCrossProduct (&normal, &vector01, &vector02);
-    bsiDPlane3d_initFromOriginAndNormal (&plane, &xyz0, &normal);
+    plane.InitFromOriginAndNormal (xyz0, normal);
     }
 
 static int s_faceToBoxPoint[6][4] =
@@ -123,7 +123,7 @@ static void ClipConvexPolygonToPlane (DPoint3d *polygonPoints, int &n, DPlane3d 
     double h0=0, h1=0;
     for (int i = 0; i < n; i++)
         {
-        h1 = bsiDPlane3d_evaluate (&plane, &polygonPoints[i]);
+        h1 = plane.Evaluate (polygonPoints[i]);
         if (i == 0)
             {
             if (h1 <= 0.0)
@@ -163,7 +163,7 @@ void ExtendRangeForBoxIntersect (DPoint3d const *pBoxPoints1, DPoint3d const *pB
         int nXYZ = GetBoxFace (pBoxPoints1, select1, xyz);
         for (int select2 = 0; select2 < 6; select2++)
             ClipConvexPolygonToPlane (xyz, nXYZ, planeSet2[select2]);
-        bsiDRange3d_extendByDPoint3dArray (&range, xyz, nXYZ);
+        range.Extend (xyz, nXYZ);
         }
     }
 
@@ -191,7 +191,7 @@ DPoint3dCP boxPoints2,
 DRange3d &intersectionRange
 )
     {
-    bsiDRange3d_init (&intersectionRange);
+    intersectionRange.Init ();
     ExtendRangeForBoxIntersect (boxPoints1, boxPoints2, intersectionRange);
     ExtendRangeForBoxIntersect (boxPoints2, boxPoints1, intersectionRange);
     }
@@ -248,7 +248,7 @@ bool GetVisibleAreaForView(::DPoint3d** areaPt, int& nbPts, const DPoint3d viewB
         dtmViewRange.low.z -= 0.0000001;        
         }
 
-    bsiDRange3d_box2Points(&dtmViewRange, dtmBox);
+    dtmViewRange.Get8Corners (dtmBox);
                 
     BoxBoxIntersectionRange(dtmBox, viewBox, dtmIntersectionRange);
      
@@ -371,7 +371,7 @@ int GetShapeInFrontOfProjectivePlane(vector<DPoint3d>&       shapeInFrontOfProje
     double   shapeWithVanishingLine[8];
     DRange3d tileExtent;
         
-    bsiDRange3d_initFromArray(&tileExtent, &*tileborderPoints.begin(), (int)tileborderPoints.size());
+    tileExtent = DRange3d::From (&*tileborderPoints.begin(), (int)tileborderPoints.size());
     
     //Line perpendicular to X
     if (rootToViewMatrix[3][0] == 0)
