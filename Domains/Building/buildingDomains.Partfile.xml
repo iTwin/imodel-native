@@ -86,7 +86,7 @@
     </Product>
 
 
-    <Part Name="RunBuildingDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=BuildingDomainTests\Assemblies\  -dGTEST_NAME=BuildingDomainTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="RunBuildingDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=BuildingDomainTests\Assemblies\  -dGTEST_NAME=BuildingDomainTests" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubProduct ProductName="BuildingDomainTests" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BuildingDomainTests.log</Files>
@@ -235,7 +235,7 @@
     </Product>
 
 
-    <Part Name="RunArchitecturalPhysicalTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ArchitecturalPhysicalTests/ArchitecturalPhysicalTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="RunArchitecturalPhysicalTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ArchitecturalPhysicalTests/ArchitecturalPhysicalTests" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubProduct ProductName="ArchitecturalPhysicalTests" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ArchitecturalPhysicalTests.log</Files>
@@ -329,7 +329,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke"
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke"
     BentleyBuildMakeOptions="-dTEST_NAME=BuildingTests -dTEST_COLLECTION_PRODUCT=Building-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Building-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
@@ -344,7 +344,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Building-Gtest/BuildingTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Building-Gtest/BuildingTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Building-Gtest" />
         <!- <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/> ->
         <Bindings>
