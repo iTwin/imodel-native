@@ -24,6 +24,8 @@ struct IMainLinearElementSource : LinearReferencing::ILinearElementSource
 
     template <class T> RefCountedCPtr<T> GetMainLinearElementAs() const { return _ILinearElementSourceToDgnElement().GetDgnDb().Elements().Get<T>(GetMainLinearElementId()); }
     ROADRAILPHYSICAL_EXPORT Dgn::DgnDbStatus SetMainLinearElement(LinearReferencing::ILinearElementCP linearElement);
+
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnElementIdSet QueryLinearElementSourceIds(LinearReferencing::ILinearElementCR mainLinearElement, Dgn::DgnClassId filterBaseClassId = Dgn::DgnClassId());
 }; // IMainLinearElementSource
 
 //=======================================================================================
