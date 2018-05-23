@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/Events/EventParser.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Events/EventParser.h>
@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, Event::EventType eventType)
+std::shared_ptr<Json::Value> EventPropertiesToJSON(Utf8String jsonString, Event::EventType eventType)
     {
     Json::Reader reader;
     Json::Value data(Json::objectValue);
@@ -87,9 +87,9 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, Even
                 data.isMember(Event::EventTopic) &&
                 data.isMember(Event::FromEventSubscriptionId) &&
                 data.isMember(Event::DeletedEventProperties::BriefcaseId) &&
-                !CheckForEventProperties(jsonString, Event::LockEvent) &&
-                !CheckForEventProperties(jsonString, Event::CodeEvent) &&
-                !CheckForEventProperties(jsonString, Event::ChangeSetPostPushEvent)
+                !EventPropertiesToJSON(jsonString, Event::LockEvent) &&
+                !EventPropertiesToJSON(jsonString, Event::CodeEvent) &&
+                !EventPropertiesToJSON(jsonString, Event::ChangeSetPostPushEvent)
                 )
                 isSuccess = true;
             break;
@@ -120,7 +120,7 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, Even
 //---------------------------------------------------------------------------------------
 EventPtr ParseIntoLockEvent(Utf8String jsonString)
     {
-	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, Event::LockEvent);
+	std::shared_ptr<Json::Value> data = EventPropertiesToJSON(jsonString, Event::LockEvent);
 	if (data == nullptr)
 		return nullptr;
 
@@ -153,7 +153,7 @@ EventPtr ParseIntoLockEvent(Utf8String jsonString)
 //---------------------------------------------------------------------------------------
 EventPtr ParseIntoChangeSetPostPushEvent(Utf8String jsonString)
     {
-	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, Event::ChangeSetPostPushEvent);
+	std::shared_ptr<Json::Value> data = EventPropertiesToJSON(jsonString, Event::ChangeSetPostPushEvent);
 	if (data == nullptr)
 		return nullptr;
 	return ChangeSetPostPushEvent::Create
@@ -171,7 +171,7 @@ EventPtr ParseIntoChangeSetPostPushEvent(Utf8String jsonString)
 //---------------------------------------------------------------------------------------
 EventPtr ParseIntoChangeSetPrePushEvent(Utf8String jsonString)
     {
-    std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, Event::ChangeSetPrePushEvent);
+    std::shared_ptr<Json::Value> data = EventPropertiesToJSON(jsonString, Event::ChangeSetPrePushEvent);
     if (data == nullptr)
         return nullptr;
     return ChangeSetPrePushEvent::Create
@@ -186,7 +186,7 @@ EventPtr ParseIntoChangeSetPrePushEvent(Utf8String jsonString)
 //---------------------------------------------------------------------------------------
 EventPtr ParseIntoCodeEvent(Utf8String jsonString)
     {
-	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, Event::CodeEvent);
+	std::shared_ptr<Json::Value> data = EventPropertiesToJSON(jsonString, Event::CodeEvent);
 	if (data == nullptr)
 		return nullptr;
 
@@ -219,7 +219,7 @@ EventPtr ParseIntoCodeEvent(Utf8String jsonString)
 //---------------------------------------------------------------------------------------
 EventPtr ParseIntoDeletedEvent(Utf8String jsonString, Event::EventType deletedEventType)
     {
-	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, deletedEventType);
+	std::shared_ptr<Json::Value> data = EventPropertiesToJSON(jsonString, deletedEventType);
 	if (data == nullptr)
 		return nullptr;
 	return DeletedEvent::Create
@@ -236,7 +236,7 @@ EventPtr ParseIntoDeletedEvent(Utf8String jsonString, Event::EventType deletedEv
 //---------------------------------------------------------------------------------------
 EventPtr ParseIntoVersionEvent(Utf8String jsonString)
     {
-    std::shared_ptr < Json::Value> data = CheckForEventProperties(jsonString, Event::VersionEvent);
+    std::shared_ptr < Json::Value> data = EventPropertiesToJSON(jsonString, Event::VersionEvent);
     if (data == nullptr)
         return nullptr;
     return VersionEvent::Create

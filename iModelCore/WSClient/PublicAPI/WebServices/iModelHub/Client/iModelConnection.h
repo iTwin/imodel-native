@@ -41,7 +41,9 @@ struct CodeSequenceSetResultInfo;
 typedef std::function<void(EventPtr)> EventCallback;
 typedef std::shared_ptr<EventCallback> EventCallbackPtr;
 typedef bmap<EventCallbackPtr, EventTypeSet> EventMap;
-typedef RefCountedPtr<struct EventManagerContext> EventManagerContextPtr;
+typedef RefCountedPtr<struct EventCallbackManagerContext> EventCallbackManagerContextPtr;
+DEFINE_POINTER_SUFFIX_TYPEDEFS(EventCallbackManager);
+typedef RefCountedPtr<struct EventCallbackManager> EventCallbackManagerPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(EventManager);
 typedef RefCountedPtr<struct EventManager> EventManagerPtr;
 typedef RefCountedPtr<struct PredownloadManager> PredownloadManagerPtr;
@@ -169,9 +171,10 @@ private:
     friend struct Briefcase;
     friend struct iModelManager;
     friend struct PredownloadManager;
-    friend struct EventManager;
+    friend struct EventCallbackManager;
     friend struct VersionsManager;
     friend struct ChangeSetCacheManager;
+    friend struct EventManager;
 
     static PredownloadManagerPtr s_preDownloadManager;
     bool m_subscribedForPreDownload = false;
@@ -182,11 +185,8 @@ private:
     IAzureBlobStorageClientPtr m_azureClient;
     IHttpHandlerPtr            m_customHandler;
 
-    EventServiceClientPtr      m_eventServiceClient = nullptr;
-    BeMutex                    m_eventServiceClientMutex;
-    EventSubscriptionPtr       m_eventSubscription;
-    AzureServiceBusSASDTOPtr   m_eventSAS;
     EventManagerPtr            m_eventManagerPtr;
+    EventCallbackManagerPtr    m_eventCallbackManagerPtr;
     UserInfoManager            m_userInfoManager;
     VersionsManager            m_versionsManager;
     ChangeSetCacheManager      m_changeSetCacheManager;
@@ -323,33 +323,6 @@ private:
 
     //! Create a new briefcase instance for this iModel.
     AsyncTaskPtr<WSCreateObjectResult> CreateBriefcaseInstance(ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Sets the EventSASToken in the EventServiceClient
-    StatusTaskPtr SetEventSASToken(ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Sets the EventSubscription in the EventServiceClient
-    StatusTaskPtr SetEventSubscription(EventTypeSet* eventTypes, ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Sets EventServiceClient.
-    StatusTaskPtr SetEventServiceClient(EventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Gets the Event SAS Token from EventServiceClient
-    AzureServiceBusSASDTOTaskPtr GetEventServiceSASToken(ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    // This pointer needs to change to be generic
-    EventSubscriptionTaskPtr SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset, 
-                                                       ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Get EventSubscription with the given Event Types
-    EventSubscriptionTaskPtr GetEventServiceSubscriptionId(EventTypeSet* eventTypes = nullptr, 
-                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Update the EventSubscription to the given EventTypes
-    EventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(EventTypeSet* eventTypes = nullptr, 
-                                                              ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Get Responses from the EventServiceClient
-    EventReponseTaskPtr GetEventServiceResponse(int numOfRetries, bool longpolling = true, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Subscribe callback for the events
     StatusTaskPtr SubscribeEventsCallback(EventTypeSet* eventTypes, EventCallbackPtr callback, iModelConnectionP imodelConnectionP);
@@ -556,7 +529,7 @@ public:
     //! @param[in] longPolling
     //! @param[in] cancellationToken
     //! @private
-    IMODELHUBCLIENT_EXPORT EventTaskPtr     GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
+    IMODELHUBCLIENT_EXPORT EventTaskPtr     GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Release certain codes and locks.
     //! @param[in] locks Set of locks to release

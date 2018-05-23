@@ -1362,3 +1362,34 @@ ICancellationTokenPtr cancellationToken
     }
 
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Uzkuraitis             04/2018
+//---------------------------------------------------------------------------------------
+GlobalConnectionTaskPtr Client::GlobalConnection()
+    {
+    const Utf8String methodName = "Client::GlobalEvents";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    if(m_globalConnectionPtr != nullptr)
+        {
+        return CreateCompletedAsyncTask<GlobalConnectionResult>(GlobalConnectionResult::Success(m_globalConnectionPtr));
+        }
+
+    if (m_serverUrl.empty())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Server URL is invalid.");
+        return CreateCompletedAsyncTask<GlobalConnectionResult>(GlobalConnectionResult::Error(Error::Id::InvalidServerURL));//NEEDSWORK: different message?
+        }
+
+    if (!m_credentials.IsValid() && !m_customHandler)
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
+        return CreateCompletedAsyncTask<GlobalConnectionResult>(GlobalConnectionResult::Error(Error::Id::CredentialsNotSet));
+        }
+
+    auto globalConnectionResult = GlobalConnection::Create(m_serverUrl, m_credentials, m_clientInfo, m_customHandler);
+    if (globalConnectionResult.IsSuccess())
+        m_globalConnectionPtr = globalConnectionResult.GetValue();
+
+    return CreateCompletedAsyncTask<GlobalConnectionResult>(globalConnectionResult);
+    }
