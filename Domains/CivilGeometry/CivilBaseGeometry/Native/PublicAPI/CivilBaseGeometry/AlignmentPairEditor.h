@@ -322,6 +322,17 @@ public:
     CIVILBASEGEOMETRY_EXPORT bool SetPVILocation(DPoint3dCR pviPoint);
     CIVILBASEGEOMETRY_EXPORT static double Slope(DPoint3dCR p0, DPoint3dCR p1);
 
+    /// Determine if this PVI is a crest.  
+    /// That is, the incoming grade is positive and the outgoing grade is negative.
+    CIVILBASEGEOMETRY_EXPORT bool IsCrest() const;
+    /// Determine if this PVI is a sag.
+    /// That is, the incoming grade is negative and the outgoing grade is positive.
+    CIVILBASEGEOMETRY_EXPORT bool IsSag() const;
+    /// Sets highPoint to the high point on this PVI and returns true if this is a crest curve, otherwise returns false.
+    CIVILBASEGEOMETRY_EXPORT bool HighDistance(double& highDistance) const;
+    /// Sets lowDistance to the distance of the lowest point on the curve and returns true if this is a sag curve, otherwise returns false.
+    CIVILBASEGEOMETRY_EXPORT bool LowDistance(double& lowDistance) const;
+
     GradeBreakInfoCP GetGradeBreak() const  { return (TYPE_GradeBreak == m_type) ? &m_gradeBreakInfo : nullptr; }
     GradeBreakInfoP GetGradeBreakP()        { return (TYPE_GradeBreak == m_type) ? &m_gradeBreakInfo : nullptr; }
     ArcInfoCP GetArc() const                { return (TYPE_Arc == m_type) ? &m_arcInfo : nullptr; }
