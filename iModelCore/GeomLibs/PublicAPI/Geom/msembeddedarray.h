@@ -18,12 +18,11 @@
 //! <ul>
 //! <li>EmbeddedIntArray
 //! <li>EmbeddedDPoint3dArray
-//! <li>EmbeddedDPoint2dArray
 //! </ul>
 //!
 //! <P>EmbeddedXXXArray's are &quot;rubber&quot; arrays with zero-based integer indexing.  Data can be inserted and removed at positions indicated by an integer index, and memory logic required to allow the size of the array to change are handled by the implementation.      Caller code is able to start with an empty array, add data, and perform its calculations with significantly less concern about memory issues compared to direct use of heap memory via malloc and free.</P>
 //!
-//! <P>To simplify discussion, this document will talk about EmbeddedDPoint3dArray - a &quot;rubber array&quot; of  DPoint3d structures.   Use of the other array types --- EmbeddedIntArray, EmbeddedDPoint2dArray - follows the same patterns.</P>
+//! <P>To simplify discussion, this document will talk about EmbeddedDPoint3dArray - a &quot;rubber array&quot; of  DPoint3d structures.   Use of the other array types --- EmbeddedIntArray - follows the same patterns.</P>
 //!
 //! <P>Embedded arrays are a &quot;gray box&quot; data type.   Most - and even the vast majority of - accesses to the array can be through function calls that hide the underlying implementation, i.e. as a &quot;black box&quot;.  However, there are advanced functions which require the calling programmer to have a general understanding of the fact that the support code is allocating and reallocating contiguous arrays on their behalf.</P>
 //!
@@ -158,20 +157,15 @@ typedef int (*VBArray_SortFunction)
 #endif
 
 typedef bvector<DPoint3d>   EmbeddedDPoint3dArray;
-typedef bvector<DPoint2d>   EmbeddedDPoint2dArray;
 typedef bvector<int>        EmbeddedIntArray;
-typedef bvector<int64_t>      EmbeddedInt64Array;
 
 typedef EmbeddedDPoint3dArray * EmbeddedDPoint3dArrayP;
-typedef EmbeddedDPoint2dArray * EmbeddedDPoint2dArrayP;
 typedef EmbeddedIntArray      * EmbeddedIntArrayP;
 
 typedef EmbeddedDPoint3dArray const * EmbeddedDPoint3dArrayCP;
-typedef EmbeddedDPoint2dArray const * EmbeddedDPoint2dArrayCP;
 typedef EmbeddedIntArray      const * EmbeddedIntArrayCP;
 
 typedef EmbeddedDPoint3dArray const * EmbeddedDPoint3dArrayConstP;
-typedef EmbeddedDPoint2dArray const * EmbeddedDPoint2dArrayConstP;
 typedef EmbeddedIntArray      const * EmbeddedIntArrayConstP;
 
 typedef struct _PtrCacheHeader *PPtrCacheHeader;
@@ -712,7 +706,6 @@ int selector
 END_BENTLEY_GEOMETRY_NAMESPACE
 
 #ifdef __cplusplus
-#include "memory/embeddeddpoint2darray.fdf"
 #include "memory/embeddeddpoint3darray.fdf"
 #include "memory/embeddedintarray.fdf"
 #endif
