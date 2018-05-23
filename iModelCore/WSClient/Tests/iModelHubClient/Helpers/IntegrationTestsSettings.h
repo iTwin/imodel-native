@@ -16,6 +16,7 @@ struct IntegrationTestsSettings
     private:
         Http::Credentials m_nonAdminCredentials;
         Http::Credentials m_adminCredentials;
+        Http::Credentials m_serviceAccountCredentials;
 
         Utf8String m_projectId;
         WebServices::UrlProvider::Environment m_environment;
@@ -24,6 +25,7 @@ struct IntegrationTestsSettings
     public:
         static IntegrationTestsSettings& Instance();
         Http::CredentialsCR GetValidAdminCredentials() const;
+        Http::CredentialsCR GetValidServiceAccountCredentials() const;
         Http::CredentialsCR GetValidNonAdminCredentials() const;
         Http::Credentials GetWrongUsername() const;
         Http::Credentials GetWrongPassword() const;

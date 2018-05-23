@@ -33,11 +33,21 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Events/ChangeSetPostPushEvent.h \
                                 $(iModelHubClientMkiPublicApiDir)Events/ChangeSetPrePushEvent.h  \
                                 $(iModelHubClientMkiPublicApiDir)Events/DeletedEvent.h           \
+                                $(iModelHubClientMkiPublicApiDir)GlobalEvents/GlobalEventParser.h \
+                                $(iModelHubClientMkiPublicApiDir)GlobalEvents/iModelCreatedEvent.h \
+                                $(iModelHubClientMkiPublicApiDir)GlobalEvents/SoftiModelDeleteEvent.h \
+                                $(iModelHubClientMkiPublicApiDir)GlobalEvents/HardiModelDeleteEvent.h \
+                                $(iModelHubClientMkiPublicApiDir)GlobalEvents/ChangeSetCreatedEvent.h \
+                                $(iModelHubClientMkiPublicApiDir)GlobalEvents/NamedVersionCreatedEvent.h \
+                                $(iModelHubClientMkiPublicApiDir)GlobalEvents/GlobalConnection.h \
+                                $(iModelHubClientMkiPublicApiDir)GlobalEvents/GlobalEventManager.h \
+                                $(iModelHubClientMkiPublicApiDir)EventsCommon/BaseEventManager.h \
+                                $(iModelHubClientMkiSourceDir)Events/EventManager.h              \
                                 $(iModelHubClientMkiSourceDir)Logging.h                          \
                                 $(iModelHubClientMkiSourceDir)Utils.h                            \
                                 $(iModelHubClientMkiSourceDir)FileLock.h                         \
                                 $(iModelHubClientMkiSourceDir)MultiProgressCallbackHandler.h     \
-                                $(iModelHubClientMkiSourceDir)Events/EventManager.h              \
+                                $(iModelHubClientMkiSourceDir)Events/EventCallbackManager.h      \
                                 $(iModelHubClientMkiSourceDir)JsonFormatters/MultiLockFormatter.h \
                                 $(iModelHubClientMkiSourceDir)JsonFormatters/MultiCodeFormatter.h \
                                 $(iModelHubClientMkiSourceDir)Storage/PendingChangeSetStorage.h   \
@@ -94,7 +104,7 @@ $(o)iModelAdmin$(oext)                     : $(iModelHubClientMkiSourceDir)iMode
 
 $(o)Client$(oext)                          : $(iModelHubClientMkiSourceDir)Client.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)EventManager$(oext)                    : $(iModelHubClientMkiSourceDir)Events/EventManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+$(o)EventCallbackManager$(oext)            : $(iModelHubClientMkiSourceDir)Events/EventCallbackManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ChangeSetCacheManager$(oext)           : $(iModelHubClientMkiSourceDir)ChangeSetCacheManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
@@ -113,6 +123,26 @@ $(o)ChangeSetPrePushEvent$(oext)           : $(iModelHubClientMkiSourceDir)Event
 $(o)CodeEvent$(oext)                       : $(iModelHubClientMkiSourceDir)Events/CodeEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DeletedEvent$(oext)                    : $(iModelHubClientMkiSourceDir)Events/DeletedEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)BaseEventManager$(oext)                : $(iModelHubClientMkiSourceDir)EventsCommon/BaseEventManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)GlobalEventManager$(oext)              : $(iModelHubClientMkiSourceDir)GlobalEvents/GlobalEventManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)EventManager$(oext)                    : $(iModelHubClientMkiSourceDir)Events/EventManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)GlobalEventParser$(oext)               : $(iModelHubClientMkiSourceDir)GlobalEvents/GlobalEventParser.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)GlobalConnection$(oext)                : $(iModelHubClientMkiSourceDir)GlobalEvents/GlobalConnection.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)iModelCreatedEvent$(oext)              : $(iModelHubClientMkiSourceDir)GlobalEvents/iModelCreatedEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)SoftiModelDeleteEvent$(oext)           : $(iModelHubClientMkiSourceDir)GlobalEvents/SoftiModelDeleteEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)HardiModelDeleteEvent$(oext)           : $(iModelHubClientMkiSourceDir)GlobalEvents/HardiModelDeleteEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ChangeSetCreatedEvent$(oext)           : $(iModelHubClientMkiSourceDir)GlobalEvents/ChangeSetCreatedEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)NamedVersionCreatedEvent$(oext)        : $(iModelHubClientMkiSourceDir)GlobalEvents/NamedVersionCreatedEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)UserInfo$(oext)                        : $(iModelHubClientMkiSourceDir)UserInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 

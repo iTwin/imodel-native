@@ -36,10 +36,12 @@ namespace ServerSchema
         {
         static Utf8CP iModel = "iModelScope";
         static Utf8CP Project = "ProjectScope";
+        static Utf8CP Global = "GlobalScope";
         }
     namespace Plugin
         {
         static Utf8CP iModel = "iModel";
+        static Utf8CP Global = "Global";
         static Utf8CP Project = "Project";
         }
     namespace Class
@@ -57,6 +59,8 @@ namespace ServerSchema
         static Utf8CP MultiCode = "MultiCode";
         static Utf8CP EventSAS = "EventSAS";
         static Utf8CP EventSubscription = "EventSubscription";
+        static Utf8CP GlobalEventSAS = "GlobalEventSAS";
+        static Utf8CP GlobalEventSubscription = "GlobalEventSubscription";
         static Utf8CP UserDefinition = "UserDefinition";
         static Utf8CP Version = "Version";
         static Utf8CP UserInfo = "UserInfo";
@@ -115,6 +119,7 @@ namespace ServerSchema
         static Utf8CP EventServiceSASToken = "EventServiceSASToken";
         static Utf8CP BaseAddress = "BaseAddress";
         static Utf8CP EventTypes = "EventTypes";
+        static Utf8CP SubscriptionId = "SubscriptionId";
         static Utf8CP IsReadOnly = "IsReadOnly";
         static Utf8CP CodeSpecId = "CodeSpecId";
         static Utf8CP CodeScope = "CodeScope";
@@ -255,6 +260,27 @@ template <typename T>
 static std::shared_ptr<T> ExecuteAsync(AsyncTaskPtr<T> task)
     {
     return std::make_shared<T>(task->GetResult());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Uzkuraitis             05/2018
+//---------------------------------------------------------------------------------------
+template <typename T>
+AsyncTaskPtr<T> AsyncTaskAddMethodLogging(AsyncTaskPtr<T> taskPtr, Utf8StringCR methodName, const double startTime)
+    {
+    return taskPtr->template Then<T>([=] (const T &result)
+        {
+        if (!result.IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+            }
+        else
+            {
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, static_cast<float>(end - startTime), "");
+            }
+        return result;
+        });
     }
 
 END_BENTLEY_IMODELHUB_NAMESPACE
