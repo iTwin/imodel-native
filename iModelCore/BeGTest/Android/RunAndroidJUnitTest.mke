@@ -2,7 +2,7 @@
 #
 #     $Source: Android/RunAndroidJUnitTest.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -21,7 +21,7 @@ baseDir             = $(_MakeFilePath)
     ANDROIDJUNIT_LOGFILE_NAME=$(ANDROIDJUNIT_PRODUCT).log
 %endif
 
-ANDROIDJUNITPROJ=$(OutputRootDir)Product/$(ANDROIDJUNIT_PRODUCT)/project/
+ANDROIDJUNITPROJ=$(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/Product/$(ANDROIDJUNIT_PRODUCT)/project/
 
 %ifndef ANDROIDJUNIT_OUTPUT_DIR
     ANDROIDJUNIT_OUTPUT_DIR=$(OutputRootDir)build/RunANJU/$(ANDROIDJUNIT_PRODUCT)/

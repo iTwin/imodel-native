@@ -7,6 +7,7 @@
     <Part Name="Base" DeferType="BuildUnitTests" BentleyBuildMakeFile="prewire.mke" >
         <Bindings>
             <PublicAPI Domain="BeGTest" />
+            <Directory SourceName="Delivery/BeGTest" SubPartDirectory="BeGTest"/>
         </Bindings>
     </Part>
 
@@ -95,6 +96,7 @@
     <!-- This part should be used by any part that wants to build and/or run a gtest EXE -->
     <!-- *********************************************************************************************** -->
     <Part Name="Gtest-Tools" DeferType="BuildUnitTests" BentleyBuildMakeFile="prewire.mke" ExcludePlatforms="iOS*">
+        <SubPart PartName="Base"/>
         <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib"    PartFile="gmock"        Repository="util-gmock" />
         <SubPart PartName="LoggingNative"       PartFile="LoggingSDK"   Repository="loggingsdk" />
