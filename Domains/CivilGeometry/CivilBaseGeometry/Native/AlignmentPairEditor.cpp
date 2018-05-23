@@ -531,6 +531,60 @@ double AlignmentPVI::Slope(DPoint3dCR p0, DPoint3dCR p1)
     return (p0.z - p1.z) / (p0.x - p1.x);
     }
 //---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool AlignmentPVI::IsCrest() const
+    {
+    if (m_type != TYPE_Parabola)
+        {
+        return false;
+        }
+    double slopeIn = Slope(m_parabolaInfo.pvc, m_parabolaInfo.pvi);
+    double slopeOut = Slope(m_parabolaInfo.pvi, m_parabolaInfo.pvt);
+    return slopeIn > 0 && slopeOut < 0;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool AlignmentPVI::IsSag() const
+    {
+    if (m_type != TYPE_Parabola)
+        {
+        return false;
+        }
+    double slopeIn = Slope(m_parabolaInfo.pvc, m_parabolaInfo.pvi);
+    double slopeOut = Slope(m_parabolaInfo.pvi, m_parabolaInfo.pvt);
+    return slopeIn < 0 && slopeOut > 0;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool AlignmentPVI::HighDistance(double& highDistance) const
+    {
+    if (IsCrest())
+        {
+        double G1 = Slope(m_parabolaInfo.pvc, m_parabolaInfo.pvi) * 100;
+        highDistance = m_parabolaInfo.kValue * fabs(G1);
+        return true;
+        }
+
+    return false;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool AlignmentPVI::LowDistance(double& lowDistance) const
+    {
+    if (IsSag())
+        {
+        double G1 = Slope(m_parabolaInfo.pvc, m_parabolaInfo.pvi) * 100;
+        lowDistance = m_parabolaInfo.kValue * fabs(G1);
+        return true;
+        }
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        02/2018
 //---------------------------------------------------------------------------------------
 AlignmentPVI::Provenance::Provenance(CurveVectorCR curve) : m_curve(&curve)
