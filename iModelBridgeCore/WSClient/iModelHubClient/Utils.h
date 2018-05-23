@@ -13,6 +13,7 @@
 #include <DgnPlatform/LocksManager.h>
 #include <WebServices/iModelHub/Client/iModelConnection.h>
 #include "Error.xliff.h"
+#include "Logging.h"
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 
