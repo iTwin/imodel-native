@@ -213,8 +213,8 @@
         <SubPart LibType="Static" PartName="JpegTurbo" PartFile="Libsrc-Nugets" Repository="bsicommon"/>
         <Bindings>
             <PublicAPI Domain="BeJpeg"/>
-            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeJpeg$(stlibext)</Libs>
-            <Libs ProductDirectoryName="BeStaticLibDir" Required="false">Delivery/$(stlibprefix)BeJpeg$(stlibdebugext)</Libs>
+            <Libs>Delivery/$(stlibprefix)BeJpeg$(stlibext)</Libs>
+            <Libs>Delivery/$(stlibprefix)BeJpeg$(stlibdebugext)</Libs>
         </Bindings>
     </Part>
 
