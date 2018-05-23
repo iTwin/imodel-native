@@ -1052,8 +1052,10 @@ BentleyStatus ECSchemaXmlDeserializer::DeserializeSchemas(BECN::ECSchemaReadCont
     m_schemaCache.Clear();
 
     m_converter.AddTasks(m_schemaXmlMap.size());
+    schemaContext.RemoveSchemaLocater(m_converter.GetDgnDb().GetSchemaLocater());
     //Prefer ECDb and standard schemas over ones embedded in DGN file.
-    schemaContext.SetFinalSchemaLocater(*this);
+    schemaContext.AddSchemaLocater(*this);
+    schemaContext.AddSchemaLocater(m_converter.GetDgnDb().GetSchemaLocater());
 
     bvector<Utf8String> usedAliases;
     for (auto& kvPairs : m_schemaXmlMap)
@@ -2080,8 +2082,6 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
             flatSchema->AddReferencedSchema(*flatRefSchema);
             }
 
-        CopyFlatCustomAttributes(*flatSchema, *sourceSchema);
-
         bvector<ECN::ECClassCP> relationshipClasses;
         for (ECN::ECClassCP sourceClass : sourceSchema->GetClasses())
             {
@@ -2181,6 +2181,8 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
                 }
             }
         // This needs to happen after we have copied all of the properties for all of the classes as the custom attributes could be defined locally
+        CopyFlatCustomAttributes(*flatSchema, *sourceSchema);
+
         for (ECN::ECClassCP sourceClass : sourceSchema->GetClasses())
             {
             ECN::ECClassP targetClass = flatSchema->GetClassP(sourceClass->GetName().c_str());
@@ -3201,13 +3203,20 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
             }
         if (checksum != syncEntry->second)
             {
-            Utf8PrintfString msg("v8 ECSchema '%s' checksum is different from stored schema", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
-            ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::InconsistentData(), Converter::Issue::ConvertFailure(), msg.c_str());
-            OnFatalError(Converter::IssueCategory::InconsistentData());
-            return;
+            ECObjectsV8::SchemaKey newSchemaKey = v8SchemaInfo.GetSchemaKey();
+            ECN::ECSchemaCP bimSchema = m_converter.GetDgnDb().Schemas().GetSchema(Utf8String(newSchemaKey.GetName().c_str()).c_str(), false);
+            ECN::SchemaKey bimSchemaKey = bimSchema->GetSchemaKey();
+            if (newSchemaKey.GetVersionMajor() == bimSchemaKey.GetVersionRead() && newSchemaKey.GetVersionMinor() <= bimSchemaKey.GetVersionMinor())
+                {
+                Utf8PrintfString msg("v8 ECSchema '%s' checksum is different from stored schema yet the version is the same as or lower than the version stored.  Minor version must be greater than stored version in order to update.", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
+                ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::InconsistentData(), Converter::Issue::ConvertFailure(), msg.c_str());
+                OnFatalError(Converter::IssueCategory::InconsistentData());
+                return;
+
+                }
+            Utf8PrintfString msg("v8 ECSchema '%s' checksum is different from stored schema.  Need to merge and reimport.", Utf8String(v8SchemaInfo.GetSchemaName()).c_str());
+            m_needReimportSchemas = true;
             }
-
-
         }
     }
 
