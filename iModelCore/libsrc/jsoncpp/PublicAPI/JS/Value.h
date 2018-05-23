@@ -133,9 +133,9 @@ struct Value
 struct Number final: Value
     {
     public:
-        Number() : Value() {}
-        Number(Number const& rhs) : Value(rhs.Factory(), rhs.Handle()) {}
-        Number(IFactory& factory, ValueHandle v) :Value(factory, v) {}
+        Number();
+        Number(Number const& rhs);
+        Number(IFactory& factory, ValueHandle v);
         int32_t Int32Value() const;
         uint32_t UInt32Value() const;
         int64_t Int64Value() const;
@@ -160,9 +160,9 @@ struct Number final: Value
 struct Boolean final: Value
     {
     public:
-        Boolean() : Value() {}
-        Boolean(Boolean const& rhs) : Value(rhs.Factory(), rhs.Handle()) {}
-        Boolean(IFactory& factory, ValueHandle v) : Value(factory, v){}
+        Boolean();
+        Boolean(Boolean const& rhs);
+        Boolean(IFactory& factory, ValueHandle v);
         bool BoolValue() const;
         operator bool() const { return BoolValue(); }
         static Boolean New(IFactory& factory, bool b);
@@ -175,9 +175,9 @@ struct Boolean final: Value
 struct String final : Value
     {
     public:
-        String() : Value() {}
-        String(String const& rhs) : Value(rhs.Factory(), rhs.Handle()){}
-        String(IFactory& factory, ValueHandle v) :Value(factory, v) {}
+        String();
+        String(String const& rhs);
+        String(IFactory& factory, ValueHandle v);
         Utf8String StringValue() const;
         uint32_t Length() const;
         
@@ -221,9 +221,9 @@ struct  Object final: Value
                 LValue& operator = (Value value);
             };
 
-        Object() : Value() {}
-        Object(Object const& rhs) : Value(rhs.Factory(), rhs.Handle()) {}
-        Object(IFactory& factory, ValueHandle v) :Value(factory, v) {}
+        Object();
+        Object(Object const& rhs);
+        Object(IFactory& factory, ValueHandle v);
         Value Get(Utf8CP key) const;
         Value Get(Utf8StringCR key) const;
         void Set(Utf8CP key, Value value);

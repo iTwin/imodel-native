@@ -74,6 +74,24 @@ bool Value::IsNumber() const
     }
 Value::operator ValueHandle () { return m_value; }
 bool Value::ReferenceEquals(Value rhs) const { return m_value == rhs.m_value; }
+
+Number::Number() : Value() {}
+Number::Number(Number const& rhs) : Value(rhs.Factory(), rhs.Handle()) {}
+Number::Number(IFactory& factory, ValueHandle v) :Value(factory, v) {}
+
+Boolean::Boolean() : Value() {}
+Boolean::Boolean(Boolean const& rhs) : Value(rhs.Factory(), rhs.Handle()) {}
+Boolean::Boolean(IFactory& factory, ValueHandle v) : Value(factory, v){}
+
+String::String() : Value() {}
+String::String(String const& rhs) : Value(rhs.Factory(), rhs.Handle()){}
+String::String(IFactory& factory, ValueHandle v) :Value(factory, v) {}
+
+Object::Object() : Value() {}
+Object::Object(Object const& rhs) : Value(rhs.Factory(), rhs.Handle()) {}
+Object::Object(IFactory& factory, ValueHandle v) :Value(factory, v) {}
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2018
 //+---------------+---------------+---------------+---------------+---------------+------
