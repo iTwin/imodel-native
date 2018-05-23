@@ -137,13 +137,21 @@
         </Bindings>
     </Part>
 
-  <Part Name="MemoryPoolTestExe" BentleyBuildMakeFile="Tests/MemoryPoolTest/MemoryPoolTester.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
-    <SubPart PartName="Base"     PartFile="Bentley"  Repository="Bentley" />
-    <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs"/>    
-    <Bindings>
-      <Assemblies>Delivery\MemoryPoolTester.exe</Assemblies>
-    </Bindings>
-  </Part>
+    <Part Name="ScalableMeshWorkerExe" BentleyBuildMakeFile="WorkerUtility/ScalableMeshWorker.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+        <SubPart PartName="ScalableMeshCore"/>
+        <SubPart PartName="ScalableMeshCreator"/>
+        <Bindings>
+            <Assemblies>Delivery\ScalableMeshWorker.exe</Assemblies>
+        </Bindings>
+    </Part>    
+
+    <Part Name="MemoryPoolTestExe" BentleyBuildMakeFile="Tests/MemoryPoolTest/MemoryPoolTester.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+        <SubPart PartName="Base"     PartFile="Bentley"  Repository="Bentley" />
+        <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs"/>    
+        <Bindings>
+          <Assemblies>Delivery\MemoryPoolTester.exe</Assemblies>
+        </Bindings>
+    </Part>
       
   <Part Name="ScalableMeshCommandLineTest" BentleyBuildMakeFile="Tests/ScalableMeshCommandLineTest.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
     <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling" Repository="Dgndomains-realitymodeling" />
@@ -390,6 +398,13 @@
         <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>        
         <Directories DirectoryListName="DgnPlatformDirList" PartFile="DgnPlatform" Repository="DgnPlatform" />        
         <Directories DirectoryListName="ScalableMeshATP" />        
+    </Product>
+
+    <Product Name="ScalableMeshWorker" SaveProduct="true" >
+        <SubPart PartName="ScalableMeshWorkerExe" />
+        <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <Directories DirectoryListName="DgnPlatformDirList" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <Directories DirectoryListName="ScalableMeshATP" />
     </Product>
 
     <Product Name="ScalableMeshLumenSdk" SaveProduct="true" >        
