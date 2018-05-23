@@ -4593,11 +4593,22 @@ void PerformDrapeBaselineTest(BeXmlNodeP pTestNode, FILE* pResultFile, BeXmlNode
     }
 
 bool TriangleWithinClosedFeature(const DPoint3d* triangle, const std::vector<DPoint3d>& feature)
-    {
+    {    
+    
     if (bsiGeom_testXYPolygonConvex(&feature[0], (int)feature.size()))
         {
+        std::vector<DPoint2d> feature2d(feature.size());
+
+        for (int i = 0; i < feature.size(); i++)
+            {
+            feature2d[i] = DPoint2d::From(feature[i]);            
+            }
+                
         for (size_t i = 0; i < 3; ++i)
-            if (!bsiGeom_isXYPointInConvexPolygon(&triangle[i], &feature[0], (int)feature.size(), 0)) return false;
+            {
+            DPoint2d triPt2d(DPoint2d::From(triangle[i]));            
+            if (!PolygonOps::IsPointInConvexPolygon(triPt2d, &feature2d[0], feature2d.size(), 0)) return false;
+            }        
         }
     else
         {
@@ -4622,8 +4633,18 @@ bool TriangleWithinClosedFeature(const DPoint3d* triangle, const std::vector<DPo
         bool trianglePts[3] = { false, false, false };
         for (auto& polygon : convexPolys)
             {
+            std::vector<DPoint2d> polygon2d(polygon.size());
+
+            for (int i = 0; i < polygon.size(); i++)
+                {
+                polygon2d[i] = DPoint2d::From(polygon[i]);
+                }
+
             for (size_t i = 0; i < 3; ++i)
-                if (bsiGeom_isXYPointInConvexPolygon(&triangle[i], &polygon[0], (int)polygon.size(), 0)) trianglePts[i] = true;
+                { 
+                DPoint2d triPt2d(DPoint2d::From(triangle[i]));
+                if (PolygonOps::IsPointInConvexPolygon(triPt2d, &polygon2d[0], polygon2d.size(), 0)) trianglePts[i] = true;                
+                }
             }
         return (trianglePts[0] && trianglePts[1] && trianglePts[2]);
         }
