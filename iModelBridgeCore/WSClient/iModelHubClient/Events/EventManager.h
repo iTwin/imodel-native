@@ -2,60 +2,77 @@
 |
 |     $Source: iModelHubClient/Events/EventManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__PUBLISH_SECTION_START__
+#include <WebServices/Client/WSRepositoryClient.h>
+#include <WebServices/Client/WSChangeset.h>
 #include <WebServices/iModelHub/Common.h>
-#include <WebServices/iModelHub/Client/iModelConnection.h>
-#include <WebServices/iModelHub/Client/Briefcase.h>
-#include <Bentley/BeThread.h>
+#include <WebServices/iModelHub/Client/iModelInfo.h>
+#include <WebServices/Azure/AzureBlobStorageClient.h>
+#include <WebServices/Azure/EventServiceClient.h>
+#include <WebServices/Azure/AzureServiceBusSASDTO.h>
+#include <WebServices/iModelHub/GlobalEvents/GlobalEvent.h>
+#include <BeHttp/AuthenticationHandler.h>
+#include <WebServices/iModelHub/Client/UserInfoManager.h>
+#include <WebServices/iModelHub/EventsCommon/BaseEventManager.h>
+#include "WebServices/iModelHub/Events/EventSubscription.h"
+#include "EventManager.h"
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
+DEFINE_TASK_TYPEDEFS(AzureServiceBusSASDTOPtr, AzureServiceBusSASDTO);
+DEFINE_TASK_TYPEDEFS(Http::Response, GlobalEventReponse);
+
 //=======================================================================================
-//@bsiclass                                      Algirdas.Mikoliunas             12/2016
+//! Manager for Events
+//@bsiclass                                      Karolis.Uzkuraitis             04/2018
 //=======================================================================================
-struct EventManagerContext : RefCountedBase
-{
+struct EventManager : BaseEventManager
+    {
 private:
-    iModelConnectionP m_imodelConnectionP;
-    EventManagerP m_managerP;
-    SimpleCancellationTokenPtr m_cancellationTokenPtr;
-    mutable BeConditionVariable m_cv;
+    friend struct iModelConnection;
 
-public:
-    EventManagerContext(iModelConnectionP imodelConnectionPtr, EventManagerP manager, SimpleCancellationTokenPtr cancellationToken)
-        :m_imodelConnectionP(imodelConnectionPtr), m_managerP(manager), m_cancellationTokenPtr(cancellationToken) {}
-    iModelConnectionP GetiModelConnectionP() const {return m_imodelConnectionP;}
-    EventManagerP GetEventManagerP() const {return m_managerP;}
-    SimpleCancellationTokenPtr GetCancellationTokenPtr() const {return m_cancellationTokenPtr;}
-    void StopManager() {m_cancellationTokenPtr->SetCanceled();}
-    BeConditionVariable& GetConditionVariable() const {return m_cv;}
-};
+    EventServiceClientPtr      m_eventServiceClient;
+    EventSubscriptionPtr       m_eventSubscription;
+    BeMutex                    m_eventServiceClientMutex;
 
-//=======================================================================================
-//@bsiclass                                      Algirdas.Mikoliunas             12/2016
-//=======================================================================================
-struct EventManager : RefCountedBase
-{
-private:
-    iModelConnectionP       m_imodelConnectionP;
-    EventMap                m_eventCallbacks;
-    BeMutex                 m_eventCallbacksMutex;
-    EventManagerContextPtr  m_eventManagerContext;
-    EventCallbackPtr        m_pullMergeAndPushCallback;
+    EventManager(const IWSRepositoryClientPtr& wsRepositoryClientPtr) : BaseEventManager(wsRepositoryClientPtr)
+        {
+        }
 
-    bool Start();
-    void GetAllSubscribedEvents(EventTypeSet& allEventTypes);
+    //! Sets the EventSubscription in the EventServiceClient
+    StatusTaskPtr SetEventSubscription(EventTypeSet* eventTypes, ICancellationTokenPtr cancellationToken = nullptr);
 
-public:
-    EventManager(iModelConnectionP imodelConnectionP) : m_imodelConnectionP(imodelConnectionP) {}
-    StatusTaskPtr Stop();
-    StatusTaskPtr Subscribe(EventTypeSet* eventTypes, EventCallbackPtr callback);
-    StatusTaskPtr Unsubscribe(EventCallbackPtr callback, bool* dispose);
-    EventMap GetCallbacks() const {return m_eventCallbacks;}
-    virtual ~EventManager() {Stop();}
-};
+    //! Sets EventServiceClient.
+    StatusTaskPtr SetEventServiceClient(EventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+
+    static EventSubscriptionPtr CreateEventSubscriptionFromResponse(const Utf8String response);
+
+    // This pointer needs to change to be generic
+    EventSubscriptionTaskPtr SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset,
+                                                        ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Get EventSubscription with the given Event Types
+    EventSubscriptionTaskPtr GetEventServiceSubscriptionId(EventTypeSet* eventTypes = nullptr,
+                                                            ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Update the EventSubscription to the given EventTypes
+    EventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(EventTypeSet* eventTypes = nullptr,
+                                                                ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    Json::Value GenerateEventSASJson() override;
+
+    StatusTaskPtr UnsubscribeEvents();
+
+public: 
+    virtual ~EventManager() {}
+
+    bool IsSubscribedToEvents(EventServiceClientPtr eventServiceClient) const override;
+
+    EventTaskPtr GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
+    };
 
 END_BENTLEY_IMODELHUB_NAMESPACE
