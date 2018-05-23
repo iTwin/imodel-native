@@ -1950,6 +1950,7 @@ public:
     void FromJson(JsonValueR props) {_FromJson(props);}
 
     //! Create a Json::Value that represents the state of this element.
+    //! @param[in] factory Factory that allow manipulating JsValue
     //! @param[in] opts options for customizing the value. If opts["wantGeometry"] != true, geometry stream Json::Value is not included.
     Js::Object ToJsValue(Js::IFactory& factory, Js::Object opts) const { Js::Object val = Js::Object::New(factory) ; _ToJsValue(val, opts); return val; }
 
