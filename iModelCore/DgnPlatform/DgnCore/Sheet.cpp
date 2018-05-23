@@ -939,6 +939,7 @@ void Sheet::Attachment::Tile3d::CreateGraphics(SceneContextR context)
                 // also only look at the relevent corner of the scene
                 Frustum frust = viewport->GetFrustum(DgnCoordSystem::Npc);
                 DPoint3dP frustPts = frust.GetPtsP();
+                
                 m_range.Get8Corners(frustPts); // use unclipped range of tile to change the frustum (this is what we're looking at)
                 DMap4dCP rootToNpc = viewport->GetWorldToNpcMap();
                 rootToNpc->M1.MultiplyAndRenormalize(frustPts, frustPts, NPC_CORNER_COUNT);
@@ -1204,12 +1205,9 @@ void Sheet::Attachment::Tile3d::_DrawGraphics(DrawArgsR args) const
     params.SetLineColor(color);
     params.SetFillColor(color);
 
-    auto range = GetRange();
-    range.low.z = range.high.z = 1.0;
-
     auto gf = args.m_context.CreateSceneGraphic();
     gf->ActivateGraphicParams(params);
-    gf->AddRangeBox(range);
+    gf->AddRangeBox(GetRange());
 
     args.m_graphics.Add(*gf->Finish());
     }
@@ -1244,12 +1242,9 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     params.SetLineColor(color);
     params.SetFillColor(color);
 
-    auto range = GetRange();
-    range.low.z = range.high.z = 1.0;
-
     auto gf = myArgs.m_context.CreateSceneGraphic();
     gf->ActivateGraphicParams(params);
-    gf->AddRangeBox(range);
+    gf->AddRangeBox(GetRange());
 
     // Put in a branch so it doesn't get clipped...
     GraphicBranch branch;
@@ -1656,7 +1651,7 @@ Sheet::Attachment::Tile3d::Tile3d(Root3dR root, Tile3dCP parent, Placement place
         fullRange = parent->GetRange();
     else
         fullRange = tree.GetRootRange();
-    double z = fullRange.low.z; // all Zs should match
+
     DPoint3d mid = DPoint3d::FromInterpolate(fullRange.low, 0.5, fullRange.high);
 
     m_range.Init();
@@ -1664,7 +1659,7 @@ Sheet::Attachment::Tile3d::Tile3d(Root3dR root, Tile3dCP parent, Placement place
         {
         case Placement::UpperLeft:
             m_range.Extend(mid);
-            m_range.Extend(DPoint3d::From(fullRange.low.x, fullRange.high.y, z));
+            m_range.Extend(DPoint3d::From(fullRange.low.x, fullRange.high.y, 0.0));
             break;
 
         case Placement::UpperRight:
@@ -1678,7 +1673,7 @@ Sheet::Attachment::Tile3d::Tile3d(Root3dR root, Tile3dCP parent, Placement place
             break;
 
         case Placement::LowerRight:
-            m_range.Extend(DPoint3d::From(fullRange.high.x, fullRange.low.y, z));
+            m_range.Extend(DPoint3d::From(fullRange.high.x, fullRange.low.y, 0.0));
             m_range.Extend(mid);
             break;
 
@@ -1688,6 +1683,8 @@ Sheet::Attachment::Tile3d::Tile3d(Root3dR root, Tile3dCP parent, Placement place
             m_range.Extend(fullRange.high);
             break;
         }
+    m_range.low.z = 0.0;
+    m_range.high.z = 1.0;
     }
 
 #if defined (DEBUG_SHEETS)

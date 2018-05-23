@@ -3459,6 +3459,9 @@ TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
         }
     }
 
+//b#define CLIP_SUPPORT
+
+#ifdef CLIP_SUPPORT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3473,11 +3476,13 @@ static Json::Value getClipPlaneJson(DVec3dCR dir, double distance)
 
     return value;
     }
+#endif
 
+#ifdef NOTNOW
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Json::Value getViewClipJson(ViewDefinitionCR view)
+static Json::Value getViewClipJson(ViewDefinitionCR view, TransformCR transformFromDgn)
     {
     DVec3d      xVector, yVector, negatedXVector, negatedYVector, extents = view.GetExtents();
     DPoint3d    viewOrigin;
@@ -3487,31 +3492,67 @@ static Json::Value getViewClipJson(ViewDefinitionCR view)
     
     negatedXVector.Negate(xVector);
     negatedYVector.Negate(yVector);
-    view.GetRotation().Multiply (viewOrigin, view.GetOrigin());
+    transformFromDgn.Multiply (viewOrigin, view.GetOrigin());
+    view.GetRotation().Multiply (viewOrigin, viewOrigin);
 
     Json::Value value(Json::arrayValue);
 
-    value.append(getClipPlaneJson(negatedXVector, -viewOrigin.x));
-    value.append(getClipPlaneJson(xVector, viewOrigin.x + extents.x));
-    value.append(getClipPlaneJson(negatedYVector, -viewOrigin.y));
-    value.append(getClipPlaneJson(yVector, viewOrigin.y + extents.y));
+    value.append(getClipPlaneJson(xVector, -viewOrigin.x));
+    value.append(getClipPlaneJson(negatedXVector, viewOrigin.x + extents.x));
+    value.append(getClipPlaneJson(yVector, -viewOrigin.y));
+    value.append(getClipPlaneJson(negatedYVector, viewOrigin.y + extents.y));
 
     return value;
     }
 
-#ifdef UNUSED
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Json::Value getViewClipJson(DRange3dCR sheetRange)
+static Json::Value getViewClipJson(DRange3dCR sheetRange, TransformCR dgnToSheet)
     {
-    Json::Value value(Json::arrayValue);
+    ClipPlane       planes[4];
+    Transform       sheetToDgn;
+    Json::Value     value(Json::arrayValue);
 
-    value.append(getClipPlaneJson(DVec3d::From(-1.0, 0.0, 0.0),  -sheetRange.low.x));
-    value.append(getClipPlaneJson(DVec3d::From(1.0, 0.0, 0.0),  sheetRange.high.x));
-    value.append(getClipPlaneJson(DVec3d::From(0.0, -1.0, 0.0),  -sheetRange.low.y));
-    value.append(getClipPlaneJson(DVec3d::From(0.0, 1.0, 0.0),  sheetRange.high.y));
+    planes[0] = ClipPlane(DVec3d::From(1.0, 0.0, 0.0),   sheetRange.low.x);
+    planes[1] = ClipPlane(DVec3d::From(-1.0, 0.0, 0.0), -sheetRange.high.x);
+    planes[2] = ClipPlane(DVec3d::From(0.0, 1.0, 0.0),   sheetRange.low.y);
+    planes[3] = ClipPlane(DVec3d::From(0.0, -1.0, 0.0), -sheetRange.high.y);
 
+    sheetToDgn.InverseOf  (dgnToSheet);
+
+    for (int i=0; i<4; i++)
+        {
+        planes[i].TransformInPlace(sheetToDgn);
+        value.append(getClipPlaneJson(planes[i].GetNormal(), -planes[i].GetDistance()));
+        }
+    return value;
+    }
+
+
+#endif
+
+#ifdef CLIP_SUPPORT
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value getViewClipJson(ClipVectorCR clip, TransformCR tileToSheet)
+    {
+    ClipPlaneSetCP  clipPlanes = clip.front()->GetClipPlanes();
+    Transform       sheetToTile;
+    Json::Value     value(Json::arrayValue);
+    ConvexClipPlaneSet  set;
+
+    sheetToTile.InverseOf(tileToSheet);
+
+    for (auto clipPlane : clipPlanes->front())
+        {
+        ClipPlane       dgnPlane = clipPlane;
+
+        //dgnPlane.TransformInPlace(sheetToTile);
+        set.push_back(dgnPlane);
+        value.append(getClipPlaneJson(dgnPlane.GetNormal(), -dgnPlane.GetDistance()));
+        }
     return value;
     }
 #endif
@@ -3568,8 +3609,13 @@ Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnMo
                             tileToSheet = Transform::FromProduct(Transform::FromProduct(addSheetOrigin, scaleToSheet), Transform::FromProduct(viewRotation, subtractViewOrigin));
 
         viewJson["transform"] = TransformToJson(tileToSheet);
-        viewJson["clipPlanes"] = getViewClipJson(*view);
-        
+
+        DPoint3d        origin = m_projectExtents.GetCenter();
+#ifdef CLIP_SUPPORT
+        ClipVectorPtr   clip = attachment->GetClip();
+        if (clip.IsValid())
+            viewJson["clipPlanes"] = getViewClipJson(*clip, tileToSheet);
+#endif
 
         attachmentsJson.append(std::move(viewJson));
         }
