@@ -332,7 +332,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
     size_t numSubNodes,
     BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh)
 {
-    assert(node->GetFilter()->IsProgressiveFilter() == false);
+    assert((node->GetFilter() == nullptr) || (node->GetFilter()->IsProgressiveFilter() == false));
 
     // Before we make sure requested level is appropriate
     if (m_requestedLevel < 0)
