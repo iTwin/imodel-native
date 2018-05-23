@@ -30,6 +30,40 @@ DgnDbStatus IMainLinearElementSource::SetMainLinearElement(ILinearElementCP line
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet IMainLinearElementSource::QueryLinearElementSourceIds(ILinearElementCR mainLinearElement, DgnClassId filterBaseClassId)
+    {
+    auto& elmCR = mainLinearElement.ToElement();
+
+    Utf8String ecSql = "SELECT SourceECInstanceId FROM "
+        BRRP_SCHEMA(BRRP_REL_ILinearElementSourceRefersToMainLinearElement) " iMainLE";
+
+    if (filterBaseClassId.IsValid())
+        {
+        ecSql.append(", meta.ClassHasAllBaseClasses WHERE meta.ClassHasAllBaseClasses.SourceECInstanceId = iMainLE.ECClassId ");
+        ecSql.append("AND iMainLE.TargetECInstanceId = ? AND meta.ClassHasAllBaseClasses.TargetECInstanceId = ?;");
+        }
+    else
+        ecSql.append(" WHERE iMainLE.TargetECInstanceId = ?;");
+
+    ECSqlStatement stmt;
+    stmt.Prepare(elmCR.GetDgnDb(), ecSql.c_str());
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindId(1, elmCR.GetElementId());
+
+    if (filterBaseClassId.IsValid())
+        stmt.BindId(2, filterBaseClassId);
+
+    DgnElementIdSet retVal;
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        retVal.insert(stmt.GetValueId<DgnElementId>(0));
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 CodeSpecId Corridor::QueryCodeSpecId(DgnDbCR dgndb)
