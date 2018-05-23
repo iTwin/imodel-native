@@ -72,7 +72,7 @@ $(OUT_DIR)dpoint4d$(OUT_EXT)        : $(geomSrcStructs)dpoint4d.cpp         $(OT
 
 #$(OUT_DIR)drange3d$(OUT_EXT)        : $(geomSrcStructs)drange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-#$(OUT_DIR)transform$(OUT_EXT)       : $(geomSrcStructs)transform.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+$(OUT_DIR)transform$(OUT_EXT)       : $(geomSrcStructs)transform.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)rotmatrix$(OUT_EXT)       : $(geomSrcStructs)rotmatrix.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
