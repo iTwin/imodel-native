@@ -1698,6 +1698,20 @@ BentleyStatus SchemaReader::ValidateBaseClasses(ECN::ECSchemaP schema)
                             }
                         }
                     }
+                if (relClass->GetBaseClasses().size() != 0)
+                    {
+                    for (ECClassCP base : relClass->GetBaseClasses())
+                        {
+                        ECRelationshipClassCP relBase = base->GetRelationshipClassCP();
+                        if (nullptr == relBase)
+                            continue;
+                        relClass->GetSource().SetMultiplicity(relBase->GetSource().GetMultiplicity());
+                        relClass->GetTarget().SetMultiplicity(relBase->GetTarget().GetMultiplicity());
+                        relClass->SetStrength(relBase->GetStrength());
+                        relClass->SetStrengthDirection(relBase->GetStrengthDirection());
+                        break;
+                        }
+                    }
                 }
             if (ecClass->GetBaseClasses().size() != 0)
                 continue;
@@ -1899,7 +1913,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
             ECEnumerationP nonConstEnum = const_cast<ECEnumerationP>(ecEnum);
             nonConstEnum->SetIsStrict(false);
             }
-        m_importer->SetTaskName(BimUpgrader::TASK_IMPORTING_SCHEMA(), ecSchema->GetName().c_str());
+        m_importer->SetTaskName(BimUpgrader::TASK_IMPORTING_SCHEMA(), toImport->GetName().c_str());
         m_importer->ShowProgress();
         }
 
@@ -2236,6 +2250,9 @@ BentleyStatus TextAnnotationDataReader::_Read(Json::Value& object)
     bvector<Byte> data;
     size_t size = object["TextAnnotation"].asString().SizeInBytes();
     Base64Utilities::Decode(data, object["TextAnnotation"].asString().c_str(), size);
+
+    if (data.empty())
+        return SUCCESS;
 
     TextAnnotationPtr annotation = TextAnnotation::Create(*GetDgnDb());
     if (SUCCESS != TextAnnotationPersistence::DecodeFromFlatBufWithRemap(*annotation, data.data(), size, *m_importer))

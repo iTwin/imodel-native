@@ -2048,7 +2048,7 @@ BentleyStatus BisJson1ExporterImpl::ExportTextAnnotationData()
     {
 
     Statement stmt;
-    Utf8PrintfString sql("SELECT ECInstanceId, TextAnnotation FROM dgn_TextAnnotationData");
+    Utf8PrintfString sql("SELECT ECInstanceId, TextAnnotation FROM dgn_TextAnnotationData WHERE TextAnnotation is NOT NULL ");
     if (BE_SQLITE_OK != (stmt.Prepare(*m_dgndb, sql.c_str())))
         {
         LogMessage(TeleporterLoggingSeverity::LOG_ERROR, "Unable to prepare statement to retrieve TextAnnotationData");
@@ -2272,7 +2272,7 @@ BentleyStatus BisJson1ExporterImpl::ExportLinkTables(Utf8CP schemaName, Utf8CP c
         return SUCCESS;
 
     //Utf8PrintfString ecSql("SELECT s.Name, c.Name, r.SourceECInstanceId, r.TargetECInstanceId FROM [%s].[%s] r, [MetaSchema].[Class] c, [MetaSchema].[Schema] s WHERE c.[Id] = r.ECClassId AND s.Id = c.[SchemaId]", schemaName, className);
-    Utf8PrintfString ecSql("SELECT ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId from [%s].[%s]", schemaName, className);
+    Utf8PrintfString ecSql("SELECT ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId from [%s].[%s] ORDER BY ECClassId", schemaName, className);
     CachedECSqlStatementPtr stmt = m_dgndb->GetPreparedECSqlStatement(ecSql.c_str());
 
     if (!stmt.IsValid())
