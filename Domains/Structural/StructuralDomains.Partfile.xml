@@ -64,7 +64,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RunStructuralDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" 
+    <Part Name="RunStructuralDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" 
           BentleyBuildMakeOptions="-dGTEST_PRODUCT=StructuralDomainsTested\  -dGTEST_NAME=StructuralDomainTests" ExcludeLibType="Static">
         <SubPart PartName="StructuralDomainTestsExe"/>
         <Bindings>
