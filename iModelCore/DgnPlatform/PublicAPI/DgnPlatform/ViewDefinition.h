@@ -979,6 +979,10 @@ public:
     //! @note To turn the camera back on, call LookAt
     void TurnCameraOff() {m_cameraOn = false;}
 
+    //! Turn the camera on for this view.  This should be used onl after the camera parameters have been set for this view. 
+    //! for internal use only -- generally LookAt should be used.
+    void TurnCameraOn() {m_cameraOn = true;}
+
     //! Determine whether the camera is valid for this view
     bool IsCameraValid() const {return m_cameraDef.IsValid();}
 
