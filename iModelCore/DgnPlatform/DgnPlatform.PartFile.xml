@@ -2,11 +2,6 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
-    <Part Name="DgnPlatformLib">
-        <RequiredRepository>DgnPlatformExamples</RequiredRepository> <!-- Many developers of higher-level parts will want to see the examples. -->
-        <SubPart PartName="DgnPlatformDLL" />
-    </Part>
-
     <Part Name="Readme" BentleyBuildMakeFile="ProcessReadme.mke">
         <Bindings>
             <Files ProductDirectoryName="DgnPlatform_PublishedAPI_Scope1_Doc">
@@ -238,9 +233,11 @@
         <SubPart PartName="DgnPlatform-Compatibility-Static" />
         <SubPart PartName="DgnPlatform-Compatibility-Dynamic" />
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <FeatureExclude>GeoCoordAssets</FeatureExclude> <!-- Exclude geocoord assets because we don't need them for schema evolution tests -->
     </Product>
 
-    <Part Name="Gtest-DgnPlatform-Compatibility" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnCompatibility -dTEST_COLLECTION_PRODUCT=DgnPlatform-Compatibility -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest-DgnPlatform-Compatibility" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnCompatibility -dTEST_COLLECTION_PRODUCT=DgnPlatform-Compatibility -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
         <SubProduct ProductName="DgnPlatform-Compatibility"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -261,7 +258,7 @@
         <SubPart PartName="GTest-DgnPlatform-Compatibility"/>
     </Product>
  
-    <Part Name="RunGtest-DgnPlatform-Compatibility" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GTest-DgnPlatform-Compatibility -dGTEST_NAME=DgnCompatibility -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DgnCompatibility" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest-DgnPlatform-Compatibility" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/runGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GTest-DgnPlatform-Compatibility -dGTEST_NAME=DgnCompatibility -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/DgnCompatibility" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="GTest-DgnPlatform-Compatibility" />
     </Part>
 
@@ -270,11 +267,11 @@
         <SubPart PartName="RunGtest-DgnPlatform-Compatibility"/>
     </Part>
 
-    <Part Name="RunGtest-DgnPlatform-Compatibility-Backwards" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunBackwardsCompatibilityTest.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest-DgnPlatform-Compatibility-Backwards" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunBackwardsCompatibilityTest.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubPart PartName="Copy-Datasets"/>
     </Part>
  
-    <Part Name="RunGtest-DgnPlatform-Compatibility-Forwards" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunCompatibilityTests.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest-DgnPlatform-Compatibility-Forwards" DeferType="RunUnitTests" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\RunCompatibilityTests.mke" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubPart PartName="RunGtest-DgnPlatform-Compatibility-Backwards"/>
         <SubPart PartName="DgnPlatform-Compatibility-Pull-All-Nugets"/>
     </Part>
@@ -283,6 +280,23 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="GTest-DgnPlatform-Compatibility"/>
     </NuGetProduct>
+
+    <Product Name="iModelSchemaEvolutionTestFiles" SaveProduct="true">
+        <SubPart PartName="SaveSchemaEvolutionTestFiles"/>
+        <Directories DirectoryListName="SchemaEvolutionTestFiles"/>
+    </Product>
+
+    <ProductDirectoryList ListName="SchemaEvolutionTestFiles" >
+        <ProductDirectory Name="Datasets" Path="Datasets"/>
+    </ProductDirectoryList>
+
+    <Part Name="SaveSchemaEvolutionTestFiles" DeferType="RunUnitTests" OnlyPlatforms="x64" BentleyBuildMakeFile="Tests\DgnProject\Compatibility\CompatibilityRunner\SaveDatasets.mke">
+        <!-- Must run after the tests are complete -->
+        <SubPart PartName="RunGtest-DgnPlatform-Compatibility" />
+        <Bindings>
+            <Directory ProductDirectoryName="Datasets" SourceName="iModelSchemaEvolutionDatasets" />
+        </Bindings>
+    </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
@@ -498,7 +512,7 @@
   <!-- ********************** -->
   <!-- **** Gtest **** -->
   <!-- ********************** -->
-  <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+  <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="DgnPlatform-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -512,7 +526,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnPlatform-Gtest -dGTEST_NAME=DgnPlatformTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DgnPlatform-Gtest -dGTEST_NAME=DgnPlatformTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="DgnPlatform-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -529,7 +543,7 @@
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
-    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_DELIVERY_SUBDIR=ANJUP -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_DELIVERY_SUBDIR=ANJUP -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="DgnPlatform-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -542,7 +556,7 @@
         <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=DgnPlatform-AndroidJUnit" OnlyPlatforms="Android*">
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=DgnPlatform-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="DgnPlatform-AndroidJUnit"/>
         <Bindings>
           <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/DgnPlatform-AndroidJUnit.log</Files>
@@ -552,7 +566,7 @@
     <!-- ********************** -->
     <!-- **** iOSXCTest **** -->
     <!-- ********************** -->
-    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatform -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatform -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
         <SubProduct ProductName="DgnPlatform-Tests"/>
         <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -565,7 +579,7 @@
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=DgnPlatform-iOSXCTest" OnlyPlatforms="iOS*">
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=DgnPlatform-iOSXCTest" OnlyPlatforms="iOS*">
         <SubProduct ProductName="DgnPlatform-iOSXCTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/DgnPlatform-iOSXCTest.log</Files>
@@ -578,7 +592,7 @@
     <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
     <Part
         Name="UwpTest" DeferType="BuildUnitTests"
-        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatform -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests"
         OnlyPlatforms="WinRT*"
         ApiNumber="B02"
@@ -597,7 +611,7 @@
 
     <Part
         Name="RunUwpTest"
-        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/RunUwpTestProject.mke"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke"
         BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=DgnPlatform-UwpTest"
         OnlyPlatforms="WinRT*"
         >
@@ -656,7 +670,7 @@
       <SubPart PartName="NoView-Gtest-RunAggregator"/>
     </Part>
   
-    <Part Name="NoView-Gtest-RunAggregator" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs">
+    <Part Name="NoView-Gtest-RunAggregator" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs">
         <SubPart Repository="GeomLibs"              PartFile="geomlibs"         PartName="RunGtest" />
         <SubPart Repository="ECDb"                  PartFile="ECDb"             PartName="RunGtest" />
         <SubPart Repository="ECObjects"             PartFile="ECObjects"        PartName="RunGtest" />
@@ -705,7 +719,7 @@
     </Part>
 
     <Part Name="iModelConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="iModelConsole/iModelConsole.mke" >
-        <SubPart PartName="DgnPlatformLib"/>
+        <SubPart PartName="DgnPlatformDll"/>
         <SubPart PartName="DgnPlatformSqlang"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">

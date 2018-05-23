@@ -69,7 +69,11 @@ BentleyStatus Writer::WriteGltf(DPoint3dCR centroid)
     AddExtensions(centroid);
     AddDefaultScene();
 
+    // Binary data must be aligned to 32-bit boundary...
     Utf8String  sceneStr = Json::FastWriter().write(m_json);
+    while (0 != sceneStr.size() % 4)
+        sceneStr.append(1, ' ');
+
     uint32_t    sceneStrLength = static_cast<uint32_t>(sceneStr.size());
 
     long    startPosition =  m_buffer.GetSize();
@@ -122,7 +126,6 @@ void    Writer::PadToBoundary(size_t boundarySize)
     while (0 != (m_buffer.GetSize() % boundarySize))
         m_buffer.Append((uint8_t) 0);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -180,7 +183,6 @@ void Writer::AddMeshUInt16Attributes(Json::Value& primitive, uint16_t const* att
             }
         }
 
-
     if (Gltf::DataType::UnsignedByte == componentType)
         {
         attributes8.reserve(nAttributes);
@@ -195,6 +197,8 @@ void Writer::AddMeshUInt16Attributes(Json::Value& primitive, uint16_t const* att
         }
 
     AddAccessor(componentType, accId, bvId, nAttributes, "SCALAR");
+
+    PadBinaryDataToBoundary();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -224,8 +228,6 @@ void Writer::AddColors(Json::Value& primitive, ColorIndex const& colorIndex, siz
     BeAssert (colorIndex.m_numColors > 1);
     AddMeshUInt16Attributes(primitive, colorIndex.m_nonUniform.m_indices, nVertices, idStr, "ColorIndex_", "_COLORINDEX");
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -485,6 +487,8 @@ void Writer::AppendPolylineToBufferView(MeshPolylineCR polyline, bool useShortIn
         else
             m_binaryData.Append(index);
         }
+
+    PadBinaryDataToBoundary();
     }
 
 /*---------------------------------------------------------------------------------**//**
