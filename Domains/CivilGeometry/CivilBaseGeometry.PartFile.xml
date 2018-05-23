@@ -72,7 +72,7 @@
     <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
   </Product>
 
-  <Part Name="CivilBaseGeometry-Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
+  <Part Name="CivilBaseGeometry-Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
       -dTEST_NAME=CivilBaseGeometryTests
       -dTEST_COLLECTION_PRODUCT=CivilBaseGeometry-Tests" OnlyPlatforms="x64" Scope="Private">
     <SubProduct ProductName="CivilBaseGeometry-Tests"/>
@@ -90,7 +90,7 @@
   </Product>
 
   <!-- This part runs the test on x64 -->
-  <Part Name="RunGTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="
+  <Part Name="RunGTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="
     -dGTEST_PRODUCT=CivilBaseGeometry-Gtest
     -dGTEST_NAME=CivilBaseGeometryTests
     -dGTEST_SHOW_PROGRESS" Scope="Private" OnlyPlatforms="x64">
@@ -112,12 +112,12 @@
     <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest" />
   </Product>
     
-  <Part Name="iOSXCTest-Run" OnlyPlatforms="iOSARM*" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="
+  <Part Name="iOSXCTest-Run" OnlyPlatforms="iOSARM*" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="
       -dLogFilesDir=$(BuildContext)SubParts/XCTest/Logs" Scope="Private" >
     <SubPart PartName="RuniOSXCTest" LibType="Static" />
   </Part>
     
-  <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="
+  <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="
       -dXCTEST_PRODUCT=iOSXCTest-CivilBaseGeometry-Tests
       -dTEST_NAME=CivilBaseGeometryTests
       -dIOSXCTEST_SHOW_PROGRESS=1
@@ -128,7 +128,7 @@
     </Bindings>
   </Part>
     
-  <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="
+  <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="
       -dTEST_NAME=CivilBaseGeometryTests
       -dTEST_COLLECTION_PRODUCT=CivilBaseGeometry-Tests
       -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOSARM*" Scope="Private">
