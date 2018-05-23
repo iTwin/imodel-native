@@ -114,7 +114,7 @@
     <SubPart PartName="Gtest-RunAggregator"/>
   </Part>
 
-  <Part Name="Gtest-RunAggregator" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+  <Part Name="Gtest-RunAggregator" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
     <SubPart PartName="RunGtest"/>
   </Part>
 
@@ -132,7 +132,7 @@
     <Directories DirectoryListName="BuildingSharedGTestDirectories"/>
   </Product>
 
-  <Part Name="BuildingShared-Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke"
+  <Part Name="BuildingShared-Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke"
     BentleyBuildMakeOptions="-dTEST_NAME=BuildingSharedTest -dTEST_COLLECTION_PRODUCT=BuildingShared-TestsProduct -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
     <SubProduct ProductName="BuildingShared-TestsProduct"/>
     <SubPart PartName="DgnClientSdk-TestHelpers" Repository="DgnClientFx" PartFile="DgnClientFx"/>
