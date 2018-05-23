@@ -170,7 +170,7 @@
         <SubPart PartName="Gtest" />
     </Product>
 
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
+    <Part Name="Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
         -dTEST_NAME=CiviliModelBridgesTests
         -dTEST_COLLECTION_PRODUCT=CiviliModelBridges-Tests
         -dTEST_FRAMEWORK_SQLANG=DgnClientFx_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
@@ -182,7 +182,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=CiviliModelBridges-Gtest -dGTEST_NAME=CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS -dGTEST_EXTRA_ARGS=--timeout=300" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=CiviliModelBridges-Gtest -dGTEST_NAME=CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS -dGTEST_EXTRA_ARGS=--timeout=300" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="CiviliModelBridges-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
     </Part>
@@ -384,7 +384,7 @@
     <SubPart PartName="Gtest-CS06" />
   </Product>
 
-  <Part Name="Gtest-CS06" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
+  <Part Name="Gtest-CS06" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="
         -dTEST_NAME=CS06CiviliModelBridgesTests
         -dTEST_COLLECTION_PRODUCT=CS06-CiviliModelBridges-Tests
         -dTEST_FRAMEWORK_SQLANG=DgnClientFx_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
@@ -396,7 +396,7 @@
     </Bindings>
   </Part>
 
-  <Part Name="RunGtest-CS06" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-CS06-CiviliModelBridges-Tests -dGTEST_NAME=CS06CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+  <Part Name="RunGtest-CS06" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-CS06-CiviliModelBridges-Tests -dGTEST_NAME=CS06CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
     <SubProduct ProductName="Gtest-CS06-CiviliModelBridges-Tests" />
     <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
   </Part>
