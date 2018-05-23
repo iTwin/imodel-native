@@ -189,8 +189,6 @@ DrawingViewDefinitionPtr DrawingViewHelper::CreateView()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialViewDefinitionPtr SpatialViewHelper::CreateView()
     {
-    BeAssert(!m_v8DgnAttachment.IsCameraOn());
-
     DefinitionModelPtr definitionModel = m_converter.GetJobDefinitionModel();
     if (!definitionModel.IsValid())
         return nullptr;
@@ -205,7 +203,7 @@ SpatialViewDefinitionPtr SpatialViewHelper::CreateView()
     SetViewGeometry(*view);     // (depends on modelselector, so populate that first!)
     
     SetCategories(*view, SyncInfo::Level::Type::Spatial);
-    
+
     SetViewFlags(view->GetDisplayStyle());
     auto& env = view->GetDisplayStyle3d().GetEnvironmentDisplayR();
     env.m_groundPlane.m_enabled = false;
@@ -215,6 +213,21 @@ SpatialViewDefinitionPtr SpatialViewHelper::CreateView()
     view->GetModelSelector().SetIsPrivate(true);
     view->GetDisplayStyle().SetIsPrivate(true);
     view->GetCategorySelector().SetIsPrivate(true);
+
+    if (m_v8DgnAttachment.IsCameraOn())
+        {
+        Transform thisTrans = m_converter.ComputeAttachmentTransform(m_converter.GetRootTrans(), m_v8DgnAttachment);
+        ResolvedModelMapping modelMapping = m_converter.FindFirstModelMappedTo(*m_v8DgnAttachment.GetDgnModelP());
+        if (modelMapping.IsValid())
+            {
+            DPoint3d    eyePoint;
+
+            modelMapping.GetTransform().Multiply (eyePoint, (DPoint3dR) m_v8DgnAttachment.GetCameraPosition());
+            view->TurnCameraOn();
+            view->GetCameraR().SetEyePoint(eyePoint);
+            view->GetCameraR().SetFocusDistance(m_v8DgnAttachment.GetCameraFocalLength() * modelMapping.GetTransform().MatrixColumnMagnitude(0));
+            }
+        }
 
     return view;
     }
