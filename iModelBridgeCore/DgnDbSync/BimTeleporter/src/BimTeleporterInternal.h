@@ -20,6 +20,14 @@
 #   define BIMTELEPORTER_EXPORT      IMPORT_ATTRIBUTE
 #endif
 
+namespace BentleyB0200
+    {
+    namespace Dgn
+        {
+        struct DgnProgressMeter;
+        }
+    }
+
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
 struct BimTeleporterHost;
@@ -31,6 +39,7 @@ private:
     BeFileName m_outputPath;
     BeFileName m_loggingConfigFileName;
     BimTeleporterHost* m_host;
+    DgnProgressMeter* m_meter;
     bool m_compress;
 
     void PrintError(WCharCP fmt, ...);

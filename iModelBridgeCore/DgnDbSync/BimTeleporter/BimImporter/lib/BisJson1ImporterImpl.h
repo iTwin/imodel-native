@@ -12,12 +12,24 @@
 #include <Bentley/BentleyAllocator.h>
 #include <Bentley/WString.h>
 #include <DgnPlatform/DgnPlatform.h>
+#include <BeSQLite/L10N.h>
 
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/DgnProgressMeter.h>
 #include <folly/ProducerConsumerQueue.h>
 
 #include "SyncInfo.h"
 BEGIN_BIM_TELEPORTER_NAMESPACE
+
+BENTLEY_TRANSLATABLE_STRINGS_START(BimUpgrader, bim_import)
+    L10N_STRING(TASK_CREATING_THUMBNAIL)            // =="View: %s"==
+    L10N_STRING(TASK_IMPORTING_SCHEMA)              // =="%s"==
+    L10N_STRING(TASK_IMPORTING_RELATIONSHIP)        // =="ECRelationship: %s"==
+    L10N_STRING(TASK_ELEMENT_GROUPS_MEMBERS)        // =="ElementGroupsMembers"==
+    L10N_STRING(STEP_GENERATING_THUMBNAILS)         // =="Generating Thumbnails"==
+    L10N_STRING(STEP_IMPORTING_SCHEMAS)             // =="Importing Schemas"==
+    L10N_STRING(STEP_IMPORTING_ELEMENTS)            // =="Importing Elements"==
+BENTLEY_TRANSLATABLE_STRINGS_END
 
 struct Reader;
 
@@ -54,13 +66,15 @@ struct BisJson1ImporterImpl : DgnImportContext
 
     private:
         DgnDbPtr            m_dgndb;
+        DgnProgressMeter*   m_meter;
         bmap<Utf8String, ECN::SchemaKey> m_schemaNameToKey;
         ECN::ECClassCP m_orthographicViewClass;
         ECN::ECClassCP m_sheetViewClass;
         BeFile m_file;
         bool m_isDone;
         SchemaRemapper m_remapper;
-        int64_t m_entityCount;
+        uint32_t m_entityCount;
+        StopWatch m_importTimer;
 
     protected:
         ECN::ECSchemaReadContextPtr m_schemaReadContext;
@@ -101,6 +115,10 @@ struct BisJson1ImporterImpl : DgnImportContext
         void AddToQueue(const char* entry);
         void SetDone() { m_isDone = true; }
         void FinalizeImport();
+        void ShowProgress() { if (nullptr != m_meter) m_meter->ShowProgress(); }
+        void SetTaskName(BimUpgrader::StringId stringId, ...) const;
+        void SetStepName(BimUpgrader::StringId stringId, ...) const;
+
     };
 
 

@@ -1780,6 +1780,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
     BeFileName bimFileName = GetDgnDb()->GetFileName();
 
     bmap<SchemaKey, bvector<SchemaKey>> originalReferences;
+    StopWatch schemaTimer(true);
 
     for (Json::Value::iterator iter = schemas.begin(); iter != schemas.end(); iter++)
         {
@@ -1898,6 +1899,8 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
             ECEnumerationP nonConstEnum = const_cast<ECEnumerationP>(ecEnum);
             nonConstEnum->SetIsStrict(false);
             }
+        m_importer->SetTaskName(BimUpgrader::TASK_IMPORTING_SCHEMA(), ecSchema->GetName().c_str());
+        m_importer->ShowProgress();
         }
 
     SchemaFlattener flattener2(m_importer->m_schemaReadContext);
@@ -2003,6 +2006,10 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
         return ERROR;
         }
 
+    schemaTimer.Stop();
+    Utf8PrintfString message("Importing schemas|%.0f millisecs", schemaTimer.GetElapsedSeconds() * 1000.0);
+    BentleyApi::NativeLogging::LoggingManager::GetLogger("DgnDbToBimConverter.Performance")->info(message.c_str());
+
     return SUCCESS;
     }
 
@@ -2065,6 +2072,8 @@ BentleyStatus ElementGroupsMembersReader::_Read(Json::Value& groups)
         if (group.isMember("MemberPriority"))
             priority = group["MemberPriority"].asInt();
         groupElement->AddMember(*member, priority);
+        m_importer->SetTaskName(BimUpgrader::TASK_ELEMENT_GROUPS_MEMBERS());
+        m_importer->ShowProgress();
         }
 
     return SUCCESS;
@@ -2107,6 +2116,8 @@ BentleyStatus LinkTableReader::_Read(Json::Value& relationships)
         ECN::ECRelationshipClassCP relClass = GetDgnDb()->Schemas().GetClass(member["Schema"].asString(), member["Class"].asString())->GetRelationshipClassCP();
         ECInstanceKey relKey;
         GetDgnDb()->InsertLinkTableRelationship(relKey, *relClass, mappedSource, mappedTarget);
+        m_importer->SetTaskName(BimUpgrader::TASK_IMPORTING_RELATIONSHIP(), relName.c_str());
+        m_importer->ShowProgress();
         }
 
     return SUCCESS;
@@ -2151,6 +2162,7 @@ BentleyStatus ElementHasLinksReader::_Read(Json::Value& hasLinks)
             continue;
             }
         linkElement->AddToSource(mappedSource);
+        m_importer->ShowProgress();
         }
     return SUCCESS;
     }
