@@ -67,7 +67,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RunFormsDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" 
+    <Part Name="RunFormsDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" 
           BentleyBuildMakeOptions="-dGTEST_PRODUCT=FormsDomainTested\  -dGTEST_NAME=FormsDomainTests" ExcludeLibType="Static">
         <SubPart PartName="FormsDomainTestsExe"/>
         <Bindings>
