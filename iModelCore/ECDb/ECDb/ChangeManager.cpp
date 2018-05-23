@@ -252,7 +252,12 @@ void ChangeManager::RegisterSqlFunctions() const
     m_ecdb.AddFunction(ChangedValueStateToOpCodeSqlFunction::GetSingleton());
 
     m_changedValueSqlFunction = std::make_unique<ChangedValueSqlFunction>(m_ecdb);
+    m_insertedValueSqlFunction = std::make_unique<InsertedValueSqlFunction>(m_ecdb);;
+    m_deletedValueSqlFunction = std::make_unique<DeletedValueSqlFunction>(m_ecdb);;
+
     m_ecdb.AddFunction(*m_changedValueSqlFunction);
+    m_ecdb.AddFunction(*m_insertedValueSqlFunction);
+    m_ecdb.AddFunction(*m_deletedValueSqlFunction);
     }
 
 //---------------------------------------------------------------------------------------

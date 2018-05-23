@@ -12,7 +12,13 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
+#define TABLEALIAS_InstanceChange "ic"
+#define TABLE_InstanceChange ECSCHEMA_ALIAS_ECDbChange "_" ECDBCHANGE_CLASS_InstanceChange
+#define TABLE_InstanceChange_COL_Id "Id"
+#define TABLE_InstanceChange_COL_SummaryId "SummaryId"
+#define TABLE_InstanceChange_COL_OpCode "OpCode"
+#define TABLE_InstanceChange_COL_ChangedInstanceId "ChangedInstance_Id"
+#define TABLE_InstanceChange_COL_ChangedInstanceClassId "ChangedInstance_ClassId"
 //************************** ViewGenerator ***************************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2016
@@ -216,6 +222,34 @@ BentleyStatus ViewGenerator::GenerateViewSql(NativeSqlBuilder& viewSql, Context&
     return RenderEntityClassMap(viewSql, ctx, classMap);
     }
 
+void ParseChangeFuntionArgs(ECInstanceId& changeSummaryId, Nullable<ChangedValueState>& changedValueState, MemberFunctionCallExp const& memberFuncCallExp)
+    {
+    ECInstanceId changesetIdFromExp;
+    const Exp* changeSummaryIdExp = memberFuncCallExp.GetArgument(0);
+    const Exp* changeValueStateExp = memberFuncCallExp.GetArgument(1);
+    if (changeSummaryIdExp->GetType() == Exp::Type::LiteralValue)
+        {
+        uint64_t val = 0;
+        sscanf(changeSummaryIdExp->GetAs<LiteralValueExp>().GetRawValue().c_str(), "%" SCNu64, &val);
+        changeSummaryId = ECInstanceId(val);
+        }
+
+    if (changeValueStateExp->GetType() == Exp::Type::LiteralValue)
+        {
+        changedValueState = ChangeManager::ToChangedValueState(changeSummaryIdExp->GetAs<LiteralValueExp>().GetRawValue().c_str());
+        if (changedValueState == nullptr)
+            {
+            int32_t val = 0;
+            sscanf(changeValueStateExp->GetAs<LiteralValueExp>().GetRawValue().c_str(), "%" SCNd32, &val);
+            changedValueState = ChangeManager::ToChangedValueState(val);
+            }
+        }
+
+    //changesetId is not important if changeValueState was not known in advance
+    if (changedValueState == nullptr)
+        changeSummaryId = ECInstanceId();    
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2017
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -224,7 +258,7 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
     BeAssert(ctx.GetMemberFunctionCallExp() != nullptr);
     MemberFunctionCallExp const& memberFuncCallExp = *ctx.GetMemberFunctionCallExp();
 
-    if (memberFuncCallExp.GetChildrenCount() != 2 )
+    if (memberFuncCallExp.GetChildrenCount() != 2)
         {
         ctx.GetECDb().GetImpl().Issues().ReportV("Class exp's member function '%s' is called with invalid number of arguments.", memberFuncCallExp.GetFunctionName().c_str());
         return ERROR;
@@ -240,33 +274,44 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
     if (ECSqlExpPreparer::PrepareFunctionArgList(argSqlSnippets, const_cast<ECSqlPrepareContext&> (ctx.GetPrepareCtx()), memberFuncCallExp) != ECSqlStatus::Success)
         return ERROR;
 
+
+    /* ----------------------------------------------
+    Optimization when ChangeValueState is know
+    o AfterDelete - Call DeleteValue() to construct row entirly from changeset
+    o AfterInsert - Call InsertValue() to construct row entirly from changeset
+    o BeforeUpdate/AfterUpdate - Require LEFT JOIN
+    - By finding which accessString changed we can remove the call to ChangeValue() but this require a additional query
+    ------------------------------------------------- */
+
     BeAssert(argSqlSnippets.size() == 2);
     NativeSqlBuilder const& summaryIdArgSql = argSqlSnippets[0];
     NativeSqlBuilder const& operationArgSql = argSqlSnippets[1];
-    
+
     NativeSqlBuilder internalView;
     if (GenerateViewSql(internalView, ctx, classMap) != SUCCESS)
         return ERROR;
 
-#define TABLEALIAS_InstanceChange "ic"
-#define TABLE_InstanceChange ECSCHEMA_ALIAS_ECDbChange "_" ECDBCHANGE_CLASS_InstanceChange
-#define TABLE_InstanceChange_COL_Id "Id"
-#define TABLE_InstanceChange_COL_SummaryId "SummaryId"
-#define TABLE_InstanceChange_COL_OpCode "OpCode"
-#define TABLE_InstanceChange_COL_ChangedInstanceId "ChangedInstance_Id"
-#define TABLE_InstanceChange_COL_ChangedInstanceClassId "ChangedInstance_ClassId"
-
-
     Utf8StringCR viewName = classMap.GetClass().GetName();
-
     internalView.AppendSpace().AppendEscaped(viewName);
-
     NativeSqlBuilder columnSql(TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceId " " ECDBSYS_PROP_ECInstanceId ", "  TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId " " ECDBSYS_PROP_ECClassId);
-
     SearchPropertyMapVisitor propertyVisitor(PropertyMap::Type::ConstraintECClassId | PropertyMap::Type::ConstraintECInstanceId | PropertyMap::Type::SingleColumnData);
     if (SUCCESS != classMap.GetPropertyMaps().AcceptVisitor(propertyVisitor))
         return ERROR;
 
+    // see if changesetId and changeValueState is constant literals or not. If yes then also try to determine the values
+    ECInstanceId changeSummaryIdArg;
+    Nullable<ChangedValueState> optimizedForChangedValueState;
+    ParseChangeFuntionArgs(changeSummaryIdArg, optimizedForChangedValueState, memberFuncCallExp);
+    //Before/After Update optimization not implemented
+    //------------------------------------------------
+    if (optimizedForChangedValueState != nullptr)
+        {
+        if (optimizedForChangedValueState.Value() == ChangedValueState::BeforeUpdate || optimizedForChangedValueState.Value() == ChangedValueState::AfterUpdate)
+            {
+            optimizedForChangedValueState = nullptr; //We currently do not support update optimization
+            }
+        }
+    //------------------------------------------------
     for (PropertyMap const* propertyMap : propertyVisitor.Results())
         {
         if (ctx.GetViewType() == ViewType::SelectFromView && !ctx.GetAs<SelectFromViewContext>().IsInSelectClause(propertyMap->GetAccessString()))
@@ -275,11 +320,26 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         if (propertyMap->GetType() == PropertyMap::Type::ConstraintECClassId || propertyMap->GetType() == PropertyMap::Type::ConstraintECInstanceId)
             {
             Utf8StringCR accessString = propertyMap->GetAccessString();
-            columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
-            columnSql.Append("'").Append(accessString).Append("',");
-            columnSql.Append(operationArgSql).AppendComma();
-            columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(accessString);
-            columnSql.AppendParenRight().AppendSpace().AppendEscaped(accessString);
+            if (optimizedForChangedValueState == nullptr)
+                {
+                columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
+                columnSql.Append("'").Append(accessString).Append("',");
+                columnSql.Append(operationArgSql).AppendComma();
+                columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(accessString);
+                columnSql.AppendParenRight().AppendSpace().AppendEscaped(accessString);
+                }
+            else if (ChangedValueState::AfterInsert == optimizedForChangedValueState.Value())
+                {
+                columnSql.Append("," SQLFUNC_InsertedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
+                columnSql.Append("'").Append(accessString).Append("'");                
+                columnSql.AppendParenRight().AppendSpace().AppendEscaped(accessString);
+                }
+            else if (ChangedValueState::BeforeDelete == optimizedForChangedValueState.Value())
+                {
+                columnSql.Append("," SQLFUNC_DeletedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
+                columnSql.Append("'").Append(accessString).Append("'");
+                columnSql.AppendParenRight().AppendSpace().AppendEscaped(accessString);
+                }
             }
         else
             {
@@ -292,29 +352,58 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
                 }
             else
                 {
-                columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
-                columnSql.Append("'").Append(dataProperty.GetAccessString()).Append("',");
-                columnSql.Append(operationArgSql).AppendComma();
-                columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(columnName);
-                columnSql.AppendParenRight().AppendSpace().AppendEscaped(columnName);
+                if (optimizedForChangedValueState == nullptr)
+                    {
+                    columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
+                    columnSql.Append("'").Append(dataProperty.GetAccessString()).Append("',");
+                    columnSql.Append(operationArgSql).AppendComma();
+                    columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(columnName);
+                    columnSql.AppendParenRight().AppendSpace().AppendEscaped(columnName);
+                    }
+                else if (ChangedValueState::AfterInsert == optimizedForChangedValueState.Value())
+                    {
+                    columnSql.Append("," SQLFUNC_InsertedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
+                    columnSql.Append("'").Append(dataProperty.GetAccessString()).Append("'");
+                    columnSql.AppendParenRight().AppendSpace().AppendEscaped(columnName);
+                    }
+                else if (ChangedValueState::BeforeDelete == optimizedForChangedValueState.Value())
+                    {
+                    columnSql.Append("," SQLFUNC_DeletedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
+                    columnSql.Append("'").Append(dataProperty.GetAccessString()).Append("'");
+                    columnSql.AppendParenRight().AppendSpace().AppendEscaped(columnName);
+                    }
                 }
             }
         }
 
     viewSql.AppendParenLeft();
-    viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM " TABLESPACE_ECChange "." TABLE_InstanceChange " " TABLEALIAS_InstanceChange " ");
+    if (optimizedForChangedValueState == nullptr)
+        {
+        viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM " TABLESPACE_ECChange "." TABLE_InstanceChange " " TABLEALIAS_InstanceChange " ");
 
-    if (ctx.IsPolymorphicQuery())
-        viewSql.AppendFormatted(" INNER JOIN [%s]." TABLE_ClassHierarchyCache " ch ON " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=ch.ClassId AND ch.BaseClassId=%s", 
-                                ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), classMap.GetClass().GetId().ToString().c_str());
+        if (ctx.IsPolymorphicQuery())
+            viewSql.AppendFormatted(" INNER JOIN [%s]." TABLE_ClassHierarchyCache " ch ON " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=ch.ClassId AND ch.BaseClassId=%s",
+                                    ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), classMap.GetClass().GetId().ToString().c_str());
 
-    viewSql.Append(" LEFT JOIN ").Append(internalView.GetSql()).Append(" ON ").AppendEscaped(viewName);
-    viewSql.Append("." ECDBSYS_PROP_ECInstanceId "=" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceId
-                   " WHERE " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_OpCode "=" SQLFUNC_ChangedValueStateToOpCode "(").Append(operationArgSql).Append(")");
-    viewSql.Append(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_SummaryId "=").Append(summaryIdArgSql);
+        viewSql.Append(" LEFT JOIN ").Append(internalView.GetSql()).Append(" ON ").AppendEscaped(viewName);
+        viewSql.Append("." ECDBSYS_PROP_ECInstanceId "=" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceId
+                       " WHERE " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_OpCode "=" SQLFUNC_ChangedValueStateToOpCode "(").Append(operationArgSql).Append(")");
+        viewSql.Append(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_SummaryId "=").Append(summaryIdArgSql);
 
-    if (!ctx.IsPolymorphicQuery())
-        viewSql.AppendFormatted(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=%s", classMap.GetClass().GetId().ToString().c_str());
+        if (!ctx.IsPolymorphicQuery())
+            viewSql.AppendFormatted(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=%s", classMap.GetClass().GetId().ToString().c_str());
+        }
+    else if (ChangedValueState::AfterInsert == optimizedForChangedValueState.Value() || ChangedValueState::BeforeDelete == optimizedForChangedValueState.Value())
+        {
+        viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM " TABLESPACE_ECChange "." TABLE_InstanceChange " " TABLEALIAS_InstanceChange " ");
+
+        if (ctx.IsPolymorphicQuery())
+            viewSql.AppendFormatted(" INNER JOIN [%s]." TABLE_ClassHierarchyCache " ch ON " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=ch.ClassId AND ch.BaseClassId=%s",
+                                    ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), classMap.GetClass().GetId().ToString().c_str());
+
+        viewSql.Append(" WHERE " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_OpCode "=" SQLFUNC_ChangedValueStateToOpCode "(").Append(operationArgSql).Append(")");
+        viewSql.Append(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_SummaryId "=").Append(summaryIdArgSql);
+        }
 
     viewSql.AppendParenRight();
     return SUCCESS;
