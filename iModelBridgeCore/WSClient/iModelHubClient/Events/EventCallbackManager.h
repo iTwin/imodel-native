@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelHubClient/Events/EventManager.h $
+|     $Source: iModelHubClient/Events/EventCallbackManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,19 +16,19 @@ BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 //=======================================================================================
 //@bsiclass                                      Algirdas.Mikoliunas             12/2016
 //=======================================================================================
-struct EventManagerContext : RefCountedBase
+struct EventCallbackManagerContext : RefCountedBase
 {
 private:
     iModelConnectionP m_imodelConnectionP;
-    EventManagerP m_managerP;
+    EventCallbackManagerP m_managerP;
     SimpleCancellationTokenPtr m_cancellationTokenPtr;
     mutable BeConditionVariable m_cv;
 
 public:
-    EventManagerContext(iModelConnectionP imodelConnectionPtr, EventManagerP manager, SimpleCancellationTokenPtr cancellationToken)
+    EventCallbackManagerContext(iModelConnectionP imodelConnectionPtr, EventCallbackManagerP manager, SimpleCancellationTokenPtr cancellationToken)
         :m_imodelConnectionP(imodelConnectionPtr), m_managerP(manager), m_cancellationTokenPtr(cancellationToken) {}
     iModelConnectionP GetiModelConnectionP() const {return m_imodelConnectionP;}
-    EventManagerP GetEventManagerP() const {return m_managerP;}
+    EventCallbackManagerP GetEventCallbackManagerP() const {return m_managerP;}
     SimpleCancellationTokenPtr GetCancellationTokenPtr() const {return m_cancellationTokenPtr;}
     void StopManager() {m_cancellationTokenPtr->SetCanceled();}
     BeConditionVariable& GetConditionVariable() const {return m_cv;}
@@ -37,25 +37,25 @@ public:
 //=======================================================================================
 //@bsiclass                                      Algirdas.Mikoliunas             12/2016
 //=======================================================================================
-struct EventManager : RefCountedBase
+struct EventCallbackManager : RefCountedBase
 {
 private:
     iModelConnectionP       m_imodelConnectionP;
     EventMap                m_eventCallbacks;
     BeMutex                 m_eventCallbacksMutex;
-    EventManagerContextPtr  m_eventManagerContext;
+    EventCallbackManagerContextPtr  m_eventCallbackManagerContext;
     EventCallbackPtr        m_pullMergeAndPushCallback;
 
     bool Start();
     void GetAllSubscribedEvents(EventTypeSet& allEventTypes);
 
 public:
-    EventManager(iModelConnectionP imodelConnectionP) : m_imodelConnectionP(imodelConnectionP) {}
+    EventCallbackManager(iModelConnectionP imodelConnectionP) : m_imodelConnectionP(imodelConnectionP) {}
     StatusTaskPtr Stop();
     StatusTaskPtr Subscribe(EventTypeSet* eventTypes, EventCallbackPtr callback);
     StatusTaskPtr Unsubscribe(EventCallbackPtr callback, bool* dispose);
     EventMap GetCallbacks() const {return m_eventCallbacks;}
-    virtual ~EventManager() {Stop();}
+    virtual ~EventCallbackManager() {Stop();}
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

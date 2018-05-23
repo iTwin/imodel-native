@@ -35,6 +35,7 @@
     <ClCompile Include="Integration\EventsTests.cpp" />
     <ClCompile Include="Integration\FailureTests.cpp" />
     <ClCompile Include="Integration\FakeServerTests.cpp" />
+    <ClCompile Include="Integration\GlobalEventsTests.cpp" />
     <ClCompile Include="Integration\iModelTests.cpp" />
     <ClCompile Include="Integration\iModelTestsBase.cpp" />
     <ClCompile Include="Integration\IntegrationTestsBase.cpp" />

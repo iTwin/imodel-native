@@ -1,15 +1,15 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelHubClient/Events/EventManager.cpp $
+|     $Source: iModelHubClient/Events/EventCallbackManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/TxnManager.h>
 #include <WebServices/iModelHub/Client/Briefcase.h>
 #include <WebServices/iModelHub/Client/Result.h>
 #include <thread>
-#include "EventManager.h"
+#include "EventCallbackManager.h"
 #include "../Logging.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
@@ -28,22 +28,22 @@ bool EventListContainsEvent(EventTypeSet eventList, Event::EventType eventType)
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
 #if defined (__APPLE__) || defined (ANDROID) || defined (__linux) || defined (__EMSCRIPTEN__)
-void* EventManagerThread(void* arg)
+void* EventCallbackManagerThread(void* arg)
 #elif defined (_WIN32) // Windows && WinRT
-unsigned __stdcall EventManagerThread(void* arg)
+unsigned __stdcall EventCallbackManagerThread(void* arg)
 #endif
     {
-    const Utf8String methodName = "EventManagerThread";
+    const Utf8String methodName = "EventCallbackManagerThread";
     try
         {
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting event manager thread.");
-        EventManagerContextPtr* managerContextPtr = (EventManagerContextPtr*)arg;
+        EventCallbackManagerContextPtr* managerContextPtr = (EventCallbackManagerContextPtr*)arg;
         if (nullptr == managerContextPtr)
             {
             LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid argument.");
             return 0;
             }
-        EventManagerContextPtr managerContext = *managerContextPtr;
+        EventCallbackManagerContextPtr managerContext = *managerContextPtr;
         if (managerContext.IsNull())
             {
             LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid context.");
@@ -53,10 +53,10 @@ unsigned __stdcall EventManagerThread(void* arg)
 
         LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Getting context members.");
         iModelConnectionP imodelConnectionP = managerContext->GetiModelConnectionP();
-        EventManagerP eventManager = managerContext->GetEventManagerP();
+        EventCallbackManagerP eventCallbackManager = managerContext->GetEventCallbackManagerP();
         ICancellationTokenPtr cancellationTokenPtr = managerContext->GetCancellationTokenPtr();
 
-        if (nullptr == imodelConnectionP || nullptr == eventManager)
+        if (nullptr == imodelConnectionP || nullptr == eventCallbackManager)
             {
             LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Invalid context members.");
             return 0;
@@ -85,7 +85,7 @@ unsigned __stdcall EventManagerThread(void* arg)
                 auto eventType = eventResult.GetValue()->GetEventType();
 
                 LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Starting event callbacks.");
-                for (auto callback : eventManager->GetCallbacks())
+                for (auto callback : eventCallbackManager->GetCallbacks())
                     {
                     LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Calling event callback.");
                     if (callback.second.empty() || EventListContainsEvent(callback.second, eventType))
@@ -104,15 +104,15 @@ unsigned __stdcall EventManagerThread(void* arg)
         }
     catch (std::exception const& e)
         {
-        LogHelper::Log(NativeLogging::SEVERITY::LOG_WARNING, "EventManagerThread", e.what());
+        LogHelper::Log(NativeLogging::SEVERITY::LOG_WARNING, "EventCallbackManagerThread", e.what());
         }
     catch (Utf8StringCR message)
         {
-        LogHelper::Log(NativeLogging::SEVERITY::LOG_WARNING, "EventManagerThread", message.c_str());
+        LogHelper::Log(NativeLogging::SEVERITY::LOG_WARNING, "EventCallbackManagerThread", message.c_str());
         }
     catch (...)
         {
-        LogHelper::Log(NativeLogging::SEVERITY::LOG_WARNING, "EventManagerThread", "Unknown exception");
+        LogHelper::Log(NativeLogging::SEVERITY::LOG_WARNING, "EventCallbackManagerThread", "Unknown exception");
         }
 
     return 0;
@@ -121,15 +121,15 @@ unsigned __stdcall EventManagerThread(void* arg)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-bool EventManager::Start()
+bool EventCallbackManager::Start()
     {
-    if (m_eventManagerContext.IsValid())
+    if (m_eventCallbackManagerContext.IsValid())
         return true;
 
-    LogHelper::Log(NativeLogging::SEVERITY::LOG_INFO, "EventManager::Start", "Start");
-    m_eventManagerContext = new EventManagerContext(m_imodelConnectionP, this, SimpleCancellationToken::Create());
-    BentleyStatus status = BeThreadUtilities::StartNewThread(EventManagerThread, &m_eventManagerContext, 1024 * 1024);
-    BeConditionVariable& cv = m_eventManagerContext->GetConditionVariable();
+    LogHelper::Log(NativeLogging::SEVERITY::LOG_INFO, "EventCallbackManager::Start", "Start");
+    m_eventCallbackManagerContext = new EventCallbackManagerContext(m_imodelConnectionP, this, SimpleCancellationToken::Create());
+    BentleyStatus status = BeThreadUtilities::StartNewThread(EventCallbackManagerThread, &m_eventCallbackManagerContext, 1024 * 1024);
+    BeConditionVariable& cv = m_eventCallbackManagerContext->GetConditionVariable();
     BeMutexHolder holder(cv.GetMutex());
     cv.RelativeWait(holder, 200);
     return BSISUCCESS == status;
@@ -138,10 +138,10 @@ bool EventManager::Start()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr EventManager::Stop()
+StatusTaskPtr EventCallbackManager::Stop()
     {
-    if (m_eventManagerContext.IsValid())
-        m_eventManagerContext->StopManager();
+    if (m_eventCallbackManagerContext.IsValid())
+        m_eventCallbackManagerContext->StopManager();
 
     m_eventCallbacks.clear();
     if (m_imodelConnectionP)
@@ -149,26 +149,26 @@ StatusTaskPtr EventManager::Stop()
 
     // Wait for events thread to finish
     int maxIterations = 100;
-    while (m_eventManagerContext.IsValid() && maxIterations > 0)
+    while (m_eventCallbackManagerContext.IsValid() && maxIterations > 0)
         {
-        int useCount = m_eventManagerContext->GetRefCount();
+        int useCount = m_eventCallbackManagerContext->GetRefCount();
         if (useCount <= 1)
             break;
 
         BeThreadUtilities::BeSleep(50);
         maxIterations--;
         }
-    BeAssert(m_eventManagerContext.IsNull() || 1 >= m_eventManagerContext->GetRefCount() && "Events thread not finished!");
+    BeAssert(m_eventCallbackManagerContext.IsNull() || 1 >= m_eventCallbackManagerContext->GetRefCount() && "Events thread not finished!");
 
-    m_eventManagerContext = nullptr;
-    LogHelper::Log(NativeLogging::SEVERITY::LOG_INFO, "EventManager::Stop", "Stop");
+    m_eventCallbackManagerContext = nullptr;
+    LogHelper::Log(NativeLogging::SEVERITY::LOG_INFO, "EventCallbackManager::Stop", "Stop");
     return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-void EventManager::GetAllSubscribedEvents(EventTypeSet& allEventTypes)
+void EventCallbackManager::GetAllSubscribedEvents(EventTypeSet& allEventTypes)
     {
     for (auto eventCallback : m_eventCallbacks)
         {
@@ -188,9 +188,9 @@ void EventManager::GetAllSubscribedEvents(EventTypeSet& allEventTypes)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr EventManager::Subscribe(EventTypeSet* eventTypes, EventCallbackPtr callback)
+StatusTaskPtr EventCallbackManager::Subscribe(EventTypeSet* eventTypes, EventCallbackPtr callback)
     {
-    const Utf8String methodName = "EventManager::Subscribe";
+    const Utf8String methodName = "EventCallbackManager::Subscribe";
     BeMutexHolder lock(m_eventCallbacksMutex);
 
     // Check callback is already subscribed
@@ -224,7 +224,7 @@ StatusTaskPtr EventManager::Subscribe(EventTypeSet* eventTypes, EventCallbackPtr
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr EventManager::Unsubscribe(EventCallbackPtr callback, bool* dispose)
+StatusTaskPtr EventCallbackManager::Unsubscribe(EventCallbackPtr callback, bool* dispose)
     {
     BeMutexHolder lock(m_eventCallbacksMutex);
 

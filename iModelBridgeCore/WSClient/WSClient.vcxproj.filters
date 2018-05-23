@@ -441,9 +441,6 @@
     <ClCompile Include="iModelHubClient\Events\DeletedEvent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="iModelHubClient\Events\EventManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="iModelHubClient\Events\EventParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -559,6 +556,42 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="iModelHubClient\ChunkedWSChangeset.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelHubClient\GlobalEvents\SoftiModelDeleteEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelHubClient\GlobalEvents\HardiModelDeleteEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelHubClient\GlobalEvents\iModelCreatedEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelHubClient\GlobalEvents\ChangeSetCreatedEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelHubClient\GlobalEvents\NamedVersionCreatedEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelHubClient\GlobalEvents\GlobalConnection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\iModelHubClient\Integration\GlobalEventsTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelHubClient\GlobalEvents\GlobalEventParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelHubClient\Events\EventCallbackManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelHubClient\Events\EventManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelHubClient\EventsCommon\BaseEventManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="iModelHubClient\GlobalEvents\GlobalEventManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1106,9 +1139,6 @@
     <ClInclude Include="Cache\Persistence\DataSourceCache.xliff.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="iModelHubClient\Events\EventManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="iModelHubClient\Logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1278,6 +1308,45 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\ISecurityToken.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\GlobalEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\NamedVersionCreatedEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\ChangeSetCreatedEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\SoftiModelDeleteEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\HardiModelDeleteEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\iModelCreatedEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\GlobalConnection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\GlobalEventSubscription.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\GlobalEventParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iModelHubClient\Events\EventCallbackManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iModelHubClient\Events\EventManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\GlobalEvents\GlobalEventManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\EventsCommon\BaseEventManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
