@@ -106,7 +106,7 @@
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
-    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke"
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=TilePublisherTest -dTEST_COLLECTION_PRODUCT=TilePublisher-Test -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x64">
         <SubProduct ProductName="TilePublisher-Test"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
@@ -119,7 +119,7 @@
         <SubPart PartName="Gtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
-    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=TilePublisher-Gtest -dGTEST_NAME=TilePublisherTest" OnlyPlatforms="x64">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=TilePublisher-Gtest -dGTEST_NAME=TilePublisherTest" OnlyPlatforms="x64">
         <SubProduct ProductName="TilePublisher-Gtest" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/TilePublisherTest.log</Files>
