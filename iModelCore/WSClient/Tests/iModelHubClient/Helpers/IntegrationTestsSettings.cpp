@@ -52,6 +52,11 @@ void IntegrationTestsSettings::ReadSettings(BeFileNameCR settingsFile)
             m_adminCredentials = Credentials(user["Username"].asString(), user["Password"].asString());
             continue;
             }
+        if (user["IsServiceAccount"].asBool())
+            {
+            m_serviceAccountCredentials = Credentials(user["Username"].asString(), user["Password"].asString());
+            continue;
+            }
 
         m_nonAdminCredentials = Credentials(user["Username"].asString(), user["Password"].asString());
         }
@@ -69,6 +74,11 @@ void IntegrationTestsSettings::ReadSettings(BeFileNameCR settingsFile)
 CredentialsCR IntegrationTestsSettings::GetValidAdminCredentials() const
     {
     return m_adminCredentials;
+    }
+
+CredentialsCR IntegrationTestsSettings::GetValidServiceAccountCredentials() const
+    {
+    return m_serviceAccountCredentials;
     }
 
 CredentialsCR IntegrationTestsSettings::GetValidNonAdminCredentials() const

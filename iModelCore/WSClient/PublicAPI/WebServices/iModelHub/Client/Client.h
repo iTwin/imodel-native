@@ -12,6 +12,7 @@
 #include <WebServices/iModelHub/Client/FileInfo.h>
 #include <WebServices/iModelHub/Client/iModelInfo.h>
 #include <WebServices/iModelHub/Client/iModelConnection.h>
+#include <WebServices/iModelHub/GlobalEvents/GlobalConnection.h>
 #include <WebServices/iModelHub/Client/Briefcase.h>
 #include <WebServices/iModelHub/Client/iModelManager.h>
 #include <WebServices/iModelHub/Client/iModelAdmin.h>
@@ -45,6 +46,7 @@ private:
     ClientInfoPtr               m_clientInfo;
     IHttpHandlerPtr             m_customHandler;
     iModelAdmin                 m_iModelAdmin;
+    GlobalConnectionPtr         m_globalConnectionPtr;
 
     static StatusResult MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath, 
                                                  ICancellationTokenPtr cancellationToken = nullptr);
@@ -297,6 +299,11 @@ public:
                                                                          LocalBriefcaseFileNameCallback const& fileNameCallBack, 
                                                                          Http::Request::ProgressCallbackCR callback = nullptr, 
                                                                          ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Provides connection to Global events.
+    //! @return Asynchronous task that has Global events connection as the result.
+    IMODELHUBCLIENT_EXPORT GlobalConnectionTaskPtr GlobalConnection();
+
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE
