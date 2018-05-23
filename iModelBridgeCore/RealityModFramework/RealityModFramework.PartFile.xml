@@ -620,7 +620,7 @@
     </Part>
     
     <!-- Define a gtest program to run the tests -->
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RealityModFrameworkTest -dTEST_COLLECTION_PRODUCT=RealityModFramework-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RealityModFrameworkTest -dTEST_COLLECTION_PRODUCT=RealityModFramework-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="RealityModFramework-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest"  PartFile="BeGTest"/>
         <SubPart PartName="BentleyDesktopClientCCApi"         PartFile="SdkSources"                Repository="bsicommon" />
@@ -646,7 +646,7 @@
         <Directories DirectoryListName="RealityModFramework-GtestDir"/>
     </Product>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=RealityModFramework-Gtest -dGTEST_NAME=RealityModFrameworkTest  -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RealityModFramework" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=RealityModFramework-Gtest -dGTEST_NAME=RealityModFrameworkTest  -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RealityModFramework" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="RealityModFramework-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
