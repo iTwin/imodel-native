@@ -36,13 +36,15 @@ DgnElementIdSet IMainLinearElementSource::QueryLinearElementSourceIds(ILinearEle
     {
     auto& elmCR = mainLinearElement.ToElement();
 
-    Utf8String ecSql = "SELECT SourceECInstanceId FROM "
+    Utf8String ecSql = "SELECT iMainLE.SourceECInstanceId FROM "
         BRRP_SCHEMA(BRRP_REL_ILinearElementSourceRefersToMainLinearElement) " iMainLE";
 
     if (filterBaseClassId.IsValid())
         {
-        ecSql.append(", meta.ClassHasAllBaseClasses WHERE meta.ClassHasAllBaseClasses.SourceECInstanceId = iMainLE.ECClassId ");
-        ecSql.append("AND iMainLE.TargetECInstanceId = ? AND meta.ClassHasAllBaseClasses.TargetECInstanceId = ?;");
+        ecSql.append(", meta.ClassHasAllBaseClasses WHERE ");
+        ecSql.append("iMainLE.TargetECInstanceId = ? AND ");
+        ecSql.append("meta.ClassHasAllBaseClasses.SourceECInstanceId = iMainLE.SourceECClassId AND ");
+        ecSql.append("meta.ClassHasAllBaseClasses.TargetECInstanceId = ?;");
         }
     else
         ecSql.append(" WHERE iMainLE.TargetECInstanceId = ?;");
