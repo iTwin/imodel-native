@@ -889,6 +889,13 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
 
             if (constraintsToRemove.size() > 0)
                 {
+                for (ECClassCP ecClass : constraintsToRemove)
+                    {
+                    if (ecClass->IsEntityClass())
+                        baseConstraint.RemoveClass(*ecClass->GetEntityClassCP());
+                    else if (ecClass->IsRelationshipClass())
+                        baseConstraint.RemoveClass(*ecClass->GetRelationshipClassCP());
+                    }
                 BECN::ECObjectsStatus status = baseConstraint.AddClass(*defaultConstraintClass);
                 if (ECN::ECObjectsStatus::RelationshipConstraintsNotCompatible == status)
                     {
@@ -897,14 +904,6 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
                     }
                 if (BECN::ECObjectsStatus::Success != status)
                     return;
-
-                for (ECClassCP ecClass : constraintsToRemove)
-                    {
-                    if (ecClass->IsEntityClass())
-                        baseConstraint.RemoveClass(*ecClass->GetEntityClassCP());
-                    else if (ecClass->IsRelationshipClass())
-                        baseConstraint.RemoveClass(*ecClass->GetRelationshipClassCP());
-                    }
                 }
             }
         }
