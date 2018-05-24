@@ -2235,7 +2235,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_Virt
         //Rel: {Parent,Child1} added {Parent,Child2} added
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", parentIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
         //WIP: RelECClassId is not handled correctly if it is virtual.
-        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s"}},{"id":"%s", "Name":"Child 2", "Parent":{"id":"%s","relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str(), parentIdStr.c_str())),
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}},{"id":"%s", "Name":"Child 2", "Parent":{"id":"%s","relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str(), parentIdStr.c_str())),
                   GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId, Name, Parent FROM ts.Child.Changes(%s,'AfterInsert') ORDER BY Name", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
         EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"},{"sourceId":"%s", "targetId":"%s"}])json",
                                              parentIdStr.c_str(), child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str())),
@@ -2262,7 +2262,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropLogicalForeignKey_Virt
         //before update 
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
-        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s"}}])json", child1IdStr.c_str(), parentIdStr.c_str())),
+        EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str())),
                   GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Parent FROM ts.Child.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
             << "Expected: Parent before being nulled out; Name is unchanged -> current value";
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
@@ -2354,9 +2354,7 @@ TEST_F(ChangeSummaryTestFixture, VirtualRelECClassId)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT Parent.Id,Parent.RelECClassId FROM ts.Child.Changes(%s,'AfterInsert')", changeSummaryKey.GetInstanceId().ToString().c_str()).c_str()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(parentKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
-    //Once fixed TFS#793636, this must be:
-    //ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "Rel"), stmt.GetValueId<ECClassId>(1));
-    ASSERT_TRUE(stmt.IsValueNull(1)) << "RelECClassId is currently expected to be NULL because of a bug. " << stmt.GetECSql();
+    ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "Rel"), stmt.GetValueId<ECClassId>(1));
     }
 
 //---------------------------------------------------------------------------------------
@@ -2448,7 +2446,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
     //Rel: {Parent1,Child1} {Parent1,Child2}
 
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s"}])json", parentIdStr.c_str())), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'AfterInsert')", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s"}},{"id":"%s", "Name":"Child 2", "Parent":{"id":"%s"}}])json", child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str(), parentIdStr.c_str())),
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}},{"id":"%s", "Name":"Child 2", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str(), parentIdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId, Name, Parent FROM ts.Child.Changes(%s,'AfterInsert') ORDER BY Name", changeSummary1Key.GetInstanceId().ToString().c_str()).c_str()));
     EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"sourceId":"%s", "targetId":"%s"},{"sourceId":"%s", "targetId":"%s"}])json", 
                                          parentIdStr.c_str(), child1IdStr.c_str(), parentIdStr.c_str(), child2IdStr.c_str())),
@@ -2476,7 +2474,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavPropCascadeDelete)
     //before update 
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId FROM ts.Parent.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()));
 
-    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s"}}])json", child1IdStr.c_str(), parentIdStr.c_str())),
+    EXPECT_EQ(JsonValue(Utf8PrintfString(R"json([{"id":"%s", "Name":"Child 1", "Parent":{"id":"%s", "relClassName":"TestSchema.Rel"}}])json", child1IdStr.c_str(), parentIdStr.c_str())),
               GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT ECInstanceId,Name,Parent FROM ts.Child.Changes(%s,'BeforeUpdate')", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))
         << "Expected: Parent before being nulled out; Name is unchanged -> current value";
     EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT SourceECInstanceId,TargetECInstanceId FROM ts.Rel.Changes(%s,'BeforeUpdate') ORDER BY TargetECInstanceId", changeSummary2Key.GetInstanceId().ToString().c_str()).c_str()))

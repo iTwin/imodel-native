@@ -322,32 +322,26 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         if (ctx.GetViewType() == ViewType::SelectFromView && !ctx.GetAs<SelectFromViewContext>().IsInSelectClause(propertyMap->GetAccessString()))
             continue;
 
-        Utf8StringCP accessString = nullptr;
         Utf8StringCP colName = nullptr;
         if (propertyMap->GetType() == PropertyMap::Type::ConstraintECClassId || propertyMap->GetType() == PropertyMap::Type::ConstraintECInstanceId)
-            {
-            accessString = &propertyMap->GetAccessString();
-            colName = accessString;
-            }
+            colName = &propertyMap->GetAccessString();
         else
             {
             const SingleColumnDataPropertyMap& dataProperty = propertyMap->GetAs<SingleColumnDataPropertyMap>();
             Utf8StringCR columnName = dataProperty.GetColumn().GetName();
-            if (dataProperty.GetType() == PropertyMap::Type::NavigationRelECClassId &&
-                dataProperty.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().GetColumn().IsVirtual())
+            if (dataProperty.GetType() == PropertyMap::Type::NavigationRelECClassId && dataProperty.GetColumn().IsVirtual())
                 {
-                columnSql.AppendComma().AppendEscaped(viewName).AppendDot().AppendEscaped(columnName);
+                columnSql.AppendComma().Append(dataProperty.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().GetDefaultClassId()).AppendSpace().Append(columnName);
                 continue;
                 }
 
-            accessString = &dataProperty.GetAccessString();
             colName = &columnName;
             }
 
-        BeAssert(accessString != nullptr && colName != nullptr);
+        BeAssert(colName != nullptr);
 
         // ChangedValue(<InstanceChange Id Column>, <access string>, <ChangedValueState>, <Fallback Value>)
-        columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." COL_DEFAULTNAME_Id ",'").Append(*accessString).Append("',");
+        columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." COL_DEFAULTNAME_Id ",'").Append(propertyMap->GetAccessString()).Append("',");
 
         if (changedValueState != nullptr) // literal value for changed value state
             columnSql.AppendFormatted("%d,", Enum::ToInt(changedValueState.Value()));
