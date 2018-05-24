@@ -1471,10 +1471,12 @@ void Check::SaveTransformed(MSBsplineSurfacePtr const &data)
     {
     SaveTransformed(IGeometry::Create (data->Clone ()));}
 
-void Check::SaveTransformed(MSBsplineCurvePtr const &data)
+void Check::SaveTransformed(MSBsplineCurvePtr const &data, bool savePolygon)
     {
     SaveTransformed(IGeometry::Create (
         ICurvePrimitive::CreateBsplineCurve (data->CreateCopy ())));
+    if (savePolygon)
+        Check::SaveTransformed (data->poles, data->GetNumPoles ());
     }
 
 void Check::SaveTransformed (bvector<DPoint3d> const &data, bool addClosure)
@@ -1484,6 +1486,26 @@ void Check::SaveTransformed (bvector<DPoint3d> const &data, bool addClosure)
         cv->GetLineStringP ()->push_back (data[0]);
     SaveTransformed (IGeometry::Create (cv));
     }
+void Check::SaveTransformed (DPoint3dCP pData, size_t n)
+    {
+    bvector<DPoint3d> data;
+    for (size_t i = 0; i < n; i++)
+        data.push_back (pData[i]);
+    SaveTransformed (data);
+    }
+
+void Check::SaveTransformed (bvector<DPoint4d> const &data)
+    {
+    bvector<DPoint3d> points;
+    for (auto & xyzw : data)
+        {
+        DPoint3d xyz;
+        if (xyzw.GetProjectedXYZ (xyz))
+            points.push_back (xyz);
+        }
+    SaveTransformed (points);
+    }
+
 void Check::SaveTransformedMarker (DPoint3dCR &xyz, double markerSize)
     {
     ICurvePrimitivePtr cp;

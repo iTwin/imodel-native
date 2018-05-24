@@ -15,7 +15,7 @@ TEST(FrustumClip, Test1)
     double a1 = 3.0;
     rangeA.low = DPoint3d::From (a0, a0, a0);
     rangeA.high = DPoint3d::From (a1, a1, a1);
-    bsiDRange3d_box2Points (&rangeA, frustumPointsA);
+    rangeA.Get8Corners (frustumPointsA);
 
     double b0 = 0.5;
     double b1 = 2.0;

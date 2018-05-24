@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/rotmatrix.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -605,15 +605,15 @@ DRange3dCP pInRange
     {
     DPoint3d    corner[8];
 
-    if (bsiDRange3d_isNull (pInRange))
+    if (pInRange->IsNull ())
         {
         *pOutRange = *pInRange;
         }
     else
         {
-        bsiDRange3d_box2Points(pInRange, corner);
+        pInRange->Get8Corners (corner);
         bsiRotMatrix_multiplyDPoint3dArray (pMatrix, corner, corner, 8);
-        bsiDRange3d_initFromArray (pOutRange, corner, 8);
+        pOutRange->InitFrom(corner, 8);
         }
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspmesh.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -417,9 +417,9 @@ double globalRelTol
     double a, b;
     DRange3d range;
     DVec3d diagonal;
-    bsiDRange3d_initFromArray (&range, pXYZ, numXYZ);
+    range.InitFrom(pXYZ, numXYZ);
     bsiDVec3d_subtractDPoint3dDPoint3d (&diagonal, &range.low, &range.high);
-    maxAbs = bsiDRange3d_getLargestCoordinate (&range);
+    maxAbs = range.LargestCoordinate ();
     maxDiagonal = bsiDVec3d_maxAbs (&diagonal);
 
     if (absTol < sDefaultAbsTol)
@@ -4939,7 +4939,7 @@ int         numPole
         else
             newPoint = pPointArray[i];
 
-        bsiDRange3d_extendByDPoint3d (pRange, &newPoint);
+        pRange->Extend (newPoint);
         }
     }
 
@@ -5000,11 +5000,11 @@ double tolerance
     {
     DRange3d poleRange;
     static double s_defaultToleranceFraction = 1.0e-3;
-    bsiDRange3d_init (pRange);
+    pRange->Init ();
     if (tolerance <= 0.0)
         {
-        mdlBspline_surfacePoleRange (&poleRange, pSurface);
-        if (bsiDRange3d_isNull (&poleRange))
+        pSurface->GetPoleRange (poleRange);
+        if (poleRange.IsNull ())
             return ERROR;
         tolerance = s_defaultToleranceFraction *
                 bsiDPoint3d_distance (&poleRange.low, &poleRange.high);
@@ -5065,7 +5065,7 @@ double tolerance
     DRange3d meshRange;
     StatusInt status;
 
-    bsiDRange3d_init (&meshRange);
+    meshRange.Init ();
     /* rotMatrix_orthogonalFromZRow constructs by ROW  */
     rotMatrix_orthogonalFromZRow (&matrix, (DVec3dCP) pNormal);
     bsiRotMatrix_transpose (&matrix, &matrix);

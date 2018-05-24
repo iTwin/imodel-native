@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/MSBsplineCurve_ByBezier.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1921,19 +1921,11 @@ DRange1d MSBsplineCurve::GetRangeOfProjectionOnRay (DRay3dCR ray, double fractio
     return range;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    peter.yu                        02/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-MSBsplineStatus MSBsplineCurve::ComputeInflectionPoints (DPoint3dP& points, double*& params, int& numPoints)
-    {
-    return mdlBspline_computeInflectionPoints (&points, &params, &numPoints, this);
-    }
-
 MSBsplineStatus MSBsplineCurve::ComputeInflectionPoints (bvector<DPoint3d>& points, bvector<double>& inflectionParams)
     {
-    double values[MAX_ORDER];
     DPoint3d derivA1, derivA2, point;
-    DPoint4d inflections[MAX_ORDER];
+    bvector<GraphicsPoint> inflections;
+    bvector<DPoint4d> segmentPoles;
     BCurveSegment segment;
     bsiDPoint3d_zero (&derivA1);
     bsiDPoint3d_zero (&derivA2);
@@ -1963,10 +1955,11 @@ MSBsplineStatus MSBsplineCurve::ComputeInflectionPoints (bvector<DPoint3d>& poin
                 }
 
             bsiBezierDPoint4d_evaluateDPoint3dArrayExt (NULL, &derivA1, &derivA2, segment.GetPoleP (), params.order, &u1, 1);
-            size_t numInBezier = bsiBezierDPoint4d_inflectionPoints (inflections, values, segment.GetPoleP (), params.order);
-            for (size_t j = 0; j < numInBezier; j++)
+            segment.GetPoles (segmentPoles);
+            bsiBezierDPoint4d_inflectionPoints (inflections, segmentPoles);
+            for (auto & gp : inflections)
                 {
-                double  param = segment.FractionToKnot (values[j]);
+                double  param = segment.FractionToKnot (gp.a);
                 if(fabs(param) < 1e-8 || fabs(param-1.0) < 1e-8)  //from SS3
                     continue;
                 inflectionParams.push_back (param);

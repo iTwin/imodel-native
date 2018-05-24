@@ -212,6 +212,7 @@ TEST(PolygonOps,InOutXYTriangle)
 TEST(PolygonOps,InOutXYPolygon)
     {
     bvector<DPoint2d> polygon;
+    bvector<DPoint3d> polygon3d;
     bvector<DPoint3d> points;
     auto transform = Transform::From (
                 RotMatrix::FromAxisAndRotationAngle (2, 0.1),
@@ -220,21 +221,27 @@ TEST(PolygonOps,InOutXYPolygon)
     for (int numTooth : {1,3})
         {
         SquareWavePolygon (polygon, numTooth, 0, 1, 1, 0, 1, true, -1 );
+        SquareWavePolygon (polygon3d, numTooth, 0, 1, 1, 0, 1, true, -1 );
         bvector<DPoint2d> skewPolygon;
         transform.Multiply (skewPolygon, polygon);
         // the polygon and point coordinates will have exact integer hits and alignment with edges
         UnitGridPoints (points, 6 * numTooth + 1, 7, -0.5, -1.5, 0.5, 0.5);
         double tol = 1.0e-10;
         size_t numError = 0;
+        size_t numErrorXYZ = 0;
         for (auto uv : points)
             {
             DPoint3d skewPoint = transform * uv;
             auto parity = PolygonOps::PointPolygonParity (DPoint2d::From (uv), polygon, tol);
+            auto parity2 = bsiGeom_XYPolygonParity (&uv, polygon3d.data (), (int)polygon3d.size (), tol);
             auto parity1 = PolygonOps::PointPolygonParity (DPoint2d::From (skewPoint), skewPolygon, tol);
             if (parity != parity1)
                 numError++;
+            if (parity != parity2)
+                numErrorXYZ++;
             }
         Check::Size (0, numError, "points in polygon versus rotated");
+        Check::Size (0, numErrorXYZ, "points in polygon XY versus XYZ");
         }
     }
 

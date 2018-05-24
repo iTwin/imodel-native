@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspcurv.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -2726,130 +2726,6 @@ MSBsplineCurve const *curveP
     }
 
 
-/*----------------------------------------------------------------------+
-|                                                                       |
-| name          mdlBspline_computeInflectionPoints                      |
-|                                                                       |
-| author        LuHan                                   01/02           |
-|                                                                       |
-+----------------------------------------------------------------------*/
-Public GEOMDLLIMPEXP int      mdlBspline_computeInflectionPoints
-(
-DPoint3d        **ppPoints,    /* <= point on curve evaluated at param */
-double          **ppParams,    /* <= point on curve evaluated at param */
-int             *pNumPoints,
-MSBsplineCurve  *pCurve
-)
-    {
-    int             i, j, status, nKnots, numDistinct, *knotMultiplicityP = NULL;
-    double          *distinctKnotP = NULL;
-    bvector<double> inflectionParams;
-    MSBsplineCurve  bezier;
-    if (ppParams)
-        *ppParams = NULL;
-    if (ppPoints)
-        *ppPoints = NULL;
-
-    /* Compute distinct knots */
-    nKnots = bspknot_numberKnots (pCurve->params.numPoles, pCurve->params.order, pCurve->params.closed);
-
-    if (NULL == (distinctKnotP = (double *) msbspline_malloc (nKnots * sizeof(double), HEAPSIG_BCRV)) ||
-        NULL == (knotMultiplicityP = (int *) msbspline_malloc (nKnots * sizeof(int), HEAPSIG_BCRV)) ||
-        SUCCESS != bspknot_getKnotMultiplicity (distinctKnotP, knotMultiplicityP, &numDistinct,
-                   pCurve->knots, pCurve->params.numPoles, pCurve->params.order, pCurve->params.closed,
-                   bspknot_knotTolerance (pCurve)))
-        return MDLERR_INSFMEMORY;
-
-    /* Check each Bezier segment */
-    memset (&bezier, 0, sizeof(MSBsplineCurve));
-    if (SUCCESS == (status = bspcurv_makeBezier (&bezier, pCurve)))
-        {
-        DPoint3d derivA1, derivA2;
-
-        int     numInBezier = 0, numSeg = (bezier.params.numPoles-1)/(bezier.params.order-1);
-        double u0 = 0.0;    /* Put in variable form so we can pass an address */
-        double u1 = 1.0;
-        bsiDPoint3d_zero (&derivA1);
-        bsiDPoint3d_zero (&derivA2);
-
-        for (i = 0; i < numSeg; i++)
-            {
-            DPoint3d    *pP = NULL;
-            double      *wP = NULL, params[MAX_ORDER];
-            DPoint4d    poles[MAX_ORDER], inflections[MAX_ORDER];
-
-            pP = bezier.poles + i*(bezier.params.order-1);
-            if (bezier.rational)
-                {
-                wP = bezier.weights + i*(bezier.params.order-1);
-                }
-
-            for (j = 0; j < bezier.params.order; j++)
-                {
-                poles[j].x = pP[j].x;
-                poles[j].y = pP[j].y;
-                poles[j].z = pP[j].z;
-                poles[j].w = bezier.rational ? wP[j] : 1.0;
-                }
-
-            /*
-                Look for curvature change at start vertex.
-                We say there is a change if the incoming and outgoing
-                plane normals have negative dot product.
-                (Plane normal defined as cross product of 1st derivative vector and 2nd derivative vector.)
-            */
-            if (   i > 0)
-                {
-                //bool    bBreakAtStart = false;
-                DPoint3d derivB1, derivB2;
-                DPoint3d normalA, normalB;
-                bsiBezierDPoint4d_evaluateDPoint3dArrayExt (NULL, &derivB1, &derivB2,
-                                    poles, bezier.params.order, &u0, 1);
-                bsiDPoint3d_crossProduct (&normalA, &derivA1, &derivA2);
-                bsiDPoint3d_crossProduct (&normalB, &derivB1, &derivB2);
-                if (bsiDPoint3d_dotProduct (&normalA, &normalB) <=0.0)
-                    {
-                    double param = distinctKnotP[i];
-                    inflectionParams.push_back (param);
-                    }
-                }
-            /* Pre-evaluate current outgoing tangent to be used as incoming tangent to successor */
-            bsiBezierDPoint4d_evaluateDPoint3dArrayExt (NULL, &derivA1, &derivA2,
-                                    poles, bezier.params.order, &u1, 1);
-
-            numInBezier = bsiBezierDPoint4d_inflectionPoints (inflections, params, poles, bezier.params.order);
-            for (j = 0; j < numInBezier; j++)
-                {
-                double  param = (distinctKnotP[i+1] - distinctKnotP[i])*params[j] + distinctKnotP[i];
-                inflectionParams.push_back (param);
-                }
-            }
-
-        DoubleOps::Sort (inflectionParams);
-        }
-
-    size_t numInflections = inflectionParams.size ();
-    if (pNumPoints)
-        *pNumPoints = (int)inflectionParams.size ();
-
-    if (ppParams && numInflections > 0)
-        BSIBaseGeom::MallocAndCopy (ppParams, inflectionParams);
-
-    if (numInflections > 0)
-        {
-        *ppPoints = static_cast<DPoint3d *>(dlmSystem_mdlMallocWithDescr (numInflections*sizeof(DPoint3d), NULL));
-        DPoint3d *pPoints = *ppPoints;
-        for (size_t i = 0; i < numInflections; i++)
-            bspcurv_evaluateCurvePoint (pPoints+i, NULL, pCurve, inflectionParams[i]);
-        }
-
-    if (distinctKnotP)
-        msbspline_free (distinctKnotP);
-    if (knotMultiplicityP)
-        msbspline_free (knotMultiplicityP);
-    bspcurv_freeCurve (&bezier);
-    return  status;
-    }
 
 /*----------------------------------------------------------------------+
 |                                                                       |

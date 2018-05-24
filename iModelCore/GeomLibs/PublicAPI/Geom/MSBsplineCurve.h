@@ -725,10 +725,6 @@ public:
     
     
     //! Calculate the parameters and location of the all inflection points of a B-spline curve.
-    //! @DotNetMethodExclude
-    GEOMDLLIMPEXP MSBsplineStatus ComputeInflectionPoints (DPoint3dP& points, double*& params, int& numPoints);
-
-    //! Calculate the parameters and location of the all inflection points of a B-spline curve.
     GEOMDLLIMPEXP MSBsplineStatus ComputeInflectionPoints (bvector<DPoint3d>& points, bvector<double>& params);
 
     //! Calculate the parameters and location of the all inflection points of a B-spline curve.
@@ -1003,11 +999,9 @@ public:
 
     //! Elevate the degree (increases the order) of the B-spline curve.
     GEOMDLLIMPEXP MSBsplineStatus ElevateDegree (int newDegree);
-    //! Create equivalent Bézier curve for the B-spline curve.
-    GEOMDLLIMPEXP MSBsplineStatus MakeBezier (MSBsplineCurveR bezierCurve);
     //! Create a series of Bézier curve for the B-spline curve.
     //! @DotNetMethodExclude
-    GEOMDLLIMPEXP MSBsplineStatus MakeBeziers (bvector<MSBsplineCurve>& beziers) const;
+    GEOMDLLIMPEXP void CopyAsBeziers (bvector<MSBsplineCurvePtr>& beziers) const;
 
 
     //! Get all C1 fractional Discontinuities.
@@ -1079,7 +1073,7 @@ public:
     //! Initialize the B-spline curve for an ellipse.
     GEOMDLLIMPEXP MSBsplineStatus InitFromDEllipse3d (DEllipse3dCR ellipse);
     //! Initialize the B-spline curve for a conic
-    GEOMDLLIMPEXP MSBsplineStatus InitFromDConic4d (DConic4dCR conic);
+    GEOMDLLIMPEXP static MSBsplineCurvePtr CreateFromDConic4d (DConic4dCR conic);
 
     //! Create the B-spline curve from point array and order.
     GEOMDLLIMPEXP MSBsplineStatus InitFromPoints (DPoint3dCP points, int nPoints);
@@ -1090,7 +1084,7 @@ public:
     GEOMDLLIMPEXP MSBsplineStatus InitAkima (bvector<DPoint3d> const &points);
 
     //! Create a B-spline curve from a series of Bézier curve.
-    GEOMDLLIMPEXP MSBsplineStatus InitFromBeziers (bvector<MSBsplineCurve> const &beziers);
+    GEOMDLLIMPEXP static MSBsplineCurvePtr CreateFromBeziers (bvector<MSBsplineCurvePtr> const &beziers);
     //! Create a B-spline curve from an array of DPoint4d ponts.
     GEOMDLLIMPEXP MSBsplineStatus InitFromDPoint4dArray (DPoint4dCP pPoleArray, int numPoles, int order);
 

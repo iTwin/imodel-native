@@ -32,6 +32,59 @@ static double s_lineUnitCircleIntersectionTolerance = 1.0e-8;
 #define FIX_MIN(value, min)          if (value < min) min = value
 #define FIX_MAX(value, max)          if (value > max) max = value
 
+
+/*-----------------------------------------------------------------*//**
+* Initialize the range from an arc of the unit circle
+* @param theta0 => start angle
+* @param sweep  => angular sweep
+* @indexVerb init
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void     bsiDRange3d_initFromUnitArcSweep
+
+(
+DRange3dP pRange,
+double          theta0,
+double          sweep
+)
+    {
+    double theta1 = theta0 + sweep;
+    if (bsiTrig_isAngleFullCircle (sweep))
+        {
+        pRange->InitFrom (-1.0, -1.0, 0.0, 1.0, 1.0, 0.0);
+        }
+    else
+        {
+        pRange->InitFrom (
+                cos (theta0), sin (theta0), 0.0,
+                cos (theta1), sin (theta1), 0.0);
+
+        /* Force the range out to the axis extremes if they are in the sweep */
+        if (bsiTrig_angleInSweep (0.0,              theta0, sweep))
+            {
+            pRange->high.x = 1.0;
+            }
+
+        if (bsiTrig_angleInSweep (msGeomConst_pi,  theta0, sweep))
+            {
+            pRange->low.x = -1.0;
+            }
+
+        if (bsiTrig_angleInSweep (msGeomConst_piOver2, theta0, sweep))
+            {
+            pRange->high.y = 1.0;
+            }
+
+        if (bsiTrig_angleInSweep (-msGeomConst_piOver2, theta0, sweep))
+            {
+            pRange->low.y = -1.0;
+            }
+        }
+
+    }
+
+
+
 /*-----------------------------------------------------------------*//**
 @description Convert a homogeneous ellipse to a Cartesian ellipse.
 @remarks Callers should beware of the following significant points:
@@ -2179,7 +2232,7 @@ DRange3dP pRange
         bsiDConic4d_getDPoint3dEndPoints (pConic, &startPoint, &endPoint);
 
         /* Test endpoints */
-        bsiDRange3d_initFrom2Points (pRange, &startPoint, &endPoint);
+        pRange->InitFrom(startPoint, endPoint);
         /* Test local extrema */
         bsiTrig_extendComponentRange (&pRange->low.x, &pRange->high.x,
                 pConic->center.x, pConic->vector0.x, pConic->vector90.x,
@@ -2388,7 +2441,7 @@ bool          clipZ
 
 
     numSaved = 0;
-    if (bsiDRange3d_isNull (pRange) || !(clipX || clipY || clipZ))
+    if (pRange->IsNull () || !(clipX || clipY || clipZ))
         {
         /* No intersections that matter. */
         }

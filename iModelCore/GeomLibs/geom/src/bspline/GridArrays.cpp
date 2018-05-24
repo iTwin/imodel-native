@@ -2,12 +2,13 @@
 |
 |     $Source: geom/src/bspline/GridArrays.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
+#include "../DeprecatedFunctions.h"
 
-// NO INCLUDES -- intended to be directly included in bsppolyface until bubbled to public api..
+// MINIMAL INCLUDES -- intended to be directly included in bsppolyface until bubbled to public api..
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 

@@ -1099,98 +1099,6 @@ int             numPoint
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description Test if a point is within a convex polygon, ignoring z-coordinates.
-*
-* @param pPoint      => point to test
-* @param pPointArray => boundary points of convex region
-* @param numPoint    => number of points
-* @param sense       => 0 if polygon sense is unknown (it will be determined internally by area calculation),
-*                       1 if polygon is known to be counterclockwise,
-*                      -1 if polygon is known to be clockwise
-* @return true if the point is in the convex polygon
-* @group Polygons
-* @bsimethod                                                    EarlinLutz      06/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    bsiGeom_isXYPointInConvexPolygon
-
-(
-DPoint3dCP pPoint,
-DPoint3dCP pPointArray,
-int             numPoint,
-int             sense
-)
-    {
-    static int linearSearchLimit = 5;
-    double areaFactor = (double)sense;
-    double cross;
-    int i1, i0;
-
-    if (numPoint < 3)
-        return  false;
-
-    if (bsiDPoint3d_pointEqual (&pPointArray[0], &pPointArray[numPoint - 1]))
-        numPoint--;
-
-    if (sense == 0)
-        areaFactor = bsiGeom_getXYPolygonArea (pPointArray, numPoint);
-
-    if (numPoint < linearSearchLimit)
-        {
-        for (i0 = numPoint - 1, i1 = 0; i1 < numPoint; i0 = i1++)
-            {
-            cross = bsiDPoint3d_crossProduct3DPoint3dXY (pPoint, pPointArray + i0, pPointArray + i1);
-            if (cross * areaFactor < 0.0)
-                return false;
-            }
-        return true;
-        }
-    else
-        {
-        int iLeft, iRight, iMid;
-        iLeft = 0;
-        iRight = numPoint;
-        /* We are going to compare the point to lines from polygon point 0 to "other" points.
-            The other points are indexed 1..numPoint - 1.
-            iLeft and iRight refer to the integer sequence on a number line -- not to be confused with
-                geometric left right in the polygon plane.
-            Do binary search.   At each step (iLeft,iRight) brackets a safe index into the array.
-                iMid is computed as ( computed as (iLeft + iRight)/2 via right shift) is one of the good indices.
-             The geometric line from point 0 to iMid splits the polygon.
-            Geometric left/right tests determine which side the point is on, and allow one of the two limit indices
-                to be moved to iMid and cut the search space in half.
-            When iLeft+1=iRight, the triangle 0,iLeft,iRight is the last possible "in" part to contain the test point.
-                The final cross product test asks compares the point to the bounding edge.
-            iLeft=0 at end uses the first edge, iRight=numPoints uses the last edge.
-        /* We know  .... iLeft < iRight
-                        iMid <= numPoint -1, so it can be used as an index without checking
-            point is IN iff it is to the left of all edges from iRight to iLeft.
-        */
-        while (iLeft + 1 < iRight)
-            {
-            iMid = (iRight + iLeft) >> 1;
-            cross = bsiDPoint3d_crossProduct3DPoint3dXY (pPoint, pPointArray, pPointArray + iMid);
-            if (cross * areaFactor >= 0)
-                iLeft = iMid;
-            else
-                iRight = iMid;
-            }
-
-        /* Known: iLeft+1 == iRight. This edge determines in/out */
-        if (iRight == numPoint)
-            iRight = 0;
-        cross = bsiDPoint3d_crossProduct3DPoint3dXY (pPoint, pPointArray + iLeft, pPointArray + iRight);
-        if (areaFactor * cross >= 0.0)
-            {
-            return true;
-            }
-        return false;
-        }
-
-    }
-
-
-
-/*---------------------------------------------------------------------------------**//**
 * @description Compute the normal of the polygon.
 * @param pNormal <= polygon normal, or approximate normal if nonplanar points (or NULL)
 * @param pOrigin <= origin for plane (or NULL)
@@ -1609,15 +1517,15 @@ int numB
 
     bsiTransform_multiplyDPoint3dArray (&worldToLocalB, pXYZA_localB, pPointArrayA, numA);
 
-    bsiDRange3d_initFromArray (&rangeA_localB, pXYZA_localB, numA);
-    bsiDRange3d_initFromArray (&rangeB_localB, pXYZB_localB, numB);
+    rangeA_localB.InitFrom(pXYZA_localB, numA);
+    rangeB_localB.InitFrom(pXYZB_localB, numB);
 
     zvecB = worldToLocalB.GetMatrixColumn (2);
 
-    largeCoordinate = bsiDRange3d_getLargestCoordinate (&rangeA_localB)
-                    + bsiDRange3d_getLargestCoordinate (&rangeB_localB);
+    largeCoordinate = rangeA_localB.LargestCoordinate ()
+                    + rangeB_localB.LargestCoordinate ();
 
-    if (!bsiDRange3d_checkOverlap (&rangeA_localB, &rangeB_localB))
+    if (!rangeA_localB.IntersectsWith (rangeB_localB))
         return false;
 
     tol = bsiTrig_smallAngle() * largeCoordinate;
@@ -1683,22 +1591,22 @@ int numB
     bsiTransform_multiplyDPoint3dArray (&worldToLocalB, pXYZA_localB, pXYZA_world, numA);
     bsiTransform_multiplyDPoint3dArray (&worldToLocalA, pXYZB_localA, pXYZB_world, numB);
 
-    bsiDRange3d_initFromArray (&rangeA_localB, pXYZA_localB, numA);
-    bsiDRange3d_initFromArray (&rangeB_localA, pXYZB_localA, numB);
+    rangeA_localB.InitFrom(pXYZA_localB, numA);
+    rangeB_localA.InitFrom(pXYZB_localA, numB);
 
     zvecA = worldToLocalA.GetMatrixColumn (2);
     zvecB = worldToLocalB.GetMatrixColumn (2);
 
-    largeCoordinate = bsiDRange3d_getLargestCoordinate (&rangeA_localA)
-                    + bsiDRange3d_getLargestCoordinate (&rangeB_localA);
+    largeCoordinate = rangeA_localA.LargestCoordinate ()
+                    + rangeB_localA.LargestCoordinate ();
 
-    if (!bsiDRange3d_checkOverlap (&rangeA_localA, &rangeB_localA))
+    if (!rangeA_localA.IntersectsWith (rangeB_localA))
         return false;
-    if (!bsiDRange3d_checkOverlap (&rangeA_localB, &rangeB_localB))
+    if (!rangeA_localB.IntersectsWith (rangeB_localB))
         return false;
 
     tol = bsiTrig_smallAngle () * largeCoordinate;
-    bsiDRange3d_combineRange (&rangeAB_localA, &rangeA_localA, &rangeB_localA);
+    rangeAB_localA = DRange3d::FromUnion (rangeA_localA, rangeB_localA);
 
     if (bsiDVec3d_areParallel (&zvecA, &zvecB))
         {

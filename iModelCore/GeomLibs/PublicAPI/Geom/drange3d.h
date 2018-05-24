@@ -355,6 +355,14 @@ DRange3dCR range2,      //!< [in] second operand
 bool zeroExtentsAreValid = false    //!< [in] If false, equal high and low in any direction is forced to null range.  If true, the equal extent is allowed as a nonnull range.
 );
 
+//! return union of ranges
+static DRange3d FromUnion
+(
+DRange3dCR range1,      //!< [in] first operand
+DRange3dCR range2       //!< [in] second operand
+);
+
+
 //! Expand a range to include points
 //!
 //! @param [in] points new points to be included in minmax ranges

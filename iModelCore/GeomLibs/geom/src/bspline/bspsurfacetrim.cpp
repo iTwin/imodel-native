@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspsurfacetrim.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -862,7 +862,7 @@ double     surfaceTol
         {
         curveTol = sCurveTol;
         DRange3d range;
-        bspsurf_poleRange (&range, pSurface);
+        pSurface->GetPoleRange (range);
         surfaceTol = sSurfaceRelTol * bsiDPoint3d_distance (&range.low, &range.high);
         }
 

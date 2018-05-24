@@ -4,18 +4,23 @@
 
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 
-MSBsplineSurfacePtr SurfaceWithSinusoidalControlPolygon (int uOrder, int vOrder, size_t numI, size_t numJ, double q0I, double aI, double q0J, double aJ)
+MSBsplineSurfacePtr SurfaceWithSinusoidalControlPolygon (int uOrder, int vOrder, size_t numI, size_t numJ, double q0I, double aI, double q0J, double aJ, double weight = 0.0)
     {
     bvector<DPoint3d>poles;
+    bvector<double> weights;
     for (size_t j = 0; j < numJ; j++)
         for (size_t i = 0; i < numI; i++)
             {
-            poles.push_back (DPoint3d::From ((double)i, (double)j, sin(q0I + aI * i) * sin (q0J + aJ * j)));
+            DPoint3d xyz = DPoint3d::From ((double)i, (double)j, sin(q0I + aI * i) * sin (q0J + aJ * j));
+            if (weight != 0.0)
+                xyz.Scale (weight);
+            poles.push_back (xyz);
+            weights.push_back (weight);
             }
 
     return MSBsplineSurface::CreateFromPolesAndOrder
         (
-        poles, NULL,
+        poles, weight != 0.0 ? &weights : nullptr,
         NULL, uOrder, (int)numI, false,
         NULL, vOrder, (int)numJ, false,
         true                

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/regions/rg_gaps.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -210,16 +210,16 @@ double          maxDiagBoxFraction
 
         for (readIndex = 0; getNonNegativeBlock (pBlockIndexArray, &readIndex, &i0, &i1);)
             {
-            bsiDRange3d_init (&searchRange);
+            searchRange.Init ();
             for (i = i0; i < i1; i++)
                 {
                 int vertexIndex;
                 jmdlEmbeddedIntArray_getInt (pBlockIndexArray, &vertexIndex, i);
                 jmdlEmbeddedDPoint3dArray_getDPoint3d (pRG->pVertexArray, &xyz, vertexIndex);
-                bsiDRange3d_extendByDPoint3d (&searchRange, &xyz);
+                searchRange.Extend (xyz);
                 }
             bsiDPoint3d_interpolate (&xyz, &searchRange.low, 0.5, &searchRange.high);
-            bsiDRange3d_extendByDistance (&searchRange, vertexEdgeRangeExtension);
+            searchRange.Extend (vertexEdgeRangeExtension);
 
             jmdlRG_collectXYEdgeRangeHits
                             (pRG, pEdgeCandidateArray, &searchRange);
@@ -271,12 +271,12 @@ double          maxDiagBoxFraction
                         DPoint3d xyz;
                         double dx, dy;
                         DPoint3d xyzRectangle[5];
-                        bsiDRange3d_init (&range);
+                        range.Init ();
                         for (i = i0; i < i1;  i++)
                             {
                             jmdlEmbeddedIntArray_getInt (pBlockIndexArray, &iIndex, i);
                             jmdlEmbeddedDPoint3dArray_getDPoint3d (pNodeXYZArray, &xyz, iIndex);
-                            bsiDRange3d_extendByDPoint3d (&range, &xyz);
+                            range.Extend (xyz);
                             }
                         xyzRectangle[0] = range.low;
                         xyzRectangle[2] = range.high;

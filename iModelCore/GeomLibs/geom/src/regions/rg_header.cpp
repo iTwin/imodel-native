@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/regions/rg_header.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -77,7 +77,7 @@ void
     pRG->tolerance      = 1.0e-12;
     pRG->minimumTolerance = 1.0e-12;
     pRG->relTol         = 1.0e-12;
-    bsiDRange3d_init (&pRG->graphRange);
+    pRG->graphRange.Init ();
 
     jmdlRG_enableIncrementalEdgeRangeTree (pRG);
     return  pRG;
@@ -350,7 +350,7 @@ DRange3d    *pRange
 )
     {
     *pRange = pRG->graphRange;
-    return !bsiDRange3d_isNull (pRange);
+    return !pRange->IsNull ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -375,7 +375,7 @@ DRange3d    *pRange
     int count;
     EmbeddedDPoint3dArray *pXYZArray = jmdlEmbeddedDPoint3dArray_grab ();
     bsiTransform_initIdentity (&planeToWorld);
-    bsiDRange3d_init (&range);
+    range.Init ();
 
 
     /* We always have the local point array ... */
@@ -402,8 +402,8 @@ DRange3d    *pRange
         {
         double bigSize;
         bsiTransform_multiplyDPoint3dArrayInPlace (&worldToPlane, pBuffer, count);
-        bsiDRange3d_extendByDPoint3dArray (&range, pBuffer, count);
-        bigSize = bsiDRange3d_getLargestCoordinate (&range);
+        range.Extend (pBuffer, count);
+        bigSize = range.LargestCoordinate ();
         if (fabs (range.high.z - range.low.z) < bigSize * s_planeRelTol)
             bResult = true;
         }
@@ -534,7 +534,7 @@ MTGNodeId                       nodeId
 
     if (jmdlRG_getEdgeRange (pRG, &range, nodeId))
         {
-        bsiDRange3d_extendByRange (&pRG->graphRange, &range);
+        pRG->graphRange.Extend (range);
 
         if  (   pRG->incrementalEdgeRanges
              && pRG->pEdgeRangeTree
@@ -1762,8 +1762,8 @@ RG_Header           *pRG
     double maxCoordinate = 0.0;
     double maxTol;
 
-    if (!bsiDRange3d_isNull (&pRG->graphRange))
-        maxCoordinate = bsiDRange3d_getLargestCoordinate (&pRG->graphRange);
+    if (!pRG->graphRange.IsNull ())
+        maxCoordinate = pRG->graphRange.LargestCoordinate ();
 
     maxTol = s_maxRelTol * maxCoordinate;
     pRG->tolerance = pRG->relTol * maxCoordinate + pRG->minimumTolerance;
@@ -2305,8 +2305,9 @@ RG_Header                       *pRG,
 DRange3d                        *pRange
 )
     {
-
-    return jmdlEmbeddedDPoint3dArray_getDRange3d (pRG->pVertexArray, pRange);
+    pRange->InitFrom (*pRG->pVertexArray);
+    return !pRange->IsNull ();
+//    return jmdlEmbeddedDPoint3dArray_getDRange3d (pRG->pVertexArray, pRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2326,7 +2327,7 @@ int                             nodeId
         {
         if  (edgeData.curveIndex == RG_NULL_CURVEID)
             {
-            bsiDRange3d_initFrom2Points (pRange, &edgeData.xyz[0], &edgeData.xyz[1]);
+            pRange->InitFrom(edgeData.xyz[0], edgeData.xyz[1]);
             myStat = true;
             }
         else
@@ -3246,12 +3247,12 @@ double                          highOffset
     {
     DRange3d faceRange, edgeRange;
 
-    bsiDRange3d_init (&faceRange);
+    faceRange.Init ();
 
     MTGARRAY_FACE_LOOP (currId, pRG->pGraph, faceStartId)
         {
         if (jmdlRG_getEdgeRange (pRG, &edgeRange, currId))
-            bsiDRange3d_extendByRange (&faceRange, &edgeRange);
+            faceRange.Extend (edgeRange);
         }
     MTGARRAY_END_FACE_LOOP (currId, pRG->pGraph, faceStartId)
 
@@ -3386,7 +3387,7 @@ void                            *pLeaf
 
     rgXYRangeTree_getLeafRange (pLeaf, &leafRange);
 
-    if (bsiDRange3d_isStrictlyContainedXY (&leafRange, &pParams->polylineRange))
+    if (leafRange.IsStrictlyContainedXY (pParams->polylineRange))
         {
 
         RG_IntersectionList intersectionList;
@@ -3416,7 +3417,7 @@ void                            *pLeaf
             }
         jmdlRGIL_releaseMem (&intersectionList);
         }
-    else if (bsiDRange3d_isStrictlyContainedXY (&pParams->polylineRange, &leafRange))
+    else if (pParams->polylineRange.IsStrictlyContainedXY (leafRange))
         {
         RG_IntersectionList intersectionList;
         jmdlRGIL_init (&intersectionList);
@@ -3466,7 +3467,7 @@ void                            *pLeaf
 
     rgXYRangeTree_getLeafRange (pLeaf, &leafRange);
 
-    if (bsiDRange3d_isStrictlyContainedXY (&leafRange, &pParams->polylineRange))
+    if (leafRange.IsStrictlyContainedXY (pParams->polylineRange))
         {
         RG_IntersectionList intersectionList;
         jmdlRGIL_init (&intersectionList);
@@ -3527,7 +3528,7 @@ bool                            closed
     params.pConflictArray = pConflictArray;
 
     /* Build ranges */
-    bsiDRange3d_initFromArray (&params.polylineRange, pPointArray, numPoint);
+    params.polylineRange.InitFrom(pPointArray, numPoint);
 
     rgXYRangeTree_initRange
                     (
@@ -3583,7 +3584,7 @@ int                             numPoint
         params.pConflictArray = pConflictArray;
 
         /* Build ranges */
-        bsiDRange3d_initFromArray (&params.polylineRange, pPointArray, numPoint);
+        params.polylineRange.InitFrom(pPointArray, numPoint);
 
         rgXYRangeTree_initRange
                         (

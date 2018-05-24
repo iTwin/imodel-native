@@ -26,13 +26,7 @@ $(OUT_DIR)embeddedarraycachemanager$(OUT_EXT)      : $(geomSrcMemory)embeddedarr
 
 $(OUT_DIR)dmap4d$(OUT_EXT)          : $(geomSrcStructs)dmap4d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-#$(OUT_DIR)dmatrix3d$(OUT_EXT)       : $(geomSrcStructs)dmatrix3d.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
 $(OUT_DIR)dmatrix4d$(OUT_EXT)       : $(geomSrcStructs)dmatrix4d.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)dpoint2d$(OUT_EXT)        : $(geomSrcStructs)dpoint2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)dvec2d$(OUT_EXT)          : $(geomSrcStructs)dvec2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)dpoint3d$(OUT_EXT)        : $(geomSrcStructs)dpoint3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -78,13 +72,7 @@ $(OUT_DIR)dvec3drotmatrix$(OUT_EXT) : $(geomSrcStructs)dvec3drotmatrix.cpp  $(OT
 
 $(OUT_DIR)dpoint4d$(OUT_EXT)        : $(geomSrcStructs)dpoint4d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)drange3d$(OUT_EXT)        : $(geomSrcStructs)drange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)drange2d$(OUT_EXT)        : $(geomSrcStructs)drange2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)dtransform3d$(OUT_EXT)    : $(geomSrcStructs)dtransform3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#bg3 cover$(OUT_DIR)dplane3d$(OUT_EXT)        : $(geomSrcStructs)dplane3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
+#$(OUT_DIR)drange3d$(OUT_EXT)        : $(geomSrcStructs)drange3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)transform$(OUT_EXT)       : $(geomSrcStructs)transform.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -129,44 +117,6 @@ $(OUT_DIR)catenary$(OUT_EXT) : $(geomSrcStructs)catenary.cpp    $(OTHER_DEPENDEN
 # (end structs_sources_bsiinc.mki)
 # (end structs_sources.mki)
 # (begin cppstructs_sources.mki)
-
-#$(OUT_DIR)bsirect$(OUT_EXT)             : $(geomSrcStructsCpp)bsirect.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-###$(OUT_DIR)cppdellipse3d$(OUT_EXT)       : $(geomSrcStructsCpp)cppdellipse3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdmap4d$(OUT_EXT)           : $(geomSrcStructsCpp)cppdmap4d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdmatrix3d$(OUT_EXT)        : $(geomSrcStructsCpp)cppdmatrix3d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdmatrix4d$(OUT_EXT)        : $(geomSrcStructsCpp)cppdmatrix4d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdpoint2d$(OUT_EXT)         : $(geomSrcStructsCpp)cppdpoint2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdpoint3d$(OUT_EXT)         : $(geomSrcStructsCpp)cppdpoint3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdpoint4d$(OUT_EXT)         : $(geomSrcStructsCpp)cppdpoint4d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdplane3d$(OUT_EXT)         : $(geomSrcStructsCpp)cppdplane3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdrange2d$(OUT_EXT)         : $(geomSrcStructsCpp)cppdrange2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdrange3d$(OUT_EXT)         : $(geomSrcStructsCpp)cppdrange3d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdray3d$(OUT_EXT)           : $(geomSrcStructsCpp)cppdray3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdsegment3d$(OUT_EXT)       : $(geomSrcStructsCpp)cppdsegment3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdtransform3d$(OUT_EXT)     : $(geomSrcStructsCpp)cppdtransform3d.cpp   $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdvec3d$(OUT_EXT)           : $(geomSrcStructsCpp)cppdvec3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cppdvec2d$(OUT_EXT)           : $(geomSrcStructsCpp)cppdvec2d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cpprotmatrix$(OUT_EXT)        : $(geomSrcStructsCpp)cpprotmatrix.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)cpptransform$(OUT_EXT)        : $(geomSrcStructsCpp)cpptransform.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-##$(OUT_DIR)DMoments3d$(OUT_EXT)        : $(geomSrcStructsCpp)DMoments3d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)refdpoint2d$(OUT_EXT)         : $(geomSrcStructsCpp)refmethods/refdpoint2d.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -233,10 +183,6 @@ $(OUT_DIR)refdray3d$(OUT_EXT)       : $(geomSrcStructsCpp)refmethods/refdray3d.c
 
 # (begin funcs_sources_pubinc.mki)
 
-#$(OUT_DIR)barycentric$(OUT_EXT)     : $(geomSrcFuncs)barycentric.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)complex$(OUT_EXT)         : $(geomSrcFuncs)complex.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
 $(OUT_DIR)ccctangent$(OUT_EXT)      : $(geomSrcFuncs)ccctangent.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)biarc$(OUT_EXT)           : $(geomSrcStructsCpp)refmethods/biarc.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
@@ -273,8 +219,6 @@ $(OUT_DIR)rotations$(OUT_EXT)       : $(geomSrcFuncs)rotations.cpp      $(OTHER_
 
 $(OUT_DIR)polygon3d$(OUT_EXT)       : $(geomSrcFuncs)polygon3d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-#$(OUT_DIR)polygon2d$(OUT_EXT)       : $(geomSrcFuncs)polygon2d.cpp      $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
 $(OUT_DIR)polyline3d$(OUT_EXT)      : $(geomSrcFuncs)polyline3d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)polyline2d$(OUT_EXT)      : $(geomSrcFuncs)polyline2d.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
@@ -282,8 +226,6 @@ $(OUT_DIR)polyline3d$(OUT_EXT)      : $(geomSrcFuncs)polyline3d.cpp     $(OTHER_
 #$(OUT_DIR)polyplane4d$(OUT_EXT)     : $(geomSrcFuncs)polyplane4d.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)dpoint3darray$(OUT_EXT)   : $(geomSrcFuncs)dpoint3darray.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)dpoint2darray$(OUT_EXT)   : $(geomSrcFuncs)dpoint2darray.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)simpson$(OUT_EXT)         : $(geomSrcFuncs)simpson.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
@@ -335,13 +277,9 @@ $(OUT_DIR)BCurveSegment$(OUT_EXT)    : $(geomSrcBspline)BCurveSegment.cpp $(OTHE
 
 $(OUT_DIR)Bspline1d$(OUT_EXT)    : $(geomSrcBspline)Bspline1d.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-#$(OUT_DIR)ustnFuncs$(OUT_EXT)  : $(geomSrcBspline)ustnFuncs.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
-
 $(OUT_DIR)bspLocal$(OUT_EXT)    : $(geomSrcBspline)bspLocal.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 $(OUT_DIR)sortutil$(OUT_EXT)    : $(geomSrcBspline)sortutil.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
-
-#$(OUT_DIR)bspv7$(OUT_EXT)    : $(geomSrcBspline)bspv7.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 $(OUT_DIR)bspcurvcurv$(OUT_EXT)    : $(geomSrcBspline)bspcurvcurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
@@ -361,19 +299,11 @@ $(OUT_DIR)bspsurf_cliptrim$(OUT_EXT)    : $(geomSrcBspline)bspsurf_cliptrim.cpp 
 
 $(OUT_DIR)bspconv$(OUT_EXT)    : $(geomSrcBspline)bspconv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-#$(OUT_DIR)bsprcurv$(OUT_EXT)    : $(geomSrcBspline)bsprcurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
-
 $(OUT_DIR)bspsurfacetrim$(OUT_EXT)    : $(geomSrcBspline)bspsurfacetrim.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 $(OUT_DIR)bspproc$(OUT_EXT)    : $(geomSrcBspline)bspproc.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-#$(OUT_DIR)bspbound$(OUT_EXT)    : $(geomSrcBspline)bspbound.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
-
-#$(OUT_DIR)bspstrok$(OUT_EXT)    : $(geomSrcBspline)bspstrok.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
-
 $(OUT_DIR)bspfit$(OUT_EXT)    : $(geomSrcBspline)bspfit.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
-
-#$(OUT_DIR)bsprfit$(OUT_EXT)    : $(geomSrcBspline)bsprfit.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 $(OUT_DIR)bspdcurv$(OUT_EXT)    : $(geomSrcBspline)bspdcurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
@@ -389,7 +319,7 @@ $(OUT_DIR)bspdsurf$(OUT_EXT)    : $(geomSrcBspline)bspdsurf.cpp $(OTHER_DEPENDEN
 
 $(OUT_DIR)bspicurv$(OUT_EXT)    : $(geomSrcBspline)bspicurv.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-$(OUT_DIR)bsprange$(OUT_EXT)    : $(geomSrcBspline)bsprange.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+#$(OUT_DIR)bsprange$(OUT_EXT)    : $(geomSrcBspline)bsprange.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 #$(OUT_DIR)plank$(OUT_EXT)    : $(geomSrcBspline)plank.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
@@ -433,8 +363,6 @@ $(OUT_DIR)bsprsurf$(OUT_EXT)    : $(geomSrcBspline)bsprsurf.cpp $(OTHER_DEPENDEN
 #$(OUT_DIR)qsic$(OUT_EXT)            : $(geomSrcFuncs)qsic.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)rctree$(OUT_EXT)          : $(geomSrcFuncs)rctree.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-#$(OUT_DIR)rotconic$(OUT_EXT)        : $(geomSrcFuncs)rotconic.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)triquad$(OUT_EXT)         : $(geomSrcFuncs)triquad.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 

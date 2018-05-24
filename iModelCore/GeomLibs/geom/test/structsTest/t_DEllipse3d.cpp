@@ -2533,3 +2533,137 @@ TEST(DEllipse3d,ScottDConstructionFromXML)
 
     }
 #endif
+void ShowCircles (DPoint3dCP center, DPoint3dCP edgeA, DPoint3dCP edgeB, DPoint3dCP edgeC, int n)
+    {
+    for (int i = 0; i < n; i++)
+        {
+        auto circle = DEllipse3d::FromCenterRadiusXY (center[i], center[i].Distance (edgeA[i]));
+        Check::SaveTransformed (circle);
+        if (edgeA)
+            Check::SaveTransformedMarker (edgeA[i], 0.02);
+        if (edgeB)
+            Check::SaveTransformedMarker (edgeB[i], 0.02);
+        if (edgeC)
+            Check::SaveTransformedMarker (edgeC[i], 0.02);
+        }
+    }
+#define MAX_TANGENT 20
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DEllipse3d,Circle_CCR)
+    {
+
+    double rA = 1.0;
+    double rB = 0.5;
+    double rC = 2.0;    
+    for (double a : {0.75, 1.25, 1.50, 1.75, 4.0})
+        {
+        SaveAndRestoreCheckTransform shifter (10,0,0);
+        auto circleA = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (1,1), rA);
+        auto circleB = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (a,a), rB);
+        Check::SaveTransformed (circleA);
+        Check::SaveTransformed (circleB);
+        DPoint3d centers[MAX_TANGENT];
+        DPoint3d tangentA[MAX_TANGENT];
+        DPoint3d tangentB[MAX_TANGENT];
+        int n;
+        bsiGeom_circleTTCircleCircleConstruction (centers, tangentA, tangentB, n, MAX_TANGENT,
+                    circleA.center, rA, circleB.center, rB, rC);
+        ShowCircles (centers, tangentA, tangentB, nullptr, n);
+        }
+    Check::ClearGeometry ("DEllipse3d.Circle_CCR");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DEllipse3d,Circle_CLR)
+    {
+
+    double rA = 1.0;
+    double rC = 3.0;
+    for (double xB : {1.0, 4.0})
+        {
+        SaveAndRestoreCheckTransform shifter (10,0,0);
+        auto circleA = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (1,1), rA);
+        Check::SaveTransformed (circleA);
+        auto segmentB = DSegment3d::From (xB, -10, 0, xB + 1, 10.0, 0);
+        Check::SaveTransformed (segmentB);
+        DPoint3d centers[MAX_TANGENT];
+        DPoint3d tangentA[MAX_TANGENT];
+        DPoint3d tangentB[MAX_TANGENT];
+        int n;
+        bsiGeom_circleTTLineCircleConstruction (centers, tangentA, tangentB, n, MAX_TANGENT,
+                    segmentB.point[0],
+                    segmentB.point[1] - segmentB.point[0],
+                    circleA.center, rA,
+                    rC);
+        ShowCircles (centers, tangentA, tangentB, nullptr, n);
+        }
+    Check::ClearGeometry ("DEllipse3d.Circle_CLR");
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DEllipse3d,Circle_CCC)
+    {
+
+    double rA = 1.0;
+    double rB = 2.0;
+    double rC = 3.0;
+    for (double xB : {2.0, 5.0, 8.0})
+        {
+        SaveAndRestoreCheckTransform shifter (30,0,0);
+        auto circleA = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (1,1), rA);
+        auto circleB = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (xB,0), rB);
+        auto circleC = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (5,0), rC);
+        Check::SaveTransformed (circleA);
+        Check::SaveTransformed (circleB);
+        Check::SaveTransformed (circleC);
+        DPoint3d centers[MAX_TANGENT];
+        double radii[MAX_TANGENT];
+        DPoint3d tangentA[MAX_TANGENT];
+        DPoint3d tangentB[MAX_TANGENT];
+        DPoint3d tangentC[MAX_TANGENT];
+        int n;
+        bsiGeom_circleTTTCircleCircleCircleConstruction (centers, radii, tangentA, tangentB, tangentC, n, MAX_TANGENT,
+                    circleA.center, rA,
+                    circleB.center, rB,
+                    circleC.center, rC);
+        ShowCircles (centers, tangentA, nullptr, nullptr, n);
+        }
+    Check::ClearGeometry ("DEllipse3d.Circle_CCC");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DEllipse3d,Circle_LLCParallel)
+    {
+    double rC = 1.5;
+    for (double xC : {0.0, 1.0, 2.0, 2.5, 6.0})
+        {
+        SaveAndRestoreCheckTransform shifter (30,0,0);
+        auto segmentA = DSegment3d::From (0,0,0,  0,10,0);
+        auto segmentB = DSegment3d::From (5,0,0,  5,10,0);
+        auto circleC = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (xC,4), rC);
+        Check::SaveTransformed (segmentA);
+        Check::SaveTransformed (segmentB);
+        Check::SaveTransformed (circleC);
+        DPoint3d centers[MAX_TANGENT];
+        double radii[MAX_TANGENT];
+        DPoint3d tangentA[MAX_TANGENT];
+        DPoint3d tangentB[MAX_TANGENT];
+        DPoint3d tangentC[MAX_TANGENT];
+        int n;
+        bsiGeom_circleTTTLineLineCircleConstruction (centers, radii, tangentA, tangentB, tangentC, n, MAX_TANGENT,
+                    segmentA.point[0], segmentA.point[1] - segmentA.point[0],
+                    segmentB.point[0], segmentB.point[1] - segmentB.point[0],
+                    circleC.center, rC);
+        ShowCircles (centers, tangentA, nullptr, nullptr, n);
+        }
+    Check::ClearGeometry ("DEllipse3d.Circle_LLCParallel");
+    }

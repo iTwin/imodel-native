@@ -329,7 +329,7 @@ void MSBsplineSurface::GetParameterRegion (double &uMin, double &uMax, double &v
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MSBsplineSurface::GetPoleRange (DRange3dR range) const
     {
-    bspsurf_poleRange (&range, const_cast <MSBsplineSurfaceP> (this));
+    range = DRange3d::From (poles, weights, (int)(int)GetNumPoles ());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2240,4 +2240,110 @@ ValidatedDPoint3d MSBsplineSurface::ControlPolygonFractionToControlPolygonDPoint
     DPoint3d xyz;
     bool stat1 = xyzw.Value ().GetProjectedXYZ (xyz);
     return ValidatedDPoint3d (xyz, xyzw.IsValid () && stat1);
+    }
+
+
+/*----------------------------------------------------------------------+
+Return larger of
+ (1) abstol
+ (2) larger of relTol or RELATIVE_RESOLUTION times
+          larger of dataSize or SMALLEST_ALLOWED_REFERENCE_SIZE
++----------------------------------------------------------------------*/
+static double  bsputil_sizeToTol
+(
+double dataSize,
+double absTol,
+double relTol
+)
+    {
+    double tol;
+    dataSize = fabs (dataSize);
+    if (dataSize < SMALLEST_ALLOWED_REFERENCE_SIZE)
+        dataSize = SMALLEST_ALLOWED_REFERENCE_SIZE;
+    if (relTol < RELATIVE_RESOLUTION)
+        relTol = RELATIVE_RESOLUTION;
+    tol = dataSize * relTol;
+    if (tol < absTol)
+        tol = absTol;
+    return tol;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     01/01
++---------------+---------------+---------------+---------------+---------------+------*/
+static double  expandMaxAbsDoubleArray
+(
+double *pData,
+int     count,
+double  dMax
+)
+    {
+    int  i;
+    double dCurr;
+    for (i = 0; i < count; i++)
+        {
+        dCurr = fabs (pData[i]);
+        if (dCurr > dMax)
+            dMax = dCurr;
+        }
+    return dMax;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    earlin.lutz                     03/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+double MSBsplineSurface::Resolution (double abstol, double reltol) const
+    {
+    return bsputil_sizeToTol (
+                expandMaxAbsDoubleArray
+                    (
+                    (double*)poles,
+                    3 * uParams.numPoles * vParams.numPoles,
+                    SMALLEST_ALLOWED_REFERENCE_SIZE
+                    ),
+                abstol,
+                reltol);
+    }
+Public GEOMDLLIMPEXP double  MSBsplineCurve::Resolution (double abstol, double reltol) const
+    {
+    return bsputil_sizeToTol (
+                expandMaxAbsDoubleArray
+                    (
+                    (double *)poles,
+                    3 * params.numPoles,
+                    0.0
+                    ),
+                abstol,
+                reltol);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    earlin.lutz                     03/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+double MSBsplineCurve::Resolution () const
+    {
+    return bsputil_sizeToTol (
+                expandMaxAbsDoubleArray
+                    (
+                    (double *)poles,
+                    3 * params.numPoles,
+                    SMALLEST_ALLOWED_REFERENCE_SIZE
+                    ),
+                0.0,
+                0.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    earlin.lutz                     03/2009
++---------------+---------------+---------------+---------------+---------------+------*/
+double MSBsplineSurface::Resolution () const
+    {
+    return bsputil_sizeToTol (
+                expandMaxAbsDoubleArray
+                    (
+                    (double*)poles,
+                    3 * uParams.numPoles * vParams.numPoles,
+                    SMALLEST_ALLOWED_REFERENCE_SIZE
+                    ),
+                0.0,
+                0.0);
     }

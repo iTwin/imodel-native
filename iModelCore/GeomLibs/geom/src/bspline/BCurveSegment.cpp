@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/BCurveSegment.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -254,6 +254,13 @@ size_t    BCurveSegment::Index () const {return m_index;}
 double *BCurveSegment::GetKnotP (size_t index) {return &m_knots[index];}
 double *BCurveSegment::GetKnotP () {return &m_knots[0];}
 size_t BCurveSegment::GetNumKnots () {return m_numKnots;}
+
+void BCurveSegment::GetPoles (bvector<DPoint4d> &poles)
+    {
+    poles.clear ();
+    for (uint32_t i = 0; i < m_order; i++)
+        poles.push_back (m_poles[i]);
+    }
 
 void BCurveSegment::BuildWorkPoles (TransformCR transform)
     {

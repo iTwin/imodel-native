@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bezier/bezierDPoint4d.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -315,9 +315,9 @@ const   DPoint4d    *pPoles,
     int numRoot;
     bsiBezierDPoint4d_pseudoTangent (tangentPoles, &tangentOrder, MAX_BEZIER_ORDER,
                             pPoles, order, 3);
-    bsiDRange3d_init (pRange);
-    bsiDRange3d_extendByDPoint4d (pRange, pPoles);
-    bsiDRange3d_extendByDPoint4d (pRange, pPoles + order - 1);
+    pRange->Init ();
+    pRange->Extend (pPoles[0]);
+    pRange->Extend (pPoles[ order - 1]);
 
     if (order <= 2)
         return;
@@ -329,7 +329,7 @@ const   DPoint4d    *pPoles,
         for (j = 0; j < numRoot; j++)
             {
             bsiBezier_functionAndDerivative ((double*)&extremePoint, NULL, (double *)pPoles, order, 4, root[j]);
-            bsiDRange3d_extendByDPoint4d (pRange, &extremePoint);
+            pRange->Extend (extremePoint);
             }
         }
     }
@@ -354,7 +354,7 @@ int         order
     DPoint3d extremePoint;
     int numRoot;
 
-    bsiDRange3d_init (pRange);
+    pRange->Init ();
 
     if (order < 1)
         return;
@@ -367,8 +367,8 @@ int         order
         tangentPoles[2][i] = pPoles[i+1].z - pPoles[i].z;
         }
 
-    bsiDRange3d_extendByDPoint3d (pRange, pPoles);
-    bsiDRange3d_extendByDPoint3d (pRange, pPoles + order - 1);
+    pRange->Extend (pPoles[0]);
+    pRange->Extend (pPoles[ order - 1]);
 
     for (int componentIndex = 0; componentIndex < 3; componentIndex++)
         {
@@ -376,7 +376,7 @@ int         order
         for (int rootIndex = 0; rootIndex < numRoot; rootIndex++)
             {
             bsiBezier_functionAndDerivative ((double*)&extremePoint, NULL, (double *)pPoles, order, 3, root[rootIndex]);
-            bsiDRange3d_extendByDPoint3d (pRange, &extremePoint);
+            pRange->Extend (extremePoint);
             }
         }
     }
@@ -402,9 +402,9 @@ const   DPoint4d    *pPoles,
     {
     DRange3d range;
 
-    bsiDRange3d_init (&range);
-    bsiDRange3d_extendByDPoint4dArray (&range, pPoles, order);
-    return bsiDRange3d_isNull (&range) ? 1.0 : bsiDRange3d_getLargestCoordinate (&range);
+    range.Init ();
+    range.Extend (pPoles, order);
+    return range.IsNull () ? 1.0 : range.LargestCoordinate ();
     }
 
 typedef struct
@@ -1880,12 +1880,10 @@ const   DPoint4d    *pPoleArray,
 * @see #inflectionPointsXY
 * @bsimethod                                                    DavidAssaf      11/98
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int         bsiBezierDPoint4d_inflectionPoints
+Public GEOMDLLIMPEXP void         bsiBezierDPoint4d_inflectionPoints
 (
-        DPoint4d    *pInflectPoints,
-        double      *pInflectParams,
-const   DPoint4d    *pPoleArray,
-        int         order
+bvector<GraphicsPoint> inflectionPoints,
+bvector<DPoint4d> curvePoles
 )
     {
     /*
@@ -1908,6 +1906,12 @@ const   DPoint4d    *pPoleArray,
     these roots to see if they vanish within tolerance.
     */
 
+    int order = (int) curvePoles.size ();
+    inflectionPoints.clear ();
+    /* quadratic, linear and constant Beziers have no inflection points */
+    if (order < 4)
+        return;
+
     int     i, j, k, l, numRoot = 0, numRoot0 = 0, numRoot1 = 0;
     int     orderP = 3 * order - 5;
     double  polesP[3][MAX_BEZIER_ORDER];        /* poles of 3 term factors */
@@ -1917,24 +1921,20 @@ const   DPoint4d    *pPoleArray,
     int     numUp, numDown, numZero;
     double  aMin, aMax;
 
-    /* do nothing if both output arrays are null */
-    if (!pInflectPoints && !pInflectParams)
-        return 0;
 
-    /* quadratic, linear and constant Beziers have no inflection points */
-    if (order < 4)
-        return 0;
+
 
     /* disallow orders that are too big */
     if (orderP > MAX_BEZIER_ORDER)
-        return -1;
+        return;
 
     /* compute P(x,y,w), P(x,z,w) and P(y,z,w) */
     for (i = 0; i < 3; i++)
         jmdlBezierDPoint4d_computeCurvatureNumerator
-                (polesP[i], pPoleArray, order, i);
+                (polesP[i], curvePoles.data (), order, i);
 
     /* find roots of last P that doesn't identically vanish */
+    i = 3;
     do
         bsiBezier_univariateRoots (rootsP, &numRoot, polesP[--i], orderP);
     while (numRoot == orderP && i);
@@ -1979,249 +1979,24 @@ const   DPoint4d    *pPoleArray,
             }
         }
     else            /* Q identically zero or no roots found */
-        return 0;
+        return;
 
     /* Fill optional output arrays */
-    if (pInflectParams && pInflectPoints)
         for (i = 0; i < numRoot; i++)
             {
-            pInflectParams[i] = rootsP[i];
+            double u = rootsP[i];
+            DPoint4d xyzw;
             bsiBezier_functionAndDerivative
                 (
-                (double *) &pInflectPoints[i], NULL,
-                (double *) pPoleArray, order, 4, rootsP[i]
+                (double *) &xyzw, NULL,
+                (double *) curvePoles.data (), order, 4, rootsP[i]
                 );
+            inflectionPoints.push_back (GraphicsPoint (xyzw, u));
             }
 
-    else if (pInflectParams)
-        for (i = 0; i < numRoot; i++)
-            pInflectParams[i] = rootsP[i];
-
-    else /* pInflectPoints */
-        for (i = 0; i < numRoot; i++)
-            bsiBezier_functionAndDerivative
-                (
-                (double *) &pInflectPoints[i], NULL,
-                (double *) pPoleArray, order, 4, rootsP[i]
-                );
-
-    return numRoot;
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-* Given the order and homogeneous poles of an open B-spline curve with uniform
-* (clamped) knot vector, output the homogeneous poles of the corresponding
-* Bezier spline with the same order.  Poles shared by successive Bezier spline
-* segments are repeated in the output iff bShare is false.  The caller must
-* ensure the output array is allocated for
-* <UL>
-* <LI><CODE>numPoles + (numPoles - order) * (order - 1)</CODE> poles if
-*     bShare is false,
-* <LI><CODE>order + (numPoles - order) * (order - 1)</CODE> poles if
-*     bShare is true.
-* </UL>
-*
-* @param pBezierPoles   <= array of poles of Bezier spline
-* @param pBsplinePoles  => array of homogeneous poles of B-spline curve
-* @param numPoles       => number of poles of B-spline curve
-* @param order          => B-spline/Bezier spline curve order (degree + 1)
-* @param bShare         => true if shared Bezier points are to appear only once in output
-* @return number of Bezier segments output or 0 if error.
-* @bsimethod                                                    DavidAssaf      11/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int         bsiBezierDPoint4d_convertOpenUniformBsplineToBeziers
-(
-        DPoint4d    *pBezierPoles,
-const   DPoint4d    *pBsplinePoles,
-        int         numPoles,
-        int         order,
-        bool        bShare
-)
-    {
-    /*
-    By restricting the type of B-spline converted, this routine should perform
-    faster than bspcurv_makeBezier, which works on general B-spline curves
-    (using the MSBsplineCurve structure).  Essentially we perform the Oslo
-    algorithm on each component of the poles to transform the B-spline's basis
-    from the standard clamped uniform one (order knots at 0, uniform single
-    knots, order knots at 1) to the Bezier basis (additional order-2 knots at
-    each interior knot).
-    */
-
-    /* poles */
-    int degree      = order - 1;
-    int numIntKnots = numPoles - order;             /* = # shared Bez poles */
-    int numBeziers  = numIntKnots + 1;              /* # Bez segments returned */
-    int numNewKnots = numIntKnots * (degree - 1);   /* = # additional poles */
-    int numBezPoles = numNewKnots + numPoles;       /* # poles in Bez spline */
-    int numOutPoles = bShare ? numBezPoles : numIntKnots + numBezPoles;
-    int pole, startPole, endPole;                   /* Bezier pole indices */
-    int segmentCtr;                                 /* #poles in current Bez */
-    DPoint4d *pBez;                                 /* ptr into Bez poles */
-    const DPoint4d *pBsp, *pBsp2;                   /* ptrs into Bspline poles */
-
-    /* knots */
-    int tau;    /* highest index of B-spline knot with current Bez knot's val */
-    int tauVal;                                     /* numerator of knot tau */
-    int tauLVal, tauRVal;                           /* B-spline knot numerators */
-    int tauLo, tauHi;                               /* min, max of tauVals */
-    int tVal;                                       /* Bezier knot numerator */
-    double denom1, denom2;                          /* merged knot diff's */
-    double beta, beta1;                             /* temporary storage */
-
-    /* T is temp storage (max len = max B-spline order) per Bez pole calculation */
-    double T[MAX_BEZIER_CURVE_ORDER];               /* bottom order entries used */
-    double *pBotT;                                  /* bottom entry of T */
-    double *pPrevT;                                 /* read ptr into T */
-    double *pCurrT;                                 /* write ptr into T */
-    int colT;                                       /* current rewrite of T */
-    int tSplit;                                     /* colT to inc tVal */
-
-    /* disallow B-spline orders that are too big */
-    if (order > MAX_BEZIER_CURVE_ORDER)
-        return 0;
-
-    /* check if B-spline is already a Bezier curve or linear Bezier spline */
-    if (order == 2 || numPoles == order)
-        {
-        /* copy poles, repeating shared poles where necessary */
-        if (order == 2 && !bShare)
-            {
-            *pBezierPoles = *pBsplinePoles;         /* first pole !repeated */
-
-            for (
-                pBez    = pBezierPoles + 1,
-                pBsp    = pBsplinePoles + 1,
-                pBsp2   = pBsplinePoles + numBeziers;
-                pBsp < pBsp2;                       /* loop over any interior poles */
-                pBsp++, pBez++
-                )
-                {
-                *pBez   = *pBsp;                    /* copy interior pole */
-                *++pBez = *pBsp;                    /* repeat it */
-                }
-
-            *pBez = *pBsp2;                         /* last pole not repeated */
-            }
-
-        /* no repeats requested or needed */
-        else
-            memcpy (pBezierPoles, pBsplinePoles, numPoles * sizeof (DPoint4d));
-
-        return numBeziers;
-        }
-
-    /*
-    Now we have a bonafide B-spline to convert.
-    The first 2 & last 2 poles are invariant.
-    */
-    pBezierPoles[0] = pBsplinePoles[0];
-    pBezierPoles[1] = pBsplinePoles[1];
-    pBezierPoles[numOutPoles - 2] = pBsplinePoles[numPoles - 2];
-    pBezierPoles[numOutPoles - 1] = pBsplinePoles[numPoles - 1];
-
-    /*
-    Compute remaining Bezier poles one at a time using corresponding
-    row of the knot insertion matrix A produced by the Oslo algorithm.
-    We construct the order entries of row i of A that could be
-    positive, and directly multiply these scalars times the
-    corresponding B-spline poles to produce the ith Bezier pole.
-    */
-    pBotT = T + MAX_BEZIER_CURVE_ORDER - 1;
-    tauLo = 0;
-    tauHi = numBeziers;
-    /* loop over interior numOutPoles - 4 Bezier poles */
-    for (
-        pole        =
-        startPole   = 2,
-        endPole     = numBezPoles   - startPole - 1,
-        pBez        = pBezierPoles  + startPole,
-        segmentCtr  = 1             + startPole;
-        pole <= endPole;
-        pole++, pBez++
-        )
-        {
-        tVal    =
-        tauVal  = (pole - 1) / degree;              /* integer division */
-
-        tau     = tauVal + degree;
-        tSplit  = tauVal * degree - pole + order;
-
-        *pBotT  = 1.0;                              /* first column write */
-        pCurrT  = pBotT;
-
-        /* loop over rewrites of T, each time filling 1 more slot in T's tail */
-        for (colT = 1; colT < order; colT++)
-            {
-            beta1 = 0.0;
-            tauRVal = tauVal + 1;
-            tauLVal = tauVal - colT + 1;
-            if (colT == tSplit)
-                tVal++;
-
-            /* rewrite last colT + 1 slots of T */
-            for (
-                pCurrT -= colT,
-                pPrevT = pCurrT + 1;                /* each write depends on 1 below */
-                pCurrT < pBotT;
-                pCurrT++, pPrevT++
-                )
-                {
-                /* check for tauVals out of bounds */
-                denom1 = (double) (tVal - (tauLVal < tauLo ? tauLo : tauLVal));
-                denom2 = (double) ((tauRVal > tauHi ? tauHi : tauRVal) - tVal);
-                beta = *pPrevT / (denom1 + denom2);
-                *pCurrT = denom2 * beta + beta1;    /* write slot */
-                beta1 = denom1 * beta;
-                tauLVal++;
-                tauRVal++;
-                }
-
-            *pCurrT = beta1;                        /* write bottom entry */
-            }
-
-        /*
-        With the last rewrite, T contains the scalars for the convex
-        combo (= *pBez) of the B-spline poles with indices tau - degree to tau.
-        Compute this combination to find this Bezier pole.
-        */
-        pBez->x = pBez->y = pBez->z = pBez->w = 0.0;
-        for (
-            pCurrT -= degree,
-            pBsp = pBsplinePoles + tau - degree;
-            pCurrT <= pBotT;
-            pCurrT++, pBsp++
-            )
-            {
-            if (*pCurrT)
-                {
-                pBez->x += *pCurrT * pBsp->x;
-                pBez->y += *pCurrT * pBsp->y;
-                pBez->z += *pCurrT * pBsp->z;
-                pBez->w += *pCurrT * pBsp->w;
-                }
-            }
-
-        if (!bShare)
-            {
-            /*
-            Repeat this Bezier pole if it's the last one of a Bez segment;
-            set counter for next pole.
-            */
-            if (segmentCtr == order)
-                {
-                pBez++;
-                *pBez = *(pBez - 1);
-                segmentCtr = 2;
-                }
-            else
-                segmentCtr++;
-            }
-        }
-
-    return numBeziers;
-    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -2354,148 +2129,6 @@ const   double      param
                 order,
                 3,
                 param);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Convert tangent and derivatives to tangent magnitude and derivatives.
-*
-* @param pF OUT array of tangent magnitude and derivatives.
-* @param pNumValueReturned OUT number of values requested in arrays.
-* @param pT IN array of tangent and derivatives. Contents up to and including
-*           pT[numValuesRequested] will be used.
-* @param numValuesRequested IN number of values requested.
-* @bsimethod                                                    EarlinLutz      08/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void evaluateTangentMagnitudeSeries
-(
-double *pF,
-int     *pNumValueReturned,
-DVec3d *pT,
-int     numValueRequested
-)
-    {
-    // f = sqrt (T.T)   -- T is pT[0]
-    // f' = T.T' / f    -- T' is pT[1]
-    // f'' = (T.T'' + T'.T' - f'^2)/f -
-    double TdT;
-    double dTdT, TddT, TdddT, dTddT;
-    double f, df, ddf, dddf, numerator2, numerator3;
-    double dN2;
-    int numReturned = 0;
-    if (numValueRequested <= 0)
-        goto done;
-    f = pF[0] = bsiDVec3d_magnitude (&pT[0]);
-    numReturned++;
-    if (numValueRequested <= 1)
-        goto done;
-
-    TdT   =   bsiDVec3d_dotProduct (&pT[0], &pT[1]);
-    df = pF[1] = TdT / f;
-    numReturned++;
-    if (numValueRequested <= 2)
-        goto done;
-
-    dTdT  = bsiDVec3d_dotProduct (&pT[1], &pT[1]);
-    TddT  = bsiDVec3d_dotProduct (&pT[0], &pT[2]);
-
-    numerator2 = TddT + dTdT - df * df;
-    ddf = pF[2] = numerator2 / f;
-    numReturned++;
-    if (numValueRequested <= 3)
-        goto done;
-
-    TdddT = bsiDVec3d_dotProduct (&pT[0], &pT[3]);
-    dTddT = bsiDVec3d_dotProduct (&pT[1], &pT[2]);
-
-    dN2 = (TdddT + 3.0 * dTddT - 2 * df * ddf);
-    numerator3 = dN2 * f - df * numerator2;
-    dddf = pF[3] = numerator3 / (f * f);
-    numReturned++;
-    if (numValueRequested <= 3)
-        goto done;
-
-done:
-    if (pNumValueReturned)
-        *pNumValueReturned = numReturned;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-Evaluate tangent mangitude and derivatives.
-* @param    pEval0      OUT tangent magnitude and derivatives at 0
-* @param    pEval1      OUT tangent magnitude and derivatives at 1
-* @param    pNumTermOut   OUT actual number of terms.
-* @param    pPoleArray  IN poles.
-* @param    order       IN curve order.
-* @param    numTermRequested IN number of requested terms (including magnitude itself)
-* @bsimethod                                                    EarlinLutz      07/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void bsiBezierDPoint3d_evaluateEndPointTangentSeries
-(
-        double*     pEval0,
-        double*     pEval1,
-        int         *pNumTermOut,
-const   DPoint3d    *pPoleArray,
-        int         order,
-        int         numTermRequested
-)
-    {
-    int diffIndex;
-    DVec3d T0[10];
-    DVec3d T1[10];
-    DVec3d diffPoles[MAX_BEZIER_ORDER];
-    int degree = order - 1;
-    double degreeProduct;
-    double s;
-    int currDegree;
-    int numGot = 0;
-
-
-    memcpy (diffPoles, pPoleArray, order * sizeof (DPoint3d));
-    // VECTOR derivatives of the curve are simple differences of the poles ...
-    int numDerivative = degree;
-    if (numTermRequested < degree)
-        numDerivative = numTermRequested;
-
-    for (diffIndex = 1, s = -1.0, degreeProduct = 1.0, currDegree = order - 1;
-                diffIndex <= numDerivative;
-                diffIndex++, currDegree--, s = -s)
-        {
-        int i;
-        degreeProduct *= currDegree;
-        for (i = 0; i < order - diffIndex; i++)
-            bsiDVec3d_subtract (&diffPoles[i], &diffPoles[i+1], &diffPoles[i]);
-        bsiDVec3d_scale (&T0[diffIndex-1], &diffPoles[0], degreeProduct);
-        bsiDVec3d_scale (&T1[diffIndex-1], &diffPoles[order - diffIndex - 1],
-                            degreeProduct);
-        }
-
-    for (; numDerivative < numTermRequested; numDerivative++)
-        {
-        bsiDVec3d_zero (&T0[numDerivative]);
-        bsiDVec3d_zero (&T1[numDerivative]);
-        }
-    evaluateTangentMagnitudeSeries (pEval0, &numGot, T0, numTermRequested);
-    evaluateTangentMagnitudeSeries (pEval1, &numGot, T1, numTermRequested);
-    if (pNumTermOut)
-        *pNumTermOut = numGot;
-    }
-
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      07/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP double bsiBezierDPoint3d_arcLengthHermite
-(
-DPoint3d *pXYZ,
-int order,
-int requestedHermiteTerms
-)
-    {
-    double f0[10], f1[10];
-    int numTerms;
-    bsiBezierDPoint3d_evaluateEndPointTangentSeries (f0, f1, &numTerms, pXYZ, order, requestedHermiteTerms);
-    return bsiQuadrature_hermiteIntegral (1.0, f0, f1, numTerms - 1);
     }
 
 
@@ -2666,127 +2299,6 @@ const   DPoint4d    *pPoleArray,
     return dMax;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Simple recursive subdivision of a bezier.
-*
-* @param    pPoleArray  => master poles.
-* @param    order       => curve order.
-* @param    numRecursion => number of times to recurse before doing output.
-* @bsimethod                                                    EarlinLutz      08/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void    jmdlBezierDPoint4d_recursiveStroke
-(
-RecursiveStrokeContext *pContext,
-const   DPoint4d   *pPoleArray,
-        int         order,
-        int         numRecursion
-)
-    {
-    DPoint4d leftPolygon[MAX_BEZIER_ORDER], rightPolygon[MAX_BEZIER_ORDER];
-    if (numRecursion <= 0)
-        {
-        pContext->handlerFunc (pContext->pHandlerContext, pPoleArray + 1, order - 1);
-        }
-    else
-        {
-        bsiBezier_subdivisionPolygons (
-                        (double *)leftPolygon,
-                        (double *)rightPolygon,
-                        (double *)pPoleArray,
-                        order,
-                        4,
-                        0.5);
-        numRecursion--;
-        jmdlBezierDPoint4d_recursiveStroke (pContext,  leftPolygon, order, numRecursion);
-        jmdlBezierDPoint4d_recursiveStroke (pContext, rightPolygon, order, numRecursion);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Recursively subdivide a bezier curve, using callbacks for both test and output.
-* @param    pPoleArray  => master poles.
-* @param    order       => curve order.
-* @param    numRecursion => number of times to recurse before doing output.
-* @bsimethod                                                    EarlinLutz      08/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void    jmdlBezierDPoint4d_genericRecursiveSubdivision
-(
-GenericRecursiveStrokeContext *pContext,
-const   DPoint4d   *pPoleArray,
-        int         order,
-        int         numRecursion,
-        double      s0,
-        double      s1
-)
-    {
-    DPoint4d *pLeftPolygon  = (DPoint4d *)_alloca (order * sizeof (DPoint4d));
-    DPoint4d *pRightPolygon = (DPoint4d *)_alloca (order * sizeof (DPoint4d));
-    double sMid;
-    if (    numRecursion <= 0
-       ||   (pContext->testFunc && !(pContext->testFunc (pContext->pTestContext, pPoleArray, order, s0, s1)))
-       )
-        {
-        pContext->handlerFunc (pContext->pHandlerContext, pPoleArray, order, s0, s1);
-        }
-    else
-        {
-        bsiBezier_subdivisionPolygons (
-                        (double *)pLeftPolygon,
-                        (double *)pRightPolygon,
-                        (double *)pPoleArray,
-                        order,
-                        4,
-                        0.5);
-        numRecursion--;
-        sMid = 0.5 * (s0 + s1);
-        jmdlBezierDPoint4d_genericRecursiveSubdivision (pContext, pLeftPolygon,  order, numRecursion, s0, sMid);
-        jmdlBezierDPoint4d_genericRecursiveSubdivision (pContext, pRightPolygon, order, numRecursion, sMid, s1);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Recursively subdivide a bezier curve.  Pass incremental control polygons to separate test and
-* output functions.
-*
-* @param    pPoleArray  => master poles.
-* @param    order       => curve order.
-* @param    testFunc     => Function with args
-*                           testFunc (pTestContext, pPoles, numPoint, s0, s1)
-*                   to test if a fragment of the final control polygon should be accepted.
-*                   Return true to continue subdivision.
-* @param    handlerFunc     => Function with args
-*                           handlerFunc (pHandlerInstance, pStrokeArray, numPoint, s0, s1)
-*                   to receive (a fragment of) the final control polygon.  Successive
-*                   fragments duplicate the shared point.
-* @param    pHandlerContext  => instance var for handler
-* @bsimethod                                                    EarlinLutz      08/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     bsiBezierDPoint4d_testAndSubdivide
-(
-const   DPoint4d                    *pPoleArray,
-        int                         order,
-        DPoint4dSubdivisionHandler  testFunc,
-        void                        *pTestContext,
-        DPoint4dSubdivisionHandler  handlerFunc,
-        void                        *pHandlerContext,
-        int                         maxRecursion
-)
-    {
-    //int numRecursion = 0;
-    static int s_maxRecursion = 8;
-    GenericRecursiveStrokeContext context;
-
-    if (maxRecursion > s_maxRecursion)
-        maxRecursion = s_maxRecursion;
-    if (maxRecursion <= 0)
-        maxRecursion = s_maxRecursion;
-
-    context.handlerFunc     = handlerFunc;
-    context.testFunc        = testFunc;
-    context.pTestContext    = pTestContext;
-    context.pHandlerContext = pHandlerContext;
-    jmdlBezierDPoint4d_genericRecursiveSubdivision (&context, pPoleArray, order, maxRecursion, 0.0, 1.0);
-    }
 
 Public GEOMDLLIMPEXP int bsiBezierDPoint4d_estimateEdgeCount
 (
@@ -2940,52 +2452,6 @@ double param1
 
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Stroke a homogeneous curve to a cartesian tolerance.
-*
-* @param    pPoleArray  => master poles.
-* @param    order       => curve order.
-* @param    tolerance   => carteian (normalized) tolerance
-* @param    handlerFunc     => Function with args
-*                           handlerFunc (pHandlerInstance, pStrokeArray, numPoint)
-*                   to receive array of strokes.
-* @param    pHandlerContext  => instance var for handler
-* @bsimethod                                                    EarlinLutz      08/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP void     bsiBezierDPoint4d_stroke
-(
-const   DPoint4d    *pPoleArray,
-        int         order,
-        double      tolerance,
-        DPoint4dArrayHandler handlerFunc,
-        void        *pHandlerContext
-)
-    {
-    int numRecursion = 0;
-    static int maxRecursion = 6;
-    RecursiveStrokeContext recursiveContext;
-
-    /* Just look at the xyz variation.  Not right. */
-    double polygonError = bsiBezierDPoint4d_maxAbsMidpointDeviationXYZ (pPoleArray, order);
-
-    for (numRecursion = 0; numRecursion < maxRecursion && polygonError > tolerance; )
-        {
-        numRecursion++;
-        polygonError *= 0.25;
-        }
-
-    recursiveContext.handlerFunc        = handlerFunc;
-    recursiveContext.pHandlerContext    = pHandlerContext;
-    recursiveContext.tolerance          = tolerance;
-    recursiveContext.order              = order;
-    recursiveContext.unitWeight         = bsiBezierDPoint4d_isUnitWeight (pPoleArray, order, s_unitWeightRelTol);
-
-    /* Get the first point out so all the recursions can assume their left point is gone .. */
-    handlerFunc (pHandlerContext, pPoleArray, 1);
-    jmdlBezierDPoint4d_recursiveStroke (&recursiveContext, pPoleArray, order, numRecursion);
-    }
-
-
 /**
 * DeCasteljou subdivision.
 * given interpolating fraction.
@@ -3070,9 +2536,9 @@ DPoint4d    *pLeftPoleArray,
                 pPoint0->z = pPoint0->z * v + pPoint1->z * u;
                 pPoint0->w = pPoint0->w * v + pPoint1->w * u;
                 }
+            if (pLeftPoleArray)
+                pLeftPoleArray[i] = pPoleArray[0];
             }
-        if (pLeftPoleArray)
-            pLeftPoleArray[i] = pPoleArray[i];
         }
     }
 
@@ -3159,9 +2625,9 @@ DPoint3d    *pLeftPoleArray,
                 pPoint0->y = pPoint0->y * v + pPoint1->y * u;
                 pPoint0->z = pPoint0->z * v + pPoint1->z * u;
                 }
+            if (pLeftPoleArray)
+                pLeftPoleArray[i] = pPoleArray[0];
             }
-        if (pLeftPoleArray)
-            pLeftPoleArray[i] = pPoleArray[i];
         }
     }
 
@@ -3305,89 +2771,6 @@ DPoint3d    *pPoleArray,
                 }
             }
         }
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* Form the order-outOrder bezier which is the componentwise least squares
-* approximation to the
-* @bsimethod                                                    EarlinLutz      12/99
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool     bsiBezierDPoint4d_leastSquaresDegreeReduction
-(
-DPoint4d    *pOutPole,
-int         outOrder,
-DPoint4d    *pInPole,
-int         inOrder,
-int         match0,
-int         match1
-)
-    {
-    double matrixA[MAX_BEZIER_CURVE_ORDER * MAX_BEZIER_CURVE_ORDER];
-    double matrixAInverse[MAX_BEZIER_CURVE_ORDER * MAX_BEZIER_CURVE_ORDER];
-    double matrixB[MAX_BEZIER_CURVE_ORDER * MAX_BEZIER_CURVE_ORDER];
-    double cond;
-    int rowDimA = outOrder;
-    int colDimA = outOrder;
-    int rowDimB = outOrder;
-    //int colDimB = inOrder;
-#define AA(ii,jj) matrixA[(ii) * rowDimA + (jj)]
-#define BB(ii,jj) matrixB[(ii) * rowDimB + (jj)]
-    int i, j;
-    bool    boolstat = false;
-    int sizeA = MAX_BEZIER_CURVE_ORDER * MAX_BEZIER_CURVE_ORDER;
-    int sizeB = MAX_BEZIER_CURVE_ORDER * MAX_BEZIER_CURVE_ORDER;
-
-    int numFreePole = outOrder - match0 - match1;
-
-    if  (  outOrder < inOrder
-        && numFreePole > 0
-        && bsiBezier_pascalRegressionMatrix (matrixA, sizeA, outOrder - 1, outOrder - 1)
-        && bsiBezier_pascalRegressionMatrix (matrixB, sizeB, outOrder - 1, inOrder - 1)
-        )
-        {
-        /* Enforce matching conditions at start .. */
-        if (match0 > 0)
-            {
-            i = 0;
-            for (j = 0; j < inOrder; j++)
-                BB(i,j) = 0.0;
-            for (j = 0; j < outOrder; j++)
-                AA(i,j) = 0.0;
-            BB(i,0) = AA(i,0) = 1.0;
-            }
-        if (match1 > 0)
-            {
-            i = outOrder;
-            for (j = 0; j < inOrder; j++)
-                BB(i,j) = 0.0;
-            for (j = 0; j < outOrder; j++)
-                AA(i,j) = 0.0;
-            BB(i,inOrder) = AA(i,outOrder) = 1.0;
-            }
-
-        /* Invert A .. */
-        if (bsiLinAlg_givensInverse (matrixAInverse, matrixA, &cond, matrixA,
-                          rowDimA,   colDimA, 1, colDimA))
-            {
-#define NUM_POLE_COMPONENT 4
-            DPoint4d H[MAX_BEZIER_CURVE_ORDER];
-            bsiLinAlg_multiplyDenseRowMajorMatrixMatrix
-                        (
-                        (double *)H, outOrder, NUM_POLE_COMPONENT,
-                        matrixB, inOrder, (const double *)pInPole
-                        );
-            bsiLinAlg_multiplyDenseRowMajorMatrixMatrix
-                        (
-                        (double *)pOutPole, outOrder, NUM_POLE_COMPONENT,
-                        matrixAInverse, outOrder, (const double *)H
-                        );
-
-            boolstat = true;
-            }
-        }
-
-    return boolstat;
     }
 
 

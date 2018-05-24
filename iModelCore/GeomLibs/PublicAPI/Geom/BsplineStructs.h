@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/BsplineStructs.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -271,6 +271,8 @@ struct BCurveSegment
     GEOMDLLIMPEXP DPoint4dP GetPoleP (size_t index);
     //! Return(interior) pointer to first pole.
     GEOMDLLIMPEXP DPoint4dP GetPoleP ();
+    //! Return the pole array (reference)
+    GEOMDLLIMPEXP void GetPoles (bvector<DPoint4d> &poles);
     //! Return pole count.
     GEOMDLLIMPEXP size_t GetOrder ();
     //! Return knot count

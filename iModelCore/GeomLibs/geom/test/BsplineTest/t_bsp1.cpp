@@ -777,7 +777,7 @@ void sample (ICurvePrimitivePtr &cp, double f0, double df, int numFraction, bvec
         }
     }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Earlin.Lutz     09/17
+* @bsimethod                                                    Earlin.Lutz     05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MSBsplineCurve,ClosedToOpen)
     {
@@ -815,6 +815,9 @@ TEST(MSBsplineCurve,ClosedToOpen)
     Check::ClearGeometry("MSBsplineCurve.ClosedToOpen");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve, CleanKnots)
     {
     bvector<DPoint3d> poles = bvector<DPoint3d> {
@@ -833,16 +836,92 @@ TEST(BsplineCurve, CleanKnots)
         curveA->CleanKnots ();
         Check::Shift (0,10,0);
         Check::SaveTransformed (curveA);
-        MSBsplineCurve bezier;
-        curveA->MakeBezier (bezier);
-        auto curveB = bezier.CreateCapture ();
+        auto bezier = curveA->CreateCopyBezier ();
         Check::Shift (0,10,0);
-        Check::SaveTransformed (curveB);
-        curveB->CleanKnots ();
+        Check::SaveTransformed (bezier);
+        bezier->CleanKnots ();
         Check::Shift (0,10,0);
-        Check::SaveTransformed (curveB);
+        Check::SaveTransformed (bezier);
         }
 
     Check::ClearGeometry ("BsplineCurve.CleanKnots");
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BsplineCurve, Fit1)
+    {
+    bvector<DPoint3d> poles = bvector<DPoint3d> {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (0,6,0),
+        DPoint3d::From (4,8,0),
+        DPoint3d::From (5, 12, 0),
+        DPoint3d::From (6,10,0),
+        DPoint3d::From (8,0,0)
+        };
+    int order = 5;
+    MSBsplineCurvePtr curveA = MSBsplineCurve::CreateFromPolesAndOrder (poles, nullptr, nullptr, order, false, false);
+    
+    Check::SaveTransformed (curveA, true);
+    Check::Shift (10, 0, 0);
+    for (double tolerance : {1.0e-3, 1.0e-2, 1.0e-1})
+        {
+        SaveAndRestoreCheckTransform shifter (10, 0, 0);
+        MSBsplineCurvePtr curveB = MSBsplineCurve::CreatePtr ();
+        curveB->ApproximateAnyCurve (curveA.get (), tolerance, 4, 2, true);
+        Check::SaveTransformed (curveA);
+        for (double f = 0.0; f <= 1.0; f += 0.0625)
+            {
+            DPoint3d xyz;
+            curveA->FractionToPoint (xyz, f);
+            Check::SaveTransformedMarker (xyz, -tolerance);
+            }
+        Check::SaveTransformed (curveB, true);
+        }
+    Check::ClearGeometry ("BsplineCurve.Fit1");
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(BsplineCurve, Fit2)
+    {
+    bvector<DPoint3d> poles = bvector<DPoint3d> {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (0,6,0),
+        DPoint3d::From (4,8,0),
+        DPoint3d::From (5, 12, 0),
+        DPoint3d::From (6,10,0),
+        DPoint3d::From (8,0,0)
+        };
+    int order = 5;
+    static double s_paramFraction = 10.0;
+    static double s_pointFraction = 0.01;
+    MSBsplineCurvePtr curveA = MSBsplineCurve::CreateFromPolesAndOrder (poles, nullptr, nullptr, order, false, false);
+    Check::SaveTransformed (curveA, true);
+    Check::Shift (10, 0, 0);
+    for (double tolerance : {1.0e-3, 1.0e-2, 1.0e-1})
+        {
+        SaveAndRestoreCheckTransform shifter (10, 0, 0);
+        MSBsplineCurvePtr curveB = MSBsplineCurve::CreatePtr ();
+        MSBsplineCurve::ApproximateG1Curve (
+            curveB.get (),
+            curveA.get (),
+            3,  // out degree
+            false, // end tangents
+            3,
+            tolerance, s_paramFraction * tolerance, s_pointFraction * tolerance);
+        Check::SaveTransformed (curveA);
+        for (double f = 0.0; f <= 1.0; f += 0.0625)
+            {
+            DPoint3d xyz;
+            curveA->FractionToPoint (xyz, f);
+            Check::SaveTransformedMarker (xyz, -tolerance);
+            }
+        Check::SaveTransformed (curveB, true);
+        }
+    Check::ClearGeometry ("BsplineCurve.Fit2");
+    }

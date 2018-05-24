@@ -877,6 +877,16 @@ DRange3d DRange3d::FromIntersection (DRange3dCR range1, DRange3dCR range2, bool 
     return out;
     }
 
+/*-----------------------------------------------------------------*//**
+* @bsimethod                                                    EarlinLutz      10/17
++----------------------------------------------------------------------*/
+DRange3d DRange3d::FromUnion (DRange3dCR range1, DRange3dCR range2)
+    {
+    DRange3d out = range1;
+    out.Extend (range2);
+    return out;
+    }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/

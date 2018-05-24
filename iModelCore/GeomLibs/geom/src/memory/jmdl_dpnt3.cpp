@@ -639,7 +639,7 @@ const EmbeddedDPoint3dArray *pHeader,
 
 
 /* MAP define jmdlVArrayDPoint3d_getRange(pHeader,pRange) pHeader->getRange(pRange) ENDMAP */
-
+#ifdef CompileDRange3dUser
 /**
 * @param pHeader => point array header
 * @param pRange <= computed range. Not set if no points.
@@ -667,7 +667,7 @@ DRange3d                *pRange
         }
     return status;
     }
-
+#endif
 
 /* MAP define jmdlVArrayDPoint3d_getPolygonPlane(pHeader,pNormal,pOrigin,pError) pHeader->getPolygonPlane(pNormal,pOrigin,pError) ENDMAP */
 

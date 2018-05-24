@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/dpoint3darray.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -319,8 +319,8 @@ int         numPoint
     if (pPointArray && numPoint > 0)
         {
         DRange3d tmpRange;
-        bsiDRange3d_initFromArray(&tmpRange, pPointArray, numPoint);
-        return bsiDRange3d_getLargestCoordinate(&tmpRange);
+        tmpRange.InitFrom(pPointArray, numPoint);
+        return tmpRange.LargestCoordinate ();
         }
     else
         {
@@ -351,7 +351,7 @@ int         numPoint
         {
         DRange3d tmpRange;
         DPoint3d diagonal;
-        bsiDRange3d_initFromArray (&tmpRange, pPointArray, numPoint);
+        tmpRange.InitFrom(pPointArray, numPoint);
         bsiDPoint3d_subtractDPoint3dDPoint3d (&diagonal, &tmpRange.high, &tmpRange.low);
         return bsiDPoint3d_maxAbs (&diagonal);
         }
@@ -393,10 +393,10 @@ int         numPoint
         double      wRecip;
         int         i;
 
-        bsiDRange3d_init (&tmpRange);
+        tmpRange.Init ();
         for (i = 0; i < numPoint; i++)
             if (bsiTrig_safeDivide (&wRecip, 1.0, pWeightArray[i], 0.0))
-                bsiDRange3d_extendByComponents (&tmpRange, pPointArray[i].x * wRecip, pPointArray[i].y * wRecip, pPointArray[i].z * wRecip);
+                tmpRange.Extend (pPointArray[i].x * wRecip, pPointArray[i].y * wRecip, pPointArray[i].z * wRecip);
 
         bsiDPoint3d_subtractDPoint3dDPoint3d (&diagonal, &tmpRange.high, &tmpRange.low);
         return bsiDPoint3d_maxAbs (&diagonal);
@@ -427,9 +427,9 @@ int         numPoint
 )
     {
     DRange3d tmpRange;
-    bsiDRange3d_initFromArray(&tmpRange, pPointArray, numPoint);
+    tmpRange.InitFrom(pPointArray, numPoint);
     tmpRange.low.z = tmpRange.high.z = 0.0;
-    return (bsiDRange3d_getLargestCoordinate(&tmpRange));
+    return (tmpRange.LargestCoordinate ());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1577,7 +1577,7 @@ int numPoint
         if (pPlaneToWorld)
             bsiTransform_initIdentity (pPlaneToWorld);
         if (pRange)
-            bsiDRange3d_init (pRange);
+            pRange->Init ();
         if (pTransformedPoints)
             bsiDPoint3d_copyArray (pTransformedPoints, pPoints, numPoint);
         }
@@ -1595,7 +1595,7 @@ int numPoint
             {
             bsiTransform_multiplyDPoint3dArray (&worldToPlane, pTransformedPoints, pPoints, numPoint);
             if (pRange)
-                bsiDRange3d_initFromArray (pRange, pTransformedPoints, numPoint);
+                pRange->InitFrom(pTransformedPoints, numPoint);
             }
         else
             {
@@ -1605,11 +1605,11 @@ int numPoint
                 DPoint3d xyz;
                 int i;
 
-                bsiDRange3d_init (pRange);
+                pRange->Init ();
                 for (i = 0; i < numPoint; i++)
                     {
                     bsiTransform_multiplyDPoint3d (&worldToPlane, &xyz, &pPoints[i]);
-                    bsiDRange3d_extendByDPoint3d (pRange, &xyz);
+                    pRange->Extend (xyz);
                     }
                 }
             }
