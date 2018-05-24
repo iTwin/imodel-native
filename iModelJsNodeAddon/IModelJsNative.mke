@@ -63,6 +63,8 @@ $(o)JsInterop$(oext) : $(baseDir)JsInterop.cpp $(baseDir)IModelJsNative.h ${Mult
 
 $(o)JsInteropDgnDb$(oext) : $(baseDir)JsInteropDgnDb.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends} 
 
+$(o)JsInteropTiles$(oext) : $(baseDir)JsInteropTiles.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends}
+
 $(o)JsInteropBriefcaseManager$(oext) : $(baseDir)JsInteropBriefcaseManager.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends} 
 
 $(o)ECPresentationUtils$(oext) : $(baseDir)ECPresentationUtils.cpp $(baseDir)ECPresentationUtils.h ${MultiCompileDepends} 

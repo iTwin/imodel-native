@@ -57,6 +57,15 @@ struct KnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   05/18
+//=======================================================================================
+struct IModelJsTileAdmin : DgnPlatformLib::Host::TileAdmin
+{
+    bool _WantCachedHiResTiles(DgnDbR) const override { return true; }
+    bool _WantEmbedMaterials(DgnDbR) const override { return true; }
+};
+
+//=======================================================================================
 // @bsistruct                                   Sam.Wilson                  05/17
 //=======================================================================================
 struct DgnPlatformHost : DgnPlatformLib::Host
@@ -64,6 +73,7 @@ struct DgnPlatformHost : DgnPlatformLib::Host
 private:
     void _SupplyProductName(Utf8StringR name) override { name.assign("IModelJs"); }
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new KnownLocationsAdmin(); }
+    TileAdmin& _SupplyTileAdmin() override { return *new IModelJsTileAdmin(); }
     BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
         {
         BeFileName sqlang(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
