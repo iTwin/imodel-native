@@ -96,6 +96,7 @@ protected:
         size_t binaryDataSize = m_binaryData.size();
         m_binaryData.resize(binaryDataSize + bufferDataSize);
         memcpy(m_binaryData.data() + binaryDataSize, bufferData, bufferDataSize);
+        PadBinaryDataToBoundary();
         }
 
     template<typename T> void AddBufferView(Utf8CP name, T const& bufferData)

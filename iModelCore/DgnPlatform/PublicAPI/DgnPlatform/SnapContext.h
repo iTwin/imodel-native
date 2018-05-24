@@ -79,7 +79,7 @@ public:
     //! @param[in] isAdjusted true if snap is not suitable for creating assoc points (pass false if customKeypointData is supplied or snap not overriden).
     //! @param[in] nBytes Size in bytes of customKeypointData, or 0 if none.
     //! @param[in] customKeypointData Pointer to customKeypointData to save for this snap or NULL.
-    DGNPLATFORM_EXPORT static void SetSnapInfo(SnapDetailR snap, SnapMode mode, Render::ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, double aperature, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = nullptr);
+    DGNPLATFORM_EXPORT static void SetSnapInfo(SnapDetailR snap, SnapMode mode, Render::ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, double aperture, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = nullptr);
 };
 
 END_BENTLEY_DGN_NAMESPACE
