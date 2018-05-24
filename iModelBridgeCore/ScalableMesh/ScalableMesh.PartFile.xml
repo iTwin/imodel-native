@@ -266,7 +266,7 @@
         <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModelDgnDb" Repository="TerrainModel" />     
         <SubPart PartName="ScalableMeshElement" PartFile="DgnDisplay" Repository="DgnDisplay"/>		
         <SubPart PartName="PublishedApi"   PartFile="geomlibs"    Repository="GeomLibs"/>
-        <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="RasterCore" PartFile="DgnDisplay" Repository="DgnDisplay"/>
         <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />
@@ -395,7 +395,7 @@
     
     <Product Name="ScalableMeshATP" SaveProduct="true" >
         <SubPart PartName="ScalableMeshATPexe" />
-        <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>        
+        <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform" Repository="DgnPlatform"/>        
         <Directories DirectoryListName="DgnPlatformDirList" PartFile="DgnPlatform" Repository="DgnPlatform" />        
         <Directories DirectoryListName="ScalableMeshATP" />        
     </Product>
@@ -410,7 +410,7 @@
     <Product Name="ScalableMeshLumenSdk" SaveProduct="true" >        
         <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
         <SubPart PartName="RasterSchema"            PartFile="RealityModeling"          Repository="DgnDomains-RealityModeling" />        
-        <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>        
+        <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform" Repository="DgnPlatform"/>        
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />        
         <Directories DirectoryListName="ScalableMeshLumenSdk" />        
@@ -486,7 +486,7 @@
         <SubPart PartName="Gtest"/>
     </Product>
 
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=SMTests -dTEST_COLLECTION_PRODUCT=SMTests"  OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="Gtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=SMTests -dTEST_COLLECTION_PRODUCT=SMTests"  OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="SMTests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -495,7 +495,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Gtest-SMTests/SMTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/SMTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Gtest-SMTests/SMTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/SMTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Gtest-SMTests" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>-->
