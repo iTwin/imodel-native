@@ -21,7 +21,7 @@
     <ClCompile Include="ScalableMeshWorker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TaskScheduler.cpp">
+    <ClCompile Include="SMWorkerTaskScheduler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,10 +32,10 @@
     <ClInclude Include="ScalableMeshWorker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TaskScheduler.h">
+    <ClInclude Include="SMWorkerDefinitions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Definitions.h">
+    <ClInclude Include="SMWorkerTaskScheduler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

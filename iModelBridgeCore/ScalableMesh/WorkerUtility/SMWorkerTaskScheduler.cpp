@@ -12,8 +12,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_IMAGEPP
 
 
-namespace ScalableMeshWorker
-    {
+
+BEGIN_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
 
     TaskScheduler::TaskScheduler(BeFileName& taskFolderName)
         {
@@ -210,4 +210,4 @@ namespace ScalableMeshWorker
 
         }
     
-    }
+END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: WorkerUtility/Definitions.h $
+|     $Source: WorkerUtility/SMWorkerDefinitions.h $
 |    $RCSfile: ScalableMeshDefs.h,v $
 |   $Revision: 1.9 $
 |       $Date: 2011/10/26 17:55:44 $

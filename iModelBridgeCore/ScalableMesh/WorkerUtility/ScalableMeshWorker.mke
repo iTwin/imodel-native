@@ -41,6 +41,8 @@ $(o)Initialize$(oext): $(baseDir)Initialize.cpp ${MultiCompileDepends}
 
 $(o)ScalableMeshWorker$(oext): $(baseDir)ScalableMeshWorker.cpp ${MultiCompileDepends}
 
+$(o)SMWorkerTaskScheduler$(oext): $(baseDir)SMWorkerTaskScheduler.cpp ${MultiCompileDepends}
+
 
 %include MultiCppCompileGo.mki
 

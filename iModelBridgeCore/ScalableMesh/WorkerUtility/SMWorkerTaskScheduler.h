@@ -15,25 +15,25 @@
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-namespace ScalableMeshWorker
+BEGIN_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE    
+
+struct TaskScheduler
     {
 
-    struct TaskScheduler
-        {
+    private:
+    
+        BeFileName m_taskFolderName;
 
-        private:
-        
-            BeFileName m_taskFolderName;
+        void ProcessTask(FILE* file);
+    
+    public:
+    
+        TaskScheduler(BeFileName& taskFolderName);
 
-            void ProcessTask(FILE* file);
-        
-        public:
-        
-            TaskScheduler(BeFileName& taskFolderName);
+        virtual ~TaskScheduler();
 
-            virtual ~TaskScheduler();
+        void Start();
 
-            void Start();
-
-        };
     };
+
+END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
