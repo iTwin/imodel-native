@@ -582,6 +582,150 @@ public:
     UserSettingsSymbolsProvider(Context const& context) : m_context(context) {}
 };
 
+//=======================================================================================
+// @bsiclass                                                Mantas.Kontrimas    05/2018
+//=======================================================================================
+struct LabelSymbolsProvider : IECSymbolProvider
+{
+    struct Context : ProviderContext
+        {
+        IConnectionCR m_connection;
+        Context(IConnectionCR connection) : m_connection(connection) {}
+        };
+
+private:
+    Context const& m_context;
+
+private:
+    static ExpressionStatus GetRelatedDisplayLabelQuery(Utf8StringR query, Utf8CP relationshipName, Utf8CP direction, Utf8CP className)
+        {
+        Utf8CP thisInstanceIdColumnName, thisClassIdColumnName,
+            relatedInstanceIdColumnName, relatedClassIdColumnName;
+        if (0 == BeStringUtilities::Stricmp("Forward", direction))
+            {
+            thisInstanceIdColumnName = "SourceECInstanceId";
+            thisClassIdColumnName = "SourceECClassId";
+            relatedInstanceIdColumnName = "TargetECInstanceId";
+            relatedClassIdColumnName = "TargetECClassId";
+            }
+        else if (0 == BeStringUtilities::Stricmp("Backward", direction))
+            {
+            thisInstanceIdColumnName = "TargetECInstanceId";
+            thisClassIdColumnName = "TargetECClassId"; 
+            relatedInstanceIdColumnName = "SourceECInstanceId";
+            relatedClassIdColumnName = "SourceECClassId";
+            }
+        else
+            {
+            BeAssert(false);
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("LabelSymbolsProvider::GetRelatedDisplayLabelQuery: UnknownError. Invalid direction (%s)", direction).c_str());
+            return ExpressionStatus::UnknownError;
+            }
+
+        Utf8String relationshipSchemaName, relationshipClassName;
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(relationshipSchemaName, relationshipClassName, relationshipName))
+            {
+            BeAssert(false);
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("LabelSymbolsProvider::GetRelatedDisplayLabelQuery: UnknownError. Could not parse relationship name: %s", relationshipName).c_str());
+            return ExpressionStatus::UnknownError;
+            }
+
+        Utf8String relatedClassSchemaName, relatedClassName;
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(relatedClassSchemaName, relatedClassName, className))
+            {
+            BeAssert(false);
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("LabelSymbolsProvider::GetRelatedDisplayLabelQuery: UnknownError. Could not parse class name: %s", className).c_str());
+            return ExpressionStatus::UnknownError;
+            }
+
+        query = Utf8PrintfString("SELECT " FUNCTION_NAME_GetRelatedDisplayLabel "([related].[ECClassId], [related].[ECInstanceId]) FROM %%s this, [%s].[%s] relationship, [%s].[%s] related "
+                                 "WHERE this.[ECInstanceId]=? AND "
+                                 "      this.[ECInstanceId]=relationship.[%s] AND this.[ECClassId]=relationship.[%s] AND "
+                                 "      related.[ECInstanceId]=relationship.[%s] AND related.[ECClassId]=relationship.[%s]",
+                                 relationshipSchemaName.c_str(), relationshipClassName.c_str(),
+                                 relatedClassSchemaName.c_str(), relatedClassName.c_str(),
+                                 thisInstanceIdColumnName, thisClassIdColumnName,
+                                 relatedInstanceIdColumnName, relatedClassIdColumnName);
+        return ExpressionStatus::Success;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                    Mantas.Kontrimas                05/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static ExpressionStatus GetRelatedDisplayLabel (EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
+        {
+        if (instanceData.empty())
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "LabelSymbolsProvider::GetRelatedDisplayLabel: WrongType. ECInstanceList is empty");
+            return ExpressionStatus::WrongType;
+            }
+
+        if (3 != args.size())
+            {
+            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("LabelSymbolsProvider::GetRelatedDisplayLabel: WrongNumberOfArguments. Expected 3, actually: %" PRIu64, (uint64_t)args.size()).c_str());
+            return ExpressionStatus::WrongNumberOfArguments;
+            }
+
+        for (size_t i = 0; i < 3; ++i)
+            {
+            if (!args[i].IsECValue() || !args[i].GetECValue()->IsString())
+                {
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "LabelSymbolsProvider::GetRelatedDisplayLabel: WrongType. Invalid arguments (expecting strings)");
+                return ExpressionStatus::WrongType;
+                }
+            }
+
+        Context ctx = *static_cast<Context*>(context);
+
+        Utf8String queryFormat;
+        ExpressionStatus stat = GetRelatedDisplayLabelQuery(queryFormat, args[0].GetECValue()->GetUtf8CP(), args[1].GetECValue()->GetUtf8CP(), args[2].GetECValue()->GetUtf8CP());
+        if (ExpressionStatus::Success != stat)
+            return stat;    
+    
+        for (IECInstancePtr const& instance : instanceData)
+            {
+            Utf8PrintfString query(queryFormat.c_str(), instance->GetClass().GetECSqlName().c_str());
+
+            ECSqlStatement stmt;
+            ECSqlStatus status = stmt.Prepare(ctx.m_connection.GetECDb().Schemas(), ctx.m_connection.GetDb(), query.c_str());
+            if (!status.IsSuccess())
+                {
+                BeAssert(false);
+                continue;
+                }
+
+            status = stmt.BindText(1, instance->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+            if (!status.IsSuccess())
+                {
+                BeAssert(false);
+                continue;
+                }
+
+            if (DbResult::BE_SQLITE_ROW == stmt.Step())
+                {
+                evalResult.InitECValue() = ECValue(stmt.GetValueText(0));
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("LabelOverrideSymbolsProvider::GetRelatedDisplayLabel: Result: %s", evalResult.ToString().c_str()).c_str());
+                return ExpressionStatus::Success;
+                }
+            }
+    
+        evalResult.InitECValue().SetToNull();
+        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("LabelOverrideSymbolsProvider::GetRelatedDisplayLabel: Result: %s", evalResult.ToString().c_str()).c_str());
+        return ExpressionStatus::Success;
+        }
+        
+protected:
+    Utf8CP _GetName() const override {return "Label";}
+    void _PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override
+        {
+        void* methodContext = const_cast<Context*>(&m_context);
+        context.AddSymbol(*MethodSymbol::Create("GetRelatedDisplayLabel", nullptr, &GetRelatedDisplayLabel, methodContext));
+        }
+        
+public:
+    LabelSymbolsProvider(Context const& context) : m_context(context) {}
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -673,6 +817,10 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(
     // ECInstance methods
     ECInstanceMethodSymbolsProvider ecInstanceMethods;
     ecInstanceMethods.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
+
+    // Label related methods
+    LabelSymbolsProvider labelOverrrideMethods(rootCtx->AddContext(*new LabelSymbolsProvider::Context(params.GetConnection())));
+    labelOverrrideMethods.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     return rootCtx;
     }

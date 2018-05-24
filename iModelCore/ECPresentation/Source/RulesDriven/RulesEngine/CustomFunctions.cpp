@@ -229,21 +229,43 @@ static void ProcessIntanceLabelOverrides(Utf8StringR label, ECClassCR ecClass, b
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void ProcessLabelAndInstanceLabelOverrides(Utf8StringR label, CustomFunctionsContext const& context, ECInstanceKeyCR key, ECClassCR ecClass)
+    {
+    bmap<ECClassCP, bvector<ECPropertyCP>> instanceLabelOverrides = QueryBuilderHelpers::GetMappedLabelOverridingProperties(context.GetSchemaHelper(), context.GetRuleset().GetInstanceLabelOverrides());
+    if (!instanceLabelOverrides.empty())
+        {
+        IECInstancePtr instance;
+        ECInstancesHelper::LoadInstance(instance, context.GetSchemaHelper().GetConnection(), key);
+        if (instance.IsValid())
+            ProcessIntanceLabelOverrides(label, ecClass, instanceLabelOverrides, *instance);
+        }
+
+    if (label.empty() && !context.GetRuleset().GetLabelOverrides().empty())
+        ProcessLabelOverrides(label, context, key.GetClassId(), key.GetInstanceId(), "");
+    }
+
 /*=================================================================================**//**
 * Parameters:
 * - ECClassId
 * - ECInstanceId
-* @bsiclass                                     Aidas.Vaiksnoras                01/2018
+* @bsiclass                                                Mantas.Kontrimas    05/2018
 +===============+===============+===============+===============+===============+======*/
-struct GetNavigationPropertyLabelScalar : CachingScalarFunction<bmap<ECInstanceKey, Utf8String>>
+struct GetRelatedDisplayLabelScalar : CachingScalarFunction<bmap<ECInstanceKey, Utf8String>>
     {
-    GetNavigationPropertyLabelScalar(CustomFunctionsManager const& manager)
-        : CachingScalarFunction(FUNCTION_NAME_GetNavigationPropertyLabel, 2, DbValueType::TextVal, manager)
+private:
+    bool m_applyLocalization;
+
+public:
+    GetRelatedDisplayLabelScalar(CustomFunctionsManager const& manager, Utf8CP name, bool applyLocalization = false)
+        : CachingScalarFunction(name, 2, DbValueType::TextVal, manager), m_applyLocalization(applyLocalization)
         {}
     void _ComputeScalar(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         BeAssert(2 == nArgs);
-        ECInstanceId instanceId (args[1].GetValueUInt64());
+        ECInstanceId instanceId(args[1].GetValueUInt64());
         ECClassId classId = args[0].GetValueId<ECClassId>();
         ECInstanceKey key(classId, instanceId);
   
@@ -261,24 +283,15 @@ struct GetNavigationPropertyLabelScalar : CachingScalarFunction<bmap<ECInstanceK
                     return;
                     }  
 
-                bmap<ECClassCP, bvector<ECPropertyCP>> instanceLabelOverrides = QueryBuilderHelpers::GetMappedLabelOverridingProperties(GetContext().GetSchemaHelper(), GetContext().GetRuleset().GetInstanceLabelOverrides());
-                if (!instanceLabelOverrides.empty())
-                    {
-                    IECInstancePtr instance;
-                    /* unused - DbResult loadResult = */ECInstancesHelper::LoadInstance(instance, GetContext().GetSchemaHelper().GetConnection(), key);
-                    if (instance.IsValid())
-                        ProcessIntanceLabelOverrides(label, *ecClass, instanceLabelOverrides, *instance);
-                    }
-
-                if (label.empty() && !GetContext().GetRuleset().GetLabelOverrides().empty())
-                    ProcessLabelOverrides(label, GetContext(), classId, instanceId, "");
+                ProcessLabelAndInstanceLabelOverrides(label, GetContext(), key, *ecClass);
 
                 if (label.empty())
                     label = CommonTools::GetDefaultDisplayLabel(ecClass->GetDisplayLabel(), instanceId.GetValue());
                 }
             if (label.empty())
                 label = RULESENGINE_LOCALIZEDSTRING_NotSpecified;
-            ApplyLocalization(label, GetContext());
+            if (m_applyLocalization)
+                ApplyLocalization(label, GetContext());
             iter = GetCache().Insert(key, label).first;
             }
 
@@ -1722,7 +1735,8 @@ void CustomFunctionsInjector::CreateFunctions()
     m_scalarFunctions.push_back(new ArePointsEqualByValueScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new AreDoublesEqualByValueScalar(CustomFunctionsManager::GetManager()));
     m_scalarFunctions.push_back(new GetPropertyDisplayValueScalar(CustomFunctionsManager::GetManager()));
-    m_scalarFunctions.push_back(new GetNavigationPropertyLabelScalar(CustomFunctionsManager::GetManager()));
+    m_scalarFunctions.push_back(new GetRelatedDisplayLabelScalar(CustomFunctionsManager::GetManager(), FUNCTION_NAME_GetNavigationPropertyLabel, true));
+    m_scalarFunctions.push_back(new GetRelatedDisplayLabelScalar(CustomFunctionsManager::GetManager(), FUNCTION_NAME_GetRelatedDisplayLabel));
 
     m_aggregateFunctions.push_back(new GetGroupedInstanceKeysAggregate(CustomFunctionsManager::GetManager()));
     m_aggregateFunctions.push_back(new GetMergedValueAggregate(CustomFunctionsManager::GetManager()));
