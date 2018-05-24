@@ -30,8 +30,6 @@ struct ChangeManager final
     private:
         ECDbCR m_ecdb;
         mutable std::unique_ptr<ChangedValueSqlFunction> m_changedValueSqlFunction;
-        mutable std::unique_ptr<InsertedValueSqlFunction> m_insertedValueSqlFunction;
-        mutable std::unique_ptr<DeletedValueSqlFunction> m_deletedValueSqlFunction;
         mutable bool m_isCacheAttached = false;
 
         //static non-POD must not be deleted (Bentley guideline)

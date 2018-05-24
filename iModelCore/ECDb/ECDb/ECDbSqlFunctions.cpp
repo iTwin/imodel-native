@@ -125,9 +125,9 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
 
     Utf8CP ecsql = nullptr;
     if (state == ChangedValueState::BeforeUpdate || state == ChangedValueState::BeforeDelete)
-        ecsql = "SELECT RawOldValue, TYPEOF(RawOldValue) FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
+        ecsql = "SELECT RawOldValue,TYPEOF(RawOldValue) FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
     else
-        ecsql = "SELECT RawNewValue, TYPEOF(RawNewValue) FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
+        ecsql = "SELECT RawNewValue,TYPEOF(RawNewValue) FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
 
     CachedECSqlStatementPtr stmt = m_statementCache.GetPreparedStatement(m_ecdb, ecsql);
     if (stmt == nullptr)
@@ -143,7 +143,11 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
 
     if (stmt->Step() != BE_SQLITE_ROW)
         {
-        ctx.SetResultValue(fallbackValue);
+        if (fallbackValue.IsNull())
+            ctx.SetResultError(Utf8PrintfString("SQL function " SQLFUNC_ChangedValue " failed: ECSQL '%s' expected to return a row.", ecsql).c_str());
+        else
+            ctx.SetResultValue(fallbackValue);
+
         return;
         }
 
@@ -184,178 +188,6 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
         }
 
     ctx.SetResultError(SqlPrintfString("SQL function " SQLFUNC_ChangedValue " failed: executing the ECSQL '%s' returned an unsupported data type (%s).", stmt->GetECSql(), valType));
-    }
-
-//************************************************************************************
-// InsertedValueSqlFunction
-//************************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan              11/17
-//+---------------+---------------+---------------+---------------+---------------+------
-void InsertedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
-    //Decode and verify parameters
-    DbValue const& instanceChangeIdValue = args[0];
-    if (instanceChangeIdValue.GetValueType() != DbValueType::IntegerVal)
-        {
-        ctx.SetResultError("Argument 1 of function " SQLFUNC_InsertedValue " is expected to be the InstanceChange ECInstanceId and must be of integer type and cannot be null");
-        return;
-        }
-
-    const ECInstanceId instanceChangeId = instanceChangeIdValue.GetValueId<ECInstanceId>();
-
-    DbValue const& accessStringValue = args[1];
-    if (accessStringValue.GetValueType() != DbValueType::TextVal)
-        {
-        ctx.SetResultError("Argument 2 of function " SQLFUNC_InsertedValue " is expected to be the property access string and must be of text type and cannot be null");
-        return;
-        }
-
-    Utf8CP accessString = accessStringValue.GetValueText();
-
-    Utf8CP ecsql = "SELECT RawNewValue, TYPEOF(RawNewValue) FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
-    CachedECSqlStatementPtr stmt = m_statementCache.GetPreparedStatement(m_ecdb, ecsql);
-    if (stmt == nullptr)
-        {
-        Utf8String msg;
-        msg.Sprintf("SQL function " SQLFUNC_InsertedValue " failed: could not prepare ECSQL '%s'.", ecsql);
-        ctx.SetResultError(msg.c_str());
-        return;
-        }
-
-    stmt->BindId(1, instanceChangeId);
-    stmt->BindText(2, accessString, IECSqlBinder::MakeCopy::No);
-
-    if (stmt->Step() != BE_SQLITE_ROW)
-        {
-        ctx.SetResultError("SQL function " SQLFUNC_InsertedValue " failed: Expecting a row in changeset.");
-        return;
-        }
-
-    if (stmt->IsValueNull(0))
-        {
-        ctx.SetResultNull();
-        return;
-        }
-
-    Utf8CP valType = stmt->GetValueText(1);
-
-    if (valType[0] == 'i')
-        {
-        ctx.SetResultInt64(stmt->GetValueInt64(0));
-        return;
-        }
-
-    if (valType[0] == 'r')
-        {
-        ctx.SetResultDouble(stmt->GetValueDouble(0));
-        return;
-        }
-
-    if (valType[0] == 't')
-        {
-        Utf8CP strVal = stmt->GetValueText(0);
-        const int len = (int) strlen(strVal);
-        ctx.SetResultText(strVal, len, Context::CopyData::Yes);
-        return;
-        }
-
-    if (valType[0] == 'b')
-        {
-        int blobSize = -1;
-        void const* blob = stmt->GetValueBlob(0, &blobSize);
-        ctx.SetResultBlob(blob, blobSize, Context::CopyData::Yes);
-        return;
-        }
-
-    ctx.SetResultError(SqlPrintfString("SQL function " SQLFUNC_InsertedValue " failed: executing the ECSQL '%s' returned an unsupported data type (%s).", stmt->GetECSql(), valType));
-    }
-
-//************************************************************************************
-// InsertedValueSqlFunction
-//************************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan              11/17
-//+---------------+---------------+---------------+---------------+---------------+------
-void DeletedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
-    //Decode and verify parameters
-    DbValue const& instanceChangeIdValue = args[0];
-    if (instanceChangeIdValue.GetValueType() != DbValueType::IntegerVal)
-        {
-        ctx.SetResultError("Argument 1 of function " SQLFUNC_DeletedValue" is expected to be the InstanceChange ECInstanceId and must be of integer type and cannot be null");
-        return;
-        }
-
-    const ECInstanceId instanceChangeId = instanceChangeIdValue.GetValueId<ECInstanceId>();
-
-    DbValue const& accessStringValue = args[1];
-    if (accessStringValue.GetValueType() != DbValueType::TextVal)
-        {
-        ctx.SetResultError("Argument 2 of function " SQLFUNC_DeletedValue " is expected to be the property access string and must be of text type and cannot be null");
-        return;
-        }
-
-    Utf8CP accessString = accessStringValue.GetValueText();
-
-    Utf8CP ecsql = "SELECT RawOldValue, TYPEOF(RawOldValue) FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
-    CachedECSqlStatementPtr stmt = m_statementCache.GetPreparedStatement(m_ecdb, ecsql);
-    if (stmt == nullptr)
-        {
-        Utf8String msg;
-        msg.Sprintf("SQL function " SQLFUNC_DeletedValue " failed: could not prepare ECSQL '%s'.", ecsql);
-        ctx.SetResultError(msg.c_str());
-        return;
-        }
-
-    stmt->BindId(1, instanceChangeId);
-    stmt->BindText(2, accessString, IECSqlBinder::MakeCopy::No);
-
-    if (stmt->Step() != BE_SQLITE_ROW)
-        {
-        ctx.SetResultError("SQL function " SQLFUNC_DeletedValue " failed: Expecting a row in changeset.");
-        return;
-        }
-
-    if (stmt->IsValueNull(0))
-        {
-        ctx.SetResultNull();
-        return;
-        }
-
-    Utf8CP valType = stmt->GetValueText(1);
-
-    if (valType[0] == 'i')
-        {
-        ctx.SetResultInt64(stmt->GetValueInt64(0));
-        return;
-        }
-
-    if (valType[0] == 'r')
-        {
-        ctx.SetResultDouble(stmt->GetValueDouble(0));
-        return;
-        }
-
-    if (valType[0] == 't')
-        {
-        Utf8CP strVal = stmt->GetValueText(0);
-        const int len = (int) strlen(strVal);
-        ctx.SetResultText(strVal, len, Context::CopyData::Yes);
-        return;
-        }
-
-    if (valType[0] == 'b')
-        {
-        int blobSize = -1;
-        void const* blob = stmt->GetValueBlob(0, &blobSize);
-        ctx.SetResultBlob(blob, blobSize, Context::CopyData::Yes);
-        return;
-        }
-
-    ctx.SetResultError(SqlPrintfString("SQL function " SQLFUNC_DeletedValue " failed: executing the ECSQL '%s' returned an unsupported data type (%s).", stmt->GetECSql(), valType));
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

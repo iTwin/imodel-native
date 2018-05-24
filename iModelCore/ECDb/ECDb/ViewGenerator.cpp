@@ -323,11 +323,11 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
             continue;
 
         Utf8StringCP accessString = nullptr;
-        Utf8StringCP alias = nullptr;
+        Utf8StringCP colName = nullptr;
         if (propertyMap->GetType() == PropertyMap::Type::ConstraintECClassId || propertyMap->GetType() == PropertyMap::Type::ConstraintECInstanceId)
             {
             accessString = &propertyMap->GetAccessString();
-            alias = accessString;
+            colName = accessString;
             }
         else
             {
@@ -341,23 +341,24 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
                 }
 
             accessString = &dataProperty.GetAccessString();
-            alias = &columnName;
+            colName = &columnName;
             }
 
-        BeAssert(accessString != nullptr && alias != nullptr);
+        BeAssert(accessString != nullptr && colName != nullptr);
 
-        if (changedValueState == ChangedValueState::AfterInsert)
-            columnSql.Append("," SQLFUNC_InsertedValue "(" TABLEALIAS_InstanceChange "." COL_DEFAULTNAME_Id ",'").Append(*accessString).Append("')");
-        else if (changedValueState == ChangedValueState::BeforeDelete)
-            columnSql.Append("," SQLFUNC_DeletedValue "(" TABLEALIAS_InstanceChange "." COL_DEFAULTNAME_Id ",'").Append(*accessString).Append("')");
+        columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." COL_DEFAULTNAME_Id ",'").Append(*accessString).Append("',");
+
+        // For insert and delete, we pass the ChangedValueState as literal and in that case
+        // we don't have to pass a fallback value as we know the value must come from the change summary table
+        if (changedValueState == ChangedValueState::AfterInsert || changedValueState == ChangedValueState::BeforeDelete)
+            columnSql.AppendFormatted("%d,NULL)", Enum::ToInt(changedValueState.Value())).AppendComma();
         else
             {
-            columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." COL_DEFAULTNAME_Id ",'").Append(*accessString).Append("',");
             columnSql.Append(changedValueStateArgSql).AppendComma();
-            columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(*alias).AppendParenRight();
+            columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(*colName).AppendParenRight();
             }
 
-        columnSql.AppendSpace().AppendEscaped(*alias);
+        columnSql.AppendSpace().AppendEscaped(*colName);
         }
 
     viewSql.AppendParenLeft();
