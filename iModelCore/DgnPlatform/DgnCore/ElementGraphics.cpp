@@ -30,7 +30,7 @@ static void wireframe_addVertex(bvector<DPoint3d>& pts, DPoint3dCR pt, bool chec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool wireframe_collectVertices(CurveVectorCR curves, bvector<DPoint3d>& pts, bool checkDistance, CheckStop* stopTester)
+bool WireframeGeomUtil::CollectVertices(CurveVectorCR curves, bvector<DPoint3d>& pts, bool checkDistance, CheckStop* stopTester)
     {
     if (1 > curves.size())
         return false;
@@ -45,7 +45,7 @@ static bool wireframe_collectVertices(CurveVectorCR curves, bvector<DPoint3d>& p
             if (stopTester && stopTester->_CheckStop())
                 return true;
 
-            wireframe_collectVertices(*curve->GetChildCurveVectorCP(), pts, checkDistance, stopTester);
+            WireframeGeomUtil::CollectVertices(*curve->GetChildCurveVectorCP(), pts, checkDistance, stopTester);
             }
         }
     else
@@ -146,9 +146,71 @@ static bool wireframe_collectVertices(CurveVectorCR curves, bvector<DPoint3d>& p
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool wireframe_computeArc(DEllipse3dR ellipse, DPoint3dCR startPt, DPoint3dCR originPt, double sweepAngle, TransformCR transform, RotMatrixCR axes, RotMatrixCR invAxes)
+bool WireframeGeomUtil::CollectLateralRulePoints(CurveVectorCR curves, bvector<DPoint3d>& pts, int divisor, int closedDivisor, CheckStop* stopTester)
     {
-    DPoint3d endPt, centerPt, tmpPt;
+    switch (curves.HasSingleCurvePrimitive())
+        {
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
+            break;
+
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+            {
+            DEllipse3dCP  ellipse = curves.front()->GetArcCP();
+            bool          fullArc = ellipse->IsFullEllipse();
+
+            if (fullArc)
+                divisor = closedDivisor;
+
+            for (int iRule = 0; iRule < divisor; ++iRule)
+                {
+                double    fraction = (1.0 / divisor) * iRule;
+                DPoint3d  point;
+
+                if (!fullArc && DoubleOps::AlmostEqual(fraction, 0.0))
+                    continue;
+
+                ellipse->FractionParameterToPoint(point, fraction);
+                pts.push_back(point);
+                }
+            break;
+            }
+
+        default:
+            {
+            MSBsplineCurveCP bcurve = curves.front()->GetProxyBsplineCurveCP();
+
+            if (!bcurve || 2 == bcurve->params.order)
+                break;
+
+            if (bcurve->IsClosed())
+                divisor = closedDivisor;
+
+            for (int iRule = 0; iRule < divisor; ++iRule)
+                {
+                double    fraction = (1.0 / divisor) * iRule;
+                DPoint3d  point;
+
+                if (!bcurve->IsClosed() && DoubleOps::AlmostEqual(fraction, 0.0))
+                    continue;
+
+                bcurve->FractionToPoint(point, fraction);
+                pts.push_back(point);
+                }
+            break;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/12
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WireframeGeomUtil::ComputeRuleArc(DEllipse3dR ellipse, DPoint3dCR startPt, DPoint3dCR originPt, double sweepAngle, TransformCR transform, RotMatrixCR axes, RotMatrixCR invAxes, double ruleTolerance)
+    {
+    DPoint3d    endPt, centerPt, tmpPt;
 
     transform.Multiply(&endPt, &startPt, 1);
     centerPt = originPt;
@@ -158,8 +220,8 @@ static bool wireframe_computeArc(DEllipse3dR ellipse, DPoint3dCR startPt, DPoint
     axes.Multiply(centerPt);
     centerPt.z = tmpPt.z;
 
-    DVec3d    xVec, yVec, zVec;
-    RotMatrix rMatrix;
+    DVec3d      xVec, yVec, zVec;
+    RotMatrix   rMatrix;
 
     zVec.Init(0.0, 0.0, 1.0);
     xVec.NormalizedDifference(tmpPt, centerPt);
@@ -168,9 +230,9 @@ static bool wireframe_computeArc(DEllipse3dR ellipse, DPoint3dCR startPt, DPoint
     rMatrix.InitProduct(invAxes, rMatrix);
     axes.MultiplyTranspose(centerPt);
 
-    double radius = centerPt.Distance(startPt);
+    double  radius = centerPt.Distance(startPt);
 
-    if (radius < 1.0e-10)
+    if (radius < ruleTolerance)
         return false;
 
     ellipse.InitFromScaledRotMatrix(centerPt, rMatrix, radius, radius, 0.0, sweepAngle);
@@ -181,11 +243,11 @@ static bool wireframe_computeArc(DEllipse3dR ellipse, DPoint3dCR startPt, DPoint
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool wireframe_collectLateralEdges(DgnExtrusionDetailR detail, bvector<DSegment3d>& edges, CheckStop* stopTester)
+bool WireframeGeomUtil::CollectLateralEdges(DgnExtrusionDetailCR detail, bvector<DSegment3d>& edges, CheckStop* stopTester)
     {
     bvector<DPoint3d> pts;
 
-    if (wireframe_collectVertices(*detail.m_baseCurve, pts, true, stopTester))
+    if (WireframeGeomUtil::CollectVertices(*detail.m_baseCurve, pts, true, stopTester))
         return true;
 
     for (size_t iPt = 0; iPt < pts.size(); ++iPt)
@@ -201,11 +263,11 @@ static bool wireframe_collectLateralEdges(DgnExtrusionDetailR detail, bvector<DS
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool wireframe_collectLateralEdges(DgnRotationalSweepDetailR detail, bvector<DEllipse3d>& edges, CheckStop* stopTester)
+bool WireframeGeomUtil::CollectLateralEdges(DgnRotationalSweepDetailCR detail, bvector<DEllipse3d>& edges, CheckStop* stopTester)
     {
     bvector<DPoint3d> pts;
 
-    if (wireframe_collectVertices(*detail.m_baseCurve, pts, true, stopTester))
+    if (WireframeGeomUtil::CollectVertices(*detail.m_baseCurve, pts, true, stopTester))
         return true;
 
     RotMatrix axes, invAxes, tmpRMatrix;
@@ -222,7 +284,7 @@ static bool wireframe_collectLateralEdges(DgnRotationalSweepDetailR detail, bvec
         {
         DEllipse3d ellipse;
 
-        if (!wireframe_computeArc(ellipse, pts.at(iPt), detail.m_axisOfRotation.origin, detail.m_sweepAngle, transform, axes, invAxes))
+        if (!WireframeGeomUtil::ComputeRuleArc(ellipse, pts.at(iPt), detail.m_axisOfRotation.origin, detail.m_sweepAngle, transform, axes, invAxes))
             continue;
 
         edges.push_back(ellipse);
@@ -234,15 +296,15 @@ static bool wireframe_collectLateralEdges(DgnRotationalSweepDetailR detail, bvec
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool wireframe_collectLateralEdges(DgnRuledSweepDetailR detail, bvector<DSegment3d>& edges, CheckStop* stopTester)
+bool WireframeGeomUtil::CollectLateralEdges(DgnRuledSweepDetailCR detail, bvector<DSegment3d>& edges, CheckStop* stopTester)
     {
     for (size_t iProfile = 0; iProfile < detail.m_sectionCurves.size()-1; ++iProfile)
         {
         bvector<DPoint3d> rulePts1;
         bvector<DPoint3d> rulePts2;
 
-        if (wireframe_collectVertices(*detail.m_sectionCurves.at(iProfile), rulePts1, true, stopTester) ||
-            wireframe_collectVertices(*detail.m_sectionCurves.at(iProfile+1), rulePts2, true, stopTester))
+        if (WireframeGeomUtil::CollectVertices(*detail.m_sectionCurves.at(iProfile), rulePts1, true, stopTester) ||
+            WireframeGeomUtil::CollectVertices(*detail.m_sectionCurves.at(iProfile+1), rulePts2, true, stopTester))
             return true;
 
         if (rulePts1.size() != rulePts2.size())
@@ -257,8 +319,8 @@ static bool wireframe_collectLateralEdges(DgnRuledSweepDetailR detail, bvector<D
                 rulePts1.clear(); rulePts2.clear();
 
                 // In case of zero scale in only X or Y...we have no choice but to re-collect without excluding any points...
-                if (wireframe_collectVertices(*detail.m_sectionCurves.at(iProfile), rulePts1, false, stopTester) ||
-                    wireframe_collectVertices(*detail.m_sectionCurves.at(iProfile+1), rulePts2, false, stopTester))
+                if (WireframeGeomUtil::CollectVertices(*detail.m_sectionCurves.at(iProfile), rulePts1, false, stopTester) ||
+                    WireframeGeomUtil::CollectVertices(*detail.m_sectionCurves.at(iProfile+1), rulePts2, false, stopTester))
                     return true;
 
                 if (rulePts1.size() != rulePts2.size())
@@ -278,6 +340,10 @@ static bool wireframe_collectLateralEdges(DgnRuledSweepDetailR detail, bvector<D
     return false;
     }
 
+#if defined (NOT_NOW_TOPOLOGYID)
+// No point doing this now as it's not being used...
+//   Also, when we switch to doing locate from depth buffer, PickContext and this code won't be involved so
+//   we'll need to provide another method for getting the CurveTopologyId from an edge (ex. SnapGeometryHelper)...
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -325,13 +391,32 @@ static void drawSolidPrimitiveCurve(Render::GraphicBuilderR graphic, ICurvePrimi
 
     graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
     }
+#else
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Ray.Bentley     10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+static void drawSolidPrimitiveCurveVector(Render::GraphicBuilderR graphic, CurveVectorCR curveVector)
+    {
+    WireframeGeomUtil::DrawOutline(curveVector, graphic); // Always output as open profile...
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Ray.Bentley     10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+static void drawSolidPrimitiveCurve(Render::GraphicBuilderR graphic, ICurvePrimitivePtr primitive)
+    {
+    graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive), false);
+    }
+#endif
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilderR graphic, CheckStop* stopTester)
     {
+#if defined (NOT_NOW_TOPOLOGYID)
     GeometryStreamEntryIdCP entryId = graphic.GetGeometryStreamEntryId();
+#endif
 
     switch (primitive.GetSolidPrimitiveType())
         {
@@ -345,8 +430,8 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
             if (Angle::IsFullCircle(detail.m_sweepAngle))
                 return;
 
-            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(0.0)), CurveTopologyId::FromSweepProfile(0), entryId);
-            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(1.0)), CurveTopologyId::FromSweepProfile(1), entryId);
+            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(0.0)));//, CurveTopologyId::FromSweepProfile(0), entryId);
+            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(1.0)));//, CurveTopologyId::FromSweepProfile(1), entryId);
             return;
             }
 
@@ -362,7 +447,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
                 DEllipse3d ellipse;
 
                 ellipse.InitFromDGNFields3d(detail.m_centerA, detail.m_vector0, detail.m_vector90, detail.m_radiusA, detail.m_radiusA, 0.0, msGeomConst_2pi);
-                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(ellipse), CurveTopologyId::FromSweepProfile(0), entryId);
+                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(ellipse));//, CurveTopologyId::FromSweepProfile(0), entryId);
                 }
 
             if (detail.m_radiusB > 0.0)
@@ -370,7 +455,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
                 DEllipse3d ellipse;
     
                 ellipse.InitFromDGNFields3d(detail.m_centerB, detail.m_vector0, detail.m_vector90, detail.m_radiusB, detail.m_radiusB, 0.0, msGeomConst_2pi);
-                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(ellipse), CurveTopologyId::FromSweepProfile(1), entryId);
+                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(ellipse));//, CurveTopologyId::FromSweepProfile(1), entryId);
                 }
             return;
             }
@@ -402,11 +487,11 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
             topRectangle[3] = corners[6];
             topRectangle[4] = corners[4];
 
-            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLineString(baseRectangle, 5), CurveTopologyId::FromSweepProfile(0), entryId);
-            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLineString(topRectangle,  5), CurveTopologyId::FromSweepProfile(1), entryId);
+            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLineString(baseRectangle, 5));//, CurveTopologyId::FromSweepProfile(0), entryId);
+            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLineString(topRectangle,  5));//, CurveTopologyId::FromSweepProfile(1), entryId);
 
             for (uint32_t iRule = 0; iRule < 4; ++iRule)
-                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLine(DSegment3d::From(baseRectangle[iRule], topRectangle[iRule])), CurveTopologyId::FromSweepLateral(iRule), entryId);
+                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLine(DSegment3d::From(baseRectangle[iRule], topRectangle[iRule])));//, CurveTopologyId::FromSweepLateral(iRule), entryId);
             return;
             }
 
@@ -425,8 +510,8 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
             double vFraction0 = detail.LatitudeToVFraction(latitude0);
             double vFraction1 = detail.LatitudeToVFraction(latitude1);
 
-            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction0)), CurveTopologyId::FromSweepProfile(0), entryId);
-            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction1)), CurveTopologyId::FromSweepProfile(1), entryId);
+            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction0)));//, CurveTopologyId::FromSweepProfile(0), entryId);
+            drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction1)));//, CurveTopologyId::FromSweepProfile(1), entryId);
             return;
             }
 
@@ -437,7 +522,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
             if (!primitive.TryGetDgnExtrusionDetail(detail))
                 return;
 
-            drawSolidPrimitiveCurveVector(graphic, *detail.m_baseCurve, CurveTopologyId::FromSweepProfile(0), entryId);
+            drawSolidPrimitiveCurveVector(graphic, *detail.m_baseCurve);//, CurveTopologyId::FromSweepProfile(0), entryId);
 
             if (stopTester && stopTester->_CheckStop())
                 return;
@@ -445,14 +530,14 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
             CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone();
 
             tmpCurve->TransformInPlace(Transform::From(detail.m_extrusionVector));
-            drawSolidPrimitiveCurveVector(graphic, *tmpCurve, CurveTopologyId::FromSweepProfile(1), entryId);
+            drawSolidPrimitiveCurveVector(graphic, *tmpCurve);//, CurveTopologyId::FromSweepProfile(1), entryId);
 
             if (stopTester && stopTester->_CheckStop())
                 return;
 
             bvector<DSegment3d> edges;
 
-            if (wireframe_collectLateralEdges(detail, edges, stopTester))
+            if (WireframeGeomUtil::CollectLateralEdges(detail, edges, stopTester))
                 return;
 
             for (uint32_t iEdge = 0; iEdge < edges.size(); ++iEdge)
@@ -460,7 +545,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
                 if (stopTester && stopTester->_CheckStop())
                     return;
 
-                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLine(edges.at(iEdge)), CurveTopologyId::FromSweepLateral(iEdge), entryId);
+                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLine(edges.at(iEdge)));//, CurveTopologyId::FromSweepLateral(iEdge), entryId);
                 }
             return;
             }
@@ -474,7 +559,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
 
             if (!Angle::IsFullCircle(detail.m_sweepAngle))
                 {
-                drawSolidPrimitiveCurveVector(graphic, *detail.m_baseCurve, CurveTopologyId::FromSweepProfile(0), entryId);
+                drawSolidPrimitiveCurveVector(graphic, *detail.m_baseCurve);//, CurveTopologyId::FromSweepProfile(0), entryId);
 
                 if (stopTester && stopTester->_CheckStop())
                     return;
@@ -488,7 +573,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
                 CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone();
 
                 tmpCurve->TransformInPlace(transform);
-                drawSolidPrimitiveCurveVector(graphic, *tmpCurve, CurveTopologyId::FromSweepProfile(1), entryId);
+                drawSolidPrimitiveCurveVector(graphic, *tmpCurve);//, CurveTopologyId::FromSweepProfile(1), entryId);
 
                 if (stopTester && stopTester->_CheckStop())
                     return;
@@ -496,7 +581,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
 
             bvector<DEllipse3d> edges;
 
-            if (wireframe_collectLateralEdges(detail, edges, stopTester))
+            if (WireframeGeomUtil::CollectLateralEdges(detail, edges, stopTester))
                 return;
 
             for (uint32_t iEdge = 0; iEdge < edges.size(); ++iEdge)
@@ -504,7 +589,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
                 if (stopTester && stopTester->_CheckStop())
                     return;
 
-                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(edges.at(iEdge)), CurveTopologyId::FromSweepLateral(iEdge), entryId);
+                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateArc(edges.at(iEdge)));//, CurveTopologyId::FromSweepLateral(iEdge), entryId);
                 }
             return;
             }
@@ -520,7 +605,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
 
             for (CurveVectorPtr curves: detail.m_sectionCurves)
                 {
-                drawSolidPrimitiveCurveVector(graphic, *curves, CurveTopologyId::FromSweepProfile(curveIndex++), entryId);
+                drawSolidPrimitiveCurveVector(graphic, *curves);//, CurveTopologyId::FromSweepProfile(curveIndex++), entryId);
 
                 if (stopTester && stopTester->_CheckStop())
                     return;
@@ -528,7 +613,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
 
             bvector<DSegment3d> edges;
 
-            if (wireframe_collectLateralEdges(detail, edges, stopTester))
+            if (WireframeGeomUtil::CollectLateralEdges(detail, edges, stopTester))
                 return;
 
             for (size_t iEdge = 0; iEdge < edges.size(); ++iEdge)
@@ -536,7 +621,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
                 if (stopTester && stopTester->_CheckStop())
                     return;
 
-                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLine(edges.at(iEdge)), CurveTopologyId::FromSweepLateral(iEdge), entryId);
+                drawSolidPrimitiveCurve(graphic, ICurvePrimitive::CreateLine(edges.at(iEdge)));//, CurveTopologyId::FromSweepLateral(iEdge), entryId);
                 }
             return;
             }
@@ -580,29 +665,32 @@ void WireframeGeomUtil::Draw(IBRepEntityCR entity, Render::GraphicBuilderR graph
     if (PK_ENTITY_null == entityTag)
         return;
 
+    bvector<PK_EDGE_t> edgeTags;
+
+    if (SUCCESS != PSolidTopo::GetBodyEdges(edgeTags, entityTag))
+        return;
+
+#if defined (NOT_NOW_TOPOLOGYID)
+    GeometryStreamEntryIdCP entryId = graphic.GetGeometryStreamEntryId();
+#endif
     IFaceMaterialAttachmentsCP attachments = entity.GetFaceMaterialAttachments();
 
-    int         nEdges = 0;
-    PK_EDGE_t*  edgeTags = nullptr;
-
-    PK_BODY_ask_edges(entityTag, &nEdges, &edgeTags);
-
-    for (int iEdge = 0; iEdge < nEdges; ++iEdge)
+    for (PK_EDGE_t edgeTag : edgeTags)
         {
         if (stopTester && stopTester->_CheckStop())
             return;
 
         bool isHiddenEntity = false;
 
-        if (SUCCESS == PSolidAttrib::GetHiddenAttribute(isHiddenEntity, edgeTags[iEdge]) && isHiddenEntity)
+        if (SUCCESS == PSolidAttrib::GetHiddenAttribute(isHiddenEntity, edgeTag) && isHiddenEntity)
             continue;
 
         ICurvePrimitivePtr curve;
 
-        if (SUCCESS != PSolidGeom::EdgeToCurvePrimitive(curve, edgeTags[iEdge]))
-            break;
+        if (SUCCESS != PSolidGeom::EdgeToCurvePrimitive(curve, edgeTag))
+            continue;
 
-        PK_FACE_t faceTag = (attachments ? PSolidUtil::GetPreferredFaceAttachmentFaceForEdge(edgeTags[iEdge]) : PK_ENTITY_null);
+        PK_FACE_t faceTag = (attachments ? PSolidUtil::GetPreferredFaceAttachmentFaceForEdge(edgeTag) : PK_ENTITY_null);
 
         if (PK_ENTITY_null != faceTag)
             {
@@ -619,11 +707,25 @@ void WireframeGeomUtil::Draw(IBRepEntityCR entity, Render::GraphicBuilderR graph
                 graphic.ActivateGraphicParams(*graphicParams, nullptr); // Activate the pre-resolved face symbology...
             }
 
+#if defined (NOT_NOW_TOPOLOGYID)
+// No point doing this now as it's not being used...
+//   Also, when we switch to doing locate from depth buffer, PickContext and this code won't be involved so
+//   we'll need to provide another method for getting the CurveTopologyId from an edge (ex. SnapGeometryHelper)...
+        if (nullptr != entryId && entryId->IsValid())
+            {
+            CurveTopologyId curveTopologyId;
+
+            if (SUCCESS == PSolidTopoId::CurveTopologyIdFromEdge(curveTopologyId, edgeTag, true))
+                {
+                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::ParasolidBody, curveTopologyId);
+                curve->SetId(newId.get());
+                }
+            }
+#endif
+
         curve->TransformInPlace(entity.GetEntityTransform());
         graphic.AddCurveVectorR(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
         }
-
-    PK_MEMORY_free(edgeTags);
 #endif
     }
 
