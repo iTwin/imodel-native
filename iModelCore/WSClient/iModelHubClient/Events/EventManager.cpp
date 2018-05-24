@@ -2,252 +2,324 @@
 |
 |     $Source: iModelHubClient/Events/EventManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnPlatform/TxnManager.h>
-#include <WebServices/iModelHub/Client/Briefcase.h>
-#include <WebServices/iModelHub/Client/Result.h>
-#include <thread>
 #include "EventManager.h"
+#include <WebServices/Client/WSChangeset.h>
+#include "../Utils.h"
 #include "../Logging.h"
+#include <WebServices/iModelHub/Client/UserInfoManager.h>
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
-USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_DGN
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             12/2016
+//@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-bool EventListContainsEvent(EventTypeSet eventList, Event::EventType eventType)
+EventSubscriptionPtr EventManager::CreateEventSubscriptionFromResponse(const Utf8String response)
     {
-    return eventList.find(eventType) != eventList.end();
+    Utf8String subscriptionId;
+    auto instance = EventSubscriptionResponseToJsonInstance(response, subscriptionId);
+    if (instance.isNull())
+        return nullptr;
+
+    EventTypeSet eventTypes;
+    for (Json::ValueIterator itr = instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].begin();
+         itr != instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].end(); ++itr)
+        eventTypes.insert(Event::Helper::GetEventTypeFromEventName((*itr).asString().c_str()));
+
+    return EventSubscription::Create(subscriptionId, eventTypes);
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             12/2016
+//@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-#if defined (__APPLE__) || defined (ANDROID) || defined (__linux) || defined (__EMSCRIPTEN__)
-void* EventManagerThread(void* arg)
-#elif defined (_WIN32) // Windows && WinRT
-unsigned __stdcall EventManagerThread(void* arg)
-#endif
+//Returns true if same, else false
+bool CompareEventTypes
+(
+    EventTypeSet* newEventTypes,
+    EventTypeSet oldEventTypes
+)
     {
-    const Utf8String methodName = "EventManagerThread";
-    try
-        {
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting event manager thread.");
-        EventManagerContextPtr* managerContextPtr = (EventManagerContextPtr*)arg;
-        if (nullptr == managerContextPtr)
-            {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid argument.");
-            return 0;
-            }
-        EventManagerContextPtr managerContext = *managerContextPtr;
-        if (managerContext.IsNull())
-            {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Invalid context.");
-            return 0;
-            }
-        managerContext->GetConditionVariable().notify_one();
-
-        LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Getting context members.");
-        iModelConnectionP imodelConnectionP = managerContext->GetiModelConnectionP();
-        EventManagerP eventManager = managerContext->GetEventManagerP();
-        ICancellationTokenPtr cancellationTokenPtr = managerContext->GetCancellationTokenPtr();
-
-        if (nullptr == imodelConnectionP || nullptr == eventManager)
-            {
-            LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Invalid context members.");
-            return 0;
-            }
-
-        LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Starting thread loop.");
-        while (true)
-            {
-            if (managerContext.IsNull())
-                {
-                LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Invalid context.");
-                return 0;
-                }
-
-            if (cancellationTokenPtr->IsCanceled())
-                {
-                LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Thread cancelled.");
-                return 0;
-                }
-
-            LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Getting event.");
-            auto eventResult = imodelConnectionP->GetEvent(true, cancellationTokenPtr)->GetResult();
-            if (!cancellationTokenPtr->IsCanceled() && eventResult.IsSuccess())
-                {
-                LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Event received.");
-                auto eventType = eventResult.GetValue()->GetEventType();
-
-                LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Starting event callbacks.");
-                for (auto callback : eventManager->GetCallbacks())
-                    {
-                    LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Calling event callback.");
-                    if (callback.second.empty() || EventListContainsEvent(callback.second, eventType))
-                        {
-                        auto callbackForEvent = *callback.first;
-                        callbackForEvent(eventResult.GetValue());
-                        }
-                    LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Event callback called.");
-                    }
-
-                LogHelper::Log(SEVERITY::LOG_TRACE, methodName, "Finished event callbacks.");
-                }
-            }
-
-        return 0;
-        }
-    catch (std::exception const& e)
-        {
-        LogHelper::Log(NativeLogging::SEVERITY::LOG_WARNING, "EventManagerThread", e.what());
-        }
-    catch (Utf8StringCR message)
-        {
-        LogHelper::Log(NativeLogging::SEVERITY::LOG_WARNING, "EventManagerThread", message.c_str());
-        }
-    catch (...)
-        {
-        LogHelper::Log(NativeLogging::SEVERITY::LOG_WARNING, "EventManagerThread", "Unknown exception");
-        }
-
-    return 0;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             12/2016
-//---------------------------------------------------------------------------------------
-bool EventManager::Start()
-    {
-    if (m_eventManagerContext.IsValid())
+    if (
+        (newEventTypes == nullptr || newEventTypes->size() == 0) &&
+        oldEventTypes.size() == 0
+        )
         return true;
 
-    LogHelper::Log(NativeLogging::SEVERITY::LOG_INFO, "EventManager::Start", "Start");
-    m_eventManagerContext = new EventManagerContext(m_imodelConnectionP, this, SimpleCancellationToken::Create());
-    BentleyStatus status = BeThreadUtilities::StartNewThread(EventManagerThread, &m_eventManagerContext, 1024 * 1024);
-    BeConditionVariable& cv = m_eventManagerContext->GetConditionVariable();
-    BeMutexHolder holder(cv.GetMutex());
-    cv.RelativeWait(holder, 200);
-    return BSISUCCESS == status;
-    }
+    if (
+        oldEventTypes.size() > 0 &&
+        (newEventTypes == nullptr || newEventTypes->size() != oldEventTypes.size())
+        )
+        return false;
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             12/2016
-//---------------------------------------------------------------------------------------
-StatusTaskPtr EventManager::Stop()
-    {
-    if (m_eventManagerContext.IsValid())
-        m_eventManagerContext->StopManager();
-
-    m_eventCallbacks.clear();
-    if (m_imodelConnectionP)
-        m_imodelConnectionP->UnsubscribeToEvents();
-
-    // Wait for events thread to finish
-    int maxIterations = 100;
-    while (m_eventManagerContext.IsValid() && maxIterations > 0)
+    for (auto newEventType : *newEventTypes)
         {
-        int useCount = m_eventManagerContext->GetRefCount();
-        if (useCount <= 1)
-            break;
-
-        BeThreadUtilities::BeSleep(50);
-        maxIterations--;
-        }
-    BeAssert(m_eventManagerContext.IsNull() || 1 >= m_eventManagerContext->GetRefCount() && "Events thread not finished!");
-
-    m_eventManagerContext = nullptr;
-    LogHelper::Log(NativeLogging::SEVERITY::LOG_INFO, "EventManager::Stop", "Stop");
-    return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             12/2016
-//---------------------------------------------------------------------------------------
-void EventManager::GetAllSubscribedEvents(EventTypeSet& allEventTypes)
-    {
-    for (auto eventCallback : m_eventCallbacks)
-        {
-        if (eventCallback.second.empty())
+        if (oldEventTypes.end() == oldEventTypes.find(newEventType))
             {
+            return false;
+            }
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Arvind.Venkateswaran            07/2016
+//---------------------------------------------------------------------------------------
+StatusTaskPtr EventManager::SetEventSubscription(EventTypeSet* eventTypes, ICancellationTokenPtr cancellationToken)
+    {
+    EventSubscriptionTaskPtr eventSubscription;
+    StatusResultPtr finalResult = std::make_shared<StatusResult>();
+
+    if (m_eventSubscription.IsNull())
+        eventSubscription = GetEventServiceSubscriptionId(eventTypes, cancellationToken);
+    else if (!CompareEventTypes(eventTypes, m_eventSubscription->GetEventTypes()))
+        eventSubscription = UpdateEventServiceSubscriptionId(eventTypes, cancellationToken);
+    else
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
+
+    return eventSubscription->Then([=] (EventSubscriptionResultCR subscriptionResult)
+        {
+        if (!subscriptionResult.IsSuccess())
+            {
+            finalResult->SetError(subscriptionResult.GetError());
             return;
             }
 
-        for (auto eventType : eventCallback.second)
+        m_eventSubscription = subscriptionResult.GetValue();
+        BaseEventManager::GetEventServiceSASToken(cancellationToken)->Then([=] (AzureServiceBusSASDTOResultCR setResult)
             {
-            if (!EventListContainsEvent(allEventTypes, eventType))
-                allEventTypes.insert(eventType);
-            }
-        }
+            if (!setResult.IsSuccess())
+                {
+                finalResult->SetError(setResult.GetError());
+                return;
+                }
+            m_eventSAS = setResult.GetValue();
+
+            finalResult->SetSuccess();
+            });
+        })->Then<StatusResult>([=]
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             12/2016
+//@bsimethod                                    Arvind.Venkateswaran            05/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr EventManager::Subscribe(EventTypeSet* eventTypes, EventCallbackPtr callback)
+StatusTaskPtr EventManager::SetEventServiceClient
+(
+    EventTypeSet* eventTypes,
+    ICancellationTokenPtr cancellationToken
+)
     {
-    const Utf8String methodName = "EventManager::Subscribe";
-    BeMutexHolder lock(m_eventCallbacksMutex);
-
-    // Check callback is already subscribed
-    if (m_eventCallbacks.find(callback) != m_eventCallbacks.end())
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::EventCallbackAlreadySubscribed));
-
-    auto types = eventTypes ? *eventTypes : EventTypeSet();
-    m_eventCallbacks.Insert(callback, types);
-
-    // Gather all event types
-    EventTypeSet allEventTypes;
-    GetAllSubscribedEvents(allEventTypes);
-    return m_imodelConnectionP->SubscribeToEvents(&allEventTypes)->Then<StatusResult>([=](StatusResultCR subscribeResult)
+    return SetEventSubscription(eventTypes, cancellationToken)->Then<StatusResult>([=] (StatusResultCR subscribeResult)
         {
         if (!subscribeResult.IsSuccess())
-            {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, subscribeResult.GetError().GetMessage().c_str());
-            return subscribeResult;
-            }
+            return StatusResult::Error(subscribeResult.GetError());
 
-        if (!Start())
-            {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Thread start failed");
-            return StatusResult::Error(Error::Id::EventServiceSubscribingError);
-            }
+        BeMutexHolder lock(m_eventServiceClientMutex);
 
+        if (m_eventServiceClient == nullptr)
+            m_eventServiceClient = EventServiceClient::Create(m_eventSAS->GetBaseAddress(), m_eventSubscription->GetSubscriptionId());
+
+        m_eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
         return StatusResult::Success();
         });
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             12/2016
+//@bsimethod                                     Arvind.Venkateswaran           07/2016
 //---------------------------------------------------------------------------------------
-StatusTaskPtr EventManager::Unsubscribe(EventCallbackPtr callback, bool* dispose)
+EventSubscriptionTaskPtr EventManager::SendEventChangesetRequest
+(
+    const std::shared_ptr<WSChangeset> changeset,
+    const ICancellationTokenPtr cancellationToken
+) const
     {
-    BeMutexHolder lock(m_eventCallbacksMutex);
-
-    *dispose = false;
-    if (callback)
+    std::shared_ptr<EventSubscriptionResult> finalResult = std::make_shared<EventSubscriptionResult>();
+    return SendChangesetRequest(changeset, cancellationToken)->Then([=] (const WSChangesetResult& result)
         {
-        auto it = m_eventCallbacks.find(callback);
-        bool callbackFound = it != m_eventCallbacks.end();
+        if (result.IsSuccess())
+            {
+            EventSubscriptionPtr ptr = CreateEventSubscriptionFromResponse(result.GetValue()->AsString().c_str());
+            if (ptr == nullptr)
+                {
+                finalResult->SetError(Error::Id::NoSubscriptionFound);
+                return;
+                }
 
-        if (callbackFound)
-            m_eventCallbacks.erase(it);
+            finalResult->SetSuccess(ptr);
+            }
         else
-            return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::EventCallbackNotFound));
-        }
+            {
+            finalResult->SetError(result.GetError());
+            }
+        })->Then<EventSubscriptionResult>([=]
+            {
+            return *finalResult;
+            });
+    }
 
-    if (!callback || 0 == m_eventCallbacks.size())
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+Json::Value GenerateEventSubscriptionWSChangeSetJson(EventTypeSet* eventTypes)
+    {
+    Json::Value properties;
+    properties[ServerSchema::Property::EventTypes] = Json::arrayValue;
+    if (eventTypes != nullptr)
         {
-        *dispose = true;
-        return Stop();
+        int i = 0;
+        for (auto eventType : *eventTypes)
+            {
+            properties[ServerSchema::Property::EventTypes][i] = Event::Helper::GetEventNameFromEventType(eventType);
+            i++;
+            }
+        }
+    return properties;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Caleb.Shafer                   06/2016
+//---------------------------------------------------------------------------------------
+void SetEventSubscriptionJsonRequestToChangeSet
+(
+    EventTypeSet* eventTypes,
+    const Utf8String                                 eventSubscriptionId,
+    WSChangeset&                                     changeset,
+    const WSChangeset::ChangeState&                  changeState
+)
+    {
+    const ObjectId eventSubscriptionObject
+        (
+        ServerSchema::Schema::iModel,
+        ServerSchema::Class::EventSubscription,
+        eventSubscriptionId
+        );
+
+    changeset.AddInstance
+        (
+        eventSubscriptionObject,
+        changeState,
+        std::make_shared<Json::Value>(GenerateEventSubscriptionWSChangeSetJson(eventTypes))
+        );
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Arvind.Venkateswaran            06/2016
+//---------------------------------------------------------------------------------------
+EventSubscriptionTaskPtr EventManager::GetEventServiceSubscriptionId
+(
+    EventTypeSet* eventTypes,
+    ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "EventManager::GetEventServiceSubscriptionId";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    const double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    const std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    SetEventSubscriptionJsonRequestToChangeSet(eventTypes, "", *changeset, WSChangeset::Created);
+
+    std::shared_ptr<EventSubscriptionResult> finalResult = std::make_shared<EventSubscriptionResult>();
+    return AsyncTaskAddMethodLogging<EventSubscriptionResult>(SendEventChangesetRequest(changeset, cancellationToken), methodName, start);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    06/2016
+//---------------------------------------------------------------------------------------
+EventSubscriptionTaskPtr EventManager::UpdateEventServiceSubscriptionId
+(
+    EventTypeSet* eventTypes,
+    ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "EventManager::UpdateEventServiceSubscriptionId";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    const double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    const std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    SetEventSubscriptionJsonRequestToChangeSet(eventTypes, m_eventSubscription->GetSubscriptionId(), *changeset, WSChangeset::Modified);
+
+    std::shared_ptr<EventSubscriptionResult> finalResult = std::make_shared<EventSubscriptionResult>();
+    return AsyncTaskAddMethodLogging<EventSubscriptionResult>(SendEventChangesetRequest(changeset, cancellationToken), methodName, start);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas            12/2016
+//---------------------------------------------------------------------------------------
+bool EventManager::IsSubscribedToEvents(EventServiceClientPtr) const
+    {
+    return m_eventServiceClient != nullptr && m_eventSubscription != nullptr && m_eventSAS != nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Karolis.Uzkuraitis            05/2018
+//---------------------------------------------------------------------------------------
+Json::Value EventManager::GenerateEventSASJson()
+    {
+    return BaseEventManager::GenerateEventSASJson(ServerSchema::Schema::iModel, ServerSchema::Class::EventSAS);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Arvind.Venkateswaran            07/2016
+//---------------------------------------------------------------------------------------
+EventTaskPtr EventManager::GetEvent
+(
+    bool longPolling,
+    ICancellationTokenPtr cancellationToken
+)
+    {
+    BeMutexHolder lock(m_eventServiceClientMutex);
+
+    const Utf8String methodName = "EventManager::GetEvent";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    if (!IsSubscribedToEvents(m_eventServiceClient))
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Not subscribed to event service.");
+        return CreateCompletedAsyncTask<EventResult>
+            (EventResult::Error(Error::Id::NotSubscribedToEventService));
         }
 
-    // Subscribe only to remaining events
-    EventTypeSet allEventTypes;
-    GetAllSubscribedEvents(allEventTypes);
-    return m_imodelConnectionP->SubscribeToEvents(&allEventTypes);
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    return AsyncTaskAddMethodLogging<EventResult>(GetEventServiceResponse(3, longPolling, m_eventServiceClient, cancellationToken)->Then<EventResult>
+        ([=] (EventReponseResult& result)
+        {
+        if (result.IsSuccess())
+            {
+            Http::Response response = result.GetValue();
+            EventPtr ptr = EventParser::ParseEvent(response.GetHeaders().GetContentType(), response.GetBody().AsString());
+            if (ptr == nullptr)
+                {
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "No events found.");
+                return EventResult::Error(Error::Id::NoEventsFound);
+                }
+            return EventResult::Success(ptr);
+            }
+        return EventResult::Error(result.GetError());
+        }), methodName, start);
+    }
+
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Arvind.Venkateswaran            06/2016
+//Todo: Add another method to only cancel GetEvent Operation and not the entire connection
+//---------------------------------------------------------------------------------------
+StatusTaskPtr  EventManager::UnsubscribeEvents()
+    {
+    BeMutexHolder lock(m_eventServiceClientMutex);
+
+    const Utf8String methodName = "EventManager::UnsubscribeEvents";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    if (m_eventServiceClient != nullptr)
+        m_eventServiceClient->CancelRequest();
+    m_eventServiceClient = nullptr;
+    m_eventSubscription = nullptr;
+    m_eventSAS = nullptr;
+    return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
     }
