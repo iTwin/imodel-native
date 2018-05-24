@@ -242,7 +242,15 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
     else if (objectType.Equals(JSON_TYPE_LineStyleElement))
         reader = new LineStyleReader(this);
     else if (objectType.Equals(JSON_TYPE_LinkTable))
+        {
         reader = new LinkTableReader(this);
+        if (nullptr != m_meter)
+            {
+            Json::Value links = entry[JSON_OBJECT_KEY];
+            if (links.isArray())
+                m_meter->AddTasks(links.size());
+            }
+        }
     else if (objectType.Equals(JSON_TYPE_ElementGroupsMembers))
         reader = new ElementGroupsMembersReader(this);
     else if (objectType.Equals(JSON_TYPE_ElementHasLinks))

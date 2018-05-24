@@ -17,6 +17,7 @@
 #include <BimTeleporter/DgnDbToBimConverter.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnIModel.h>
+#include <DgnPlatform/DgnProgressMeter.h>
 #include <BeSQLite/L10N.h>
 #include <DgnView/DgnViewAPI.h>
 #include <DgnView/DgnViewLib.h>
@@ -265,6 +266,7 @@ BentleyStatus BimTeleporter::_Initialize(int argc, WCharCP argv[])
     InitLogging(argv[0]);
 
     m_host = new BimTeleporterHost();
+    m_host->SetProgressMeter(new PrintfProgressMeter());
     DgnViewLib::Initialize(*m_host, false);
     return SUCCESS;
 
