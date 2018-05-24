@@ -217,6 +217,9 @@ public:
     Transform GetLocationForTileGeneration() const; //!< @private
 
     template<typename T> auto UnderMutex(T func) const -> decltype(func()) { BeMutexHolder lock(m_mutex); return func(); }
+
+    bool _ToJson(Json::Value&) const override;
+    TileTree::TilePtr _FindTileById(Utf8CP id) override;
 };
 
 ENUM_IS_FLAGS(Root::DebugOptions);
@@ -241,7 +244,7 @@ protected:
     double                      m_tolerance;
     mutable ElementAlignedBox3d m_contentRange;
     mutable DebugGraphics       m_debugGraphics;
-    double                      m_zoomFactor = 1.0;
+    double                      m_zoomFactor = 0.0;
     uint64_t                    m_debugId;
     Render::GraphicPtr          m_backupGraphic;
     TileGeneratorUPtr           m_generator;
@@ -290,7 +293,7 @@ public:
 
     void SetZoomFactor(double zoom) { BeAssert(!IsLeaf()); m_zoomFactor = zoom; m_hasZoomFactor = true; }
     bool HasZoomFactor() const { return m_hasZoomFactor; }
-    double GetZoomFactor() const { BeAssert(HasZoomFactor()); return HasZoomFactor() ? m_zoomFactor : 1.0; }
+    double GetZoomFactor() const { BeAssert(HasZoomFactor()); return HasZoomFactor() ? m_zoomFactor : 0.0; }
     void SetContentRange (ElementAlignedBox3dCR contentRange) { m_contentRange = contentRange; }
     Utf8String GetDebugId() const { return _GetTileCacheKey(); }
 
@@ -303,7 +306,13 @@ public:
 
     virtual bool IsCacheable() const;
     void SetGenerator(TileGeneratorUPtr&&);
-	void SetDisplayable(bool displayable) { m_displayable = displayable; }
+    void SetDisplayable(bool displayable) { m_displayable = displayable; }
+
+    bool _ToJson(Json::Value&) const override;
+    Utf8String GetIdString() const;
+    TilePtr FindTile(TileTree::OctTree::TileId id, double zoomFactor);
+    TilePtr FindTile(double zoomFactor);
+    TileP GetElementParent() const { return const_cast<TileP>(static_cast<TileCP>(GetParent())); }
 };
 
 //=======================================================================================

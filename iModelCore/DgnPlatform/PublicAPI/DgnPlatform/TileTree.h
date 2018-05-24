@@ -341,6 +341,8 @@ public:
     };
 
     void Count(Counts& counts) const;
+
+    virtual bool _ToJson(Json::Value&) const { return false; }
 };
 
 /*=================================================================================**//**
@@ -479,6 +481,9 @@ public:
 
     bool Is3d() const { return m_is3d; }
     bool Is2d() const { return !Is3d(); }
+
+    virtual bool _ToJson(Json::Value&) const { return false; }
+    virtual TilePtr _FindTileById(Utf8CP id) { return nullptr; }
 };
 
 //=======================================================================================
@@ -833,6 +838,9 @@ struct TileId
     TileId GetRelativeId(TileId parentId) const;
 
     static TileId RootId() { return TileId(0,0,0,0); }
+
+    bool operator==(TileId const& other) const { return m_level == other.m_level && m_i == other.m_i && m_j == other.m_j && m_k == other.m_k; }
+    bool IsRoot() const { return *this == RootId(); }
 };
 
 //=======================================================================================
