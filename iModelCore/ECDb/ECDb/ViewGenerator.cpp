@@ -14,7 +14,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define TABLEALIAS_InstanceChange "ic"
 #define TABLE_InstanceChange ECSCHEMA_ALIAS_ECDbChange "_" ECDBCHANGE_CLASS_InstanceChange
-#define TABLE_InstanceChange_COL_Id "Id"
 #define TABLE_InstanceChange_COL_SummaryId "SummaryId"
 #define TABLE_InstanceChange_COL_OpCode "OpCode"
 #define TABLE_InstanceChange_COL_ChangedInstanceId "ChangedInstance_Id"
@@ -222,34 +221,6 @@ BentleyStatus ViewGenerator::GenerateViewSql(NativeSqlBuilder& viewSql, Context&
     return RenderEntityClassMap(viewSql, ctx, classMap);
     }
 
-void ParseChangeFuntionArgs(ECInstanceId& changeSummaryId, Nullable<ChangedValueState>& changedValueState, MemberFunctionCallExp const& memberFuncCallExp)
-    {
-    ECInstanceId changesetIdFromExp;
-    const Exp* changeSummaryIdExp = memberFuncCallExp.GetArgument(0);
-    const Exp* changeValueStateExp = memberFuncCallExp.GetArgument(1);
-    if (changeSummaryIdExp->GetType() == Exp::Type::LiteralValue)
-        {
-        uint64_t val = 0;
-        sscanf(changeSummaryIdExp->GetAs<LiteralValueExp>().GetRawValue().c_str(), "%" SCNu64, &val);
-        changeSummaryId = ECInstanceId(val);
-        }
-
-    if (changeValueStateExp->GetType() == Exp::Type::LiteralValue)
-        {
-        changedValueState = ChangeManager::ToChangedValueState(changeSummaryIdExp->GetAs<LiteralValueExp>().GetRawValue().c_str());
-        if (changedValueState == nullptr)
-            {
-            int32_t val = 0;
-            sscanf(changeValueStateExp->GetAs<LiteralValueExp>().GetRawValue().c_str(), "%" SCNd32, &val);
-            changedValueState = ChangeManager::ToChangedValueState(val);
-            }
-        }
-
-    //changesetId is not important if changeValueState was not known in advance
-    if (changedValueState == nullptr)
-        changeSummaryId = ECInstanceId();    
-    }
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2017
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -275,17 +246,17 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         return ERROR;
 
 
-    /* ----------------------------------------------
-    Optimization when ChangeValueState is know
-    o AfterDelete - Call DeleteValue() to construct row entirly from changeset
-    o AfterInsert - Call InsertValue() to construct row entirly from changeset
-    o BeforeUpdate/AfterUpdate - Require LEFT JOIN
-    - By finding which accessString changed we can remove the call to ChangeValue() but this require a additional query
-    ------------------------------------------------- */
+    // ----------------------------------------------
+    // Optimization when ChangeValueState is known
+    // - AfterDelete - Call DeleteValue() to construct row entirely from changeset
+    // - AfterInsert - Call InsertValue() to construct row entirely from changeset
+    // - BeforeUpdate/AfterUpdate - Require LEFT JOIN
+    // - By finding which accessString changed we can remove the call to ChangeValue() but this require a additional query
+    // -------------------------------------------------
 
     BeAssert(argSqlSnippets.size() == 2);
     NativeSqlBuilder const& summaryIdArgSql = argSqlSnippets[0];
-    NativeSqlBuilder const& operationArgSql = argSqlSnippets[1];
+    NativeSqlBuilder const& changedValueStateArgSql = argSqlSnippets[1];
 
     NativeSqlBuilder internalView;
     if (GenerateViewSql(internalView, ctx, classMap) != SUCCESS)
@@ -299,47 +270,64 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         return ERROR;
 
     // see if changesetId and changeValueState is constant literals or not. If yes then also try to determine the values
-    ECInstanceId changeSummaryIdArg;
-    Nullable<ChangedValueState> optimizedForChangedValueState;
-    ParseChangeFuntionArgs(changeSummaryIdArg, optimizedForChangedValueState, memberFuncCallExp);
-    //Before/After Update optimization not implemented
-    //------------------------------------------------
-    if (optimizedForChangedValueState != nullptr)
+    /* Not used yet
+    ECInstanceId summaryId;
+    bool optimizeForLiteralSummaryId = false;
+    ValueExp const* changeSummaryIdExp = memberFuncCallExp.GetArgument(0);
+    if (changeSummaryIdExp->GetType() == Exp::Type::LiteralValue && !changeSummaryIdExp->GetTypeInfo().IsNull())
         {
-        if (optimizedForChangedValueState.Value() == ChangedValueState::BeforeUpdate || optimizedForChangedValueState.Value() == ChangedValueState::AfterUpdate)
+        ECValue summaryIdVal;
+        if (SUCCESS != changeSummaryIdExp->GetAs<LiteralValueExp>().TryParse(summaryIdVal) || !summaryIdVal.IsLong())
             {
-            optimizedForChangedValueState = nullptr; //We currently do not support update optimization
+            ctx.GetECDb().GetImpl().Issues().ReportV("Failed to prepare ECSQL. Invalid ChangeSummary Id expression '%s' in function " ECSQLFUNC_Changes ".", changeSummaryIdExp->ToECSql().c_str());
+            return ERROR;
             }
+
+        summaryId = ECInstanceId((uint64_t) summaryIdVal.GetLong());
+        optimizeForLiteralSummaryId = true;
         }
-    //------------------------------------------------
+    */
+
+    ValueExp const* changeValueStateExp = memberFuncCallExp.GetArgument(1);
+    bool needsJoinToDataTable = true;
+    Nullable<ChangedValueState> changedValueState;
+    if (changeValueStateExp->GetType() == Exp::Type::LiteralValue)
+        {
+        ECValue stateVal;
+        if (SUCCESS != changeValueStateExp->GetAs<LiteralValueExp>().TryParse(stateVal) || !(stateVal.IsLong() || stateVal.IsInteger() || stateVal.IsString()) )
+            {
+            ctx.GetECDb().GetImpl().Issues().ReportV("Failed to prepare ECSQL. Invalid ChangedValueStatue expression '%s' in function " ECSQLFUNC_Changes ".", changeValueStateExp->ToECSql().c_str());
+            return ERROR;
+            }
+
+        if (stateVal.IsInteger())
+            changedValueState = ChangeManager::ToChangedValueState(stateVal.GetInteger());
+        else if (stateVal.IsLong())
+            changedValueState = ChangeManager::ToChangedValueState((int) stateVal.GetLong());
+        else
+            changedValueState = ChangeManager::ToChangedValueState(stateVal.GetUtf8CP());
+
+        if (changedValueState == nullptr)
+            {
+            ctx.GetECDb().GetImpl().Issues().ReportV("Failed to prepare ECSQL. Invalid ChangedValueStatue expression '%s' in function " ECSQLFUNC_Changes ".", changeValueStateExp->ToECSql().c_str());
+            return ERROR;
+            }
+
+        //For before and after we still need a join to the data table
+        needsJoinToDataTable = changedValueState == ChangedValueState::BeforeUpdate || changedValueState == ChangedValueState::AfterUpdate;
+        }
+
     for (PropertyMap const* propertyMap : propertyVisitor.Results())
         {
         if (ctx.GetViewType() == ViewType::SelectFromView && !ctx.GetAs<SelectFromViewContext>().IsInSelectClause(propertyMap->GetAccessString()))
             continue;
 
+        Utf8StringCP accessString = nullptr;
+        Utf8StringCP alias = nullptr;
         if (propertyMap->GetType() == PropertyMap::Type::ConstraintECClassId || propertyMap->GetType() == PropertyMap::Type::ConstraintECInstanceId)
             {
-            Utf8StringCR accessString = propertyMap->GetAccessString();
-            if (optimizedForChangedValueState == nullptr)
-                {
-                columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
-                columnSql.Append("'").Append(accessString).Append("',");
-                columnSql.Append(operationArgSql).AppendComma();
-                columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(accessString);
-                columnSql.AppendParenRight().AppendSpace().AppendEscaped(accessString);
-                }
-            else if (ChangedValueState::AfterInsert == optimizedForChangedValueState.Value())
-                {
-                columnSql.Append("," SQLFUNC_InsertedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
-                columnSql.Append("'").Append(accessString).Append("'");                
-                columnSql.AppendParenRight().AppendSpace().AppendEscaped(accessString);
-                }
-            else if (ChangedValueState::BeforeDelete == optimizedForChangedValueState.Value())
-                {
-                columnSql.Append("," SQLFUNC_DeletedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
-                columnSql.Append("'").Append(accessString).Append("'");
-                columnSql.AppendParenRight().AppendSpace().AppendEscaped(accessString);
-                }
+            accessString = &propertyMap->GetAccessString();
+            alias = accessString;
             }
         else
             {
@@ -349,61 +337,56 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
                 dataProperty.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>().GetColumn().IsVirtual())
                 {
                 columnSql.AppendComma().AppendEscaped(viewName).AppendDot().AppendEscaped(columnName);
+                continue;
                 }
-            else
-                {
-                if (optimizedForChangedValueState == nullptr)
-                    {
-                    columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
-                    columnSql.Append("'").Append(dataProperty.GetAccessString()).Append("',");
-                    columnSql.Append(operationArgSql).AppendComma();
-                    columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(columnName);
-                    columnSql.AppendParenRight().AppendSpace().AppendEscaped(columnName);
-                    }
-                else if (ChangedValueState::AfterInsert == optimizedForChangedValueState.Value())
-                    {
-                    columnSql.Append("," SQLFUNC_InsertedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
-                    columnSql.Append("'").Append(dataProperty.GetAccessString()).Append("'");
-                    columnSql.AppendParenRight().AppendSpace().AppendEscaped(columnName);
-                    }
-                else if (ChangedValueState::BeforeDelete == optimizedForChangedValueState.Value())
-                    {
-                    columnSql.Append("," SQLFUNC_DeletedValue "(" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_Id ",");
-                    columnSql.Append("'").Append(dataProperty.GetAccessString()).Append("'");
-                    columnSql.AppendParenRight().AppendSpace().AppendEscaped(columnName);
-                    }
-                }
+
+            accessString = &dataProperty.GetAccessString();
+            alias = &columnName;
             }
+
+        BeAssert(accessString != nullptr && alias != nullptr);
+
+        if (changedValueState == ChangedValueState::AfterInsert)
+            columnSql.Append("," SQLFUNC_InsertedValue "(" TABLEALIAS_InstanceChange "." COL_DEFAULTNAME_Id ",'").Append(*accessString).Append("')");
+        else if (changedValueState == ChangedValueState::BeforeDelete)
+            columnSql.Append("," SQLFUNC_DeletedValue "(" TABLEALIAS_InstanceChange "." COL_DEFAULTNAME_Id ",'").Append(*accessString).Append("')");
+        else
+            {
+            columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." COL_DEFAULTNAME_Id ",'").Append(*accessString).Append("',");
+            columnSql.Append(changedValueStateArgSql).AppendComma();
+            columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(*alias).AppendParenRight();
+            }
+
+        columnSql.AppendSpace().AppendEscaped(*alias);
         }
 
     viewSql.AppendParenLeft();
-    if (optimizedForChangedValueState == nullptr)
+    viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM " TABLESPACE_ECChange "." TABLE_InstanceChange " " TABLEALIAS_InstanceChange " ");
+    if (ctx.IsPolymorphicQuery())
+        viewSql.AppendFormatted(" INNER JOIN [%s]." TABLE_ClassHierarchyCache " ch ON " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=ch.ClassId AND ch.BaseClassId=%s",
+                                ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), classMap.GetClass().GetId().ToString().c_str());
+
+    if (needsJoinToDataTable)
         {
-        viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM " TABLESPACE_ECChange "." TABLE_InstanceChange " " TABLEALIAS_InstanceChange " ");
-
-        if (ctx.IsPolymorphicQuery())
-            viewSql.AppendFormatted(" INNER JOIN [%s]." TABLE_ClassHierarchyCache " ch ON " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=ch.ClassId AND ch.BaseClassId=%s",
-                                    ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), classMap.GetClass().GetId().ToString().c_str());
-
         viewSql.Append(" LEFT JOIN ").Append(internalView.GetSql()).Append(" ON ").AppendEscaped(viewName);
-        viewSql.Append("." ECDBSYS_PROP_ECInstanceId "=" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceId
-                       " WHERE " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_OpCode "=" SQLFUNC_ChangedValueStateToOpCode "(").Append(operationArgSql).Append(")");
-        viewSql.Append(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_SummaryId "=").Append(summaryIdArgSql);
-
-        if (!ctx.IsPolymorphicQuery())
-            viewSql.AppendFormatted(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=%s", classMap.GetClass().GetId().ToString().c_str());
+        viewSql.Append("." ECDBSYS_PROP_ECInstanceId "=" TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceId);
         }
-    else if (ChangedValueState::AfterInsert == optimizedForChangedValueState.Value() || ChangedValueState::BeforeDelete == optimizedForChangedValueState.Value())
+
+    viewSql.Append(" WHERE " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_OpCode "=");
+    
+    if (changedValueState == nullptr)
+        viewSql.Append(SQLFUNC_ChangedValueStateToOpCode "(").Append(changedValueStateArgSql).Append(")");
+    else
         {
-        viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM " TABLESPACE_ECChange "." TABLE_InstanceChange " " TABLEALIAS_InstanceChange " ");
-
-        if (ctx.IsPolymorphicQuery())
-            viewSql.AppendFormatted(" INNER JOIN [%s]." TABLE_ClassHierarchyCache " ch ON " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=ch.ClassId AND ch.BaseClassId=%s",
-                                    ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), classMap.GetClass().GetId().ToString().c_str());
-
-        viewSql.Append(" WHERE " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_OpCode "=" SQLFUNC_ChangedValueStateToOpCode "(").Append(operationArgSql).Append(")");
-        viewSql.Append(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_SummaryId "=").Append(summaryIdArgSql);
+        Nullable<ChangeOpCode> opCode = ChangeManager::DetermineOpCodeFromChangedValueState(changedValueState.Value());
+        BeAssert(opCode != nullptr);
+        viewSql.AppendFormatted("%d", Enum::ToInt(opCode.Value()));
         }
+
+    viewSql.Append(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_SummaryId "=").Append(summaryIdArgSql);
+
+    if (needsJoinToDataTable && !ctx.IsPolymorphicQuery())
+        viewSql.AppendFormatted(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=%s", classMap.GetClass().GetId().ToString().c_str());
 
     viewSql.AppendParenRight();
     return SUCCESS;

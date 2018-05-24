@@ -140,6 +140,8 @@ JsonValue TestHelper::ExecuteSelectECSql(Utf8CP ecsql) const
     if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
         return JsonValue(Json::nullValue);
 
+    LOG.debugv("ECSQL: %s | SQL: %s", ecsql, stmt.GetNativeSql());
+
     JsonValue resultSet(Json::arrayValue);
     JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
     while (BE_SQLITE_ROW == stmt.Step())

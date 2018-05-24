@@ -437,6 +437,117 @@ TEST_F(ChangeSummaryTestFixture, sqlite_stat1)
 
     //printf("%s", changeset1.ToJson(m_ecdb).ToString().c_str());
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                  05/18
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, ChangesFunctionOptimizations)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ChangesFunctionOptimizations.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?> 
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"> 
+            <ECEntityClass typeName="Foo">
+                <ECProperty propertyName="I" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    ASSERT_EQ(BE_SQLITE_OK, AttachCache());
+
+    TestChangeTracker tracker(m_ecdb);
+    tracker.EnableTracking(true);
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(I) VALUES(123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ts.Foo(I) VALUES(222)"));
+
+    TestChangeSet changeset1;
+    ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
+
+    ECInstanceKey summary1Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary1Key, ChangeSetArg(changeset1)));
+
+    tracker.Restart();
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("UPDATE ts.Foo SET I=124 WHERE I=123"));
+
+    TestChangeSet changeset2;
+    ASSERT_EQ(BE_SQLITE_OK, changeset2.FromChangeTrack(tracker));
+
+    ECInstanceKey summary2Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary2Key, ChangeSetArg(changeset2)));
+
+    tracker.Restart();
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("DELETE FROM ts.Foo WHERE I=222"));
+
+    TestChangeSet changeset3;
+    ASSERT_EQ(BE_SQLITE_OK, changeset3.FromChangeTrack(tracker));
+
+    ECInstanceKey summary3Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary3Key, ChangeSetArg(changeset3)));
+
+    tracker.EndTracking();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+
+    //unoptimized case
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I FROM ts.Foo.Changes(?,?)"));
+    Utf8String nativeSql(stmt.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I FROM ts.Foo.Changes(?,'BeforeUpdate')"));
+    nativeSql.assign(stmt.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I FROM ts.Foo.Changes(?,'AfterUpdate')"));
+    nativeSql.assign(stmt.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
+    stmt.Finalize();
+
+    //optimized case
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I FROM ts.Foo.Changes(?,'AfterInsert')"));
+    nativeSql.assign(stmt.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(?,%d)", (int) ChangedValueState::AfterInsert).c_str()));
+    nativeSql.assign(stmt.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I FROM ts.Foo.Changes(?,'BeforeDelete')"));
+    nativeSql.assign(stmt.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(?,%d)", (int) ChangedValueState::BeforeDelete).c_str()));
+    nativeSql.assign(stmt.GetNativeSql());
+    ASSERT_FALSE(nativeSql.ContainsI("JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
+    stmt.Finalize();
+
+    //not yet optimized cases
+    Utf8String summary2IdStr = summary2Key.GetInstanceId().ToString();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(%s,'BeforeUpdate')", summary2IdStr.c_str()).c_str()));
+    nativeSql.assign(stmt.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(%s,%d)", summary2IdStr.c_str(), (int) ChangedValueState::BeforeUpdate).c_str()));
+    nativeSql.assign(stmt.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
+    stmt.Finalize();
+ 
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(%s,'AfterUpdate')", summary2IdStr.c_str()).c_str()));
+    nativeSql.assign(stmt.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("SELECT I FROM ts.Foo.Changes(%s,%d)", summary2IdStr.c_str(), (int) ChangedValueState::AfterUpdate).c_str()));
+    nativeSql.assign(stmt.GetNativeSql());
+    ASSERT_TRUE(nativeSql.ContainsI("LEFT JOIN")) << stmt.GetECSql() << " Native SQL: " << nativeSql;
+    stmt.Finalize();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                  12/17
 //---------------------------------------------------------------------------------------

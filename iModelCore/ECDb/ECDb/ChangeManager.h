@@ -13,15 +13,12 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-
 #define ECSCHEMA_ECDbChange "ECDbChange"
 #define ECSCHEMA_ALIAS_ECDbChange "change"
 
 #define ECDBCHANGE_CLASS_ChangeSummary "ChangeSummary"
 #define ECDBCHANGE_CLASS_InstanceChange "InstanceChange"
 #define ECDBCHANGE_CLASS_PropertyValueChange "PropertyValueChange"
-
-#define TABLE_ChangeSummary "change_" ECDBCHANGE_CLASS_ChangeSummary
 
 #define FILEEXT_ChangeCache L".ecchanges"
 
