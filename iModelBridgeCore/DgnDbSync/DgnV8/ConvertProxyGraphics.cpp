@@ -667,10 +667,6 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
                 // for drawing graphics. (We track only the dgnattachment's hash as a proxy for *all* drawing graphics in the attachment.)
                 return status;
                 }
-            else 
-                {
-                BeAssert (!"ExistingDrawingGraphic missing. Possibly previously deleted in ChangeDetector::_DetectDeletedModels.");
-                }
             }
         }
 

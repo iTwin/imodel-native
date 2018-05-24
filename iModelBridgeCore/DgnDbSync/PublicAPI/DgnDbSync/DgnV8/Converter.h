@@ -1354,7 +1354,6 @@ public:
     void CreateProxyGraphics (DgnModelRefR modelRef, ViewportR viewport);
     void MergeDrawingGraphics(Bentley::DgnModelRefR baseModelRef, ResolvedModelMapping const& v8mm, ViewportR viewport);
     void CreateSheetExtractionAttachments(ResolvedModelMapping const& v8SheetModelMapping, ProxyGraphicsDrawingFactory& drawingGenerator, Bentley::ViewInfoCP v8SheetView);
-    DgnDbStatus CreateDrawingElement(DgnModelR model, DgnCategoryId categoryId, GeometryBuilder& builder);
     DGNDBSYNC_EXPORT bool _UseRenderedViewAttachmentFor(DgnAttachmentR ref);
     DGNDBSYNC_EXPORT bool _GenerateProxyCacheFor(DgnAttachmentR ref);
     DGNDBSYNC_EXPORT bool HasRenderedViewAttachments(DgnV8ModelR v8ParentModel);
