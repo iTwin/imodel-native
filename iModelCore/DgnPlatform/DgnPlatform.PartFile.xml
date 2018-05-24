@@ -286,6 +286,11 @@
         <Directories DirectoryListName="SchemaEvolutionTestFiles"/>
     </Product>
 
+    <NuGetProduct Name="iModelSchemaEvolutionTestFilesNuget" Description="Datasets">
+        <SubPart PartName="SaveSchemaEvolutionTestFiles"/>
+        <Directories DirectoryListName="SchemaEvolutionTestFiles"/>
+    </NuGetProduct>
+
     <ProductDirectoryList ListName="SchemaEvolutionTestFiles" >
         <ProductDirectory Name="Datasets" Path="Datasets"/>
     </ProductDirectoryList>
