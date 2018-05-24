@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/Logging.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,4 +34,26 @@ public:
     //=======================================================================================
     static void Log(SEVERITY severity, Utf8String const methodName, Utf8CP message, ...);
 };
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Uzkuraitis             05/2018
+//---------------------------------------------------------------------------------------
+template <typename T>
+Tasks::AsyncTaskPtr<T> AsyncTaskAddMethodLogging(Tasks::AsyncTaskPtr<T> taskPtr, Utf8StringCR methodName, const double startTime)
+    {
+    return taskPtr->template Then<T>([=] (const T &result)
+        {
+        if (!result.IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
+            }
+        else
+            {
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            LogHelper::Log(SEVERITY::LOG_INFO, methodName, static_cast<float>(end - startTime), "");
+            }
+        return result;
+        });
+    }
+
 END_BENTLEY_IMODELHUB_NAMESPACE
