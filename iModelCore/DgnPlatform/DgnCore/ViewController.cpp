@@ -666,8 +666,10 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     if (!hit.GetGeomDetail().IsValidSurfaceHit())
         return; // AccuSnap will flash edge/segment geometry...
 
+#if defined (NOT_NOW)
     if ((static_cast<SnapDetailCR>(hit)).PointWasAdjusted())
         return; // Only display if snap point has not been adjusted...surface normal is for snap location, not adjusted location...
+#endif
 
     ColorDef    color = ColorDef(~vp.GetHiliteColor().GetValue()); // Invert hilite color for good contrast...
     ColorDef    colorFill = color;
