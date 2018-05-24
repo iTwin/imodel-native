@@ -346,26 +346,30 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
 
         BeAssert(accessString != nullptr && colName != nullptr);
 
+        // ChangedValue(<InstanceChange Id Column>, <access string>, <ChangedValueState>, <Fallback Value>)
         columnSql.Append("," SQLFUNC_ChangedValue "(" TABLEALIAS_InstanceChange "." COL_DEFAULTNAME_Id ",'").Append(*accessString).Append("',");
 
-        // For insert and delete, we pass the ChangedValueState as literal and in that case
-        // we don't have to pass a fallback value as we know the value must come from the change summary table
-        if (changedValueState == ChangedValueState::AfterInsert || changedValueState == ChangedValueState::BeforeDelete)
-            columnSql.AppendFormatted("%d,NULL)", Enum::ToInt(changedValueState.Value())).AppendComma();
+        if (changedValueState != nullptr) // literal value for changed value state
+            columnSql.AppendFormatted("%d,", Enum::ToInt(changedValueState.Value()));
         else
-            {
-            columnSql.Append(changedValueStateArgSql).AppendComma();
+            columnSql.Append(changedValueStateArgSql).AppendComma(); // any other type of expression for changed value state (e.g. a parameter)
+
+          // For insert and delete, we don't have to pass a fallback value as we know the value must come from the change summary table
+        if (changedValueState == ChangedValueState::AfterInsert || changedValueState == ChangedValueState::BeforeDelete)
+            columnSql.Append("NULL)");
+        else
             columnSql.AppendEscaped(viewName).AppendDot().AppendEscaped(*colName).AppendParenRight();
-            }
 
         columnSql.AppendSpace().AppendEscaped(*colName);
         }
 
     viewSql.AppendParenLeft();
-    viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM " TABLESPACE_ECChange "." TABLE_InstanceChange " " TABLEALIAS_InstanceChange " ");
+
+    Utf8String classIdStr = classMap.GetClass().GetId().ToString();
+    viewSql.Append("SELECT ").Append(columnSql.GetSql()).Append(" FROM " TABLESPACE_ECChange "." TABLE_InstanceChange " " TABLEALIAS_InstanceChange);
     if (ctx.IsPolymorphicQuery())
         viewSql.AppendFormatted(" INNER JOIN [%s]." TABLE_ClassHierarchyCache " ch ON " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=ch.ClassId AND ch.BaseClassId=%s",
-                                ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), classMap.GetClass().GetId().ToString().c_str());
+                                ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), classIdStr.c_str());
 
     if (needsJoinToDataTable)
         {
@@ -386,8 +390,8 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
 
     viewSql.Append(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_SummaryId "=").Append(summaryIdArgSql);
 
-    if (needsJoinToDataTable && !ctx.IsPolymorphicQuery())
-        viewSql.AppendFormatted(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=%s", classMap.GetClass().GetId().ToString().c_str());
+    if (!ctx.IsPolymorphicQuery())
+        viewSql.AppendFormatted(" AND " TABLEALIAS_InstanceChange "." TABLE_InstanceChange_COL_ChangedInstanceClassId "=%s", classIdStr.c_str());
 
     viewSql.AppendParenRight();
     return SUCCESS;

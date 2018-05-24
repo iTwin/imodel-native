@@ -143,11 +143,7 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
 
     if (stmt->Step() != BE_SQLITE_ROW)
         {
-        if (fallbackValue.IsNull())
-            ctx.SetResultError(Utf8PrintfString("SQL function " SQLFUNC_ChangedValue " failed: ECSQL '%s' expected to return a row.", ecsql).c_str());
-        else
-            ctx.SetResultValue(fallbackValue);
-
+        ctx.SetResultValue(fallbackValue);
         return;
         }
 
@@ -161,18 +157,21 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
 
     if (valType[0] == 'i' /*BeStringUtilities::StricmpAscii("integer", valType) == 0*/)
         {
+        BeAssert(BeStringUtilities::StricmpAscii("integer", valType) == 0);
         ctx.SetResultInt64(stmt->GetValueInt64(0));
         return;
         }
 
     if (valType[0] == 'r' /*BeStringUtilities::StricmpAscii("real", valType) == 0*/)
         {
+        BeAssert(BeStringUtilities::StricmpAscii("real", valType) == 0);
         ctx.SetResultDouble(stmt->GetValueDouble(0));
         return;
         }
 
     if (valType[0] == 't' /*BeStringUtilities::StricmpAscii("text", valType) == 0*/)
         {
+        BeAssert(BeStringUtilities::StricmpAscii("text", valType) == 0);
         Utf8CP strVal = stmt->GetValueText(0);
         const int len = (int) strlen(strVal);
         ctx.SetResultText(strVal, len, Context::CopyData::Yes);
@@ -181,6 +180,7 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
 
     if (valType[0] == 'b' /*BeStringUtilities::StricmpAscii("blob", valType) == 0*/)
         {
+        BeAssert(BeStringUtilities::StricmpAscii("blob", valType) == 0);
         int blobSize = -1;
         void const* blob = stmt->GetValueBlob(0, &blobSize);
         ctx.SetResultBlob(blob, blobSize, Context::CopyData::Yes);

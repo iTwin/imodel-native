@@ -9,7 +9,6 @@ ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run w
 #TFS 720060 Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
 
-ChangeSummaryTestFixture.SimpleWorkflowWithNavPropLogicalForeignKey_NonVirtualRelECClassId
 ChangeSummaryTestFixture.SimpleWorkflowWithNavPropLogicalForeignKey_VirtualRelECClassId
 ChangeSummaryTestFixture.VirtualRelECClassId
 ChangeSummaryTestFixture.SimpleWorkflowWithNavPropCascadeDelete
