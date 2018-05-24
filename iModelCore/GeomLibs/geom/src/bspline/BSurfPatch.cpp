@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/BSurfPatch.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -353,7 +353,7 @@ static bool AcceptTriangleUVWForRefinement (DPoint3dCR uvw)
 **************/
 size_t DefaultClosestPointGridDensity (size_t order)
     {
-    static size_t s_orderFactor = 2;
+    static size_t s_orderFactor = 3;
     //static size_t s_baseCount = 4;
     if (order == 2)
         return 2;
