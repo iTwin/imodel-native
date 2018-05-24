@@ -226,7 +226,7 @@ protected:
         public: \
             TESTFILE_CLASSNAME(fileName) () : TestFile(profile, TESTFILE_NAME(fileName), isPersisted) { ProfileManager::Get().GetProfile(GetProfileType()).RegisterTestFile(*this); } \
         }; \
-        TestFile* TESTFILE_CLASSNAME(fileName) ::s_singleton = new TESTFILE_CLASS_NAME(fileName) ();
+        TestFile* TESTFILE_CLASSNAME(fileName) ::s_singleton = new TESTFILE_CLASSNAME(fileName) ();
 
 #define TESTFILE_CREATEPHYSICAL(fileName) void TESTFILE_CLASSNAME(fileName) ::CreatePhysical()
 
