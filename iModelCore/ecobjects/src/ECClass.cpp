@@ -3176,8 +3176,7 @@ bool ECRelationshipConstraint::IsValid(bool resolveIssues)
 
     if (GetConstraintClasses().size() == 0)
         {
-        LOG.messagev(m_relClass->GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_0)? NativeLogging::SEVERITY::LOG_ERROR : NativeLogging::SEVERITY::LOG_WARNING,
-            "Relationship Class Constraint Violation: The %s-Constraint of '%s' does not contain any constraint classes.",
+        LOG.errorv("Relationship Class Constraint Violation: The %s-Constraint of '%s' does not contain any constraint classes.",
                 (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
 
         valid = false;
