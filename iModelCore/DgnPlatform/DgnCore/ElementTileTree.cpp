@@ -3242,7 +3242,8 @@ Utf8CP TileCache::GetCurrentVersion()
     //  7: Fix out-of-control subdivision in specific cases (TFS#884193, TFS#886685)
     //  8: Fix issue in which MeshGenerator::AddPolyface() decimates a polyface in a tile which later becomes a leaf tile (TFS#889847)
     //  9: We were failing to align most chunks of the binary data. In JavaScript this produces exceptions when trying to read unaligned data.
-    return "9";
+    //  10: Change tile cache key such that if tile has no 'zoom factor', it is written as 0, not 1.
+    return "10";
     }
 
 /*---------------------------------------------------------------------------------**//**
