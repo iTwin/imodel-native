@@ -139,23 +139,35 @@ Utf8CP ParseUrlFilter(Utf8String filter)
     Utf8String filterQuery("");
     for (size_t i = 0; i < (tokens2.size() + 1) / 4; i++)
         {
-        if (i != 0) if (tokens2[4 * i - 1].Contains("and") || tokens2[4 * i - 1].Contains("or")) filterQuery.append(tokens2[4 * i - 1]);
-        filterQuery.append(" ");
-        filterQuery.append(tokens2[4 * i]);
-        if (tokens2[4 * i + 1].Contains("eq")) filterQuery.append(" = ");
-        else if (tokens2[4 * i + 1].Contains("ne")) filterQuery.append(" != ");
-        else if (tokens2[4 * i + 1].Contains("gt")) filterQuery.append(" > ");
-        else if (tokens2[4 * i + 1].Contains("in")) filterQuery.append(" IN ");
-        
-        if (tokens2[4 * i + 2].Contains("%5B"))
+        if (!tokens2[4 * i].Contains("FollowingChangeSet"))
             {
-            BeStringUtilities::Split(filter.c_str(), "'", nullptr, tokens);
-            filterQuery.append("('");
-            filterQuery.append(tokens[1]);
-            filterQuery.append("')");
+            if (i != 0) if (tokens2[4 * i - 1].Contains("and") || tokens2[4 * i - 1].Contains("or")) filterQuery.append(tokens2[4 * i - 1]);
+            filterQuery.append(" ");
+
+            filterQuery.append(tokens2[4 * i]);
+
+            if (tokens2[4 * i + 1].Contains("eq")) filterQuery.append(" = ");
+            else if (tokens2[4 * i + 1].Contains("ne")) filterQuery.append(" != ");
+            else if (tokens2[4 * i + 1].Contains("gt")) filterQuery.append(" > ");
+            else if (tokens2[4 * i + 1].Contains("in")) filterQuery.append(" IN ");
+
+            if (tokens2[4 * i + 2].Contains("%5B"))
+                {
+                BeStringUtilities::Split(tokens2[4 * i + 2].c_str(), "'", nullptr, tokens);
+                filterQuery.append("('");
+                filterQuery.append(tokens[1]);
+                filterQuery.append("')");
+                }
+            else filterQuery.append(tokens2[4 * i + 2]);
+            filterQuery.append(" ");
             }
-        else filterQuery.append(tokens2[4 * i + 2]);
-        filterQuery.append(" ");
+        else
+            {
+            if (i != 0) filterQuery.append(tokens2[4 * i - 1]);
+            filterQuery.append("IndexNo > (Select IndexNo from ChangeSets where Id = ");
+            filterQuery.append(tokens2[4 * i + 2]);
+            filterQuery.append(")");
+            }
         }
     return filterQuery.c_str();
     }
@@ -192,8 +204,8 @@ Http::Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8CP url, Utf8Strin
 Json::Value ParsedJson(Request req)
     {
     HttpBodyPtr reqBody = req.GetRequestBody();
-    char readBuff[1000];
-    size_t buffSize = 100000;
+    char readBuff[10000];
+    size_t buffSize = 1000000;
     reqBody->Read(readBuff, buffSize);
     Utf8String reqBodyRead(readBuff);
 
@@ -585,7 +597,7 @@ Response RequestHandler::GetBriefcaseInfo(Request req)
         st.BindText(1, iModelId, Statement::MakeCopy::No);
         DbResult result = DbResult::BE_SQLITE_ROW;
         result = st.Step();
-        
+
         Json::Value instancesinfo(Json::objectValue);
         JsonValueR instanceArray = instancesinfo[ServerSchema::Instances] = Json::arrayValue;
         for (int i = 0; result == DbResult::BE_SQLITE_ROW; i++)
@@ -747,13 +759,10 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
     bvector<Utf8String> args = ParseUrl(req, "/");
     Utf8String iModelid = GetInstanceid(args[4]);
     Json::Value settings = ParsedJson(req);
-
     bvector<Utf8String> input = {
         settings["instance"]["properties"]["Id"].asString(),
         settings["instance"]["properties"]["Description"].asString(),
         settings["instance"]["properties"]["ParentId"].asString(),
-        settings["instance"]["properties"]["FileSize"].asString(),
-        settings["instance"]["properties"]["BriefcaseId"].asString(),
         settings["instance"]["properties"]["SeedFileId"].asString() };
 
     CheckDb();
@@ -775,7 +784,8 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
 
         char buffer[50];
         sprintf(buffer, "%d", index);
-
+        char buffFileSize[50];
+        sprintf(buffFileSize, "%d", (int)settings["instance"]["properties"]["FileSize"].asInt());
         Json::Value changesetMetadata(Json::objectValue);
         JsonValueR changedInstance = changesetMetadata[ServerSchema::ChangedInstance] = Json::objectValue;
         changedInstance["change"] = "Created";
@@ -787,11 +797,11 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
         properties[ServerSchema::Property::BriefcaseId] = settings["instance"]["properties"]["BriefcaseId"].asInt();
         properties[ServerSchema::Property::ContainingChanges] = settings["instance"]["properties"]["ContainingChanges"].asInt();
         properties[ServerSchema::Property::Description] = input[1];
-        properties[ServerSchema::Property::FileSize] = input[3];
+        properties[ServerSchema::Property::FileSize] = buffFileSize;
         properties[ServerSchema::Property::Id] = input[0];
         properties[ServerSchema::Property::IsUploaded] = false;
         properties[ServerSchema::Property::ParentId] = input[2];
-        properties[ServerSchema::Property::SeedFileId] = input[5];
+        properties[ServerSchema::Property::SeedFileId] = input[3];
         properties[ServerSchema::Property::Index] = buffer;
         JsonValueR relationshipInstances = InstanceAfterChange[ServerSchema::RelationshipInstances] = Json::arrayValue;
         JsonValueR relationsArray = relationshipInstances[0] = Json::objectValue;
@@ -817,7 +827,7 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
         st.BindInt(4, settings["instance"]["properties"]["FileSize"].asInt());
         st.BindInt(5, settings["instance"]["properties"]["BriefcaseId"].asInt());
         st.BindText(6, input[2], Statement::MakeCopy::No);
-        st.BindText(7, input[5], Statement::MakeCopy::No);
+        st.BindText(7, input[3], Statement::MakeCopy::No);
         st.BindInt(8, index);
         st.BindBoolean(9, false);
         st.Step();
