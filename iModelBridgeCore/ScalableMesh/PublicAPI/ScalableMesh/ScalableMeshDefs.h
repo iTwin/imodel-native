@@ -196,6 +196,18 @@ struct SMRasterTile
     uint64_t m_resolutionInd;
     };
     
+
+enum class SMGenerateOperation
+    {
+    SCM_FILTER_DUMB = 0,
+    SCM_FILTER_PROGRESSIVE_DUMB = 1,
+    SCM_FILTER_DUMB_MESH = 2,
+    SCM_FILTER_CGAL_SIMPLIFIER = 3,
+    SCM_FILTER_QTY,
+    };
+
+
+
 #define MEAN_SCREEN_PIXELS_PER_POINT 100
 
 

@@ -284,12 +284,15 @@ bb -ax64 -p ScalableMeshWorkerExe -f ScalableMesh -r ScalableMesh re ScalableMes
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Definitions.h" />
     <ClInclude Include="Initialize.h" />
     <ClInclude Include="ScalableMeshWorker.h" />
+    <ClInclude Include="TaskScheduler.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Initialize.cpp" />
     <ClCompile Include="ScalableMeshWorker.cpp" />
+    <ClCompile Include="TaskScheduler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ScalableMeshWorker.mke" />
