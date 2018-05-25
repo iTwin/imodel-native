@@ -17,7 +17,7 @@ namespace Render = Dgn::Render;
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   05/18
 //=======================================================================================
-struct System : Render::System
+struct InteropSystem : Render::System
 {
     int _Initialize(void*, bool) override NO_IMPL(0)
     Render::TargetPtr _CreateTarget(Render::Device&, double) override NULL_IMPL
@@ -43,4 +43,25 @@ struct System : Render::System
     Render::GraphicPtr _CreateBranch(Render::GraphicBranch&& branch, Dgn::DgnDbR db, TransformCR, ClipVectorCP) const override RETURN_GRAPHIC
     Render::GraphicPtr _CreateBatch(Render::GraphicR graphic, Render::FeatureTable&& features, DRange3dCR range) const override { return new Render::Graphic(graphic.GetDgnDb()); }
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR idStr)
+    {
+    DgnModelId modelId(BeInt64Id::FromString(idStr.c_str()).GetValue());
+    if (!modelId.IsValid())
+        return DgnDbStatus::InvalidId;
+
+    GeometricModelPtr model = db.Models().Get<GeometricModel>(modelId);
+    if (model.IsNull())
+        return DgnDbStatus::MissingId;
+
+    InteropSystem system;
+    TileTree::RootP root = model->GetTileTree(&system);
+    if (nullptr != root && root->_ToJson(result))
+        return DgnDbStatus::Success;
+    else
+        return DgnDbStatus::NotFound;
+    }
 

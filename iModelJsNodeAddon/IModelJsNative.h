@@ -110,6 +110,8 @@ public:
     static RepositoryStatus BriefcaseManagerStartBulkOperation(DgnDbR dgndb);
     static RepositoryStatus BriefcaseManagerEndBulkOperation(DgnDbR dgndb);
 
+    static DgnDbStatus GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR id);
+
     static void ThrowJsException(Utf8CP msg);
     static Json::Value ExecuteTest(DgnDbR, Utf8StringCR testName, Utf8StringCR params);
     static NativeLogging::ILogger &GetLogger();

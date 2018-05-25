@@ -1061,6 +1061,18 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)status);
         }
 
+    Napi::Value GetTileTree(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        REQUIRE_ARGUMENT_STRING(0, idStr, Env().Undefined());
+
+        Json::Value output;
+        auto status = JsInterop::GetTileTree(output, GetDgnDb(), idStr);
+
+        Napi::Value jsValue = NapiUtils::Convert(Env(), output);
+        return CreateBentleyReturnObject(status, jsValue);
+        }
+
     Napi::Value InsertLinkTableRelationship(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -1721,6 +1733,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),
             InstanceMethod("updateModel", &NativeDgnDb::UpdateModel),
             InstanceMethod("updateProjectExtents", &NativeDgnDb::UpdateProjectExtents),
+            InstanceMethod("getTileTree", &NativeDgnDb::GetTileTree),
         });
 
         exports.Set("NativeDgnDb", t);

@@ -265,6 +265,13 @@ declare class NativeDgnDb {
     getModel(opts: string): ErrorStatusOrResult<IModelStatus, string>;
 
     /**
+     * Get the properties of a tile tree
+     * @param id Identifies the tile tree
+     * @returns In case of success, the result property of the returned object will be the tile tree's properties in stringified JSON format.
+     */
+    getTileTree(id: string): ErrorStatusOrResult<IModelStatus, string>;
+
+    /**
      * Insert an element.
      * @param elemProps The element's properties, in stringified JSON format.
      * @return In case of success, the result property of the returned object will be the element's ID (as a hex string)
