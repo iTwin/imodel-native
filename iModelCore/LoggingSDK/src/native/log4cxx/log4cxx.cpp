@@ -28,6 +28,10 @@
 #include <log4cxx/mdc.h>
 #include "utf8/checked.h"
 
+#ifdef ANDROID
+#include "CustomAppenders/androidlogprintappender.h"
+#endif
+
 using namespace log4cxx;
 using namespace log4cxx::helpers;
 
@@ -154,6 +158,13 @@ Log4cxxProvider::Log4cxxProvider
 const wchar_t* name
 ) : m_pMap ( NULL ), m_configRefresh(0)
     {
+#ifdef ANDROID
+    // Shared library linking might use --no-whole-archive to strip unused symbols, thus making
+    // AndroidLogPrintAppender not register statically, as this is common issue with such linking
+    // and classes that register to frameworks statically. Force registration here.
+    AndroidLogPrintAppender::registerClass();
+#endif
+
     m_pMap = new LoggerMap;
     assert ( NULL != m_pMap );
     }
