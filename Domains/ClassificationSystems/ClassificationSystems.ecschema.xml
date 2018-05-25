@@ -9,6 +9,14 @@
 <ECSchema schemaName="ClassificationSystems" alias="clsf" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00" alias="bis" />
 
+    <ECEntityClass typeName="IClassified" modifier="Abstract" displayTitle="IClassifiedElement" Description="An interface that indicates that an element could be classified by classification(s)">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.1.0">
+                <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
     <ECEntityClass typeName="ClassificationSystem" displayLabel="ClassificationSystem">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <BaseClass>bis:ISubModeledElement</BaseClass>
@@ -35,6 +43,16 @@
         </ECCustomAttributes>
     </ECEntityClass>
         
+    <ECRelationshipClass typeName="IClassifiedIsClassifiedAs" modifier="None" strength="referencing" description="a relationship to map IClassified to Classifications">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="is classified as" polymorphic="true">
+            <Class class="IClassified"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="classifies" polymorphic="true">
+            <Class class="Classification"/>
+        </Target>
+    </ECRelationshipClass>
+
     <ECRelationshipClass typeName="ClassificationIsInClassificationGroup" modifier="None" strength="referencing" description="a relationship to map Classification to its' group">
         <Source multiplicity="(0..*)" roleLabel="is grouped in" polymorphic="true">
             <Class class="Classification"/>
