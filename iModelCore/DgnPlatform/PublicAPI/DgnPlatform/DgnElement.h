@@ -1954,7 +1954,7 @@ public:
     //! @param[in] opts options for customizing the value. If opts["wantGeometry"] != true, geometry stream Json::Value is not included.
     Js::Object ToJsValue(Js::IFactory& factory, Js::Object opts) const { Js::Object val = Js::Object::New(factory) ; _ToJsValue(val, opts); return val; }
 
-    void FromJsValue(Js::Object props) { FromJsValue(props); }
+    void FromJsValue(Js::Object props) { _FromJsValue(props); }
     //! @}
 
     //! Make an iterator over all ElementAspects owned by this element

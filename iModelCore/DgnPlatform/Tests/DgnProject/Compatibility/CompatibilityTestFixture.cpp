@@ -12,69 +12,67 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/BeDirectoryIterator.h>
 
-//================================ProfileManager::Profile================================
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-ProfileManager::Profile::Profile(Kind type, Utf8CP nameSpace, Utf8CP schemaVersionProp, Utf8CP fileExtension)
-    :m_type(type), m_versionPropertySpec(schemaVersionProp, nameSpace), m_fileExtension(fileExtension), m_expectedVersion(0, 0, 0, 0), m_initalized(false)
-    {
-    }
+//================================Profile================================
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-ProfileVersion const& ProfileManager::Profile::GetExpectedVersion() const
+Profile::Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name) 
+    : m_type(type), m_versionPropertySpec("SchemaVersion", nameSpace), m_name(name)
     {
-    if (m_expectedVersion.IsEmpty())
+    m_profileSeedFolder = ProfileManager::Get().GetSeedFolder();
+    m_profileSeedFolder.AppendSeparator().AppendUtf8(m_name);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan                        03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus Profile::Init() const
+    {
+    if (!m_profileSeedFolder.DoesPathExist())
         {
-        Init();
-        DbResult r = _GetSchemaVersion(m_expectedVersion, m_versionPropertySpec);
-        if (r != BE_SQLITE_OK)
+        BeFileNameStatus status = BeFileName::CreateNewDirectory(m_profileSeedFolder.GetName());
+        if (status != BeFileNameStatus::Success)
             {
-            BeAssert(false && "Failed to query schema version");
+            BeAssert(status == BeFileNameStatus::Success);
+            return ERROR;
             }
         }
 
-    BeAssert(!m_expectedVersion.IsEmpty());
-    return m_expectedVersion;
+    return _Init();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan                        03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus Profile::ReadProfileVersion(ProfileVersion& schemaVersion, Db const& db, PropertySpec const& spec)
+    {
+    Utf8String profileVersionJson;
+    if (BE_SQLITE_ROW != db.QueryProperty(profileVersionJson, spec))
+        return ERROR;
+
+    if (profileVersionJson.empty())
+        return ERROR;
+
+    schemaVersion.FromJson(profileVersionJson.c_str());
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-BeFileName const& ProfileManager::Profile::GetSeedFolder() const
+std::vector<BeFileName> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName) const
     {
-    if (m_profileSeedFolder.empty())
-        {
-        m_profileSeedFolder = ProfileManager::GetInstance().GetSeedFolder();
-        m_profileSeedFolder.AppendSeparator().AppendUtf8(m_fileExtension.c_str());
-        if (!m_profileSeedFolder.DoesPathExist())
-            {
-            BeFileNameStatus status = BeFileName::CreateNewDirectory(m_profileSeedFolder.GetName());
-            if (status != BeFileNameStatus::Success)
-                {
-                BeAssert(status == BeFileNameStatus::Success);
-                }
-            }
-        }
-
-    return m_profileSeedFolder;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-std::vector<BeFileName> ProfileManager::Profile::GetCopyOfAllVersionOfTestFile(Utf8CP name) const
-    {
-    Init();
     std::vector<BeFileName> files;
-    for (BeVersion ver : ReadProfileVersionFromDisk())
+    for (ProfileVersion const& ver : ReadProfileVersionFromDisk())
         {
         BeFileName fl;
-        if (!GetCopyOfTestFile(fl, name, ver))
+        if (SUCCESS != GetTestFile(fl, testFileName, ver))
             {
-            LOG.warningv("Seed file %s/%s.%s is not found or created", ver.ToString().c_str(), name, m_fileExtension.c_str());
+            LOG.warningv("Seed file %s/%s.%s is not found or created", ver.ToString().c_str(), testFileName, m_name);
             continue;
             }
 
@@ -87,162 +85,152 @@ std::vector<BeFileName> ProfileManager::Profile::GetCopyOfAllVersionOfTestFile(U
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ProfileManager::Profile::GenerateAllSeedFiles() const
+BentleyStatus Profile::GenerateAllSeedFiles() const
     {
     for (auto& key : m_testFiles)
         {
-        TestFile* testFile = key.second;
-        if (GenerateSeedFile(testFile, GetExpectedVersion()))
-            return true;
+        if (SUCCESS != GenerateSeedFile(*key.second, m_expectedVersion))
+            return ERROR;
         }
 
-    return false;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ProfileManager::Profile::GenerateSeedFile(TestFile* testFile, BeVersion const& ver) const
+BentleyStatus Profile::GenerateSeedFile(TestFile& testFile, ProfileVersion const& actualVersion) const
     {
-    if (testFile->IsResolved())
-        return true;
+    if (testFile.IsResolved())
+        return SUCCESS;
 
-    if (ver != GetExpectedVersion())
+    if (actualVersion != m_expectedVersion)
         {
-        LOG.errorv("File  %s/%s.%s does not exist and cannot be created. Currect profile version is %s", ver.ToString().c_str(), testFile->GetFileName(), m_fileExtension.c_str(), GetExpectedVersion().ToString().c_str());
+        LOG.errorv("File  %s/%s.%s does not exist and cannot be created. Current profile version is %s", actualVersion.ToString().c_str(), testFile.GetFileName(), m_name, m_expectedVersion.ToString().c_str());
         BeAssert(false && "Only create seed file for expected profile version");
-        return false;
+        return ERROR;
         }
 
     //Create the file
-    BeFileName& fl = testFile->m_resolvedFileName;
-    fl = GetSeedFolder();
-    fl.AppendSeparator().AppendUtf8(ver.ToString().c_str());
 
-    BeDirectoryIterator it(GetSeedFolder());
+    BeDirectoryIterator it(m_profileSeedFolder);
     do
         {
         BeFileName entry;
-        bool isDir;
-        if (it.GetCurrentEntry(entry, isDir, false) == 0 && isDir)
+        bool isDir = false;
+        if (it.GetCurrentEntry(entry, isDir, false) == SUCCESS && isDir)
             {
-            BeVersion version;
+            ProfileVersion version(0, 0, 0, 0);
             version.FromString(entry.GetNameUtf8().c_str());
-            if (1 == version.CompareTo(ver))
+            if (version.CompareTo(actualVersion) > 0)
                 {
-                fl = GetSeedFolder(version);
-                fl.AppendSeparator().AppendUtf8(testFile->GetFileName());
-                fl.AppendExtension(WString(m_fileExtension.c_str(), BentleyCharEncoding::Utf8).c_str());
-                return true;
+                BeFileName filePath(m_profileSeedFolder);
+                filePath.AppendSeparator().AppendUtf8(version.ToString().c_str());
+
+                filePath.AppendSeparator().AppendUtf8(testFile.GetFileName());
+                filePath.AppendExtension(WString(m_name, BentleyCharEncoding::Utf8).c_str());
+                testFile.SetResolvedFileName(filePath);
+                return SUCCESS;
                 }
             }
-        } while (it.ToNext() == 0);
+        } while (it.ToNext() == SUCCESS);
 
-    if (!fl.DoesPathExist())
+    BeFileName filePath(m_profileSeedFolder);
+    filePath.AppendToPath(BeFileName(actualVersion.ToString()));
+    if (!filePath.DoesPathExist())
         {
-        BeFileNameStatus status = BeFileName::CreateNewDirectory(fl.GetName());
-        if (status != BeFileNameStatus::Success)
+        if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(filePath.GetName()))
             {
-            BeAssert(status == BeFileNameStatus::Success);
-            return false;
+            BeAssert(false);
+            return ERROR;
             }
         }
 
-    fl.AppendSeparator().AppendUtf8(testFile->GetFileName());
-    fl.AppendExtension(WString(m_fileExtension.c_str(), BentleyCharEncoding::Utf8).c_str());
-    if (!fl.DoesPathExist())
+    filePath.AppendSeparator().AppendUtf8(testFile.GetFileName());
+    filePath.AppendExtension(WString(m_name, BentleyCharEncoding::Utf8).c_str());
+    if (!filePath.DoesPathExist())
         {
-        Init();
-        testFile->Create();
-        if (!fl.DoesPathExist())
+        testFile.CreatePhysical();
+        if (!filePath.DoesPathExist())
             {
-            LOG.errorv("Fail to create %s", fl.GetNameUtf8().c_str());
+            LOG.errorv("Fail to create %s", filePath.GetNameUtf8().c_str());
             BeAssert(false && "Failed to create seed file");
-            return false;
+            return ERROR;
             }
         }
 
-    return true;
+    testFile.SetResolvedFileName(filePath);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-bool  ProfileManager::Profile::GetCopyOfTestFile(BeFileName& copyTestFile, Utf8CP name, BeVersion const& ver) const
+BentleyStatus Profile::GetTestFile(BeFileName& copyTestFile, Utf8CP testFileName, ProfileVersion const& ver) const
     {
     copyTestFile.clear();
-    auto itor = m_testFiles.find(name);
+    auto itor = m_testFiles.find(testFileName);
     if (itor == m_testFiles.end())
         {
-        LOG.errorv("File %s/%s.%s is not registered", ver.ToString().c_str(), name, m_fileExtension.c_str());
+        LOG.errorv("File %s/%s.%s is not registered", ver.ToString().c_str(), testFileName, m_name);
         BeAssert(false && "Failed to find file");
-        return false;
+        return ERROR;
         }
 
-    TestFile* testFile = itor->second;
-    if (!GenerateSeedFile(testFile, ver))
-        return false;
+    TestFile& testFile = *itor->second;
+    if (SUCCESS != GenerateSeedFile(testFile, ver))
+        return ERROR;
 
     // Create copy of the file
-    copyTestFile = ProfileManager::GetInstance().GetOutFolder();
-    copyTestFile.AppendSeparator().AppendUtf8(m_fileExtension.c_str());
+    copyTestFile = ProfileManager::Get().GetOutFolder();
+    copyTestFile.AppendSeparator().AppendUtf8(m_name);
     copyTestFile.AppendSeparator().AppendUtf8(ver.ToString().c_str());
     if (!copyTestFile.DoesPathExist())
         {
-        BeFileNameStatus status = BeFileName::CreateNewDirectory(copyTestFile.GetName());
-        if (status != BeFileNameStatus::Success)
+        if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(copyTestFile.GetName()))
             {
-            BeAssert(status == BeFileNameStatus::Success);
-            return false;
+            BeAssert(false);
+            return ERROR;
             }
         }
 
-    copyTestFile.AppendSeparator().AppendUtf8(testFile->GetFileName());
-    copyTestFile.AppendExtension(WString(m_fileExtension.c_str(), BentleyCharEncoding::Utf8).c_str());
+    copyTestFile.AppendSeparator().AppendUtf8(testFile.GetFileName());
+    copyTestFile.AppendExtension(WString(m_name, BentleyCharEncoding::Utf8).c_str());
     if (copyTestFile.DoesPathExist())
         {
         if (copyTestFile.BeDeleteFile() != BeFileNameStatus::Success)
             {
             LOG.errorv("Fail to delete %s", copyTestFile.GetNameUtf8().c_str());
             BeAssert(false && "Failed to delete copy file");
-            return false;
+            return ERROR;
             }
         }
 
-    if (BeFileName::BeCopyFile(testFile->GetResolvedFilePath(), copyTestFile) != BeFileNameStatus::Success)
+    if (BeFileName::BeCopyFile(testFile.GetResolvedFilePath(), copyTestFile) != BeFileNameStatus::Success)
         {
-        LOG.errorv("Fail to copy file %s to %s", testFile->GetResolvedFilePath().GetNameUtf8().c_str(), copyTestFile.GetNameUtf8().c_str());
+        LOG.errorv("Fail to copy file %s to %s", testFile.GetResolvedFilePath().GetNameUtf8().c_str(), copyTestFile.GetNameUtf8().c_str());
         BeAssert(false && "Failed to create copy seed file");
-        return false;
+        return ERROR;
         }
 
-    return true;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-BeFileName ProfileManager::Profile::GetSeedFolder(BeVersion const& ver) const
-    {
-    BeFileName fl = GetSeedFolder();
-    fl.AppendSeparator().AppendUtf8(ver.ToString().c_str());  
-    return fl;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-std::vector<BeVersion> const&  ProfileManager::Profile::ReadProfileVersionFromDisk() const
+std::vector<ProfileVersion> const&  Profile::ReadProfileVersionFromDisk() const
     {
-    if (!m_verList.empty())
-        return m_verList;
+    if (!m_versionList.empty())
+        return m_versionList;
 
-    BeFileName fl = GetSeedFolder();
+    BeFileName fl(m_profileSeedFolder);
     if (fl.DoesPathExist())
         {
         if (!GenerateAllSeedFiles())
             {
             BeAssert(false && "Failed to generate profile");
-            return m_verList;
+            return m_versionList;
             }
         }
     BeDirectoryIterator it(fl);
@@ -252,206 +240,159 @@ std::vector<BeVersion> const&  ProfileManager::Profile::ReadProfileVersionFromDi
         bool isDir;
         if (it.GetCurrentEntry(entry, isDir, false) == 0 && isDir)
             {
-            BeVersion ver;
+            ProfileVersion ver(0, 0, 0, 0);
             ver.FromString(entry.GetNameUtf8().c_str());
-            m_verList.push_back(ver);
+            m_versionList.push_back(ver);
             }
         } while (it.ToNext() == 0);
         
 
-    std::sort(m_verList.begin(), m_verList.end());
-    return m_verList;
+    std::sort(m_versionList.begin(), m_versionList.end());
+    return m_versionList;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ProfileManager::Profile::Register(TestFile* testFile)
+void Profile::RegisterTestFile(TestFile& testFile)
     {
-    BeAssert(testFile != nullptr);
-    if (testFile == nullptr || m_testFiles.end() != m_testFiles.find(testFile->GetFileName()))
-        return false;
+    Utf8CP fileName = testFile.GetFileName();
 
-    return m_testFiles.insert(std::make_pair(testFile->GetFileName(), testFile)).second;
-    }
-
-//================================ProfileManager::_ECDb==================================
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult ProfileManager::_ECDb::_GetSchemaVersion(ProfileVersion& schemaVersion, PropertySpec const& spec) const
-    {
-    ECDb db;
-    DbResult r = db.CreateNewDb(BEDB_MemoryDb);
-    if (BE_SQLITE_OK != r)
-        return r;
-
-    Utf8String schemaVersionJSon;
-    r = db.QueryProperty(schemaVersionJSon, spec);
-    if (BE_SQLITE_ROW != r)
-        return r;
-
-    if (schemaVersionJSon.empty())
-        return BE_SQLITE_ERROR;
-
-    schemaVersion.FromJson(schemaVersionJSon.c_str());
-    return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-void ProfileManager::_ECDb::_Init() const
-    {
-    if (ECDb::IsInitialized())
+    if (m_testFiles.end() != m_testFiles.find(fileName))
         return;
 
-    BeFileName applicationSchemaDir;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
-
-    BeFileName temporaryDir;
-    BeTest::GetHost().GetOutputRoot(temporaryDir);
-
-    ECDb::Initialize(temporaryDir, &applicationSchemaDir);
-    srand((uint32_t) (BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
+    m_testFiles[fileName] = &testFile;
     }
 
-//================================ProfileManager::_BeDb==================================
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ProfileManager::_BeDb::_GetSchemaVersion(ProfileVersion& schemaVersion, PropertySpec const& spec) const
+ProfileType Profile::ParseProfileType(Utf8CP str)
     {
-    Db db;
-    DbResult r = db.CreateNewDb(BEDB_MemoryDb);
-    if (BE_SQLITE_OK != r)
-        return r;
+    if (BeStringUtilities::StricmpAscii(PROFILE_NAME_BEDB, str) == 0)
+        return ProfileType::BeDb;
 
-    Utf8String schemaVersionJSon;
-    r = db.QueryProperty(schemaVersionJSon, spec);
-    if (BE_SQLITE_ROW != r)
-        return r;
+    if (BeStringUtilities::StricmpAscii(PROFILE_NAME_ECDB, str) == 0)
+        return ProfileType::ECDb;
 
-    if (schemaVersionJSon.empty())
-        return BE_SQLITE_ERROR;
+    if (BeStringUtilities::StricmpAscii(PROFILE_NAME_DGNDB, str) == 0)
+        return ProfileType::DgnDb;
 
-    schemaVersion.FromJson(schemaVersionJSon.c_str());
-    return BE_SQLITE_OK;
+    BeAssert(false && "Unknown profile name");
+    return ProfileType::BeDb;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan                        03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbProfile::_Init() const
+    {
+    if (!ECDb::IsInitialized())
+        {
+        BeFileName applicationSchemaDir;
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
+
+        BeFileName temporaryDir;
+        BeTest::GetHost().GetOutputRoot(temporaryDir);
+
+        ECDb::Initialize(temporaryDir, &applicationSchemaDir);
+        srand((uint32_t) (BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
+        }
+
+    ECDb db;
+    if (BE_SQLITE_OK != db.CreateNewDb(BEDB_MemoryDb))
+        return ERROR;
+
+    return ReadProfileVersion(m_expectedVersion, db, m_versionPropertySpec);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-void ProfileManager::_BeDb::_Init() const
+BentleyStatus BeDbProfile::_Init() const
     {
     BeFileName temporaryDir;
     BeTest::GetHost().GetOutputRoot(temporaryDir);
     BeSQLiteLib::Initialize(temporaryDir);
+
+    Db db;
+    if (BE_SQLITE_OK != db.CreateNewDb(BEDB_MemoryDb))
+        return ERROR;
+
+    return ReadProfileVersion(m_expectedVersion, db, m_versionPropertySpec);
     }
 
-//================================ProfileManager::_DgnDb=================================
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult ProfileManager::_DgnDb::_GetSchemaVersion(ProfileVersion& schemaVersion, PropertySpec const& spec) const
+BentleyStatus DgnDbProfile::_Init() const
     {
+    if (!DgnDb::IsInitialized())
+        {
+        BeFileName applicationSchemaDir;
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
+
+        BeFileName temporaryDir;
+        BeTest::GetHost().GetOutputRoot(temporaryDir);
+
+        DgnDb::Initialize(temporaryDir, &applicationSchemaDir);
+        srand((uint32_t) (BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
+        }
+
     BeFileName temporaryDir;
     BeTest::GetHost().GetTempDir(temporaryDir);
     temporaryDir.AppendUtf8("temp");
 
     CreateDgnDbParams temp("SchemaVersion");
-    DbResult r;
-    DgnDbPtr db = DgnDb::CreateDgnDb(&r, temporaryDir, temp);
-    if (BE_SQLITE_OK != r)
-        return r;
+    DgnDbPtr db = DgnDb::CreateDgnDb(nullptr, temporaryDir, temp);
+    if (db == nullptr)
+        return ERROR;
 
-    schemaVersion = db->GetProfileVersion();
-    return BE_SQLITE_OK;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-void ProfileManager::_DgnDb::_Init() const
-    {
-    if (DgnDb::IsInitialized())
-        return;
-
-    BeFileName applicationSchemaDir;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
-
-    BeFileName temporaryDir;
-    BeTest::GetHost().GetOutputRoot(temporaryDir);
-
-    DgnDb::Initialize(temporaryDir, &applicationSchemaDir);
-    srand((uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() & 0xFFFFFFFF));
+    m_expectedVersion = db->GetProfileVersion();
+    return ERROR;
     }
 
 //=====================================ProfileManager====================================
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-ProfileManager::ProfileManager()
-    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-ProfileManager::Profile* ProfileManager::GetProfile(Kind kind)
+ProfileManager ProfileManager::s_singleton;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan                        03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+Profile& ProfileManager::GetProfile(ProfileType type) const
     {
-    if (kind == Kind::PROFILE_BeDb)
-        return &m_bedb;
+    auto it = m_profiles.find(type);
+    if (it != m_profiles.end())
+        return *it->second;
 
-    if (kind == Kind::PROFILE_ECDb)
-        return &m_ecdb;
+    std::unique_ptr<Profile> profile = nullptr;
+    switch (type)
+        {
+            case ProfileType::BeDb:
+                profile = BeDbProfile::Create();
+                break;
 
-    if (kind == Kind::PROFILE_DgnDb)
-        return &m_dgndb;
+            case ProfileType::ECDb:
+                profile = ECDbProfile::Create();
+                break;
 
-    return nullptr;
-    }
+            case ProfileType::DgnDb:
+                profile = DgnDbProfile::Create();
+                break;
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-ProfileManager& ProfileManager::GetInstance()
-    {
-    static ProfileManager profileManager;
-    return profileManager;
-    }
+            default:
+                BeAssert(false && "Unhandled ProfileType value. Update the code");
+                break;
+        }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-ProfileManager::Profile* ProfileManager::GetProfile(Utf8CP name)
-    {
-    if (BeStringUtilities::StricmpAscii(name, "bedb") == 0)
-        return GetProfile(PROFILE_BeDb);
-
-    if (BeStringUtilities::StricmpAscii(name, "ecdb") == 0)
-        return GetProfile(PROFILE_ECDb);
-
-    if (BeStringUtilities::StricmpAscii(name, "dgndb") == 0)
-        return GetProfile(PROFILE_DgnDb);
-
-    BeAssert(false);
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-void ProfileManager::Register(TestFile* tf)
-    {
-    BeAssert(tf != nullptr);
-    if (tf == nullptr)
-        return;
-
-    bool success = false;
-    if (Profile* profile = GetProfile(tf->GetProfileName()))
-        success = profile->Register(tf);
-
-    BeAssert(success);
+    BeAssert(profile != nullptr && "Failed to create profile");
+    Profile* profileP = profile.get();
+    m_profiles[type] = std::move(profile);
+    return *profileP;
     }
 
 //---------------------------------------------------------------------------------------
@@ -475,42 +416,33 @@ BeFileName const& ProfileManager::GetOutFolder() const
     {
     if (m_outFolder.empty())
         BeTest::GetHost().GetOutputRoot(m_outFolder);
+
     return m_outFolder;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-int ProfileManager::CompareFileVersion(BeFileName const& in)
+ProfileState ProfileManager::GetFileProfileState(BeFileNameCR filePath) const
     {
-    Utf8String ext(in.GetExtension());
-    Utf8String ver(in.GetDirectoryName().GetNameUtf8());
-    BeVersion currentVersion = ProfileManager::GetInstance().GetProfile(ext.c_str())->GetExpectedVersion();
+    ProfileType fileProfileType = Profile::ParseProfileType(Utf8String(filePath.GetExtension()).c_str());
+    ProfileVersion const& expectedVersion = GetProfile(fileProfileType).GetExpectedVersion();
 
+    BeFileName fileVersionFolder = filePath.GetDirectoryName();
     // This is needed because the sscanf does not search the entire file path for the format %d.%d.%d.%d. It only looks for the string
-    // to explicitly match. So drop the version directory and append the VersionParseFormat to the end.
-    BeFileName pathForVersionParseFormat = in.GetDirectoryName();
-    pathForVersionParseFormat.PopDir().AppendSeparator();
+    // to explicitly match. So drop the version directory and append the parse format to the end.
+    BeFileName parseFormat(fileVersionFolder);
+    parseFormat.PopDir().AppendSeparator().append(WString(VERSION_PARSE_FORMAT, BentleyCharEncoding::Utf8));
+    ProfileVersion fileProfileVersion(0,0,0,0);
+    fileProfileVersion.FromString(fileVersionFolder.GetNameUtf8().c_str(), parseFormat.GetNameUtf8().c_str());
+    BeAssert(!fileProfileVersion.IsEmpty());
 
-    Utf8String parseFormat(pathForVersionParseFormat.GetNameUtf8());
-    parseFormat.append(VERSION_PARSE_FORMAT);
+    const int compareRes = fileProfileVersion.CompareTo(expectedVersion);
+    if (compareRes == 0)
+        return ProfileState::Current;
 
-    BeVersion fileVer;
-    fileVer.FromString(ver.c_str(), parseFormat.c_str());
+    if (compareRes < 0)
+        return ProfileState::Older;
 
-    BeAssert(!fileVer.IsEmpty());
-    if (currentVersion < fileVer)
-        return 1;
-
-    if (currentVersion > fileVer)
-        return -1;
-
-    return 0;
+    return ProfileState::Newer;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-bool CompatibilityTestFixture::HasNewProfile(BeFileName const& fileName) { return ProfileManager::CompareFileVersion(fileName) > 0; }
-bool CompatibilityTestFixture::HasOldProfile(BeFileName const& fileName) { return ProfileManager::CompareFileVersion(fileName) < 0; }
-bool CompatibilityTestFixture::HasCurrentProfile(BeFileName const& fileName) { return ProfileManager::CompareFileVersion(fileName) == 0; }

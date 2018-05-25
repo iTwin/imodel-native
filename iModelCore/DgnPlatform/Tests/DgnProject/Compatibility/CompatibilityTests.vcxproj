@@ -11,10 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CompatibilityBeDb.cpp" />
-    <ClCompile Include="CompatibilityDgnDb.cpp" />
-    <ClCompile Include="CompatibilityECDb.cpp" />
+    <ClCompile Include="BeDbCompatibilityTests.cpp" />
     <ClCompile Include="CompatibilityTestFixture.cpp" />
+    <ClCompile Include="DgnDbCompatibilityTests.cpp" />
+    <ClCompile Include="ECDbCompatibilityTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompatibilityTestFixture.h" />
