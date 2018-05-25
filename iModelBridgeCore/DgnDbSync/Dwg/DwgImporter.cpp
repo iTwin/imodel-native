@@ -1932,7 +1932,7 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
     m_importedTextstyles.clear ();
     m_importedLinestyles.clear ();
     m_importedMaterials.clear ();
-    m_sharedGeometryPartList.clear ();
+    m_blockPartsMap.clear ();
     m_entitiesImported = 0;
     m_layersImported = 0;
     m_errorCount = 0;

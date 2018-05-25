@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportPointClouds.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -211,14 +211,10 @@ BentleyStatus   DwgPointCloudExExt::_ConvertToBim (ProtocalExtensionContext& con
     // create an element from the geometry builder w/points collected
     if (DwgDbStatus::Success == status && collector->GetNumCollected() > 0)
         {
-        DwgImporter::GeometryBuilderInfo    builderInfo(display, entity->GetObjectId().ToUInt64(), builder.get());
-        DwgImporter::T_GeometryBuilderList  builders;
-        builders.push_back (builderInfo);
+        ElementFactory  factory(context.GetElementResultsR(), context.GetElementInputsR(), createParams, importer);
+        factory.SetGeometryBuilder (builder.get());
 
-        DwgImporter::T_PartIndexList    emptyParts;
-
-        if (BSISUCCESS != importer._CreateOrUpdateElement(context.GetElementResultsR(), context.GetModel(), builders, emptyParts, createParams, context.GetEntity(), context.GetDgnClassId()))
-            status = DwgDbStatus::UnknownError;
+        status = ToDwgDbStatus (factory.CreateElement());
         }
 
     delete collector;
