@@ -772,7 +772,7 @@ public:
     DWGDB_EXPORT DwgDbObjectId  GetBlockTableRecordId () const;
     DWGDB_EXPORT DPoint3d       GetPosition () const;
     DWGDB_EXPORT void           GetBlockTransform (TransformR tranform) const;
-    DWGDB_EXPORT DPoint3d       GetScaleFactors () const;
+    DWGDB_EXPORT DVec3d         GetScaleFactors () const;
     DWGDB_EXPORT DVec3d         GetNormal () const;
     DWGDB_EXPORT DwgDbStatus    ExplodeToOwnerSpace () const;
     DWGDB_EXPORT DwgDbStatus    GetExtentsBestFit (DRange3dR extents, TransformCR parentXform = Transform::FromIdentity()) const;
@@ -800,7 +800,7 @@ public:
     DWGDB_EXPORT DwgDbObjectId  GetBlockTableRecordId () const;
     DWGDB_EXPORT DPoint3d       GetPosition () const;
     DWGDB_EXPORT void           GetBlockTransform (TransformR tranform) const;
-    DWGDB_EXPORT DPoint3d       GetScaleFactors () const;
+    DWGDB_EXPORT DVec3d         GetScaleFactors () const;
     DWGDB_EXPORT DVec3d         GetNormal () const;
     DWGDB_EXPORT DwgDbStatus    ExplodeToOwnerSpace () const;
     DWGDB_EXPORT DwgDbStatus    GetExtentsBestFit (DRange3dR extents, TransformCR parentXform = Transform::FromIdentity()) const;

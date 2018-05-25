@@ -368,4 +368,65 @@ public:
     static DwgDbObjectId FindOverallViewport (DwgDbBlockTableRecordCR block);
     };  // LayoutFactory
 
+/*=================================================================================**//**
+* ElementFactory takes geometries collected from GeometryFactory as input, and creates
+* either shared parts or individual elements.  If GeometryFactory sees no trouble creating
+* an assembly, it will create shared parts.  If it cannot create parts, individual elements
+* will be created instead.
+*
+* @see GeometryFactory
+* @bsiclass                                                     Don.Fu          05/18
++===============+===============+===============+===============+===============+======*/
+struct ElementFactory
+    {
+private:
+    DwgImporter::ElementImportResults&  m_results;
+    DwgImporter::ElementImportInputs&   m_inputs;
+    DwgImporter::ElementCreateParams&   m_createParams;
+    DwgImporter::T_BlockGeometryMap const*  m_geometryMap;
+    DgnElement::CreateParams            m_elementParams;
+    ElementHandlerP     m_elementHandler;
+    DgnCode             m_elementCode;
+    Utf8String          m_elementLabel;
+    DefinitionModelPtr  m_partModel;
+    GeometryBuilderPtr  m_geometryBuilder;
+    Transform           m_modelTransform;
+    Transform           m_baseTransform;
+    Transform           m_invBaseTransform;
+    double              m_basePartScale;
+    bool                m_is3d;
+    bool                m_canCreateSharedParts;
+    bool                m_hasBaseTransform;
+    DwgDbObjectId       m_sourceBlockId;
+    DwgImporter&        m_importer;
+
+    void            SetDefaultCreation ();
+    Utf8String      BuildPartCodeValue (DwgImporter::GeometryEntry const& geomEntry, size_t partNo);
+    void            TransformGeometry (GeometricPrimitiveR geometry, TransformR geomTrans) const;
+    void            Validate2dTransform (TransformR transform) const;
+    void            ApplyBasePartScale (TransformR transform, bool invert) const;
+    bool            NeedsSeparateElement (DgnCategoryId id) const;
+    BentleyStatus   GetOrCreateGeometryPart (DwgImporter::SharedPartEntry& part, DwgImporter::GeometryEntry const& geomEntry, size_t partNo);
+    BentleyStatus   CreateEmptyElement ();
+    BentleyStatus   CreateIndividualElements ();
+    BentleyStatus   CreateSharedParts ();
+
+public:
+    // Constructor
+    ElementFactory (DwgImporter::ElementImportResults& results, DwgImporter::ElementImportInputs& inputs, DwgImporter::ElementCreateParams& params, DwgImporter& importer);
+
+    bool    CanCreateSharedParts () const { return  m_canCreateSharedParts; }
+    void    SetCreateSharedParts (bool desired) { m_canCreateSharedParts = desired; }
+    // Set base transform from a block tranform
+    void    SetBaseTransform (TransformCR blockTrans);
+    // Set a prebuilt GeometryBuilder from which elements will be created
+    void    SetGeometryBuilder (GeometryBuilderP builder) { BeAssert(!m_geometryBuilder.IsValid()); m_geometryBuilder = builder; }
+    // Create db elements from the GeometryBuilder and flush the builder at the end.
+    BentleyStatus   CreateElement ();
+    // Create shared parts from a part cache per block
+    BentleyStatus   CreatePartElements (DwgImporter::T_SharedPartList const& parts);
+    // Create db elements from a block-geometry map
+    BentleyStatus   CreateElements (DwgImporter::T_BlockGeometryMap const* geometryMap);
+    };  // ElementFactory
+
 END_DGNDBSYNC_DWG_NAMESPACE
