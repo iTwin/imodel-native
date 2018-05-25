@@ -2077,7 +2077,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
     }
     bvector<bvector<DPoint3d>> features;
     bvector<DTMFeatureType> types;
-    node->ReadFeatureDefinitions(features, types);
+    node->ReadFeatureDefinitions(features, types, false);
 
     assert(node->m_nodeHeader.m_nbFaceIndexes == 0 || newNodePointData != nullptr);
     

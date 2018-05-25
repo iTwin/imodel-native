@@ -1800,7 +1800,7 @@ template<class EXTENT> void ClipMeshDefinition(EXTENT clipExtent, bvector<DPoint
    // SimplifyMesh(indicesClipped, pointsClipped, inOutUvs);
     }
 
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types)
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types, bool shouldIgnoreOpenFeatures)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = GetLinearFeaturesPtr();
     bvector<bvector<int32_t>> defs;
@@ -1808,7 +1808,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ReadFea
     for (size_t i = 0; i < defs.size(); ++i)
         {
         bvector<DPoint3d> feature;
-        if (!IsClosedFeature(defs[i][0])) continue;
+        if (shouldIgnoreOpenFeatures && !IsClosedFeature(defs[i][0])) continue;
         for (size_t j = 1; j < defs[i].size(); ++j)
             {
             if (defs[i][j] < GetPointsPtr()->size()) feature.push_back(this->GetPointsPtr()->operator[](defs[i][j]));
