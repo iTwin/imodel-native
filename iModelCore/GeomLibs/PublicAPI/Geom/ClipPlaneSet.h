@@ -389,6 +389,24 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     PolyfaceHeaderPtr *inside,
     PolyfaceHeaderPtr *outside
     );
+
+    //! Clip a polyface to a swept polygon.  This produces side faces where the sweep makes a closed cut.
+    //! If the polyface is not closed, cut faces may be produced where sections are closed loops.
+    //! @param polyface [in] polyface to test
+    //! @param polygon [in] polygon points.
+    //! @param sweepDirection [in] sweep direction for the polygon.
+    //! @param constructNewFacetsOnClipSetPlanes [in] true to construct new faces where clip planes are inside the facet.
+    //! @param inside [out] (optional) "inside" parts
+    //! @param outside [out] (optional) "outside" parts
+    GEOMDLLIMPEXP void static SweptPolygonClipPolyface
+    (
+    PolyfaceQueryCR polyface,
+    bvector<DPoint3d> &polygon,
+    DVec3dCR sweepDirection,
+    bool constructNewFacetsOnClipSetPlanes,
+    PolyfaceHeaderPtr *inside,
+    PolyfaceHeaderPtr *outside
+    );
 };
 
 END_BENTLEY_GEOMETRY_NAMESPACE
