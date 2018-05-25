@@ -681,6 +681,96 @@ TEST_P(ScalableMeshTestWithParams, GetMeshQueryInterface)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, MeshQuery)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshMeshQueryPtr meshQueryPtr(myScalableMesh->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION));
+   
+    EXPECT_TRUE(meshQueryPtr.IsValid());
+
+    IScalableMeshMeshQueryParamsPtr meshQueryParamPtr(IScalableMeshMeshQueryParams::CreateParams());
+
+    EXPECT_TRUE(meshQueryParamPtr.IsValid());
+
+    size_t levelInd = myScalableMesh->GetNbResolutions() - 1;
+    meshQueryParamPtr->SetLevel(levelInd);
+
+    EXPECT_TRUE(meshQueryParamPtr->GetLevel() == levelInd);
+
+    const GeoCoords::GCS& gcs(myScalableMesh->GetGCS());
+    
+    if (gcs.GetGeoRef().GetBasePtr().IsValid())
+        { 
+        BaseGCSPtr sourceGcsPtr(BaseGCS::CreateGCS(*gcs.GetGeoRef().GetBasePtr().get()));
+        BaseGCSPtr targetGcsPtr(BaseGCS::CreateGCS(L"EPSG:900913"));
+
+        meshQueryParamPtr->SetGCS(sourceGcsPtr, targetGcsPtr);
+                
+        EXPECT_TRUE(meshQueryParamPtr->GetLevel() == levelInd);
+
+        BaseGCSCPtr querySourceGcsPtr(meshQueryParamPtr->GetSourceGCS());
+        BaseGCSCPtr queryTargetGcsPtr(meshQueryParamPtr->GetTargetGCS());
+
+        EXPECT_TRUE(sourceGcsPtr->IsEquivalent(*querySourceGcsPtr.get()));
+        EXPECT_TRUE(targetGcsPtr->IsEquivalent(*queryTargetGcsPtr.get()));
+        }
+    
+    bool useAllRes = meshQueryParamPtr->GetUseAllResolutions();
+    meshQueryParamPtr->SetUseAllResolutions(!useAllRes);
+
+    EXPECT_TRUE(useAllRes != meshQueryParamPtr->GetUseAllResolutions());        
+
+
+#if 0
+    IScalableMeshMeshQueryParamsPtr meshQueryParamLowResPtr(IScalableMeshMeshQueryParams::CreateParams());
+
+    meshQueryParamLowResPtr->SetLevel(0);
+
+    DRange3d smRange; 
+    myScalableMesh->GetRange(smRange);
+
+    DPoint3d queryExtent[8];        
+    smRange.Get8Corners(queryExtent);
+    //queryExtent
+    //const DPoint3d* pQueryExtentPts
+
+    DPoint3d temp = queryExtent[3];
+    queryExtent[3] = queryExtent[2];
+    queryExtent[2] = temp;
+    queryExtent[4] = queryExtent[0];
+
+    IScalableMeshMeshPtr          meshPtr;
+    bvector<IScalableMeshNodePtr> meshNodes;
+        
+    int status = meshQueryPtr->Query(meshPtr, queryExtent, 5, meshQueryParamLowResPtr);
+    EXPECT_TRUE(status == SUCCESS);
+
+    EXPECT_TRUE(meshPtr->GetNbPoints() > 0);
+    EXPECT_TRUE(meshPtr->GetNbFaces() > 0);
+
+    status = meshQueryPtr->Query(meshNodes, queryExtent, 5, meshQueryParamLowResPtr);
+    EXPECT_TRUE(status == SUCCESS && meshNodes.size() > 0 || status != SUCCESS && meshNodes.size() == 0);
+#endif
+    //EXPECT_TRUE(meshNodes.size() > 0);    
+        
+
+    //int meshQueryPtr->Query(bvector<IScalableMeshNodePtr>& meshNodesPtr, ClipVectorCP queryExtent3d, const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
+
+
+
+
+/*
+    BENTLEY_SM_EXPORT int Query(IScalableMeshMeshPtr& meshPtr, const DPoint3d* pQueryExtentPts, int nbQueryExtentPts, const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
+    BENTLEY_SM_EXPORT int Query(bvector<IScalableMeshNodePtr>& meshNodesPtr, const DPoint3d* pQueryExtentPts, int nbQueryExtentPts, const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
+    BENTLEY_SM_EXPORT int Query(bvector<IScalableMeshNodePtr>& meshNodesPtr, ClipVectorCP queryExtent3d, const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
+*/
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, SetGetReprojectionTransform)
