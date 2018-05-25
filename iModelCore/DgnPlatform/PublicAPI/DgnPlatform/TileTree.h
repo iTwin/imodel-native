@@ -395,7 +395,7 @@ protected:
     Root(DgnDbR, DgnModelId, bool is3d, TransformCR, Utf8CP rootResource, Dgn::Render::SystemP);
 public:
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeDuration partialTimeout);
-    void RequestTiles(MissingNodesCR, BeDuration partialTimeout);
+    DGNPLATFORM_EXPORT void RequestTiles(MissingNodesCR, BeDuration partialTimeout);
 
     //! Select appropriate tiles from available set based on context. If any needed tiles are not available, add them to the context's set of tile requests.
     bvector<TileCPtr> SelectTiles(SceneContextR context);
@@ -484,6 +484,7 @@ public:
 
     virtual bool _ToJson(Json::Value&) const { return false; }
     virtual TilePtr _FindTileById(Utf8CP id) { return nullptr; }
+    ByteStream GetTileDataFromCache(Utf8StringCR cacheKey) const;
 };
 
 //=======================================================================================
@@ -639,7 +640,7 @@ private:
 
     Set m_set;
 public:
-    void Insert(TileCR tile, bool prioritize);
+    DGNPLATFORM_EXPORT void Insert(TileCR tile, bool prioritize);
     bool Contains(TileCR tile) const;
 
     bool empty() const { return m_set.empty(); }

@@ -3292,13 +3292,9 @@ bool TileCache::_ValidateData() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Root::_ToJson(Json::Value& json) const
     {
-    if (GetRootTile().IsNull())
-        return false;
-
     json["id"] = GetModelId().ToHexStr();
     json["maxTilesToSkip"] = 1;
     JsonUtils::TransformToJson(json["location"], GetLocation());
-    GetRootTile()->_ToJson(json["rootTile"]);
     return true;
     }
 
@@ -3326,6 +3322,14 @@ bool Tile::_ToJson(Json::Value& json) const
         {
         for (auto const& child : *children)
             json["childIds"].append(static_cast<TileR>(*child).GetIdString());
+        }
+
+    ByteStream geometry = GetRoot().GetTileDataFromCache(_GetTileCacheKey());
+    if (!geometry.empty())
+        {
+        Utf8String encodedGeometry;
+        Base64Utilities::Encode(encodedGeometry, geometry.GetData(), geometry.size());
+        json["geometry"] = encodedGeometry;
         }
 
     return true;
