@@ -244,7 +244,7 @@ protected:
     double                      m_tolerance;
     mutable ElementAlignedBox3d m_contentRange;
     mutable DebugGraphics       m_debugGraphics;
-    double                      m_zoomFactor = 0.0;
+    double                      m_zoomFactor = 1.0;
     uint64_t                    m_debugId;
     Render::GraphicPtr          m_backupGraphic;
     TileGeneratorUPtr           m_generator;
@@ -293,7 +293,7 @@ public:
 
     void SetZoomFactor(double zoom) { BeAssert(!IsLeaf()); m_zoomFactor = zoom; m_hasZoomFactor = true; }
     bool HasZoomFactor() const { return m_hasZoomFactor; }
-    double GetZoomFactor() const { BeAssert(HasZoomFactor()); return HasZoomFactor() ? m_zoomFactor : 0.0; }
+    double GetZoomFactor() const { BeAssert(HasZoomFactor()); return HasZoomFactor() ? m_zoomFactor : 1.0; }
     void SetContentRange (ElementAlignedBox3dCR contentRange) { m_contentRange = contentRange; }
     Utf8String GetDebugId() const { return _GetTileCacheKey(); }
 

@@ -1759,7 +1759,7 @@ Tile::Tile(Tile const& parent) : T_Super(const_cast<Root&>(parent.GetElementRoot
 void Tile::InitTolerance(double minToleranceRatio, bool isLeaf)
     {
     double diagDist = GetElementRoot().Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
-    m_tolerance = diagDist / (minToleranceRatio * HasZoomFactor() ? m_zoomFactor : 1.0);
+    m_tolerance = diagDist / (minToleranceRatio * m_zoomFactor);
     m_isLeaf = isLeaf;
     BeAssert(0.0 != m_tolerance);
     }
@@ -1780,7 +1780,7 @@ void Tile::_Invalidate()
 
         m_isLeaf = false;
         m_hasZoomFactor = false;
-        m_zoomFactor = 0.0;
+        m_zoomFactor = 1.0;
 
         InitTolerance(s_minToleranceRatio);
 
@@ -1981,7 +1981,7 @@ void Tile::_ValidateChildren() const
 double Tile::_GetMaximumSize() const
     {
     // returning 0.0 signifies undisplayable tile...
-    return m_displayable ? s_tileScreenSize * (HasZoomFactor() ? m_zoomFactor : 1.0) : 0.0;
+    return m_displayable ? s_tileScreenSize * m_zoomFactor : 0.0;
     }
 
 /*=================================================================================**//**
