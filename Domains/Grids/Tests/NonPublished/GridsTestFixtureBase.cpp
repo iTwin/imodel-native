@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/GridsTestFixtureBase.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeXml/BeXml.h>
@@ -59,13 +59,14 @@ void CreatSeedDb (WCharCP seedFileName)
     dgnDbPtr = DgnDbTestUtils::CreateSeedDb (seedFileName);
     ASSERT_TRUE (dgnDbPtr.IsValid ());
 
-    dgnDbPtr->SetAsBriefcase (BeBriefcaseId (BeBriefcaseId::Standalone ()));
     dgnDbPtr->GeoLocation ().SetProjectExtents (AxisAlignedBox3d (DPoint3d::From (-500.0, -500.0, 0.0), DPoint3d::From (500.0, 500.0, 500.0)));
 
+    dgnDbPtr->SetAsBriefcase(BeBriefcaseId(2));
     dgnDbPtr->SaveChanges ();
     dgnDbPtr->SaveSettings ();
     }
-    dgnDbPtr->CloseDb ();
+    dgnDbPtr->CloseDb();
+
     Dgn::T_HOST.GetScriptAdmin ().TerminateOnThread ();
     }
 
@@ -143,3 +144,19 @@ L10N::SqlangFiles GridsTestFixtureBase::_GetApplicationSqlangs ()
     return L10N::SqlangFiles (sqlangDbPath);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Martynas.Saulius                05/18
+//---------------------------------------------------------------------------------------
+void RepositoryManagerTest::ClearRevisions(DgnDbR db)
+    {
+    // Ensure the seed file doesn't contain any changes pending for a revision
+    if (!db.IsMasterCopy())
+        {
+        DgnRevisionPtr rev = db.Revisions().StartCreateRevision();
+        if (rev.IsValid())
+            {
+            db.Revisions().FinishCreateRevision();
+            db.SaveChanges();
+            }
+        }
+    }
