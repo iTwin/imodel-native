@@ -27,7 +27,7 @@ GMockPublicApiDirectory = $(GMockDirectory)include/
 #--------------------------------------------------------------------------------------
 # Tell dlmlink.mki where to point symbolic links
 ContextDeliveryDir  = $(BuildContext)Delivery/
-CCompPDBName = $(appName)
+# CCompPDBName = $(appName)
 LIB_CONTEXT_LOCATION = $(ContextDeliveryDir)
 always:
     ~mkdir $(DLM_LIB_CONTEXT_LOCATION)
