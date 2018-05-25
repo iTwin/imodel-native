@@ -1870,6 +1870,7 @@ DgnElementPtr DgnElement::CopyForEdit() const
     {
     DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetUserLabel(), m_parent.m_id, m_parent.m_relClassId, GetFederationGuid());
     createParams.SetElementId(GetElementId());
+    createParams.SetIsLoadingElement(true);
 
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(createParams);
 #ifdef __clang__
