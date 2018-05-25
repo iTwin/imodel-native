@@ -402,8 +402,10 @@ static Utf8CP s_standardSchemaNames[] =
     "Units_Schema",
     "USCustomaryUnitSystemDefaults",
     "ECDbMap",
-    "CoreCustomAttributes",
-    "SchemaLocalizationCustomAttributes",
+    "CoreCustomAttributes", // New EC3 Standard Schema
+    "SchemaLocalizationCustomAttributes", // New EC3 Standard Schema
+    "Units", // New EC3 Standard Schema
+    "Formats" // New EC3 Standard Schema
     };
 
 /*---------------------------------------------------------------------------------**//**

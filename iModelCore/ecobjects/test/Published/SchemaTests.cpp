@@ -1291,6 +1291,11 @@ TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
     standardSchemaNames.insert(bpair<Utf8String, Utf8CP>("Units_Schema", "01.00"));
     standardSchemaNames.insert(bpair<Utf8String, Utf8CP>("USCustomaryUnitSystemDefaults", "01.00"));
 
+    standardSchemaNames.insert(bpair<Utf8String, Utf8CP>("CoreCustomAttributes", "01.00.00"));
+    standardSchemaNames.insert(bpair<Utf8String, Utf8CP>("SchemaLocalizationCustomAttributes", "01.00.00"));
+    standardSchemaNames.insert(bpair<Utf8String, Utf8CP>("Formats", "01.00.00"));
+    standardSchemaNames.insert(bpair<Utf8String, Utf8CP>("Units", "01.00.00"));
+
     ECSchemaPtr schema;
 
     for (bmap<Utf8String, Utf8CP>::const_iterator it = standardSchemaNames.begin(); it != standardSchemaNames.end(); ++it)
