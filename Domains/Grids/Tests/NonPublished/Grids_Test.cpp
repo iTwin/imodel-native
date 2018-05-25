@@ -2588,8 +2588,7 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (*m_model,
                                                                             db.Elements ().GetRootSubject ()->GetElementId (),
                                                                             "Floor-Grid"),
-                                                                            floorPlaneCurves,
-                                                                            true);
+                                                                            floorPlaneCurves);
                                                                                             
     db.SaveChanges();
 
@@ -2725,8 +2724,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (*m_model,
                                                                               db.Elements ().GetRootSubject ()->GetElementId (),
                                                                               "Floor-Grid"),
-                                                                              floorPlaneCurves,
-                                                                              true);
+                                                                              floorPlaneCurves);
     db.SaveChanges();
 
     /////////////////////////////////////////////////////////////
@@ -2864,8 +2862,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (*m_model,
                                                                               db.Elements ().GetRootSubject ()->GetElementId (),
                                                                               "Floor-Grid"),
-                                                                              floorPlaneCurves,
-                                                                              true);
+                                                                              floorPlaneCurves);
     db.SaveChanges();
 
     /////////////////////////////////////////////////////////////

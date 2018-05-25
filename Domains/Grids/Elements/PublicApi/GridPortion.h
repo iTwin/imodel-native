@@ -230,7 +230,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
 
         static  BentleyStatus           ValidateSurfaces (bvector<CurveVectorPtr> const& surfaces);
 
-                BentleyStatus           CreateElevationGridPlanes (bvector<CurveVectorPtr> const& surfaces, GridAxisCR gridAxis, bool createDimensions);
+                BentleyStatus           CreateElevationGridPlanes (bvector<CurveVectorPtr> const& surfaces, GridAxisCR gridAxis);
         //! creates the Grid.. !!!DEFAULT parameters makes the gridportion INVALID!!! elements should not be constructed via handler
         //! @param[in]          params  params for creation
         explicit GRIDELEMENTS_EXPORT ElevationGrid (T_Super::CreateParams const& params) : T_Super (params) {};
@@ -247,7 +247,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
         //! @param[in]  surfaces        gridsurface geometry
         //! @return                     grid with gridsurfaces in submodel
         //! @note all surfaces will be tested to be planar and normal needs to be in Z direction
-        GRIDELEMENTS_EXPORT static ElevationGridPtr CreateAndInsertWithSurfaces (CreateParams const& params, bvector<CurveVectorPtr> const& surfaces, bool createDimensions);
+        GRIDELEMENTS_EXPORT static ElevationGridPtr CreateAndInsertWithSurfaces (CreateParams const& params, bvector<CurveVectorPtr> const& surfaces);
 
         GRIDELEMENTS_EXPORT static ElevationGridPtr CreateAndInsert (CreateParams const& params);
 

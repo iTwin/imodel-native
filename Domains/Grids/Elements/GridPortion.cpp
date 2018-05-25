@@ -11,11 +11,9 @@
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
 #include <BuildingShared/BuildingSharedApi.h>
-//#include <DimensionHandler.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_BUILDING
 USING_NAMESPACE_BUILDING_SHARED
 
@@ -259,8 +257,7 @@ bvector<CurveVectorPtr> const& surfaces
 BentleyStatus                   ElevationGrid::CreateElevationGridPlanes
 (
 bvector<CurveVectorPtr> const& surfaces,
-GridAxisCR gridAxis,
-bool createDimensions
+GridAxisCR gridAxis
 )
     {
     BentleyStatus status = BentleyStatus::ERROR;
@@ -296,10 +293,6 @@ bool createDimensions
             gridPlane->Insert ();
             DPlane3d planeThis;
             planeThis = gridPlane->GetPlane ();
-            if (lastGridPlane.IsValid () && createDimensions)
-                {
-                DimensionHandler::Insert(GetDgnDb(), lastGridPlane->GetElementId(), gridPlane->GetElementId(), 0, 0, planeThis.normal, planeLast.Evaluate(planeThis.origin));
-                }
             planeLast = planeThis;
             lastGridPlane = gridPlane;
             }
@@ -312,8 +305,7 @@ bool createDimensions
 ElevationGridPtr        ElevationGrid::CreateAndInsertWithSurfaces
 (
 CreateParams const& params,
-bvector<CurveVectorPtr> const& surfaces,
-bool createDimensions
+bvector<CurveVectorPtr> const& surfaces
 )
     {
     if (BentleyStatus::SUCCESS != ValidateSurfaces (surfaces))
@@ -321,7 +313,7 @@ bool createDimensions
 
     ElevationGridPtr thisGrid = ElevationGrid::CreateAndInsert (params);
     
-    if (BentleyStatus::SUCCESS != thisGrid->CreateElevationGridPlanes (surfaces, *thisGrid->GetAxis(), createDimensions))
+    if (BentleyStatus::SUCCESS != thisGrid->CreateElevationGridPlanes (surfaces, *thisGrid->GetAxis()))
         BeAssert (!"error inserting gridSurfaces into elevation grid..");
     return thisGrid;
     }
