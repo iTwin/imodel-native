@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ElementGraphics.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,6 +16,14 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct WireframeGeomUtil
 {
+    DGNPLATFORM_EXPORT static bool ComputeRuleArc(DEllipse3dR ellipse, DPoint3dCR startPt, DPoint3dCR originPt, double sweepAngle, TransformCR transform, RotMatrixCR axes, RotMatrixCR invAxes, double ruleTolerance = 1.0e-10);
+    DGNPLATFORM_EXPORT static bool CollectLateralRulePoints(CurveVectorCR curves, bvector<DPoint3d>& pts, int divisor, int closedDivisor, CheckStop* stopTester = nullptr);
+    DGNPLATFORM_EXPORT static bool CollectVertices(CurveVectorCR curves, bvector<DPoint3d>& pts, bool checkDistance, CheckStop* stopTester = nullptr);
+
+    DGNPLATFORM_EXPORT static bool CollectLateralEdges(DgnExtrusionDetailCR detail, bvector<DSegment3d>& edges, CheckStop* stopTester = nullptr);
+    DGNPLATFORM_EXPORT static bool CollectLateralEdges(DgnRotationalSweepDetailCR detail, bvector<DEllipse3d>& edges, CheckStop* stopTester = nullptr);
+    DGNPLATFORM_EXPORT static bool CollectLateralEdges(DgnRuledSweepDetailCR detail, bvector<DSegment3d>& edges, CheckStop* stopTester = nullptr);
+
     DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(ISolidPrimitiveCR, DgnDbR, GeometryStreamEntryIdCP entryId = nullptr);
     DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(MSBsplineSurfaceCR, DgnDbR, GeometryStreamEntryIdCP entryId = nullptr);
     DGNPLATFORM_EXPORT static CurveVectorPtr CollectCurves(IBRepEntityCR, DgnDbR, GeometryStreamEntryIdCP entryId = nullptr);

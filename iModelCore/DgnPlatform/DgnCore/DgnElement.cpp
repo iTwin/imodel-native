@@ -1243,6 +1243,29 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
     adapter.GetRow(elementJson, true);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/18
+//---------------+---------------+---------------+---------------+---------------+------
+void DgnElement::_ToJsValue(Js::Object out, Js::Object opts) const
+    {    
+    Json::Value aOpts;
+    if (!opts.IsEmpty())
+        aOpts = opts.ToJson();
+
+    Json::Value aVal = ToJson(aOpts);
+    for (auto it = aVal.begin(); it != aVal.end(); ++it)
+        out[it.memberName()] = Js::Value::FromJson(out.Factory(), *it);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/18
+//---------------+---------------+---------------+---------------+---------------+------
+void DgnElement::_FromJsValue(Js::Object props)
+    {
+    Json::Value p = props.ToJson();
+    FromJson(p);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/

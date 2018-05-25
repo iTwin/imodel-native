@@ -130,6 +130,27 @@ void GeomDetail::SetCurvePrimitive(ICurvePrimitiveCP curve, TransformCP localToW
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
             {
+            MSBsplineCurveCP bcurve = curve->GetProxyBsplineCurveCP();
+
+            if (bcurve && 2 == bcurve->params.order) // An order 2 bspline curve should be treated as a linestring...
+                {
+                bvector<DPoint3d> poles;
+
+                bcurve->GetUnWeightedPoles(poles);
+
+                if (bcurve->params.closed)
+                    poles.push_back(poles.at(0));
+
+                m_primitive = ICurvePrimitive::CreateLineString(poles);
+                m_geomType  = HitGeomType::Segment;
+
+                CurvePrimitiveIdCP curveId = curve->GetId();
+
+                if (nullptr != curveId)
+                    m_primitive->SetId(curveId->Clone().get()); // Preserve curve topology id from source curve...
+                break;
+                }
+
             m_primitive = curve->Clone();
             m_geomType  = HitGeomType::Curve;
             break;
@@ -464,7 +485,8 @@ size_t GeomDetail::GetPointCount() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeomDetail::IsValidSurfaceHit() const
     {
-    return (HitGeomType::Surface == GetGeomType() && 0.0 != GetSurfaceNormal().Magnitude());
+//    return (HitGeomType::Surface == GetGeomType() && 0.0 != GetSurfaceNormal().Magnitude());
+    return 0.0 != GetSurfaceNormal().Magnitude();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -9,6 +9,7 @@
     <!-- ======================================================================================================================================== -->
 
     <Part Name="iModelNativeCorePRG" PrgOutputDir="iModelNativeCore">
+        <SubPart PartName="iModelNativeCore"/>
         <SubPart PartName="RunAllTests"/>
         <SubPart PartName="__ParasiteSubParts"/>
     </Part>
@@ -21,14 +22,13 @@
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
         <SubPart PartName="ECObjectsNative" PartFile="ECObjects" Repository="ECObjects"/>
+        <SubPart PartName="iModelNativeCoreSqlang" PartFile="iModelNativeCoreL10N"/>
     </Part>
 
     <Part Name="RunAllTests" DeferType="RunUnitTests"
             BentleyBuildMakeFile="${SrcRoot}iModelNative/iModelNativeCore/BeGTest/gtest/CheckLogfilesForFailures.mke"
             BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs +dAllowIgnore=1"
             >
-        <SubPart PartName="iModelNativeCore"/>
-
         <SubPart PartName="RunGtest" PartFile="BeHttp" Repository="BeHttp"/>
         <SubPart PartName="RunGtest" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="RunGtest" PartFile="BeSQLite" Repository="BeSQLite"/>
@@ -38,6 +38,15 @@
         <SubPart PartName="RunGtest" PartFile="ECPresentation" Repository="ECPresentation"/>
         <SubPart PartName="RunGtest" PartFile="geomlibs" Repository="GeomLibs"/>
         <SubPart PartName="RunGtest" PartFile="Units" Repository="Units"/>
+
+        <!-- These are built, but not run, due to time. -->
+        <SubProduct ProductName="GeoCoord-Gtest" PartFile="GeoCoord" Repository="GeoCoord"/>
+        
+        <SubPart PartName="PerformanceTests" PartFile="ECObjects" Repository="ecobjects"/>
+        <SubPart PartName="UnitTests-Performance" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="UnitTests-Performance" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="UnitTests-Performance" PartFile="ECDb" Repository="ECDb"/>
+        <SubPart PartName="UnitTests-PerformanceTest" PartFile="geomlibs" Repository="GeomLibs"/>
     </Part>
 
     <!-- ======================================================================================================================================== -->
@@ -51,12 +60,24 @@
     -->
     <Part Name="__ParasiteSubParts">
         <!-- Testing -->
+        <!-- .................................................................................. -->
         <SubPart PartName="Gtest-Tools" PartFile="BeGTest" Repository="BeGTest"/>
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock"/>
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest"/>
 
         <!-- For DgnClientSdk -->
+        <!-- .................................................................................. -->
         <SubProduct ProductName="IModelExtractor" PartFile="IModelExtractor" Repository="BeSQLite"/>
+        <SubProduct ProductName="iModelConsole" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        
+        <SubPart PartName="LoggingManagedInterop" PartFile="LoggingSDK" Repository="LoggingSDK"/>
+        <SubPart PartName="DgnPlatformExtractions" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="Docs" PartFile="ECPresentation" Repository="ECPresentation"/>
+
+        <SubPart PartName="NuGetPackage" PartFile="ecobjects" Repository="ecobjects"/>
+        <SubPart PartName="NuGetPackage" PartFile="ecdb" Repository="ECDb"/>
+        <SubPart PartName="NuGetPackage" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="NuGetPackage" PartFile="dgnplatform" Repository="DgnPlatform"/>
     </Part>
 
 </BuildContext>

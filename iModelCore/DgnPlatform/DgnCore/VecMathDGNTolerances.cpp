@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/VecMathDGNTolerances.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -65,9 +65,9 @@ RotMatrixCP rotMatrixP
 
     range.low = *low;
     range.high = *high;
-    bsiDRange3d_box2Points (&range, corner);
+    range.Get8Corners (corner);
     rotMatrixP->Multiply (corner, corner, 8);
-    bsiDRange3d_initFromArray (&range, corner, 8);
+    range.InitFrom(corner, 8);
     *low = range.low;
     *high = range.high;
     }

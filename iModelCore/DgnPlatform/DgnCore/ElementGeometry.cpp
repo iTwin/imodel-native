@@ -253,24 +253,26 @@ static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP trans
         return getRange(builder->GetClientMeshR(), range, transform);
         }
 
-    Transform originWithExtentVectors, centroidalLocalToWorld, centroidalWorldToLocal;
-
-    if (geom.TightPrincipalExtents(originWithExtentVectors, centroidalLocalToWorld, centroidalWorldToLocal, range))
-        {
-        centroidalLocalToWorld.Multiply(range, range);
-
-        if (nullptr != transform)
-            transform->Multiply(range, range);
-
-        return true;
-        }
-
     if (nullptr != transform)
         geom.GetPoleRange(range, *transform);
     else
         geom.GetPoleRange(range);
 
-   return true;
+    DRange3d    tightRange;
+    Transform   originWithExtentVectors, centroidalLocalToWorld, centroidalWorldToLocal;
+
+    if (geom.TightPrincipalExtents(originWithExtentVectors, centroidalLocalToWorld, centroidalWorldToLocal, tightRange))
+        {
+        tightRange.ScaleAboutCenter(tightRange, 1.2); // Pad range to make sure surface is fully inside range...
+        centroidalLocalToWorld.Multiply(tightRange, tightRange);
+
+        if (nullptr != transform)
+            transform->Multiply(tightRange, tightRange);
+
+        range = DRange3d::FromIntersection(range, tightRange); // Don't return a range that exceeds pole range in any direction...
+        }
+
+    return true;
     }
 
 /*----------------------------------------------------------------------------------*//**
