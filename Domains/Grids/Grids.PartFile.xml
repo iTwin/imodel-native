@@ -113,7 +113,7 @@
       <SubPart PartName="ConstraintSystem-Tested" Repository="DgnDomains-ConstraintSystem" PartFile="ConstraintSystem" />
     </Part>
 
-    <Part Name="Gtest-RunAggregator" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
+    <Part Name="Gtest-RunAggregator" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">
       <SubPart PartName="RunGtest"/>
     </Part>
 
@@ -131,7 +131,7 @@
       <Directories DirectoryListName="GridsGTestDirectories"/>
     </Product>
 
-    <Part Name="Grids-Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke"
+    <Part Name="Grids-Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke"
       BentleyBuildMakeOptions="-dTEST_NAME=GridsTest -dTEST_COLLECTION_PRODUCT=Grids-TestsProduct -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
       <SubProduct ProductName="Grids-TestsProduct"/>
       <SubPart PartName="DgnClientSdk-TestHelpers" Repository="DgnClientFx" PartFile="DgnClientFx"/>

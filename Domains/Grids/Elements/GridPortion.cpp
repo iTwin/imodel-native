@@ -167,6 +167,19 @@ Utf8CP  Grid::GetName() const
     return GetCode().GetValueUtf8CP();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void Grid::SetName
+(
+    Utf8String newName
+)
+    {
+    Dgn::DgnCode currentCode = GetCode();
+    Dgn::DgnCode newCode(currentCode.GetCodeSpecId(), currentCode.GetScopeElementId(GetDgnDb()), newName);
+    SetCode(newCode);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  11/17
 //---------------------------------------------------------------------------------------
@@ -285,7 +298,7 @@ bool createDimensions
             planeThis = gridPlane->GetPlane ();
             if (lastGridPlane.IsValid () && createDimensions)
                 {
-                DimensionHandler::Insert (GetDgnDb(), lastGridPlane->GetElementId (), gridPlane->GetElementId (), 0, 0, planeThis.normal, bsiDPlane3d_evaluate (&planeLast, &planeThis.origin));
+                DimensionHandler::Insert(GetDgnDb(), lastGridPlane->GetElementId(), gridPlane->GetElementId(), 0, 0, planeThis.normal, planeLast.Evaluate(planeThis.origin));
                 }
             planeLast = planeThis;
             lastGridPlane = gridPlane;
