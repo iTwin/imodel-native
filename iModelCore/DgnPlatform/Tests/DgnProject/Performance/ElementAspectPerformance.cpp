@@ -99,3 +99,127 @@ TEST_F (ElementAspectTests1, UniqueAspectPerformance_SimpleInsert)
     LogTiming (timer, "Insert Element Without Aspect", "TestElement", false, 0, count);
 }
 
+
+
+/*=================================================================================**//**
+* @bsiclass                                                     Taslim.Murad      05/18
++===============+===============+===============+===============+===============+======*/
+TEST_F (ElementAspectTests1, UniqueAspectPerformance_SimpleUpdate)
+{
+    SetupSeedProject ();
+    ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
+
+    //   update element without aspect
+    int const count = 1000;
+    TestElementPtr tempEl[count];
+    TestElementCPtr el[count];
+    for (int i = 1; i < count; i++) {
+        tempEl[i] = TestElement::Create (*m_db, m_defaultModelId, m_defaultCategoryId, ("TestElement"));
+        ASSERT_EQ (nullptr, DgnElement::UniqueAspect::GetAspect (*(tempEl[i]), aclass)) << "element should have no aspect";
+        tempEl[i]->SetUserLabel ("value");
+        el[i] = m_db->Elements ().Insert (*(tempEl[i]));
+        ASSERT_TRUE ((el[i]).IsValid ());
+    }
+
+    DgnDbStatus status;
+    StopWatch timer1 (true);
+    for (int i = 1; i < count; i++) {
+        tempEl[i]->SetUserLabel ("updated");
+        tempEl[i]->Update (&status);
+    }
+    timer1.Stop ();
+    LogTiming (timer1, "Update Element Without Aspect", "TestElement", false, count, count);
+}
+
+/*=================================================================================**//**
+* @bsiclass                                                     Taslim.Murad      05/18
+ +===============+===============+===============+===============+===============+======*/
+TEST_F (ElementAspectTests1, UniqueAspectPerformance_AspectUpdate)
+{
+    SetupSeedProject ();
+    ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
+
+    //   update element with aspect
+    int const count = 1000;
+    TestElementPtr tempEl[count];
+    TestElementCPtr el[count];
+    for (int i = 1; i < count; i++) {
+        tempEl[i] = TestElement::Create (*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement2");
+        DgnElement::UniqueAspect::SetAspect (*tempEl[i], *TestUniqueAspect::Create ("InitialValue"));
+        ASSERT_NE (nullptr, DgnElement::UniqueAspect::GetAspect (*tempEl[i], aclass)) << "element should have a scheduled aspect";
+        el[i] = m_db->Elements ().Insert (*(tempEl[i]));
+        ASSERT_TRUE ((el[i]).IsValid ());
+    }
+
+    TestElementPtr tempE3[count];
+    TestUniqueAspectP aspect[count];
+    for (int i = 1; i < count; i++) {
+        tempE3[i] = el[i]->MakeCopy<TestElement> ();
+        aspect[i] = DgnElement::UniqueAspect::GetP<TestUniqueAspect> (*tempE3[i], aclass);
+        ASSERT_EQ (aspect[i], DgnElement::UniqueAspect::GetP<TestUniqueAspect> (*tempE3[i], aclass)) << "GetP should return the same instance each time we call it";
+    }
+    StopWatch timer1 (true);
+    for (int i = 1; i < count; i++) {
+        aspect[i]->SetTestUniqueAspectProperty ("Changed Value");
+        ASSERT_TRUE (m_db->Elements ().Update (*tempE3[i]).IsValid ());
+    }
+    timer1.Stop ();
+    LogTiming (timer1, "Update Element With Aspect", "TestElement2", false, count, count);
+}
+
+
+/*=================================================================================**//**
+* @bsiclass                                                     Taslim.Murad      05/18
++===============+===============+===============+===============+===============+======*/
+TEST_F (ElementAspectTests1, UniqueAspectPerformance_SimpleDelete)
+{
+    SetupSeedProject ();
+    ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
+
+    //   delete element without aspect
+    int const count = 1000;
+    TestElementPtr tempEl[count];
+    TestElementCPtr el[count];
+    for (int i = 1; i < count; i++) {
+        tempEl[i] = TestElement::Create (*m_db, m_defaultModelId, m_defaultCategoryId, ("TestElement"));
+        ASSERT_EQ (nullptr, DgnElement::UniqueAspect::GetAspect (*(tempEl[i]), aclass)) << "element should have no aspect";
+        tempEl[i]->SetUserLabel ("value");
+        el[i] = m_db->Elements ().Insert (*(tempEl[i]));
+        ASSERT_TRUE ((el[i]).IsValid ());
+    }
+
+    StopWatch timer (true);
+    for (int i = 1; i < count; i++) {
+        tempEl[i]->Delete ();
+    }
+    timer.Stop ();
+    LogTiming (timer, "Delete Element Without Aspect", "TestElement", false, count, count);
+}
+
+/*=================================================================================**//**
+* @bsiclass                                                     Taslim.Murad      05/18
++===============+===============+===============+===============+===============+======*/
+TEST_F (ElementAspectTests1, UniqueAspectPerformance_AspectDelete)
+{
+    SetupSeedProject ();
+    ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
+
+    //  ... delete element with an aspect
+    int const count = 1000;
+    TestElementPtr tempEl[count];
+    TestElementCPtr el[count];
+    for (int i = 1; i < count; i++) {
+        tempEl[i] = TestElement::Create (*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement2");
+        DgnElement::UniqueAspect::SetAspect (*tempEl[i], *TestUniqueAspect::Create ("InitialValue"));
+        ASSERT_NE (nullptr, DgnElement::UniqueAspect::GetAspect (*tempEl[i], aclass)) << "element should have a scheduled aspect";
+        el[i] = m_db->Elements ().Insert (*(tempEl[i]));
+        ASSERT_TRUE ((el[i]).IsValid ());
+    }
+
+    StopWatch timer1 (true);
+    for (int i = 1; i < count; i++) {
+        tempEl[i]->Delete ();
+    }
+    timer1.Stop ();
+    LogTiming (timer1, "Delete Element With Aspect", "TestElement", false, count, count);
+}
