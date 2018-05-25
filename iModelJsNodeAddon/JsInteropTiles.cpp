@@ -74,7 +74,19 @@ DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR id
     if (DgnDbStatus::Success == status && !root->_ToJson(result))
         status = DgnDbStatus::NotFound;
 
-    return status;
+    auto rootTile = root->GetRootTile();
+    if (rootTile.IsNull())
+        return DgnDbStatus::NotFound;
+
+    TileTree::MissingNodes missing;
+    missing.Insert(*rootTile, true);
+    root->RequestTiles(missing, BeDuration());
+    root->WaitForAllLoads();
+
+    if (!rootTile->_ToJson(result["rootTile"]))
+        return DgnDbStatus::NotFound;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -87,20 +99,22 @@ DgnDbStatus JsInterop::GetTiles(JsonValueR result, DgnDbR db, Utf8StringCR treeI
     if (DgnDbStatus::Success != status)
         return status;
 
-    bvector<TileTree::TilePtr> tiles;
+    TileTree::MissingNodes missing;
     for (auto const& tileId : tileIds)
         {
         auto tile = root->_FindTileById(tileId.c_str());
         if (tile.IsValid())
-            tiles.push_back(tile);
+            missing.Insert(*tile, true);
         }
 
-    // ###TODO: Request the tiles so we have geometry...
+    root->RequestTiles(missing, BeDuration());
+    root->WaitForAllLoads();
+
     result = Json::arrayValue;
-    for (auto const& tile : tiles)
+    for (auto const& node : missing)
         {
         Json::Value tileJson;
-        if (tile->_ToJson(tileJson))
+        if (node->_ToJson(tileJson))
             result.append(tileJson);
         }
 
