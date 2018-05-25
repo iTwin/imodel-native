@@ -44,6 +44,10 @@ struct InteropSystem : Render::System
     Render::GraphicPtr _CreateBatch(Render::GraphicR graphic, Render::FeatureTable&& features, DRange3dCR range) const override { return new Render::Graphic(graphic.GetDgnDb()); }
 };
 
+// The TileTree maintains a pointer to the Render::System - it must be kept alive.
+// (It is entirely stateless so this is not a problem).
+InteropSystem s_system;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -59,8 +63,7 @@ static DgnDbStatus findTileTree(TileTree::RootP& root, Utf8StringCR idStr, DgnDb
     if (model.IsNull())
         return DgnDbStatus::MissingId;
 
-    InteropSystem system;
-    root = model->GetTileTree(&system);
+    root = model->GetTileTree(&s_system);
     return nullptr != root ? DgnDbStatus::Success : DgnDbStatus::NotFound;
     }
 
