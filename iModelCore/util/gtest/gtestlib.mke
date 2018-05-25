@@ -56,7 +56,7 @@ LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)
 
 # Tell dlmlink.mki where to point symbolic links
 ContextDeliveryDir  = $(BuildContext)Delivery/
-CCompPDBName = $(name)
+# CCompPDBName = $(name)
 
 always:
     ~mkdir $(DLM_LIB_CONTEXT_LOCATION)
