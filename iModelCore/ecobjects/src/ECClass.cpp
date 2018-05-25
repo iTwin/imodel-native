@@ -3502,18 +3502,45 @@ ECObjectsStatus ECRelationshipConstraint::ValidateMultiplicityConstraint(uint32_
             {
             resolveIssues &= m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0);
             LOG.messagev(resolveIssues? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
-                "Multiplicity Violation: The multiplicity (%" PRIu32 "..%" PRIu32 ") of the %s-constraint on %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
+                "Multiplicity Violation: The multiplicity (%" PRIu32 "..%" PRIu32 ") of the %s-constraint on %s is larger than the Multiplicity of its base class %s (%" PRIu32 "..%" PRIu32 ")",
                     lowerLimit, upperLimit, (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                     relationshipBaseClass->GetFullName(), baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit());
 
             if (!resolveIssues)
                 return ECObjectsStatus::RelationshipConstraintsNotCompatible;
 
-            // For legacy 2.0 schemas we change the base class constraint multiplicity to bigger derived class constraint in order for it to pass the validation rules.
-            LOG.warningv("The Multiplicity of %s's base class, %s, has been changed from (%" PRIu32 "..%" PRIu32 ") to (%" PRIu32 "..%" PRIu32 ") to conform to new relationship constraint rules.",
-                            m_relClass->GetFullName(), relationshipBaseClass->GetFullName(),
-                            baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit(), lowerLimit, upperLimit);
-            baseClassConstraint->SetMultiplicity(lowerLimit, upperLimit);
+            bool hasNav = false;
+            for (ECN::ECClassCP ecClass2 : relationshipBaseClass->GetSchema().GetClasses())
+                {
+                if (!ecClass2->IsEntityClass())
+                    continue;
+                for (ECN::ECPropertyCP prop : ecClass2->GetProperties(false))
+                    {
+                    ECN::NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
+                    if (nullptr == navProp)
+                        continue;
+                    if (navProp->GetRelationshipClass() == relationshipBaseClass)
+                        {
+                        hasNav = true;
+                        break;
+                        }
+                    }
+                if (hasNav)
+                    break;
+                }
+            if (hasNav)
+                {
+                ECRelationshipConstraintP nonConst = const_cast<ECRelationshipConstraintP>(this);
+                nonConst->SetMultiplicity(baseClassConstraint->GetMultiplicity());
+                }
+            else
+                {
+                // For legacy 2.0 schemas we change the base class constraint multiplicity to bigger derived class constraint in order for it to pass the validation rules.
+                LOG.warningv("The Multiplicity of %s's base class, %s, has been changed from (%" PRIu32 "..%" PRIu32 ") to (%" PRIu32 "..%" PRIu32 ") to conform to new relationship constraint rules.",
+                             m_relClass->GetFullName(), relationshipBaseClass->GetFullName(),
+                             baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit(), lowerLimit, upperLimit);
+                baseClassConstraint->SetMultiplicity(lowerLimit, upperLimit);
+                }
             }
         }
 
