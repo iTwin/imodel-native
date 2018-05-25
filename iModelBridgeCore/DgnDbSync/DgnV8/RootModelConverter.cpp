@@ -352,6 +352,9 @@ bool Converter::DoesRelationshipExist(Utf8StringCR relName, BeSQLite::EC::ECInst
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RootModelConverter::_ConvertSpatialViews()
     {
+    if (!IsFileAssignedToBridge(*GetRootV8File()))
+        return;
+
     if (IsUpdating())
         return;         // pity, but we don't have the logic to *update* previously converted views.
 
@@ -924,7 +927,10 @@ void RootModelConverter::ImportSpatialModels(bool& haveFoundSpatialRoot, DgnV8Mo
 void RootModelConverter::_ConvertSpatialLevels()
     {
     for (DgnV8FileP v8File : m_v8Files)
-        _ConvertSpatialLevelTable(*v8File);
+        {
+        if (IsFileAssignedToBridge(*v8File))
+            _ConvertSpatialLevelTable(*v8File);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -937,7 +943,10 @@ void RootModelConverter::_ConvertLineStyles()
         return;     //  the line style converter uses m_rootModel
 
     for (DgnV8FileP v8File : m_v8Files)
-        ConvertAllLineStyles(*v8File);
+        {
+        if (IsFileAssignedToBridge(*v8File))
+            ConvertAllLineStyles(*v8File);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1143,6 +1152,9 @@ void RootModelConverter::ConvertNamedGroupsAndECRelationships()
     //convert dictionary model named groups
     for (DgnV8FileP v8File : m_v8Files)
         {
+        if (!IsFileAssignedToBridge(*v8File))
+            continue;
+
         SetTaskName(Converter::ProgressMessage::TASK_CONVERTING_MODEL(), Converter::IssueReporter::FmtFileBaseName(*v8File).c_str());
 
         if (WasAborted())
@@ -1528,6 +1540,9 @@ BentleyApi::BentleyStatus RootModelConverter::ConvertECRelationships()
     //analyze named groups in dictionary models
     for (DgnV8FileP v8File : m_v8Files)
         {
+        if (!IsFileAssignedToBridge(*v8File))
+            continue;
+
         DgnV8ModelR dictionaryModel = v8File->GetDictionaryModel();
         if (std::find(visitedModels.begin(), visitedModels.end(), &dictionaryModel) == visitedModels.end())
             ConvertECRelationshipsInModel(dictionaryModel);
@@ -1621,6 +1636,9 @@ void RootModelConverter::_FinishConversion()
             // Detect deletions in the V8 files that we processed. (Don't assume we saw all V8 files.)
             for (DgnV8FileP v8File : m_v8Files)
                 {
+                if (!IsFileAssignedToBridge(*v8File))
+                    continue;
+
                 GetChangeDetector()._DetectDeletedElementsInFile(*this, *v8File);
                 GetChangeDetector()._DetectDeletedModelsInFile(*this, *v8File);    // NB: call this *after* DetectDeletedElements!
                 }
@@ -1631,6 +1649,8 @@ void RootModelConverter::_FinishConversion()
         // Update syncinfo for all V8 files *** WIP_UPDATER - really only need to update syncinfo for changed files, but we don't keep track of that.
         for (DgnFileP v8File : m_v8Files)
             {
+            if (!IsFileAssignedToBridge(*v8File))
+                continue;
             SyncInfo::V8FileProvenance prov(*v8File, GetSyncInfo(), GetCurrentIdPolicy());
             prov.Update();
             }
