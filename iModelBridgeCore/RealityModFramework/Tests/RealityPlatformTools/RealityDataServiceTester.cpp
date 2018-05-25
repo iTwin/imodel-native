@@ -1532,6 +1532,47 @@ TEST(TransferReport, XmlExport)
     EXPECT_THAT(report.c_str(), testing::HasSubstr(R"(<File FileName="MyName2" timeSpent="5" ToolCode="7" progress="0">    <Response ResponseCode="400" Header="SomeHeader"/>  </File>)"));
     }
 
+//=====================================================================================
+//! @bsimethod                                     Spencer.Mason              05/2018
+//=====================================================================================
+TEST(TransferReport, AllTransferredSuccessfully)
+    {
+    TransferReport transferReport{};
+
+    transferReport.transferSuccessMap["MyName"] = true;
+    transferReport.transferSuccessMap["MyName2"] = true;
+
+    EXPECT_TRUE(transferReport.AllTransferedSuccessfully());
+    }
+
+//=====================================================================================
+//! @bsimethod                                     Spencer.Mason              05/2018
+//=====================================================================================
+TEST(TransferReport, AllTransferredSuccessfullyFailure)
+    {
+    TransferReport transferReport{};
+
+    transferReport.transferSuccessMap["MyName"] = true;
+    transferReport.transferSuccessMap["MyName2"] = false;
+
+    EXPECT_FALSE(transferReport.AllTransferedSuccessfully());
+    }
+
+//=====================================================================================
+//! @bsimethod                                     Spencer.Mason              05/2018
+//=====================================================================================
+TEST(TransferReport, GetFailedTransferList)
+    {
+    TransferReport transferReport{};
+
+    transferReport.transferSuccessMap["MyName"] = true;
+    transferReport.transferSuccessMap["MyName2"] = false;
+
+    bvector<Utf8String> failedTransfers = transferReport.GetFailedTransferList();
+    EXPECT_EQ(failedTransfers.size(), 1);
+    EXPECT_STREQ(failedTransfers[0].c_str(), "MyName2");
+    }
+
 // No way to test those class yet.
 #if 0
 

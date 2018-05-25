@@ -1310,6 +1310,22 @@ bool TransferReport::AllTransferedSuccessfully() const
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
+bvector<Utf8String> TransferReport::GetFailedTransferList() const
+    {
+    bvector<Utf8String> failedTransfers = bvector<Utf8String>();
+    for (bmap<Utf8String, bool>::iterator iter = transferSuccessMap.begin(); iter != transferSuccessMap.end(); ++iter)
+        {
+        if (!iter->second)
+            {
+            failedTransfers.push_back(iter->first);
+            }
+        }
+    return failedTransfers;
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Spencer.Mason              02/2017
+//=====================================================================================
 void TransferReport::ToXml(Utf8StringR report) const
     {
     BeXmlWriterPtr writer = BeXmlWriter::Create();

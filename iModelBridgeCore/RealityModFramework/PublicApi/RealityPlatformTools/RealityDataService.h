@@ -895,6 +895,9 @@ struct TransferReport
     //! Returns whether every file has been properly transfered
     REALITYDATAPLATFORM_EXPORT bool AllTransferedSuccessfully() const;
 
+    //! Returns the list of failed transfers
+    REALITYDATAPLATFORM_EXPORT bvector<Utf8String> GetFailedTransferList() const;
+
     //! Writes the contents of each TranferResult as an attribute of and XML string
     REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report) const;
     };
