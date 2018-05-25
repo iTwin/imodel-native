@@ -47,8 +47,10 @@ struct InteropSystem : Render::System
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR idStr)
+static DgnDbStatus findTileTree(TileTree::RootP& root, Utf8StringCR idStr, DgnDbR db)
     {
+    root = nullptr;
+
     DgnModelId modelId(BeInt64Id::FromString(idStr.c_str()).GetValue());
     if (!modelId.IsValid())
         return DgnDbStatus::InvalidId;
@@ -58,10 +60,49 @@ DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR id
         return DgnDbStatus::MissingId;
 
     InteropSystem system;
-    TileTree::RootP root = model->GetTileTree(&system);
-    if (nullptr != root && root->_ToJson(result))
-        return DgnDbStatus::Success;
-    else
-        return DgnDbStatus::NotFound;
+    root = model->GetTileTree(&system);
+    return nullptr != root ? DgnDbStatus::Success : DgnDbStatus::NotFound;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus JsInterop::GetTileTree(JsonValueR result, DgnDbR db, Utf8StringCR idStr)
+    {
+    TileTree::RootP root = nullptr;
+    auto status = findTileTree(root, idStr, db);
+    if (DgnDbStatus::Success == status && !root->_ToJson(result))
+        status = DgnDbStatus::NotFound;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus JsInterop::GetTiles(JsonValueR result, DgnDbR db, Utf8StringCR treeIdStr, bvector<Utf8String> const& tileIds)
+    {
+    TileTree::RootP root = nullptr;
+    auto status = findTileTree(root, treeIdStr, db);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    bvector<TileTree::TilePtr> tiles;
+    for (auto const& tileId : tileIds)
+        {
+        auto tile = root->_FindTileById(tileId.c_str());
+        if (tile.IsValid())
+            tiles.push_back(tile);
+        }
+
+    // ###TODO: Request the tiles so we have geometry...
+    result = Json::arrayValue;
+    for (auto const& tile : tiles)
+        {
+        Json::Value tileJson;
+        if (tile->_ToJson(tileJson))
+            result.append(tileJson);
+        }
+
+    return DgnDbStatus::Success;
+    }
