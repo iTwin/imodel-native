@@ -14,894 +14,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct SnapGraphicsProcessor : IGeometryProcessor // NOT_NOW_WIP: Delete when SnapGeometryHelper supports all geometry types...
-{
-private:
-    
-    SnapContextR        m_snapContext;
-    CurveLocationDetail m_location;
-    bool                m_inProcessFace = false;
-
-protected:
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
-IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(MSBsplineSurfaceCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
-IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
-IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Curve;}
-IGeometryProcessor::UnhandledPreference _GetUnhandledPreference(TextStringCR, SimplifyGraphic&) const override {return IGeometryProcessor::UnhandledPreference::Box;}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CollectLateralRulePoints(CurveVectorCR curves, bvector<DPoint3d>& pts, int divisor, int closedDivisor)
-    {
-    switch (curves.HasSingleCurvePrimitive())
-        {
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
-            break;
-
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
-            {
-            DEllipse3dCP  ellipse = curves.front()->GetArcCP();
-            bool          fullArc = ellipse->IsFullEllipse();
-
-            if (fullArc)
-                divisor = closedDivisor;
-
-            for (int iRule = 0; iRule < divisor; ++iRule)
-                {
-                double    fraction = (1.0 / divisor) * iRule;
-                DPoint3d  point;
-
-                if (!fullArc && DoubleOps::AlmostEqual(fraction, 0.0))
-                    continue;
-
-                ellipse->FractionParameterToPoint(point, fraction);
-                pts.push_back(point);
-                }
-            break;
-            }
-
-        default:
-            {
-            MSBsplineCurveCP  bcurve = curves.front()->GetProxyBsplineCurveCP();
-
-            if (nullptr == bcurve)
-                break;
-
-            if (bcurve->IsClosed())
-                divisor = closedDivisor;
-
-            for (int iRule = 0; iRule < divisor; ++iRule)
-                {
-                double    fraction = (1.0 / divisor) * iRule;
-                DPoint3d  point;
-
-                if (!bcurve->IsClosed() && DoubleOps::AlmostEqual(fraction, 0.0))
-                    continue;
-
-                bcurve->FractionToPoint(point, fraction);
-                pts.push_back(point);
-                }
-            break;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ComputeRuleArc(DEllipse3dR ellipse, DPoint3dCR startPt, DPoint3dCR originPt, double sweepAngle, TransformCR transform, RotMatrixCR axes, RotMatrixCR invAxes, double ruleTolerance)
-    {
-    DPoint3d    endPt, centerPt, tmpPt;
-
-    transform.Multiply(&endPt, &startPt, 1);
-    centerPt = originPt;
-
-    tmpPt = startPt;
-    axes.Multiply(tmpPt);
-    axes.Multiply(centerPt);
-    centerPt.z = tmpPt.z;
-
-    DVec3d      xVec, yVec, zVec;
-    RotMatrix   rMatrix;
-
-    zVec.Init(0.0, 0.0, 1.0);
-    xVec.NormalizedDifference(tmpPt, centerPt);
-    yVec.CrossProduct(zVec, xVec);
-    rMatrix.InitFromColumnVectors(xVec, yVec, zVec);
-    rMatrix.InitProduct(invAxes, rMatrix);
-    axes.MultiplyTranspose(centerPt);
-
-    double  radius = centerPt.Distance(startPt);
-
-    if (radius < ruleTolerance)
-        return false;
-
-    ellipse.InitFromScaledRotMatrix(centerPt, rMatrix, radius, radius, 0.0, sweepAngle);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TestArcCenter(ICurvePrimitiveCR primitive, SimplifyGraphic& graphic)
-    {
-    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != primitive.GetCurvePrimitiveType())
-        return false;
-
-    DEllipse3dCP arc = primitive.GetArcCP();
-
-    if (fabs(arc->sweep) < Angle::PiOver2())
-        return false;
-
-    Transform   localToWorld = graphic.GetLocalToWorldTransform();
-    Transform   worldToLocal;
-    DPoint3d    spacePointLocal;
-
-    worldToLocal.InverseOf(localToWorld);
-    worldToLocal.Multiply(&spacePointLocal, &m_snapContext.GetSnapDetail()->GetGeomDetail().GetClosestPoint(), 1);
-
-    CurveLocationDetail location(&primitive, 0.0, arc->center, 0, 1, 0.0, spacePointLocal.Distance(arc->center));
-
-    // NOTE: m_location.curve becomes invalid when curvesLocal goes away...we only care about "a" and whether it's nullptr, so that's fine...
-    if (nullptr == m_location.curve)
-        m_location = location;
-    else if (!m_location.UpdateIfCloser(location))
-        return false;
-
-    // NOTE: Set curve primitive to arc with geometry type as point to denote arc center...
-    m_snapContext.GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(m_location.curve, &localToWorld, HitGeomType::Point);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TestCurveLocation(CurveVectorCR curvesLocal, SimplifyGraphic& graphic)
-    {
-    Transform   localToWorld = graphic.GetLocalToWorldTransform();
-    Transform   worldToLocal;
-    DPoint3d    spacePointLocal;
-
-    worldToLocal.InverseOf(localToWorld);
-    worldToLocal.Multiply(&spacePointLocal, &m_snapContext.GetSnapDetail()->GetGeomDetail().GetClosestPoint(), 1);
-
-    CurveLocationDetail location;
-
-    if (!curvesLocal.ClosestPointBounded(spacePointLocal, location))
-        return false;
-
-    // Process components for arc centers...
-    graphic.ProcessAsCurvePrimitives(curvesLocal, false);
-
-    // NOTE: m_location.curve becomes invalid when curvesLocal goes away...we only care about "a" and whether it's nullptr, so that's fine...
-    if (nullptr == m_location.curve)
-        m_location = location;
-    else if (!m_location.UpdateIfCloser(location))
-        return false;
-
-    m_snapContext.GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(m_location.curve, &localToWorld, HitGeomType::Surface);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool _ProcessCurvePrimitive(ICurvePrimitiveCR primitive, bool closed, bool filled, SimplifyGraphic& graphic) override
-    {
-    TestArcCenter(primitive, graphic);
-
-    return (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != primitive.GetCurvePrimitiveType());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& graphic) override
-    {
-    TestCurveLocation(curves, graphic);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool _ProcessSolidPrimitive(ISolidPrimitiveCR primitive, SimplifyGraphic& graphic) override
-    {
-    int divisorU = m_snapContext.GetSnapDivisor();
-    int divisorV = divisorU;
-
-    switch (primitive.GetSolidPrimitiveType())
-        {
-        case SolidPrimitiveType_DgnTorusPipe:
-            {
-            DgnTorusPipeDetail  detail;
-
-            if (!primitive.TryGetDgnTorusPipeDetail(detail))
-                return true;
-
-            divisorU = 4; // Don't think other arcs are very useful snap locations...avoid clutter and just output every 90 degrees...
-
-            for (int uRule = 0; uRule < divisorU; ++uRule)
-                {
-                double          uFraction = (1.0 / divisorU) * uRule;
-                CurveVectorPtr  curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(detail.UFractionToVSectionDEllipse3d(uFraction)));
-
-                TestCurveLocation(*curve, graphic);
-                }
-
-            bool  fullTorus = Angle::IsFullCircle(detail.m_sweepAngle);
-
-            if (fullTorus)
-                divisorV *= 2;
-
-            for (int vRule = 0; vRule <= divisorV; ++vRule)
-                {
-                double vFraction = (1.0 / divisorV) * vRule;
-
-                if (fullTorus && DoubleOps::AlmostEqual(vFraction, 1.0))
-                    continue; // Don't duplicate first arc for a full torus...
-
-                CurveVectorPtr  curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction)));
-
-                TestCurveLocation(*curve, graphic);
-                }
-
-            return true;
-            }
-
-        case SolidPrimitiveType_DgnCone:
-            {
-            DgnConeDetail  detail;
-
-            if (!primitive.TryGetDgnConeDetail(detail))
-                return true;
-
-            DEllipse3d ellipse1;
-
-            if (detail.FractionToSection(0.0, ellipse1))
-                {
-                CurveVectorPtr  curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(ellipse1));
-
-                TestCurveLocation(*curve, graphic);
-                }
-
-            DEllipse3d ellipse2;
-
-            if (detail.FractionToSection(1.0, ellipse2))
-                {
-                CurveVectorPtr  curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(ellipse2));
-
-                TestCurveLocation(*curve, graphic);
-                }
-
-            divisorV *= 2;
-
-            for (int vRule = 0; vRule < divisorV; ++vRule)
-                {
-                double      vFraction = (1.0 / divisorV) * vRule;
-                DSegment3d  segment;
-
-                if (!detail.FractionToRule(vFraction, segment))
-                    continue;
-
-                CurveVectorPtr  curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(segment));
-
-                TestCurveLocation(*curve, graphic);
-                }
-            
-            DSegment3d  silhouette[2];
-
-            // NOTE: MicroStation's type 23 cone element always allowed it's silhouettes to be located/snapped to...continue doing so for historical reasons but with one caveat.
-            //       The center of the cursor *must* be over the cone face to actually identify it and not just within locate tolerance. This behavior difference is because we
-            //       no longer locate elements their silhouettes in PickContext (would need to do this using the mesh tiles or something in order to support all geometry types)...
-            if (detail.GetSilhouettes(silhouette[0], silhouette[1], graphic.GetViewToLocal()))
-                {
-                for (int iSilhouette = 0; iSilhouette < 2; ++iSilhouette)
-                    {
-                    if (0.0 == silhouette[iSilhouette].Length())
-                        continue;
-
-                    CurveVectorPtr  curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(silhouette[iSilhouette]));
-
-                    TestCurveLocation(*curve, graphic);
-                    }
-                }
-
-            return true;
-            }
-
-        case SolidPrimitiveType_DgnSphere:
-            {
-            DgnSphereDetail  detail;
-
-            if (!primitive.TryGetDgnSphereDetail(detail))
-                return true;
-
-            divisorU *= 2;
-
-            for (int uRule = 0; uRule < divisorU; ++uRule)
-                {
-                double          uFraction = (1.0 / divisorU) * uRule;
-                CurveVectorPtr  curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(detail.UFractionToVSectionDEllipse3d(uFraction)));
-
-                TestCurveLocation(*curve, graphic);
-                }
-
-            double latitude0, latitude1, z0, z1;
-            bool   fullSphere = !detail.GetSweepLimits(latitude0, latitude1, z0, z1);
-
-            if (fullSphere)
-                divisorV = 2; // Don't think other arcs are very useful snap locations...avoid clutter and just output equator...
-
-            double vFraction0 = detail.LatitudeToVFraction(latitude0);
-            double vFraction1 = detail.LatitudeToVFraction(latitude1);
-
-            for (int vRule = 0; vRule <= divisorV; ++vRule)
-                {
-                double vFraction = vFraction0 + (((vFraction1 - vFraction0) / divisorV) * vRule);
-
-                if (fullSphere && (DoubleOps::AlmostEqual(vFraction, 0.0) || DoubleOps::AlmostEqual(vFraction, 1.0)))
-                    continue; // Don't generate 0 radius arcs at top/bottom of full sphere...
-
-                CurveVectorPtr  curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction)));
-
-                TestCurveLocation(*curve, graphic);
-                }
-
-            return true;
-            }
-
-        case SolidPrimitiveType_DgnExtrusion:
-            {
-            if (!m_inProcessFace)
-                break;
-
-            DgnExtrusionDetail  detail;
-
-            if (!primitive.TryGetDgnExtrusionDetail(detail))
-                return true;
-
-            bvector<DPoint3d> pts;
-
-            CollectLateralRulePoints(*detail.m_baseCurve, pts, divisorU, divisorU * 2);
-
-            for (size_t iPt = 0; iPt < pts.size(); ++iPt)
-                {
-                DSegment3d      segment = DSegment3d::FromOriginAndDirection(pts[iPt], detail.m_extrusionVector);
-                CurveVectorPtr  curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(segment));
-
-                TestCurveLocation(*curve, graphic);
-                }
-
-            return false; // Output face edges...
-            }
-
-        case SolidPrimitiveType_DgnRotationalSweep:
-            {
-            if (!m_inProcessFace)
-                break;
-
-            DgnRotationalSweepDetail  detail;
-
-            if (!primitive.TryGetDgnRotationalSweepDetail(detail))
-                return true;
-
-            bvector<DPoint3d> pts;
-
-            CollectLateralRulePoints(*detail.m_baseCurve, pts, divisorU, 4); // Avoid clutter and just output every 90 degrees for closed face (i.e. rotational sweep is a torus)...
-
-            RotMatrix   axes, invAxes, tmpRMatrix;
-            Transform   transform;
-
-            invAxes.InitFrom1Vector(detail.m_axisOfRotation.direction, 2, true);
-            axes.TransposeOf(invAxes);
-
-            tmpRMatrix.InitFromPrincipleAxisRotations(axes, 0.0, 0.0, detail.m_sweepAngle);
-            tmpRMatrix.InitProduct(invAxes, tmpRMatrix);
-            transform.From(tmpRMatrix, detail.m_axisOfRotation.origin);
-
-            for (size_t iPt = 0; iPt < pts.size(); ++iPt)
-                {
-                DEllipse3d  ellipse;
-
-                if (!ComputeRuleArc(ellipse, pts.at(iPt), detail.m_axisOfRotation.origin, detail.m_sweepAngle, transform, axes, invAxes, 1.0e-8))
-                    continue;
-
-                CurveVectorPtr  curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateArc(ellipse));
-
-                TestCurveLocation(*curve, graphic);
-                }
-
-            bool  fullRevolve = Angle::IsFullCircle(detail.m_sweepAngle);
-
-            if (fullRevolve)
-                divisorV *= 2;
-
-            for (int vRule = 0; vRule < divisorV; ++vRule)
-                {
-                double vFraction = (1.0 / divisorV) * vRule;
-
-                if (!fullRevolve && DoubleOps::AlmostEqual(vFraction, 0.0))
-                    continue;
-
-                CurveVectorPtr  curve = detail.VFractionToProfile(vFraction);
-
-                if (curve.IsValid())    
-                    TestCurveLocation(*curve, graphic);
-                }
-
-            return false; // Output face edges...
-            }
-            
-        case SolidPrimitiveType_DgnRuledSweep:
-            {
-            if (!m_inProcessFace)
-                break;
-
-            DgnRuledSweepDetail detail;
-    
-            if (!primitive.TryGetDgnRuledSweepDetail(detail))
-                return true;
-
-            for (size_t iProfile = 0; iProfile < detail.m_sectionCurves.size()-1; ++iProfile)
-                {
-                bvector<DPoint3d> rulePts1;
-                bvector<DPoint3d> rulePts2;
-
-                CollectLateralRulePoints(*detail.m_sectionCurves.at(iProfile), rulePts1, divisorU, divisorU * 2);
-                CollectLateralRulePoints(*detail.m_sectionCurves.at(iProfile+1), rulePts2, divisorU, divisorU * 2);
-
-                if (rulePts1.size() != rulePts2.size())
-                    {
-                    if (1 == rulePts2.size()) // Special case to handle zero scale in both XY...
-                        rulePts2.insert(rulePts2.end(), rulePts1.size()-1, rulePts2.front());
-                    else
-                        rulePts1.clear(); rulePts2.clear();;
-                    }
-
-                for (size_t iRule = 0; iRule < rulePts1.size(); ++iRule)
-                    {
-                    DSegment3d      segment = DSegment3d::From(rulePts1.at(iRule), rulePts2.at(iRule));
-                    CurveVectorPtr  curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(segment));
-
-                    TestCurveLocation(*curve, graphic);
-                    }
-                }
-
-            return false; // Output face edges...
-            }
-        }
-
-    // Find selected face and output the u/v rules just for that face...
-    Transform   worldToLocal;
-    DPoint3d    spacePointLocal;
-
-    worldToLocal.InverseOf(graphic.GetLocalToWorldTransform());
-    worldToLocal.Multiply(&spacePointLocal, &m_snapContext.GetSnapDetail()->GetGeomDetail().GetClosestPoint(), 1);
-
-    SolidLocationDetail location;
-
-    if (!primitive.ClosestPoint(spacePointLocal, location))
-        return true;
-
-    IGeometryPtr faceGeom = primitive.GetFace(location.GetFaceIndices());
-
-    if (!faceGeom.IsValid())
-        return true;
-
-    switch (faceGeom->GetGeometryType())
-        {
-        case IGeometry::GeometryType::CurveVector:
-            {
-            CurveVectorPtr  faceCurves = faceGeom->GetAsCurveVector();
-
-            if (faceCurves.IsValid())
-                TestCurveLocation(*faceCurves, graphic);
-            break;
-            }
-
-        case IGeometry::GeometryType::SolidPrimitive:
-            {
-            ISolidPrimitivePtr facePrimitive = faceGeom->GetAsISolidPrimitive();
-
-            if (!facePrimitive.IsValid())
-                break;
-
-            AutoRestore<bool> saveInProcessFace(&m_inProcessFace, true);
-            graphic.AddSolidPrimitive(*facePrimitive);
-            break;
-            }
-
-        case IGeometry::GeometryType::BsplineSurface:
-            {
-            MSBsplineSurfacePtr faceSurface = faceGeom->GetAsMSBsplineSurface();
-
-            if (!faceSurface.IsValid())
-                break;
-
-            AutoRestore<bool> saveInProcessFace(&m_inProcessFace, true);
-            graphic.AddBSplineSurface(*faceSurface);
-            break;
-            }
-
-        default:
-            {
-            BeAssert(false);
-            break;
-            }
-        }
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& graphic) override
-    {
-    if (!surface.uParams.closed || !surface.vParams.closed)
-        {
-        CurveVectorPtr curves = surface.GetUnstructuredBoundaryCurves(0.0, true, true);
-
-        if (curves.IsValid())
-            TestCurveLocation(*curves, graphic);
-        }
-
-    // NOTE: Use current keypoint snap divisor to produce uv rule curves to evaluate snap mode on...
-    Transform   worldToLocal;
-    DPoint3d    spacePointLocal;
-
-    worldToLocal.InverseOf(graphic.GetLocalToWorldTransform());
-    worldToLocal.Multiply(&spacePointLocal, &m_snapContext.GetSnapDetail()->GetGeomDetail().GetClosestPoint(), 1);
-
-    DPoint3d    surfacePoint;
-    DPoint2d    surfaceUV;
-
-    surface.ClosestPoint(surfacePoint, surfaceUV, spacePointLocal);
-
-    int divisorU = m_snapContext.GetSnapDivisor();
-    int divisorV = divisorU;
-
-    // NOTE: For closed directions we want more key points...
-    if (surface.uParams.closed)
-        divisorU *= 2;
-
-    if (surface.vParams.closed)
-        divisorV *= 2;
-        
-    int     keyFactorU = int ((surfaceUV.x / 1.0) * (double) divisorU + 0.5);
-    int     keyFactorV = int ((surfaceUV.y / 1.0) * (double) divisorV + 0.5);
-    double  keyParamU = (keyFactorU / (double) divisorU);
-    double  keyParamV = (keyFactorV / (double) divisorV);
-
-    if (surface.uParams.closed || (!DoubleOps::AlmostEqual(keyParamU, 0.0) && !DoubleOps::AlmostEqual(keyParamU, 1.0)))
-        {
-        bvector<MSBsplineCurvePtr> segmentsU;
-
-        surface.GetIsoUCurveSegments(keyParamU, segmentsU);
-
-        for (MSBsplineCurvePtr& isoCurveU : segmentsU)
-            {
-            CurveVectorPtr curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurveSwapFromSource(*isoCurveU));
-
-            TestCurveLocation(*curve, graphic);
-            }
-        }
-
-    if (surface.vParams.closed || (!DoubleOps::AlmostEqual(keyParamV, 0.0) && !DoubleOps::AlmostEqual(keyParamV, 1.0)))
-        {
-        bvector<MSBsplineCurvePtr> segmentsV;
-
-        surface.GetIsoVCurveSegments(keyParamV, segmentsV);
-
-        for (MSBsplineCurvePtr& isoCurveV : segmentsV)
-            {
-            CurveVectorPtr curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateBsplineCurveSwapFromSource(*isoCurveV));
-
-            TestCurveLocation(*curve, graphic);
-            }
-        }
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool _ProcessPolyface(PolyfaceQueryCR meshData, bool isFilled, SimplifyGraphic& graphic) override
-    {
-    if (m_inProcessFace)
-        return false; // Process single face using unhandled preference...
-
-    PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(meshData);
-    double              tolerance = 1.0e-5;
-
-    visitor->SetNumWrap(1);
-
-    DPoint3d    spacePointLocal;
-    Transform   worldToLocal;
-
-    worldToLocal.InverseOf(graphic.GetLocalToWorldTransform());
-    worldToLocal.Multiply(&spacePointLocal, &m_snapContext.GetSnapDetail()->GetGeomDetail().GetClosestPoint(), 1);
-
-    for (; visitor->AdvanceToNextFace();)
-        {
-        DPoint3d thisFacePoint;
-
-        if (!visitor->TryFindCloseFacetPoint(spacePointLocal, tolerance, thisFacePoint))
-            continue;
-
-        // Get a "face" containing this facet, a single facet when there are hidden edges isn't what someone would consider a face...
-        bvector<ptrdiff_t> seedReadIndices;
-        bvector<ptrdiff_t> allFaceBlocks;
-        bvector<ptrdiff_t> activeReadIndexBlocks;
-    
-        meshData.PartitionByConnectivity(2, allFaceBlocks);
-        seedReadIndices.push_back(visitor->GetReadIndex());
-        PolyfaceHeader::SelectBlockedIndices(allFaceBlocks, seedReadIndices, true, activeReadIndexBlocks);
-
-        bvector<PolyfaceHeaderPtr> perFacePolyfaces;
-
-        meshData.CopyPartitions(activeReadIndexBlocks, perFacePolyfaces);
-
-        if (0 != perFacePolyfaces.size())
-            {
-            AutoRestore<bool> saveInProcessFace(&m_inProcessFace, true);
-            graphic.AddPolyface(*perFacePolyfaces.front());
-            }
-
-        break;
-        }
-
-    return true;
-    }
-
-#if defined (BENTLEYCONFIG_PARASOLID)
-/*=================================================================================**//**
-* @bsiclass                                                     Brien.Bastings  11/17
-+===============+===============+===============+===============+===============+======*/
-struct BRepFaceHatchProcessor : IParasolidWireOutput
-    {
-    SnapGraphicsProcessor&  m_processor;
-    SimplifyGraphic&        m_graphic;
-    Transform               m_entityTransform;
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                    BrienBastings   11/2017
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    BentleyStatus _ProcessGoOutput(ICurvePrimitiveCR hatchCurve, PK_ENTITY_t entityTag)
-        {
-        CurveVectorPtr curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, hatchCurve.Clone());
-
-        curve->TransformInPlace(m_entityTransform);
-        m_processor.TestCurveLocation(*curve, m_graphic);
-
-        return (m_processor.m_snapContext._CheckStop() ? ERROR : SUCCESS);
-        }
-
-    BRepFaceHatchProcessor(SnapGraphicsProcessor& processor, SimplifyGraphic& graphic, TransformCR entityTransform) : m_processor(processor), m_graphic(graphic), m_entityTransform(entityTransform) {}
-
-    }; // BRepFaceHatchProcessor
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool _ProcessBody(IBRepEntityCR entity, SimplifyGraphic& graphic) override
-    {
-    if (IBRepEntity::EntityType::Wire == entity.GetEntityType())
-        return false; // Output edge geometry...
-
-    Transform   worldToLocal;
-    DPoint3d    spacePointLocal;
-
-    worldToLocal.InverseOf(graphic.GetLocalToWorldTransform());
-    worldToLocal.Multiply(&spacePointLocal, &m_snapContext.GetSnapDetail()->GetGeomDetail().GetClosestPoint(), 1);
-
-    ISubEntityPtr closeEntity = BRepUtil::ClosestSubEntity(entity, spacePointLocal);
-
-    if (!closeEntity.IsValid())
-        return true;
-
-    switch (closeEntity->GetSubEntityType())
-        {
-        case ISubEntity::SubEntityType::Edge:
-        case ISubEntity::SubEntityType::Vertex:
-            {
-            GeometricPrimitiveCPtr geom = closeEntity->GetGeometry();
-
-            if (geom.IsValid() && GeometricPrimitive::GeometryType::CurvePrimitive == geom->GetGeometryType())
-                {
-                CurveVectorPtr curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, geom->GetAsICurvePrimitive());
-
-                TestCurveLocation(*curve, graphic);
-                }
-
-            return true;
-            }
-
-        case ISubEntity::SubEntityType::Face:
-            {
-            CurveVectorPtr faceCurves = BRepUtil::Create::PlanarFaceToCurveVector(*closeEntity);
-
-            if (faceCurves.IsValid())
-                {
-                TestCurveLocation(*faceCurves, graphic);
-
-                return true;
-                }
-
-            break;
-            }
-        }
-
-    int divisor = m_snapContext.GetSnapDivisor();
-
-    BRepFaceHatchProcessor output(*this, graphic, entity.GetEntityTransform());
-
-    PSolidGoOutput::ProcessFaceHatching(output, divisor, PSolidSubEntity::GetSubEntityTag(*closeEntity));
-
-    bvector<ISubEntityPtr> faceEdges;
-
-    if (SUCCESS != BRepUtil::GetFaceEdges(faceEdges, *closeEntity))
-        return true;
-
-    for (ISubEntityPtr& edge : faceEdges)
-        {
-        if (m_snapContext._CheckStop())
-            return true;
-
-        GeometricPrimitiveCPtr geom = edge->GetGeometry();
-
-        if (!geom.IsValid() || GeometricPrimitive::GeometryType::CurvePrimitive != geom->GetGeometryType())
-            continue;
-
-        CurveVectorPtr curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, geom->GetAsICurvePrimitive());
-
-        TestCurveLocation(*curve, graphic);
-        }
-
-    return true;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void _OutputGraphics(ViewContextR context) override
-    {
-    SnapDetailP      snap = m_snapContext.GetSnapDetail();
-    DgnElementCPtr   element = snap->GetElement();
-    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
-
-    if (nullptr == source)
-        {
-        IElemTopologyCP elemTopo = snap->GetElemTopology();
-        if (nullptr == (source = (nullptr != elemTopo ? elemTopo->_ToGeometrySource() : nullptr)))
-            return;
-        }
-
-    // Attach viewport from snap context for cone silhouettes...
-    context.Attach(m_snapContext.GetViewport(), _GetProcessPurpose());
-
-    // Get the geometry for this hit from the GeometryStream...
-    GeometryCollection collection(*source);
-    Render::GraphicBuilderPtr graphic;
-
-    GeometryStreamEntryId snapElemEntryId = snap->GetGeomDetail().GetGeometryStreamEntryId();
-    GeometryStreamEntryId snapPartEntryId = snap->GetGeomDetail().GetGeometryStreamEntryId(true);
-
-    for (auto iter : collection)
-        {
-        // Quick exclude of geometry that didn't generate the hit...
-        if (snapElemEntryId != iter.GetGeometryStreamEntryId())
-            continue;
-
-        GeometricPrimitivePtr geom;
-
-        if (nullptr != source && GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType())
-            {
-            IBRepEntityPtr entity = BRepDataCache::FindCachedBRepEntity(*element, snapElemEntryId);
-
-            if (entity.IsValid())
-                geom = GeometricPrimitive::Create(entity);
-            }
-
-        if (!geom.IsValid())
-            geom = iter.GetGeometryPtr();
-
-        if (geom.IsValid())
-            {
-            if (!graphic.IsValid())
-                graphic = context.CreateSceneGraphic(iter.GetGeometryToWorld());
-
-            geom->AddToGraphic(*graphic);
-
-            if (iter.IsBRepPolyface())
-                continue; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
-            break;
-            }
-
-        DgnGeometryPartCPtr geomPart = iter.GetGeometryPartCPtr();
-
-        if (!geomPart.IsValid())
-            return; // Shouldn't happen...
-
-        GeometryCollection partCollection(geomPart->GetGeometryStream(), context.GetDgnDb());
-
-        partCollection.SetNestedIteratorContext(iter); // Iterate part GeomStream in context of parent...
-
-        for (auto partIter : partCollection)
-            {
-            // Quick exclude of part geometry that didn't generate the hit...pass true to compare part geometry index...
-            if (snapPartEntryId != partIter.GetGeometryStreamEntryId())
-                continue;
-
-            GeometricPrimitivePtr partGeom;
-
-            if (GeometryCollection::Iterator::EntryType::BRepEntity == partIter.GetEntryType())
-                {
-                IBRepEntityPtr entity = BRepDataCache::FindCachedBRepEntity(*geomPart, snapPartEntryId);
-
-                if (entity.IsValid())
-                    partGeom = GeometricPrimitive::Create(entity);
-                }
-
-            if (!partGeom.IsValid())
-                partGeom = partIter.GetGeometryPtr();                
-
-            if (!partGeom.IsValid())
-                continue;
-
-            if (!graphic.IsValid())
-                graphic = context.CreateSceneGraphic(partIter.GetGeometryToWorld());
-
-            partGeom->AddToGraphic(*graphic);
-
-            if (partIter.IsBRepPolyface())
-                continue; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
-            break;
-            }
-
-        break; // Done with part...
-        }
-    }
-
-public:
-
-SnapGraphicsProcessor(SnapContextR snapContext) : m_snapContext(snapContext) {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool DoSnapUsingClosestCurve(SnapContextR snapContext)
-    {
-    SnapGraphicsProcessor processor(snapContext);
-
-    GeometryProcessor::Process(processor, snapContext.GetDgnDb());
-
-    if (nullptr == snapContext.GetSnapDetail()->GetGeomDetail().GetCurvePrimitive())
-        return false; // No edge found...
-
-    return (SnapStatus::Success == snapContext.DoSnapUsingCurve(snapContext.GetSnapMode()) ? true : false);
-    }
-
-}; // SnapGraphicsProcessor
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct SnapGeometryHelper // NEEDSWORK: Include "off" sub-categories and ViewFlags...can we ignore snappable patterns/linestyles in imodel-js?
+struct SnapGeometryHelper
 {
 private:
 
@@ -910,12 +23,21 @@ int                     m_snapDivisor;
 double                  m_snapAperture;
 DPoint3d                m_closePtWorld;
 DMap4d                  m_worldToView;
+CheckStop*              m_stopTester = nullptr;
 
 GeometricPrimitivePtr   m_hitGeom;
 Transform               m_hitLocalToWorld = Transform::FromIdentity();
+GeometryParams          m_hitParams;
 GeometryStreamEntryId   m_hitEntryId;
 CurveLocationDetail     m_hitCurveDetail;
+DVec3d                  m_hitNormalLocal = DVec3d::FromZero();
 HitGeomType             m_hitGeomType = HitGeomType::None;
+
+DPoint3d                m_hitClosePtLocal;
+Transform               m_hitWorldToLocal;
+DMap4d                  m_hitLocalToView;
+double                  m_hitDistanceView;
+ICurvePrimitivePtr      m_hitCurveDerived;
 
 protected:
 
@@ -927,18 +49,9 @@ bool EvaluateInterior()
     if (!m_hitGeom.IsValid() || m_hitGeom->IsWire())
         return false;
 
-    Transform   worldToLocal;
-
-    worldToLocal.InverseOf(m_hitLocalToWorld);
-
-    DMatrix4d   viewToLocal = GetViewToLocal(worldToLocal);
-    DMatrix4d   localToView;
-
-    localToView.QrInverseOf(viewToLocal);
-
     // NOTE: Nearest snap tracks surface when edge not within locate aperture...
-    bool        useSpacePt = (HitGeomType::Point != m_hitGeomType && SnapMode::Nearest == m_snapMode && m_hitCurveDetail.a > m_snapAperture);
-    DPoint3d    localPoint = (useSpacePt ? GetSpacePointLocal(worldToLocal) : m_hitCurveDetail.point);
+    bool        interiorPt = (HitGeomType::Point != m_hitGeomType && SnapMode::Nearest == m_snapMode && m_hitDistanceView > m_snapAperture);
+    DPoint3d    localPoint = interiorPt ? m_hitClosePtLocal : m_hitCurveDetail.point;
 
     switch (m_hitGeom->GetGeometryType())
         {
@@ -947,30 +60,187 @@ bool EvaluateInterior()
             CurveVectorCR curves = *m_hitGeom->GetAsCurveVector();
 
             if (!curves.IsAnyRegionType())
-                break;
+                return false;
 
             SolidLocationDetail solidDetail;
-            DRay3d boresite = GetBoresite(localPoint, viewToLocal);
+            DRay3d boresite = GetBoresite(localPoint, m_hitLocalToView.M1);
 
             CurveVector::InOutClassification result = curves.RayPierceInOnOut(boresite, solidDetail);
 
-            if (CurveVector::InOutClassification::INOUT_In == result || CurveVector::InOutClassification::INOUT_On == result)
+            if (CurveVector::InOutClassification::INOUT_In != result && CurveVector::InOutClassification::INOUT_On != result)
+                return false;
+
+            m_hitCurveDetail.point = solidDetail.GetXYZ();
+            m_hitNormalLocal.NormalizedCrossProduct(solidDetail.GetUDirection(), solidDetail.GetVDirection());
+            break;
+            }
+
+        case GeometricPrimitive::GeometryType::SolidPrimitive:
+            {
+#if defined (NEEDSWORK) // Get best face like BRepEntity does...
+            SolidLocationDetail solidDetail;
+
+            if (!m_hitGeom->GetAsISolidPrimitive()->ClosestPoint(localPoint, solidDetail))
+                return false;
+
+            DVec3d    uDir, vDir;
+            DPoint3d  point;
+
+            if (!m_hitGeom->GetAsISolidPrimitive()->TryUVFractionToXYZ(solidDetail.GetFaceIndices(), solidDetail.GetU(), solidDetail.GetV(), point, uDir, vDir))
+                return false;
+
+            m_hitCurveDetail.point = point;
+            m_hitNormalLocal.NormalizedCrossProduct(uDir, vDir);
+#else
+            SolidLocationDetail solidDetail;
+
+            if (!m_hitGeom->GetAsISolidPrimitive()->ClosestPoint(m_hitClosePtLocal, solidDetail)) // Prefer face identified at original hit location...
+                return false;
+
+            IGeometryPtr faceGeom = m_hitGeom->GetAsISolidPrimitive()->GetFace(solidDetail.GetFaceIndices());
+
+            if (!faceGeom.IsValid())
+                return false;
+
+            switch (faceGeom->GetGeometryType())
                 {
-                if (useSpacePt)
+                case IGeometry::GeometryType::CurveVector:
                     {
-                    m_hitGeomType = HitGeomType::Surface;
-                    m_hitCurveDetail.curve = nullptr; // Don't flash single curve primitive when snapping to interior...
+                    DRay3d boresite = GetBoresite(localPoint, m_hitLocalToView.M1);
+
+                    CurveVector::InOutClassification result = faceGeom->GetAsCurveVector()->RayPierceInOnOut(boresite, solidDetail);
+
+                    if (CurveVector::InOutClassification::INOUT_In != result && CurveVector::InOutClassification::INOUT_On != result)
+                        return false;
+
                     m_hitCurveDetail.point = solidDetail.GetXYZ();
+                    m_hitNormalLocal.NormalizedCrossProduct(solidDetail.GetUDirection(), solidDetail.GetVDirection());
+                    break;
                     }
 
-                // NEEDSWORK: Save surface uv directions...
+                case IGeometry::GeometryType::SolidPrimitive:
+                    {
+                    if (!faceGeom->GetAsISolidPrimitive()->ClosestPoint(localPoint, solidDetail))
+                        return false;
+
+                    DVec3d    uDir, vDir;
+                    DPoint3d  point;
+
+                    if (!faceGeom->GetAsISolidPrimitive()->TryUVFractionToXYZ(solidDetail.GetFaceIndices(), solidDetail.GetU(), solidDetail.GetV(), point, uDir, vDir))
+                        return false;
+
+                    m_hitCurveDetail.point = point;
+                    m_hitNormalLocal.NormalizedCrossProduct(uDir, vDir);
+                    break;
+                    }
+
+                case IGeometry::GeometryType::BsplineSurface:
+                    {
+                    DPoint3d  surfacePoint;
+                    DPoint2d  surfaceUV;
+                    DVec3d    uDir, vDir, dPdUU, dPdVV, dPdUV;
+
+                    faceGeom->GetAsMSBsplineSurface()->ClosestPoint(surfacePoint, surfaceUV, localPoint);
+
+                    m_hitCurveDetail.point = surfacePoint;
+                    faceGeom->GetAsMSBsplineSurface()->EvaluateAllPartials(surfacePoint, uDir, vDir, dPdUU, dPdVV, dPdUV, m_hitNormalLocal, surfaceUV.x, surfaceUV.y);
+                    m_hitNormalLocal.Normalize();
+                    break;
+                    }
+
+                default:
+                    return false;
+                }
+#endif
+            break;
+            }
+
+        case GeometricPrimitive::GeometryType::BsplineSurface:
+            {
+            DPoint3d  surfacePoint;
+            DPoint2d  surfaceUV;
+            DVec3d    uDir, vDir, dPdUU, dPdVV, dPdUV;
+
+            m_hitGeom->GetAsMSBsplineSurface()->ClosestPoint(surfacePoint, surfaceUV, localPoint);
+
+            m_hitCurveDetail.point = surfacePoint;
+            m_hitGeom->GetAsMSBsplineSurface()->EvaluateAllPartials(surfacePoint, uDir, vDir, dPdUU, dPdVV, dPdUV, m_hitNormalLocal, surfaceUV.x, surfaceUV.y);
+            m_hitNormalLocal.Normalize();
+            break;
+            }
+
+        case GeometricPrimitive::GeometryType::Polyface:
+            {
+            PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*m_hitGeom->GetAsPolyfaceHeader());
+            bool found = false;
+
+            visitor->SetNumWrap(1);
+
+            for (; visitor->AdvanceToNextFace();) // NEEDSWORK: Get best facet like BRepEntity does...
+                {
+                DPoint3d thisFacePoint;
+
+                if (!visitor->TryFindCloseFacetPoint(localPoint, 1.0e-5, thisFacePoint))
+                    continue;
+
+                FacetLocationDetail thisDetail;
+
+                if (visitor->LoadVertexData(thisDetail, 0) && thisDetail.TryGetNormal(m_hitNormalLocal))
+                    m_hitNormalLocal.Normalize();
+
+                m_hitCurveDetail.point = thisFacePoint;
+                found = true;
+                break;
                 }
 
-            return true;
+            if (!found)
+                return false;
+            break;
+            }
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+        case GeometricPrimitive::GeometryType::BRepEntity:
+            {
+            DRay3d         boresite = GetBoresite(m_hitClosePtLocal, m_hitLocalToView.M1); boresite.direction.Negate();
+            IBRepEntityCR  entity = *m_hitGeom->GetAsIBRepEntity();
+            ISubEntityPtr  closeEntity = BRepUtil::ClosestFace(entity, m_hitClosePtLocal, &boresite.direction); // Prefer face identified at original hit location...
+
+            if (!closeEntity.IsValid())
+                return false;
+                
+            DVec3d    normal, uDir, vDir;
+            DPoint2d  param;
+            DPoint3d  point;
+
+            if (!BRepUtil::ClosestPointToFace(*closeEntity, localPoint, point, param) || SUCCESS != BRepUtil::EvaluateFace(*closeEntity, point, normal, uDir, vDir, param))
+                return false;
+
+            m_hitCurveDetail.point = point;
+            m_hitNormalLocal = normal;
+            break;
+            }
+#endif
+
+         case GeometricPrimitive::GeometryType::TextString:
+            {
+            // NEEDSWORK: Unify with DoTextSnap...
+            return false;
+            }
+
+        default:
+            {
+            // Shouldn't be any surface type not covered above...
+            return false;
             }
         }
 
-    return false;
+    if (interiorPt)
+        {
+        m_hitGeomType = HitGeomType::Surface;
+        m_hitCurveDetail.curve = nullptr; // Don't flash single curve primitive when snapping to interior...
+        }
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -986,24 +256,15 @@ bool EvaluateArcCenter()
     if (fabs(arc->sweep) < Angle::PiOver2())
         return false;
 
-    Transform   worldToLocal;
+    DPoint3d localPts[2];
+    DPoint4d viewPts[2];
 
-    worldToLocal.InverseOf(m_hitLocalToWorld);
+    localPts[0] = m_hitClosePtLocal;
+    localPts[1] = arc->center;
 
-    DMatrix4d   viewToLocal = GetViewToLocal(worldToLocal);
-    DMatrix4d   localToView;
+    m_hitLocalToView.M0.Multiply(viewPts, localPts, nullptr, 2);
 
-    localToView.QrInverseOf(viewToLocal);
-
-    DPoint3d    localPts[2];
-    DPoint4d    viewPts[2];
-
-    localPts[0] = arc->center;
-    localPts[1] = GetSpacePointLocal(worldToLocal);
-
-    localToView.Multiply(viewPts, localPts, nullptr, 2);
-
-    if (viewPts[0].RealDistance(viewPts[1]) > (m_snapAperture * 1.5))
+    if (viewPts[0].RealDistance(viewPts[1]) > m_snapAperture)
         return false;
 
     m_hitGeomType = HitGeomType::Point;
@@ -1177,11 +438,48 @@ bool EvaluateCurve()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyHitDetail()
+    {
+    MSBsplineCurveCP bcurve = (m_hitCurveDetail.curve ? m_hitCurveDetail.curve->GetProxyBsplineCurveCP() : nullptr);
+
+    if (nullptr == bcurve || 2 != bcurve->params.order)
+        return;
+    
+    // An order 2 bspline curve should be treated the same as a linestring for snapping...
+    bvector<DPoint3d> poles;
+
+    bcurve->GetUnWeightedPoles(poles);
+
+    if (bcurve->params.closed)
+        poles.push_back(poles.at(0));
+
+    ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLineString(poles);
+    CurveLocationDetail detail;
+
+    if (!curve->ClosestPointBounded(m_hitCurveDetail.point, detail))
+        return;
+
+    CurvePrimitiveIdCP curveId = m_hitCurveDetail.curve->GetId();
+
+    if (nullptr != curveId)
+        curve->SetId(curveId->Clone().get()); // Preserve curve topology id from source curve...
+
+    detail.a = m_hitCurveDetail.a; // Preserve distance to original hit...
+
+    m_hitCurveDerived = curve;
+    m_hitCurveDetail = detail;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 bool UpdateIfCloser(CurveLocationDetailCR curveDetail)
     {
     if (nullptr == m_hitCurveDetail.curve || curveDetail.a < m_hitCurveDetail.a)
         {
-        m_hitCurveDetail = curveDetail;
+        m_hitCurveDerived = const_cast<ICurvePrimitiveP>(curveDetail.curve); // Make sure m_hitCurveDetail.curve remains valid...
+        m_hitCurveDetail  = curveDetail;
+
         return true;
         }
 
@@ -1191,13 +489,13 @@ bool UpdateIfCloser(CurveLocationDetailCR curveDetail)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d GetSpacePointLocal(Transform worldToLocalTrans)
+DPoint3d GetClosePointLocal(Transform worldToLocalTrans)
     {
-    DPoint3d    spacePointLocal = m_closePtWorld;
+    DPoint3d    closePointLocal = m_closePtWorld;
 
-    worldToLocalTrans.Multiply(spacePointLocal);
+    worldToLocalTrans.Multiply(closePointLocal);
 
-    return spacePointLocal;
+    return closePointLocal;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1244,40 +542,854 @@ DRay3d GetBoresite(DPoint3dCR localPoint, DMatrix4dCR viewToLocal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR snapElemEntryId, DgnDbP db)
+bool ProcessICurvePrimitive(ICurvePrimitiveCR curve, DPoint3dCR localPoint)
     {
-    GeometryStreamEntryId elemEntryId = iter.GetGeometryStreamEntryId();
+    CurveLocationDetail curveDetail;
 
-    if (snapElemEntryId.IsValid())
-        return (snapElemEntryId != elemEntryId);
-
-    // NEEDSWORK: Check "off" sub-categories and ViewFlags...
-    DRange3d    localRange = iter.GetSubGraphicLocalRange();
-
-    if (localRange.IsNull() && (nullptr == db || SUCCESS != DgnGeometryPart::QueryGeometryPartRange(localRange, *db, iter.GetGeometryPartId())))
+    if (!curve.ClosestPointBounded(localPoint, curveDetail))
         return false;
 
-    Transform   localToWorld = iter.GetGeometryToWorld();
-    Transform   worldToLocal;
-
-    worldToLocal.InverseOf(localToWorld);
-
-    DPoint3d    localPoint = GetSpacePointLocal(worldToLocal);
-
-    return (!localRange.IsContained(localPoint));
+    return UpdateIfCloser(curveDetail);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProcessEntry(GeometryCollection::Iterator const& iter, bool checkRange, DgnElementCP element)
+bool ProcessCurveVector(CurveVectorCR curves, DPoint3dCR localPoint)
+    {
+    CurveLocationDetail curveDetail;
+
+    if (!curves.ClosestPointBounded(localPoint, curveDetail))
+        return false;
+
+    return UpdateIfCloser(curveDetail);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint)
+    {
+    bool    foundCurve = false;
+
+    if (!surface.uParams.closed || !surface.vParams.closed)
+        {
+        CurveVectorPtr curves = surface.GetUnstructuredBoundaryCurves(0.0, true, true);
+
+        if (curves.IsValid() && ProcessCurveVector(*curves, localPoint))
+            foundCurve = true;
+
+        if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+            return false;
+        }
+
+    DPoint3d    surfacePoint;
+    DPoint2d    surfaceUV;
+
+    surface.ClosestPoint(surfacePoint, surfaceUV, localPoint);
+
+    int divisorU = m_snapDivisor;
+    int divisorV = divisorU;
+
+    // NOTE: For closed directions we want more key points...
+    if (surface.uParams.closed)
+        divisorU *= 2;
+
+    if (surface.vParams.closed)
+        divisorV *= 2;
+        
+    int     keyFactorU = int ((surfaceUV.x / 1.0) * (double) divisorU + 0.5);
+    int     keyFactorV = int ((surfaceUV.y / 1.0) * (double) divisorV + 0.5);
+    double  keyParamU = (keyFactorU / (double) divisorU);
+    double  keyParamV = (keyFactorV / (double) divisorV);
+
+    if (surface.uParams.closed || (!DoubleOps::AlmostEqual(keyParamU, 0.0) && !DoubleOps::AlmostEqual(keyParamU, 1.0)))
+        {
+        bvector<MSBsplineCurvePtr> segmentsU;
+
+        surface.GetIsoUCurveSegments(keyParamU, segmentsU);
+
+        for (MSBsplineCurvePtr& isoCurveU : segmentsU)
+            {
+            ICurvePrimitivePtr  curve = ICurvePrimitive::CreateBsplineCurveSwapFromSource(*isoCurveU);
+
+            if (ProcessICurvePrimitive(*curve, localPoint))
+                foundCurve = true;
+
+            if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                return false;
+            }
+        }
+
+    if (surface.vParams.closed || (!DoubleOps::AlmostEqual(keyParamV, 0.0) && !DoubleOps::AlmostEqual(keyParamV, 1.0)))
+        {
+        bvector<MSBsplineCurvePtr> segmentsV;
+
+        surface.GetIsoVCurveSegments(keyParamV, segmentsV);
+
+        for (MSBsplineCurvePtr& isoCurveV : segmentsV)
+            {
+            ICurvePrimitivePtr  curve = ICurvePrimitive::CreateBsplineCurveSwapFromSource(*isoCurveV);
+
+            if (ProcessICurvePrimitive(*curve, localPoint))
+                foundCurve = true;
+
+            if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                return false;
+            }
+        }
+
+    return foundCurve;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR localPoint, TransformCR worldToLocal)
+    {
+    int     divisorU = m_snapDivisor;
+    int     divisorV = divisorU;
+    bool    foundCurve = false;
+
+    switch (primitive.GetSolidPrimitiveType())
+        {
+        case SolidPrimitiveType_DgnTorusPipe:
+            {
+            DgnTorusPipeDetail detail;
+
+            if (!primitive.TryGetDgnTorusPipeDetail(detail))
+                return false;
+
+            divisorU = 4; // Don't think other arcs are very useful snap locations...avoid clutter and just output every 90 degrees...
+
+            for (int uRule = 0; uRule < divisorU; ++uRule)
+                {
+                double              uFraction = (1.0 / divisorU) * uRule;
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(detail.UFractionToVSectionDEllipse3d(uFraction));
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+                }
+
+            bool  fullTorus = Angle::IsFullCircle(detail.m_sweepAngle);
+
+            if (fullTorus)
+                divisorV *= 2;
+
+            for (int vRule = 0; vRule <= divisorV; ++vRule)
+                {
+                double vFraction = (1.0 / divisorV) * vRule;
+
+                if (fullTorus && DoubleOps::AlmostEqual(vFraction, 1.0))
+                    continue; // Don't duplicate first arc for a full torus...
+
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction));
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+                }
+
+            return foundCurve;
+            }
+
+        case SolidPrimitiveType_DgnCone:
+            {
+            DgnConeDetail detail;
+
+            if (!primitive.TryGetDgnConeDetail(detail))
+                return false;
+
+            DEllipse3d ellipse1;
+
+            if (detail.FractionToSection(0.0, ellipse1))
+                {
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(ellipse1);
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+                }
+
+            DEllipse3d ellipse2;
+
+            if (detail.FractionToSection(1.0, ellipse2))
+                {
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(ellipse2);
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+                }
+
+            divisorV *= 2;
+
+            for (int vRule = 0; vRule < divisorV; ++vRule)
+                {
+                double      vFraction = (1.0 / divisorV) * vRule;
+                DSegment3d  segment;
+
+                if (!detail.FractionToRule(vFraction, segment))
+                    continue;
+
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+                }
+            
+            DSegment3d  silhouette[2];
+            DMatrix4d   viewToLocal = GetViewToLocal(worldToLocal);
+
+            // NOTE: MicroStation's type 23 cone element always allowed it's silhouettes to be located/snapped to...continue doing so for historical reasons but with one caveat.
+            //       The center of the cursor *must* be over the cone face to actually identify it and not just within locate tolerance. This behavior difference is because we
+            //       no longer locate elements their silhouettes in PickContext (will work better when locating off mesh tiles)...
+            if (detail.GetSilhouettes(silhouette[0], silhouette[1], viewToLocal))
+                {
+                for (int iSilhouette = 0; iSilhouette < 2; ++iSilhouette)
+                    {
+                    if (0.0 == silhouette[iSilhouette].Length())
+                        continue;
+
+                    ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(silhouette[iSilhouette]);
+
+                    if (ProcessICurvePrimitive(*curve, localPoint))
+                        foundCurve = true;
+                    }
+                }
+
+            return foundCurve;
+            }
+
+        case SolidPrimitiveType_DgnSphere:
+            {
+            DgnSphereDetail detail;
+
+            if (!primitive.TryGetDgnSphereDetail(detail))
+                return false;
+
+            divisorU *= 2;
+
+            for (int uRule = 0; uRule < divisorU; ++uRule)
+                {
+                double              uFraction = (1.0 / divisorU) * uRule;
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(detail.UFractionToVSectionDEllipse3d(uFraction));
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+                }
+
+            double latitude0, latitude1, z0, z1;
+            bool   fullSphere = !detail.GetSweepLimits(latitude0, latitude1, z0, z1);
+
+            if (fullSphere)
+                divisorV = 2; // Don't think other arcs are very useful snap locations...avoid clutter and just output equator...
+
+            double vFraction0 = detail.LatitudeToVFraction(latitude0);
+            double vFraction1 = detail.LatitudeToVFraction(latitude1);
+
+            for (int vRule = 0; vRule <= divisorV; ++vRule)
+                {
+                double vFraction = vFraction0 + (((vFraction1 - vFraction0) / divisorV) * vRule);
+
+                if (fullSphere && (DoubleOps::AlmostEqual(vFraction, 0.0) || DoubleOps::AlmostEqual(vFraction, 1.0)))
+                    continue; // Don't generate 0 radius arcs at top/bottom of full sphere...
+
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction));
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+                }
+
+            return foundCurve;
+            }
+
+        case SolidPrimitiveType_DgnExtrusion:
+            {
+            DgnExtrusionDetail detail;
+
+            if (!primitive.TryGetDgnExtrusionDetail(detail))
+                return false;
+
+            if (ProcessCurveVector(*detail.m_baseCurve, localPoint))
+                foundCurve = true;
+
+            CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone(Transform::From(detail.m_extrusionVector));
+
+            if (tmpCurve.IsValid() && ProcessCurveVector(*tmpCurve, localPoint))
+                foundCurve = true;
+
+            if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                return false;
+
+            bvector<DSegment3d> edges;
+
+            WireframeGeomUtil::CollectLateralEdges(detail, edges);
+
+            for (DSegment3d segment : edges)
+                {
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+
+                if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                    return false;
+                }
+
+            bvector<DPoint3d> pts;
+
+            WireframeGeomUtil::CollectLateralRulePoints(*detail.m_baseCurve, pts, divisorU, divisorU * 2);
+
+            for (DPoint3d pt : pts)
+                {
+                DSegment3d          segment = DSegment3d::FromOriginAndDirection(pt, detail.m_extrusionVector);
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+
+                if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                    return false;
+                }
+
+            return foundCurve;
+            }
+
+        case SolidPrimitiveType_DgnRotationalSweep:
+            {
+            DgnRotationalSweepDetail detail;
+
+            if (!primitive.TryGetDgnRotationalSweepDetail(detail))
+                return false;
+
+            if (!Angle::IsFullCircle(detail.m_sweepAngle))
+                {
+                if (ProcessCurveVector(*detail.m_baseCurve, localPoint))
+                    foundCurve = true;
+
+                DPoint3d  axisPoint;
+                Transform transform;
+
+                axisPoint.SumOf(detail.m_axisOfRotation.origin, detail.m_axisOfRotation.direction);
+                transform.InitFromLineAndRotationAngle(detail.m_axisOfRotation.origin, axisPoint, detail.m_sweepAngle);
+
+                CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone(transform);
+
+                if (tmpCurve.IsValid() && ProcessCurveVector(*tmpCurve, localPoint))
+                    foundCurve = true;
+
+                if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                    return false;
+                }
+
+            bvector<DEllipse3d> edges;
+
+            WireframeGeomUtil::CollectLateralEdges(detail, edges);
+
+            for (DEllipse3d arc : edges)
+                {
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(arc);
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+
+                if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                    return false;
+                }
+
+            bvector<DPoint3d> pts;
+
+            WireframeGeomUtil::CollectLateralRulePoints(*detail.m_baseCurve, pts, divisorU, 4); // Avoid clutter and just output every 90 degrees for closed face (i.e. rotational sweep is a torus)...
+
+            RotMatrix   axes, invAxes, tmpRMatrix;
+            Transform   transform;
+
+            invAxes.InitFrom1Vector(detail.m_axisOfRotation.direction, 2, true);
+            axes.TransposeOf(invAxes);
+
+            tmpRMatrix.InitFromPrincipleAxisRotations(axes, 0.0, 0.0, detail.m_sweepAngle);
+            tmpRMatrix.InitProduct(invAxes, tmpRMatrix);
+            transform.From(tmpRMatrix, detail.m_axisOfRotation.origin);
+
+            for (size_t iPt = 0; iPt < pts.size(); ++iPt)
+                {
+                DEllipse3d  ellipse;
+
+                if (!WireframeGeomUtil::ComputeRuleArc(ellipse, pts.at(iPt), detail.m_axisOfRotation.origin, detail.m_sweepAngle, transform, axes, invAxes, 1.0e-8))
+                    continue;
+
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(ellipse);
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+
+                if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                    return false;
+                }
+
+            bool  fullRevolve = Angle::IsFullCircle(detail.m_sweepAngle);
+
+            if (fullRevolve)
+                divisorV *= 2;
+
+            for (int vRule = 0; vRule < divisorV; ++vRule)
+                {
+                double vFraction = (1.0 / divisorV) * vRule;
+
+                if (!fullRevolve && DoubleOps::AlmostEqual(vFraction, 0.0))
+                    continue;
+
+                CurveVectorPtr  curve = detail.VFractionToProfile(vFraction);
+
+                if (curve.IsValid() && ProcessCurveVector(*curve, localPoint))
+                    foundCurve = true;
+
+                if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                    return false;
+                }
+
+            return foundCurve;
+            }
+            
+        case SolidPrimitiveType_DgnRuledSweep:
+            {
+            DgnRuledSweepDetail detail;
+    
+            if (!primitive.TryGetDgnRuledSweepDetail(detail))
+                return false;
+
+            for (CurveVectorPtr curves : detail.m_sectionCurves)
+                {
+                if (ProcessCurveVector(*curves, localPoint))
+                    foundCurve = true;
+                }
+
+            if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                return false;
+
+            bvector<DSegment3d> edges;
+
+            WireframeGeomUtil::CollectLateralEdges(detail, edges);
+
+            for (DSegment3d segment : edges)
+                {
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+
+                if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                    return false;
+                }
+
+            for (size_t iProfile = 0; iProfile < detail.m_sectionCurves.size()-1; ++iProfile)
+                {
+                bvector<DPoint3d> rulePts1;
+                bvector<DPoint3d> rulePts2;
+
+                WireframeGeomUtil::CollectLateralRulePoints(*detail.m_sectionCurves.at(iProfile), rulePts1, divisorU, divisorU * 2);
+                WireframeGeomUtil::CollectLateralRulePoints(*detail.m_sectionCurves.at(iProfile+1), rulePts2, divisorU, divisorU * 2);
+
+                if (rulePts1.size() != rulePts2.size())
+                    {
+                    if (1 == rulePts2.size()) // Special case to handle zero scale in both XY...
+                        rulePts2.insert(rulePts2.end(), rulePts1.size()-1, rulePts2.front());
+                    else
+                        rulePts1.clear(); rulePts2.clear();;
+                    }
+
+                for (size_t iRule = 0; iRule < rulePts1.size(); ++iRule)
+                    {
+                    DSegment3d          segment = DSegment3d::From(rulePts1.at(iRule), rulePts2.at(iRule));
+                    ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
+
+                    if (ProcessICurvePrimitive(*curve, localPoint))
+                        foundCurve = true;
+
+                    if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                        return false;
+                    }
+                }
+
+            return foundCurve;
+            }
+
+        default:
+            {
+            BeAssert(false);
+            return false;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProcessSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR localPoint, TransformCR worldToLocal)
+    {
+    bvector<SolidLocationDetail::FaceIndices> faceIndices;
+
+    primitive.GetFaceIndices(faceIndices);
+
+    if (faceIndices.size() < 2)
+        return ProcessSingleFaceSolidPrimitive(primitive, localPoint, worldToLocal);
+
+    SolidLocationDetail location;
+
+    if (!primitive.ClosestPoint(localPoint, location))
+        return false;
+
+    IGeometryPtr faceGeom = primitive.GetFace(location.GetFaceIndices());
+
+    if (!faceGeom.IsValid())
+        return false;
+
+    switch (faceGeom->GetGeometryType())
+        {
+        case IGeometry::GeometryType::CurveVector:
+            {
+            CurveVectorPtr faceCurves = faceGeom->GetAsCurveVector();
+
+            return (faceCurves.IsValid() && ProcessCurveVector(*faceCurves, localPoint));
+            }
+
+        case IGeometry::GeometryType::SolidPrimitive:
+            {
+            ISolidPrimitivePtr facePrimitive = faceGeom->GetAsISolidPrimitive();
+
+            return (facePrimitive.IsValid() && ProcessSingleFaceSolidPrimitive(*facePrimitive, localPoint, worldToLocal));
+            }
+
+        case IGeometry::GeometryType::BsplineSurface:
+            {
+            MSBsplineSurfacePtr faceSurface = faceGeom->GetAsMSBsplineSurface();
+
+            return (faceSurface.IsValid() && ProcessBsplineSurface(*faceSurface, localPoint));
+            }
+
+        default:
+            {
+            BeAssert(false);
+            return false;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProcessSingleFacePolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
+    {
+    int const*  vertIndex = meshData.GetPointIndexCP();
+
+    if (!vertIndex)
+        return false;
+
+    size_t      numIndices = meshData.GetPointIndexCount();
+    DPoint3dCP  verts = meshData.GetPointCP();
+    int         polySize = meshData.GetNumPerFace();
+    int         thisIndex, prevIndex=0, firstIndex=0;
+    size_t      thisFaceSize = 0;
+    bool        foundCurve = false;
+
+    for (size_t readIndex = 0; readIndex < numIndices; readIndex++)
+        {    
+        // found face loop entry
+        if (thisIndex = vertIndex[readIndex])
+            {
+            if (!thisFaceSize)
+                {
+                // remember first index in this face loop
+                firstIndex = thisIndex;
+                }
+            else if (prevIndex > 0)
+                {
+                // draw visible edge (prevIndex, thisIndex)
+                int closeVertexId = (abs(prevIndex) - 1);
+                int segmentVertexId = (abs(thisIndex) - 1);
+                ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+                }
+
+            prevIndex = thisIndex;
+            thisFaceSize++;
+            }
+
+        // found end of face loop (found first pad/terminator or last index in fixed block)
+        if (thisFaceSize && (!thisIndex || (polySize > 1 && polySize == thisFaceSize)))
+            {
+            // draw last visible edge (prevIndex, firstIndex)
+            if (prevIndex > 0)
+                {
+                int closeVertexId = (abs(prevIndex) - 1);
+                int segmentVertexId = (abs(firstIndex) - 1);
+                ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
+
+                if (ProcessICurvePrimitive(*curve, localPoint))
+                    foundCurve = true;
+                }
+
+            thisFaceSize = 0;
+            }
+
+        if (0 == (readIndex % 100) && (nullptr != m_stopTester && m_stopTester->_CheckStop()))
+            return false;
+        }
+
+    return foundCurve;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProcessPolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
+    {
+    PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(meshData);
+    double              tolerance = 1.0e-5;
+
+    visitor->SetNumWrap(1);
+
+    for (; visitor->AdvanceToNextFace();)
+        {
+        DPoint3d thisFacePoint;
+
+        if (!visitor->TryFindCloseFacetPoint(localPoint, tolerance, thisFacePoint))
+            continue;
+
+        // Get a "face" containing this facet, a single facet when there are hidden edges isn't what someone would consider a face...
+        bvector<ptrdiff_t> seedReadIndices;
+        bvector<ptrdiff_t> allFaceBlocks;
+        bvector<ptrdiff_t> activeReadIndexBlocks;
+    
+        meshData.PartitionByConnectivity(2, allFaceBlocks);
+        seedReadIndices.push_back(visitor->GetReadIndex());
+        PolyfaceHeader::SelectBlockedIndices(allFaceBlocks, seedReadIndices, true, activeReadIndexBlocks);
+
+        bvector<PolyfaceHeaderPtr> perFacePolyfaces;
+
+        meshData.CopyPartitions(activeReadIndexBlocks, perFacePolyfaces);
+
+        if (0 != perFacePolyfaces.size())
+            return ProcessSingleFacePolyface(*perFacePolyfaces.front(), localPoint);
+        break;
+        }
+
+    return false;
+    }
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+struct BRepFaceHatchProcessor : IParasolidWireOutput
+    {
+    SnapGeometryHelper&     m_processor;
+    DPoint3d                m_localPoint;
+    Transform               m_entityTransform;
+    bool                    m_foundCurve = false;
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    BrienBastings   11/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    BentleyStatus _ProcessGoOutput(ICurvePrimitiveCR hatchCurve, PK_ENTITY_t entityTag)
+        {
+        CurveVectorPtr curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Open, hatchCurve.Clone());
+
+        curve->TransformInPlace(m_entityTransform);
+
+        if (m_processor.ProcessCurveVector(*curve, m_localPoint))
+            m_foundCurve = true;
+
+        return (nullptr != m_processor.m_stopTester && m_processor.m_stopTester->_CheckStop() ? ERROR : SUCCESS);
+        }
+
+    bool GetFoundCurve() {return m_foundCurve;}
+
+    BRepFaceHatchProcessor(SnapGeometryHelper& processor, DPoint3dCR localPoint, TransformCR entityTransform) : m_processor(processor), m_localPoint(localPoint), m_entityTransform(entityTransform) {}
+
+    }; // BRepFaceHatchProcessor
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProcessBody(IBRepEntityCR entity, DPoint3dCR localPoint)
+    {
+    ISubEntityPtr closeEntity = BRepUtil::ClosestSubEntity(entity, localPoint);
+
+    if (!closeEntity.IsValid())
+        return false;
+
+    switch (closeEntity->GetSubEntityType())
+        {
+        case ISubEntity::SubEntityType::Edge:
+        case ISubEntity::SubEntityType::Vertex:
+            {
+            GeometricPrimitiveCPtr geom = closeEntity->GetGeometry();
+
+            if (geom.IsValid() && GeometricPrimitive::GeometryType::CurvePrimitive == geom->GetGeometryType())
+                {
+                ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
+
+                return ProcessICurvePrimitive(*curve, localPoint);
+                }
+
+            return false;
+            }
+
+        case ISubEntity::SubEntityType::Face:
+            {
+            CurveVectorPtr faceCurves = BRepUtil::Create::PlanarFaceToCurveVector(*closeEntity);
+
+            if (faceCurves.IsValid())
+                return ProcessCurveVector(*faceCurves, localPoint);
+
+            break;
+            }
+        }
+
+    BRepFaceHatchProcessor output(*this, localPoint, entity.GetEntityTransform());
+
+    PSolidGoOutput::ProcessFaceHatching(output, m_snapDivisor, PSolidSubEntity::GetSubEntityTag(*closeEntity));
+
+    if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+        return false;
+
+    bool foundCurve = output.GetFoundCurve();
+
+    bvector<ISubEntityPtr> faceEdges;
+
+    if (SUCCESS != BRepUtil::GetFaceEdges(faceEdges, *closeEntity))
+        return foundCurve;
+
+    for (ISubEntityPtr& edge : faceEdges)
+        {
+        if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+            return false;
+
+        GeometricPrimitiveCPtr geom = edge->GetGeometry();
+
+        if (!geom.IsValid() || GeometricPrimitive::GeometryType::CurvePrimitive != geom->GetGeometryType())
+            continue;
+
+        ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
+
+        if (ProcessICurvePrimitive(*curve, localPoint))
+            foundCurve = true;
+        }
+
+    return foundCurve;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProcessTextString(TextStringCR text, DPoint3dCR localPoint)
+    {
+    if (text.GetText().empty())
+        return false;
+        
+    DPoint3d points[5];
+
+    text.ComputeBoundingShape(points);
+    text.ComputeTransform().Multiply(points, _countof(points));
+
+    ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLineString(points, 5);
+
+    return ProcessICurvePrimitive(*curve, localPoint);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProcessGeometry(GeometricPrimitiveR geom, TransformCR localToWorld, bool checkRange)
+    {
+    Transform   worldToLocal;
+
+    worldToLocal.InverseOf(localToWorld);
+
+    DPoint3d    localPoint = GetClosePointLocal(worldToLocal);
+
+    if (checkRange)
+        {
+        DRange3d    localRange;
+
+        if (geom.GetRange(localRange) && localRange.DistanceOutside(localPoint) > 1.0e-5)
+            return false;
+        }
+
+    switch (geom.GetGeometryType())
+        {
+        case GeometricPrimitive::GeometryType::CurvePrimitive:
+            {
+            ICurvePrimitiveCR curve = *geom.GetAsICurvePrimitive();
+
+            return ProcessICurvePrimitive(curve, localPoint);
+            }
+
+        case GeometricPrimitive::GeometryType::CurveVector:
+            {
+            CurveVectorCR curves = *geom.GetAsCurveVector();
+
+            return ProcessCurveVector(curves, localPoint);
+            }
+
+        case GeometricPrimitive::GeometryType::SolidPrimitive:
+            {
+            ISolidPrimitiveCR primitive = *geom.GetAsISolidPrimitive();
+
+            return ProcessSolidPrimitive(primitive, localPoint, worldToLocal);
+            }
+
+        case GeometricPrimitive::GeometryType::BsplineSurface:
+            {
+            MSBsplineSurfaceCR surface = *geom.GetAsMSBsplineSurface();
+
+            return ProcessBsplineSurface(surface, localPoint);
+            }
+
+        case GeometricPrimitive::GeometryType::Polyface:
+            {
+            PolyfaceQueryCR mesh = *geom.GetAsPolyfaceHeader();
+
+            return ProcessPolyface(mesh, localPoint);
+            }
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+        case GeometricPrimitive::GeometryType::BRepEntity:
+            {
+            IBRepEntityCR entity = *geom.GetAsIBRepEntity();
+
+            return ProcessBody(entity, localPoint);
+            }
+#endif
+
+        case GeometricPrimitive::GeometryType::TextString:
+            {
+            TextStringCR text = *geom.GetAsTextString();
+
+            return ProcessTextString(text, localPoint);
+            }
+
+        default:
+            {
+            BeAssert(false);
+            return false;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProcessEntry(GeometryCollection::Iterator const& iter, bool preFiltered, DgnElementCP element)
     {
     GeometryStreamEntryId elemEntryId = iter.GetGeometryStreamEntryId();
     GeometricPrimitivePtr geom;
 
     if (nullptr != element && GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType())
         {
-        IBRepEntityPtr entity = BRepDataCache::FindCachedBRepEntity(*element, elemEntryId);
+        IBRepEntityPtr entity = BRepDataCache::FindCachedBRepEntity(*element, elemEntryId); // NEEDSWORK: For imodel-js...brep cache is currently only populated through PickContext...
 
         if (entity.IsValid())
             geom = GeometricPrimitive::Create(entity);
@@ -1288,72 +1400,88 @@ void ProcessEntry(GeometryCollection::Iterator const& iter, bool checkRange, Dgn
         geom = iter.GetGeometryPtr();
 
         if (!geom.IsValid())
-            return;
+            return false;
         }
 
-    ProcessGeometry(*geom, iter.GetGeometryToWorld(), elemEntryId, checkRange);
+    Transform localToWorld = iter.GetGeometryToWorld();
+
+    if (!ProcessGeometry(*geom, localToWorld, !preFiltered))
+        return false; 
+
+    m_hitGeom = geom;
+    m_hitParams = iter.GetGeometryParams();
+    m_hitEntryId = elemEntryId;
+    m_hitLocalToWorld = localToWorld;
+
+    OnHitChanged();
+
+    if (!preFiltered || iter.IsBRepPolyface())
+        {
+        // If we found an edge within locate tolerance, it's good enough and we can stop slogging through the geometry stream...
+        if (m_hitDistanceView < m_snapAperture)
+            return true;
+
+        return false; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
+        }
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ProcessGeometry(GeometricPrimitiveR geom, TransformCR localToWorld, GeometryStreamEntryIdCR elemEntryId, bool checkRange)
+bool SkipEntry(GeometryCollection::Iterator const& iter, GeometryStreamEntryIdCR snapElemEntryId, bool isPart, ViewFlagsCP viewFlags, DgnElementIdSet const* offSubCategories)
     {
+    GeometryStreamEntryId elemEntryId = iter.GetGeometryStreamEntryId();
+
+    if (snapElemEntryId.IsValid())
+        return (snapElemEntryId != elemEntryId);
+
+    if (nullptr != viewFlags || nullptr != offSubCategories)
+        {
+        GeometryParamsCR params = iter.GetGeometryParams();
+
+        if (nullptr != viewFlags)
+            {
+            switch (params.GetGeometryClass())
+                {
+                case DgnGeometryClass::Construction:
+                    if (!viewFlags->ShowConstructions())
+                        return true;
+                    break;
+
+                case DgnGeometryClass::Dimension:
+                    if (!viewFlags->ShowDimensions())
+                        return true;
+                    break;
+
+                case DgnGeometryClass::Pattern:
+                    if (!viewFlags->ShowPatterns())
+                        return true;
+                    break;
+                }
+            }
+
+        if (nullptr != offSubCategories)
+            {
+            if (offSubCategories->end() != offSubCategories->find(params.GetSubCategoryId()))
+                return true;
+            }
+        }
+
+    DRange3d    localRange = iter.GetSubGraphicLocalRange();
+
+    if (localRange.IsNull() && (!isPart || SUCCESS != DgnGeometryPart::QueryGeometryPartRange(localRange, iter.GetDgnDb(), iter.GetGeometryPartId())))
+        return false;
+
+    Transform   localToWorld = iter.GetGeometryToWorld();
     Transform   worldToLocal;
 
     worldToLocal.InverseOf(localToWorld);
 
-    DPoint3d    localPoint = GetSpacePointLocal(worldToLocal);
+    DPoint3d    localPoint = GetClosePointLocal(worldToLocal);
 
-    if (checkRange)
-        {
-        DRange3d    localRange;
-
-        if (geom.GetRange(localRange) && !localRange.IsContained(localPoint))
-            return;
-        }
-
-    DMatrix4d   viewToLocal = GetViewToLocal(worldToLocal);
-    DMatrix4d   localToView;
-
-    localToView.QrInverseOf(viewToLocal);
-
-    switch (geom.GetGeometryType())
-        {
-        case GeometricPrimitive::GeometryType::CurvePrimitive:
-            {
-            ICurvePrimitiveCR curve = *geom.GetAsICurvePrimitive();
-            CurveLocationDetail curveDetail;
-
-            if (!curve.ClosestPointBoundedXY(localPoint, &localToView, curveDetail))
-                return;
-
-            if (!UpdateIfCloser(curveDetail))
-                return;
-
-            m_hitGeom = &geom;
-            m_hitLocalToWorld = localToWorld;
-            m_hitEntryId = elemEntryId;
-            break;
-            }
-
-        case GeometricPrimitive::GeometryType::CurveVector:
-            {
-            CurveVectorCR curves = *geom.GetAsCurveVector();
-            CurveLocationDetail curveDetail;
-
-            if (!curves.ClosestPointBoundedXY(localPoint, &localToView, curveDetail))
-                return;
-
-            if (!UpdateIfCloser(curveDetail))
-                return;
-
-            m_hitGeom = &geom;
-            m_hitLocalToWorld = localToWorld;
-            m_hitEntryId = elemEntryId;
-            break;
-            }
-        }
+    return (localRange.DistanceOutside(localPoint) > 1.0e-5);
     }
 
 public:
@@ -1370,12 +1498,44 @@ DMap4dCR GetWorldToView() const {return m_worldToView;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometricPrimitivePtr GetHitGeometry() {return m_hitGeom;}
-TransformR GetHitLocalToWorld() {return m_hitLocalToWorld;}
-GeometryStreamEntryIdR GetHitGeometryStreamEntryId() {return m_hitEntryId;}
-CurveLocationDetailR GetHitCurveDetail() {return m_hitCurveDetail;}
+void SetHitGeometryStreamEntryId(GeometryStreamEntryIdCR entryId) {m_hitEntryId = entryId;}
+void SetHitCurveDetail(CurveLocationDetailCR detail) {m_hitCurveDetail = detail; OnHitChanged();}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void OnHitChanged()
+    {
+    m_hitWorldToLocal.InverseOf(m_hitLocalToWorld);
+    m_hitClosePtLocal = GetClosePointLocal(m_hitWorldToLocal);
+
+    DMatrix4d viewToLocal = GetViewToLocal(m_hitWorldToLocal);
+    DMatrix4d localToView;
+
+    localToView.QrInverseOf(viewToLocal);
+    m_hitLocalToView.InitFrom(localToView, viewToLocal);
+
+    DPoint3d localPts[2];
+    DPoint4d viewPts[2];
+
+    localPts[0] = m_hitClosePtLocal;
+    localPts[1] = m_hitCurveDetail.point;
+
+    m_hitLocalToView.M0.Multiply(viewPts, localPts, nullptr, 2);
+    m_hitDistanceView = viewPts[0].RealDistance(viewPts[1]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometricPrimitivePtr GetHitGeometry() const {return m_hitGeom;}
+TransformCR GetHitLocalToWorld() const {return m_hitLocalToWorld;}
+GeometryParamsCR GetHitGeometryParams() const {return m_hitParams;}
+GeometryStreamEntryIdCR GetHitGeometryStreamEntryId() const {return m_hitEntryId;}
+CurveLocationDetailCR GetHitCurveDetail() const {return m_hitCurveDetail;}
 HitGeomType GetHitGeomType() const {return m_hitGeomType;}
 DPoint3d GetHitPointWorld() const {DPoint3d hitPtWorld = m_hitCurveDetail.point; m_hitLocalToWorld.Multiply(hitPtWorld); return hitPtWorld;}
+DVec3d GetHitNormalWorld() const {DVec3d hitNormalWorld = m_hitNormalLocal; m_hitLocalToWorld.MultiplyMatrixOnly(hitNormalWorld); return hitNormalWorld;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
@@ -1461,27 +1621,34 @@ bool ComputeSnapLocation()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GetClosestCurve(GeometrySourceCR source, CheckStop* stopTester = nullptr)
+SnapStatus GetClosestCurve(GeometrySourceCR source, ViewFlagsCP viewFlags = nullptr, DgnElementIdSet const* offSubCategories = nullptr, CheckStop* stopTester = nullptr)
     {
+    // NEEDSWORK: For imodel-js...
+    //  DgnSubCategory::Appearance.GetDontLocate is a problem, geometry will get located and used by tools that aren't snapping...
+    //  ViewController overrides for DgnSubCategory::Appearance.GetDontSnap is a problem...return hit subcategory to front end to let it check?
+    //  Can we ignore snappable patterns/linestyles? These will locate currently, snap will just go to "base" geometry...
     GeometryCollection     collection(source);
     GeometryStreamEntryId  snapElemEntryId = m_hitEntryId;
     GeometryStreamEntryId  snapPartEntryId = m_hitEntryId;
 
     snapElemEntryId.SetPartIndex(0);
+    m_stopTester = stopTester;
 
     for (auto iter : collection)
         {
         // Quick exclude of geometry that didn't generate the hit...
-        if (SkipEntry(iter, snapElemEntryId, &source.GetSourceDgnDb()))
+        if (SkipEntry(iter, snapElemEntryId, false, viewFlags, offSubCategories))
             continue;
 
         if (GeometryCollection::Iterator::EntryType::GeometryPart != iter.GetEntryType())
             {
-            ProcessEntry(iter, !snapElemEntryId.IsValid(), source.ToElement());
+            if (ProcessEntry(iter, snapElemEntryId.IsValid(), source.ToElement()))
+                break;
 
-            if (!snapElemEntryId.IsValid() || iter.IsBRepPolyface())
-                continue; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
-            break;
+            if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                return SnapStatus::Aborted;
+
+            continue;
             }
 
         DgnGeometryPartCPtr geomPart = iter.GetGeometryPartCPtr();
@@ -1496,21 +1663,23 @@ bool GetClosestCurve(GeometrySourceCR source, CheckStop* stopTester = nullptr)
         for (auto partIter : partCollection)
             {
             // Quick exclude of geometry that didn't generate the hit...
-            if (SkipEntry(partIter, snapPartEntryId, nullptr))
+            if (SkipEntry(partIter, snapPartEntryId, true, viewFlags, offSubCategories))
                 continue;
 
-            ProcessEntry(partIter, !snapPartEntryId.IsValid(), geomPart.get());
+            if (ProcessEntry(partIter, snapPartEntryId.IsValid(), geomPart.get()))
+                break;
 
-            if (!snapPartEntryId.IsValid() || partIter.IsBRepPolyface())
-                continue; // Keep going, want to draw all matching geometry (multi-symb BRep is Polyface per-symbology)...
-            break;
+            if (nullptr != m_stopTester && m_stopTester->_CheckStop())
+                return SnapStatus::Aborted;
             }
 
         if (snapPartEntryId.IsValid())
             break; // Done with part...
         }
 
-    return (nullptr != m_hitCurveDetail.curve);
+    SimplifyHitDetail();
+
+    return (nullptr != m_hitCurveDetail.curve ? SnapStatus::Success : SnapStatus::NoSnapPossible);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1526,7 +1695,7 @@ END_BENTLEY_DGN_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus SnapContext::DoDefaultDisplayableSnap()
     {
-#if defined (NOT_NOW_WIP)
+#if defined (NOT_NOW_USE_HITDETAIL)
     bool            useFullHitDetail = false;
 #else
     bool            useFullHitDetail = true;
@@ -1565,25 +1734,31 @@ SnapStatus SnapContext::DoDefaultDisplayableSnap()
 
             if (SnapMode::Origin != GetSnapMode() || !usePlacement) // Snap to geometry origin for non-element hits without a meaningful placement...
                 {
-#if defined (NOT_NOW_WIP)
                 SnapGeometryHelper helper(GetSnapMode(), GetSnapDivisor(), GetSnapAperture(), GetSnapDetail()->GetGeomDetail().GetClosestPoint(), GetWorldToView());
 
                 if (useFullHitDetail)
-                    helper.GetHitGeometryStreamEntryId() = GetSnapDetail()->GetGeomDetail().GetGeometryStreamEntryId(true); // Supply HitDetail entry id so that we can trivially reject GeometryStream entries...
+                    helper.SetHitGeometryStreamEntryId(GetSnapDetail()->GetGeomDetail().GetGeometryStreamEntryId(true)); // Supply HitDetail entry id so that we can trivially reject GeometryStream entries...
 
-                // NOTE: This is a fairly expensive proposition...but we need something more meaningful than snap to center of range...
-                if (helper.GetClosestCurve(*source, this) && helper.ComputeSnapLocation())
+                // NOTE: This can be fairly expensive...but we need something more meaningful than snapping to center of range...
+                SnapStatus status = helper.GetClosestCurve(*source, &m_viewflags, nullptr, this);
+
+                if (SnapStatus::Aborted == status)
+                    return status;
+
+                if (SnapStatus::Success == status && helper.ComputeSnapLocation())
                     {
+                    if (!useFullHitDetail)
+                        GetSnapDetail()->GetGeomDetailW().SetGeometryStreamEntryId(helper.GetHitGeometryStreamEntryId());
+
                     GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(helper.GetHitCurveDetail().curve, &helper.GetHitLocalToWorld(), helper.GetHitGeomType());
+
+                    if (0.0 != helper.GetHitNormalWorld().Magnitude())
+                        GetSnapDetail()->GetGeomDetailW().SetSurfaceNormal(helper.GetHitNormalWorld());
+
                     SetSnapInfo(*GetSnapDetail(), GetSnapMode(), GetSnapSprite(GetSnapMode()), helper.GetHitPointWorld(), SnapMode::Center == GetSnapMode(), GetSnapAperture(), false);
 
-                    return SnapStatus::Success;
+                    return status;
                     }
-#else
-                // NOTE: This is a fairly expensive proposition...but we need something more meaningful than snap to center of range...
-                if (SnapGraphicsProcessor::DoSnapUsingClosestCurve(*this))
-                    return SnapStatus::Success;
-#endif
 
                 if (!usePlacement)
                     return SnapStatus::NotSnappable;
@@ -1608,10 +1783,14 @@ SnapStatus SnapContext::DoDefaultDisplayableSnap()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus SnapContext::DoSnapUsingCurve(SnapMode snapMode)
     {
+    CurveLocationDetail detail;
+
+    if (!GetSnapDetail()->GetGeomDetail().GetCloseDetail(detail))
+        return SnapStatus::NotSnappable;
+
     SnapGeometryHelper helper(snapMode, GetSnapDivisor(), GetSnapAperture(), GetSnapDetail()->GetGeomDetail().GetClosestPoint(), GetWorldToView());
 
-    if (!GetSnapDetail()->GetGeomDetail().GetCloseDetail(helper.GetHitCurveDetail()))
-        return SnapStatus::NotSnappable;
+    helper.SetHitCurveDetail(detail);
 
     if (!helper.ComputeSnapLocation())
         return SnapStatus::NotSnappable;
@@ -1626,6 +1805,7 @@ SnapStatus SnapContext::DoSnapUsingCurve(SnapMode snapMode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus SnapContext::DoTextSnap()
     {
+    // NEEDSWORK: What about snapping to capsule/leaders???
     GeomDetailCR detail = GetSnapDetail()->GetGeomDetail();
 
     switch (GetSnapMode())
