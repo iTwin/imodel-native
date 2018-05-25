@@ -1,0 +1,15 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: iModelDmsApiprewire.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+%include mdl.mki
+
+baseDir         = $(SrcRoot)DmsSupport/
+
+# Wire in my own public header files.
+always:
+    ~linkdir "$(BuildContext)PublicAPI/iModelDmsSupport=$(baseDir)PublicAPI/iModelDmsSupport"
+

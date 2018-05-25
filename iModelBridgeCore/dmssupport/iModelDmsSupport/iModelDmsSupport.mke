@@ -19,7 +19,7 @@ nameToDefine = UNICODE
 nameToDefine = _UNICODE
 %include cdefapnd.mki
 
-dmsAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/Dms/
+dmsAPISrc     = $(SrcRoot)DmsSupport/PublicAPI/iModelDmsSupport/
 
 
 dirToSearch = $(BuildContext)PublicAPI\ProjectWise_InternalSDK\Include
@@ -38,9 +38,9 @@ MultiCompileDepends = $(_MakeFileSpec)
 
 %include MultiCppCompileRule.mki
 
-$(o)PWSession$(oext) : $(_MakeFilePath)PWSession.cpp $(dmsAPISrc)PWSession.h  $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
+$(o)DmsSession$(oext) : $(_MakeFilePath)DmsSession.cpp $(dmsAPISrc)DmsSession.h  $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
 
-$(o)PWWorkspaceHelper$(oext) : $(_MakeFilePath)PWWorkspaceHelper.cpp $(dmsAPISrc)PWWorkspaceHelper.h $(dmsAPISrc)PWSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
+$(o)PWWorkspaceHelper$(oext) : $(_MakeFilePath)PWWorkspaceHelper.cpp $(_MakeFilePath)PWWorkspaceHelper.h $(dmsAPISrc)DmsSession.h $(dmsAPISrc)iModelDmsSupport.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <iModelBridge/Dms/PWWorkspaceHelper.h>
-#include <iModelBridge/Dms/PWSession.h>
+#include "PWWorkspaceHelper.h"
+#include <iModelDmsSupport/DmsSession.h>
 #include <ProjectWise_InternalSDK/Include/Workspace/ManagedWorkspace.h>
 #include <Bentley/Desktop/FileSystem.h>
 
@@ -31,7 +31,7 @@ void            PWWorkspaceHelper::UnInitialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PWWorkspaceHelper::FetchWorkspace(PWSession& session, int folderId, int documentId, BeFileNameCR destination)
+bool            PWWorkspaceHelper::FetchWorkspace(DmsSession& session, int folderId, int documentId, BeFileNameCR destination)
     {
     PWWorkspaceHelper helper;
     if (!helper.Initialize())

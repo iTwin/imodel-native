@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/iModelBridge/Dms/iModelDmsSupport.h $
+|     $Source: PublicAPI/iModelDmsSupport/iModelDmsSupport.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -24,5 +24,10 @@
 
 #include <Logging/bentleylogging.h>
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger(L"iModelBridge"))
+
+struct iModelDmsSupport
+    {
+    IMODEL_DMSSUPPORT_EXPORT  BentleyStatus FetchWorkspace(Utf8StringCR pWMoniker);
+    };
 
 

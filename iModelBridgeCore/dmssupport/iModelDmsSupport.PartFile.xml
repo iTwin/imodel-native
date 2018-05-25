@@ -44,7 +44,7 @@
     </Part>
 
 
-  <Part Name="ProjectWise_SDK" BentleyBuildMakeFile="Dms/pwsdkprewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+  <Part Name="ProjectWise_SDK" BentleyBuildMakeFile="iModelDmsSupport/pwsdkprewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
     <SdkSource>ProjectWise_InternalSDK</SdkSource>
     <Bindings>
       <PublicAPI Domain="ProjectWise_InternalSDK"/>
@@ -59,11 +59,18 @@
         <Directory SourceName="Delivery/DgnPlatformV8Sdk/Dlls/v8iConfig" ProductDirectoryName="DgnV8Dlls" ProductSubDirectory="v8iConfig" SubPartDirectory="DgnPlatformV8Sdk/Dlls/v8iConfig" Required="true"/>    
     </Bindings>
  </Part>
+  <Part Name="iModelDmsPublicApi" BentleyBuildMakeFile="iModelDmsApiprewire.mke">
+    <Bindings>
+      <PublicAPI Domain="iModelDmsSupport" />
+    </Bindings>
+  </Part>
 
-  <Part Name="iModelDmsSupport" BentleyBuildMakeFile="Dms/iModelDmsSupport.mke" OnlyPlatforms="x64"  ApiNumber="B02">
+  <Part Name="iModelDmsSupport" BentleyBuildMakeFile="iModelDmsSupport/iModelDmsSupport.mke" OnlyPlatforms="x64"  ApiNumber="B02">
     <SubPart PartName="ProjectWise_SDK"/>
     <SubPart PartName="VersionedV8_InternalSDK" PartFile="DgnDbSync" Repository="DgnDbSync"/>
     <SubPart PartName="v8ConfigSupport"/>
+    <SubPart PartName="iModelDmsPublicApi"/>
+    <SubPart PartName="BentleyLib" Repository="Bentley" PartFile="Bentley"/>
     <Bindings>
       <Assemblies>Delivery/$(shlibprefix)iModelDmsSupport$(ApiNumber)$(shlibext)</Assemblies>
       <Libs Required="false">Delivery/iModelDmsSupport$(libext)</Libs>

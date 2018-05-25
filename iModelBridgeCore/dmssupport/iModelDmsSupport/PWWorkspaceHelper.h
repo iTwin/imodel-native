@@ -1,17 +1,17 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/iModelBridge/Dms/PWWorkspaceHelper.h $
+|     $Source: iModelDmsSupport/PWWorkspaceHelper.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "iModelDmsSupport.h"
+#include <iModelDmsSupport/iModelDmsSupport.h>
 
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct PWSession;
+struct DmsSession;
 struct PWWorkspaceHelper
     {
     private:
@@ -19,7 +19,7 @@ struct PWWorkspaceHelper
         void UnInitialize();
 
     public:
-        IMODEL_DMSSUPPORT_EXPORT static bool FetchWorkspace(PWSession& session, int folderId, int documentId, BeFileNameCR destination);
+        IMODEL_DMSSUPPORT_EXPORT static bool FetchWorkspace(DmsSession& session, int folderId, int documentId, BeFileNameCR destination);
     };
 
 END_BENTLEY_DGN_NAMESPACE

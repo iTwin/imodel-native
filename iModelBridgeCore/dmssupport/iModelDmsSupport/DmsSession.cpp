@@ -1,20 +1,20 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelDmsSupport/PWSession.cpp $
+|     $Source: iModelDmsSupport/DmsSession.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <iModelBridge/Dms/PWSession.h>
+#include <iModelDmsSupport/DmsSession.h>
 #include <ProjectWise_InternalSDK/Include/aadmsapi.h>
 #include <ProjectWise_InternalSDK/Include/aaodsapi.h>
 
 USING_NAMESPACE_BENTLEY_DGN
-
+static const Utf8String s_PWSessionType("PWDI");
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PWSession::Initialize(BeFileNameCR pwBinaryPath)
+bool            DmsSession::Initialize(BeFileNameCR pwBinaryPath)
     {
     if (NULL != m_activeDataSource)
         return true;
@@ -63,7 +63,7 @@ bool            PWSession::Initialize(BeFileNameCR pwBinaryPath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PWSession::UnInitialize()
+bool            DmsSession::UnInitialize()
     {
     aaOApi_UninitializeSession();
     bool status = aaApi_LogoutByHandle(m_activeDataSource) ? true : false;
@@ -76,8 +76,8 @@ bool            PWSession::UnInitialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-PWSession::PWSession(Utf8StringCR userName, Utf8StringCR password, Utf8StringCR dataSource)
-    :m_userName(userName), m_activeDataSource(NULL), m_password(password), m_dataSource(dataSource)
+DmsSession::DmsSession(Utf8StringCR userName, Utf8StringCR password, Utf8StringCR dataSource, SessionType sessionType)
+    :m_userName(userName), m_activeDataSource(NULL), m_password(password), m_dataSource(dataSource),m_sessionType(sessionType)
     {
 
     }
@@ -86,7 +86,7 @@ PWSession::PWSession(Utf8StringCR userName, Utf8StringCR password, Utf8StringCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PWSession::SetApplicationResourcePath(BeFileNameCR applicationResourcePath)
+void            DmsSession::SetApplicationResourcePath(BeFileNameCR applicationResourcePath)
     {
     m_applicationResourcePath = applicationResourcePath;
     }
@@ -94,7 +94,7 @@ void            PWSession::SetApplicationResourcePath(BeFileNameCR applicationRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PWSession::SetPWBinaryPath(BeFileNameCR pwBinaryPath)
+void            DmsSession::SetPWBinaryPath(BeFileNameCR pwBinaryPath)
     {
     m_pwBinaryPath = pwBinaryPath;
     LOG.tracev("Setting up  projectwise dll search path to %S", pwBinaryPath.c_str());
@@ -104,7 +104,15 @@ void            PWSession::SetPWBinaryPath(BeFileNameCR pwBinaryPath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameCR    PWSession::GetApplicationResourcePath() const
+BeFileNameCR    DmsSession::GetApplicationResourcePath() const
     {
     return m_applicationResourcePath;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DmsSession::SessionType     DmsSession::GetSessionType() const
+    {
+    return m_sessionType;
     }
