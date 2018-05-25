@@ -24,7 +24,19 @@ struct TaskScheduler
     
         BeFileName m_taskFolderName;
 
-        void ProcessTask(FILE* file);
+        bool ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType& t);
+
+        bool ProcessTask(FILE* file);
+
+        void PerformCutTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
+                        
+        void PerformFilterTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
+                
+        void PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
+        
+        void PerformMeshTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
+
+        void PerformStitchTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/);
     
     public:
     

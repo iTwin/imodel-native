@@ -33,10 +33,13 @@ USING_NAMESPACE_BENTLEY
     USING_NAMESPACE_BENTLEY_DGN
 #endif
 
+#include "SMWorkerDefinitions.h"
+
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
-namespace ScalableMeshWorker
-{
+
+
+BEGIN_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
 
 #ifdef VANCOUVER_API
 
@@ -84,7 +87,7 @@ struct ScalableMeshWorker : DgnPlatformLib::Host
 #endif
         virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin();
 
-        BeFileName          m_inputFileName;
+        BeFileName          m_taskFolderName;
         bool                m_optionClean;
         IScalableMeshPtr    m_sMesh;
         HANDLE m_pipe;
@@ -104,12 +107,6 @@ struct ScalableMeshWorker : DgnPlatformLib::Host
         BentleyStatus ParseImportDefinition(BeXmlNodeP pTestNode);
         void Start();
         void Import();
-
-
-
     };
 
-
-
-
-};
+END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE

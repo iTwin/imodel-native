@@ -1,5 +1,6 @@
 #pragma once
 #include <DgnPlatform/DgnPlatformLib.h>
+#include "SMWorkerDefinitions.h"
 
 #ifdef VANCOUVER_API
     USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -8,7 +9,8 @@
 #endif
 
 
-namespace ScalableMeshWorker
-    {
-    void InitializeWorker(DgnPlatformLib::Host& host);
-    };
+BEGIN_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
+
+void InitializeWorker(DgnPlatformLib::Host& host);
+
+END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE

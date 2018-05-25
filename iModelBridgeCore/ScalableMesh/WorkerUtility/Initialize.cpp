@@ -1,4 +1,5 @@
 #include "Initialize.h"
+#include "SMWorkerDefinitions.h"
 
 #include <time.h>
 #include <sys/types.h>
@@ -45,8 +46,8 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN
 using namespace BENTLEY_NAMESPACE_NAME::DgnPlatform;
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
-namespace ScalableMeshWorker
-{
+BEGIN_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
+
 #ifdef VANCOUVER_API 
 struct AppViewManager : VIEWMANAGER
     {
@@ -230,5 +231,5 @@ void InitializeWorker(DgnPlatformLib::Host& host)
 
     static ExeHost smHost;
     }
-}
 
+END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE

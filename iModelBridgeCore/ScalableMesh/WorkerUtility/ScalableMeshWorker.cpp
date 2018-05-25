@@ -13,8 +13,8 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_IMAGEPP
 
 
-namespace ScalableMeshWorker
-{
+BEGIN_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
+
 DgnPlatformLib::Host::GeoCoordinationAdmin&      ScalableMeshWorker::_SupplyGeoCoordinationAdmin()
     {
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
@@ -214,7 +214,7 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
     if (argc < 2)
         return PrintUsage(argv[0]);
     
-    m_optionClean = false;
+    //m_optionClean = false;
     
     for (int iArg = 2; iArg < argc; ++iArg)
         {
@@ -281,10 +281,15 @@ void ScalableMeshWorker::Start()
         }
 #endif
     }
-}
+
+END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
+
+
+//USING_NAMESPACE_BENTLEY_SCALABLEMESH_WORKER/
 
 int wmain(int argc, wchar_t* argv[])
     {
+/*
     _set_error_mode(_OUT_TO_MSGBOX);
     ScalableMeshWorker::ScalableMeshWorker app;
     if (SUCCESS != app.ParseCommandLine(argc, argv))
@@ -292,7 +297,7 @@ int wmain(int argc, wchar_t* argv[])
 
     app.Initialize(argc, argv);
     app.Start();
-
+*/
     //ScalableMeshWorker::CloseATP();
 
     return 0;
