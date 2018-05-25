@@ -1149,7 +1149,10 @@ public:
 
     void ValidateJob();
 
-    DefinitionModelPtr GetJobDefinitionModel();
+    DGNDBSYNC_EXPORT DefinitionModelPtr GetJobDefinitionModel();
+    DgnModelId           GetDrawingListModelId() {return m_drawingListModelId;}
+    DgnModelId           GetSheetListModelId() {return m_sheetListModelId;}
+
     //! @}
 
     //! @name DgnDb properties
