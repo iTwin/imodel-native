@@ -223,8 +223,6 @@ $(OUT_DIR)polyline3d$(OUT_EXT)      : $(geomSrcFuncs)polyline3d.cpp     $(OTHER_
 
 #$(OUT_DIR)polyplane4d$(OUT_EXT)     : $(geomSrcFuncs)polyplane4d.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dpoint3darray$(OUT_EXT)   : $(geomSrcFuncs)dpoint3darray.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
 $(OUT_DIR)simpson$(OUT_EXT)         : $(geomSrcFuncs)simpson.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)polygondecomp$(OUT_EXT)   : $(geomSrcFuncs)polygondecomp.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
@@ -443,8 +441,6 @@ $(OUT_DIR)vuRefineSurface$(OUT_EXT)      : $(vuSrc)vuRefineSurface.cpp $(OTHER_D
 $(OUT_DIR)vusubset$(OUT_EXT)            : $(vuSrc)vusubset.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)vuarray$(OUT_EXT)             : $(vuSrc)vuarray.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-$(OUT_DIR)vumod$(OUT_EXT)               : $(vuSrc)vumod.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)vumod2$(OUT_EXT)              : $(vuSrc)vumod2.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 

@@ -2300,4 +2300,977 @@ double          relTol
                     absTol, relTol, &sortVector, arePointsClose_absXY);
     }
 
+/*-----------------------------------------------------------------*//**
+* @description Returns an upper bound for both the largest absolute value x, y or z
+* coordinate and the greatest distance between any two x,y or z coordinates
+* in an array of points.
+*
+* @param pPointArray => array of points to test
+* @param numPoint => number of points
+* @return upper bound as described above. or zero if no points
+* @see bsiDPoint3d_getLargestCoordinateDifference, bsiDPoint3d_getLargestWeightedCoordinateDifference, bsiDPoint3d_getLargestXYCoordinate
+* @group "DPoint3d Queries"
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double bsiDPoint3d_getLargestCoordinate
+
+(
+DPoint3dCP pPointArray,
+int         numPoint
+)
+    {
+    if (pPointArray && numPoint > 0)
+        {
+        DRange3d tmpRange;
+        tmpRange.InitFrom(pPointArray, numPoint);
+        return tmpRange.LargestCoordinate ();
+        }
+    else
+        {
+        return 0.0;
+        }
+    }
+
+
+/*-----------------------------------------------------------------*//**
+* @description Returns an upper bound for the greatest distance between any two x, y or z
+* coordinates in an array of points.
+*
+* @param pPointArray => array of points to test
+* @param numPoint => number of points
+* @return upper bound as described above, or zero if no points
+* @see bsiDPoint3d_getLargestCoordinate, bsiDPoint3d_getLargestWeightedCoordinateDifference, bsiDPoint3d_getLargestXYCoordinate
+* @group "DPoint3d Queries"
+* @bsihdr                                       DavidAssaf      04/02
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double bsiDPoint3d_getLargestCoordinateDifference
+
+(
+DPoint3dCP pPointArray,
+int         numPoint
+)
+    {
+    if (pPointArray && numPoint > 0)
+        {
+        DRange3d tmpRange;
+        DPoint3d diagonal;
+        tmpRange.InitFrom(pPointArray, numPoint);
+        bsiDPoint3d_subtractDPoint3dDPoint3d (&diagonal, &tmpRange.high, &tmpRange.low);
+        return bsiDPoint3d_maxAbs (&diagonal);
+        }
+    else
+        {
+        return 0.0;
+        }
+    }
+
+
+/*-----------------------------------------------------------------*//**
+* @description Returns an upper bound for the greatest distance between any two x, y or z
+* coordinates in an array of weighted points.
+* @remarks Points with zero weight are ignored.
+*
+* @param pPointArray => array of weighted points to test
+* @param pWeightArray => array of weights
+* @param numPoint => number of points and weights
+* @return upper bound as described above, or zero if no points
+* @group "DPoint3d Queries"
+* @see bsiDPoint3d_getLargestCoordinateDifference, bsiDPoint3d_getLargestCoordinate, bsiDPoint3d_getLargestXYCoordinate
+* @bsihdr                                       DavidAssaf      04/02
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double bsiDPoint3d_getLargestWeightedCoordinateDifference
+
+(
+DPoint3dCP    pPointArray,
+const   double*     pWeightArray,
+int         numPoint
+)
+    {
+    if (!pWeightArray)
+        return bsiDPoint3d_getLargestCoordinateDifference (pPointArray, numPoint);
+
+    if (pPointArray && numPoint > 0)
+        {
+        DRange3d    tmpRange;
+        DPoint3d    diagonal;
+        double      wRecip;
+        int         i;
+
+        tmpRange.Init ();
+        for (i = 0; i < numPoint; i++)
+            if (bsiTrig_safeDivide (&wRecip, 1.0, pWeightArray[i], 0.0))
+                tmpRange.Extend (pPointArray[i].x * wRecip, pPointArray[i].y * wRecip, pPointArray[i].z * wRecip);
+
+        bsiDPoint3d_subtractDPoint3dDPoint3d (&diagonal, &tmpRange.high, &tmpRange.low);
+        return bsiDPoint3d_maxAbs (&diagonal);
+        }
+    else
+        {
+        return 0.0;
+        }
+    }
+
+/*-----------------------------------------------------------------*//**
+* @description Add a given point to each of the points of an array.
+*
+* @param pArray <=> array whose points are to be incremented
+* @param pDelta => point to add to each point of the array
+* @param numPoints => number of points
+* @group "DPoint3d Addition"
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDPoint3d_addDPoint3dArray
+
+(
+DPoint3dP pArray,
+DPoint3dCP pDelta,
+int              numPoints
+)
+    {
+    int         i;
+    DPoint3d   *pPoint = pArray;
+    double      x = pDelta->x;
+    double      y = pDelta->y;
+    double      z = pDelta->z;
+
+    for (i=0; i < numPoints; i++)
+        {
+        pPoint->x += x;
+        pPoint->y += y;
+        pPoint->z += z;
+        pPoint++;
+        }
+    }
+
+/*-----------------------------------------------------------------*//**
+* @description Subtract a given point from each of the points of an array.
+*
+* @param pArray <=> Array whose points are to be decremented
+* @param pDelta => point to subtract from each point of the array
+* @param numVerts => number of points
+* @group "DPoint3d Addition"
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDPoint3d_subtractDPoint3dArray
+
+(
+DPoint3dP pArray,
+DPoint3dCP pDelta,
+int              numVerts
+)
+    {
+    int         i;
+    DPoint3d   *pPoint = pArray;
+    double      x = pDelta->x;
+    double      y = pDelta->y;
+    double      z = pDelta->z;
+
+    for (i=0; i<numVerts; i++)
+        {
+        pPoint->x -= x;
+        pPoint->y -= y;
+        pPoint->z -= z;
+        pPoint++;
+        }
+    }
+
+
+/*-----------------------------------------------------------------*//**
+* @description Copy the given number of DPoint3d structures from the pSource array to the pDest array.
+*
+* @param pDest <= destination array
+* @param pSource => source array
+* @param n => number of points
+* @group "DPoint3d Copy"
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDPoint3d_copyArray
+
+(
+DPoint3dP pDest,
+DPoint3dCP pSource,
+int          n
+)
+    {
+#if defined (__jmdl)
+    int i;
+    for (i = 0; i < n ;i++)
+        {
+        pDest[i]= pSource[i];
+        }
+#else
+    memcpy (pDest, pSource, n*sizeof(DPoint3d) );
+#endif
+    }
+
+
+/*-----------------------------------------------------------------*//**
+* @description Reverse the order of points in the array.
+* @param pXYZ => source array
+* @param n => number of points
+* @group "DPoint3d Copy"
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDPoint3d_reverseArrayInPlace
+(
+DPoint3dP pXYZ,
+int          n
+)
+    {
+    int i, j;
+    for (i= 0, j = n - 1; i < j; i++, j--)
+        {
+        DPoint3d xyz = pXYZ[i];
+        pXYZ[i] = pXYZ[j];
+        pXYZ[j] = xyz;
+        }
+    }
+/*-----------------------------------------------------------------*//**
+* @description Approximate a plane through a set of points.
+* @remarks The method used is:
+    <ul>
+    <li>Find the bounding box.</li>
+    <li>Choose the axis with greatest range.</li>
+    <li>Take two points that are on the min and max of this axis.</li>
+    <li>Also take as a third point the point that is most distant from the line connecting the two extremal points.</li>
+    <li>Form plane through these 3 points.</li>
+    </ul>
+* @param pNormal <= plane normal
+* @param pOrigin <= origin for plane
+* @param pPoint => point array
+* @param numPoint => number of points
+* @param tolerance => max allowable deviation from colinearity (or nonpositive to compute minimal tolerance)
+* @return true if the points define a clear plane; false if every point lies on the line (within tolerance) joining the two extremal points.
+* @group "DPoint3d Queries"
+* @bsihdr                                       DavidAssaf      06/01
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     bsiGeom_planeThroughPointsTol
+
+(
+DPoint3dP pNormal,
+DPoint3dP pOrigin,
+DPoint3dCP pPoint,
+int             numPoint,
+double          tolerance
+)
+    {
+    int i;
+    int i0, i1;
+    bool    result = false;
+
+    DPoint3d point0;
+    DPoint3d point1;
+    DPoint3d vector;
+
+    DPoint3d currVector;
+    DPoint3d currNormal;
+    DPoint3d maxNormal;
+
+    double delta, deltaMax;
+    static double relTol = 1.0e-12;
+    double myTol = bsiDPoint3d_getLargestCoordinateDifference (pPoint, numPoint) * relTol;
+    double myTol2;
+
+    if (tolerance > myTol)
+        myTol = tolerance;
+
+    myTol2 = myTol * myTol;
+
+    if (numPoint > 2)
+        {
+        bsiGeom_findWidelySeparatedPoints
+            (&point0, &i0, &point1, &i1, pPoint, numPoint);
+
+        bsiDPoint3d_computeNormal (&vector, &point1, &point0);
+
+        deltaMax = 0.0;
+        for (i = 0; i < numPoint; i++)
+            {
+            if ( i != i0 && i != i1)
+                {
+                bsiDPoint3d_subtractDPoint3dDPoint3d (&currVector, pPoint + i, &point0);
+                bsiDPoint3d_addScaledDPoint3d (
+                                            &currNormal,
+                                            &currVector,
+                                            &vector,
+                                            -bsiDPoint3d_dotProduct (&currVector, &vector));
+                delta = bsiDPoint3d_dotProduct (&currNormal, &currNormal);
+                if (delta > deltaMax)
+                    {
+                    maxNormal = currNormal;
+                    deltaMax = delta;
+                    }
+                }
+            }
+
+
+        if (deltaMax > myTol2)
+            {
+            *pOrigin = point1;
+            bsiDPoint3d_crossProduct (pNormal, &vector, &maxNormal);
+            result = true;
+            }
+        }
+    return result;
+    }
+
+
+/*-----------------------------------------------------------------*//**
+* @description Approximate a plane through a set of points.
+* @remarks This function calls ~mbsiGeom_planeThroughPointsTol with tolerance = 0.0 to force usage of smallest colinearity tolerance.
+* @param pNormal <= plane normal
+* @param pOrigin <= origin for plane
+* @param pPoint => point array
+* @param numPoint => number of points
+* @return true if the points define a clear plane; false if every point lies on the line joining the two extremal points.
+* @group "DPoint3d Queries"
+* @bsihdr                                       DavidAssaf      12/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     bsiGeom_planeThroughPoints
+
+(
+DPoint3dP pNormal,
+DPoint3dP pOrigin,
+DPoint3dCP pPoint,
+int             numPoint
+)
+    {
+    return bsiGeom_planeThroughPointsTol (pNormal, pOrigin, pPoint, numPoint, 0.0);
+    }
+/*-----------------------------------------------------------------*//**
+* @description Find two points (and their indices) in the given array of points that are relatively far from each other.
+* @remarks The returned points are not guaranteed to be the points with farthest separation.
+*
+* @param pMinPoint  <= first of the two widely separated points (or null)
+* @param pMinIndex  <= index of first point (or null)
+* @param pMaxPoint  <= second of the two widely separated points (or null)
+* @param pMaxIndex  <= index of second point (or null)
+* @param pPoints    => array of points
+* @param numPts     => number of points
+* @return false if numPts < 2
+* @group "DPoint3d Queries"
+* @bsihdr                                       EarlinLutz      12/97
+* @bsihdr                                       DavidAssaf      12/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        bsiGeom_findWidelySeparatedPoints
+
+(
+DPoint3dP pMinPoint,
+int                 *pMinIndex,
+DPoint3dP pMaxPoint,
+int                 *pMaxIndex,
+const DPoint3d      *pPoints,
+int                 numPts
+)
+    {
+    double      *pArray;        /* TREAT DPOINT3D AS ARRAY OF 3 DOUBLES*/
+    double      aMin[3];
+    double      aMax[3];
+    double      a;
+    double      delta, deltaMax;
+    int         iMin[3];
+    int         iMax[3];
+    int         kMax;
+    int         minIndex, maxIndex;
+    int         i, k;
+
+    if (numPts < 2)
+        return false;
+
+    /* Find extrema on each axis, keeping track of their indices in the array.*/
+    pArray = (double *)pPoints;
+    for (k = 0; k < 3; k++)         /* init min/max vals/indices w/ 1st pt */
+        {
+        aMin[k] = aMax[k] = pArray[k];
+        iMin[k] = iMax[k] = 0;
+        }
+    for (i = 1; i < numPts; i++)    /* compare min/max vals/indices w/ other pts */
+        {
+        pArray = (double *)(pPoints + i);
+        for (k = 0; k < 3; k++)
+            {
+            a = pArray[k];
+            if (a < aMin[k])
+                {
+                aMin[k] = a;
+                iMin[k] = i;
+                }
+            else if (a > aMax[k])
+                {
+                aMax[k] = a;
+                iMax[k] = i;
+                }
+            }
+        }
+
+    /* Find the axis (kMax) with largest range.*/
+    kMax = 0;
+    deltaMax = fabs (aMax[0] - aMin[0]);
+
+    for (k = 1; k < 3; k++)
+        {
+        delta = fabs (aMax[k] - aMin[k]);
+        if (delta > deltaMax)
+            {
+            deltaMax = delta;
+            kMax = k;
+            }
+        }
+
+    minIndex = iMin[kMax];
+    maxIndex = iMax[kMax];
+
+    if (pMinIndex)
+        *pMinIndex = minIndex;
+    if (pMaxIndex)
+        *pMaxIndex = maxIndex;
+    if (pMinPoint)
+        *pMinPoint = pPoints[minIndex];
+    if (pMaxPoint)
+        *pMaxPoint = pPoints[maxIndex];
+
+    return true;
+    }
+
+/*-----------------------------------------------------------------*//**
+* qsort comparator.  Compare w parts of pA, pB; if equal comapre (squared)
+*       distance from origin.
+* @bsihdr                                       EarlinLutz 08/02
++---------------+---------------+---------------+---------------+------*/
+static int compareW
+
+(
+DPoint4dCP pA,
+DPoint4dCP pB
+)
+    {
+    double rrA, rrB;
+    if (pA->w < pB->w)
+        return -1;
+    if (pA->w > pB->w)
+        return 1;
+    rrA = pA->x * pA->x + pA->y * pA->y;
+    rrB = pB->x * pB->x + pB->y * pB->y;
+
+    if (rrA < rrB)
+        return -1;
+    if (rrA > rrB)
+        return 1;
+    return 0;
+    }
+
+/*-----------------------------------------------------------------*//**
+* @description Trim points from the tail of an evolving hull if they
+*   are covered by segment from new point back to earlier point.
+* @param pXYZA IN evolving hull array.
+* @param num IN number of points in initial hull.
+* @param pXYZNew = new point being added to hull.
+* @return number of points in hull array after removals.
+* @bsihdr                                       EarlinLutz 08/02
++---------------+---------------+---------------+---------------+------*/
+static int trimHull
+
+(
+DPoint4dP pXYZA,
+int     num,
+DPoint4dCP pXYZNew
+)
+    {
+    int i0, i1;
+    double dx0, dy0, dx1, dy1;
+    double cross;
+    while (num >= 2)
+        {
+        i0 = num - 1;
+        i1 = i0 - 1;
+        dx0 = pXYZA[i0].x - pXYZNew->x;
+        dy0 = pXYZA[i0].y - pXYZNew->y;
+        dx1 = pXYZA[i1].x - pXYZNew->x;
+        dy1 = pXYZA[i1].y - pXYZNew->y;
+        cross = dx0 * dy1 - dy0 * dx1;
+        if (cross < 0.0)
+            break;
+        num--;
+        }
+    return num;
+    }
+
+/*-----------------------------------------------------------------*//**
+* @description Compute a convex hull of given points.  Each output point
+*       is one of the inputs, including its z part.
+* @param pOutBuffer OUT Convex hull points.  First/last point NOT duplicated.
+*       This must be allocated to the caller, large enough to contain numIn points.
+* @param pNumOut OUT number of points on hull
+* @param pInBuffer IN input points.
+* @param numIn IN number of input points.
+* @param iMax IN index of point at maximal radius, i.e. guaranteed to be on hull.
+* @bsihdr                                       EarlinLutz 08/02
++---------------+---------------+---------------+---------------+------*/
+static bool    bsiDPoint3dArray_convexHullXY_go
+
+(
+DPoint3dP pOutBuffer,
+int         *pNumOut,
+DPoint4dP pXYZA,
+int         numIn,
+int         iMax
+)
+    {
+    int i;
+    int numOut;
+    double shift = 8.0 * atan (1.0); /* 2pi */
+    double theta0 = pXYZA[iMax].w;
+    for (i = 0; i < numIn; i++)
+        {
+        if (pXYZA[i].w < theta0)
+            pXYZA[i].w += shift;
+        }
+    qsort (pXYZA, numIn, sizeof (DPoint4d),
+            (int (*)(const void *, const void *))compareW);
+    numOut = 1;
+    for (i = 1; i < numIn; i++)
+        {
+        numOut = trimHull (pXYZA, numOut, &pXYZA[i]);
+        pXYZA[numOut++] = pXYZA[i];
+        }
+    if (numOut > 2)
+        numOut = trimHull (pXYZA, numOut, &pXYZA[0]);
+    *pNumOut = numOut;
+    return true;
+    }
+
+/*-----------------------------------------------------------------*//**
+* @description Compute a convex hull of a point array, ignoring z-coordinates.
+* @remarks Each output point is one of the inputs, including its z-coordinate.
+* @param pOutBuffer OUT convex hull points, first/last point <em>not</em> duplicated.
+*                       This must be allocated by the caller, large enough to contain numIn points.
+* @param pNumOut    OUT number of points on hull
+* @param pInBuffer  IN  input points
+* @param numIn      IN  number of input points
+* @return false if numin is nonpositive or memory allocation failure
+* @group "DPoint3d Queries"
+* @bsihdr                                       EarlinLutz      08/02
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    bsiDPoint3dArray_convexHullXY
+
+(
+DPoint3dP pOutBuffer,
+int         *pNumOut,
+DPoint3dP pInBuffer,
+int         numIn
+)
+    {
+    int i;
+    double xsum, ysum;
+    double dx, dy, rr, rrMax;
+    int iMax, k;
+    double x0, y0;
+    int numOut = 0;
+    bool    boolstat = false;
+    int numSort;
+
+    numOut = 0;
+    if (pNumOut)
+        *pNumOut = numOut;
+
+    if (numIn <= 0)
+        return false;
+
+    bvector<DPoint4d>sortXYZA ((size_t)(numIn + 1));
+
+    if (numIn == 1)
+        {
+        numOut = 1;
+        pOutBuffer[0] = pInBuffer[0];
+        boolstat = true;
+        }
+    else
+        {
+        /* Compute centroid of all points, relative to first point. */
+        xsum = ysum = 0.0;
+        x0 = pInBuffer[0].x;
+        y0 = pInBuffer[0].y;
+        for (i = 1; i < numIn; i++)
+            {
+            xsum += pInBuffer[i].x - x0;
+            ysum += pInBuffer[i].y - y0;
+            }
+        x0 += xsum / numIn;
+        y0 += ysum / numIn;
+        /* Set up work array with x,y,i,angle in local coordinates around centroid. */
+        iMax = -1;
+        rrMax = 0.0;
+        numSort = 0;
+        for (i = 0; i < numIn; i++)
+            {
+            dx = sortXYZA[numSort].x = pInBuffer[i].x - x0;
+            dy = sortXYZA[numSort].y = pInBuffer[i].y - y0;
+            sortXYZA[numSort].z = (double)i;
+            sortXYZA[numSort].w = bsiTrig_atan2 (dy, dx);
+            rr = dx * dx + dy * dy;
+            if (rr > 0.0)
+                {
+                if (rr > rrMax)
+                    {
+                    iMax = numSort;
+                    rrMax = rr;
+                    }
+                numSort++;
+                }
+            }
+
+        if (numSort == 0)
+            {
+            /* All points are at the centroid. Copy the first one out. */
+            numOut = 1;
+            if (pOutBuffer)
+                pOutBuffer[0] = pInBuffer[0];
+            boolstat = true;
+            }
+        else
+            {
+            boolstat = bsiDPoint3dArray_convexHullXY_go (pOutBuffer, &numOut, &sortXYZA[0], numSort, iMax);
+            if (boolstat)
+                {
+                for (i = 0; i < numOut; i++)
+                    {
+                    k = (int)sortXYZA[i].z;
+                    pOutBuffer[i] = pInBuffer[k];
+                    }
+                }
+            else
+                numOut = 0;
+            }
+        }
+    if (pNumOut)
+        *pNumOut = numOut;
+    return boolstat;
+    }
+
+/*-----------------------------------------------------------------*//**
+* qsort comparator.  Compare x parts of pA, pB
+* @bsihdr                                       EarlinLutz 08/02
++---------------+---------------+---------------+---------------+------*/
+static int compareX
+(
+const DPoint3d *pA,
+const DPoint3d *pB
+)
+    {
+    if (pA->x < pB->x)
+        return -1;
+    if (pA->x > pB->x)
+        return 1;
+    return 0;
+    }
+
+/*-----------------------------------------------------------------*//**
+* qsort comparator.  Compare y parts of pA, pB
+* @bsihdr                                       EarlinLutz 08/02
++---------------+---------------+---------------+---------------+------*/
+static int compareY
+(
+const DPoint3d *pA,
+const DPoint3d *pB
+)
+    {
+    if (pA->y < pB->y)
+        return -1;
+    if (pA->y > pB->y)
+        return 1;
+    return 0;
+    }
+
+/*-----------------------------------------------------------------*//**
+* qsort comparator.  Compare x parts of pA, pB
+* @bsihdr                                       EarlinLutz 08/02
++---------------+---------------+---------------+---------------+------*/
+static int compareZ
+(
+const DPoint3d *pA,
+const DPoint3d *pB
+)
+    {
+    if (pA->z < pB->z)
+        return -1;
+    if (pA->z > pB->z)
+        return 1;
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@description Sort points along any direction with clear variation.
+@param pXYZ IN OUT points to sort.
+@param numXYZ IN number of points.
+@group "DPoint3d Sorting"
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDPoint3dArray_sortAlongAnyDirection
+(
+DPoint3d *pXYZ,
+int      numXYZ
+)
+    {
+    if (numXYZ < 2)
+        return;
+    DRange3d range;
+    range.Init ();
+    range.Extend (pXYZ, numXYZ);
+    DVec3d diagonal;
+    diagonal.DifferenceOf (range.high, range.low);
+
+    if (diagonal.x >= diagonal.y && diagonal.x >= diagonal.z)
+        qsort (pXYZ, numXYZ, sizeof (DPoint3d),
+            (int (*)(const void *, const void *))compareX);
+    else if (diagonal.y >= diagonal.z)
+        qsort (pXYZ, numXYZ, sizeof (DPoint3d),
+            (int (*)(const void *, const void *))compareY);
+    else
+        qsort (pXYZ, numXYZ, sizeof (DPoint3d),
+            (int (*)(const void *, const void *))compareZ);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @description Compute a transformation which, if the points are coplanar in 3D, transforms all to the z=0 plane.
+* @remarks Optionally returns post-transform range data so the caller can assess planarity.   If non-coplanar points are given,
+    the plane will be chosen to pass through 3 widely separated points.   If the points are "close" to coplanar, the choice of
+    "widely separated" will give an intuitively reasonable plane, but is not a formal "best" plane by any particular condition.
+* @param pTransformedPoints OUT the points after transformation.  May be NULL.
+* @param pWorldToPlane OUT transformation from world to plane.  May be NULL.
+* @param pPlaneToWorld OUT transformation from plane to world.  May be NULL.
+* @param pRange OUT range of the points in the transformed system.  May be NULL.
+* @param pPoints IN pretransformed points
+* @param numPoint IN number of points
+* @return true if a plane was computed.  This does not guarantee that the points are coplanar.
+    The false condition is for highly degenerate (colinear or single point) data, not
+    an assessment of deviation from the proposed plane.
+* @group "DPoint3d Modification"
+* @bsihdr                                       EarlinLutz      08/02
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    bsiDPoint3dArray_transformToPlane
+
+(
+DPoint3dP pTransformedPoints,
+TransformP pWorldToPlane,
+TransformP pPlaneToWorld,
+DRange3dP pRange,
+DPoint3dCP pPoints,
+int numPoint
+)
+    {
+    Transform worldToPlane, planeToWorld;
+    DVec3d normal;
+    DPoint3d origin;
+    DVec3d xVec, yVec, zVec;
+    bool    boolstat = false;
+    if (   !bsiGeom_planeThroughPoints (&normal, &origin, pPoints, numPoint)
+        || !bsiDVec3d_getNormalizedTriad (&normal, &xVec, &yVec, &zVec)
+       )
+        {
+        if (pWorldToPlane)
+            bsiTransform_initIdentity (pWorldToPlane);
+        if (pPlaneToWorld)
+            bsiTransform_initIdentity (pPlaneToWorld);
+        if (pRange)
+            pRange->Init ();
+        if (pTransformedPoints)
+            bsiDPoint3d_copyArray (pTransformedPoints, pPoints, numPoint);
+        }
+    else
+        {
+        bsiTransform_initFromOriginAndVectors (&planeToWorld, &origin, &xVec, &yVec, &zVec);
+        bsiTransform_invertAsRotation (&worldToPlane, &planeToWorld);
+
+        if (pWorldToPlane)
+            *pWorldToPlane = worldToPlane;
+        if (pPlaneToWorld)
+            *pPlaneToWorld = planeToWorld;
+
+        if (pTransformedPoints)
+            {
+            bsiTransform_multiplyDPoint3dArray (&worldToPlane, pTransformedPoints, pPoints, numPoint);
+            if (pRange)
+                pRange->InitFrom(pTransformedPoints, numPoint);
+            }
+        else
+            {
+            // If range requested but no buffer given, have to do it one by one ourselves.
+            if (pRange)
+                {
+                DPoint3d xyz;
+                int i;
+
+                pRange->Init ();
+                for (i = 0; i < numPoint; i++)
+                    {
+                    bsiTransform_multiplyDPoint3d (&worldToPlane, &xyz, &pPoints[i]);
+                    pRange->Extend (xyz);
+                    }
+                }
+            }
+        boolstat = true;
+        }
+    return boolstat;
+    }
+
+/*-----------------------------------------------------------------*//**
+* @description Find the closest point in an array to the given point.
+* @param pDist2 <= squared distance of closest point to test point (or NULL)
+* @param pPointArray => point array
+* @param n => number of points
+* @param pTestPoint => point to test
+* @return index of nearest point, or negative if n is nonpositive
+* @group "DPoint3d Queries"
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int bsiGeom_nearestPointinDPoint3dArray
+
+(
+double          *pDist2,
+DPoint3dCP pPointArray,
+int              n,
+DPoint3dCP pTestPoint
+)
+    {
+    double minDist2, dist2;
+    int    minIndex, i;
+    if (n <= 0)
+        {
+        minDist2= 0.0;
+        minIndex = -1;
+        }
+    else
+
+        {
+        minDist2 = bsiDPoint3d_distanceSquared (pTestPoint, pPointArray);
+        minIndex = 0;
+        for (i = 1; i < n; i++)
+            {
+            dist2 = bsiDPoint3d_distanceSquared (pTestPoint, pPointArray + i);
+            if (dist2 < minDist2)
+                {
+                minDist2 = dist2;
+                minIndex = i;
+                }
+            }
+        }
+    if (pDist2)
+        *pDist2 = minDist2;
+    return minIndex;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description Copy the given number of DPoint2d structures, setting all z-coordinates to zero.
+* @param pDest <= destination array
+* @param pSource => source array
+* @param n => number of points
+* @group "DPoint3d Copy"
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDPoint3d_copyDPoint2dArray
+
+(
+DPoint3dP pDest,
+DPoint2dCP pSource,
+int          n
+)
+    {
+    int i;
+    for (i = 0; i < n ;i++)
+        {
+        pDest[i].x = pSource[i].x;
+        pDest[i].y = pSource[i].y;
+        pDest[i].z = 0.0;
+        }
+    }
+
+/*-----------------------------------------------------------------*//**
+* @description Test if an array of points is effectively a straight line from the first to the last.
+* @param pOnLine <= true if all points are all within tolerance of the (bounded) line segment from the first point to the last point.
+* @param pPointArray => array of points
+* @param numPoint => number of points
+* @param tolerance => absolute tolerance for distance test (or nonpositive to compute minimal tolerance)
+* @return same as pOnLine
+* @group "DPoint3d Queries"
+* @bsihdr                                       DavidAssaf      12/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        bsiGeom_pointArrayColinearTest
+
+(
+bool        *pOnLine,
+const   DPoint3d    *pPointArray,
+int         numPoint,
+double      tolerance
+)
+    {
+    DPoint3d    vector;
+    double d01, s;
+    int i;
+    DPoint3d p0, p1, proj;
+    static double relTol = 1.0e-12;
+    double myTol = bsiDPoint3d_getLargestCoordinate (pPointArray, numPoint) * relTol;
+    double myTol2;
+
+    if (tolerance > myTol)
+        myTol = tolerance;
+
+    myTol2 = myTol * myTol;
+
+    *pOnLine = false;
+
+    if (numPoint < 2)
+        return *pOnLine;
+
+    p0 = pPointArray[0];
+    p1 = pPointArray[numPoint - 1];
+    bsiDPoint3d_subtractDPoint3dDPoint3d (&vector, &p1, &p0);
+    d01 = bsiDPoint3d_normalizeInPlace (&vector);
+
+    if (d01 <= myTol)
+        return *pOnLine;
+
+    for (i = 1; i < numPoint - 1; i++)
+        {
+        s = bsiDPoint3d_dotDifference (&pPointArray[i], &p0, (DVec3d*) &vector);
+        bsiDPoint3d_addScaledDPoint3d (&proj, &p0, &vector, s);
+        if (bsiDPoint3d_distanceSquared (&proj, &pPointArray[i]) > myTol2)
+            return *pOnLine;
+        if (s < 0.0)
+            {
+            /* projected before line segment's start */
+            if (-s * d01 > myTol)
+                return *pOnLine;
+            }
+        else if (s > d01)
+            {
+            /* projected after line segment's end */
+            if ((s - d01) * d01 > myTol)
+                return *pOnLine;
+            }
+        }
+    *pOnLine = true;
+    return *pOnLine;
+    }
+
+
+/*-----------------------------------------------------------------*//**
+* @description Test if an array of points is effectively a straight line from the first to the last.
+* @param pPointArray => array of points
+* @param numPoint => number of points
+* @param tolerance => absolute tolerance for distance test (or nonpositive to compute minimal tolerance)
+* @return true if all points are within tolerance of the (bounded) line segment from the first point to the last point.
+* @group "DPoint3d Queries"
+* @bsihdr                                       DavidAssaf      12/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        bsiGeom_isDPoint3dArrayColinear
+
+(
+const   DPoint3d    *pPointArray,
+int         numPoint,
+double      tolerance
+)
+    {
+    bool    onLine;
+    return bsiGeom_pointArrayColinearTest (&onLine, pPointArray, numPoint, tolerance);
+    }
+
 END_BENTLEY_GEOMETRY_NAMESPACE

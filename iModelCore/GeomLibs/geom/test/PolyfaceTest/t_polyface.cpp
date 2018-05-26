@@ -1669,6 +1669,7 @@ TEST(Polyface,SweptLinestring)
 
     testSweptLinestrings (3, 0, 2, true, 3, 0);
     testSweptLinestrings (3, 0, 2, true, 4, 0);
+    Check::ClearGeometry ("Polyface.SweptLineString");
     }
 
 /*---------------------------------------------------------------------------------**//**

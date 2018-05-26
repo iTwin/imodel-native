@@ -2485,6 +2485,60 @@ const MTGFacets *pFacetHeader
     return jmdlEmbeddedDPoint3dArray_getCount ((&pFacetHeader->vertexArrayHdr));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Transform both the points and normals of a facet set.
+* There are two options for handling normals.  If
+* inverseTransposeEffects is true, normals are mutliplied by the
+* inverse trasnspose of the matrix part of the transform.  (Why? Let
+* U and V be an two vectors in the plane originally normal to the
+* normal. (e.g. Two insurface tangents in model space.)  Prior to
+* transformation, U dot N is zero.  Let UU and VV be the same vectors
+* after the surface is transformed.  Then the zero dot product is
+* preserved.)
+* If inverseTransposeEffects is false, the normals are just multiplied
+* directly by the matrix part.
+*
+* @param pFacetHeader    <=> facets to transform
+* @param pTransform => transform to apply
+* @param inverseTransposeEffects => true to have normals
+*                                         multiplied by inverse transpose.  This
+*                                         is the usual practice for viewing ops.
+*                                         false to have normals directly
+*                                         multiplied by the matrix part.
+* @see
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void jmdlMTGFacets_transform
+(
+MTGFacets *             pFacetHeader,
+const Transform *       pTransform,
+bool                    inverseTransposeEffects
+)
+    {
+    RotMatrix matrixPart, transpose, inverseTranspose;
+    pTransform->Multiply (pFacetHeader->vertexArrayHdr, pFacetHeader->vertexArrayHdr);
+
+    if (pFacetHeader->normalArrayHdr.size () > 0)
+        {
+        if (inverseTransposeEffects)
+            {
+            matrixPart.InitFrom(*pTransform);
+            transpose = matrixPart;
+            transpose.Transpose ();
+
+            if (inverseTranspose.InverseOf (transpose))
+                {
+                for (auto &normal : pFacetHeader->normalArrayHdr)
+                    inverseTranspose.Multiply (normal);
+                }
+            else
+                {
+                for (auto &normal : pFacetHeader->normalArrayHdr)
+                    matrixPart.Multiply (normal);
+                }
+            }
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Expand an (integer) mask into an ascii buffer, appropriate
