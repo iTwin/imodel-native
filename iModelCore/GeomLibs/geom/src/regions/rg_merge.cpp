@@ -2074,13 +2074,13 @@ static void filterMultipleIntersections
 (
 RG_Header           *pRG,
 MTGNodeId           nodeId,
-EmbeddedDoubleArray *pParamArray,
+bvector<double> *pParamArray,
 EmbeddedDPoint3dArray *pPointArray
 )
     {
-    int numIntersection = jmdlEmbeddedDoubleArray_getCount (pParamArray);
+    size_t numIntersection = pParamArray->size();
     bool    isReversed = false;
-    int outIndex, currIndex;
+    size_t outIndex, currIndex;
     DPoint3d outPoint;
     double minDelta, currDelta;
     double nodeParameter, currParameter;
@@ -2095,17 +2095,19 @@ EmbeddedDPoint3dArray *pPointArray
         minDelta = 1.0e10;
         for (currIndex = 0; currIndex < numIntersection; currIndex++)
             {
-            jmdlEmbeddedDoubleArray_getDouble (pParamArray, &currParameter, currIndex);
+            currParameter = pParamArray->at(currIndex);
             currDelta = fabs (currParameter - nodeParameter);
             if (currIndex == 0 || currDelta < minDelta)
                 outIndex = currIndex;
             }
-        jmdlEmbeddedDoubleArray_getDouble (pParamArray, &currParameter, outIndex);
-        jmdlEmbeddedDoubleArray_empty (pParamArray);
-        jmdlEmbeddedDoubleArray_addDouble (pParamArray, currParameter);
-        jmdlEmbeddedDPoint3dArray_getDPoint3d (pPointArray, &outPoint, outIndex);
-        jmdlEmbeddedDPoint3dArray_empty (pPointArray);
-        jmdlEmbeddedDPoint3dArray_addDPoint3d (pPointArray, &outPoint);
+
+        currParameter = pParamArray->at (outIndex);
+        pParamArray->clear();
+        pParamArray->push_back (currParameter);
+
+        outPoint = pPointArray->at(outIndex);
+        pPointArray->clear ();
+        pPointArray->push_back (outPoint);
         }
     }
 
@@ -2121,7 +2123,7 @@ MTG_MarkSet             *pUnmergedNodes,
 RGVertexSortArrayR      sortArray,
 double                  rTest,
 int                     noisy,
-EmbeddedDoubleArray     *pParamArray,
+bvector<double>         *pParamArray,
 EmbeddedDPoint3dArray   *pPointArray
 )
     {
@@ -2177,7 +2179,6 @@ EmbeddedDPoint3dArray   *pPointArray
             rr01 = bsiDPoint3d_distanceSquaredXY (&xyz0, &xyz1);
             if (rr01 < rr)
                 {
-                int numIntersection;
                 double targetParam;
                 DPoint3d targetPoint;
                 DPoint3d targetVector;
@@ -2191,18 +2192,18 @@ EmbeddedDPoint3dArray   *pPointArray
                 jmdlRG_edgeCircleXYIntersection (pRG,
                         pParamArray, pPointArray, currNodeId, &xyz0, rCircle);
                 filterMultipleIntersections (pRG, currNodeId, pParamArray, pPointArray);
-                numIntersection = jmdlEmbeddedDoubleArray_getCount (pParamArray);
+                auto numIntersection = pParamArray->size();
 
                 if (numIntersection != 1)
                     {
                     jmdlMTGMarkSet_addNode (&deleteSet, currNodeId);
                     if (noisy)
-                        GEOMAPI_PRINTF (" ******** intersection count = %d\n", numIntersection);
+                        GEOMAPI_PRINTF (" ******** intersection count = %d\n", (int)numIntersection);
                     }
                 else
                     {
-                    jmdlEmbeddedDPoint3dArray_getDPoint3d (pPointArray, &targetPoint, 0);
-                    jmdlEmbeddedDoubleArray_getDouble (pParamArray, &targetParam, 0);
+                    targetPoint = pPointArray->front ();
+                    targetParam = pParamArray->front ();
                     bsiDPoint3d_subtractDPoint3dDPoint3d (&targetVector, &targetPoint, &xyz0);
                     angle = bsiTrig_atan2 (targetVector.y, targetVector.x);
 

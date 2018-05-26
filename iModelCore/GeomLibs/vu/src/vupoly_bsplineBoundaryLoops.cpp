@@ -2,11 +2,58 @@
 |
 |     $Source: vu/src/vupoly_bsplineBoundaryLoops.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+/*---------------------------------------------------------------------------------**//**
+* @description Remove all edges in a graph, except those with the given mask on exactly one side.
+* @param graphP IN OUT  graph header
+* @param mask   IN      mask to query
+* @group "VU Edges"
+* @bsimethod                                                    EarlinLutz      8/96
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void vu_removeAllButSingleMarkedEdges
+(
+VuSetP  graphP,
+VuMask  mask
+)
+    {
+    int mateFlag;
+
+    VuP mateP;
+    VuMask myMask = vu_grabMask (graphP);
+    vu_clearMaskInSet (graphP, myMask);
+
+    VU_SET_LOOP(currP, graphP)
+        {
+        mateP = vu_edgeMate (currP);
+        mateFlag = vu_getMask (mateP, mask);
+        if (vu_getMask (currP, mask))
+            {
+            if (mateFlag)
+                {
+                // doubly-marked edge
+                vu_setMask (currP, myMask);
+                vu_setMask (mateP, myMask);
+                }
+            }
+        else
+            {
+            if (!mateFlag)
+                {
+                // unmarked edge
+                vu_setMask (currP, myMask);
+                vu_setMask (mateP, myMask);
+                }
+            }
+        }
+    END_VU_SET_LOOP (currP, graphP)
+
+    vu_freeMarkedEdges (graphP, myMask);
+    vu_returnMask (graphP, myMask);
+    }
 
 
 typedef struct

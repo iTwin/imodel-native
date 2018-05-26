@@ -6,7 +6,7 @@
 |       $Date: 2006/08/02 18:07:13 $
 |     $Author: DavidAssaf $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -139,7 +139,7 @@ double          endFraction,        /* IN      ending fractional parameter */
 DPoint3d        *pXYZ0,
 DPoint3d        *pXYZ1,
 DPoint3d        *pXYZ2,
-EmbeddedDoubleArray *pFractionArray,
+bvector<double> *pFractionArray,
 EmbeddedDPoint3dArray *pXYZArray
 );
 #endif
@@ -171,8 +171,8 @@ Public GEOMDLLIMPEXP void bspcurv_sweepToPlane
 (
 MSBsplineCurve const *pBaseCurve,
 MSBsplineCurve  *pTargetCurve,
-EmbeddedDoubleArray *pStartEndParams,
-EmbeddedDoubleArray *pRuleLineParams,
+bvector<double> *pStartEndParams,
+bvector<double> *pRuleLineParams,
 DVec3dCP        pSweepVector,
 DPlane3dCP      pPlane
 );
@@ -211,7 +211,7 @@ double                  param0,
 double                  param1,
 double                  currParam,
 /*bvector<double>&    pParamArray, */
-EmbeddedDoubleArray *pParamArray,
+bvector<double> *pParamArray,
 void*                   pVoid
 );
 
@@ -221,7 +221,7 @@ void*                   pVoid
 Public GEOMDLLIMPEXP  StatusInt     bspcurv_curvePlaneIntersects
 (
 /*bvector<double>&    pParamArray, */
-EmbeddedDoubleArray     *pParamArray,
+bvector<double>     *pParamArray,
 DPoint3dCP              pOrigin,
 DPoint3dCP              pNormal,
 MSBsplineCurveP         pCurve,

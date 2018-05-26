@@ -7,8 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include "mtgintrn.h"
-#include "../memory/jmdl_iarray.fdf"
-#include "../memory/jmdl_dpnt3.fdf"
+
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 

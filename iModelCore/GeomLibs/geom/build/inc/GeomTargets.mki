@@ -16,8 +16,6 @@ geomSrcPubGeomInteral = $(geomSrcPubGeom)internal/
 
 # (begin structs_sources_pubinc.mki)
 
-$(OUT_DIR)embeddeddoublearray$(OUT_EXT)      : $(geomSrcMemory)embeddeddoublearray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
 $(OUT_DIR)embeddedintarray$(OUT_EXT)      : $(geomSrcMemory)embeddedintarray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)embeddeddpoint3darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint3darray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
@@ -225,8 +223,6 @@ $(OUT_DIR)polyline3d$(OUT_EXT)      : $(geomSrcFuncs)polyline3d.cpp     $(OTHER_
 
 #$(OUT_DIR)polyplane4d$(OUT_EXT)     : $(geomSrcFuncs)polyplane4d.cpp    $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dpoint3darray$(OUT_EXT)   : $(geomSrcFuncs)dpoint3darray.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
 $(OUT_DIR)simpson$(OUT_EXT)         : $(geomSrcFuncs)simpson.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 #$(OUT_DIR)polygondecomp$(OUT_EXT)   : $(geomSrcFuncs)polygondecomp.cpp  $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
@@ -325,7 +321,7 @@ $(OUT_DIR)bspicurv$(OUT_EXT)    : $(geomSrcBspline)bspicurv.cpp $(OTHER_DEPENDEN
 
 #$(OUT_DIR)bspplank$(OUT_EXT)    : $(geomSrcBspline)bspplank.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-$(OUT_DIR)bsp_curvature$(OUT_EXT)    : $(geomSrcBspline)bsp_curvature.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+#$(OUT_DIR)bsp_curvature$(OUT_EXT)    : $(geomSrcBspline)bsp_curvature.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 #####$(OUT_DIR)bspbool$(OUT_EXT)    : $(geomSrcBspline)bspbool.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
@@ -445,8 +441,6 @@ $(OUT_DIR)vuRefineSurface$(OUT_EXT)      : $(vuSrc)vuRefineSurface.cpp $(OTHER_D
 $(OUT_DIR)vusubset$(OUT_EXT)            : $(vuSrc)vusubset.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)vuarray$(OUT_EXT)             : $(vuSrc)vuarray.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-$(OUT_DIR)vumod$(OUT_EXT)               : $(vuSrc)vumod.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)vumod2$(OUT_EXT)              : $(vuSrc)vumod2.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
@@ -799,9 +793,7 @@ $(OUT_DIR)gp_developable$(OUT_EXT) : $(geomSrcGpa)gp_developable.cpp         $(O
 
 # deprecated but still used -- most functionality maps to jmdlEmbeddedXXXArray, but
 # return values are StatusInt instead of BoolInt and call-side changes are dangerous.
-$(OUT_DIR)jmdl_dpnt3$(OUT_EXT) : $(geomSrcMemory)jmdl_dpnt3.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-$(OUT_DIR)jmdl_iarray$(OUT_EXT) : $(geomSrcMemory)jmdl_iarray.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+#$(OUT_DIR)jmdl_dpnt3$(OUT_EXT) : $(geomSrcMemory)jmdl_dpnt3.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)UnionFind$(OUT_EXT) : $(geomSrcMemory)UnionFind.cpp     $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
@@ -829,8 +821,6 @@ $(OUT_DIR)jmdl_mtgfacet$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgfacet.cpp         $(OTH
 
 $(OUT_DIR)jmdl_mtgedgestar$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgedgestar.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
-#$(OUT_DIR)jmdl_mtgparity$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgparity.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
 #$(OUT_DIR)jmdl_mtgreduce$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgreduce.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 #$(OUT_DIR)jmdl_mtgreg$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgreg.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
@@ -841,8 +831,6 @@ $(OUT_DIR)jmdl_mtgstitch$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgstitch.cpp         $(O
 $(OUT_DIR)jmdl_mtgswap$(OUT_EXT) : $(geomSrcMTG)jmdl_mtgswap.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 #$(OUT_DIR)mtgflowlines$(OUT_EXT) : $(geomSrcMTG)mtgflowlines.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-#$(OUT_DIR)unfold$(OUT_EXT) : $(geomSrcMTG)unfold.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 %ifdef CompileSmoothMeshNormals
 $(OUT_DIR)mtgSmoothNormals$(OUT_EXT) : $(geomSrcMTG)mtgSmoothNormals.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
@@ -894,8 +882,6 @@ $(OUT_DIR)rimsbs_intersect$(OUT_EXT)        :$(geomSrcRimsbs)rimsbs_intersect.cp
 $(OUT_DIR)rimsbs_intersect1$(OUT_EXT)        :$(geomSrcRimsbs)rimsbs_intersect1.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 ##$(OUT_DIR)gpaff_context$(OUT_EXT)        :$(geomSrcRimsbs)gpaff_context.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
-
-#$(OUT_DIR)decimatexyz$(OUT_EXT)         :$(geomSrcMTG)decimatexyz.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 %ifdef COMPILE_PLATFORM_GEOMETRY
 

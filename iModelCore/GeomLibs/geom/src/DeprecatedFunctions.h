@@ -820,6 +820,371 @@ DPoint3dCP pOrigin,
 DPoint3dCP pNormal
 );
 
+/**
+* @param pDestArray array where shuffled data is placed
+* @param pSourceArray original array
+* @param pIndexArray index information
+* @see
+* @return SUCCESS if
+* @bsimethod                                                    BentleySystems  12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP StatusInt jmdlVArrayInt_shuffleArray
+(
+        EmbeddedDPoint3dArray     *pDestArray,    /* array where shuffled data is placed */
+const   EmbeddedDPoint3dArray     *pSourceArray,  /* original array */
+const   EmbeddedIntArray            *pIndexArray    /* index information */
+);
 
+/*---------------------------------------------------------------------------------**//**
+* Create a new cluster index for a union-find algorithm.
+*
+* @param    pInstance IN      int array being used for union find.
+* @return
+* @bsimethod                                                    BentleySystems  06/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      jmdlVArrayInt_newClusterIndex
+(
+EmbeddedIntArray  *pInstance
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search upwards in the union-find structure for a parent cluster.
+* Fixup indices along the way!!!   The parent index always is a root (i.e. is its own parent)
+* @param    pInstance IN OUT  int array being used for union find.
+* @param cluster0 IN      first cluster id
+* @return the merged cluster index.
+* @bsimethod                                                    BentleySystems  06/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int  jmdlVArrayInt_getMergedClusterIndexExt
+(
+EmbeddedIntArray  *pInstance,
+int         cluster,
+int         depth
+);
+
+/*---------------------------------------------------------------------------------**//**
+* Search upwards in the union-find structure for a parent cluster.
+* Fixup indices along the way!!!   The parent index always is a root (i.e. is its own parent)
+* @param    pInstance IN OUT  int array being used for union find.
+* @param cluster0 IN      first cluster id
+* @return the merged cluster index.
+* @bsimethod                                                    BentleySystems  06/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int  jmdlVArrayInt_getMergedClusterIndex
+(
+EmbeddedIntArray  *pInstance,
+int         cluster
+);
+
+/*---------------------------------------------------------------------------------**//**
+* @param    pInstance IN OUT  int array being used for union find.
+* @param cluster0 IN      first cluster id
+* @param cluster1 IN      second cluster id
+* @return the merged cluster index (may be different from both!!)
+* @bsimethod                                                    BentleySystems  06/98
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      jmdlVArrayInt_mergeClusters
+(
+EmbeddedIntArray  *pInstance,
+int         cluster0,
+int         cluster1
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Returns an upper bound for both the largest absolute value x, y or z
+* coordinate and the greatest distance between any two x,y or z coordinates
+* in an array of points.
+*
+* @param pPointArray => array of points to test
+* @param numPoint => number of points
+* @return upper bound as described above. or zero if no points
+* @see bsiDPoint3d_getLargestCoordinateDifference, bsiDPoint3d_getLargestWeightedCoordinateDifference, bsiDPoint3d_getLargestXYCoordinate
+* @group "DPoint3d Queries"
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double bsiDPoint3d_getLargestCoordinate
+
+(
+DPoint3dCP pPointArray,
+int         numPoint
+);
+
+
+/*-----------------------------------------------------------------*//**
+* @description Returns an upper bound for the greatest distance between any two x, y or z
+* coordinates in an array of points.
+*
+* @param pPointArray => array of points to test
+* @param numPoint => number of points
+* @return upper bound as described above, or zero if no points
+* @see bsiDPoint3d_getLargestCoordinate, bsiDPoint3d_getLargestWeightedCoordinateDifference, bsiDPoint3d_getLargestXYCoordinate
+* @group "DPoint3d Queries"
+* @bsihdr                                       DavidAssaf      04/02
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double bsiDPoint3d_getLargestCoordinateDifference
+
+(
+DPoint3dCP pPointArray,
+int         numPoint
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Returns an upper bound for the greatest distance between any two x, y or z
+* coordinates in an array of weighted points.
+* @remarks Points with zero weight are ignored.
+*
+* @param pPointArray => array of weighted points to test
+* @param pWeightArray => array of weights
+* @param numPoint => number of points and weights
+* @return upper bound as described above, or zero if no points
+* @group "DPoint3d Queries"
+* @see bsiDPoint3d_getLargestCoordinateDifference, bsiDPoint3d_getLargestCoordinate, bsiDPoint3d_getLargestXYCoordinate
+* @bsihdr                                       DavidAssaf      04/02
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP double bsiDPoint3d_getLargestWeightedCoordinateDifference
+
+(
+DPoint3dCP    pPointArray,
+const   double*     pWeightArray,
+int         numPoint
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Add a given point to each of the points of an array.
+*
+* @param pArray <=> array whose points are to be incremented
+* @param pDelta => point to add to each point of the array
+* @param numPoints => number of points
+* @group "DPoint3d Addition"
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDPoint3d_addDPoint3dArray
+
+(
+DPoint3dP pArray,
+DPoint3dCP pDelta,
+int              numPoints
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Subtract a given point from each of the points of an array.
+*
+* @param pArray <=> Array whose points are to be decremented
+* @param pDelta => point to subtract from each point of the array
+* @param numVerts => number of points
+* @group "DPoint3d Addition"
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDPoint3d_subtractDPoint3dArray
+
+(
+DPoint3dP pArray,
+DPoint3dCP pDelta,
+int              numVerts
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Copy the given number of DPoint3d structures from the pSource array to the pDest array.
+*
+* @param pDest <= destination array
+* @param pSource => source array
+* @param n => number of points
+* @group "DPoint3d Copy"
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDPoint3d_copyArray
+
+(
+DPoint3dP pDest,
+DPoint3dCP pSource,
+int          n
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Reverse the order of points in the array.
+* @param pXYZ => source array
+* @param n => number of points
+* @group "DPoint3d Copy"
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDPoint3d_reverseArrayInPlace
+(
+DPoint3dP pXYZ,
+int          n
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Approximate a plane through a set of points.
+* @remarks The method used is:
+    <ul>
+    <li>Find the bounding box.</li>
+    <li>Choose the axis with greatest range.</li>
+    <li>Take two points that are on the min and max of this axis.</li>
+    <li>Also take as a third point the point that is most distant from the line connecting the two extremal points.</li>
+    <li>Form plane through these 3 points.</li>
+    </ul>
+* @param pNormal <= plane normal
+* @param pOrigin <= origin for plane
+* @param pPoint => point array
+* @param numPoint => number of points
+* @param tolerance => max allowable deviation from colinearity (or nonpositive to compute minimal tolerance)
+* @return true if the points define a clear plane; false if every point lies on the line (within tolerance) joining the two extremal points.
+* @group "DPoint3d Queries"
+* @bsihdr                                       DavidAssaf      06/01
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     bsiGeom_planeThroughPointsTol
+
+(
+DPoint3dP pNormal,
+DPoint3dP pOrigin,
+DPoint3dCP pPoint,
+int             numPoint,
+double          tolerance
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Approximate a plane through a set of points.
+* @remarks This function calls ~mbsiGeom_planeThroughPointsTol with tolerance = 0.0 to force usage of smallest colinearity tolerance.
+* @param pNormal <= plane normal
+* @param pOrigin <= origin for plane
+* @param pPoint => point array
+* @param numPoint => number of points
+* @return true if the points define a clear plane; false if every point lies on the line joining the two extremal points.
+* @group "DPoint3d Queries"
+* @bsihdr                                       DavidAssaf      12/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool     bsiGeom_planeThroughPoints
+
+(
+DPoint3dP pNormal,
+DPoint3dP pOrigin,
+DPoint3dCP pPoint,
+int             numPoint
+);
+/*-----------------------------------------------------------------*//**
+* @description Find two points (and their indices) in the given array of points that are relatively far from each other.
+* @remarks The returned points are not guaranteed to be the points with farthest separation.
+*
+* @param pMinPoint  <= first of the two widely separated points (or null)
+* @param pMinIndex  <= index of first point (or null)
+* @param pMaxPoint  <= second of the two widely separated points (or null)
+* @param pMaxIndex  <= index of second point (or null)
+* @param pPoints    => array of points
+* @param numPts     => number of points
+* @return false if numPts < 2
+* @group "DPoint3d Queries"
+* @bsihdr                                       EarlinLutz      12/97
+* @bsihdr                                       DavidAssaf      12/98
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool        bsiGeom_findWidelySeparatedPoints
+
+(
+DPoint3dP pMinPoint,
+int                 *pMinIndex,
+DPoint3dP pMaxPoint,
+int                 *pMaxIndex,
+const DPoint3d      *pPoints,
+int                 numPts
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Compute a convex hull of given points.  Each output point
+*       is one of the inputs, including its z part.
+* @param pOutBuffer OUT Convex hull points.  First/last point NOT duplicated.
+*       This must be allocated to the caller, large enough to contain numIn points.
+* @param pNumOut OUT number of points on hull
+* @param pInBuffer IN input points.
+* @param numIn IN number of input points.
+* @param iMax IN index of point at maximal radius, i.e. guaranteed to be on hull.
+* @bsihdr                                       EarlinLutz 08/02
++---------------+---------------+---------------+---------------+------*/
+static bool    bsiDPoint3dArray_convexHullXY_go
+
+(
+DPoint3dP pOutBuffer,
+int         *pNumOut,
+DPoint4dP pXYZA,
+int         numIn,
+int         iMax
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Compute a convex hull of a point array, ignoring z-coordinates.
+* @remarks Each output point is one of the inputs, including its z-coordinate.
+* @param pOutBuffer OUT convex hull points, first/last point <em>not</em> duplicated.
+*                       This must be allocated by the caller, large enough to contain numIn points.
+* @param pNumOut    OUT number of points on hull
+* @param pInBuffer  IN  input points
+* @param numIn      IN  number of input points
+* @return false if numin is nonpositive or memory allocation failure
+* @group "DPoint3d Queries"
+* @bsihdr                                       EarlinLutz      08/02
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    bsiDPoint3dArray_convexHullXY
+
+(
+DPoint3dP pOutBuffer,
+int         *pNumOut,
+DPoint3dP pInBuffer,
+int         numIn
+);
+
+/*---------------------------------------------------------------------------------**//**
+@description Sort points along any direction with clear variation.
+@param pXYZ IN OUT points to sort.
+@param numXYZ IN number of points.
+@group "DPoint3d Sorting"
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDPoint3dArray_sortAlongAnyDirection
+(
+DPoint3d *pXYZ,
+int      numXYZ
+);
+
+/*-----------------------------------------------------------------*//**
+* @description Compute a transformation which, if the points are coplanar in 3D, transforms all to the z=0 plane.
+* @remarks Optionally returns post-transform range data so the caller can assess planarity.   If non-coplanar points are given,
+    the plane will be chosen to pass through 3 widely separated points.   If the points are "close" to coplanar, the choice of
+    "widely separated" will give an intuitively reasonable plane, but is not a formal "best" plane by any particular condition.
+* @param pTransformedPoints OUT the points after transformation.  May be NULL.
+* @param pWorldToPlane OUT transformation from world to plane.  May be NULL.
+* @param pPlaneToWorld OUT transformation from plane to world.  May be NULL.
+* @param pRange OUT range of the points in the transformed system.  May be NULL.
+* @param pPoints IN pretransformed points
+* @param numPoint IN number of points
+* @return true if a plane was computed.  This does not guarantee that the points are coplanar.
+    The false condition is for highly degenerate (colinear or single point) data, not
+    an assessment of deviation from the proposed plane.
+* @group "DPoint3d Modification"
+* @bsihdr                                       EarlinLutz      08/02
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    bsiDPoint3dArray_transformToPlane
+
+(
+DPoint3dP pTransformedPoints,
+TransformP pWorldToPlane,
+TransformP pPlaneToWorld,
+DRange3dP pRange,
+DPoint3dCP pPoints,
+int numPoint
+);
+/*-----------------------------------------------------------------*//**
+* @description Find the closest point in an array to the given point.
+* @param pDist2 <= squared distance of closest point to test point (or NULL)
+* @param pPointArray => point array
+* @param n => number of points
+* @param pTestPoint => point to test
+* @return index of nearest point, or negative if n is nonpositive
+* @group "DPoint3d Queries"
+* @bsihdr                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int bsiGeom_nearestPointinDPoint3dArray
+
+(
+double          *pDist2,
+DPoint3dCP pPointArray,
+int              n,
+DPoint3dCP pTestPoint
+);
 
 END_BENTLEY_GEOMETRY_NAMESPACE

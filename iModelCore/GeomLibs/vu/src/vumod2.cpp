@@ -2,11 +2,192 @@
 |
 |     $Source: vu/src/vumod2.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          vu_splitEdgeAtV                                         |
+|                                                                       |
+| author        earlinLutz                                      10/94   |
+|                                                                       |
++----------------------------------------------------------------------*/
+static void     vu_splitEdgeAtV (
+VuSetP          graphP,         /* Parent set where the new nodes are added */
+VuP             startP,         /* Starting vu of edge to split */
+double          v,              /* v coordinate for new point. */
+VuP            *leftP,          /* <= new vu on left of edge */
+VuP            *rightP          /* <= new vu on right of edge */
+)
+    {
+    double          t, u, v0;
+    VuP             endP = VU_FSUCC (startP);
+    v0 = VU_V (startP);
+    t = (v - v0) / (VU_V (VU_FSUCC (startP)) - v0);
+    u = VU_U (startP) + t * (VU_U (endP) - VU_U (startP));
+    vu_splitEdge (graphP, startP, leftP, rightP);
+    VU_SET_UV (*leftP, u, v);
+    VU_SET_UV (*rightP, u, v);
+    }
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+| name          searchSortedArrayAbove                                  |
+|                                                                       |
+| author        earlinLutz                                      10/94   |
+|                                                                       |
++----------------------------------------------------------------------*/
+static int      searchSortedArrayAbove (       /* <= the index of the least entry strictly larger than a
+                                                   This value is nv if all entries are a or less */
+double          a,              /* => test key */
+double         *v,              /* => array of keys */
+int             nv              /* => number of keys */
+)
+    {
+    int             i;
+    for (i = 0; i < nv && v[i] <= a; i++)
+        {
+        }
+    return i;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @description Insert horizontal edges across a face that is known to be monotone in the v-coordinate.
+* @param graphP         IN OUT  graph header
+* @param sliceArrayP    OUT     array to receive the sliced faces, one node per new face
+* @param startP         IN      any starter node in the face
+* @param v              IN      ascending array of altitudes (v-coordinates of horizontal split lines)
+* @param maskP          IN      array of masks to install on new edges
+* @param nv             IN      number of altitudes/masks
+* @param fixedMask      IN      additional mask to apply to new edges
+* @group "VU Meshing"
+* @bsimethod                                                    EarlinLutz      10/94
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void            vu_splitMonotoneFaceOnSortedHorizontalLines
+(
+VuSetP          graphP,
+VuArrayP        sliceArrayP,
+VuP             startP,
+double          *v,
+VuMask          *maskP,
+int             nv,
+VuMask          fixedMask
+)
+    {
+    VuP             nextP, leftP, rightP;
+    VuP             insideP, outsideP;
+    VuP             newLeftP, newRightP;
+    double          v0, v1, vLine;
+    int             i;
+    VuMask          mask;
+
+    /*    Look for a local min (which should also be a global min) */
+    nextP = VU_FSUCC (startP);
+    if (VU_BELOW (nextP, startP))
+        {
+        do
+            {
+            startP = nextP;
+            nextP = VU_FSUCC (nextP);
+            }
+        while (VU_BELOW (nextP, startP));
+        }
+    else
+        {
+        for (nextP = VU_FPRED (startP);
+             VU_BELOW (nextP, startP);
+             startP = nextP, nextP = VU_FPRED (nextP))
+            {
+            }
+        ;
+        }
+
+
+    i = searchSortedArrayAbove (VU_V (startP), v, nv);
+    /*    Walk upwards on both sides, inserting and joining
+       cross lines at each v value  */
+    leftP = rightP = startP;
+    vu_arrayAdd (sliceArrayP, leftP);
+
+    while (i < nv)
+        {
+
+        mask = maskP[i] | fixedMask;
+        vLine = v[i++];
+
+        /*      Search and subdivide on the left */
+        v1 = VU_V (leftP);
+        nextP = leftP;
+        do
+            {
+            leftP = nextP;
+            nextP = VU_FPRED (leftP);
+            v0 = v1;
+            v1 = VU_V (nextP);
+            }
+        while (v1 < vLine && VU_BELOW (leftP, nextP));
+
+        if (v1 > vLine)
+            {
+            /*      subdivide the left edge */
+            vu_splitEdgeAtV (graphP, nextP, vLine, &insideP, &outsideP);
+            leftP = insideP;
+            }
+        else
+            {
+            /*      Continue moving as long as the edge moves
+               strictly to the right */
+            do
+                {
+                leftP = nextP;
+                nextP = VU_FPRED (nextP);
+                }
+            while (VU_V (nextP) == v1 && VU_U (nextP) > VU_U (leftP));
+            }
+
+        /*      Search and subdivide on the right */
+        v1 = VU_V (rightP);
+        nextP = rightP;
+        do
+            {
+            rightP = nextP;
+            nextP = VU_FSUCC (rightP);
+            v0 = v1;
+            v1 = VU_V (nextP);
+            }
+        while (v1 < vLine && VU_BELOW (rightP, nextP));
+
+        if (v1 > vLine)
+            {
+            /*      subdivide the left edge */
+            vu_splitEdgeAtV (graphP, rightP, vLine, &insideP, &outsideP);
+            rightP = insideP;
+            }
+        else
+            {
+            rightP = nextP;
+            }
+
+        if (leftP != rightP
+            && VU_V (leftP) == vLine
+            && VU_V (rightP) == vLine)
+            {
+            vu_join (graphP, leftP, rightP, &newLeftP, &newRightP);
+            VU_SETMASK(newLeftP,mask);
+            VU_SETMASK(newRightP,mask);
+            leftP = newLeftP;
+            vu_arrayAdd (sliceArrayP, newLeftP);
+            }
+        else
+            {
+            i = nv;             /* forces loop exit */
+            }
+        }
+    }
+
 /*
    Typical 'meshing' operations on a vu graph -- horizontal line slicing,
    triangulation of monotone face.

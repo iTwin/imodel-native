@@ -69,17 +69,27 @@ double wInterior
     }
 
 
-PolyfaceHeaderPtr PolyfaceWithSinusoidalGrid (size_t numI, size_t numJ, double q0I, double aI, double q0J, double aJ, bool triangulated)
+PolyfaceHeaderPtr PolyfaceWithSinusoidalGrid (
+size_t numI, size_t numJ,
+double q0I, double aI,
+double q0J, double aJ,
+bool triangulated,
+bool params
+)
     {
     PolyfaceHeaderPtr mesh = triangulated ?
               PolyfaceHeader::CreateTriangleGrid ((int)numI)
             : PolyfaceHeader::CreateQuadGrid ((int)numI);
 
     bvector<DPoint3d>poles;
+    if (params)
+        mesh->Param().SetActive (true);
     for (size_t j = 0; j < numJ; j++)
         for (size_t i = 0; i < numI; i++)
             {
             mesh->Point ().push_back (DPoint3d::From ((double)i, (double)j, sin(q0I + aI * i) * sin (q0J + aJ * j)));
+            if (params)
+                mesh->Param ().push_back (DPoint2d::From ((double)i, (double)j));
             }
     return mesh;
     }

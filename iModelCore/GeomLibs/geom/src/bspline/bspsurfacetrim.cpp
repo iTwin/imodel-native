@@ -1389,7 +1389,8 @@ Find the parity classification of a point with respect to a loop, using a single
 static bool bspTrimCurve_attmptPointOutOnInLoopScan
 (
 TrimCurve *pHead,
-EmbeddedDoubleArray *pParamArray,
+bvector<double> &paramArray,
+bvector<DPoint3d> &pointArray,
 double ax,
 double ay,
 double ux,
@@ -1399,14 +1400,11 @@ int &parity
     {
     static double abstol = 1.0e-8;
     static double paramTol = 1.0e-6;
-    DPoint3d origin;
-    DPoint3d normal;
     DPoint3d curvePoint;
     int numLeft = 0, numRight = 0;
-    bsiDPoint3d_setXYZ (&origin, ax, ay, 0.0);
     double nx = -uy;
     double ny = ux;
-    bsiDPoint3d_setXYZ (&normal, nx, ny, 0.0);
+    DPlane3d plane = DPlane3d::FromOriginAndNormal (ax, ay, 0, nx, ny, 0);
     TrimCurve *pCurr;
     parity = 0;
     // Count simple crossings to left and right.
@@ -1414,17 +1412,15 @@ int &parity
     // Any awkward crossing (endpoint, double root) is immediate false exit.
     for (pCurr = pHead; NULL != pCurr; pCurr = pCurr->pNext)
         {
-        pParamArray->clear ();
-        if (SUCCESS != bspcurv_curvePlaneIntersects (pParamArray, &origin, &normal, &pCurr->curve, abstol))
-            return false;
-        size_t   numParam = jmdlEmbeddedDoubleArray_getCount (pParamArray);
+        paramArray.clear ();
+        pCurr->curve.AddPlaneIntersections(&pointArray, &paramArray, plane);
+        size_t   numParam = paramArray.size ();
         // ASSUME parameters are sorted ....
         double currParam, prevParam = 0.0;
         for (size_t i = 0; i < numParam; i++, prevParam = currParam)
             {
-            currParam = pParamArray->at (i);
-            bspcurv_evaluateCurvePoint (&curvePoint, NULL,
-                const_cast <MSBsplineCurve*>(&pCurr->curve), currParam);
+            currParam = paramArray[i];
+            curvePoint = pointArray[i];
             if (   fabs (curvePoint.x - ax) < abstol
                 || fabs (curvePoint.y - ay) < abstol)
                 {
@@ -1460,7 +1456,7 @@ int &parity
                 if (i == 0)
                     {
                     u0 = 0.0;
-                    u1 = pParamArray->at (i);
+                    u1 = paramArray[i];
                     }
                 else if (i == numParam)
                     {
@@ -1470,7 +1466,7 @@ int &parity
                 else
                     {
                     u0 = prevParam;
-                    u1 = pParamArray->at (i);
+                    u1 = paramArray[i];
                     }
                 // Sort error or double root ...
                 if (u1 < u0 + abstol)
@@ -1510,7 +1506,8 @@ Find the parity classification of a point with respect to a loop.
 static bool bspTrimCurve_pointOutOnInLoop
 (
 TrimCurve *pHead,
-EmbeddedDoubleArray *pParamArray,
+bvector<double>  &paramArray,
+bvector<DPoint3d> &pointArray,
 double ax,
 double ay,
 int &parity
@@ -1525,7 +1522,7 @@ int &parity
         {
         double ux = cos (theta);
         double uy = sin (theta);
-        if (bspTrimCurve_attmptPointOutOnInLoopScan (pHead, pParamArray, ax, ay, ux, uy, parity))
+        if (bspTrimCurve_attmptPointOutOnInLoopScan (pHead, paramArray, pointArray, ax, ay, ux, uy, parity))
             return true;
         theta *= sThetaFactor;
         }
@@ -1555,6 +1552,7 @@ bool            holeOrigin
     if (numBounds == 0)
         return true;    /* maybe should check in range ? */
     bvector<double> paramArray;
+    bvector<DPoint3d> pointArray;
 
     crossings = 0;
     for (i = 0; i < numBounds; i++)
@@ -1564,7 +1562,7 @@ bool            holeOrigin
             {
             int singleOutOnInLoop;
             if (!bspTrimCurve_pointOutOnInLoop (currBoundaryP->pFirst,
-                            &paramArray,
+                            paramArray, pointArray,
                             uvP->x, uvP->y,
                             singleOutOnInLoop))
                 goto cleanup;
@@ -1646,9 +1644,9 @@ int                         horizontal
     bspsurf_countLoops (pSurface, &numLinear, &numPCurve);
     if (   numPCurve > 0)
         {
-        DPoint3d origin;
-        DPoint3d normal;
+        DPlane3d plane;
         bvector<double> curveParamArray;
+        bvector<DPoint3d> curvePointArray;
 
         if (!pSurface->holeOrigin)
             {
@@ -1657,13 +1655,13 @@ int                         horizontal
             }
         if (horizontal)
             {
-            bsiDPoint3d_setXYZ (&origin, 0.0, scanHeight, 0.0);
-            bsiDPoint3d_setXYZ (&normal, 0.0, 1.0, 0.0);
+            plane.origin.Init (0.0, scanHeight, 0.0);
+            plane.normal.Init (0.0, 1.0, 0.0);
             }
         else
             {
-            bsiDPoint3d_setXYZ (&origin, scanHeight,  0.0, 0.0);
-            bsiDVec3d_setXYZ   ((DVec3d *) &normal, 1.0,       0.0, 0.0);
+            plane.origin.Init (scanHeight,  0.0, 0.0);
+            plane.normal.Init (1.0,       0.0, 0.0);
             }
 
         for (int i = 0; i < pSurface->numBounds; i++)
@@ -1673,18 +1671,17 @@ int                         horizontal
                     pCurr = pCurr->pNext)
                 {
                 curveParamArray.clear ();
-                bspcurv_curvePlaneIntersects (&curveParamArray, &origin, &normal, &pCurr->curve, sParamTol);
+                curvePointArray.clear ();
+                pCurr->curve.AddPlaneIntersections (&curvePointArray, &curveParamArray, plane);
                 size_t numCurveParam = curveParamArray.size ();
                 for (size_t k = 0; k < numCurveParam; k++)
                     {
-                    double u = curveParamArray[k];
-                    DPoint3d xyz;
-                    bspcurv_evaluateCurvePoint (&xyz, NULL, &pCurr->curve, u);
+                    DPoint3d xyz = curvePointArray[k];
                     pFractionArray->push_back ( horizontal ? xyz.x : xyz.y);
                     }
                 }
             }
-        jmdlEmbeddedDoubleArray_sort (pFractionArray);
+        std::sort (pFractionArray->begin (), pFractionArray->end ());
         }
     else if (pSurface->numBounds > 0)
         {
@@ -1782,8 +1779,7 @@ int                         horizontal
                     }
                 }
             }
-
-        jmdlEmbeddedDoubleArray_sort (pFractionArray);
+        std::sort (pFractionArray->begin (), pFractionArray->end ());
         }
     else
         {

@@ -1006,8 +1006,13 @@ MSBsplineSurfacePtr SurfaceWithSinusoidalControlPolygon
 // @param [in] q0J start angle for v direction sine calls
 // @param [in] qJ angle step between successive v direction sine calls.
 // @remarks Control point i,j is at (x,y,z) = (i,j,sin(q0I + aI * i) * sin (q0J + aJ * j))
-PolyfaceHeaderPtr PolyfaceWithSinusoidalGrid (size_t numI, size_t numJ, double q0I, double aI, double q0J, double aJ, bool triangulated = true);
-
+PolyfaceHeaderPtr PolyfaceWithSinusoidalGrid (
+size_t numI, size_t numJ,
+double q0I, double aI,
+double q0J, double aJ,
+bool triangulated = true,
+bool params = false 
+);
 
 // Return a bspline surface whose control points are evaluated on a hyperbolic patch.
 // The patch has three points (00) (10) (01) at unit squre points and a fourth specified by parameters.

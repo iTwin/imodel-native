@@ -50,11 +50,30 @@ TEST(Polyface,AverageNormalsWithDegenerateTriangles)
     }
 
 
+ValidatedDouble GetVolume (PolyfaceHeaderPtr &mesh)
+    {
+    if (mesh.IsValid ())
+        {
+        auto volume = mesh->ValidatedVolume ();
+        if (volume.IsValid ())
+            return volume;
+        DPoint3d centroid;
+        double volume2;
+        RotMatrix axes;
+        DVec3d momentxyz;
+
+        if (mesh->ComputePrincipalMomentsAllowMissingSideFacets (volume2, centroid, axes, momentxyz, false))
+            {
+            return ValidatedDouble (volume2, true);
+            }
+            
+        }
+    return ValidatedDouble (0, false);
+    }
 
 
 
-
-void ExerciseCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, char const *message)
+void ExerciseSingleSheetCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, char const *message)
     {
     MeshAnnotationVector messages (false);
     PolyfaceHeaderPtr cutMesh, fillMesh;
@@ -70,10 +89,14 @@ void ExerciseCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, char const 
     Check::SaveTransformed (*fillMesh);
 
 
-    auto cutVolume1 = cutMesh->ValidatedVolume ();
-    auto fillVolume1 = fillMesh->ValidatedVolume ();
-    Check::Near (cutVolume1.Value (), fabs (cutVolume0), "Cut Volume from mesh vs direct");
-    Check::Near (fillVolume1.Value (), fillVolume0, "Fill Volume from mesh vs direct");
+    auto cutVolume1 = GetVolume (cutMesh);
+    auto fillVolume1 = GetVolume (fillMesh);
+
+    if (cutVolume1)
+        Check::Near (cutVolume1.Value (), fabs (cutVolume0), "Cut Volume from mesh vs direct");
+    if (fillVolume1)
+        Check::Near (fillVolume1.Value (), fillVolume0, "Fill Volume from mesh vs direct");
+
     bvector<PolyfaceHeaderPtr> polyfaceA, polyfaceB, fill2, cut2;
     polyfaceA.push_back (dtm);
     polyfaceB.push_back (road);
@@ -93,10 +116,13 @@ void ExerciseCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, char const 
         {
         PolyfaceHeaderPtr m1;
         PolyfaceQuery::HealVerticalPanels (*m, true, false, m1);
-        auto v = m1->ValidatedVolume ();
-        cutVolume2 += v;
-        if (!v.IsValid ())
+        if (m1.IsValid ())
+            {
+            auto v = m1->ValidatedVolume ();
             cutVolume2 += v;
+            if (!v.IsValid ())
+                cutVolume2 += v;
+            }
         }
     
     if (s_noisy > 100)
@@ -146,7 +172,7 @@ TEST(FastCutFill,NoCrossings)
                     DPoint3dDVec3dDVec3d (DPoint3d::From (0,0,zDtm),   DVec3d::From (dtmSide,0,0),   DVec3d::From (0,dtmSide,0)),
                                     dtmNumX, dtmNumY, false);
 
-            ExerciseCutFill (dtm, road, "Flat Road And DTM");
+            ExerciseSingleSheetCutFill (dtm, road, "Flat Road And DTM");
             }
         }
     Check::ClearGeometry ("FastCutFill.NoCrossings");
@@ -176,7 +202,7 @@ TEST(FastCutFill,SlopedWithCrossings)
                 DPoint3dDVec3dDVec3d (DPoint3d::From (0,0,0),   DVec3d::From (dtmSide,0,0),   DVec3d::From (0,dtmSide,0)),
                                 dtmNumX, dtmNumY, false);
 
-        ExerciseCutFill (dtm, road, "CutFill with road slope");
+        ExerciseSingleSheetCutFill (dtm, road, "CutFill with road slope");
         }
     Check::ClearGeometry ("FastCutFill.SlopedWithCrossings");
     }
@@ -211,7 +237,7 @@ TEST(FastCutFill,SingleVertexTouch)
             };
         auto road = PolyfaceHeader::CreateIndexedMesh (0, points, indices);
 
-        ExerciseCutFill (dtm, road, "CutFill with single touch");
+        ExerciseSingleSheetCutFill (dtm, road, "CutFill with single touch");
         }
     Check::ClearGeometry ("FastCutFill.SingleVertexTouch");
     }
@@ -245,11 +271,55 @@ TEST(FastCutFill,NoEdgeContact)
             1,2,3,0
             };
         auto road = PolyfaceHeader::CreateIndexedMesh (0, points, indices);
-        ExerciseCutFill (dtm, road, "CutFill with single touch");
+        ExerciseSingleSheetCutFill (dtm, road, "CutFill with single touch");
         }
     Check::ClearGeometry ("FastCutFill.NoEdgeContact");
 
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(FastCutFill,VerticalGaps)
+    {
+    double dtmSide = 4.0;
+    int dtmNumX = 1;
+    int dtmNumY = 1;
+
+    for (double z1 : bvector<double>{0, 0, 0})
+        {
+        SaveAndRestoreCheckTransform shifter (30.0, 0, 0);
+    // 1x1 dtm (large face)
+        auto dtm = UnitGridPolyface (
+                DPoint3dDVec3dDVec3d (DPoint3d::From (0,0,0),   DVec3d::From (dtmSide,0,z1),   DVec3d::From (0,dtmSide,0)),
+                                dtmNumX, dtmNumY, false);
+
+        // two squares that share an edge when viewed from above, but there is a vertical gap at the edge.
+        bvector<DPoint3d>points
+            {
+            DPoint3d::From (1,1,1),
+            DPoint3d::From (2,1,1),
+            DPoint3d::From (2,2,1),
+            DPoint3d::From (1,2,1),
+            DPoint3d::From (2,1,2),
+            DPoint3d::From (3,1,2),
+            DPoint3d::From (3,2,2),
+            DPoint3d::From (2,2,2),
+            };
+        bvector<int> indices
+            {
+            1,2,3,4,0,
+            5,6,7,8,0
+
+            };
+        auto road = PolyfaceHeader::CreateIndexedMesh (0, points, indices);
+        ExerciseSingleSheetCutFill (dtm, road, "CutFill with single touch");
+        }
+    Check::ClearGeometry ("FastCutFill.VerticalGaps");
+
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
@@ -280,7 +350,7 @@ TEST(FastCutFill,SinusoidPlane)
             };
         DPoint3dOps::Append (&road->Point (), &roadPoints);
         road->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
-        ExerciseCutFill (dtm, road, "CutFill with single touch");
+        ExerciseSingleSheetCutFill (dtm, road, "CutFill with single touch");
 #ifdef TestIntersectionSegments
         bvector<DSegment3dSizeSize> segments;
         PolyfaceQuery::SearchIntersectionSegments (*dtm, *road, segments);

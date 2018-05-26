@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Regions/rg_header.fdf $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -748,7 +748,7 @@ MTGNodeId           node0Id
 Public GEOMDLLIMPEXP bool        jmdlRG_edgeCircleXYIntersection
 (
 RG_Header           *pRG,
-EmbeddedDoubleArray *pParameterArray,
+bvector<double> *pParameterArray,
 EmbeddedDPoint3dArray *pPointArray,
 int                 nodeId,
 DPoint3d            *pCenter,
@@ -1473,7 +1473,7 @@ const char                      *pTitle
 Public GEOMDLLIMPEXP bool        jmdlRG_linkToCurveCircleXYIntersection
 (
 RG_Header           *pRG,
-EmbeddedDoubleArray *pParameterArray,
+bvector<double> *pParameterArray,
 EmbeddedDPoint3dArray *pPointArray,
 RG_EdgeData         *pEdgeData,
 DPoint3d            *pCenter,

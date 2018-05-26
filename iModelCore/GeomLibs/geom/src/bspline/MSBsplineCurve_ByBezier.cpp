@@ -2210,4 +2210,125 @@ size_t bezierSelect
     }
 
 
+struct EqualChordsByLengthContext
+{
+
+    bvector<DPoint3d> m_pointArray;
+    bvector<double> m_paramArray;
+
+    DPoint3d mXYZOld;
+    double   mParamOld;
+    double   mChordLength;
+
+    MSBsplineCurve *mpCurve;
+EqualChordsByLengthContext (MSBsplineCurve *curveP, double chordLength)
+    {
+    mpCurve = curveP;
+    mChordLength = chordLength;
+    
+    mParamOld = 0.0;
+    mpCurve->FractionToPoint (mXYZOld, mParamOld);
+    m_pointArray.push_back (mXYZOld);
+    m_paramArray.push_back (mParamOld);
+    }
+
+
+bool ProcessBezier (DPoint4d *pPoles, int order, double s0, double s1)
+    {
+    DVec3d U[MAX_BEZIER_CURVE_ORDER];
+    double   dw[MAX_BEZIER_CURVE_ORDER];
+    double   gPoles[2 * MAX_BEZIER_CURVE_ORDER];
+    double   hPoles[2 * MAX_BEZIER_CURVE_ORDER];
+    double   fPoles[2 * MAX_BEZIER_CURVE_ORDER];
+    double   roots[ 2 * MAX_BEZIER_CURVE_ORDER];
+    int numRoots;
+    int      fOrder, maxOrder = 2 * MAX_BEZIER_CURVE_ORDER;
+    double uBase = 0.0; // To find: u > uBase with chord condition.
+    for (bool bCurveAlive = true; bCurveAlive;)
+        {
+        // Homogeneous distance condition is
+        // (X/w - Q) . (X/w - Q) = d^2
+        //  (X - Qw).(X-Qw) = (d*w)^2
+        //  U = X-Qw is a pure vector.
+        //  Result is a scalar of double degree.
+        for (int i = 0; i < order; i++)
+            {
+            U[i].x = pPoles[i].x - mXYZOld.x * pPoles[i].w;
+            U[i].y = pPoles[i].y - mXYZOld.y * pPoles[i].w;
+            U[i].z = pPoles[i].z - mXYZOld.z * pPoles[i].w;
+            dw[i]  = pPoles[i].w * mChordLength;
+            }
+
+        bsiBezier_dotProduct (gPoles, &fOrder, maxOrder,
+                        (double*)U, order, 0, 3,
+                        (double*)U, order, 0, 3,
+                        3);
+        bsiBezier_univariateProduct (hPoles, 0, 1,
+                        dw, order, 0, 1,
+                        dw, order, 0, 1);
+
+        for (int i = 0; i < fOrder; i++)
+            fPoles[i] = gPoles[i] - hPoles[i];
+
+        bsiBezier_univariateRoots (roots, &numRoots, fPoles, fOrder);
+        bool bNextPointFound = false;
+        // take the first root with u > uBase as the "next" base point ...
+        for (int i = 0; i < numRoots && !bNextPointFound; i++)
+            {
+            double u = roots[i];
+            if (u > uBase)
+                {
+                double s = s0 +  u * (s1 - s0);
+                DPoint3d xyz;
+                bsiBezierDPoint4d_evaluateDPoint3dArray (
+                        &xyz, NULL, pPoles, order, &u, 1);
+                m_pointArray.push_back (xyz);
+                m_paramArray.push_back (s);
+                bNextPointFound = true;
+                // Shift base point forward ...
+                mXYZOld = xyz;
+                mParamOld = s;
+                uBase = u;
+                }
+            }
+
+        if (!bNextPointFound)
+            bCurveAlive = false;
+        }
+    return true;
+    }
+};
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     08/07
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MSBsplineCurve::StrokeWithFixedChordLength
+(
+bvector<DPoint3d> &points,
+bvector<double> &params,
+double          chordLength   /* => chord length */
+)
+    {
+    EqualChordsByLengthContext context (this, chordLength);
+    points.clear  ();
+    params.clear ();
+    BCurveSegment segment;
+    bool handlerOK = true;
+    for (size_t spanIndex = 0; handlerOK && GetBezier (segment, spanIndex); spanIndex++)
+        {
+        if (!segment.IsNullU ())
+            handlerOK = context.ProcessBezier (
+                    segment.GetPoleP (), (int)segment.GetOrder (),
+                    segment.UMin (), segment.UMax ());
+        }
+
+    if (handlerOK)
+        {
+        points.swap (context.m_pointArray);
+        params.swap (context.m_paramArray);
+        return true;
+        }
+    return false;
+    }
+
+
 END_BENTLEY_GEOMETRY_NAMESPACE

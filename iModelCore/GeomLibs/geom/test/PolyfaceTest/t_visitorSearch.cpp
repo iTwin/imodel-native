@@ -110,6 +110,26 @@ void BuildIntervals (PolyfaceVisitorR visitor)
         else
             m_numEdgeHit++;
         }
+
+    // all over with alternate implementation .  ..
+    size_t numHitB = 0;
+    DPoint3d facetXYZB;
+    double rayFractionB;
+    ptrdiff_t edgeIndexB;
+    double edgeFractionB;
+    DPoint3d edgeXYZB;
+    double edgeDistanceB;
+    double tolerance = 0.001;
+    for (visitor.Reset (); visitor.AdvanceToFacetBySearchRay (m_ray,
+                    tolerance,
+                    facetXYZB, rayFractionB, edgeIndexB, edgeFractionB, edgeXYZB, edgeDistanceB
+                    );)
+        {
+        numHitB++;
+        }
+    Check::Size (numHitB, m_hits.size ());
+
+
     // verify that there are an even number of edges hits with strictly alternating in/out normals
     // (no hits is valid)
     if (m_numInteriorHit > 1 && m_numEdgeHit == 0 && (m_hits.size () & 0x01) == 0)
@@ -544,4 +564,151 @@ TEST(PolyfaceVisitor,EdgeSearch)
             Check::SaveTransformed (DSegment3d::From (pickPoint, eh.point));
         }
     Check::ClearGeometry("PolyfaceVisitor.EdgeSearch");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PolyfaceVisitor,StrokeSearch)
+    {
+    auto polyface = PolyfaceWithSinusoidalGrid (5,4, 0.1, 0.2, 0.1, 3, true);
+    bvector<FacetLocationDetail> pickData;
+    Check::SaveTransformed (polyface);
+    DSegment3d segment = DSegment3d::From (-1,2,0, 10,3,0);
+    Check::SaveTransformed (segment);
+    polyface->PickFacetsByStroke (
+        DPoint4d::From (4,5,10,0),
+        segment.point[0],
+        segment.point[1],
+        pickData, false);
+
+    for (auto &pick: pickData)
+        {
+        Check::SaveTransformedMarker (pick.point);
+        }
+    Check::ClearGeometry("PolyfaceVisitor.StrokeSearch");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PolyfaceVisitor,ClosestApproachToLineString)
+    {
+    auto polyface = PolyfaceWithSinusoidalGrid (5,4, 0.1, 0.2, 0.1, 3, true);
+    bvector<FacetLocationDetail> pickData;
+    Check::SaveTransformed (polyface);
+    bvector<DPoint3d> pointB {
+            DPoint3d::From (1,0.5, 3),
+            DPoint3d::From (2,0.5, 2),
+            DPoint3d::From (5,3,5)
+            };
+    Check::SaveTransformed (pointB);
+    DSegment3d segment;
+    if (Check::True (PolyfaceQuery::SearchClosestApproachToLinestring (
+        *polyface,
+        pointB,
+        segment)))
+        {
+        Check::SaveTransformed (segment);
+        }
+
+    Check::ClearGeometry("PolyfaceVisitor.ClosestApproachToLineString");
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PolyfaceVisitor,ClosestApproachMeshMesh)
+    {
+    auto polyfaceA = PolyfaceWithSinusoidalGrid (5,4, 2.1, 1.2, 0.1, 3, true);
+    auto polyfaceB = PolyfaceWithSinusoidalGrid (8,6, 0.9, 0.8, 0.1, 3, true);
+
+    Transform placementB = Transform::FromRowValues (
+        1.0, 0.2, 0.2,  0.3,
+        0.3, 1.0, 0,  -0.2,
+        0, 0,   1,      2.0
+        );
+    polyfaceB->Transform (placementB);
+    bvector<FacetLocationDetail> pickData;
+    Check::SaveTransformed (polyfaceA);
+    Check::SaveTransformed (polyfaceB);
+    DSegment3d segment;
+    if (Check::True (PolyfaceQuery::SearchClosestApproach (
+        *polyfaceA, *polyfaceB,
+        0, segment)))
+        {
+        Check::SaveTransformed (segment);
+        DSegment3d segmentB;
+        // verify same result from all pairs
+        if (Check::True (PolyfaceQuery::SearchClosestApproach (
+            *polyfaceA, *polyfaceB,
+            0, segmentB,
+            nullptr, nullptr)))
+            {
+            Check::Near (segment, segmentB);
+            }
+
+        }
+
+    Check::ClearGeometry("PolyfaceVisitor.ClosestApproachMeshMesh");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PolyfaceVisitor,ClosestApproachOneMesh)
+    {
+    auto polyfaceA = PolyfaceWithSinusoidalGrid (6,8, 2.1, 1.2, 0.1, 3, true);
+
+    Check::SaveTransformed (polyfaceA);
+    DSegment3d segment;
+    if (Check::True (PolyfaceQuery::SearchClosestApproach (
+        *polyfaceA,
+        0, segment,
+        0.0)))
+        {
+        Check::SaveTransformed (segment);
+        }
+
+    Check::ClearGeometry("PolyfaceVisitor.ClosestApproachOneMesh");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(PolyfaceVisitor,TryParamToDetail)
+    {
+    PolyfaceHeaderPtr polyfaceA = PolyfaceWithSinusoidalGrid (6,8, 2.1, 1.2, 0.1, 3, true, true);
+
+    Check::SaveTransformed (polyfaceA);
+
+    auto visitor = PolyfaceVisitor::Attach (*polyfaceA);
+    size_t numHit = 0;
+    size_t numBracket = 0;
+    FacetLocationDetailPair horizontalBracket, verticalBracket;
+    for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+        {
+        DPoint2d uv = DPoint2d::From (0.2, 0.01);
+        FacetLocationDetail detailA;
+        if (visitor->TryParamToFacetLocationDetail (uv, detailA))
+            {
+            numHit++;
+            Check::SaveTransformed (
+                    DSegment3d::From (
+                        detailA.point,
+                        detailA.point + DVec3d::From (0,0,3)));
+            }
+        DPoint2d uvBracket = DPoint2d::From (1.3, 2.4);
+        if (visitor->TryParamToScanBrackets (uvBracket, &horizontalBracket, &verticalBracket))
+            {
+            numBracket++;
+            Check::SaveTransformed (DSegment3d::From (
+                        horizontalBracket.detailA.point, horizontalBracket.detailB.point));
+            Check::SaveTransformed (DSegment3d::From (
+                        verticalBracket.detailA.point, verticalBracket.detailB.point));
+            }
+        }
+    Check::Size (1, numHit);
+    Check::ClearGeometry("PolyfaceVisitor.TryParamToDetail");
     }

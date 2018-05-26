@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/polyfaceToMTG.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -103,6 +103,7 @@ int                    stitchSelect
 
     PolyfaceVisitorPtr visitorPtr = PolyfaceVisitor::Attach (polyface, false);
     PolyfaceVisitor & visitor = *visitorPtr.get ();
+    size_t numFacets = 0;
     for (visitor.Reset ();visitor.AdvanceToNextFace ();)
         {
 
@@ -114,7 +115,7 @@ int                    stitchSelect
         MTGNodeId baseNodeId = jmdlMTGFacets_addIndexedDoubleFace (pFacets, thruOffset, visitor.ClientPointIndex().GetCP (), NULL, numThisFace);
         if (MTG_NULL_NODEID == baseNodeId)
             continue;   /* ignore degenerate faces */
-
+        numFacets++;
 
         if (pNodeIdFromMeshVertex)
             {
@@ -152,7 +153,8 @@ int                    stitchSelect
             MTGARRAY_END_FACE_LOOP (nodeId, pGraph, baseNodeId)
             }
         }
-
+    if (numFacets == 0)
+        return false;
     /* stitch (use same tolerance as jmdlMTGFacets_addDoubleFace) */
     if (stitchSelect == 0)
         {

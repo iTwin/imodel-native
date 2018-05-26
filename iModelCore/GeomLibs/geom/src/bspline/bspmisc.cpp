@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bspmisc.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1836,6 +1836,7 @@ MSBsplineSurfaceCP   in
     }
 
 
+#ifdef Compile_bspsurf_intersectBoundariesWithUVLineExt
 
 /*----------------------------------------------------------------------+
 |         Copy of util_compareDoubles                                   |
@@ -1853,7 +1854,6 @@ double  y2
     else
         return(-1);
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BSI             09/91
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1879,7 +1879,7 @@ int                     horizontal
     if (scanHeight > near1)
             scanHeight = near1;
 
-    //jmdlEmbeddedDoubleArray_empty (pFractionArray);
+    //pFractionArray->clear();
     bvector<double>().swap (pFractionArray);
 
     bspsurf_countLoops (pSurface, &numLinear, &numPCurve);
@@ -1914,10 +1914,10 @@ int                     horizontal
                     NULL != pCurr;
                     pCurr = pCurr->pNext)
                 {
-                //jmdlEmbeddedDoubleArray_empty (pCurveParamArray);
+                //pCurveParamArray->clear();
                 bvector<double>().swap (pCurveParamArray);
                 bspcurv_curvePlaneIntersectsExt (pCurveParamArray, &origin, &normal, &pCurr->curve, sParamTol);
-                //int numCurveParam = jmdlEmbeddedDoubleArray_getCount (pCurveParamArray);
+                //int numCurveParam = pCurveParamArray->size();
                 size_t numCurveParam = pCurveParamArray.size ();
                 for (size_t k = 0; k < numCurveParam; k++)
                     {
@@ -2050,7 +2050,7 @@ int                     horizontal
         pFractionArray.push_back (1.0);
         }
     }
-
+#endif
 
 /*---------------------------------------------------------------------------------**//**
  FP equality test with fixed tolerance 0.0001.
@@ -2673,7 +2673,7 @@ void                                *args              /* => arguments */
 typedef int (*PFFlushDPoint3dPDoublePIntVoidP)(DPoint3d*,double*,int,void*);
 typedef int (*PFFlushDPoint3dPIntVoidP)(DPoint3d*,int,void*);
 
-    
+#ifdef Compile_bspcurve_curvePlaneIntersectsExt    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz     07/98
@@ -2716,7 +2716,7 @@ double                  tolerance
                 (MSBsplineCurve_AnnounceParameter*)cb_collectParameterExt, &pParamArray[0], NULL);
     return SUCCESS;
     }
-
+#endif
 #ifdef CompileUpdated_getNumBoundPointsCurve
 /*----------------------------------------------------------------------+
 |                                                                       |

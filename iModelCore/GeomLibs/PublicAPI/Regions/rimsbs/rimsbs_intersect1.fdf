@@ -6,7 +6,7 @@
 |       $Date: 2006/08/02 18:07:13 $
 |     $Author: DavidAssaf $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -65,7 +65,7 @@ void            *pUserData1
 Public GEOMDLLIMPEXP bool    jmdlRIMSBS_curveCircleIntersectionXY
 (
 RIMSBS_Context          *pContext,          /* IN      general context */
-EmbeddedDoubleArray     *pParameterArray,   /* OUT     curve parameters of intersections. */
+bvector<double>     *pParameterArray,   /* OUT     curve parameters of intersections. */
 EmbeddedDPoint3dArray   *pPointArray,       /* OUT     curve points of intersections */
 RG_EdgeData             *pEdgeData,         /* IN      segment edge data */
 const DPoint3d          *pCenter,           /* IN      circle center */

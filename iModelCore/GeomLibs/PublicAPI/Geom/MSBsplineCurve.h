@@ -836,6 +836,17 @@ public:
     //! @param [in] matrix optional transformation into viewing space.
     GEOMDLLIMPEXP void AddCuspsXY (bvector<DPoint3d>*points, bvector<double> *fractionParameters, DMatrix4dCP matrix) const;
 
+    //! Compute points along the bspline, spaced to have equal point-to-point sitance (chordLength)
+    //! Stroke length is measured along the stroke, NOT along the arc.
+    //! The first point will be the start point of the curve.
+    //! The last point is usually NOT the end point of the curve.
+    GEOMDLLIMPEXP bool MSBsplineCurve::StrokeWithFixedChordLength
+    (
+    bvector<DPoint3d> &points,  //!< [out] stroke points
+    bvector<double> &params,    //!< [out] fraction parameters for the strokes
+    double          chordLength //!< [in] stroke length.
+    );
+
     //! Open the closed B-spline curve.
     GEOMDLLIMPEXP MSBsplineStatus MakeOpen (double u);
     //! Close the open B-spline curve.
