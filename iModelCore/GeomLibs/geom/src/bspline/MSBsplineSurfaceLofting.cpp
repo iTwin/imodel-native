@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/MSBsplineSurfaceLofting.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -55,47 +55,36 @@ MSBsplineCurveCP    pCurve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Peter.Yu                        11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int makeCurvesCompatibleFast
+static bool makeCurvesCompatibleFast
 (
-MSBsplineCurve  *pOut,          /* <= array of input curves, shuld be allocated before calling this */
-MSBsplineCurve  *pIn,           /* => array of input curves */
-int             numCurves,      /* => number of curves */
+bvector<MSBsplineCurvePtr> &out,/* <= array of output curves */
+bvector<MSBsplineCurvePtr> const &in,           /* => array of input curves */
 double          tol,            /* => approximation tolerance, set to zero for precise compatibility */
 int             tangentControl, /* => 0: no tangent control, 1: start point, 2: end point, 3: Both ends */
 bool            keepMagnitude,  /* => true: derivatives maintained at specified ends, false: only directions */
 int             derivative      /* => Highest derivatives maintained. Ignored when keepMagnitude is false */
 )
     {
-    MSBsplineStatus status;
-
+    size_t numCurves = in.size ();
     bool rat = false, rmf, wfl;
     const double NOREM = 1.0e+25;
     const double WMIN = 1e-5;
     const double WMAX = 200.0;
 
-    int   i, j, k, l, ll, ii, jj, first, last, off, n, ns, m, r, s = 0, fout, p, kk = numCurves - 1;
+    int   i, j, k, l, ll,   ii, jj, first, last, off, n, ns, m, r, s = 0, fout, p;
+    size_t kk = numCurves - 1;
 
     double    *U, *a, wmin, wmax, pmax, alf, bet, lam = 0.0, oml = 0.0, bsum, wi, wj;
 
     bvector<DPoint4d> Pw;
 
     if (tangentControl > 3)
-        return MSB_ERROR;
+        return false;
 
-    MSBsplineCurve **inC = static_cast<MSBsplineCurve**>(BSIBaseGeom::Malloc (numCurves * sizeof(MSBsplineCurve*)));
-    MSBsplineCurve **outC = static_cast<MSBsplineCurve**>(BSIBaseGeom::Malloc (numCurves * sizeof(MSBsplineCurve*)));
+    bvector<MSBsplineCurvePtr> inC, outC;
 
-    for (i = 0; i < numCurves; i++)
-        {
-        inC[i] = &pIn[i];
-        outC[i] = &pOut[i];
-        }
-    if (MSB_SUCCESS != (status = bspcurv_makeCurvesCompatible (outC, inC, numCurves, 1, 1)))
-        {
-        BSIBaseGeom::Free (outC);
-        BSIBaseGeom::Free (inC);
-        return status;
-        }
+    if (!MSBsplineCurve::CloneCompatibleCurves (out, in, true, true))
+        return false;
 
     /************************************/
     /* Remove as many knots as possible */
@@ -103,22 +92,22 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
 
     /* Adjust knot removal tolerance for rational curves */
 
-    n = pOut[kk].NumberAllocatedPoles () - 1;
+    n = out[kk]->NumberAllocatedPoles () - 1;
     for (i=0; i<=n; i++)
-        Pw.push_back (pOut[kk].GetPoleDPoint4d (i));
-    p = pOut[kk].GetIntOrder () - 1;
-    m = pOut[kk].NumberAllocatedKnots () - 1;
-    U = pOut[kk].knots;
+        Pw.push_back (out[kk]->GetPoleDPoint4d (i));
+    p = out[kk]->GetIntOrder () - 1;
+    m = out[kk]->NumberAllocatedKnots () - 1;
+    U = out[kk]->knots;
     ns = n;
 
-    if( pOut[0].rational )
+    if( out[0]->rational )
         {
-        curmwp (wmin, pmax, &pOut[0]);
+        curmwp (wmin, pmax, out[0].get ());
         alf = (tol*wmin)/(1.0+pmax);
 
-        for( ll=1; ll<=kk; ll++ )
+        for(ll=1; ll<=kk; ll++ )
             {
-            curmwp(wmin, pmax, &pOut[ll]);
+            curmwp(wmin, pmax, out[ll].get ());
             bet = (tol*wmin)/(1.0 + pmax);
             if( bet < alf )  
                 alf = bet;
@@ -164,7 +153,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
 
         for( ll=0; ll<=kk; ll++ )
             {
-            br[ll][r] = MSBsplineCurve::GetRemovalKnotBound (&pOut[ll], r, sr[r]);
+            br[ll][r] = MSBsplineCurve::GetRemovalKnotBound (out[ll].get (), r, sr[r]);
             }
 
         r++;
@@ -291,9 +280,9 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
             wfl = true;
             for( ll=0; ll<=kk; ll++ )
                 {
-                for (int iTemp=0; iTemp<pOut[ll].NumberAllocatedPoles (); iTemp++)
-                    Pw[iTemp] = pOut[ll].GetPoleDPoint4d (iTemp);
-                a = pOut[ll].knots;
+                for (int iTemp=0; iTemp<out[ll]->NumberAllocatedPoles (); iTemp++)
+                    Pw[iTemp] = out[ll]->GetPoleDPoint4d (iTemp);
+                a = out[ll]->knots;
 
                 i  = first;  
                 j  = last;
@@ -354,9 +343,9 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
   
                 for( ll=0; ll<=kk; ll++ )
                     {
-                    for (int iTemp=0; iTemp<pOut[ll].NumberAllocatedPoles (); iTemp++)
-                        Pw[iTemp] = pOut[ll].GetPoleDPoint4d (iTemp);
-                    a = pOut[ll].knots;
+                    for (int iTemp=0; iTemp<out[ll]->NumberAllocatedPoles (); iTemp++)
+                        Pw[iTemp] = out[ll]->GetPoleDPoint4d (iTemp);
+                    a = out[ll]->knots;
 
                     i = first;
                     j = last;
@@ -395,9 +384,9 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
 
             for( ll=0; ll<=kk; ll++ )
                 {
-                for (int iTemp=0; iTemp<pOut[ll].NumberAllocatedPoles (); iTemp++)
-                        Pw[iTemp] = pOut[ll].GetPoleDPoint4d (iTemp);
-                U = pOut[ll].knots;
+                for (int iTemp=0; iTemp<out[ll]->NumberAllocatedPoles (); iTemp++)
+                        Pw[iTemp] = out[ll]->GetPoleDPoint4d (iTemp);
+                U = out[ll]->knots;
 
                 for( j=r+1; j<=m; j++ )  U[j-1] = U[j];
 
@@ -406,14 +395,14 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                     Pw[j-1] = Pw[j];
                     }
 
-                pOut[ll].params.numPoles = n;
+                out[ll]->params.numPoles = n;
                 for (int cpi = 0; cpi < n; cpi++)
                     {
-                    pOut[ll].poles[cpi].x = Pw[cpi].x;
-                    pOut[ll].poles[cpi].y = Pw[cpi].y;
-                    pOut[ll].poles[cpi].z = Pw[cpi].z;
+                    out[ll]->poles[cpi].x = Pw[cpi].x;
+                    out[ll]->poles[cpi].y = Pw[cpi].y;
+                    out[ll]->poles[cpi].z = Pw[cpi].z;
                     if (rat)
-                        pOut[ll].weights[cpi] = Pw[cpi].w;
+                        out[ll]->weights[cpi] = Pw[cpi].w;
                     }
                 }
             n--;   m--;  
@@ -434,7 +423,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                         {
                         if( br[ll][j] != NOREM )
                             {
-                            br[ll][j] = MSBsplineCurve::GetRemovalKnotBound(&pOut[ll], j, sr[j]);
+                            br[ll][j] = MSBsplineCurve::GetRemovalKnotBound(out[ll].get (), j, sr[j]);
                             }
                         }
                     }
@@ -449,19 +438,18 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
 
         } /* End of while loop */
     
-    BSIBaseGeom::Free (outC);
-    BSIBaseGeom::Free (inC);
-    return MSB_SUCCESS;
+    return true;
     }
 
+
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Peter.Yu                        11/2010
+* @bsimethod                                    Earlin.Lutz             05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int bspcurv_makeCurvesCompatibleWithConsByApprox
+bool MSBsplineCurve::CloneAndSimplifyCompatibleCurves
 (
-MSBsplineCurve  *pOut,          /* <= array of input curves, shuld be allocated before calling this */
-MSBsplineCurve  *pIn,           /* => array of input curves */
-int             numCurves,      /* => number of curves */
+bvector<MSBsplineCurvePtr> &out,/* <= array of output curves */
+bvector<MSBsplineCurvePtr> const &in,           /* => array of input curves */
 double          tolerance,      /* => approximation tolerance, set to zero for precise compatibility */
 int             tangentControl, /* => 0: no tangent control, 1: start point, 2: end point, 3: Both ends */
 bool            keepMagnitude,  /* => true: derivatives maintained at specified ends, false: only directions */
@@ -469,9 +457,8 @@ int             derivative,     /* => Highest derivatives maintained. Ignored wh
 bool            fastMode        /* => true: to remove less data but faster */
 )
     {
-    return makeCurvesCompatibleFast (pOut, pIn, numCurves, tolerance, tangentControl, keepMagnitude, derivative);
+    return makeCurvesCompatibleFast (out, in, tolerance, tangentControl, keepMagnitude, derivative);
     }
-
 /*----------------------------------------------------------------------+
 |                                                                       |
 | name          allPointsCoincide                                       |
@@ -517,14 +504,13 @@ bool            *shift          /* if true, the coincident points are shifted */
     return (true);
     }
 
-END_BENTLEY_GEOMETRY_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Peter.Yu                        11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MSBsplineStatus MSBsplineSurface::LoftingSurface 
+MSBsplineStatus MSBsplineSurface::InitLoftingSurface 
 (
-MSBsplineCurveP     pCurves,     
+bvector<MSBsplineCurvePtr> const &curves,     
 DVec3dP             pStartNormal,
 DVec3dP             pEndNormal,  
 int                 numCurves,    
@@ -541,15 +527,12 @@ double              tolerance
 
     if (numCurves == 2)
         {
-        MSBsplineCurve  ruleCurves[2];
+        bvector<MSBsplineCurvePtr> ruleCurves;
 
-        if (SUCCESS == (status = bspcurv_makeCurvesCompatibleWithConsByApprox (
-            ruleCurves, pCurves, 2,
-            (approxComp == true) ? tolerance : 0.0, 3, true, 1, false)))
-            status = bspsurf_ruledSurfaceFromCompatibleCopiesOfCurves (this, &ruleCurves[0], &ruleCurves[1]);
-
-        bspcurv_freeCurve (&ruleCurves[0]);
-        bspcurv_freeCurve (&ruleCurves[1]);
+        if (MSBsplineCurve::CloneAndSimplifyCompatibleCurves (
+            ruleCurves, curves,
+            (approxComp == true) ? tolerance : 0.0, 3, true, 1, false))
+            status = bspsurf_ruledSurfaceFromCompatibleCopiesOfCurves (this, ruleCurves[0].get (), ruleCurves[1].get ());
         }
     else
         {
@@ -557,34 +540,26 @@ double              tolerance
         int             i, j, numU, numV;
         double          *wPts = NULL, *wPoles = NULL;
         DPoint3d        *pPts = NULL, *pPoles = NULL;
-        MSBsplineCurve  *cvArray = NULL;
-
-        if (NULL == (cvArray = static_cast<MSBsplineCurve*>(BSIBaseGeom::Malloc (numCurves * sizeof(MSBsplineCurve)))))
-            return MDLERR_INSFMEMORY;
+        bvector<MSBsplineCurvePtr> loftCurves;
 
         if (applyComp == true)
             {
-            if (SUCCESS != (status = bspcurv_makeCurvesCompatibleWithConsByApprox (
-                cvArray, pCurves, numCurves,
-                (approxComp == true) ? tolerance : 0.0, 3, true, 1, true)))
-                {
-                BSIBaseGeom::Free (cvArray);
-                return  status;
-                }
+            if (!MSBsplineCurve::CloneAndSimplifyCompatibleCurves (
+                loftCurves, curves,
+                (approxComp == true) ? tolerance : 0.0, 3, true, 1, true))
+                return false;
             }
         else
             {
             for (i = 0; i < numCurves; i++)
-                {
-                bspcurv_copyCurve (&cvArray[i], &pCurves[i]);
-                }
+                loftCurves.push_back (curves[i]->CreateCopy ());
             }
 
         /* Create the surface from the cross sections */
         Zero ();
-        rational = cvArray[0].rational;
-        numU = cvArray[0].params.numPoles;
-        uParams = cvArray[0].params;
+        rational = loftCurves[0]->rational;
+        numU = loftCurves[0]->params.numPoles;
+        uParams = loftCurves[0]->params;
         vParams.closed = false;
         vParams.order = 4;
         numV = vParams.numPoles = numCurves + 2;
@@ -594,75 +569,64 @@ double              tolerance
             goto wrapup;
 
         /* Malloc some tmp variables */
-        pPts = pPoles = NULL;
-        wPts = wPoles = NULL;
-        if (NULL == (pPts = static_cast<DPoint3d*>(BSIBaseGeom::Malloc (numCurves * sizeof(DPoint3d)))) ||
-            NULL == (pPoles = static_cast<DPoint3d*>(BSIBaseGeom::Malloc (numV * sizeof(DPoint3d)))))
-            {
-            status = MDLERR_INSFMEMORY;
-            goto wrapup;
-            }
+            {// INDENT FOR BVECTOR SCOPE
+            bvector<DPoint3d> curvePoints (numCurves);  // points to fit jumping curve-to-curve at fixed i
+            bvector<DPoint3d> vPoles(numV);             // poles of fit curve for curvePoints
+            bvector<double> curveWeights(numCurves);  // was wPts
+            bvector<double> vWeights(numCurves);  // was wPoles
 
-        if (rational)
-            if (NULL == (wPts = static_cast<double*>(BSIBaseGeom::Malloc (numCurves*sizeof(double)))) ||
-                NULL == (wPoles = static_cast<double*>(BSIBaseGeom::Malloc (numV*sizeof(double)))))
-                {
-                status = MDLERR_INSFMEMORY;
-                goto wrapup;
-                }
 
-        /* Compute the poles and weights if rational */
-        for (i = 0; i < numU; i++)
-            {
-            for (j=0; j<numCurves; j++)
+            /* Compute the poles and weights if rational */
+            for (i = 0; i < numU; i++)
                 {
-                pPts[j] = cvArray[j].poles[i];
-                if (rational) wPts[j] = cvArray[j].weights[i];
-                }
-
-            /* Check if all input data points conincide to one single point */
-            shift = true;
-            if (allPointsCoincide (pPts, rational ? wPts : NULL, numCurves, &shift))
-                {
-                for (j=0; j<numV; j++)
+                for (j=0; j<numCurves; j++)
                     {
-                    poles[j*numU+i] = pPts[0];
-                    if (rational)
-                        weights[j*numU+i] = wPts[0];
+                    curvePoints[j] = loftCurves[j]->poles[i];
+                    if (rational) curveWeights[j] = loftCurves[j]->weights[i];
                     }
-                }
-            else
-                {
-                if (SUCCESS != (status = bspcurv_c2CubicInterpolatePoles (
-                                            pPoles,
-                                            rational ?  wPoles : NULL, NULL, /* Knot */
-                                            NULL, /* in params */
-                                            pPts, NULL, rational ?  wPts : NULL,
-                                            &vParams,
-                                            numCurves)))
-                    goto wrapup;
 
-                for (j=0; j<numV; j++)
+                /* Check if all input data points conincide to one single point */
+                shift = true;
+                if (allPointsCoincide (curvePoints.data (), rational ? curveWeights.data () : NULL, numCurves, &shift))
                     {
-                    poles[j*numU+i] = pPoles[j];
-                    if (rational)
-                        weights[j*numU+i] = wPoles[j];
+                    for (j=0; j<numV; j++)
+                        {
+                        poles[j*numU+i] = curvePoints[0];
+                        if (rational)
+                            vWeights[j*numU+i] = curveWeights[0];
+                        }
                     }
-                }
+                else
+                    {
+                    if (SUCCESS != (status = bspcurv_c2CubicInterpolatePoles (
+                                                vPoles.data (),
+                                                rational ?  vWeights.data () : NULL, NULL, /* Knot */
+                                                NULL, /* in params */
+                                                curvePoints.data (), NULL, rational ?  curveWeights.data () : NULL,
+                                                &vParams,
+                                                numCurves)))
+                        goto wrapup;
+
+                    for (j=0; j<numV; j++)
+                        {
+                        poles[j*numU+i] = vPoles[j];
+                        if (rational)
+                            weights[j*numU+i] = vWeights[j];
+                        }
+                    }
+                }// END INENDT FOR BVECTOR SCOPE
             }
 
         /* Compute the u knot vector */
-        memcpy (uKnots, cvArray[0].knots,
-                bspknot_numberKnots (numU, cvArray[0].params.order,
-                cvArray[0].params.closed) * sizeof(double));
+        memcpy (uKnots, loftCurves[0]->knots,
+                bspknot_numberKnots (numU, loftCurves[0]->params.order,
+                loftCurves[0]->params.closed) * sizeof(double));
 
         /* Compute the v knot vector uniformly */
         vParams.numKnots = 0;
         bspknot_computeKnotVector (vKnots, &vParams, NULL);
 
 wrapup:
-        for (i = 0; i < numCurves; i++)
-            bspcurv_freeCurve (&cvArray[i]);
         if (pPts)
             BSIBaseGeom::Free (pPts);
         if (wPts)
@@ -671,8 +635,6 @@ wrapup:
             BSIBaseGeom::Free (pPoles);
         if (wPoles)
             BSIBaseGeom::Free (wPoles);
-        if (cvArray)
-            BSIBaseGeom::Free (cvArray);
         }
 
     /* Swap surface U and V direction so that V direction has more poles */
@@ -690,3 +652,4 @@ wrapup:
 
     return status;
     }
+END_BENTLEY_GEOMETRY_NAMESPACE

@@ -215,11 +215,11 @@ int order                                   //! curve order
             );
 
 
-//flex !! Predicates
+    //flex !! Predicates
 
-//flex || bool MSBsplineCurve::AreCompatible (curveA, curveB) ||Test if counts and knot spaces are matched || 
-//flex || bool IsPhysicallyClosed()     || direct comparison of endpoint coordinates ||
-//flex || bool IsClosed ()  || inspects the params.closed flag. ||
+    //flex || bool MSBsplineCurve::AreCompatible (curveA, curveB) ||Test if counts and knot spaces are matched || 
+    //flex || bool IsPhysicallyClosed()     || direct comparison of endpoint coordinates ||
+    //flex || bool IsClosed ()  || inspects the params.closed flag. ||
 
 
     /// <summary>Test if two curves have compatible knots, order, and pole count</summary>
@@ -228,6 +228,30 @@ int order                                   //! curve order
             MSBsplineCurveCR curveA,
             MSBsplineCurveCR curveB
             );
+
+//! Create copies of all curves, with knots added as needed to make them compatible for surface lofting.
+GEOMDLLIMPEXP static bool CloneCompatibleCurves
+(
+bvector<MSBsplineCurvePtr> &outputCurves,/* <= array of output curves */
+bvector<MSBsplineCurvePtr> const &inputCurves,           /* => array of input curves */
+bool          enableReverse,         /* => allows reversing output */
+bool          openAll                /* => forces opening */
+);
+
+//! Create copies of all curves via CloneCompatibleCurves.  In addition, do various further steps
+//! to reduce redundant knots.
+GEOMDLLIMPEXP static bool CloneAndSimplifyCompatibleCurves
+(
+bvector<MSBsplineCurvePtr> &compatibleCurves,   //!< [out] curves with compatible knots.
+bvector<MSBsplineCurvePtr> const &inputCurves,  //!< [in] existing curves
+double          tolerance,      //!< [in] approximation tolerance, set to zero for precise compatibility
+int             tangentControl, //!< [in] 0: no tangent control, 1: start point, 2: end point, 3: Both ends
+bool            keepMagnitude,  //!< [in] true: derivatives maintained at specified ends, false: only directions
+int             derivative,     //!< [in] Highest derivatives maintained. Ignored when keepMagnitude is false
+bool            fastMode        //!< [in] true: to remove less data but faster
+);
+
+
 
     //! Check whether the B-spline curve is physically closed. A B-spline curve may be non-periodic, but still return 
     //! true if its first and last poles coincide. 

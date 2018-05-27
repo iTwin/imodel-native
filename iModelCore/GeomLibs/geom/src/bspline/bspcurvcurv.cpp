@@ -38,71 +38,91 @@ RotMatrix           *rotMatrixP
     }
 #endif
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RBB             03/90
 +---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspcurv_makeCurvesCompatible
+Public GEOMDLLIMPEXP int      bspcurv_make2CurvesCompatible
 (
-MSBsplineCurve  **outputCurves,
-MSBsplineCurve  **inputCurves,
-int             numCurves,
-int             enableReverse,         /* => allows reversing output */
-int             openAll                /* => forces opening */
+MSBsplineCurve  *curve1,
+MSBsplineCurve  *curve2
 )
     {
-    int             i, j, k, highestOrder, highestDegree, bezier,
-                    rational, sameNum, sameKnots, sameMult, newMult = 0,
-                    curveMult, index, done, sum, status = ERROR, allocSize,
-                    *numDistinct = NULL, **knotMultiplicity = NULL,
-                    *tags = NULL, allClosed, *maxMult, maxNumKnots = 0;
-    double          curveTolerance, knotTolerance, avgKnot, openAtParam,
-                    **distinctKnots = NULL, *knots = NULL, dot, dist0, dist1;
-    DPoint3d        minPt, tan, lastTan;
-    MSBsplineCurve  *cvP;
+    bvector<MSBsplineCurvePtr> in, out;
+    in.push_back (curve1->CreateCapture ());
+    in.push_back (curve2->CreateCapture());
+
+    if (MSBsplineCurve::CloneCompatibleCurves (in, out, false, false))
+        {
+        curve1->SwapContents (*out[0]);
+        curve2->SwapContents (*out[1]);
+        return SUCCESS;
+        }
+    // restore originals
+    curve1->SwapContents (*in[0]);
+    curve2->SwapContents (*in[1]);
+    return ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RBB             03/90
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MSBsplineCurve::CloneCompatibleCurves
+(
+bvector<MSBsplineCurvePtr> &outputCurves,/* <= array of output curves */
+bvector<MSBsplineCurvePtr> const &inputCurves,           /* => array of input curves */
+bool             enableReverse,         /* => allows reversing output */
+bool            openAll                /* => forces opening */
+)
+    {
+    size_t numCurves = inputCurves.size ();
+    outputCurves.clear ();
+    int             done, status = ERROR,
+                    maxNumKnots = 0;
+    double          curveTolerance, knotTolerance, openAtParam,
+                    dot, dist0, dist1;
+    DPoint3d        minPt;
+    DVec3d lastTan;
 
     if (numCurves < 2)
-        return SUCCESS;
+        {
+        outputCurves.push_back (inputCurves[0]->CreateCopy ());
+        return true;
+        }
     if (numCurves > MAX_POLES)
-        return (ERROR);
+        return false;
     
-    numDistinct      = (int*)BSIBaseGeom::Malloc (numCurves * sizeof(int));
-    knotMultiplicity = (int**)BSIBaseGeom::Malloc (numCurves * sizeof(int*));
-    tags             = (int*)BSIBaseGeom::Malloc (numCurves * sizeof(int));
-    distinctKnots    = (double**)BSIBaseGeom::Malloc (numCurves * sizeof(double*));
-    knots            = (double*)BSIBaseGeom::Malloc (numCurves * sizeof(double));
-
-    memset (distinctKnots, 0, numCurves *sizeof(distinctKnots) );
-    memset (knotMultiplicity, 0, numCurves *sizeof(knotMultiplicity) );
-    maxMult = NULL;
+    bvector<int> numDistinct;
+    bvector<KnotData> knotData;
+    bvector<size_t> maxMult;
     knotTolerance = fc_hugeVal;
 
     /* We need to find the curve with the highest degree, because the others
         will have to be raised to that degree. Also check periodicity and
         rationality of all the curves. If all the curves are Bezier then we
         will not have to do the refining part, just up the degree */
-    highestOrder = inputCurves[0]->params.order;
-    allClosed    = inputCurves[0]->params.closed;
-    rational     = inputCurves[0]->rational;
-    bezier       = inputCurves[0]->params.numPoles == inputCurves[0]->params.order;
+    int highestOrder = inputCurves[0]->params.order;
+    bool allClosed    = inputCurves[0]->params.closed != 0;
+    bool rational     = inputCurves[0]->rational != 0;
+    bool bezier       = inputCurves[0]->params.numPoles == inputCurves[0]->params.order;
 
-    for (i=1; i < numCurves; i++)
+    for (auto &curve : inputCurves)
         {
-        cvP = inputCurves[i];
+        auto cvP = curve.get ();
         highestOrder = cvP->params.order > highestOrder ? cvP->params.order : highestOrder;
         allClosed = allClosed && cvP->params.closed;
         rational  = rational || cvP->rational;
         bezier    = bezier && (cvP->params.numPoles == cvP->params.order);
         }
-    highestDegree = highestOrder - 1;
+    int highestDegree = highestOrder - 1;
 
-    for (i=0; i < numCurves; i++)
+    for (size_t i=0; i < numCurves; i++)
         {
-        cvP = outputCurves[i];
-
         /* allocate space for the output curves and copy the original to the
             output */
-        if (SUCCESS != (status = bspcurv_copyCurve (cvP, inputCurves[i])) ||
-            SUCCESS != (status = bspknot_normalizeKnotVector (cvP->knots, cvP->params.numPoles, cvP->params.order, cvP->params.closed)))
+        outputCurves.push_back (inputCurves[i]->CreateCopy ());
+        auto cvP = outputCurves[i].get ();
+        if (SUCCESS != (status = bspknot_normalizeKnotVector (cvP->knots, cvP->params.numPoles, cvP->params.order, cvP->params.closed)))
             goto wrapup;
 
         /* Open all curves */
@@ -110,7 +130,7 @@ int             openAll                /* => forces opening */
             {
             if (i==0)
                 {
-                if (SUCCESS != (status = bspcurv_openCurve (cvP, cvP, 0.0)))
+                if (SUCCESS != (status = cvP->MakeOpen (0.0)))
                     goto wrapup;
                 }
             else
@@ -118,7 +138,7 @@ int             openAll                /* => forces opening */
                 DPoint3d startPointOnPreviousCurve;
                 outputCurves[i-1]->FractionToPoint (startPointOnPreviousCurve, 0.0);
                 cvP->ClosestPoint (minPt, openAtParam, startPointOnPreviousCurve);
-                if (SUCCESS != (status = bspcurv_openCurve (cvP, cvP, openAtParam)))
+                if (SUCCESS != (status = cvP->MakeOpen (openAtParam)))
                     goto wrapup;
                 }
             }
@@ -126,18 +146,18 @@ int             openAll                /* => forces opening */
         /* Reverse curve if necessary */
         if (enableReverse)
             {
-            bsiDPoint3d_computeNormal (&tan, cvP->poles, cvP->poles+1);
+            DVec3d tan = DVec3d::FromStartEndNormalize (cvP->poles[0], cvP->poles[1]);
             if (i)
                 {
-                bsiDPoint3d_computeNormal (&tan, cvP->poles, cvP->poles+1);
-                dot = bsiDPoint3d_dotProduct (&tan, &lastTan);
-                dist0 = bsiDPoint3d_distance ((cvP-1)->poles, cvP->poles);
-                dist1 = bsiDPoint3d_distance ((cvP-1)->poles, cvP->poles +
-                                        cvP->params.numPoles - 1);
+                auto cvP0 = outputCurves[i-1].get ();
+                dot = tan.DotProduct (lastTan);
+                dist0 = cvP0->poles[0].Distance (cvP->poles[0]);
+                dist1 = cvP0->poles[0].Distance (cvP->poles[cvP->params.numPoles - 1]);
                 if ((dot < 0.0) || (dist1 < dist0))
                     {
                     bspcurv_reverseCurve (cvP, cvP);
-                    bsiDPoint3d_computeNormal (&tan, cvP->poles, cvP->poles+1);
+                    // and get the revised tangent
+                    tan = DVec3d::FromStartEndNormalize (cvP->poles[0], cvP->poles[1]);
                     }
                 }
             lastTan = tan;
@@ -160,7 +180,7 @@ int             openAll                /* => forces opening */
         if (!bezier)
             {
             curveTolerance = bspknot_knotTolerance (cvP);
-            sameKnots = cvP->params.numPoles + cvP->params.order; /*OPEN*/
+            int sameKnots = cvP->params.numPoles + cvP->params.order; /*OPEN*/
 
             /* we want to find the smallest knot tolerance of all curves */
             if ( i == 0  ||  curveTolerance < knotTolerance)
@@ -181,42 +201,29 @@ int             openAll                /* => forces opening */
     /* refine all the knot vectors, so curve have the same number of knots */
 
     /* find the distinct knots of all the OPEN(!!) curves */
-
-    allocSize = maxNumKnots * sizeof(int);
-    if (NULL == (maxMult = static_cast<int *>(BSIBaseGeom::Malloc (allocSize))))
+    maxMult.clear ();
+    for (size_t i = 0; i < maxNumKnots; i++)
+        maxMult.push_back (0);
+    for (auto &curve : outputCurves)
         {
-        status = ERROR;
-        goto wrapup;
-        }
-    memset (maxMult, 0, allocSize);
-    for (i=0; i < numCurves; i++)
-        {
-        cvP = outputCurves[i];
-        allocSize = cvP->params.numPoles + cvP->params.order;
-        if (NULL ==
-            (distinctKnots[i]    = static_cast<double *>(BSIBaseGeom::Malloc (allocSize * sizeof(double)))) ||
-            NULL ==
-            (knotMultiplicity[i] = static_cast<int *>(BSIBaseGeom::Malloc (allocSize * sizeof(int)))))
+        auto cvP = curve.get ();
+        knotData.push_back (KnotData ());
+        knotData.back ().LoadCurveKnots (*cvP);
+        for (size_t j=0; j < knotData.back ().GetNumActiveKnots (); j++)
             {
-            status = ERROR;
-            goto wrapup;
+            auto m = knotData.back ().multiplicities[j];
+            maxMult[j] = std::max (maxMult[j], m);
             }
-        bspknot_getKnotMultiplicity (distinctKnots[i], knotMultiplicity[i], numDistinct + i,
-                                     cvP->knots, cvP->params.numPoles, cvP->params.order,
-                                     cvP->params.closed, knotTolerance);
-        for (j=0; j < numDistinct[i]; j++)
-            maxMult[j] = maxMult[j] > knotMultiplicity[i][j] ?
-                         maxMult[j] : knotMultiplicity[i][j];
         }
 
     /* find out if they all have the same number of distinct knots and
        if they are the same distinct knots */
-    sameNum = true;
-    sameKnots = true;
-    sameMult = true;
-    for (i=1; i < numCurves; i++)
+    bool sameNum = true;
+    bool sameKnots = true;
+    bool sameMult = true;
+    for (size_t i=1; i < numCurves; i++)
         {
-        if (!sameNum || numDistinct[i-1] != numDistinct[i])
+        if (!sameNum || knotData[i-1].GetNumActiveKnots () != knotData[i].GetNumActiveKnots ())
             {
             sameNum = false;
             break;
@@ -227,12 +234,12 @@ int             openAll                /* => forces opening */
                 {
                 /* only check if all previous have same distinct knots
                    NOTE: this loop assumes all curves are open !!! */
-                for (j=1; j < numDistinct[0]-1; j++)
+                for (size_t j=1; j + 1 < knotData[i].GetNumActiveKnots (); j++)
                     {
                     sameKnots =
-                        fabs (distinctKnots[i-1][j] - distinctKnots[i][j]) <= knotTolerance;
+                        fabs (knotData[i-1].compressedKnots[j] - knotData[i].compressedKnots[j]) <= knotTolerance;
                     sameMult =
-                        knotMultiplicity[i-1][j] == knotMultiplicity[i][j];
+                        knotData[i-1].multiplicities[j] == knotData[i].multiplicities[j];
                     if (!sameKnots || !sameMult)
                         break;
                     }
@@ -245,64 +252,70 @@ int             openAll                /* => forces opening */
         if (!sameKnots || !sameMult)
             {
             /* make all interior knots of maximum multiplicity */
-            for (i=0; i < numCurves; i++)
+            for (size_t i=0; i < numCurves; i++)
                 {
-                cvP = outputCurves[i];
-                for (j=1; j < numDistinct[i]-1; j++)
+                auto cvP = outputCurves[i].get ();
+                for (size_t j=1; j < knotData[i].GetNumActiveKnots() - 1; j++)
                     {
-                    bspknot_addKnot (cvP, distinctKnots[i][j], knotTolerance, maxMult[j],
-                                     false);
+                    bspknot_addKnot (cvP, knotData[i].compressedKnots[j], knotTolerance,
+                            (int)maxMult[j],
+                            false);
                     }
                 }
             }
 
-        index = highestOrder; /* assumes all curves are open */
-        for (i=1; i < numDistinct[0] - 1; i++)
+        size_t index = (size_t)highestOrder; /* assumes all curves are open */
+        for (size_t i=1; i < knotData[0].GetNumActiveKnots () - 1; i++)
             {
             /* find the average of each distinct knot between curves */
-            for (j=0, avgKnot=0.0; j < numCurves; j++)
-                 avgKnot += distinctKnots[j][i];
+            double avgKnot = 0.0;
+            for (size_t j=0; j < numCurves; j++)
+                 avgKnot += knotData[j].compressedKnots[i];
             avgKnot /= numCurves;
-
-            for (j=0; j < numCurves; j++)
+            size_t newMult = 0;
+            for (size_t j=0; j < numCurves; j++)
                 {
-                cvP = outputCurves[j];
-                newMult = (sameKnots && sameMult) ? knotMultiplicity[j][i] : maxMult[i];
-                for (k=0; k < newMult; k++)
+                auto cvP = outputCurves[j].get ();
+                newMult = (sameKnots && sameMult) ? knotData[j].multiplicities[i] : maxMult[i];
+                for (size_t k=0; k < newMult; k++)
                     cvP->knots[index + k] = avgKnot;
                 }
-            index += newMult;
+            index += (int)newMult;  // newMult was the same on all curves ??
             }
         }
 
     else /* general case */
         {
         done = false;
-        index = highestOrder;
+        size_t index = (size_t)highestOrder;
+        bvector<double> knots;
+        bvector<int> tags ((int)numCurves);
         do
             {
-            sum = 0;
-            for (i=0; i < numCurves; i++)
+            size_t sum = 0;
+            knots.clear ();
+            for (size_t i=0; i < numCurves; i++)
                 {
-                cvP = outputCurves[i];
+                auto cvP = outputCurves[i].get ();
                 if (cvP->params.numPoles == index)
                     {
                     sum += 1;
-                    knots[i] = cvP->knots[cvP->params.numPoles];
+                    knots.push_back (cvP->knots[cvP->params.numPoles]);
                     }
                 else
-                    knots[i] = cvP->knots[index];
+                    knots.push_back (cvP->knots[index]);
                 }
             if (sum == numCurves) /* been through all knots of all curves */
                 done = true;
             else
                 {
                 /* sort the knots from smallest to largest */
-                util_tagSort (tags, knots, numCurves);
+                util_tagSort (tags.data (), knots.data (), (int)numCurves);
 
                 /* find out how many knots have the smallest value,
                     then break and average this knot  */
-                avgKnot = knots[tags[0]];
+                double avgKnot = knots[tags[0]];
+                size_t i;   // at end, this is the index where knots were different.
                 for(i=0; i < numCurves-1; i++)
                     {
                     if (fabs (knots[tags[i]]-knots[tags[i+1]]) < knotTolerance)
@@ -310,15 +323,15 @@ int             openAll                /* => forces opening */
                     else
                         break;
                     }
-                j = i ;
+                size_t j = i ;
                 avgKnot /= (j+1);
 
                 /* find largest multiplicity of this smallest averaged knot */
-                newMult = 1;
-                for (i=j; i >= 0; i-- )
+                size_t newMult = 1;
+                for (ptrdiff_t i=j; i >= 0; i-- )
                     {
-                    curveMult = 1;
-                    for (k=0; k < highestDegree; k++)
+                    size_t curveMult = 1;
+                    for (size_t k=0; k < highestDegree; k++)
                         {
                         if (fabs(outputCurves[tags[i]]->knots[index+k] -
                                  outputCurves[tags[i]]->knots[index+k+1]) < knotTolerance )
@@ -329,16 +342,13 @@ int             openAll                /* => forces opening */
                     newMult = (curveMult > newMult) ? curveMult : newMult;
 
                     /* also set the knot in the knot vector to this avgKnot */
-                    for (k=0; k < curveMult; k++)
+                    for (size_t k=0; k < curveMult; k++)
                         outputCurves[tags[i]]->knots[index+k] = avgKnot;
                     }
 
                 /* add the knot to the curves to full multiplicity  */
-                for (i=0; i < numCurves; i++)
-                    {
-                    cvP = outputCurves[i];
-                    bspknot_addKnot (cvP, avgKnot,knotTolerance, newMult, false);
-                    }
+                for (auto &curve : outputCurves)
+                    bspknot_addKnot (curve.get (), avgKnot,knotTolerance, (int)newMult, false);
                 index += newMult;
                 }
             }
@@ -347,9 +357,9 @@ int             openAll                /* => forces opening */
 
     /* close all curves if allClosed == true */
     if (allClosed && !openAll)
-        for (i=0; i< numCurves; i++)
+        for (size_t i=0; i< numCurves; i++)
             {
-            cvP = outputCurves[i];
+            auto cvP = outputCurves[i].get ();
 
             // generate a "fake closed" curve so that numPoles doesn't change
             // EDL May 6 2018: This called mdlBspline_closeCurve_V7.
@@ -361,61 +371,9 @@ int             openAll                /* => forces opening */
             }
 
 wrapup:
-    if (maxMult)        BSIBaseGeom::Free  (maxMult);
-    for (i=0; i < numCurves; i++)
-        {
-        if (distinctKnots[i])       BSIBaseGeom::Free (distinctKnots[i]);
-        if (knotMultiplicity[i])    BSIBaseGeom::Free (knotMultiplicity[i]);
-        }
-    
-    BSIBaseGeom::Free (knotMultiplicity);
-    BSIBaseGeom::Free (distinctKnots);
-    BSIBaseGeom::Free (numDistinct);
-    BSIBaseGeom::Free (tags);
-    BSIBaseGeom::Free (knots);
-
     if (status != SUCCESS)
-        {
-        for (i=0; i < numCurves; i++)
-            {
-            cvP = outputCurves[i];
-            if (cvP)    bspcurv_freeCurve (cvP);
-            }
-        }
-    return status;
+        outputCurves.clear ();
+    return status == SUCCESS;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RBB             03/90
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int      bspcurv_make2CurvesCompatible
-(
-MSBsplineCurve  *curve1,
-MSBsplineCurve  *curve2
-)
-    {
-    int             status;
-    MSBsplineCurve  compat[2], *compatPtr[2], *curvePtr[2];
-
-    memset (compat, 0, sizeof(compat));
-
-    curvePtr[0] = curve1;
-    curvePtr[1] = curve2;
-    compatPtr[0] = &compat[0];
-    compatPtr[1] = &compat[1];
-
-    if (SUCCESS !=
-        (status = bspcurv_makeCurvesCompatible (compatPtr, curvePtr, 2, false, false)))
-        return status;
-
-    bspcurv_freeCurve (curve1);
-    bspcurv_freeCurve (curve2);
-
-    *curve1 = compat[0];
-    *curve2 = compat[1];
-
-    return SUCCESS;
-    }
-
 
 END_BENTLEY_GEOMETRY_NAMESPACE

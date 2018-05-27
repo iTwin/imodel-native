@@ -382,12 +382,6 @@ $(OUT_DIR)cluster$(OUT_EXT)          : $(geomSrcFuncs)cluster.cpp          $(OTH
 
 
 # (end funcs_sources_bsiinc.mki)
-# (begin funcs_sources_privinc.mki)
-
-$(OUT_DIR)bench$(OUT_EXT)           : $(geomSrcFuncs)bench.cpp          $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
-
-# (end funcs_sources_privinc.mki)
 # (end funcs_sources.mki)
 # (begin interfac_sources.mki)
 
