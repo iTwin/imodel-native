@@ -1914,7 +1914,7 @@ RotMatrixCP pMatrix
     RotMatrix rotation1, rotation2;
     DPoint3d scalePoint;
 
-    bsiRotMatrix_factorRotateScaleRotate (pMatrix, &rotation1, &scalePoint, &rotation2);
+    pMatrix->FactorRotateScaleRotate (rotation1, scalePoint, rotation2);
     double aMax = fabs (scalePoint.x);
     double aMin = aMax;
     double a = fabs (scalePoint.y);

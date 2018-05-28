@@ -20,8 +20,6 @@ $(OUT_DIR)embeddedintarray$(OUT_EXT)      : $(geomSrcMemory)embeddedintarray.cpp
 
 $(OUT_DIR)embeddeddpoint3darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint3darray.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)embeddedarraycachemanager$(OUT_EXT)      : $(geomSrcMemory)embeddedarraycachemanager.cpp       $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
 $(OUT_DIR)dmap4d$(OUT_EXT)          : $(geomSrcStructs)dmap4d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)dmatrix4d$(OUT_EXT)       : $(geomSrcStructs)dmatrix4d.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 

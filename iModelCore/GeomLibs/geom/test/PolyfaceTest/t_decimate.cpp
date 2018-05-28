@@ -53,6 +53,7 @@ void testDecimate (int select, bvector<DPoint3d> &points, int vertsPerRow, doubl
             }
         }
     Check::SaveTransformed (*mesh);
+    auto meshB = mesh->Clone ();
     Check::Shift (0, 1.5 * range.YLength (), 0);
     size_t numA = 0;
     if (select == 1)
@@ -62,9 +63,16 @@ void testDecimate (int select, bvector<DPoint3d> &points, int vertsPerRow, doubl
 #endif
         }
     else
-
         numA = mesh->DecimateByEdgeCollapse (shortEdge, 0.0);
     Check::SaveTransformed (*mesh);
+
+    auto meshC = meshB->ClusteredVertexDecimate (shortEdge);
+    Check::Shift (0, 1.5 * range.YLength (), 0);
+    if (meshC.IsValid ())
+        {
+        Check::SaveTransformed (*meshC);
+        meshC->BuildNormalsFast (0.1, 1.0e-6);
+        }
     Check::Size (numCollapse, numA, "decimate count");
     Check::EndScope ();
     }
