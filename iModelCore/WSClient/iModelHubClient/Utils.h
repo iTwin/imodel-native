@@ -13,7 +13,6 @@
 #include <DgnPlatform/LocksManager.h>
 #include <WebServices/iModelHub/Client/iModelConnection.h>
 #include "Error.xliff.h"
-#include "Logging.h"
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -261,27 +260,6 @@ template <typename T>
 static std::shared_ptr<T> ExecuteAsync(AsyncTaskPtr<T> task)
     {
     return std::make_shared<T>(task->GetResult());
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Uzkuraitis             05/2018
-//---------------------------------------------------------------------------------------
-template <typename T>
-AsyncTaskPtr<T> AsyncTaskAddMethodLogging(AsyncTaskPtr<T> taskPtr, Utf8StringCR methodName, const double startTime)
-    {
-    return taskPtr->template Then<T>([=] (const T &result)
-        {
-        if (!result.IsSuccess())
-            {
-            LogHelper::Log(SEVERITY::LOG_WARNING, methodName, result.GetError().GetMessage().c_str());
-            }
-        else
-            {
-            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-            LogHelper::Log(SEVERITY::LOG_INFO, methodName, static_cast<float>(end - startTime), "");
-            }
-        return result;
-        });
     }
 
 END_BENTLEY_IMODELHUB_NAMESPACE
