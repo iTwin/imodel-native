@@ -145,6 +145,7 @@
     <ClCompile Include="Client\ClientConnection.cpp" />
     <ClCompile Include="Client\ClientInfo.cpp" />
     <ClCompile Include="Client\ClientInternal.cpp" />
+    <ClCompile Include="Client\RepositoryInfoProvider.cpp" />
     <ClCompile Include="Client\RequestOptions.cpp" />
     <ClCompile Include="Client\WSJob.cpp" />
     <ClCompile Include="Client\WebApi\Jobs\JobApi.cpp" />
@@ -262,6 +263,7 @@
     <ClInclude Include="Cache\Compatibility\Schemas.h" />
     <ClInclude Include="Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Persistence\DataSourceCache.xliff.h" />
+    <ClInclude Include="Client\RepositoryInfoProvider.h" />
     <ClInclude Include="Cache\Logging.h" />
     <ClInclude Include="Cache\CachingTaskBase.h" />
     <ClInclude Include="Cache\ChangesGraph.h" />

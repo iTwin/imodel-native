@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Client/RequestOptions.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,6 +38,7 @@ struct RequestOptions
         FailureStrategy m_failureStrategy = FailureStrategy::Default;
         ResponseContent m_responseContent = ResponseContent::Default;
         bool m_refreshInstances = false;
+        Json::Value m_customRequestOptions = Json::objectValue;
 
     private:
         static Utf8CP GetFailureStrategyStr(FailureStrategy failureStrategy);
@@ -53,12 +54,16 @@ struct RequestOptions
         bool GetShouldRefreshInstances() const { return m_refreshInstances; };
         void SetShouldRefreshInstances(bool option) { m_refreshInstances = option; };
 
+        Json::Value GetCustomOption() const { return m_customRequestOptions; }
+        void SetCustomRequestOption(Utf8String customOption, Json::Value value) { m_customRequestOptions[customOption] = value; }
+
         bool operator ==(const RequestOptions& other) const
             {
             return
                 other.m_failureStrategy == m_failureStrategy &&
                 other.m_responseContent == m_responseContent &&
-                other.m_refreshInstances == m_refreshInstances;
+                other.m_refreshInstances == m_refreshInstances &&
+                other.m_customRequestOptions == m_customRequestOptions;
             };
 
         //! Convert options to JSON for server
