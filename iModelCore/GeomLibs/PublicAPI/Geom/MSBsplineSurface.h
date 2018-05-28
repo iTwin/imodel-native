@@ -702,10 +702,9 @@ struct GEOMDLLIMPEXP MSBsplineSurface
 
 
 //! Make a loft surface for a set of curves.
-//! @param [in] pCurves input curve array.
+//! @param [in] curves input curve array.
 //! @param [in] pStartNormal used when smoothStart is true only, or NULL.
 //! @param [in] pEndNormal used when smoothEnd is true only, or NULL.
-//! @param [in] numCurves number of curves.
 //! @param [in] approxComp true: use approximation for compitibility.
 //! @param [in] closed true: consider the last curve to be the same as the first curve.
 //! @param [in] smoothStart true: for degenerate end, use normal to control the tangent.
@@ -718,7 +717,6 @@ MSBsplineStatus InitLoftingSurface
 bvector<MSBsplineCurvePtr> const &curves,        
 DVec3dP             pStartNormal,   
 DVec3dP             pEndNormal,     
-int                 numCurves,      
 bool                approxComp,     
 bool                closed,         
 bool                smoothStart,    

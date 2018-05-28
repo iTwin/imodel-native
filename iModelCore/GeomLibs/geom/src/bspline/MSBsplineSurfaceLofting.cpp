@@ -513,7 +513,6 @@ MSBsplineStatus MSBsplineSurface::InitLoftingSurface
 bvector<MSBsplineCurvePtr> const &curves,     
 DVec3dP             pStartNormal,
 DVec3dP             pEndNormal,  
-int                 numCurves,    
 bool                approxComp,   
 bool                closed,       
 bool                smoothStart,  
@@ -524,7 +523,7 @@ double              tolerance
 )
     {
     int             status = SUCCESS;
-
+    int numCurves = (int)curves.size ();
     if (numCurves == 2)
         {
         bvector<MSBsplineCurvePtr> ruleCurves;
