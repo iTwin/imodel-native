@@ -153,6 +153,27 @@ TEST_F(WSRepositoryClientTests, CrudObjectViaRequests_CreateObjectsWithFileUsing
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WebApiV26_InfoSucceeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://bsw-wsg.bentley.com/ws26";
+    Utf8String repositoryId = "BentleyCONNECT.SampleAzureSqlDb--Main";
+    Credentials credentials("admin", "admin");
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
+    client->SetCredentials(credentials);
+
+    auto result = client->GetInfo()->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_STREQ(repositoryId.c_str(), result.GetValue().GetId().c_str());
+    EXPECT_STREQ(serverUrl.c_str(), result.GetValue().GetServerUrl().c_str());
+    //TODO: add plugin check
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    julius.cepukenas                   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_ConnectGlobalProjectQueryWithConnectSignInManager_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();

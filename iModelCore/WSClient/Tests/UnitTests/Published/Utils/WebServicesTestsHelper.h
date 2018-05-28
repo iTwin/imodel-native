@@ -140,6 +140,8 @@ Http::Response StubWSInfoHttpResponseWebApi27();
 //! Stub WebApi version and BWSG server
 Response StubWSInfoHttpResponseWebApi(BeVersion webApiVersion);
 
+WSRepository StubWSRepository(Utf8StringCR url = "testUrl", Utf8StringCR id = "testId");
+
 void WriteStringToHttpBody(Utf8StringCR string, HttpBodyPtr body);
 Utf8String ReadHttpBody(HttpBodyPtr body);
 

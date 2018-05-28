@@ -14,6 +14,7 @@
 #define HEADER_MasFileAccessUrlType     "Mas-File-Access-Url-Type"
 #define HEADER_MasUploadConfirmationId  "Mas-Upload-Confirmation-Id"
 #define HEADER_MasFileETag              "Mas-File-ETag"
+#define HEADER_MasServerHeader          "Mas-Server"
 
 #define VALUE_FileAccessUrlType_Azure   "AzureBlobSasUrl"
 #define VALUE_True                      "true"
@@ -252,6 +253,34 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& re
     return WSRepositoriesResult::Success(repositories);
     }
 
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+BeVersion WebApiV2::GetRepositoryPluginVersion(HttpResponseCR response, Utf8StringCR pluginId) const
+    {
+    Utf8CP serverHeader = response.GetHeaders().GetValue(HEADER_MasServerHeader);
+    if (!serverHeader)
+        return BeVersion();
+
+    bvector<Utf8String> servers;
+    BeStringUtilities::Split(serverHeader, ",", servers);
+
+    for (Utf8String& server : servers)
+        {
+        server.Trim();
+        bvector<Utf8String> values;
+        BeStringUtilities::Split(server.c_str(), "/", values);
+        if (values[0] != pluginId)
+            continue;
+
+        auto format = values[0] + "/%d.%d.%d.%d";
+        return BeVersion(server.c_str(), format.c_str());
+        }
+
+    return BeVersion();
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -293,6 +322,35 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, bool 
         return WSObjectsResult::Success(WSObjectsResponse(reader, body, status, eTag, skipToken));
         }
     return WSObjectsResult::Error(response);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryRequest(ICancellationTokenPtr ct) const
+    {
+    Utf8String url = GetUrl("/");
+    HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
+    request.SetCancellationToken(ct);
+
+    return request.PerformAsync()->Then<WSRepositoryResult>([this] (HttpResponse& httpResponse)
+        {
+        auto resolvedRepositories = ResolveGetRepositoriesResponse(httpResponse);
+
+        if (!resolvedRepositories.IsSuccess())
+            return WSRepositoryResult::Error(resolvedRepositories.GetError());
+
+        if (1 != resolvedRepositories.GetValue().size())
+            return WSRepositoryResult::Error(WSError::CreateServerNotSupportedError());
+
+        auto repository = resolvedRepositories.GetValue().front();
+        repository.SetPluginVersion(GetRepositoryPluginVersion(httpResponse, repository.GetPluginId()));
+
+        if (!repository.IsValid())
+            return WSRepositoryResult::Error(WSError::CreateServerNotSupportedError());
+
+        return WSRepositoryResult::Success(repository);
+        });
     }
 
 /*--------------------------------------------------------------------------------------+

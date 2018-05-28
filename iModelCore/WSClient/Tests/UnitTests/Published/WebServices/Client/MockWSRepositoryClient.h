@@ -25,6 +25,15 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
         Utf8String m_id;
 
     public:
+        MockWSRepositoryClient()
+            {
+            WSRepository repository;
+            repository.SetId("testId");
+            repository.SetServerUrl("testUrl");
+            ON_CALL(*this, GetInfo(_)).WillByDefault(
+                Return(CreateCompletedAsyncTask(WSRepositoryResult::Success(repository))));
+            }
+
         static std::shared_ptr<NiceMock<MockWSRepositoryClient>> Create(Utf8StringCR id = "test")
             {
             DefaultValue<AsyncTaskPtr<WSObjectsResult>>::Set(CreateCompletedAsyncTask(WSObjectsResult()));
@@ -57,6 +66,11 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             }
 
         MOCK_METHOD2(SetCredentials, void(Credentials, IWSRepositoryClient::AuthenticationType));
+
+        MOCK_METHOD1(RegisterRepositoryInfoListener, void(std::weak_ptr<IRepositoryInfoListener>));
+        MOCK_METHOD1(UnregisterRepositoryInfoListener, void(std::weak_ptr<IRepositoryInfoListener>));
+
+        MOCK_CONST_METHOD1(GetInfo, AsyncTaskPtr<WSRepositoryResult>(ICancellationTokenPtr));
 
         MOCK_METHOD1(SetCompressionOptions, void(CompressionOptions));
 

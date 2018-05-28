@@ -185,6 +185,14 @@ WSInfo StubWSInfoWebApi(BeVersion webApiVersion, WSInfo::Type type)
     return WSInfo(serverVersion, webApiVersion, type);
     }
 
+WSRepository StubWSRepository(Utf8StringCR url, Utf8StringCR id)
+    {
+    WSRepository repository;
+    repository.SetServerUrl(url);
+    repository.SetId(id);
+    return repository;
+    }
+
 Http::Response StubWSInfoHttpResponseBentleyConnectV1()
     {
     auto bodyStub = R"(..stub.. Web Service Gateway for BentleyCONNECT ..stub.. <span id="versionLabel">1.1.0.0</span> ..stub..)";

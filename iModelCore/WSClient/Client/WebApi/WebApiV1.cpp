@@ -412,6 +412,18 @@ WSFileResult WebApiV1::ResolveFileResponse(Http::Response& response, BeFileName 
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSRepositoryResult> WebApiV1::SendGetRepositoryRequest(ICancellationTokenPtr ct) const
+    {
+    WSRepository repository;
+    repository.SetServerUrl(m_configuration->GetServerUrl());
+    repository.SetId(m_configuration->GetRepositoryId());
+
+    return CreateCompletedAsyncTask(WSRepositoryResult::Success(repository));
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSRepositoriesResult> WebApiV1::SendGetRepositoriesRequest
