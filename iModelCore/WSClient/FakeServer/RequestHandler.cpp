@@ -105,7 +105,7 @@ void RequestHandler::CreateTables(BentleyB0200::BeSQLite::Db *m_db)
     if (!m_db->TableExists("SeedFile"))
         CreateTable("SeedFile", *m_db, "Id STRING, FileName STRING, FileDescription STRING, FileSize INTEGER, iModelId STRING, IsUploaded BOOLEAN, UserUploaded STRING, UploadedDate STRING");
     if (!m_db->TableExists("Locks"))
-        CreateTable("Locks", *m_db, "ObjectId STRING, iModelId STRING, LockType INTEGER, LockLevel INTEGER, BriefcaseId INTEGER, ReleasedWithChangeSet STRING, ReleasedWithChangeSetIndex INTEGER");
+        CreateTable("Locks", *m_db, "ObjectId STRING, iModelId STRING, LockType INTEGER, LockLevel INTEGER, BriefcaseId INTEGER, ReleasedWithChangeSet STRING, ReleasedWithChangeSetIndex INTEGER, Id String");
     if (!m_db->TableExists("Briefcases"))
         CreateTable("Briefcases", *m_db, "BriefcaseId INTEGER, iModelId STRING, MergedChangeSetId STRING");
     }
@@ -154,8 +154,12 @@ Utf8CP ParseUrlFilter(Utf8String filter)
             if (tokens2[4 * i + 2].Contains("%5B"))
                 {
                 BeStringUtilities::Split(tokens2[4 * i + 2].c_str(), "'", nullptr, tokens);
-                filterQuery.append("('");
-                filterQuery.append(tokens[1]);
+                filterQuery.append("(");
+                for (size_t j = 1; j < tokens.size() - 1; j++)
+                    {
+                    filterQuery.append("'");
+                    filterQuery.append(tokens[j]);
+                    }
                 filterQuery.append("')");
                 }
             else filterQuery.append(tokens2[4 * i + 2]);
@@ -543,7 +547,6 @@ Response RequestHandler::CreateBriefcaseInstance(Request req)
         propertiesl2[ServerSchema::Property::UploadUrl] = NULL;
         propertiesl2[ServerSchema::Property::DownloadUrl] = downloadloadUrl.c_str();
         Utf8String contentToWrite(Json::FastWriter().write(instanceCreation));
-        printf("%s\n", contentToWrite.c_str());
         st.Finalize();
 
         Statement stInsert;
@@ -589,7 +592,7 @@ Response RequestHandler::GetBriefcaseInfo(Request req)
         sql.append(" AND B.BriefcaseId = ");
         sql.append(args[7]);
         }
-    printf("%s\n", sql.c_str());
+
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
         Statement st;
@@ -629,14 +632,18 @@ Response RequestHandler::DownloadiModel(Request req)
     bvector<Utf8String> args = ParseUrl(req, "/");
 
     //download by checking instanceid from db
-    Utf8String instanceid = GetInstanceid(args[3]);
-
+    Utf8String iModelId = GetInstanceid(args[2]);
+    int flag = 0;
     bvector<Utf8String> tokens;
-    BeStringUtilities::Split(instanceid.c_str(), ".", nullptr, tokens);
+    if (req.GetUrl().Contains(".cs"))
+        {
+        flag = 1;
+        BeStringUtilities::Split(args[3].c_str(), "?", nullptr, tokens);
+        }
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
-    CharCP filetoDownload, iModelId;
-    instanceid = tokens[0];
+    CharCP filetoDownload;
+    //instanceid = tokens[0];
 
     HttpBodyPtr body = req.GetResponseBody();
     Utf8String requestBody = body->AsString();
@@ -647,12 +654,16 @@ Response RequestHandler::DownloadiModel(Request req)
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
-        st.Prepare(m_db, "Select iModelId, FileName from SeedFile where Id = ?");
-        st.BindText(1, instanceid, Statement::MakeCopy::No);
-        st.Step();
+        if (flag == 0)
+            {
+            st.Prepare(m_db, "Select FileName from SeedFile where iModelId = ?");
+            st.BindText(1, iModelId, Statement::MakeCopy::No);
+            st.Step();
+            filetoDownload = st.GetValueText(0);
+            }
+        
+        else filetoDownload = tokens[0].c_str();
 
-        iModelId = st.GetValueText(0);
-        filetoDownload = st.GetValueText(1);
         BeFileName serverFilePath(serverPath);
         serverFilePath.AppendToPath(BeFileName(iModelId));
         if (FakeServer::DownloadiModel(fileDownloadPath, serverFilePath.GetNameUtf8().c_str(), filetoDownload) == BeFileNameStatus::Success)
@@ -855,7 +866,6 @@ Response RequestHandler::GetChangeSetInfo(Request req)
         sql.append(" AND ");
         sql.append(ParseUrlFilter(req.GetUrl()));
         }
-    printf("%s\n", sql.c_str());
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
@@ -890,12 +900,13 @@ Response RequestHandler::GetChangeSetInfo(Request req)
             properties[ServerSchema::Property::IsUploaded] = true;
             if (fileAccessKey)
                 {
-                JsonValueR relationshipInstances = properties[ServerSchema::RelationshipInstances] = Json::objectValue;
+                JsonValueR relationshipInstancesArray = instance[ServerSchema::RelationshipInstances] = Json::arrayValue;
+                JsonValueR relationshipInstances = relationshipInstancesArray[0] = Json::objectValue;
                 relationshipInstances[ServerSchema::InstanceId] = "";
                 relationshipInstances[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
                 relationshipInstances[ServerSchema::ClassName] = "FileAccessKey";
                 relationshipInstances["direction"] = "forward";
-                JsonValueR relatedInstance = relationshipInstances[ServerSchema::RelatedInstance] = Json::objectValue;;
+                JsonValueR relatedInstance = relationshipInstances[ServerSchema::RelatedInstance] = Json::objectValue;
                 relatedInstance[ServerSchema::InstanceId] = "";
                 relatedInstance[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
                 relatedInstance[ServerSchema::ClassName] = "AccessKey";
@@ -974,27 +985,38 @@ Response RequestHandler::PushAcquiredLocks(Request req)
                     st.Step();
                     records = st.GetValueInt(0);
                     st.Finalize();
+                    char buff[50], buff2[50];
+                    sprintf(buff, "%d", properties["LockType"].asInt());
+                    Utf8String id(buff);
+                    id.append("-");
+                    id.append(properties["ObjectIds"][j].asString());
+                    sprintf(buff2, "%d", properties["BriefcaseId"].asInt());
+                    id.append("-");
+                    id.append(buff2);
+                    printf("%s\n", id.c_str());
                     if (records == 0)
                         {
-                        st.Prepare(m_db, "INSERT INTO Locks(ObjectId, iModelId, LockType, LockLevel, BriefcaseId, ReleasedWithChangeSet) VALUES (?,?,?,?,?,?)");
-                        st.BindText(1, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
-                        st.BindText(2, iModelid, Statement::MakeCopy::No);
-                        st.BindInt(3, properties["LockType"].asInt());
-                        st.BindInt(4, properties["LockLevel"].asInt());
-                        st.BindInt(5, properties["BriefcaseId"].asInt());
-                        st.BindText(6, properties["ReleasedWithChangeSet"].asString(), Statement::MakeCopy::No);
+                        st.Prepare(m_db, "INSERT INTO Locks(Id, ObjectId, iModelId, LockType, LockLevel, BriefcaseId, ReleasedWithChangeSet) VALUES (?,?,?,?,?,?,?)");
+                        st.BindText(1, id, Statement::MakeCopy::No);
+                        st.BindText(2, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
+                        st.BindText(3, iModelid, Statement::MakeCopy::No);
+                        st.BindInt(4, properties["LockType"].asInt());
+                        st.BindInt(5, properties["LockLevel"].asInt());
+                        st.BindInt(6, properties["BriefcaseId"].asInt());
+                        st.BindText(7, properties["ReleasedWithChangeSet"].asString(), Statement::MakeCopy::No);
                         st.Step();
                         st.Finalize();
                         }
                     else
                         {
-                        st.Prepare(m_db, "UPDATE Locks Set LockLevel = ?, BriefcaseId = ?, ReleasedWithChangeSet = ? where iModelId = ? AND ObjectId = ? AND LockType = ? AND BriefcaseId = 0");
-                        st.BindInt(1, properties["LockLevel"].asInt());
-                        st.BindInt(2, properties["BriefcaseId"].asInt());
-                        st.BindText(3, properties["ReleasedWithChangeSet"].asString(), Statement::MakeCopy::No);
-                        st.BindText(4, iModelid, Statement::MakeCopy::No);
-                        st.BindText(5, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
-                        st.BindInt(6, properties["LockType"].asInt());
+                        st.Prepare(m_db, "UPDATE Locks Set Id = ?, LockLevel = ?, BriefcaseId = ?, ReleasedWithChangeSet = ? where iModelId = ? AND ObjectId = ? AND LockType = ? AND BriefcaseId = 0");
+                        st.BindText(6, id, Statement::MakeCopy::No);
+                        st.BindInt(2, properties["LockLevel"].asInt());
+                        st.BindInt(3, properties["BriefcaseId"].asInt());
+                        st.BindText(4, properties["ReleasedWithChangeSet"].asString(), Statement::MakeCopy::No);
+                        st.BindText(5, iModelid, Statement::MakeCopy::No);
+                        st.BindText(6, properties["ObjectIds"][j].asString(), Statement::MakeCopy::No);
+                        st.BindInt(7, properties["LockType"].asInt());
                         st.Step();
                         st.Finalize();
                         }
@@ -1004,12 +1026,30 @@ Response RequestHandler::PushAcquiredLocks(Request req)
                 {
                 bvector<Utf8String> tokens;
                 BeStringUtilities::Split(settings["instances"][i]["instanceId"].asString().c_str(), "-", nullptr, tokens);
-                st.Prepare(m_db, "UPDATE Locks Set LockLevel = 0, BriefcaseId = 0 where iModelId = ? AND BriefcaseId = ?");
+                st.Prepare(m_db, "Select * from Locks where iModelId = ? AND BriefcaseId = ?");
                 st.BindText(1, iModelid, Statement::MakeCopy::No);
                 int briefcaseId;
                 sscanf(tokens[1].c_str(), "%d", &briefcaseId);
                 st.BindInt(2, briefcaseId);
-                st.Step();
+                DbResult result = st.Step();
+                Statement updateSt;
+                for (int i = 0; result == DbResult::BE_SQLITE_ROW; i++)
+                    {
+                    Utf8String id(st.GetValueText(2));
+                    id.append("-");
+                    id.append(st.GetValueText(0));
+                    id.append("-");
+                    id.append("0");
+                    updateSt.Prepare(m_db, "UPDATE Locks Set Id = ?, LockLevel = 0, BriefcaseId = 0 where iModelId = ? AND BriefcaseId = ? AND LockType = ? AND ObjectId = ?");
+                    updateSt.BindText(1, id, Statement::MakeCopy::No);
+                    updateSt.BindText(2, iModelid, Statement::MakeCopy::No);
+                    updateSt.BindInt(3, briefcaseId);
+                    updateSt.BindInt(4, st.GetValueInt(2));
+                    updateSt.BindText(5, st.GetValueText(0), Statement::MakeCopy::No);
+                    updateSt.Step();
+                    updateSt.Finalize();
+                    result = st.Step();
+                    }
                 st.Finalize();
                 }
             }
@@ -1064,20 +1104,21 @@ Response RequestHandler::MultiLocksInfo(Request req)
             instanceId.append("-");
             instanceId.append(GetLockType(st.GetValueInt(2)));
             instanceId.append("-");
-            instanceId.append(GetLockLevel(st.GetValueInt(3)));
+            instanceId.append(GetLockLevel(st.GetValueInt(1)));
             JsonValueR instance = instanceArray[i] = Json::objectValue;
             instance[ServerSchema::InstanceId] = instanceId.c_str();
             instance[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
             instance[ServerSchema::ClassName] = ServerSchema::Class::MultiLock;
             JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
 
-            stObjectIds.Prepare(m_db, "Select ObjectId from Locks where LockLevel = ? AND LockType = ? AND BriefcaseId = ?");
+            stObjectIds.Prepare(m_db, "Select ObjectId from Locks where LockLevel = ? AND LockType = ? AND BriefcaseId = ? AND iModelId = ?");
             stObjectIds.BindInt(1, st.GetValueInt(1));
             stObjectIds.BindInt(2, st.GetValueInt(2));
             stObjectIds.BindInt(3, st.GetValueInt(3));
+            stObjectIds.BindText(4, iModelid, Statement::MakeCopy::No);
             result2 = DbResult::BE_SQLITE_ROW;
             result2 = stObjectIds.Step();
-            JsonValueR ObjectIdsArray = properties[ServerSchema::Property::ObjectId] = Json::arrayValue;
+            JsonValueR ObjectIdsArray = properties[ServerSchema::Property::ObjectIds] = Json::arrayValue;
             for (int j = 0; result2 == DbResult::BE_SQLITE_ROW; j++)
                 {
                 ObjectIdsArray[j] = stObjectIds.GetValueText(0);
@@ -1110,6 +1151,7 @@ Response RequestHandler::LocksInfo(Request req)
         sql.append(" AND ");
         sql.append(ParseUrlFilter(req.GetUrl()));
         }
+    printf("%s\n", sql.c_str());
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
@@ -1126,7 +1168,7 @@ Response RequestHandler::LocksInfo(Request req)
             instanceId.append("-");
             instanceId.append(st.GetValueText(0));
             instanceId.append("-");
-            instanceId.append(st.GetValueText(3));
+            instanceId.append(st.GetValueText(4));
             JsonValueR instance = instanceArray[i] = Json::objectValue;
             instance[ServerSchema::InstanceId] = instanceId.c_str();
             instance[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
@@ -1137,7 +1179,7 @@ Response RequestHandler::LocksInfo(Request req)
             properties[ServerSchema::Property::LockLevel] = st.GetValueInt(3);
             properties[ServerSchema::Property::BriefcaseId] = st.GetValueInt(4);
             properties["AcquiredDate"] = "";
-            properties[ServerSchema::Property::ReleasedWithChangeSet] = "";
+            properties[ServerSchema::Property::ReleasedWithChangeSet] = st.GetValueText(5);
             properties[ServerSchema::Property::ReleasedWithChangeSetIndex] = "";
             properties[ServerSchema::Property::QueryOnly] = true;
             result = st.Step();
