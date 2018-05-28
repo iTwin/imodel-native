@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 21:55:29 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -249,7 +249,7 @@ IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddNode(StatusInt&   st
         }
     if (m_pDataIndex->GetRootNode() != nullptr)
         {
-        status = BSIERROR;
+        //status = BSIERROR;
         auto rootNodeP = m_pDataIndex->GetRootNode();
         return IScalableMeshNodeEditPtr(new ScalableMeshNodeEdit<PointType>(rootNodeP));
         }

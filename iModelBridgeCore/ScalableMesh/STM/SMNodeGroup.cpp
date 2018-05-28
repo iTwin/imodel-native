@@ -23,6 +23,7 @@ uint32_t s_max_group_depth = 4;
 uint32_t s_max_group_common_ancestor = 2;
 
 mutex SMNodeGroup::s_mutex;
+SMGroupingStrategy<DRange3d>* s_groupingStrategy = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     04/2018
