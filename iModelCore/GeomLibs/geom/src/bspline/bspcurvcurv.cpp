@@ -52,7 +52,7 @@ MSBsplineCurve  *curve2
     in.push_back (curve1->CreateCapture ());
     in.push_back (curve2->CreateCapture());
 
-    if (MSBsplineCurve::CloneCompatibleCurves (in, out, false, false))
+    if (MSBsplineCurve::CloneCompatibleCurves (out, in, false, false))
         {
         curve1->SwapContents (*out[0]);
         curve2->SwapContents (*out[1]);
