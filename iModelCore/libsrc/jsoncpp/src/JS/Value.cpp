@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Bentley/Refcounted.h>
+#include <Bentley/RefCounted.h>
 #include <Bentley/bset.h>
 #include <Bentley/bmap.h>
 #include <queue>
