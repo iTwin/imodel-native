@@ -1956,6 +1956,7 @@ void Tile::_ValidateChildren() const
                 auto child = static_cast<TileP>(m_children[0].get());
                 if (!child->HasZoomFactor())
                     {
+                    child->SetIsLeaf(false);
                     child->SetZoomFactor(2.0 * GetZoomFactor());
                     child->InitTolerance(s_minToleranceRatio);
                     }
