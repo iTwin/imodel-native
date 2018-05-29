@@ -397,5 +397,46 @@ GridAxisCPtr                    ElevationGrid::GetAxis
     return GetDgnDb().Elements().Get<GridAxis>((*MakeAxesIterator().begin()).GetElementId());
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ElevationGridSurfaceCPtr ElevationGrid::GetSurface
+(
+    double elevation
+) const
+    {
+    for (Dgn::ElementIteratorEntry surfaceEntry : MakeIterator())
+        {
+        ElevationGridSurfaceCPtr surface = GetDgnDb().Elements().Get<ElevationGridSurface>(surfaceEntry.GetElementId());
+        if (surface.IsNull())
+            continue;
+
+        if (DoubleOps::AlmostEqual(surface->GetElevation(), elevation))
+            return surface;
+        }
+
+    return nullptr;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ElevationGridSurfaceCPtr ElevationGrid::GetTopSurface() const
+    {
+    ElevationGridSurfaceCPtr topMostSurface = nullptr;
+
+    for (Dgn::ElementIteratorEntry surfaceEntry : MakeIterator())
+        {
+        ElevationGridSurfaceCPtr surface = GetDgnDb().Elements().Get<ElevationGridSurface>(surfaceEntry.GetElementId());
+        if (surface.IsNull())
+            continue;
+
+        if (topMostSurface.IsNull() || topMostSurface->GetElevation() < surface->GetElevation())
+            topMostSurface = surface;
+        }
+
+    return topMostSurface;
+    }
+
 END_GRIDS_NAMESPACE
 

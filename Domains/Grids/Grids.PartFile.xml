@@ -13,7 +13,6 @@
       <ProductDirectory Name="VendorNotices" Path="Notices" LibType="static" />
       <ProductDirectory Name="GridsIncludes" Path="Grids" />
       <ProductDirectory Name="TestsBackdoorIncludes" Path="TestsBackdoor" />
-      <ProductDirectory Name="ConstraintSystemIncludes" Path="ConstraintSystem" />
       <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="" />
       <ProductDirectory Name="BentleyDesktopClientApi" Path="" />
       <ProductDirectory Name="BentleyClientSharedAssemblies" Path="" />
@@ -35,7 +34,6 @@
     </ProductDirectoryList>
 
     <Part Name="GridsSchema" BentleyBuildMakeFile="Grids/GridsSchema.prewire.mke">
-      <SubPart PartName="ConstraintModelSchema" Repository="DgnDomains-ConstraintSystem" PartFile="ConstraintSystem" />
       <SubPart PartName="AecUnitsPublicAPI" Repository="DgnDomains-DesignModelingUnits" PartFile="AecUnits" />
       <Bindings>
         <Files ProductDirectoryName="Assets"        ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/Grids*.xml</Files>
@@ -50,9 +48,7 @@
     </Part>
     
     <Part Name="GridElements" BentleyBuildMakeFile="Grids/Elements/GridElements.mke">
-        <RequiredRepository>DgnDomains-ConstraintSystem</RequiredRepository>
         <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
-        <SubPart PartName="ConstraintModel" Repository="DgnDomains-ConstraintSystem" PartFile="ConstraintSystem" />
         <SubPart PartName="GridsApi"/>
         <SubPart PartName="BuildingDgnUtils" Repository="BuildingShared" PartFile="BuildingShared" />
         <Bindings>
@@ -110,7 +106,6 @@
     <Part Name="Grids-Tested">
       <SubPart PartName="Grids"/>
       <SubPart PartName="Gtest-RunAggregator"/>
-      <SubPart PartName="ConstraintSystem-Tested" Repository="DgnDomains-ConstraintSystem" PartFile="ConstraintSystem" />
     </Part>
 
     <Part Name="Gtest-RunAggregator" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/Gtest/Logs" OnlyPlatforms="x86,x64,Linux*,MacOS*,WinRT*">

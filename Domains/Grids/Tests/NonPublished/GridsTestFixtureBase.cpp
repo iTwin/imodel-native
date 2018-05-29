@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/GridsTestFixtureBase.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeXml/BeXml.h>
@@ -18,7 +18,6 @@
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
-USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 
@@ -53,7 +52,6 @@ void CreatSeedDb (WCharCP seedFileName)
     BeFileName::CreateNewDirectory (temporaryDir);
 
 
-    ASSERT_TRUE (SUCCESS == DgnDomains::RegisterDomain (ConstraintModel::ConstraintModelDomain::GetDomain (), DgnDomain::Required::Yes)) << "Failed to register ConstraintModel domain";
     ASSERT_TRUE (SUCCESS == DgnDomains::RegisterDomain (Grids::GridsDomain::GetDomain (), DgnDomain::Required::Yes)) << "Failed to register Grids domain";
 
     dgnDbPtr = DgnDbTestUtils::CreateSeedDb (seedFileName);
@@ -114,7 +112,6 @@ void GridsTestFixtureBase::SetUp ()
     projectPath.BeDeleteFile ();
     BeFileName::BeCopyFile (GetSeedProjectPath (), projectPath.c_str (), true);
 
-    DgnDomains::RegisterDomain (ConstraintModel::ConstraintModelDomain::GetDomain (), DgnDomain::Required::Yes);
     DgnDomains::RegisterDomain (Grids::GridsDomain::GetDomain (), DgnDomain::Required::Yes);
 
     EXPECT_EQ (BE_SQLITE_OK, DgnClientUi::OpenDgnDb (projectPath, DgnDb::OpenParams (Db::OpenMode::ReadWrite, DefaultTxn::Yes)));

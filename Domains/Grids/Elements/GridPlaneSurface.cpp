@@ -10,8 +10,6 @@ BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BUILDING_SHARED
 
-namespace CML = CONSTRAINTMODEL_NAMESPACE_NAME;
-
 DEFINE_GRIDS_ELEMENT_BASE_METHODS(GridPlanarSurface)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS(PlanGridPlanarSurface)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS(PlanRadialGridSurface)
@@ -123,20 +121,6 @@ DPlane3d                        GridPlanarSurface::_GetPlane
 
     DPoint3d point3 = DPoint3d::FromSumOf (baseShapePoints[0][0], extDetail.m_extrusionVector);
     return DPlane3d::From3Points (baseShapePoints[0][0], baseShapePoints[0][1], point3);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  03/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus                   GridPlanarSurface::LockDimensionToOther
-(
-GridPlanarSurfaceCR otherSurface
-) const
-    {
-    DPlane3d bottomPlane = GetPlane();
-    DPlane3d topPlane = otherSurface.GetPlane();
-    CML::DimensionHandler::Insert(GetDgnDb(), GetElementId(), otherSurface.GetElementId(), 0, 0, bottomPlane.normal, bottomPlane.Evaluate(topPlane.origin));
-    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

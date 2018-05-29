@@ -13,7 +13,7 @@ BEGIN_GRIDS_NAMESPACE
 //=======================================================================================
 //! planar grid surface element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GridPlanarSurface : GridSurface, ConstraintModel::IConstrainable
+struct EXPORT_VTABLE_ATTRIBUTE GridPlanarSurface : GridSurface
 {
     DEFINE_T_SUPER(GridSurface);
 
@@ -32,8 +32,8 @@ protected:
     GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _Validate () const override;
 public:
     //IConstrainable TODO: remove IConstrainable
-    GRIDELEMENTS_EXPORT virtual bool GetGeomIdPlane (int geomId, DPlane3dR planeOut) const override;
-    GRIDELEMENTS_EXPORT virtual bool StretchGeomIdToPlane (int geomId, DPlane3dR targetPlane) override;
+    GRIDELEMENTS_EXPORT bool GetGeomIdPlane (int geomId, DPlane3dR planeOut) const;
+    GRIDELEMENTS_EXPORT bool StretchGeomIdToPlane (int geomId, DPlane3dR targetPlane);
 
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridPlanarSurface, GRIDELEMENTS_EXPORT)
 
@@ -50,10 +50,6 @@ public:
     //! sets curveVector for this gridPlane
     //! @param[in]  newShape        new curvevector shape for the GridPlanarSurface
     GRIDELEMENTS_EXPORT void    SetCurveVector (CurveVectorR newShape);
-
-    //! gets the plane of this gridplanesurface
-    //! @return     plane of this gridplanesurface
-    GRIDELEMENTS_EXPORT         BentleyStatus   LockDimensionToOther(GridPlanarSurfaceCR otherSurface) const;
 };
 
 //=======================================================================================

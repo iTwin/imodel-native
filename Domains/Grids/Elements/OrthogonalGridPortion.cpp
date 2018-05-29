@@ -11,13 +11,11 @@
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
-//#include <DimensionHandler.h>
 #include <BuildingShared/BuildingSharedApi.h>
 #include <BeSQLite/BeSQLite.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_BUILDING
 USING_NAMESPACE_BUILDING_SHARED
 
@@ -172,38 +170,5 @@ DVec3d OrthogonalGrid::FindOrthogonalFormTranslation(int elementIndex, double in
     translation.RotateXY(rotationAngle);
     return translation;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas                  04/17
-//---------------------------------------------------------------------------------------
-void OrthogonalGrid::AddDimensionsToOrthogonalGrid
-(
-GridSurfacePtr lastElement,
-GridSurfacePtr element,
-double distance
-)
-    {
-    DPlane3d elementPlane = (dynamic_cast<GridPlanarSurface *>(element.get()))->GetPlane();
-    DVec3d planeNormal = elementPlane.normal;
-
-    if (lastElement.IsValid())
-        {
-        DPoint3d elementOrigin = elementPlane.origin;
-        DPoint3d lastPlaneOrigin;
-        DPlane3d lastPlane = (dynamic_cast<GridPlanarSurface *>(lastElement.get()))->GetPlane();
-        lastPlane.ProjectPoint(lastPlaneOrigin, elementOrigin);
-
-        DVec3d direction = DVec3d::FromStartEnd(lastPlaneOrigin, elementOrigin);
-        bsiDVec3d_normalizeInPlace(&direction);
-
-        DimensionHandler::Insert(lastElement->GetDgnDb(),
-                                 lastElement->GetElementId(),
-                                 element->GetElementId(),
-                                 0, 0,
-                                 direction,
-                                 distance);
-        }
-    }
-
 
 END_GRIDS_NAMESPACE

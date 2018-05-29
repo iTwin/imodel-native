@@ -10,7 +10,6 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <BuildingShared/Interfaces.h>
 #include <Grids/Domain/GridsMacros.h>
-#include <ConstraintSystem/ConstraintSystemApi.h>
 
 #include "ForwardDeclarations.h"
 #include "GridCurvesPortion.h"

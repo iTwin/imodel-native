@@ -270,5 +270,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
         //! Gets default Surface2d of this ElevationGrid
         //! @return surface of this ElevationGrid, as curvevector on zero Z plane
         GRIDELEMENTS_EXPORT GridAxisCPtr      GetAxis() const;
+
+        //! Gets the ElevationGridSurface with the given elevation.
+        //! @param[in] elevation    Elevation that the returned surface should have.
+        //! @return ElevationGridSurface with the given elevation.
+        GRIDELEMENTS_EXPORT ElevationGridSurfaceCPtr GetSurface(double elevation) const;
+
+        //! Gets the top-most ElevationGridSurface.
+        GRIDELEMENTS_EXPORT ElevationGridSurfaceCPtr GetTopSurface() const;
     };
 END_GRIDS_NAMESPACE

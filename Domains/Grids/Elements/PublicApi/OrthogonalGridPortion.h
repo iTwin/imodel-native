@@ -87,12 +87,6 @@ protected:
     //! @returns vector as translation for grid
     GRIDELEMENTS_EXPORT static DVec3d FindOrthogonalFormTranslation(int elementIndex, double interval, double rotationAngle, bool isHorizontal);
 
-    //! Adds dimensions between elements
-    //! @param[in] element1 first element for dimension 
-    //! @param[in] element2 second element for 
-    //! @param[in] distance distance between elements
-    GRIDELEMENTS_EXPORT static void AddDimensionsToOrthogonalGrid(Grids::GridSurfacePtr element1, Grids::GridSurfacePtr element2, double distance);
-
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGrid, GRIDELEMENTS_EXPORT)
 
