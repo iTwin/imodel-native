@@ -708,7 +708,7 @@ void RootModelConverter::RegisterSheetModel(DgnV8FileR v8File, DgnV8Api::ModelIn
 
     Transform2dAttachments(*v8model);
 
-    TransformDrawingAttachmentsToCopies(*v8model, [this] (DgnV8Api::DgnAttachment const& attachment)    // See "Why do sheet need to make copies of their attachments?"
+    TransformDrawingAttachmentsToCopies(*v8model, [this] (DgnV8Api::DgnAttachment const& attachment)    // See "Why do sheets need to make copies of their attachments?"
         {
         if (this->_GetParams().GetConvertViewsOfAllDrawings())          // 
             return true;
@@ -842,6 +842,8 @@ struct MergeProxyGraphicsDrawGeom : public DgnV8Api::SimplifyViewDrawGeom
         SyncInfo::V8ElementMapping              m_attachElementMapping;
 
         ModelRefInfo() : m_hasChanged(false), m_failed(false) {}
+
+        bool IsAttachment() const {return m_attachElementMapping.IsValid();}
         };
 
     typedef bmap<DgnModelRefP, ModelRefInfo>    T_ModelRefInfoMap;
@@ -892,7 +894,7 @@ bool InitGeometryParams(Render::GeometryParams& params)
         nullptr != (proxyInfo = m_converter.GetProxyDisplayHitInfo(*m_context)))
         {
         // Proxy Graphics...
-        if (!m_currentModelRefInfo.m_hasChanged || m_currentModelRefInfo.m_failed)
+        if (((m_currentModelRefInfo.IsAttachment() && !m_currentModelRefInfo.m_hasChanged) || m_currentModelRefInfo.m_failed))
             {
             m_attachmentsUnchanged.insert(m_currentModelRefInfo.m_attachElementMapping);
             return false;
@@ -1076,17 +1078,22 @@ void InitCurrentModel()
         m_currentModelRefInfo = foundInfo->second;
         return;
         }
-
-    auto    attachment = m_currentModelRef->AsDgnAttachmentCP();
+    
     ModelRefInfo info;
 
+    auto    attachment = m_currentModelRef->AsDgnAttachmentCP();
     if (nullptr == attachment)
         {
+        // -----------------------------------------------------------------------------------------------------
+        // We are processing elements in the master DrawingModel itself.
         m_modelRefInfoMap[m_currentModelRef] = info;
         m_currentModelRefInfo = info;
         return;
         }
-    
+
+    // -----------------------------------------------------------------------------------------------------
+    // We are merging elements from some attached model into the master model.
+    // We track the DgnAttachment element itself in syncinfo.
     if (m_processingProxy)
         {
         DgnV8Api::DgnAttachment const* parentAttachment;
@@ -1103,7 +1110,7 @@ void InitCurrentModel()
     info.m_hasChanged = m_converter.GetChangeDetector()._IsElementChanged(syncInfoSearch, m_converter, v8eh, m_parentModelMapping, &chooseDrawing);
     if (!info.m_hasChanged)
         {
-        // The existing V8 attachment is unchanged, and MergeDrawGraphicsConverter will skip it. Just to record the fact
+        // The existing V8 attachment is unchanged, and MergeDrawGraphicsConverter will skip it. Just record the fact
         // that we have found a mapping to the BIM Drawing element.
         m_converter.GetChangeDetector()._OnElementSeen(m_converter, syncInfoSearch.GetExistingElementId());
         }
@@ -1111,7 +1118,7 @@ void InitCurrentModel()
         {
         // The existing V8 attachment has changed. At this stage of the update, we just update its provenance in syncinfo
         // AND record the fact that we've found a mapping to the BIM drawing element. We also tell MergeDrawGraphicsConverter to go ahead and
-        // harvest the proxies. Later, the caller (ConvertExtractionAttachments), will update the elements in the DrawingModel from the harvested geometry.
+        // harvest the proxies. Later, the caller (mergeDrawingGraphics), will update the elements in the DrawingModel from the harvested geometry.
         m_converter.UpdateMappingInSyncInfo(syncInfoSearch.GetExistingElementId(), v8eh, m_parentModelMapping);
         m_converter.GetChangeDetector()._OnElementSeen(m_converter, syncInfoSearch.GetExistingElementId());
         }
@@ -1123,7 +1130,10 @@ void InitCurrentModel()
 
     info.m_attachElementMapping = syncInfoSearch.m_v8ElementMapping;
     if (info.m_attachElementMapping.IsValid())
+        {
         info.m_failed = false;
+        BeAssert(info.IsAttachment());
+        }
     else
         {
         m_converter.ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(),
@@ -1149,38 +1159,68 @@ void CreateDrawingElements()
         auto                    modelRef = byModelRef.first;
         auto&                   modelRefInfo = m_modelRefInfoMap[modelRef];
 
+        SyncInfo::V8ElementSource v8AttachmentSource = modelRefInfo.m_attachElementMapping;
+        if (!v8AttachmentSource.IsValid())   // See "MergeProxyGraphicsDrawGeom handles both the drawing and attachments to the drawing"
+            v8AttachmentSource = SyncInfo::V8ElementSource(0, m_parentModelMapping.GetV8ModelSyncInfoId());
+        auto& v8ElementsByAttachment = v8OriginalsSeen[v8AttachmentSource];
+
         for (auto& byElement : byModelRef.second)
             {
             SyncInfo::V8ElementMapping originalElementMapping;
             
             if (nullptr != modelRef && nullptr != modelRef->GetDgnModelP())
                 originalElementMapping = m_converter.FindFirstElementMappedTo(*modelRef->GetDgnModelP(), byElement.first);
+
+            if (!originalElementMapping.IsValid())
+                {
+                // See "MergeProxyGraphicsDrawGeom handles both the drawing and attachments to the drawing"
+                DgnV8Api::ElementHandle v8eh(modelRef->GetDgnModelP()->FindElementByID(byElement.first));
+                SyncInfo::ElementProvenance lmt(v8eh, m_converter.GetSyncInfo(), m_converter.GetCurrentIdPolicy());
+                originalElementMapping = SyncInfo::V8ElementMapping(DgnElementId(), byElement.first, m_parentModelMapping.GetV8ModelSyncInfoId(), lmt);
+
+#ifdef COMMENT_OUT  // I would like to skip the work of generating drawing elements when the source V8 elements are unchanged,
+                    // But I don't have enough information to do that. The generated proxy graphics depend on several things,
+                    // including the original drawing element, the drawing model's clip, and probably some display style somewhere.
+                IChangeDetector::SearchResults      syncInfoSearch;
+                if (!m_converter.GetChangeDetector()._IsElementChanged(syncInfoSearch, m_converter, v8eh, m_parentModelMapping))
+                    {
+                    // The existing V8 attachment is unchanged, so there's no need to re-generate the proxy graphics. Just record the fact
+                    // that we have found a mapping to the BIM Drawing element.
+                    m_converter.GetChangeDetector()._OnElementSeen(m_converter, syncInfoSearch.GetExistingElementId());
+                    continue;
+                    }
+                else if (IChangeDetector::ChangeType::Update == syncInfoSearch.m_changeType)
+                    {
+                    // The existing V8 attachment has changed. At this stage of the update, we just update its provenance in syncinfo
+                    // AND record the fact that we've found a mapping to the BIM drawing element.
+                    // Let _CreateAndInsertExtractionGraphic below update the BIM and the special v8sync_ExtractedGraphic table.
+                    m_converter.UpdateMappingInSyncInfo(syncInfoSearch.GetExistingElementId(), v8eh, m_parentModelMapping);
+                    m_converter.GetChangeDetector()._OnElementSeen(m_converter, syncInfoSearch.GetExistingElementId());
+                    }
+                else
+                    {
+                    // This is a v8 element that we haven't seen before. Let _CreateAndInsertExtractionGraphic insert it.
+                    }
+#endif
+                }
+
+            if (m_converter.IsUpdating())
+                v8ElementsByAttachment.insert(originalElementMapping);
             
             for (auto& bycategory : byElement.second)
                 {
-                DgnDbStatus     status;
-
-                if (modelRefInfo.m_attachElementMapping.IsValid() && originalElementMapping.IsValid())
-                    status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, modelRefInfo.m_attachElementMapping, originalElementMapping, bycategory.first, *bycategory.second);
-                else
-                    status = m_converter.CreateDrawingElement(m_parentModelMapping.GetDgnModel(), bycategory.first, *bycategory.second);
-
+                DgnDbStatus status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, v8AttachmentSource, originalElementMapping, bycategory.first, *bycategory.second);
                 if (DgnDbStatus::Success != status)
                     {
-#ifdef NEEDS_WORK
                     BeAssert((DgnDbStatus::LockNotHeld != status) && "Failed to get or retain necessary locks");
-                    ReportError(IssueCategory::Unknown(), Issue::ConvertFailure(), "drawing extraction");
-                    BeAssert(false);
-#endif
+                    m_converter.ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), "drawing extraction");
                     }
                 }
             }
         }
 
-#ifdef NEEDS_WORK
-    if (IsUpdating())
-        _DetectDeletedExtractionGraphics(v8mm., v8OriginalsSeen, drawGeom.m_attachmentsUnchanged);
-#endif
+    if (m_converter.IsUpdating())
+        m_converter._DetectDeletedExtractionGraphics(m_parentModelMapping, v8OriginalsSeen, m_attachmentsUnchanged);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1279,6 +1319,8 @@ void _DrawModelRef (DgnV8Api::DgnModelRef* baseModelRef, DgnV8Api::DgnModelRefLi
     {
     if (nullptr == baseModelRef->GetDgnModelP())
         return;
+
+    m_converter.GetV8FileSyncInfoId(*baseModelRef->GetDgnModelP()->GetDgnFileP());  // May be the first we've encountered this file. Map it in now, so that downstream conversion mappings can refer to it.
     
     if (!m_mergeGraphicsForRenderedViews &&
         nullptr != baseModelRef->AsDgnAttachmentP() &&
@@ -1533,79 +1575,6 @@ static void mergeDrawingGraphics(Converter& converter, Bentley::DgnModelRefR bas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Converter::CreateDrawingElement(DgnModelR model, DgnCategoryId categoryId, GeometryBuilder& builder)
-    {
-    DgnCode code;
-    if (WantDebugCodes())
-        {
-        // *** WIP_CONVERT_CVE code = CreateCode(defaultCodeValue, defaultCodeScope);
-        }
-
-    // *** WIP_CONVERT_CVE - what bis element class to use? Will it always be the same for all kinds of drawing extractions?
-    DgnClassId elementClassId(GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic));
-    DgnElementPtr drawingGraphic = CreateNewElement(model, elementClassId, categoryId, code);
-
-    if (!drawingGraphic.IsValid())
-        return DgnDbStatus::BadRequest;
-
-    if (!drawingGraphic.IsValid())
-        {
-        BeAssert(false);
-        return DgnDbStatus::BadRequest;
-        }
-    if (BSISUCCESS != builder.Finish(*drawingGraphic->ToGeometrySourceP()))
-        {
-        BeAssert(false);
-        return DgnDbStatus::BadRequest;
-        }
-
-    ShowProgress();
-    ++m_elementsConverted;
-
-    DgnDbStatus status = DgnDbStatus::Success;
-
-#ifdef NEEDS_WORK
-    if (IsUpdating())
-        {
-        auto existingDrawingGraphicId = GetSyncInfo().FindExtractedGraphic(attachmentSource, originalElementMapping, categoryId);
-        if (existingDrawingGraphicId.IsValid())
-            {
-            // We already have a graphic for this element. Update it.
-            DgnElementCPtr existingEl = GetDgnDb().Elements().GetElement(existingDrawingGraphicId);
-
-            if (existingEl.IsValid())
-                {
-                DgnElementPtr writeEl = MakeCopyForUpdate(*drawingGraphic, *existingEl);
-                writeEl->Update(&status);
-                // There's no need to "update" the syncinfo record for this drawing graphic, as syncinfo does not store anything like a date or a hash
-                // for drawing graphics. (We track only the dgnattachment's hash as a proxy for *all* drawing graphics in the attachment.)
-                return status;
-                }
-            else 
-                {
-                BeAssert (!"ExistingDrawingGraphic missing. Possibly previously deleted in ChangeDetector::_DetectDeletedModels.");
-                }
-            }
-        }
-#endif
-
-    // This is a new graphic for this element.
-    drawingGraphic->Insert(&status);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-#ifdef NEEDS_WORK
-    GetSyncInfo().InsertElement();
-#endif
-
-    return DgnDbStatus::Success;
-
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 static DgnV8Api::ViewInfoPtr  createFakeViewInfo(DgnV8ModelR v8ParentModel, Converter& converter)
     {
     Bentley::DRange3d sheetModelRange;
@@ -1799,18 +1768,43 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 // 	DgnV8ConverterB02.dll!BentleyB0200::Dgn::DgnDbSync::DgnV8::RootModelConverter::Process() Line 2135	C++
 
 
-// "Why do sheet need to make copies of their attachments?"
+// "Why do sheets need to make copies of their attachments?"
 // Some of the cases are explained above, for example, when a sheet needs a re-scaled copy of a drawing.
 //
 // Why in other cases? To avoid duplicate graphics in the case where a drawing has nested attachments of its own.
-// When a drawing is attached to a sheet, the nested attachments are un-nested and become direct attachments of the sheet. 
+// When a drawing is attached to a sheet, the nested 3d attachments are un-nested and become direct attachments of the sheet. 
 // When a drawing is displayed in its own right in its own view, then its nested attachments must be merged into it.
-// So, obviously, the bridge can apply those two different transformations to the same model. (Note that these transformations are done on the V8 models (in memory) before the conversion really starts.)
+// So, obviously, the bridge cannot apply those two different transformations to the same model. (Note that these transformations are done on the V8 models (in memory) before the conversion really starts.)
 //
 // There's another issue. Sheets always assert ownership over the drawings that are attached to them. By default such drawings are not considered to have
-// an independent existence. So, the converter will not converter views of such drawings. If that is not what we want for a given drawing (or for all drawings),
+// an independent existence. So, the converter will not convert views of such drawings. If that is not what we want for a given drawing (or for all drawings),
 // then we have to tell sheets to make their own private copies and assert ownership over them, so that the original drawings and their will be converted independently of the sheets.
 //
 // Finally, one more issue: If the root model is a drawing, then we must not fail to convert views of it. We cannot allow a sheet to assert private ownership over it.
 // Therefore, sheets that attach a drawing that is the root model must attach a copy of it.
 // 
+
+// "MergeProxyGraphicsDrawGeom handles both the drawing and attachments to the drawing"
+// MergeProxyGraphicsDrawGeom captures all graphics that appear in a V8 drawing, including
+// graphics generated from elements in the v8 drawing model itself, as well as graphics
+// generated from elements in attachments to the v8 drawing model. In some cases, the 
+// referenced graphics will have been generated by CVE, e.g., for section cuts, but that is a detail.
+// In some cases, the graphics for elements in the drawing itself will be clipped or otherwise
+// different from the original elements. That is also a detail. In all cases, the graphics
+// are proxies for the original elements.
+//
+// In order to support updates, where the converter detects changes and converts only what has changed,
+// the converter keeps track of the mapping from the original V8 elements to the generated
+// DrawingGraphic elements in the SyncInfo db. On an update, Converter::_CreateAndInsertExtractionGraphic looks up
+// the original V8 elements and updates them if they exist. Otherwise, it inserts new DrawingGraphic
+// elements.
+//
+// SyncInfo does not use the normal element mapping table for proxy graphics. It has dedicated table called v8sync_ExtractedGraphic.
+// That table is defined to handle the complicated case of CVE, where a single 3d element can throw off
+// many proxy graphics, where the graphics are assigned to various categories, and where all of that
+// is specific to a given DgnAttachment. The same v8sync_ExtractedGraphic must also handle the simpler case
+// where the proxy graphics are generated from elements in the drawing model itself. In that case,
+// the attachment-specific columns will be 0 and OriginalV8ModelSyncInfoId will be the same as DrawingV8ModelSyncInfoId.
+//
+// MergeProxyGraphicsDrawGeom::CreateDrawingElements handles the non-attachment case by generating a dummy object to represent
+// missing attachment.

@@ -153,7 +153,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         void ReportProgress() const;
 
         //! Report progress. 
-        void ShowProgress() const { m_meter->ShowProgress(); }
+        void ShowProgress() const { if (nullptr != m_meter) m_meter->ShowProgress(); }
 
         //! Specify how many steps remain in the current task
         void AddSteps(int32_t n) const;

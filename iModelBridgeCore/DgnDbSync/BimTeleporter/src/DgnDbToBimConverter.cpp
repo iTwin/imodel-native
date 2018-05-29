@@ -64,14 +64,11 @@ bool DgnDbToBimConverter::Convert(WCharCP inputPath, WCharCP outputPath)
         });
 
     StopWatch totalTimer(true);
-//    std::thread consumer([&importer] { importer.CreateBim(); });
     auto future = ExportDgnDb(&exporter);
     importer.ImportJson(future);
-    //bool stat = future.get();
-    //importer.SetDone();
-//    consumer.join();
+    
     totalTimer.Stop();
-    Utf8PrintfString message("Total teleportation|%.0f millisecs", totalTimer.GetElapsedSeconds() * 1000.0);
+    Utf8PrintfString message("Total upgrade|%.0f millisecs", totalTimer.GetElapsedSeconds() * 1000.0);
     BentleyApi::NativeLogging::LoggingManager::GetLogger("DgnDbToBimConverter.Performance")->info(message.c_str());
 
     return true;

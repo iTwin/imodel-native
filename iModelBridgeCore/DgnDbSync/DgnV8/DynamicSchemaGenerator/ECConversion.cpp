@@ -2146,8 +2146,6 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
             flatSchema->AddReferencedSchema(*flatRefSchema);
             }
 
-        CopyFlatCustomAttributes(*flatSchema, *sourceSchema);
-
         bvector<ECN::ECClassCP> relationshipClasses;
         for (ECN::ECClassCP sourceClass : sourceSchema->GetClasses())
             {
@@ -2247,6 +2245,8 @@ BentleyStatus DynamicSchemaGenerator::FlattenSchemas(ECN::ECSchemaP ecSchema)
                 }
             }
         // This needs to happen after we have copied all of the properties for all of the classes as the custom attributes could be defined locally
+        CopyFlatCustomAttributes(*flatSchema, *sourceSchema);
+
         for (ECN::ECClassCP sourceClass : sourceSchema->GetClasses())
             {
             ECN::ECClassP targetClass = flatSchema->GetClassP(sourceClass->GetName().c_str());
@@ -3566,5 +3566,361 @@ BentleyStatus TiledFileConverter::MakeSchemaChanges()
 
     return status;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP findRootRelationshipName(ECN::ECClassCP relClass)
+    {
+    if (relClass->GetBaseClasses().size() > 0)
+        {
+        for (ECN::ECClassCP baseClass : relClass->GetBaseClasses())
+            {
+            if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(baseClass->GetSchema()))
+                continue;
+            return findRootRelationshipName(baseClass);
+            }
+        }
+    return relClass->GetName().c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool Converter::DoesRelationshipExist(Utf8StringCR relName, BeSQLite::EC::ECInstanceKey const& sourceInstanceKey, BeSQLite::EC::ECInstanceKey const& targetInstanceKey)
+    {
+
+    Utf8String ecsql("SELECT COUNT(*) FROM ");
+    ecsql.append(relName).append(" WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
+    BeSQLite::EC::CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement(ecsql.c_str());
+    //Utf8String qplan = GetDgnDb().ExplainQuery();
+
+    if (!stmt.IsValid())
+        {
+        ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::CorruptData(), Converter::Issue::Message(),
+                    Utf8PrintfString("%s - failed to prepare", ecsql.c_str()).c_str());
+        return false;
+        }
+
+    if (BeSQLite::EC::ECSqlStatus::Success != stmt->BindId(1, sourceInstanceKey.GetInstanceId()))
+        {
+        Utf8PrintfString error("Failed to search for ECRelationship %s. Binding value to SourceECInstanceId (%s) failed. (%s:%s -> %s:%s)", relName.c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                               sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(), targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+        ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+        return false;
+        }
+
+    if (BeSQLite::EC::ECSqlStatus::Success != stmt->BindId(2, targetInstanceKey.GetInstanceId()))
+        {
+        Utf8PrintfString error("Failed to search for ECRelationship %s. Binding value to TargetECInstanceId (%s) failed.  (%s:%s -> %s:%s)", relName.c_str(), targetInstanceKey.GetInstanceId().ToString().c_str(),
+                               sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(), targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+        ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
+        return false;
+        }
+
+    if (BeSQLite::BE_SQLITE_ROW != stmt->Step())
+        {
+        Utf8String errorMsg;
+        errorMsg.Sprintf("Failed to search for ECRelationship '%s' "
+                         "(Source: (%s:%s) Target (%s:%s)). "
+                         "Execution of ECSQL SELECT '%s' failed. (Native SQL: %s)\n",
+                         relName.c_str(),
+                         sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                         targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str(),
+                         stmt->GetECSql(), stmt->GetNativeSql());
+
+        ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                    errorMsg.c_str());
+        return false;
+        }
+
+    return stmt->GetValueInt(0) > 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle   10/2014
+//---------------------------------------------------------------------------------------
+BentleyApi::BentleyStatus Converter::ConvertECRelationships(DgnV8Api::ElementHandle const& v8Element)
+    {
+    auto& v8ECManager = DgnV8Api::DgnECManager::GetManager();
+    DgnV8Api::RelationshipEntryVector relationships;
+    v8ECManager.FindRelationshipEntriesOnElement(v8Element.GetElementRef(), relationships);
+
+    DgnDbR dgndb = GetDgnDb();
+    SyncInfo::V8FileSyncInfoId fileId = GetV8FileSyncInfoIdFromAppData(*v8Element.GetDgnFileP());
+
+    for (DgnV8Api::RelationshipEntry const& entry : relationships)
+        {
+        //schemas not captured in sync info are system schemas which we don't consider during conversion
+        if (!GetSyncInfo().ContainsECSchema(Utf8String(entry.RelationshipSchemaName.c_str()).c_str()))
+            continue;
+
+        V8ECInstanceKey v8SourceKey(ECClassName(Utf8String(entry.SourceSchemaName.c_str()).c_str(), Utf8String(entry.SourceClassName.c_str()).c_str()),
+                                    entry.SourceInstanceId.c_str());
+        V8ECInstanceKey v8TargetKey(ECClassName(Utf8String(entry.TargetSchemaName.c_str()).c_str(), Utf8String(entry.TargetClassName.c_str()).c_str()),
+                                    entry.TargetInstanceId.c_str());
+        ECClassName v8RelName(Utf8String(entry.RelationshipSchemaName.c_str()).c_str(), Utf8String(entry.RelationshipClassName.c_str()).c_str());
+        Utf8String v8RelFullClassName = v8RelName.GetClassFullName();
+
+        BisConversionRule rule;
+        bool hasSecondary;
+        if (!V8ECClassInfo::TryFind(rule, dgndb, v8RelName, hasSecondary))
+            {
+            BeAssert(false && "V8ECClassInfo should exist for relationship classes.");
+            continue;
+            }
+
+        if (BisConversionRuleHelper::IgnoreInstance(rule))
+            {
+            Utf8String errorMsg;
+            errorMsg.Sprintf("Skipped v8 '%s' relationship ECInstance because its class was ignored during schema conversion. See ECSchema conversion log entries above.",
+                             v8RelName.GetClassFullName().c_str());
+            ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
+            continue;
+            }
+
+        bool sourceInstanceIsElement = false;
+        BeSQLite::EC::ECInstanceKey sourceInstanceKey = ECInstanceInfo::Find(sourceInstanceIsElement, dgndb, fileId, v8SourceKey);
+        bool targetInstanceIsElement = false;
+        BeSQLite::EC::ECInstanceKey targetInstanceKey = ECInstanceInfo::Find(targetInstanceIsElement, dgndb, fileId, v8TargetKey);
+
+        if (IsUpdating())
+            {
+            if (DoesRelationshipExist(v8RelFullClassName, sourceInstanceKey, targetInstanceKey))
+                {
+                continue;
+                }
+            }
+        ECDiagnostics::LogV8RelationshipDiagnostics(dgndb, v8RelName, v8SourceKey, sourceInstanceKey.IsValid(), sourceInstanceIsElement, v8TargetKey, targetInstanceKey.IsValid(), targetInstanceIsElement);
+
+        if (!sourceInstanceKey.IsValid() || !targetInstanceKey.IsValid())
+            {
+            Utf8CP failingEndStr = nullptr;
+            if (!sourceInstanceKey.IsValid() && !targetInstanceKey.IsValid())
+                failingEndStr = "source and target ECInstances";
+            else
+                failingEndStr = !sourceInstanceKey.IsValid() ? "source ECInstance" : "target ECInstance";
+
+            Utf8String errorMsg;
+            errorMsg.Sprintf("Could not find %s for relationship '%s' (Source: %s|%s Target %s|%s).",
+                             failingEndStr, v8RelFullClassName.c_str(),
+                             v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                             v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId());
+            ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), errorMsg.c_str());
+            continue;
+            }
+
+        ECN::ECClassCP relClass = GetDgnDb().Schemas().GetClass(v8RelName.GetSchemaName(), v8RelName.GetClassName());
+        if (relClass == nullptr || !relClass->IsRelationshipClass())
+            {
+            Utf8String error;
+            error.Sprintf("Failed to convert instance of ECRelationshipClass %s. The class doesn't exist in the BIM file.", v8RelFullClassName.c_str());
+            ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                        error.c_str());
+            continue;
+            }
+
+        // If the relationship class inherits from one ElementRefersToElements base relationship class, then it is a link table relationship, and can use the API
+        if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements))
+            {
+            BeSQLite::EC::ECInstanceKey relKey;
+            if (BE_SQLITE_OK != GetDgnDb().InsertLinkTableRelationship(relKey, *relClass->GetRelationshipClassCP(), sourceInstanceKey.GetInstanceId(), targetInstanceKey.GetInstanceId()))
+                {
+                Utf8String dgndbError = GetDgnDb().GetLastError();
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
+                                 "Insertion into target BIM file failed.%s%s",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str(),
+                                 dgndbError.empty() ? "" : " Reason: ",
+                                 dgndbError.empty() ? "" : dgndbError.c_str());
+
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                }
+            continue;
+            }
+
+        ECN::ECClassCP targetClass = GetDgnDb().Schemas().GetClass(targetInstanceKey.GetClassId());
+        ECN::ECClassCP sourceClass = GetDgnDb().Schemas().GetClass(sourceInstanceKey.GetClassId());
+        // Otherwise, the converter should have created a navigation property on the target class, so we need to set the target instance's ECValue
+        ECN::ECPropertyP prop = nullptr;
+
+        // Search for root relationshipclass name
+        Utf8CP navName = findRootRelationshipName(relClass);
+        // If the class is an ElementOwnsMultiAspects base, then need to use the NavigationProperty 'Element' that is defined on the base MultiAspect class.
+        bool navPropOnSource = false;
+        if (relClass->Is(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects))
+            {
+            prop = targetClass->GetPropertyP("Element");
+            }
+        else
+            {
+            prop = targetClass->GetPropertyP(navName);
+            if (nullptr == prop)
+                {
+                prop = sourceClass->GetPropertyP(navName);
+                navPropOnSource = true;
+                }
+            }
+
+        if (nullptr == prop)
+            {
+            Utf8String errorMsg;
+            errorMsg.Sprintf("Unable to find NavigationECProperty '%s' on Target-Constraint ECClass '%s'.  This relationship is not derived from a BisCore link table relationship "
+                             "and therefore the conversion process should have created a NavigationECProperty on the ECClass."
+                             "Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                             "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
+                             "Insertion into target BIM file failed.",
+                             relClass->GetName().c_str(), targetClass->GetFullName(),
+                             v8RelFullClassName.c_str(),
+                             v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                             v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                             sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                             v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                             targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+            ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                        errorMsg.c_str());
+
+            continue;
+            }
+        ECN::NavigationECPropertyP navProp = prop->GetAsNavigationPropertyP();
+        if (nullptr == navProp)
+            {
+            Utf8String errorMsg;
+            errorMsg.Sprintf("Unable to find NavigationECProperty '%s' on Target-Constraint ECClass '%s'.  This relationship is not derived from a BisCore link table relationship "
+                             "and therefore the conversion process should have created a NavigationECProperty on the ECClass."
+                             "Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                             "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
+                             "Insertion into target BIM file failed.",
+                             relClass->GetName().c_str(), targetClass->GetFullName(),
+                             v8RelFullClassName.c_str(),
+                             v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                             v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                             sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                             v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                             targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+            ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                        errorMsg.c_str());
+
+            continue;
+            }
+        ECN::ECValue val;
+        val.SetNavigationInfo((BeInt64Id) targetInstanceKey.GetInstanceId().GetValue(), relClass->GetRelationshipClassCP());
+
+        if (targetClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect) && !navPropOnSource)
+            {
+            DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(sourceInstanceKey.GetInstanceId().GetValue()));
+            if (!element.IsValid())
+                continue;
+            DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*element, *targetClass, targetInstanceKey.GetInstanceId());
+            if (nullptr == aspect)
+                {
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Unable to get ElementAspect from Element."
+                                 "Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
+                                 "Insertion into target BIM file failed.",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                continue;
+                }
+            if (DgnDbStatus::Success != aspect->SetPropertyValue(navProp->GetName().c_str(), val))
+                {
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Failed to set NavigationECProperty on Target ElementAspect ECInstance for ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). ",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                continue;
+                }
+            element->Update();
+            }
+        else if (sourceClass->Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementAspect) && navPropOnSource)
+            {
+            DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(targetInstanceKey.GetInstanceId().GetValue()));
+            if (!element.IsValid())
+                continue;
+            DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(*element, *sourceClass, sourceInstanceKey.GetInstanceId());
+            if (nullptr == aspect)
+                {
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Unable to get ElementAspect from Element."
+                                 "Failed to convert ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). "
+                                 "Insertion into target BIM file failed.",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                continue;
+                }
+            if (DgnDbStatus::Success != aspect->SetPropertyValue(navProp->GetName().c_str(), val))
+                {
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Failed to set NavigationECProperty on Source ElementAspect ECInstance for ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). ",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                continue;
+                }
+            element->Update();
+            }
+
+        else
+            {
+            DgnElementPtr element = m_dgndb->Elements().GetForEdit<DgnElement>(DgnElementId(targetInstanceKey.GetInstanceId().GetValue()));
+            if (DgnDbStatus::Success != element->SetPropertyValue(navProp->GetName().c_str(), val))
+                {
+                Utf8String errorMsg;
+                errorMsg.Sprintf("Failed to set NavigationECProperty on Target ECInstance for ECRelationship '%s' from element %" PRIu64 " in file '%s' "
+                                 "(Source: %s|%s (%s:%s) Target %s|%s (%s:%s)). ",
+                                 v8RelFullClassName.c_str(),
+                                 v8Element.GetElementId(), Utf8String(v8Element.GetDgnFileP()->GetFileName().c_str()).c_str(),
+                                 v8SourceKey.GetClassName().GetClassFullName().c_str(), v8SourceKey.GetInstanceId(),
+                                 sourceInstanceKey.GetClassId().ToString().c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
+                                 v8TargetKey.GetClassName().GetClassFullName().c_str(), v8TargetKey.GetInstanceId(),
+                                 targetInstanceKey.GetClassId().ToString().c_str(), targetInstanceKey.GetInstanceId().ToString().c_str());
+
+                ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Message(),
+                            errorMsg.c_str());
+                continue;
+                }
+            element->Update();
+            }
+        }
+
+    return BentleyApi::SUCCESS;
+    }
+
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

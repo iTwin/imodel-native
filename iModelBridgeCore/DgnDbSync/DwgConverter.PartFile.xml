@@ -388,7 +388,7 @@
         <Directories DirectoryListName="Tests"/>
     </Product>
 
-    <Part Name="RunDwgImporterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DwgImporterTests -dGTEST_NAME=DwgImporterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="RunDwgImporterTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=DwgImporterTests -dGTEST_NAME=DwgImporterTests" OnlyPlatforms="x64" ExcludeLibType="Static">
         <RequiredRepository>BeGTest</RequiredRepository>
         <SubProduct ProductName="DwgImporterTests" />
         <Bindings>

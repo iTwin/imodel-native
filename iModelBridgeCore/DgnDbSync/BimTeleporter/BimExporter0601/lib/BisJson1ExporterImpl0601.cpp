@@ -393,8 +393,6 @@ bool BisJson1ExporterImpl::ExportDgnDb()
 
     m_meter->AddSteps(8);
 
-    CalculateEntities();
-
     SetStepName(BisJson1ExporterImpl::ProgressMessage::STEP_EXPORT_SCHEMAS());
     StopWatch timer(true);
     StopWatch totalTimer(true);
@@ -403,17 +401,20 @@ bool BisJson1ExporterImpl::ExportDgnDb()
         return false;
 
     LogPerformanceMessage(timer, "Export Schemas");
+    CalculateEntities();
 
     timer.Start();
     if (SUCCESS != (stat = ExportFonts()))
         return false;
     LogPerformanceMessage(timer, "Export Fonts");
 
+    SetStepName(BisJson1ExporterImpl::ProgressMessage::STEP_EXPORT_AUTHORITIES());
     timer.Start();
     if (SUCCESS != (stat = ExportAuthorities()))
         return false;
     LogPerformanceMessage(timer, "Export Authorities");
 
+    SetStepName(BisJson1ExporterImpl::ProgressMessage::STEP_EXPORT_MODELS());
     timer.Start();
     if (SUCCESS != (stat = ExportModels()))
         return false;
@@ -508,10 +509,9 @@ void BisJson1ExporterImpl::CalculateEntities()
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_Authority ");
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_Model ");
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_Font ");
-    sql.append("UNION ALL SELECT count(*) as rows FROM dgn_GeometricElement2d ");
-    sql.append("UNION ALL SELECT count(*) as rows FROM dgn_GeometricElement3d ");
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_ElementGroupsMembers ");
-    sql.append("UNION ALL SELECT count(*) as rows FROM ec_Schema ");
+    sql.append("UNION ALL SELECT count(*) as rows FROM dgn_TextAnnotationData ");
+    sql.append("UNION ALL SELECT count(*) as rows FROM generic_MultiAspect ");
     sql.append(") u");
     
     Statement stmt;
@@ -522,7 +522,7 @@ void BisJson1ExporterImpl::CalculateEntities()
         {
         auto entry = Json::Value(Json::ValueType::objectValue);
         int64_t id = stmt.GetValueInt64(0);
-        entry["entryCount"] = id;
+        entry["elementCount"] = id;
         (QueueJson) (entry.toStyledString().c_str());
         }
     }
@@ -1213,13 +1213,25 @@ BentleyStatus BisJson1ExporterImpl::ExportSchemas() const
     schemaReadContext = ECN::ECSchemaReadContext::CreateContext();
     schemaReadContext->AddSchemaLocater(m_dgndb->GetSchemaLocater());
 
+    bvector<ECSchemaCP> ecSchemas = m_dgndb->Schemas().GetECSchemas();
+
+    int schemaCount = 0;
+    for (ECN::ECSchemaCP ischema : ecSchemas)
+        {
+        if (knownSchemas.end() != std::find(knownSchemas.begin(), knownSchemas.end(), ischema->GetName()))
+            continue;
+        schemaCount++;
+        }
+    auto entryCount = Json::Value(Json::ValueType::objectValue);
+    entryCount["schemaCount"] = schemaCount;
+    (QueueJson) (entryCount.toStyledString().c_str());
+
     auto entry = Json::Value(Json::ValueType::objectValue);
     entry[JSON_TYPE_KEY] = JSON_TYPE_Schema;
     entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::arrayValue);
     entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
     auto& schemas = entry[JSON_OBJECT_KEY];
 
-    bvector<ECSchemaCP> ecSchemas = m_dgndb->Schemas().GetECSchemas();
     for (ECN::ECSchemaCP ischema : ecSchemas)
         {
         bvector<ECSchemaCP> orderedSchemas;
@@ -2036,7 +2048,7 @@ BentleyStatus BisJson1ExporterImpl::ExportTextAnnotationData()
     {
 
     Statement stmt;
-    Utf8PrintfString sql("SELECT ECInstanceId, TextAnnotation FROM dgn_TextAnnotationData");
+    Utf8PrintfString sql("SELECT ECInstanceId, TextAnnotation FROM dgn_TextAnnotationData WHERE TextAnnotation is NOT NULL ");
     if (BE_SQLITE_OK != (stmt.Prepare(*m_dgndb, sql.c_str())))
         {
         LogMessage(TeleporterLoggingSeverity::LOG_ERROR, "Unable to prepare statement to retrieve TextAnnotationData");
@@ -2260,7 +2272,7 @@ BentleyStatus BisJson1ExporterImpl::ExportLinkTables(Utf8CP schemaName, Utf8CP c
         return SUCCESS;
 
     //Utf8PrintfString ecSql("SELECT s.Name, c.Name, r.SourceECInstanceId, r.TargetECInstanceId FROM [%s].[%s] r, [MetaSchema].[Class] c, [MetaSchema].[Schema] s WHERE c.[Id] = r.ECClassId AND s.Id = c.[SchemaId]", schemaName, className);
-    Utf8PrintfString ecSql("SELECT ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId from [%s].[%s]", schemaName, className);
+    Utf8PrintfString ecSql("SELECT ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId from [%s].[%s] ORDER BY ECClassId", schemaName, className);
     CachedECSqlStatementPtr stmt = m_dgndb->GetPreparedECSqlStatement(ecSql.c_str());
 
     if (!stmt.IsValid())
@@ -2320,7 +2332,7 @@ BentleyStatus BisJson1ExporterImpl::ExportPropertyData()
 
 void BisJson1ExporterImpl::ReportProgress() const
     {
-    if (m_meter && DgnProgressMeter::ABORT_Yes == m_meter->ShowProgress())
+    if (nullptr != m_meter && DgnProgressMeter::ABORT_Yes == m_meter->ShowProgress())
         {
         //OnFatalError();
         }

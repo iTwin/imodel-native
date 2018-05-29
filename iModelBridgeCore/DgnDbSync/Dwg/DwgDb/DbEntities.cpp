@@ -1444,10 +1444,10 @@ uint32_t    DwgDbViewBorder::GetShadedDPI () const { DWGDB_CALLSDKMETHOD({BeAsse
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d        DwgDbBlockReference::GetScaleFactors () const
+DVec3d      DwgDbBlockReference::GetScaleFactors () const
     {
     DWGGE_Type(Scale3d) scale = T_Super::scaleFactors ();
-    return DPoint3d::From (scale.sx, scale.sy, scale.sz);
+    return DVec3d::From (scale.sx, scale.sy, scale.sz);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1532,10 +1532,10 @@ DwgDbStatus     DwgDbBlockReference::OpenSpatialFilter (DwgDbSpatialFilterPtr& f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d        DwgDbViewRepBlockReference::GetScaleFactors () const
+DVec3d          DwgDbViewRepBlockReference::GetScaleFactors () const
     {
     DWGGE_Type(Scale3d) scale = T_Super::scaleFactors ();
-    return DPoint3d::From (scale.sx, scale.sy, scale.sz);
+    return DVec3d::From (scale.sx, scale.sy, scale.sz);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
