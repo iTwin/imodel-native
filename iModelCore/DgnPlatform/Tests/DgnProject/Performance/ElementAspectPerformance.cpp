@@ -61,7 +61,7 @@ TEST_F (ElementAspectTests1, UniqueAspectPerformance_Insert)
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
 
     //  ... insert element with an aspect
-    int const count = 1000;
+    int const count = 1001;
     TestElementCPtr e2[count];
     TestElementPtr tempE2[count];
     StopWatch timer1 (true);
@@ -73,7 +73,7 @@ TEST_F (ElementAspectTests1, UniqueAspectPerformance_Insert)
         ASSERT_TRUE ((e2[i]).IsValid ());
     }
     timer1.Stop ();
-    LogTiming (timer1, "Insert Element With a Unique Aspect", "TestElement", false, 0, count);
+    LogTiming (timer1, "Insert Element With a Unique Aspect", "TestElement", false, 0, count-1);
 }
 
 /*=================================================================================**//**
@@ -85,7 +85,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformance_Insert)
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
 
     //   insert element without aspect
-    int const count = 1000;
+    int const count = 1001;
     TestElementPtr tempEl[count];
     TestElementCPtr el[count];
     StopWatch timer (true);
@@ -96,7 +96,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformance_Insert)
         ASSERT_TRUE ((el[i]).IsValid ());
     }
     timer.Stop ();
-    LogTiming (timer, "Insert Simple Element Without Aspect", "TestElement", false, 0, count);
+    LogTiming (timer, "Insert Simple Element Without Aspect", "TestElement", false, 0, count-1);
 }
 
 
@@ -110,7 +110,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformance_Update)
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
 
     //   update element without aspect
-    int const count = 1000;
+    int const count = 1001;
     TestElementPtr tempEl[count];
     TestElementCPtr el[count];
     for (int i = 1; i < count; i++) {
@@ -128,7 +128,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformance_Update)
         tempEl[i]->Update (&status);
     }
     timer1.Stop ();
-    LogTiming (timer1, "Update Simple Element Without Aspect", "TestElement", false, count, count);
+    LogTiming (timer1, "Update Simple Element Without Aspect", "TestElement", false, count-1, count-1);
 }
 
 /*=================================================================================**//**
@@ -140,7 +140,7 @@ TEST_F (ElementAspectTests1, UniqueAspectPerformance_Update)
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
 
     //   update element with aspect
-    int const count = 1000;
+    int const count = 1001;
     TestElementPtr tempEl[count];
     TestElementCPtr el[count];
     for (int i = 1; i < count; i++) {
@@ -164,7 +164,7 @@ TEST_F (ElementAspectTests1, UniqueAspectPerformance_Update)
         ASSERT_TRUE (m_db->Elements ().Update (*tempE3[i]).IsValid ());
     }
     timer1.Stop ();
-    LogTiming (timer1, "Update Element With a Unique Aspect", "TestElement2", false, count, count);
+    LogTiming (timer1, "Update Element With a Unique Aspect", "TestElement2", false, count-1, count-1);
 }
 
 
@@ -177,7 +177,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformance_Delete)
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
 
     //   delete element without aspect
-    int const count = 1000;
+    int const count = 1001;
     TestElementPtr tempEl[count];
     TestElementCPtr el[count];
     for (int i = 1; i < count; i++) {
@@ -193,7 +193,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformance_Delete)
         tempEl[i]->Delete ();
     }
     timer.Stop ();
-    LogTiming (timer, "Delete Simple Element Without any Aspect", "TestElement", false, count, count);
+    LogTiming (timer, "Delete Simple Element Without any Aspect", "TestElement", false, count-1, count-1);
 }
 
 /*=================================================================================**//**
@@ -205,7 +205,7 @@ TEST_F (ElementAspectTests1, UniqueAspectPerformance_Delete)
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
 
     //  ... delete element with an aspect
-    int const count = 1000;
+    int const count = 1001;
     TestElementPtr tempEl[count];
     TestElementCPtr el[count];
     for (int i = 1; i < count; i++) {
@@ -221,7 +221,7 @@ TEST_F (ElementAspectTests1, UniqueAspectPerformance_Delete)
         tempEl[i]->Delete ();
     }
     timer1.Stop ();
-    LogTiming (timer1, "Delete Element With a Unique Aspect", "TestElement", false, count, count);
+    LogTiming (timer1, "Delete Element With a Unique Aspect", "TestElement", false, count-1, count-1);
 }
 
 /*=================================================================================**//**
@@ -232,7 +232,7 @@ TEST_F (ElementAspectTests1, MultiAspectPerformance_Insert)
     SetupSeedProject ();
     ECN::ECClassCR aclass = *TestMultiAspect::GetECClass (*m_db);
     TestElementCPtr el;
-    int const count = 1000;
+    int const count = 1001;
     TestMultiAspectPtr a1[count];
     EC::ECInstanceId a1id[count];
 
@@ -264,7 +264,7 @@ TEST_F (ElementAspectTests1, MultiAspectPerformance_Update)
     SetupSeedProject ();
     ECN::ECClassCR aclass = *TestMultiAspect::GetECClass (*m_db);
     TestElementCPtr el;
-    int const count = 1000;
+    int const count = 1001;
     TestMultiAspectPtr a1[count];
     EC::ECInstanceId a1id[count];
 
@@ -312,7 +312,7 @@ TEST_F (ElementAspectTests1, MultiAspectPerformance_Delete)
     SetupSeedProject ();
     ECN::ECClassCR aclass = *TestMultiAspect::GetECClass (*m_db);
     TestElementCPtr el;
-    int const count = 1000;
+    int const count = 1001;
     TestMultiAspectPtr a1[count];
     EC::ECInstanceId a1id[count];
 
