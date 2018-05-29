@@ -99,7 +99,7 @@ CurveVectorPtr  surfaceVector
 ) : T_Super(params) 
     {
 
-    if (params.m_classId.IsValid () && surfaceVector.IsValid()) // elements created via handler have no classid.
+    if (!params.m_isLoadingElement) // elements created via handler have no classid.
         {
         Dgn::GeometrySourceP geomElem = ToGeometrySourceP ();
 
@@ -108,6 +108,11 @@ CurveVectorPtr  surfaceVector
         SetPlacement (newPlacement);
 
         Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create (*geomElem);
+
+        SetAxisId(params.m_gridAxisId);
+
+        if (surfaceVector.IsNull())
+            return;
 
         if (surfaceVector->size () == 1 &&
             surfaceVector->at (0)->GetCurvePrimitiveType () == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_PointString)
@@ -125,7 +130,6 @@ CurveVectorPtr  surfaceVector
                 BeAssert (!"Failed to create DrivingSurface Geometry");
             }
 
-        SetAxisId (params.m_gridAxisId);
         }
     }
 

@@ -582,6 +582,19 @@ CreateParams const& params
     return surface;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DgnDbStatus      ElevationGridSurface::_Validate
+(
+) const
+    {
+    if (GetSurface2d().IsNull())
+        return T_Super::T_Super::_Validate();   //it's fine for ElevationGridSurface to have null surface2d
+
+    return T_Super::_Validate();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -619,6 +632,8 @@ Dgn::DgnDbStatus                ElevationGridSurface::RecomputeGeometryStream
     {
 
     CurveVectorPtr shape = GetSurface2d();
+    if (shape.IsNull())
+        return Dgn::DgnDbStatus::Success; //null surface is fine..
 
     Transform translation = Transform::From(0.0, 0.0, GetElevation());
 

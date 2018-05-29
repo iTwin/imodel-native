@@ -7,20 +7,21 @@
 |
 ======================================================================================= -->
 <ECSchema schemaName="Grids" alias="grids" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="BisCore" version="01.00" alias="bis" />
-    <ECSchemaReference name="AecUnits" version="01.00" alias="AECU" />
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
+    <ECSchemaReference name="AecUnits" version="01.00.00" alias="AECU" />
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
 
     <ECEntityClass typeName="GridCurvesPortion">
       <BaseClass>bis:SpatialLocationPortion</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
     </ECEntityClass>
 
     <ECRelationshipClass typeName="GridDrivesGridSurface" modifier="None" strength="referencing">
       <BaseClass>bis:ElementDrivesElement</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00"/>
+        <ClassHasHandler xmlns="BisCore.01.00.00"/>
       </ECCustomAttributes>
       <Source multiplicity="(1..1)" roleLabel="drives" polymorphic="true">
         <Class class="Grid"/>
@@ -33,7 +34,7 @@
     <ECRelationshipClass typeName="GridSurfaceCreatesGridCurve" modifier="None" strength="referencing">
       <BaseClass>bis:ElementDrivesElement</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00"/>
+        <ClassHasHandler xmlns="BisCore.01.00.00"/>
       </ECCustomAttributes>
       <Source multiplicity="(0..*)" roleLabel="creates" polymorphic="true">
         <Class class="GridSurface"/>
@@ -70,35 +71,35 @@
     <ECEntityClass typeName="OrthogonalAxisX">
       <BaseClass>GridAxis</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
     </ECEntityClass>
   
     <ECEntityClass typeName="OrthogonalAxisY">
       <BaseClass>GridAxis</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
     </ECEntityClass>
       
     <ECEntityClass typeName="CircularAxis">
       <BaseClass>GridAxis</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
     </ECEntityClass>
   
     <ECEntityClass typeName="RadialAxis">
       <BaseClass>GridAxis</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
     </ECEntityClass>
   
     <ECEntityClass typeName="GeneralGridAxis">
       <BaseClass>GridAxis</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
     </ECEntityClass>
   
@@ -110,28 +111,28 @@
     <ECEntityClass typeName="GeneralGridCurve">
       <BaseClass>GridCurve</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
     </ECEntityClass>
   
     <ECEntityClass typeName="GridLine">
       <BaseClass>GridCurve</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="GridSpline">
       <BaseClass>GridCurve</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="GridArc">
       <BaseClass>GridCurve</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
     </ECEntityClass>
   
@@ -147,7 +148,7 @@
     <ECEntityClass typeName="ElevationGridSurface" description="A PlanarGridSurface that is parallel with its Grid’s x-y plane (always contained in an ElevationGrid).">
       <BaseClass>GridPlanarSurface</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="Elevation" displayLabel="Elevation" typeName="double" kindOfQuantity="AECU:LENGTH"/>
       <ECProperty propertyName="Surface2d" displayLabel="Surface2d" typeName="Bentley.Geometry.Common.IGeometry"/>
@@ -156,7 +157,7 @@
     <ECEntityClass typeName="FreeGridSurface" description="a grid surface of any geometry.">
       <BaseClass>GridSurface</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
     </ECEntityClass>
 
@@ -182,7 +183,7 @@
     <ECEntityClass typeName="OrthogonalGrid" description="And OrthogonalGrid has all of its' surfaces orthogonal in either X or Y direction">
       <BaseClass>PlanGrid</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="DefaultCoordinateIncrementX" displayLabel="DefaultCoordinateIncrementX" typeName="double" kindOfQuantity="AECU:LENGTH"/>
       <ECProperty propertyName="DefaultCoordinateIncrementY" displayLabel="DefaultCoordinateIncrementY" typeName="double" kindOfQuantity="AECU:LENGTH"/>
@@ -195,7 +196,7 @@
     <ECEntityClass typeName="RadialGrid" description="A RadialGrid consists either of arcsurfaces in radial axis or planarsurfaces in circular axis">
       <BaseClass>PlanGrid</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="DefaultAngleIncrement" displayLabel="DefaultAngleIncrement" typeName="double" kindOfQuantity="AECU:ANGLE"/>
       <ECProperty propertyName="DefaultRadiusIncrement" displayLabel="DefaultRadiusIncrement" typeName="double" kindOfQuantity="AECU:ANGLE"/>
@@ -208,14 +209,14 @@
     <ECEntityClass typeName="SketchGrid" description="A SketchGrid contains surfaces whose positions are not constrained (other than being swept to the grid normal)">
       <BaseClass>PlanGrid</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="ElevationGrid" description="An ElevationGrid contains planar surfaces that are parallel to the local XY plane">
       <BaseClass>Grid</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="DefaultElevationIncrement" displayLabel="DefaultElevationIncrement" typeName="double" kindOfQuantity="AECU:LENGTH"/>
       <ECProperty propertyName="DefaultSurface2d" displayLabel="DefaultSurface2d" typeName="Bentley.Geometry.Common.IGeometry"/>
@@ -224,13 +225,13 @@
     <ECEntityClass typeName="FreeGrid" description="An FreeGrid contains surfaces that do not need to follow any rules">
       <BaseClass>Grid</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="IPlanGridSurface" modifier="Abstract" displayLabel="PlanGrid Surface" description="An interface that indicates that this Surface is suitable to be placed in PlanGrid" >
       <ECCustomAttributes>
-        <IsMixin xmlns="CoreCustomAttributes.1.0">
+        <IsMixin xmlns="CoreCustomAttributes.01.00.00">
           <!-- Only subclasses of grids:GridSurface can implement the IPlanGridSurface interface -->
           <AppliesToEntityClass>GridSurface</AppliesToEntityClass>
         </IsMixin>
@@ -247,7 +248,7 @@
     <ECEntityClass typeName="PlanCartesianGridSurface" description="A planar plan grid surface that is perpendicular to the grid’s x-axis or y-axis.">
       <BaseClass>PlanGridPlanarSurface</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="Coordinate" displayLabel="Coordinate" typeName="double" kindOfQuantity="AECU:LENGTH" description="Origin of the surface"/>
       <ECProperty propertyName="StartExtent" displayLabel="StartExtent" typeName="double" kindOfQuantity="AECU:LENGTH"/>
@@ -257,7 +258,7 @@
     <ECEntityClass typeName="PlanRadialGridSurface" description="A PlanGridPlanarSurface whose infinite plane contains the PlanGrid’s origin.">
       <BaseClass>PlanGridPlanarSurface</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="Angle" displayLabel="Angle" typeName="double" kindOfQuantity="AECU:LENGTH" description="Origin of the surface"/>
       <ECProperty propertyName="StartRadius" displayLabel="StartRadius" typeName="double" kindOfQuantity="AECU:LENGTH"/>
@@ -267,7 +268,7 @@
     <ECEntityClass typeName="SketchLineGridSurface" description="An extruded line gridsurface element.">
       <BaseClass>PlanGridPlanarSurface</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="Line2d" displayLabel="Line2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>
@@ -280,7 +281,7 @@
     <ECEntityClass typeName="PlanCircumferentialGridSurface" description="An PlanGridArcSurface that is centered on the Grid’s origin.">
       <BaseClass>PlanGridArcSurface</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="Radius" displayLabel="Radius" typeName="double" kindOfQuantity="AECU:LENGTH" description="Origin of the surface"/>
       <ECProperty propertyName="StartAngle" displayLabel="StartAngle" typeName="double" kindOfQuantity="AECU:ANGLE"/>
@@ -290,7 +291,7 @@
     <ECEntityClass typeName="SketchArcGridSurface" description="An extruded arc gridsurface element.">
       <BaseClass>PlanGridArcSurface</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="Arc2d" displayLabel="Arc2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>
@@ -303,7 +304,7 @@
     <ECEntityClass typeName="SketchSplineGridSurface" description="An extruded spline gridsurface element.">
       <BaseClass>PlanGridSplineSurface</BaseClass>
       <ECCustomAttributes>
-        <ClassHasHandler xmlns="BisCore.01.00" />
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
       </ECCustomAttributes>
       <ECProperty propertyName="Spline2d" displayLabel="Spline2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>

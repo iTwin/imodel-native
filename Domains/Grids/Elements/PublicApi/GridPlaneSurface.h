@@ -308,11 +308,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface :
 
             //! Creates create parameters for elevation grid
             //! @param[in] model              model for the PlanCartesianGridSurface
-            CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, CurveVectorR surface, double elevation) :
+            CreateParams (Dgn::SpatialLocationModelCR model, GridAxisCR gridAxis, CurveVectorP surface, double elevation) :
                 T_Super::CreateParams (model, QueryClassId (model.GetDgnDb ()), gridAxis.GetElementId())
                 {
                 m_elevation = elevation;
-                m_surface = &surface;
+                m_surface = surface;
                 }
 
             //! Constructor from base params. Chiefly for internal use.
@@ -354,6 +354,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGridSurface :
         //! @param[in]  elementData JSON object that holds serialized data
         GRIDELEMENTS_EXPORT void _FormatSerializedProperties(Json::Value& elementData) const override;
 
+        GRIDELEMENTS_EXPORT virtual Dgn::DgnDbStatus _Validate() const override;
     public:
         DECLARE_GRIDS_ELEMENT_BASE_METHODS (ElevationGridSurface, GRIDELEMENTS_EXPORT)
         //---------------------------------------------------------------------------------------
