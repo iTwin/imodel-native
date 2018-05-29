@@ -800,7 +800,13 @@ void ElevationGridSurface::_PerformJsonAction (Json::Value const& actionData)
         BeAssert(GetElementId().GetValueUnchecked() == elementData[BCSSERIALIZABLE_ELEMENT_ElementId].asUInt64());
 
         SetElevation(elementData[BCSSERIALIZABLE_ELEVSURFACE_Elevation].asDouble());
-        
+        SetUserLabel(elementData[BCSSERIALIZABLE_ELEMENT_Name].asString().c_str());
+        if (!elementData[BCSSERIALIZABLE_ELEMENT_CodeValue].asString().empty())
+            {
+            DgnCode newCode = DgnCode::From(GetCode().GetCodeSpecId(), GetCode().GetScopeString(), elementData[BCSSERIALIZABLE_ELEMENT_CodeValue].asString());
+            SetCode(newCode);
+            }
+
         BuildingLocks_LockElementForOperation(*this, BeSQLite::DbOpcode::Update, "ElevationGridSurface::UpdateFromJson");
         Update();
         }
