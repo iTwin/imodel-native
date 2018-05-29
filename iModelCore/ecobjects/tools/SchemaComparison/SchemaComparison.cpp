@@ -154,7 +154,7 @@ int CompareSchemas(SchemaComparisonOptions& options)
     for (int i = 0; i < NSCHEMAS; ++i)
         {
         contexts[i] = ECN::ECSchemaReadContext::CreateContext(true, true);
-        contexts[i]->SetPreserveElementOrder(true);
+        contexts[i]->SetPreserveElementOrder(false);
         contexts[i]->SetPreserveXmlComments(false);
 
         bvector<WString> searchPaths;
