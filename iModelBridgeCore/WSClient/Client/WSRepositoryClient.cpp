@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include "WebApi/WebApiV1.h"
 #include <regex>
 
 #define HEADER_MasConnectionInfo "Mas-Connection-Info"

@@ -17,7 +17,6 @@ ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                        
                     $(ClientMkiPublicApiDir)RequestOptions.h                    \
                     $(ClientMkiPublicApiDir)Response/WSFileResponse.h           \
                     $(ClientMkiPublicApiDir)Response/WSObjectsReader.h          \
-                    $(ClientMkiPublicApiDir)Response/WSObjectsReaderV1.h        \
                     $(ClientMkiPublicApiDir)Response/WSObjectsReaderV2.h        \
                     $(ClientMkiPublicApiDir)Response/WSObjectsResponse.h        \
                     $(ClientMkiPublicApiDir)Response/WSUploadResponse.h         \
@@ -36,8 +35,6 @@ ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                        
                     $(ClientMkiSourceDir)ServerInfoProvider.h                   \
                     $(ClientMkiSourceDir)Utils.h                                \
                     $(ClientMkiSourceDir)WebApi/WebApi.h                        \
-                    $(ClientMkiSourceDir)WebApi/WebApiV1.h                      \
-                    $(ClientMkiSourceDir)WebApi/WebApiV1BentleyConnect.h        \
                     $(ClientMkiSourceDir)WebApi/WebApiV2.h                      \
                     $(ClientMkiSourceDir)WebApi/WebApiV2Utils/JobApi.h         \
                     $(ClientMkiSourceDir)WSError.xliff.h                         
@@ -98,17 +95,11 @@ $(o)WSJob$(oext)                            : $(ClientMkiSourceDir)WSJob.cpp $(C
 
 $(o)WSObjectsReader$(oext)                  : $(ClientMkiSourceDir)Response/WSObjectsReader.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
-$(o)WSObjectsReaderV1$(oext)                : $(ClientMkiSourceDir)Response/WSObjectsReaderV1.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
-
 $(o)WSObjectsReaderV2$(oext)                : $(ClientMkiSourceDir)Response/WSObjectsReaderV2.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)WSObjectsResponse$(oext)                : $(ClientMkiSourceDir)Response/WSObjectsResponse.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)WebApi$(oext)                           : $(ClientMkiSourceDir)WebApi/WebApi.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
-
-$(o)WebApiV1$(oext)                         : $(ClientMkiSourceDir)WebApi/WebApiV1.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
-
-$(o)WebApiV1BentleyConnect$(oext)           : $(ClientMkiSourceDir)WebApi/WebApiV1BentleyConnect.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)WebApiV2$(oext)                         : $(ClientMkiSourceDir)WebApi/WebApiV2.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

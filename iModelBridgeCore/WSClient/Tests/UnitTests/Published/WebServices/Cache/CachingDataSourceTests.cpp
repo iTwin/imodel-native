@@ -366,7 +366,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithRemoteSchemas_UsesE
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithLocalSchema_QueriesServerForRemoteSchemas)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     // Act & Assert
     StubInstances schemas;
@@ -397,7 +397,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_CacheCreatedWithLocalSchema_Queries
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, UpdateSchemas_SchemaWithReferancedSchema_ImportsBothSchemas)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     StubInstances schemas;
     schemas.Add({"MetaSchema.ECSchemaDef", "A"}, {{"Name", "SchemaWithReferance"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
@@ -444,7 +444,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemaWithReferancedSchema_ImportsB
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, UpdateSchemas_NewSchemaWithExistingReferancedSchema_ImportsNewSchema)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     // Initial schema
     StubInstances schemas1;
@@ -507,7 +507,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_NewSchemaWithExistingReferancedSche
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, UpdateSchemas_SchemasIncludeStandardSchemas_SkipsStandardSchemas)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     // Act & Assert
     StubInstances schemas;
@@ -538,7 +538,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_SchemasIncludeStandardSchemas_Skips
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, UpdateSchemas_InvalidSchemaGotFromServer_ReturnsError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     // Act & Assert
     StubInstances schemas;
@@ -580,7 +580,7 @@ TEST_F(CachingDataSourceTests, UpdateSchemas_InvalidSchemaGotFromServer_ReturnsR
     schemas.Add({"MetaSchema.ECSchemaDef", "Foo"}, {{"Name", "Foo"}});
 
     EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
-        .WillRepeatedly(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
+        .WillRepeatedly(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi(BeVersion(2,1))))));
 
     EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
@@ -730,18 +730,18 @@ TEST_F(CachingDataSourceTests, GetServerInfo_CreatedCacheAndCalledWithTransactio
     // Act
     auto ds = CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->GetResult().GetValue();
 
-    listenerWeakPtr.lock()->OnServerInfoReceived(StubWSInfoWebApi(BeVersion(1, 3)));
+    listenerWeakPtr.lock()->OnServerInfoReceived(StubWSInfoWebApi(BeVersion(2, 3)));
     ds->GetCacheAccessThread()->ExecuteAsync([=]
         {
         auto txn = ds->StartCacheTransaction();
-        EXPECT_EQ(BeVersion(1, 3), ds->GetServerInfo(txn).GetWebApiVersion());
+        EXPECT_EQ(BeVersion(2, 3), ds->GetServerInfo(txn).GetWebApiVersion());
         })->Wait();
 
-        listenerWeakPtr.lock()->OnServerInfoReceived(StubWSInfoWebApi(BeVersion(1, 3, 1, 0)));
+        listenerWeakPtr.lock()->OnServerInfoReceived(StubWSInfoWebApi(BeVersion(2, 3, 1, 0)));
         ds->GetCacheAccessThread()->ExecuteAsync([=]
             {
             auto txn = ds->StartCacheTransaction();
-            EXPECT_EQ(BeVersion(1, 3, 1, 0), ds->GetServerInfo(txn).GetWebApiVersion());
+            EXPECT_EQ(BeVersion(2, 3, 1, 0), ds->GetServerInfo(txn).GetWebApiVersion());
             })->Wait();
     }
 
@@ -769,16 +769,16 @@ TEST_F(CachingDataSourceTests, GetServerInfo_CreatedCache_ReturnsInfoReturnedFor
     // Act
     auto ds = CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->GetResult().GetValue();
 
-    listenerWeakPtr.lock()->OnServerInfoReceived(StubWSInfoWebApi(BeVersion(1, 3)));
+    listenerWeakPtr.lock()->OnServerInfoReceived(StubWSInfoWebApi(BeVersion(2, 3)));
     ds->GetCacheAccessThread()->ExecuteAsync([=]
         {
-        EXPECT_EQ(BeVersion(1, 3), ds->GetServerInfo().GetWebApiVersion());
+        EXPECT_EQ(BeVersion(2, 3), ds->GetServerInfo().GetWebApiVersion());
         })->Wait();
 
-        listenerWeakPtr.lock()->OnServerInfoReceived(StubWSInfoWebApi(BeVersion(1, 3, 1, 0)));
+        listenerWeakPtr.lock()->OnServerInfoReceived(StubWSInfoWebApi(BeVersion(2, 3, 1, 0)));
         ds->GetCacheAccessThread()->ExecuteAsync([=]
             {
-            EXPECT_EQ(BeVersion(1, 3, 1, 0), ds->GetServerInfo().GetWebApiVersion());
+            EXPECT_EQ(BeVersion(2, 3, 1, 0), ds->GetServerInfo().GetWebApiVersion());
             })->Wait();
     }
 
@@ -787,7 +787,7 @@ TEST_F(CachingDataSourceTests, GetServerInfo_CreatedCache_ReturnsInfoReturnedFor
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetFile_InstanceIsNotCached_ErrorStatus)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto result = ds->GetFile({"TestSchema.TestClass", "Foo"}, CachingDataSource::DataOrigin::CachedData, nullptr, nullptr)->GetResult();
 
@@ -800,7 +800,7 @@ TEST_F(CachingDataSourceTests, GetFile_InstanceIsNotCached_ErrorStatus)
 TEST_F(CachingDataSourceTests, GetFile_FileInstanceIsCached_ProgressIsCalledWithNameAndSize)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
@@ -834,7 +834,7 @@ TEST_F(CachingDataSourceTests, GetFile_FileInstanceIsCached_ProgressIsCalledWith
 TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedForAllCallers)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
 
@@ -916,7 +916,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimes_ProgressIsReportedFor
 TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesFirstCancelled_FirstCallbackIsCancelledSecondFinishes)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
 
@@ -990,7 +990,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesFirstCancelled_FirstCa
 TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesSecondCancelled_SecondCallbackIsCancelledFirstFinishes)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
 
@@ -1064,7 +1064,7 @@ TEST_F(CachingDataSourceTests, GetFile_CalledMultipleTimesSecondCancelled_Second
 TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId fileId {"TestSchema.TestClass", "TestId"};
 
@@ -1102,7 +1102,7 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
 TEST_F(CachingDataSourceTests, GetFile_InstanceHasVeryLongRemoteIdAndNoFileDependentPropertiesCA_FileHasTruncatedNameAndCanBeWrittenTo)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId fileId {"TestSchema.TestClass", Utf8String(10000, 'x')};
 
@@ -1131,7 +1131,7 @@ TEST_F(CachingDataSourceTests, GetFile_InstanceHasVeryLongRemoteIdAndNoFileDepen
 TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCAButHasLabel_ProgressIsCalledWithGeneratedFileNameAsLabelMightBeNotSuitable)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
 
@@ -1173,7 +1173,7 @@ TEST_F(CachingDataSourceTests, GetFile_ClassDoesNotHaveFileDependentPropertiesCA
 TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileNotCachedAndConnectionError_ReturnsError)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
     ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
@@ -1196,7 +1196,7 @@ TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileNotCachedAndConn
 TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileNotCachedAndServerReturnsFile_CachesFile)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
     ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
@@ -1220,7 +1220,7 @@ TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileNotCachedAndServ
 TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileCachedAndConnectionError_ReturnsCachedFile)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
     ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
@@ -1245,7 +1245,7 @@ TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileCachedAndConnect
 TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileCachedAndServerReturnsNewFile_CachesNewFile)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
     ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
@@ -1270,7 +1270,7 @@ TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileCachedAndServerR
 TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileCachedAndServerReturnsNotModified_LeavesCachedFile)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestLabeledClass", "TestId"};
     ECInstanceKey fileKey = StubInstanceInCache(txn.GetCache(), fileId);
@@ -1295,7 +1295,7 @@ TEST_F(CachingDataSourceTests, GetFile_RemoteOrCachedDataAndFileCachedAndServerR
 TEST_F(CachingDataSourceTests, CacheFiles_BothFilesCachedAndSkipCached_NoFileRequestAndSuccess)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
@@ -1323,7 +1323,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_BothFilesCachedAndSkipCached_NoFileReq
 TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndSkipCached_OneFileRequestAndSuccess)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
@@ -1354,7 +1354,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndSkipCached_OneFileRequ
 TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndNoSkipCached_TwoFileRequestsAndSuccess)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     ObjectId fileId {"TestSchema.TestFileClass", "TestId"};
@@ -1385,7 +1385,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_OneFileCachedAndNoSkipCached_TwoFileRe
 TEST_F(CachingDataSourceTests, CacheFiles_FileDownloadRestarts_ProgressReportsSmallerValue)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     ds->SetMinTimeBetweenProgressCalls(0);
 
     auto txn = ds->StartCacheTransaction();
@@ -1422,7 +1422,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_FileDownloadRestarts_ProgressReportsSm
 TEST_F(CachingDataSourceTests, CacheFiles_TwoFilesDownloading_ProgressReportsSumOfBothDownloads)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     ds->SetMinTimeBetweenProgressCalls(0);
 
     auto txn = ds->StartCacheTransaction();
@@ -1490,7 +1490,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_TwoFilesDownloading_ProgressReportsSum
 TEST_F(CachingDataSourceTests, CacheFiles_TwoFilesAreDownloadingWhenMaxParalelDownloadsIsOne_DownloadsAndReportsProgressInChunks)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     ds->SetMinTimeBetweenProgressCalls(0);
     ds->SetMaxParalelFileDownloadLimit(1);
 
@@ -1561,7 +1561,7 @@ TEST_F(CachingDataSourceTests, CacheFiles_TwoFilesAreDownloadingWhenMaxParalelDo
 TEST_F(CachingDataSourceTests, DownloadAndCacheChildren_SpecificParent_ChildIsCached)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "Parent"}));
@@ -1588,7 +1588,7 @@ TEST_F(CachingDataSourceTests, DownloadAndCacheChildren_SpecificParent_ChildIsCa
 TEST_F(CachingDataSourceTests, GetNavigationChildren_SpecificParentInstance_ChildIsCachedAndReturned)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "Parent"}));
@@ -1620,7 +1620,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildren_SpecificParentInstance_Chil
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingRemoteData_ObjectIsCachedAndReturned)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     // Act & Assert
     StubInstances instances;
@@ -1651,7 +1651,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingRemoteData_ObjectIsC
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingCachedDataAfterCached_ObjectIsReturned)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     // Act & Assert
     StubInstances instances;
@@ -1683,7 +1683,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildren_GettingCachedDataAfterCache
 TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_SpecificParentInstance_ChildIsCachedAndKeyReturned)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     ASSERT_EQ(SUCCESS, txn.GetCache().LinkInstanceToRoot("TestRoot", {"TestSchema.TestClass", "Parent"}));
@@ -1712,7 +1712,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_SpecificParentInstance_
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_GettingRemoteData_ObjectIsCachedAndReturned)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     // Act & Assert
     StubInstances instances;
@@ -1742,7 +1742,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_GettingRemoteData_Objec
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_GettingCachedDataAfterCached_ObjectIsReturned)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     // Act & Assert
     StubInstances instances;
@@ -1771,7 +1771,7 @@ TEST_F(CachingDataSourceTests, GetNavigationChildrenKeys_GettingCachedDataAfterC
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, CacheNavigation_TwoLevelsCachedPreviouslyAsTemporary_RepeatsSameQueries)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     // Act & Assert
     StubInstances instances1;
@@ -1818,7 +1818,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_TwoLevelsCachedPreviouslyAsTempor
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, CacheNavigation_OneLevelCachedPreviouslyAsTemporary_RepeatsSameQueryAndCachesResults)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     // Act & Assert
     StubInstances instances1;
@@ -1859,7 +1859,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_OneLevelCachedPreviouslyAsTempora
 TEST_F(CachingDataSourceTests, CacheNavigation_TemporaryNavigationNotCached_DoesNothing)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     // Act & Assert
     bvector<ObjectId> navigationTreesToCacheFully;
@@ -1881,7 +1881,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_TemporaryNavigationNotCached_Does
 TEST_F(CachingDataSourceTests, CacheNavigation_NotCachedRootPassedToBeFullyCached_QueriesChildrenRecursivelyForRootAndCachesResult)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     // Act & Assert
     EXPECT_CALL(GetMockClient().GetMockWSClient(), GetServerInfo(_))
@@ -1919,7 +1919,7 @@ TEST_F(CachingDataSourceTests, CacheNavigation_NotCachedRootPassedToBeFullyCache
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_ObjectNotCached_RetrievesRemoteObjectAndReturnsError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -1938,7 +1938,7 @@ TEST_F(CachingDataSourceTests, GetObject_ObjectNotCached_RetrievesRemoteObjectAn
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_ObjectLinkedButNotCached_RetrievesRemoteObject)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -1961,7 +1961,7 @@ TEST_F(CachingDataSourceTests, GetObject_ObjectLinkedButNotCached_RetrievesRemot
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_ObjectNotCachedAndResponseHasInstance_ReturnsError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     ObjectId objectIdA("TestSchema.TestClass", "Foo");
     StubInstances instances;
     instances.Add(objectIdA);
@@ -1981,7 +1981,7 @@ TEST_F(CachingDataSourceTests, GetObject_ObjectNotCachedAndResponseHasInstance_R
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjects_CachedDataAndQueryResponseNotCached_ReturnsError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -1997,7 +1997,7 @@ TEST_F(CachingDataSourceTests, GetObjects_CachedDataAndQueryResponseNotCached_Re
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjects_CachedOrRemoteDataAndQueryResponseNotCached_SendsQueryRequest)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2019,7 +2019,7 @@ TEST_F(CachingDataSourceTests, GetObjects_CachedOrRemoteDataAndQueryResponseNotC
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjects_CachedOrRemoteDataAndQueryResponseNotCachedAndNetworkError_ReturnsError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2039,7 +2039,7 @@ TEST_F(CachingDataSourceTests, GetObjects_CachedOrRemoteDataAndQueryResponseNotC
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjects_CachedOrRemoteDataAndQueryResponseNotCached_CachesQueryResponseAndReturnsInstances)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2063,7 +2063,7 @@ TEST_F(CachingDataSourceTests, GetObjects_CachedOrRemoteDataAndQueryResponseNotC
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjects_CachedOrRemoteDataAndQueryResponseIsCached_ReturnsCached)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2088,7 +2088,7 @@ TEST_F(CachingDataSourceTests, GetObjects_CachedOrRemoteDataAndQueryResponseIsCa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjects_RemoteOrCachedDataAndConnectionError_ReturnsNetworkError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2108,7 +2108,7 @@ TEST_F(CachingDataSourceTests, GetObjects_RemoteOrCachedDataAndConnectionError_R
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjects_RemoteOrCachedDataAndQueryResponseIsCachedAndConnectionError_ReturnsCached)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2136,7 +2136,7 @@ TEST_F(CachingDataSourceTests, GetObjects_RemoteOrCachedDataAndQueryResponseIsCa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjects_RemoteOrCachedDataAndQueryResponseIsCachedAndNewData_ReturnsNew)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2167,7 +2167,7 @@ TEST_F(CachingDataSourceTests, GetObjects_RemoteOrCachedDataAndQueryResponseIsCa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjects_RemoteDataAndQueryResponseIsCached_SendsQueryRequestWithETag)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2187,7 +2187,7 @@ TEST_F(CachingDataSourceTests, GetObjects_RemoteDataAndQueryResponseIsCached_Sen
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjects_RemoteDataAndQueryResponseIsCachedAndNetworkErrors_ReturnsError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2210,7 +2210,7 @@ TEST_F(CachingDataSourceTests, GetObjects_RemoteDataAndQueryResponseIsCachedAndN
 TEST_F(CachingDataSourceTests, GetObjects_ResponseDoesNotContainPreviouslyCachedObject_RemovesObjectFromCachedResponse)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     CachedResponseKey key = CreateTestResponseKey(ds);
 
     StubInstances instances;
@@ -2243,7 +2243,7 @@ TEST_F(CachingDataSourceTests, GetObjects_ResponseDoesNotContainPreviouslyCached
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjects_DataReadOptionsSpecified_ReturnsOnlyPropertiesSpecifiedByOptions)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2319,62 +2319,9 @@ TEST_F(CachingDataSourceTests, GetObjects_QueryIncludesPartialInstancesThatAreIn
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, GetObjects_WSGV1NavigationQueryIncludesPartialInstancesThatAreInFullyPersisted_QueriesAndCachesRejectedSeparatelly)
-    {
-    auto ds = GetTestDataSourceV2();
-
-    auto txn = ds->StartCacheTransaction();
-    StubInstances fullInstances;
-    fullInstances.Add({"TestSchema.TestClass", "A"});
-    fullInstances.Add({"TestSchema.TestClass", "B"});
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstancesAndLinkToRoot(fullInstances.ToWSObjectsResponse(), "SomePersistentRoot"));
-    txn.Commit();
-
-    StubInstances remoteInstances;
-    remoteInstances.Add({"TestSchema.TestClass", "A"});
-    remoteInstances.Add({"TestSchema.TestClass", "B"});
-    remoteInstances.Add({"TestSchema.TestClass", "C"});
-
-    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
-        .WillOnce(Return(CreateCompletedAsyncTask(remoteInstances.ToWSObjectsResult())))
-        .WillOnce(Invoke([=] (WSQueryCR query, Utf8StringCR, Utf8StringCR, ICancellationTokenPtr)
-        {
-        EXPECT_THAT(query.GetSchemaName(), Eq("TestSchema"));
-        EXPECT_THAT(query.GetClasses(), ContainerEq(std::set<Utf8String> {"TestClass"}));
-        EXPECT_THAT(query.GetFilter(), Eq("$id+in+['A','B']"));
-        EXPECT_THAT(query.GetSelect(), Eq(""));
-
-        StubInstances instances;
-        instances.Add({"TestSchema.TestClass", "A"}, {{"TestProperty", "Foo"}});
-        instances.Add({"TestSchema.TestClass", "B"}, {{"TestProperty", "Boo"}});
-        return CreateCompletedAsyncTask(instances.ToWSObjectsResult());
-        }));
-
-    CachedResponseKey key = CreateTestResponseKey(ds);
-    WSQuery query("TestSchema", "TestClass");
-    query.SetSelect("Name,OtherProperty");
-    query.SetCustomParameter(WSQuery_CustomParameter_NavigationParentId, "Parent");
-
-    auto result = ds->GetObjects(key, query, CachingDataSource::DataOrigin::RemoteData, nullptr, nullptr)->GetResult();
-
-    ASSERT_TRUE(result.IsSuccess());
-    EXPECT_THAT(result.GetValue().GetJson().size(), 3);
-
-    EXPECT_THAT(result.GetValue().GetJson()[0][DataSourceCache_PROPERTY_RemoteId], Eq("A"));
-    EXPECT_THAT(result.GetValue().GetJson()[1][DataSourceCache_PROPERTY_RemoteId], Eq("B"));
-    EXPECT_THAT(result.GetValue().GetJson()[2][DataSourceCache_PROPERTY_RemoteId], Eq("C"));
-
-    EXPECT_THAT(result.GetValue().GetJson()[0]["TestProperty"], Eq("Foo"));
-    EXPECT_THAT(result.GetValue().GetJson()[1]["TestProperty"], Eq("Boo"));
-    EXPECT_THAT(result.GetValue().GetJson()[2]["TestProperty"], Eq(Json::nullValue));
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseNotCached_ReturnsError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2390,7 +2337,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseNotCache
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponseNotCached_SendsQueryRequest)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2412,7 +2359,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponseNotCachedAndNetworkError_ReturnsError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2432,7 +2379,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponseNotCached_CachesQueryResponseAndReturnsInstances)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2459,7 +2406,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponseIsCached_ReturnsCached)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2486,7 +2433,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataAndConnectionError_ReturnsNetworkError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2506,7 +2453,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataAndConnectionErr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataAndQueryResponseIsCachedAndConnectionError_ReturnsCached)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2537,7 +2484,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataAndQueryResponse
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataAndQueryResponseIsCachedAndNewData_ReturnsNew)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2571,7 +2518,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataAndQueryResponse
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndQueryResponseIsCached_SendsQueryRequestWithETag)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2591,7 +2538,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndQueryResponseIsCached
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndQueryResponseIsCachedAndNetworkErrors_ReturnsError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2614,7 +2561,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndQueryResponseIsCached
 TEST_F(CachingDataSourceTests, GetObjectsKeys_ResponseDoesNotContainPreviouslyCachedObject_RemovesObjectFromCachedResponse)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     CachedResponseKey key = CreateTestResponseKey(ds);
 
     StubInstances instances;
@@ -2650,7 +2597,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_ResponseDoesNotContainPreviouslyCa
 TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndResponseNotModified_ReturnsCachedData)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     CachedResponseKey key = CreateTestResponseKey(ds);
 
     StubInstances instances;
@@ -2684,7 +2631,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataAndResponseNotModified_R
 TEST_F(CachingDataSourceTests, GetObjects_SkipTokensNotEnabled_SkipTokenNotTest)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     CachedResponseKey key = CreateTestResponseKey(ds);
 
     // Expect
@@ -2708,7 +2655,7 @@ TEST_F(CachingDataSourceTests, GetObjects_SkipTokensNotEnabled_SkipTokenNotTest)
 TEST_F(CachingDataSourceTests, GetObjects_SkipTokensEnabled_InitialSkipTokenSent)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     CachedResponseKey key = CreateTestResponseKey(ds);
 
     ds->EnableSkipTokens(true);
@@ -2734,7 +2681,7 @@ TEST_F(CachingDataSourceTests, GetObjects_SkipTokensEnabled_InitialSkipTokenSent
 TEST_F(CachingDataSourceTests, GetObjects_ClientRespondsWithSkipTokens_QueriesAndCachesMultiplePages)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     ds->EnableSkipTokens(true);
     CachedResponseKey key = CreateTestResponseKey(ds);
 
@@ -2776,7 +2723,7 @@ TEST_F(CachingDataSourceTests, GetObjects_ClientRespondsWithSkipTokens_QueriesAn
 TEST_F(CachingDataSourceTests, GetObjectsKeys_ClientRespondsWithSkipTokens_QueriesAndCachesMultiplePages)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     ds->EnableSkipTokens(true);
     CachedResponseKey key = CreateTestResponseKey(ds);
 
@@ -2825,7 +2772,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_ClientRespondsWithSkipTokens_Queri
 TEST_F(CachingDataSourceTests, GetObjectsKeys_ClientRespondsWithSkipTokensAndCalledSecondTime_UsesPreviousPageETagsAndNewSkipTokens)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     ds->EnableSkipTokens(true);
     CachedResponseKey key = CreateTestResponseKey(ds);
 
@@ -2859,7 +2806,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_ClientRespondsWithSkipTokensAndCal
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseNotCachedBackgroundSync_ErrorDoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2880,7 +2827,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseNotCache
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseCachedBackgroundSync_BackgroundSyncUpdatesInstance)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2916,7 +2863,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseCachedBa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseCachedBackgroundSyncNotChanged_BackgroundSyncReturnsNotModified)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2948,7 +2895,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseCachedBa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseCachedBackgroundSyncError_BackgroundSyncReturnsError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -2981,7 +2928,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedDataAndQueryResponseCachedBa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataNetworkErrorsBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -3008,7 +2955,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataNetworkErrorsBackgroundS
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataNotModifiedBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -3039,7 +2986,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataNotModifiedBackgroundSyn
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -3069,7 +3016,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteDataBackgroundSync_DoesNotSy
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponseCachedBackgroundSync_BackgroundSyncUpdatesInstance)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -3100,7 +3047,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponseNotCachedAndNetworkErrorBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -3124,7 +3071,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponseNotCachedBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -3152,7 +3099,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_CachedOrRemoteDataAndQueryResponse
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataResponseCachedAndNetworkErrorsBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -3183,7 +3130,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataResponseCachedAn
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataResponseNotCachedAndNetworkErrorsBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -3206,7 +3153,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataResponseNotCache
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataNotModifiedBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -3236,7 +3183,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataNotModifiedBackg
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     CachedResponseKey key = CreateTestResponseKey(ds);
     WSQuery query("TestSchema", "TestClass");
@@ -3266,7 +3213,7 @@ TEST_F(CachingDataSourceTests, GetObjectsKeys_RemoteOrCachedDataBackgroundSync_D
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndConnectionError_ReturnsNetworkError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(StubWSConnectionError()))));
@@ -3283,7 +3230,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndConnectionError_Re
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndInstanceIsCachedAndConnectionError_ReturnsCached)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
     StubInstances instances;
@@ -3308,7 +3255,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndInstanceIsCachedAn
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndInstanceIsCachedAndServerReturnsNewData_ReturnsNew)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3338,7 +3285,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataAndInstanceIsCachedAn
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotModfieid_ReturnsCached)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3365,7 +3312,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotModfieid_ReturnsCached)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotEnoughRights_RemovesInstanceFromCache)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3398,7 +3345,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndNotEnoughRights_RemovesIns
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndInstanceNotFound_RemovesInstanceFromCache)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3433,7 +3380,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataAndInstanceNotFound_RemovesIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseNotCachedBackgroundSync_ErrorDoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3459,7 +3406,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseNotCachedBack
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseCachedBackgroundSync_BackgroundSyncUpdatesInstance)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3496,7 +3443,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseCachedBackgro
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseCachedBackgroundSyncNotChanged_BackgroundSyncReturnsNotModified)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
     StubInstances instances;
@@ -3526,7 +3473,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseCachedBackgro
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseCachedBackgroundSyncError_BackgroundSyncReturnsError)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3557,7 +3504,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedDataAndQueryResponseCachedBackgro
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteDataNetworkErrorsBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3582,7 +3529,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataNetworkErrorsBackgroundSync_D
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteDataNotModifiedBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3645,7 +3592,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteDataBackgroundSync_DoesNotSyncInB
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseCachedBackgroundSync_BackgroundSyncUpdatesInstance)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3674,7 +3621,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseCache
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseNotCachedAndNetworkErrorBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3696,7 +3643,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseNotCa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseNotCachedBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3720,7 +3667,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataAndQueryResponseNotCa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataRemoteInstanceNotFound_BackgroundSyncReturnSynced)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3753,7 +3700,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataRemoteInstanceNotFoun
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataRemoteNotEnoughRights_BackgroundSyncReturnSynced)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3787,7 +3734,7 @@ TEST_F(CachingDataSourceTests, GetObject_CachedOrRemoteDataRemoteNotEnoughRights
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataResponseCachedAndNetworkErrorsBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3816,7 +3763,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataResponseCachedAndNetw
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataResponseNotCachedAndNetworkErrorsBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3840,7 +3787,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataResponseNotCachedAndN
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataNotModifiedBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3868,7 +3815,7 @@ TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataNotModifiedBackground
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, GetObject_RemoteOrCachedDataBackgroundSync_DoesNotSyncInBackground)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     ObjectId objectId("TestSchema.TestClass", "Foo");
 
@@ -3916,7 +3863,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_Default_CallsCommitLocalDeletion
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedDeletedObject_CommitsLocalChangeAndDoesNoRequests)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto ecClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -3937,7 +3884,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedDeletedObject_CommitsLoca
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncLocalChanges_NoChanges_DoesNoRequestsAndSucceeds)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
 
@@ -4273,7 +4220,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_FileCancelled_FailureRegistered)
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlagAndResetsItAfterSuccessfulSync)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -4295,7 +4242,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlag
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Created"});
-    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
         .Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(instances.ToWSObjectsResponse()))));
 
@@ -4373,7 +4320,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CancelSync_IsActiveSyncResets)
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlagAndResetsItAfterFailedSync)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -4404,7 +4351,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlag
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SendsCreateObjectRequestWithCorrectParameters)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -4435,40 +4382,6 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SendsCreateObjectR
         }));
 
     ds->SyncLocalChanges(nullptr, nullptr)->Wait();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, SyncLocalChanges_ServerV1CreatedObject_SendsQueryRequestToUpdateInstance)
-    {
-    // Arrange
-    auto ds = GetTestDataSourceV1();
-
-    auto txn = ds->StartCacheTransaction();
-    auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
-    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue).IsValid());
-    txn.Commit();
-
-    // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, BeFileName(), _, _))
-        .WillOnce(Return(CreateCompletedAsyncTask((StubWSCreateObjectResult({"TestSchema.TestClass", "NewId"})))));
-
-    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
-        .WillOnce(Invoke([=] (ObjectIdCR objectId, Utf8StringCR, ICancellationTokenPtr)
-        {
-        EXPECT_THAT(objectId, Eq(ObjectId("TestSchema.TestClass", "NewId")));
-
-        StubInstances instances;
-        instances.Add({"TestSchema.TestClass", "NewId"}, {{"TestProperty", "TestValue"}});
-        return CreateCompletedAsyncTask(instances.ToWSObjectsResult());
-        }));
-
-    ASSERT_TRUE(ds->SyncLocalChanges(nullptr, nullptr)->GetResult().IsSuccess());
-
-    Json::Value jsonInstance;
-    ds->StartCacheTransaction().GetCache().ReadInstance({"TestSchema.TestClass", "NewId"}, jsonInstance);
-    EXPECT_THAT(jsonInstance["TestProperty"], Eq("TestValue"));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -5914,117 +5827,10 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V2CreatedRelatedObjectsWithFile_
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, SyncLocalChanges_V1CreatedRelatedObjectsWithFile_SendsSeperateRequestsForEachNewObjectAndRelationship)
-    {
-    // Arrange
-    auto ds = GetTestDataSourceV1();
-
-    auto txn = ds->StartCacheTransaction();
-    auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
-    auto testRelClass = txn.GetCache().GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
-
-    auto instanceA = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
-    auto instanceB = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty" : "ValB"})"));
-    auto instanceC = txn.GetCache().GetChangeManager().CreateObject(*testClass, ToJson(R"({"TestProperty" : "ValC"})"));
-    ASSERT_EQ(SUCCESS, txn.GetCache().GetChangeManager().ModifyFile(instanceC, StubFile(), false));
-
-    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceA, instanceB).IsValid());
-    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateRelationship(*testRelClass, instanceB, instanceC).IsValid());
-    txn.Commit();
-
-    // Act & Assert
-    Json::Value expectedCreationJson1 = ToJson(
-        R"( {
-            "instance" :
-                {
-                "changeState": "new",
-                "schemaName" : "TestSchema",
-                "className" : "TestClass",
-                "properties" :
-                    {
-                    "TestProperty" : "ValB"
-                    },
-                "relationshipInstances" :
-                    [{
-                    "changeState": "new",
-                    "schemaName" : "TestSchema",
-                    "className" : "TestRelationshipClass",
-                    "direction" : "backward",
-                    "relatedInstance" :
-                        {
-                        "changeState" : "existing",
-                        "schemaName" : "TestSchema",
-                        "className" : "TestClass",
-                        "instanceId" : "A"
-                        }
-                    }]
-                }
-            })");
-    Json::Value expectedCreationJson2 = ToJson(
-        R"( {
-            "instance" :
-                {
-                "changeState": "new",
-                "schemaName" : "TestSchema",
-                "className" : "TestClass",
-                "properties" :
-                    {
-                    "TestProperty" : "ValC"
-                    },
-                "relationshipInstances" :
-                    [{
-                    "changeState": "new",
-                    "schemaName" : "TestSchema",
-                    "className" : "TestRelationshipClass",
-                    "direction" : "backward",
-                    "relatedInstance" :
-                        {
-                        "changeState" : "existing",
-                        "schemaName" : "TestSchema",
-                        "className" : "TestClass",
-                        "instanceId" : "NewB"
-                        }
-                    }]
-                }
-            })");
-    BeFileName filePath2 = ds->StartCacheTransaction().GetCache().ReadFilePath(instanceC);
-
-    EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
-        .Times(2)
-        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
-        {
-        EXPECT_EQ(expectedCreationJson1, json);
-        EXPECT_EQ(L"", path);
-        return CreateCompletedAsyncTask(StubWSCreateObjectResult(
-            {"TestSchema.TestClass", "NewB"}, {"TestSchema.TestRelationshipClass", ""}, {"TestSchema.TestClass", "A"}));
-        }))
-        .WillOnce(Invoke([&] (JsonValueCR json, BeFileNameCR path, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
-            {
-            EXPECT_EQ(expectedCreationJson2, json);
-            EXPECT_EQ(filePath2, path);
-            return CreateCompletedAsyncTask(StubWSCreateObjectResult(
-                {"TestSchema.TestClass", "NewC"}, {"TestSchema.TestRelationshipClass", ""}, {"TestSchema.TestClass", "NewB"}));
-            }));
-
-        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId {"TestSchema.TestClass", "NewB"}, _, _))
-            .Times(1)
-            .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewB"}))));
-
-        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId {"TestSchema.TestClass", "NewC"}, _, _))
-            .Times(1)
-            .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewC"}))));
-
-        auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
-        EXPECT_TRUE(result.IsSuccess());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedTwoRelatedInstancesAndFirstOneFails_SecondOneFailureHasDependencySyncFailedStatus)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -6059,7 +5865,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedTwoRelatedInstancesAndFir
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationships_SecondRelationshipCreationSentSeperately)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -6146,7 +5952,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
                 );
             }));
 
-        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId {"TestSchema.TestClass", "NewC"}, _, _))
+        EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
             .Times(1)
             .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "NewC"}))));
 
@@ -6160,7 +5966,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationship
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjet_SetsNewRemoteIdAndCommits)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -6172,7 +5978,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjet_SetsNewRemoteIdAndC
         .Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "CreatedObjectId"}))));
 
-    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(ObjectId("TestSchema.TestClass", "CreatedObjectId"), _, _))
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
         .Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "CreatedObjectId"}))));
 
@@ -6189,7 +5995,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjet_SetsNewRemoteIdAndC
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithReadOnlyProperties_SendsReadOnlyButNotCalculatedProperty)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass3");
@@ -6215,7 +6021,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithReadOnlyPropert
 TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObjectWithReadOnlyProperties_DoesNotSendAnyReadOnlyProperties)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass3", "Foo"});
@@ -6267,7 +6073,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_FailedToModifyObject_ReturnsFail
 TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectRequestWithOnlyChangedPropertiesAndCommits)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "OldA"}, {"TestProperty2", "OldB"}});
@@ -6297,7 +6103,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_SendUpdateObjectR
 TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFile_SendUpdateFileRequestWithCorrectParametersAndCommits)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "Foo"});
@@ -6327,7 +6133,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFile_SendUpdateFileReque
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_SendUpdateFileRequestWithCorrectParametersAndCommits)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -6344,7 +6150,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_SendUpdate
         return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "Foo"}, "NewTag"));
         }));
 
-    ON_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+    ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
         .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
 
     auto result = ds->SyncLocalChanges(nullptr, nullptr)->GetResult();
@@ -6359,7 +6165,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_SendUpdate
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_ProgressCallbackCalledWithCorrectParameters)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -6371,8 +6177,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_ProgressCa
     auto cachedFilePath = txn.GetCache().ReadFilePath(instance);
     txn.Commit();
 
-    ON_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
-        .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
+    //ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+    //    .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
 
     TestProgressMock testOnProgress;
     auto onProgress = [&] (ICachingDataSource::ProgressCR progress)
@@ -6427,7 +6233,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithFile_ProgressCa
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithout_ProgressCallbackCalledWithoutFileProgress)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -6435,8 +6241,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithout_ProgressCal
 
     txn.Commit();
 
-    ON_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
-        .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
+    ////ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+    ////    .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
 
     TestProgressMock testOnProgress;
     auto onProgress = [&] (ICachingDataSource::ProgressCR progress)
@@ -6680,7 +6486,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WebApi24AndCreatedObjectWithFile
 TEST_F(CachingDataSourceTests, SyncLocalChanges_DeletedObject_SendsDeleteObjectRequestWithCorrectParametersAndCommits)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "Foo"});
@@ -6707,7 +6513,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_DeletedObject_SendsDeleteObjectR
 TEST_F(CachingDataSourceTests, SyncLocalChanges_DeletedRelationship_SendsDeleteObjectRequestWithCorrectParametersAndCommits)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
@@ -6740,7 +6546,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_DeletedRelationship_SendsDeleteO
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithClassThatHasLabel_CallsProgressWithLabelAndWithoutBytes)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestLabeledClass");
@@ -6771,7 +6577,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithClassThatHasLab
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithClassWithoutLabel_CallsProgressWithFallbackLabel)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -6801,7 +6607,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithClassWithoutLab
 TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObjectWithLabel_CallsProgressWithLabelAndWithoutBytes)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestLabeledClass", "Foo"});
@@ -6830,7 +6636,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObjectWithLabel_CallsPro
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedAndModifiedAndDeletedObjects_CallsSyncedInstancesProgress)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     auto txn = ds->StartCacheTransaction();
 
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -6846,8 +6652,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedAndModifiedAndDeletedObje
     EXPECT_CALL(GetMockClient(), SendCreateObjectRequest(_, _, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "Foo"}))));
 
-    ON_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
-        .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
+    ////ON_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
+    ////    .WillByDefault(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "Foo"}))));
 
     EXPECT_CALL(GetMockClient(), SendUpdateObjectRequest(_, _, _, _, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSUpdateObjectResult::Success({}))));
@@ -6873,7 +6679,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedAndModifiedAndDeletedObje
 TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_CallsSyncedInstanceProgress)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestLabeledClass", "Foo"});
@@ -6902,7 +6708,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedObject_CallsSyncedInstan
 TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFileWithLabel_CallsProgressWithLabel)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     ASSERT_EQ(SUCCESS, txn.GetCache().CacheInstanceAndLinkToRoot({"TestSchema.TestLabeledClass", "Foo"}, *ToRapidJson(R"({"Name" : "TestLabel"})"), "", ""));
@@ -6936,7 +6742,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFileWithLabel_CallsProgr
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectsWithFiles_CallsProgressWithTotalBytes)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
     ObjectId newIdA("TestSchema.TestClass", "");
     ObjectId newIdB("TestSchema.TestClass", "");
 
@@ -6964,7 +6770,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectsWithFiles_CallsPro
             return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "B"}));
             }));
 
-        EXPECT_CALL(GetMockClient(), SendGetObjectRequest(_, _, _))
+        EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _))
             .Times(2)
             .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "A"}))))
             .WillOnce(Return(CreateCompletedAsyncTask(StubWSObjectsResult({"TestSchema.TestClass", "B"}))));
@@ -6988,7 +6794,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectsWithFiles_CallsPro
 TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFiles_CallsProgressWithTotalBytes)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto instanceA = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
@@ -7036,7 +6842,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ModifiedFiles_CallsProgressWithT
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncLocalChanges_NoObjectsPassedToSync_DoesNoRequestsAndReturnsSuccess)
     {
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -7056,7 +6862,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_NoObjectsPassedToSync_DoesNoRequ
 TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForObjectChangePassed_SyncsFile)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
@@ -7078,7 +6884,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForObjectChangePassed_Sy
 TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForRelationshipChangePassed_SyncsRelationship)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto relationship = StubCreatedRelationshipInCache(txn.GetCache(),
@@ -7100,7 +6906,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForRelationshipChangePas
 TEST_F(CachingDataSourceTests, SyncLocalChanges_ObjectIdForFileChangePassed_SyncsFile)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto instance = StubInstanceInCache(txn.GetCache(), {"TestSchema.TestClass", "A"});
@@ -7251,40 +7057,6 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesContainsInvalid_Sk
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, SyncCachedData_WSG1AndInitialInstancesSupplied_CachesIntialInstancesWithSeperateRequests)
-    {
-    auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
-    auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
-    auto store = std::make_shared<StubRepositoryInfoStore>(StubWSInfoWebApi({1, 3}));
-    auto ds = CreateMockedCachingDataSource(client, cache, store);
-
-    auto instanceKeyA = StubECInstanceKey(11, 22);
-    auto instanceKeyB = StubECInstanceKey(11, 33);
-    ObjectId objectIdA("TestSchema.TestClass", "A");
-    ObjectId objectIdB("TestSchema.TestClass", "B");
-    EXPECT_CALL(*cache, FindInstance(instanceKeyA)).WillRepeatedly(Return(objectIdA));
-    EXPECT_CALL(*cache, FindInstance(instanceKeyB)).WillRepeatedly(Return(objectIdB));
-    EXPECT_CALL(*cache, FindInstance(objectIdA)).WillRepeatedly(Return(instanceKeyA));
-    EXPECT_CALL(*cache, FindInstance(objectIdB)).WillRepeatedly(Return(instanceKeyB));
-
-    EXPECT_CALL(*cache, ReadInstanceCacheTag(objectIdA)).WillOnce(Return("TagA"));
-    EXPECT_CALL(*cache, ReadInstanceCacheTag(objectIdB)).WillOnce(Return("TagB"));
-    EXPECT_CALL(*client, SendGetObjectRequest(objectIdA, Utf8String("TagA"), _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    EXPECT_CALL(*client, SendGetObjectRequest(objectIdB, Utf8String("TagB"), _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    EXPECT_CALL(*cache, UpdateInstance(objectIdA, _)).WillOnce(Return(CacheStatus::OK));
-    EXPECT_CALL(*cache, UpdateInstance(objectIdB, _)).WillOnce(Return(CacheStatus::OK));
-
-    ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
-
-    auto initialInstances = StubBVector({instanceKeyA, instanceKeyB});
-    auto result = ds->SyncCachedData(initialInstances, bvector<IQueryProvider::Query>(), bvector<IQueryProviderPtr>(), nullptr, nullptr)->GetResult();
-    ASSERT_TRUE(result.IsSuccess());
-    EXPECT_THAT(result.GetValue(), IsEmpty());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesNotReturnedInQueryRequest_QueriesAndCachesInstancesSeperatelyAndRemovesOnesThatNotAccessable)
     {
     auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
@@ -7358,47 +7130,6 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesNotReturnedInQuery
     EXPECT_CALL(*client, SendGetObjectRequest(objectIdC, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError::Id::InstanceNotFound))));
 
-    EXPECT_CALL(*cache, RemoveInstance(objectIdA)).WillOnce(Return(CacheStatus::OK));
-    EXPECT_CALL(*cache, RemoveInstance(objectIdC)).WillOnce(Return(CacheStatus::OK));
-
-    ON_CALL(*cache, ReadInstanceLabel(_)).WillByDefault(Return(nullptr));
-    ON_CALL(*cache, ReadInstanceCacheTag(_)).WillByDefault(Return(nullptr));
-    ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
-
-    auto initialInstances = StubBVector({instanceKeyA, instanceKeyB, instanceKeyC});
-    auto result = ds->SyncCachedData(initialInstances, bvector<IQueryProvider::Query>(), bvector<IQueryProviderPtr>(), nullptr, nullptr)->GetResult();
-    ASSERT_TRUE(result.IsSuccess());
-    EXPECT_THAT(result.GetValue(), SizeIs(2));
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, SyncCachedData_WSG1AndInitialInstancesReturnsNotFound_RemovesInstancesFromCache)
-    {
-    auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
-    auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
-    auto store = std::make_shared<StubRepositoryInfoStore>(StubWSInfoWebApi({1, 3}));
-    auto ds = CreateMockedCachingDataSource(client, cache, store);
-
-    auto instanceKeyA = StubECInstanceKey(11, 22);
-    auto instanceKeyB = StubECInstanceKey(11, 33);
-    auto instanceKeyC = StubECInstanceKey(11, 44);
-    ObjectId objectIdA("TestSchema.TestClass", "A");
-    ObjectId objectIdB("TestSchema.TestClass", "B");
-    ObjectId objectIdC("TestSchema.TestClass", "C");
-    EXPECT_CALL(*cache, FindInstance(instanceKeyA)).WillRepeatedly(Return(objectIdA));
-    EXPECT_CALL(*cache, FindInstance(instanceKeyB)).WillRepeatedly(Return(objectIdB));
-    EXPECT_CALL(*cache, FindInstance(instanceKeyC)).WillRepeatedly(Return(objectIdC));
-    EXPECT_CALL(*cache, FindInstance(objectIdA)).WillRepeatedly(Return(instanceKeyA));
-    EXPECT_CALL(*cache, FindInstance(objectIdB)).WillRepeatedly(Return(instanceKeyB));
-    EXPECT_CALL(*cache, FindInstance(objectIdC)).WillRepeatedly(Return(instanceKeyC));
-
-    EXPECT_CALL(*client, SendGetObjectRequest(objectIdA, _, _)).WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError(WSError::Id::InstanceNotFound)))));
-    EXPECT_CALL(*client, SendGetObjectRequest(objectIdB, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-    EXPECT_CALL(*client, SendGetObjectRequest(objectIdC, _, _)).WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Error(WSError(WSError::Id::NotEnoughRights)))));
-
-    EXPECT_CALL(*cache, UpdateInstance(objectIdB, _)).WillOnce(Return(CacheStatus::OK));
     EXPECT_CALL(*cache, RemoveInstance(objectIdA)).WillOnce(Return(CacheStatus::OK));
     EXPECT_CALL(*cache, RemoveInstance(objectIdC)).WillOnce(Return(CacheStatus::OK));
 
@@ -7894,64 +7625,11 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstance_CallbackCalledWith
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, SyncCachedData_WSG1AndInitialInstances_OnProgressCallsWithEachInstanceProgressWithoutLabels)
-    {
-    auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
-    auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
-    auto store = std::make_shared<StubRepositoryInfoStore>(StubWSInfoWebApi({1, 3}));
-    auto ds = CreateMockedCachingDataSource(client, cache, store);
-
-    auto instanceA = StubECInstanceKey(1, 2);
-    auto instanceB = StubECInstanceKey(3, 4);
-    auto instanceC = StubECInstanceKey(5, 6);
-    auto instanceD = StubECInstanceKey(7, 8);
-    auto objectA = ObjectId("TestSchema.TestClass", "A");
-    auto objectB = ObjectId("TestSchema.TestClass", "B");
-    auto objectC = ObjectId("TestSchema.TestClass", "C");
-    auto objectD = ObjectId("TestSchema.TestClass", "D");
-
-    ON_CALL(*cache, FindInstance(instanceA)).WillByDefault(Return(objectA));
-    ON_CALL(*cache, FindInstance(instanceB)).WillByDefault(Return(objectB));
-    ON_CALL(*cache, FindInstance(instanceC)).WillByDefault(Return(objectC));
-    ON_CALL(*cache, FindInstance(instanceD)).WillByDefault(Return(objectD));
-
-    ON_CALL(*cache, FindInstance(objectA)).WillByDefault(Return(instanceA));
-    ON_CALL(*cache, FindInstance(objectB)).WillByDefault(Return(instanceB));
-    ON_CALL(*cache, FindInstance(objectC)).WillByDefault(Return(instanceC));
-    ON_CALL(*cache, FindInstance(objectD)).WillByDefault(Return(instanceD));
-
-    ON_CALL(*cache, ReadFullyPersistedInstanceKeys(_)).WillByDefault(Return(SUCCESS));
-    ON_CALL(*cache, ReadInstanceCacheTag(_)).WillByDefault(Return(nullptr));
-    ON_CALL(*cache, UpdateInstance(_, _)).WillByDefault(Return(CacheStatus::OK));
-    ON_CALL(*client, SendGetObjectRequest(_, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
-
-    int progressCalled = 0;
-    double expectedSyncedValues[5] = {0, 0.25, 0.50, 0.75, 1};
-    auto onProgress = [&] (CachingDataSource::ProgressCR progress)
-        {
-        EXPECT_EQ(expectedSyncedValues[progressCalled], progress.GetSynced());
-        EXPECT_EQ("", progress.GetLabel());
-        EXPECT_THAT(progress.GetBytes().current, 0);
-        EXPECT_THAT(progress.GetBytes().total, 0);
-        progressCalled++;
-        };
-
-    auto instances = StubBVector({instanceA, instanceB, instanceC, instanceD});
-    auto result = ds->SyncCachedData(instances, bvector<IQueryProvider::Query>(), bvector<IQueryProviderPtr>(), onProgress, nullptr)->GetResult();
-
-    ASSERT_TRUE(result.IsSuccess());
-    EXPECT_THAT(result.GetValue(), IsEmpty());
-    EXPECT_THAT(progressCalled, 5);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesAndQueries_OnProgressCallsWithEachpartProgress)
     {
     auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
     auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
-    auto store = std::make_shared<StubRepositoryInfoStore>(StubWSInfoWebApi({1, 3}));
+    auto store = std::make_shared<StubRepositoryInfoStore>(StubWSInfoWebApi({2, 0}));
     auto ds = CreateMockedCachingDataSource(client, cache, store);
 
     auto instanceA = StubECInstanceKey(1, 2);
@@ -7972,6 +7650,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesAndQueries_OnProgr
     ON_CALL(*cache, ReadResponseCacheTag(_, _)).WillByDefault(Return(nullptr));
     ON_CALL(*cache, ReadResponseInstanceKeys(_, _)).WillByDefault(Return(CacheStatus::OK));
     ON_CALL(*cache, UpdateInstance(_, _)).WillByDefault(Return(CacheStatus::OK));
+    ON_CALL(*cache, UpdateInstances(_, _, _, _)).WillByDefault(Return(SUCCESS));
     ON_CALL(*client, SendGetObjectRequest(_, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
     ON_CALL(*client, SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
 
@@ -8000,7 +7679,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesWithProviders_OnPr
     {
     auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();
     auto client = std::make_shared<NiceMock<MockWSRepositoryClient>>();
-    auto store = std::make_shared<StubRepositoryInfoStore>(StubWSInfoWebApi({1, 3}));
+    auto store = std::make_shared<StubRepositoryInfoStore>(StubWSInfoWebApi({2, 0}));
     auto ds = CreateMockedCachingDataSource(client, cache, store);
     auto provider = std::make_shared<MockQueryProvider>();
 
@@ -8021,6 +7700,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstancesWithProviders_OnPr
     ON_CALL(*cache, ReadResponseCacheTag(_, _)).WillByDefault(Return(nullptr));
     ON_CALL(*cache, ReadResponseInstanceKeys(_, _)).WillByDefault(Return(CacheStatus::OK));
     ON_CALL(*cache, UpdateInstance(_, _)).WillByDefault(Return(CacheStatus::OK));
+    ON_CALL(*cache, UpdateInstances(_, _, _, _)).WillByDefault(Return(SUCCESS));
     ON_CALL(*client, SendGetObjectRequest(_, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
     ON_CALL(*client, SendQueryRequest(_, _, _, _)).WillByDefault(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
 
@@ -8114,7 +7794,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_FilesBeingDownloaded_CallbackCalle
 TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsQueryReturnsTwoInstances_ProgressCalledWithInstancesState)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     StubInstances instanceA;
@@ -8128,16 +7808,15 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsQueryReturnsT
     auto provider = std::make_shared<MockQueryProvider>();
     EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
     EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
-
-    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(instanceId, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instanceA.ToWSObjectsResult())));
-
     IQueryProvider::Query query(responseKey, std::make_shared<WSQuery>("TestSchema", "TestClass"));
     EXPECT_CALL(*provider, GetQueries(_, instanceKey, _)).WillOnce(Return(StubBVector({query})));
 
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "B"});
     instances.Add({"TestSchema.TestClass", "C"});
-    EXPECT_CALL(GetMockClient(), SendQueryRequest(*query.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).Times(2)
+        .WillOnce(Return(CreateCompletedAsyncTask(instanceA.ToWSObjectsResult())))
+        .WillOnce(Return(CreateCompletedAsyncTask(instances.ToWSObjectsResult())));
 
     int progressCalled = 0;
     CachingDataSource::Progress expectedProgress[] = {
@@ -8160,7 +7839,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsQueryReturnsT
 TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsTwoQueriesReturnTwoInstancesEach_ProgressCalledWithInstancesState)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     StubInstances instanceA;
@@ -8176,7 +7855,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsTwoQueriesRet
     EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
     EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
 
-    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(instanceAId, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instanceA.ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instanceA.ToWSObjectsResult())));
 
     IQueryProvider::Query queryA(responseQAKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "QA"}));
     IQueryProvider::Query queryB(responseQBKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "QB"}));
@@ -8213,7 +7892,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceAndItsTwoQueriesRet
 TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturnsInstanceWithQuery_ProgressCalledWithInstancesState)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     StubInstances instancesA;
@@ -8234,7 +7913,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturn
     EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
     EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
 
-    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(instanceAId, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
 
     IQueryProvider::Query queryA(responseQAKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "QA"}));
     IQueryProvider::Query queryB(responseQBKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "QB"}));
@@ -8267,7 +7946,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturn
 TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturnsNoInstances_ProgressCalledWithInstancesState)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     StubInstances instancesA;
@@ -8282,7 +7961,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturn
     EXPECT_CALL(*provider, GetQueries(_, _, _)).WillRepeatedly(Return(bvector<IQueryProvider::Query>()));
     EXPECT_CALL(*provider, DoUpdateFile(_, _, _)).WillRepeatedly(Return(false));
 
-    EXPECT_CALL(GetMockClient(), SendGetObjectRequest(instanceAId, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(instancesA.ToWSObjectsResult())));
 
     IQueryProvider::Query queryA(responseQAKey, std::make_shared<WSQuery>(ObjectId {"TestSchema", "TestClass", "QA"}));
 
@@ -8311,7 +7990,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithQueryThatReturn
 TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithNoQuery_ProgressCalledWithInstancesState)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     StubInstances instancesA;
@@ -8347,7 +8026,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceWithNoQuery_Progres
 TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstance_ProgressCalledWithInstancesState)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto responseQAKey = StubCachedResponseKey(txn.GetCache(), "QA");
@@ -8383,7 +8062,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstance_ProgressC
 TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstanceThatReturnsQueryWithInstance_ProgressCalledWithInstancesState)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto responseQAKey = StubCachedResponseKey(txn.GetCache(), "QA");
@@ -8432,7 +8111,7 @@ TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstanceThatReturn
 TEST_F(CachingDataSourceTests, SyncCachedData_InitialQueryWithInstancesThatReturnQueriesWithNoInstances_ProgressCalledWithInstancesState)
     {
     // Arrange
-    auto ds = GetTestDataSourceV1();
+    auto ds = GetTestDataSourceV2();
 
     auto txn = ds->StartCacheTransaction();
     auto responseQKey = StubCachedResponseKey(txn.GetCache(), "Q");

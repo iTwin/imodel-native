@@ -306,9 +306,9 @@ TEST_F(WSClientTests, GetServerInfo_PrevioulslyReceivedServerNotSupported_Previo
     auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(3);
-    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "", {{"Server", "Bentley-WebAPI/1.2,Bentley-WSG/1.3"}}));
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::OK, "", {{"Server", "Bentley-WebAPI/2.2,Bentley-WSG/2.3"}}));
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, R"(this is not data source response)"));
-    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, "", {{"Server", "Bentley-WebAPI/1.2,Bentley-WSG/1.3"}}));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, "", {{"Server", "Bentley-WebAPI/2.2,Bentley-WSG/2.3"}}));
 
     auto response = client->SendGetRepositoriesRequest()->GetResult();
     auto info = client->GetServerInfo()->GetResult();
@@ -444,14 +444,14 @@ TEST_F(WSClientTests, RegisterServerInfoListener_AddedListener_ListenerNotifiedW
 
     GetHandler().ForAnyRequest([=] (Http::RequestCR request)
         {
-        return StubWSInfoHttpResponseWebApi13();
+        return StubWSInfoHttpResponseWebApi20();
         });
 
     client->RegisterServerInfoListener(listener);
 
     EXPECT_CALL(*listener, OnServerInfoReceived(_)).Times(1).WillOnce(Invoke([=] (WSInfoCR info)
         {
-        EXPECT_EQ(BeVersion(1, 2), info.GetVersion());
+        EXPECT_EQ(BeVersion(2, 0), info.GetVersion());
         }));
 
     client->SendGetInfoRequest()->Wait();
@@ -478,7 +478,7 @@ TEST_F(WSClientTests, RegisterServerInfoListener_AddedListenerDeleted_ListenerNo
 
     GetHandler().ForAnyRequest([=] (Http::RequestCR request)
         {
-        return StubWSInfoHttpResponseWebApi13();
+        return StubWSInfoHttpResponseWebApi20();
         });
 
     auto listener = std::make_shared<StubServerInfoListener>(listenerCallCount);
@@ -542,7 +542,7 @@ TEST_F(WSClientTests, UnregisterServerInfoListener_ExistingListener_ListenerNotN
     EXPECT_CALL(*listener, OnServerInfoReceived(_)).Times(0);
     GetHandler().ForAnyRequest([=] (Http::RequestCR request)
         {
-        return StubWSInfoHttpResponseWebApi13();
+        return StubWSInfoHttpResponseWebApi20();
         });
 
     client->RegisterServerInfoListener(listener);
@@ -551,211 +551,6 @@ TEST_F(WSClientTests, UnregisterServerInfoListener_ExistingListener_ListenerNotN
     client->SendGetInfoRequest()->Wait();
     }
 #endif
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1Format_ParsesDefaultFields)
-    {
-    Utf8String dataSourcesResponse =
-        R"([{
-            "id" : "D.testLocation",
-            "label" : "A",
-            "description" : "B",
-            "type" : "C",
-            "providerId" : "D"
-         }])";
-
-    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
-
-    GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
-    GetHandler().ForRequest(2, StubJsonHttpResponse(HttpStatus::OK, dataSourcesResponse));
-
-    auto response = client->SendGetRepositoriesRequest()->GetResult();
-    auto dataSource = response.GetValue().front();
-
-    EXPECT_EQ("D.testLocation", dataSource.GetId());
-    EXPECT_EQ("A", dataSource.GetLabel());
-    EXPECT_EQ("B", dataSource.GetDescription());
-    EXPECT_EQ("D", dataSource.GetPluginId());
-    EXPECT_EQ("https://srv.com/ws", dataSource.GetServerUrl());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithType_ParsesLocationFromId)
-    {
-    Utf8String dataSourcesResponse =
-        R"([{
-            "id" : "testProvider.testLocation",
-            "label" : "A",
-            "description" : "B",
-            "type" : "test.type",
-            "providerId" : "testProvider"
-         }])";
-
-    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
-
-    GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
-    GetHandler().ForRequest(2, StubJsonHttpResponse(HttpStatus::OK, dataSourcesResponse));
-
-    auto response = client->SendGetRepositoriesRequest()->GetResult();
-    auto dataSource = response.GetValue().front();
-
-    EXPECT_EQ("testLocation", dataSource.GetLocation());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithNoType_ParsesLocationFromId)
-    {
-    Utf8String dataSourcesResponse =
-        R"([{
-            "id" : "testProvider.testLocation",
-            "label" : "A",
-            "description" : "B",
-            "type" : null,
-            "providerId" : "testProvider"
-         }])";
-
-    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
-
-    GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
-    GetHandler().ForRequest(2, StubJsonHttpResponse(HttpStatus::OK, dataSourcesResponse));
-
-    auto response = client->SendGetRepositoriesRequest()->GetResult();
-    auto dataSource = response.GetValue().front();
-
-    EXPECT_EQ("testLocation", dataSource.GetLocation());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithProviderIdECAndType_ParsesLocationFromId)
-    {
-    Utf8String dataSourcesResponse =
-        R"([{
-            "id" : "ec.test.type--testLocation",
-            "label" : "A",
-            "description" : "B",
-            "type" : "test.type",
-            "providerId" : "ec"
-         }])";
-
-    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
-
-    GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
-    GetHandler().ForRequest(2, StubJsonHttpResponse(HttpStatus::OK, dataSourcesResponse));
-
-    auto response = client->SendGetRepositoriesRequest()->GetResult();
-    auto dataSource = response.GetValue().front();
-
-    EXPECT_EQ("testLocation", dataSource.GetLocation());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1AndIdIsNotKnownFormat_ReturnsEmptyLocation)
-    {
-    Utf8String dataSourcesResponse =
-        R"([{
-            "id" : "someOtherId",
-            "label" : "A",
-            "description" : "B",
-            "type" : "C",
-            "providerId" : "D"
-         }])";
-
-    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
-
-    GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
-    GetHandler().ForRequest(2, StubJsonHttpResponse(HttpStatus::OK, dataSourcesResponse));
-
-    auto response = client->SendGetRepositoriesRequest()->GetResult();
-
-    ASSERT_TRUE(response.IsSuccess());
-
-    auto dataSource = response.GetValue().front();
-
-    EXPECT_EQ("someOtherId", dataSource.GetId());
-    EXPECT_EQ("A", dataSource.GetLabel());
-    EXPECT_EQ("B", dataSource.GetDescription());
-    EXPECT_EQ("D", dataSource.GetPluginId());
-    EXPECT_EQ("https://srv.com/ws", dataSource.GetServerUrl());
-
-    EXPECT_EQ("", dataSource.GetLocation());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithProviderIdEC_ReturnsPluginIdFromProviderTypeField)
-    {
-    Utf8String dataSourcesResponse =
-        R"([{
-            "id" : "ec.test.pluginId--test",
-            "label" : "",
-            "description" : "",
-            "type" : "test.pluginId",
-            "providerId" : "ec"
-         }])";
-
-    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
-
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
-    GetHandler().ForRequest(2, StubJsonHttpResponse(HttpStatus::OK, dataSourcesResponse));
-
-    auto response = client->SendGetRepositoriesRequest()->GetResult();
-
-    auto dataSource = response.GetValue().front();
-    EXPECT_EQ("test.pluginId", dataSource.GetPluginId());
-    EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1_CorrectUrl)
-    {
-    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
-
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
-    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
-        {
-        EXPECT_STREQ("https://srv.com/ws/v1.1/DataSources", request.GetUrl().c_str());
-        return StubHttpResponse();
-        });
-
-    client->SendGetRepositoriesRequest()->Wait();
-    EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV11_UrlWithoutWebApiVersion)
-    {
-    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
-
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi11());
-    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
-        {
-        EXPECT_STREQ("https://srv.com/ws/DataSources", request.GetUrl().c_str());
-        return StubHttpResponse();
-        });
-
-    client->SendGetRepositoriesRequest()->Wait();
-    EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
-    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015

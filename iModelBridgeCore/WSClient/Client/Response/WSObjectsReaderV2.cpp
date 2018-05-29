@@ -2,7 +2,7 @@
 |
 |  $Source: Client/Response/WSObjectsReaderV2.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -54,7 +54,6 @@ WSObjectsReader::Instances WSObjectsReaderV2::ReadInstances(std::shared_ptr<cons
         !m_data->HasMember("instances") ||
         !(*m_data)["instances"].IsArray())
         {
-        BeAssert(false && "Bad format");
         m_data = nullptr;
         m_instanceCount = 0;
         return Instances(shared_from_this());

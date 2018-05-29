@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/StubInstances.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StubInstances.h"
@@ -88,34 +88,6 @@ WSChangesetResult StubInstances::ToWSChangesetResult() const
     {
     auto body = HttpStringBody::Create(ToChangesetResponseJson());
     return WSChangesetResult::Success(body);
-    }
-
-Utf8String StubInstances::ToJsonWebApiV1() const
-    {
-    Utf8String mainSchemaName;
-    Json::Value dataJson(Json::objectValue);
-
-    if (!m_instances.empty())
-        {
-        mainSchemaName = m_instances.front().objectId.schemaName;
-        }
-
-    for (auto& instance : m_instances)
-        {
-        BeAssert(instance.objectId.schemaName.Equals(mainSchemaName) && "Only one schema is supported in WebApi1");
-        BeAssert(instance.relationshipInstances.empty() && "Relationship instances are not supported in WebApi1");
-
-        Json::Value instanceJson;
-        instanceJson["$id"] = instance.objectId.remoteId;
-        for (auto& keyValue : instance.properties)
-            {
-            instanceJson[keyValue.first] = keyValue.second;
-            }
-
-        dataJson[instance.objectId.className].append(instanceJson);
-        }
-
-    return dataJson.toStyledString();
     }
 
 Utf8String StubInstances::ToJsonWebApiV2() const

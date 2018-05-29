@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/BaseCachingDataSourceTest.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -63,7 +63,7 @@ class BaseCachingDataSourceTest : public BaseCacheTest
             (
             std::shared_ptr<MockWSRepositoryClient> customClient = nullptr,
             ECSchemaPtr customSchema = nullptr,
-            WSInfoCR info = StubWSInfoWebApi({1, 3})
+            WSInfoCR info = StubWSInfoWebApi({2, 0})
             );
 
         // Create new CachingDataSource for testing
@@ -73,7 +73,7 @@ class BaseCachingDataSourceTest : public BaseCacheTest
             CacheEnvironment environment = StubCacheEnvironemnt(),
             std::shared_ptr<MockWSRepositoryClient> customClient = nullptr,
             ECSchemaPtr customSchema = nullptr,
-            WSInfoCR info = StubWSInfoWebApi({1, 3})
+            WSInfoCR info = StubWSInfoWebApi({2, 0})
             );
 
     public:
