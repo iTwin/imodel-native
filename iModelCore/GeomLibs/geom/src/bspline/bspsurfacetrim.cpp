@@ -23,138 +23,6 @@ double  y2
         return(-1);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/93
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool    pntutil_pointOnSegment
-(
-const DPoint2d     *pointP,
-const DPoint2d     *segOrgP,
-const DPoint2d     *segEndP,
-double              tolerance
-)
-    {
-    double      segDistSquared, dotProduct;
-    DPoint2d    segDelta, pointDelta;
-
-    if ((segDelta.x = segEndP->x - segOrgP->x) > 0.0)
-        {
-        if ((pointP->x < segOrgP->x - tolerance) ||
-            (pointP->x > segEndP->x + tolerance))
-            return false;
-        }
-    else
-        {
-        if ((pointP->x < segEndP->x - tolerance) ||
-            (pointP->x > segOrgP->x + tolerance))
-            return false;
-        }
-
-    if ((segDelta.y = segEndP->y - segOrgP->y) > 0.0)
-        {
-        if ((pointP->y < segOrgP->y - tolerance) ||
-            (pointP->y > segEndP->y + tolerance))
-            return false;
-        }
-    else
-        {
-        if ((pointP->y < segEndP->y - tolerance) ||
-            (pointP->y > segOrgP->y + tolerance))
-            return false;
-        }
-
-    pointDelta.x = pointP->x - segOrgP->x;
-    pointDelta.y = pointP->y - segOrgP->y;
-
-    segDistSquared = segDelta.x * segDelta.x + segDelta.y * segDelta.y;
-    tolerance *= sqrt (segDistSquared);
-
-    /* Check perpendicular distance */
-    if (fabs (pointDelta.x * segDelta.y - pointDelta.y * segDelta.x) > tolerance)
-        return false;
-
-    /* Check paralell distance */
-    dotProduct = pointDelta.x * segDelta.x + pointDelta.y * segDelta.y;
-
-    if (dotProduct < -tolerance || dotProduct > segDistSquared + tolerance)
-        return false;
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* For 3d points this routine ignores the z coordinate so transform points first. Notice the polygon closed flag, true means first and last
-* points are equal.
-* @bsimethod                                                    Brian.Peters    05/93
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int mdlPolygon_pointInside /* <= 0 if outside, -1 of on, 1 if inside */
-(
-const double*   pInPt,                 /* => test point, 2d or 3d */
-const double*   pInPoints,             /* => closed polygon points, 2d or 3d */
-int             numPoints,             /* => number of points in polygon */
-int             closed,                /* => true if the polygon is closed */
-int             dimension,             /* => 2 or 3 */
-double          onTolerance            /* => on Polygon tolerance */
-)
-    {
-    int             i, crossings;
-    double          intercept, dx, slope;
-    const double   *p0, *p1;
-    const double   *pt = pInPt;
-    const double   *points = pInPoints;;
-
-    crossings = 0;
-    p0 = points;
-    p1 = points + dimension;
-    for (i = 1; i < numPoints; i++, p0 = p1, p1 += dimension)
-        {
-        if (pntutil_pointOnSegment ((DPoint2d *) pt, (DPoint2d *) p0,
-                                    (DPoint2d *) p1, onTolerance))
-            {
-            return -1;
-            }
-        else
-            {
-            if ((p0[0] < pt[0] && p1[0] >= pt[0]) ||
-                (p0[0] >= pt[0] && p1[0] < pt[0]))
-                {
-                /* calculate intercept with line through pt parallel to y axis */
-                slope = (p1[1] - p0[1]) / (p1[0] - p0[0]);
-                dx = pt[0] - p0[0];
-                intercept = p0[1] + dx * slope;
-
-                if (intercept < pt[1])
-                    crossings++;
-                }
-            }
-        }
-
-    if (closed == false)
-        {
-        p1 = points;
-        if (pntutil_pointOnSegment ((DPoint2d *) pt, (DPoint2d *) p0,
-                                    (DPoint2d *) p1, onTolerance))
-            {
-            return -1;
-            }
-        else
-            {
-            if ((p0[0] < pt[0] && p1[0] >= pt[0]) ||
-                (p0[0] >= pt[0] && p1[0] < pt[0]))
-                {
-                /* calculate intercept with line through pt parallel to y axis */
-                slope = (p1[1] - p0[1]) / (p1[0] - p0[0]);
-                dx = pt[0] - p0[0];
-                intercept = p0[1] + dx * slope;
-
-                if (intercept < pt[1])
-                    crossings++;
-                }
-            }
-        }
-
-    return crossings & 0x01;
-    }
 
 /*----------------------------------------------------------------------+
 project pXYZ1 on segment pXYZ0..pXYZ2.
@@ -1124,31 +992,6 @@ TrimCurve **ppHead
     }
 
 /*----------------------------------------------------------------------+
-Free the links and curves in a TrimCurve chain.
-Both cyclic and linear chains are allowed.
-@param ppHEAD IN OUT handle for head-of-chain.
-+----------------------------------------------------------------------*/
-Public GEOMDLLIMPEXP void bspTrimCurve_freeList
-(
-TrimCurve **ppHead,
-void      *pHeapDescr
-)
-    {
-    bspTrimCurve_breakCyclicList (ppHead);
-    TrimCurve *pHead = *ppHead;
-    TrimCurve *pNext = NULL;
-    while (pHead)
-        {
-        pNext = pHead->pNext;
-        bspcurv_freeCurve (&pHead->curve);
-        pHead->pNext = pHead->pPrevious = NULL;
-        BSIBaseGeom::Free (pHead, (void*)pHeapDescr);
-        pHead = pNext;
-        }
-    *ppHead = NULL;
-    }
-
-/*----------------------------------------------------------------------+
 @description remove PCurve trim but leave polylines unchanged.
 @param pSurf IN OUT subject surface.
 +----------------------------------------------------------------------*/
@@ -1189,31 +1032,6 @@ MSBsplineSurface *pSurf
         }
 
     BSIBaseGeom::Free (pSurf->boundaries);
-    pSurf->boundaries = NULL;
-    pSurf->numBounds  = 0;
-    }
-
-/*----------------------------------------------------------------------+
-@param pSurf IN OUT subject surface.
-+----------------------------------------------------------------------*/
-Public GEOMDLLIMPEXP void bspsurf_freeBoundaries
-(
-MSBsplineSurface *pSurf,
-void             *pHeapDescr
-)
-    {
-    BsurfBoundary *pBoundary;
-    for (int i = 0; i < pSurf->numBounds; i++)
-        {
-        pBoundary = &pSurf->boundaries[i];
-        BSIBaseGeom::Free (pBoundary->points, (void*)pHeapDescr);
-        bspTrimCurve_freeList (&pBoundary->pFirst, pHeapDescr);
-        pBoundary->pFirst = NULL;
-        pBoundary->points = NULL;
-        pBoundary->numPoints = 0;
-        }
-
-    BSIBaseGeom::Free (pSurf->boundaries, (void*)pHeapDescr);
     pSurf->boundaries = NULL;
     pSurf->numBounds  = 0;
     }
@@ -1576,13 +1394,11 @@ bool            holeOrigin
             }
         else
             {
-            int outOnInLoop = mdlPolygon_pointInside ((double*)uvP,
-                    (double*)currBoundaryP->points,
-                    currBoundaryP->numPoints,
-                    true, 2, 1.0E-10);
-            if (outOnInLoop > 0)
+            int parity = PolygonOps::PointPolygonParity (*uvP,
+                        currBoundaryP->points, (size_t) currBoundaryP->numPoints, 1.0e-10);
+            if (parity > 0)
                 crossings++;
-            else if (outOnInLoop == -1)
+            else if (parity == 0)
                 {
                 crossings++;
                 break;

@@ -1579,22 +1579,22 @@ double      tol             /* tolerance for ON case detection */
 int PolygonOps::PointPolygonParity
 (
 DPoint2dCR point,
-bvector<DPoint2d> const &points,
+DPoint2d const *points,
+size_t numPoint,
 double      tol
 )
     {
     int i, parity;
     double x = point.x, y = point.y, theta, dTheta, maxTheta;
-    if (points.size () == 0)
+    if (numPoint == 0)
         return -2;
-    int numPoint = (int)points.size ();
     if (numPoint == 1)
         return (fabs (x - points[0].x) <= tol && fabs (y - points[0].y) <= tol) ? 0 : -1;
 
     /* Try really easy ways first ... */
-    if ( bsiDPoint2d_PolygonParity_yTest (&parity, &point, points.data (), numPoint, tol))
+    if ( bsiDPoint2d_PolygonParity_yTest (&parity, &point, points, (int)numPoint, tol))
         return  parity;
-    if ( bsiDPoint2d_PolygonParity_xTest (&parity, &point, points.data (), numPoint, tol))
+    if ( bsiDPoint2d_PolygonParity_xTest (&parity, &point, points, (int)numPoint, tol))
         return  parity;
 
     // Is test point within tol of one of the polygon points in x and y?
@@ -1607,10 +1607,31 @@ double      tol
     theta = dTheta = 0.276234342921378;
     while (theta < maxTheta)
         {
-        if (bsiDPoint2d_PolygonParity_vectorTest (&parity, &point, theta, points.data (), numPoint, tol))
+        if (bsiDPoint2d_PolygonParity_vectorTest (&parity, &point, theta, points, (int)numPoint, tol))
             return parity;
         theta += dTheta;
         }
     return -2;
+    }
+/* METHOD(Geom,getPolygonParity,none) */
+/*---------------------------------------------------------------------------------**//**
+* Classify a point with respect to a polygon.
+* @param pPoint => point to test
+* @param pPointArray => polygon points.  Last point does not need to be duplicated.
+* @param numPoint => number of points.
+* @param tol => tolerance for "on" detection. May be zero.
+* @return 1 if point is "in" by parity, 0 if "on", -1 if "out", -2 if nothing worked.
+* @bsimethod                                                    EarlinLutz      03/99
++---------------+---------------+---------------+---------------+---------------+------*/
+int PolygonOps::PointPolygonParity
+(
+DPoint2dCR point,
+bvector<DPoint2d> const &points,
+double      tol
+)
+    {
+    if (points.size () == 0)
+        return -2;
+    return PointPolygonParity (point, points.data (), points.size (), tol);
     }
 END_BENTLEY_GEOMETRY_NAMESPACE
