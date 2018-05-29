@@ -166,6 +166,16 @@ Utf8String WebApiV2::CreateSelectPropertiesQuery(const bset<Utf8String>& propert
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
+HttpRequest WebApiV2::CreateQueryRequest(WSQueryCR query) const
+    {
+    Utf8String classes = StringUtils::Join(query.GetClasses().begin(), query.GetClasses().end(), ",");
+    Utf8String url = GetUrl(CreateClassSubPath(query.GetSchemaName(), classes), query.ToQueryString());
+    return m_configuration->GetHttpClient().CreateGetJsonRequest(url);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 std::shared_ptr<WSObjectsReader> WebApiV2::CreateJsonInstancesReader() const
     {
     bool quoteInstanceETags =
@@ -529,9 +539,7 @@ Utf8StringCR skipToken,
 ICancellationTokenPtr ct
 ) const
     {
-    Utf8String classes = StringUtils::Join(query.GetClasses().begin(), query.GetClasses().end(), ",");
-    Utf8String url = GetUrl(CreateClassSubPath(query.GetSchemaName(), classes), query.ToQueryString());
-    HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
+    HttpRequest request = CreateQueryRequest(query);
 
     bool requestHasSkipToken = false;
     if (GetMaxWebApiVersion() >= BeVersion(2, 5) && !skipToken.empty())
