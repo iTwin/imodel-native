@@ -1630,7 +1630,7 @@ int                         horizontal
     DPoint2d        *p;
     BsurfBoundary   *currBound, *endB;
     int numLinear, numPCurve;
-    static double sParamTol = 1.0e-8;
+    // static double sParamTol = 1.0e-8;
 
     scanHeight = value;
     near1 = 1.0 - fc_epsilon;
