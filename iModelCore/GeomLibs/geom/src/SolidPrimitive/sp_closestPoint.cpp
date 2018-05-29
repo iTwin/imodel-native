@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/SolidPrimitive/sp_closestPoint.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -409,13 +409,12 @@ SolidLocationDetailR pickData
             size_t leafIndex;
             DPoint3d surfacePoint;
             double v;
-            double u = detail.fraction;
+            double u = detail.componentFraction;
             if (m_baseCurve->LeafToIndex (detail.curve, leafIndex))
                 {
                 DRay3d ray = DRay3d::FromOriginAndVector (detail.point, m_extrusionVector);
                 ray.ProjectPointBounded (surfacePoint, v, spacePoint);
-                UpdatePick (pickData,
-                            spacePoint, surfacePoint, u, v, 0, (int)leafIndex, (int)detail.componentIndex);
+                UpdatePick (pickData, spacePoint, surfacePoint, u, v, 0, (int)leafIndex, (int)detail.componentIndex);
                 }
             }
         }
