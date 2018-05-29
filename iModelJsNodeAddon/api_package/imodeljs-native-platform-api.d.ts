@@ -788,6 +788,21 @@ declare class NativeECPresentationManager implements IDisposable {
      * presentation data.
      */
     setActiveLocale(locale: string): ErrorStatusOrResult<NativeECPresentationStatus, void>;
+     /**
+     * Set user setting value.
+     * @param ruleSetId Id of the ruleset setting is associated with.
+     * @param settingId Id of the setting.
+     * @param jsonValue Value and type of setting in json format.
+     */
+    setUserSetting(ruleSetId: string, settingId: string, jsonValue: string): ErrorStatusOrResult<NativeECPresentationStatus, void>;
+    /**
+     * Set user setting value.
+     * @param ruleSetId Id of the ruleset setting is associated with.
+     * @param settingId Id of the setting.
+     * @param settingType Type of the setting..
+     */
+    getUserSetting(ruleSetId: string, settingId: string, settingType: string): ErrorStatusOrResult<NativeECPresentationStatus, any>;
+
     /**
      * Adds ruleset that can be used by NativeECPresentationManager
      * @param ruleSetJson Serialized JSON string of a ruleset to be added

@@ -78,6 +78,10 @@ struct ECPresentationUtils
     static ECPresentationResult GetContentDescriptor(IECPresentationManagerR, ECDbR, JsonValueCR params);
     static ECPresentationResult GetContent(IECPresentationManagerR, ECDbR, JsonValueCR params);
     static ECPresentationResult GetContentSetSize(IECPresentationManagerR, ECDbR, JsonValueCR params);
+
+    static ECPresentationResult SetUserSetting(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR settingId, Utf8StringCR value);
+    static ECPresentationResult GetUserSetting(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR settingId, Utf8StringCR settingType);
+
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

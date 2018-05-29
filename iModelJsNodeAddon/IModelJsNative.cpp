@@ -2742,6 +2742,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     RefCountedPtr<SimpleRuleSetLocater> m_ruleSetLocater;
+
     NativeECPresentationManager(Napi::CallbackInfo const& info)
         : Napi::ObjectWrap<NativeECPresentationManager>(info)
         {
@@ -2771,6 +2772,8 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
           InstanceMethod("setupRulesetDirectories", &NativeECPresentationManager::SetupRulesetDirectories),
           InstanceMethod("setupLocaleDirectories", &NativeECPresentationManager::SetupLocaleDirectories),
           InstanceMethod("setActiveLocale", &NativeECPresentationManager::SetActiveLocale),
+          InstanceMethod("setUserSetting", &NativeECPresentationManager::SetUserSetting),
+          InstanceMethod("getUserSetting", &NativeECPresentationManager::GetUserSetting),
           InstanceMethod("addRuleSet", &NativeECPresentationManager::AddRuleSet),
           InstanceMethod("removeRuleSet", &NativeECPresentationManager::RemoveRuleSet),
           InstanceMethod("clearRuleSets", &NativeECPresentationManager::ClearRuleSets),
@@ -2836,7 +2839,6 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params);
         else if (0 == strcmp("GetContentSetSize", requestId))
             result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params);
-
         return CreateReturnValue(result, true);
         }
 
@@ -2878,6 +2880,24 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
     Napi::Value ClearRuleSets(Napi::CallbackInfo const& info)
         {
         ECPresentationResult result = ECPresentationUtils::ClearRuleSets(*m_ruleSetLocater);
+        return CreateReturnValue(result);
+        }
+
+    Napi::Value GetUserSetting(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, ruleSetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
+        REQUIRE_ARGUMENT_STRING(1, settingId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "settingId")));
+        REQUIRE_ARGUMENT_STRING(2, settingType, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "settingType")));
+        ECPresentationResult result = ECPresentationUtils::GetUserSetting(*m_presentationManager, ruleSetId, settingId, settingType);
+        return CreateReturnValue(result);
+        }
+
+    Napi::Value SetUserSetting(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, ruleSetId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "rulesetId")));
+        REQUIRE_ARGUMENT_STRING(1, settingId, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "settingId")));
+        REQUIRE_ARGUMENT_STRING(2, value, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "value")));
+        ECPresentationResult result = ECPresentationUtils::SetUserSetting(*m_presentationManager, ruleSetId, settingId, value);
         return CreateReturnValue(result);
         }
 
