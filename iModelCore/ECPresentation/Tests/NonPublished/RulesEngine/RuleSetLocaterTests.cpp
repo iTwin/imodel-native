@@ -804,40 +804,20 @@ TEST (FileRuleSetLocater, DoesntDisposeCachedRulesetIfInvalidateRequestedWithNot
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(SupplementalRuleSetLocater, FindsSupplementalRuleSetsAndSetsProvidedId)
     {
-    BeFileName directory;
-    BeTest::GetHost().GetOutputRoot(directory);
-    directory.AppendToPath(L"FindsSupplementalRuleSetsAndSetsProvidedId");
-    if (directory.DoesPathExist())
-        directory.BeDeleteFile();
+    RefCountedPtr<SimpleRuleSetLocater> baseLocater = SimpleRuleSetLocater::Create();
 
-    BeFileName::CreateNewDirectory(directory.c_str());
+    PresentationRuleSetPtr ruleset1 = PresentationRuleSet::CreateInstance("Ruleset1", 1, 0, true, "", "", "", false);
+    ruleset1->AddPresentationRule(*new StyleOverride("", 1, "Red", "Green", ""));
+    baseLocater->AddRuleSet(*ruleset1);
+    
+    PresentationRuleSetPtr ruleset2 = PresentationRuleSet::CreateInstance("Ruleset2", 1, 0, false, "", "", "", false);
+    baseLocater->AddRuleSet(*ruleset2);
+    
+    PresentationRuleSetPtr ruleset3 = PresentationRuleSet::CreateInstance("Ruleset3", 1, 0, true, "", "", "", false);
+    ruleset3->AddPresentationRule(*new StyleOverride("", 1, "Blue", "Orange", ""));
+    baseLocater->AddRuleSet(*ruleset3);
 
-    BeFileName subDirectory = directory;
-    subDirectory.AppendToPath(L"SubDir");
-
-    Utf8CP ruleSetXmlString1 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                                "<PresentationRuleSet RuleSetId=\"Ruleset1\" VersionMajor=\"1\" VersionMinor=\"0\" IsSupplemental=\"true\" "
-                                "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                                "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" >"
-                                "    <StyleOverride ForeColor=\"Red\" BackColor=\"Green\" />"
-                                "</PresentationRuleSet>";
-    CreateFileWithContent(ruleSetXmlString1, "1.PresentationRuleSet.xml", &directory);
-
-    Utf8CP ruleSetXmlString2 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                               "<PresentationRuleSet RuleSetId=\"Ruleset2\" VersionMajor=\"1\" VersionMinor=\"0\" IsSupplemental=\"false\" "
-                               "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                               "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" />";
-    CreateFileWithContent(ruleSetXmlString2, "2.PresentationRuleSet.xml", &directory);
-
-    Utf8CP ruleSetXmlString3 = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                                "<PresentationRuleSet RuleSetId=\"Ruleset3\" VersionMajor=\"1\" VersionMinor=\"0\" IsSupplemental=\"true\" "
-                                "                     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
-                                "                     xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\" >"
-                                "    <StyleOverride ForeColor=\"Blue\" BackColor=\"Orange\" />"
-                                "</PresentationRuleSet>";
-    CreateFileWithContent(ruleSetXmlString3, "3.PresentationRuleSet.xml", &subDirectory);
-
-    RefCountedPtr<SupplementalRuleSetLocater> locater = SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(directory.GetNameUtf8().c_str()));
+    RefCountedPtr<SupplementalRuleSetLocater> locater = SupplementalRuleSetLocater::Create(*baseLocater);
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets("Ruleset1");
     ASSERT_EQ(2, rulesets.size());
 
