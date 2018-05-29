@@ -886,7 +886,7 @@ public:
     Render::GraphicPtr _GetGraphic() const override { return m_graphic; }
     bool IsLeaf() const { return m_isLeaf; }
 
-    void SetIsLeaf() { m_isLeaf = true; /*m_children.clear();*/ }
+    void SetIsLeaf(bool isLeaf = true) { m_isLeaf = isLeaf; }
     void SetGraphic(Render::GraphicR graphic) { m_graphic = &graphic; }
 };
 
