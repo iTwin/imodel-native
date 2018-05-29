@@ -9879,6 +9879,8 @@ bool            BaseGCS::Compare (BaseGCSCR compareTo, bool& datumDifferent, boo
     if (thisDef.quad != compareDef.quad)
         SET_RETURN (csDifferent)
 
+    if (!WString(GetDescription()).Equals(compareTo.GetDescription()))
+        SET_RETURN(csDifferent)
 
     return true;
     }
