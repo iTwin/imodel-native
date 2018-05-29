@@ -45,7 +45,7 @@ struct IScalableMeshNodeCreator : public IScalableMeshCreator
 
         BENTLEY_SM_IMPORT_EXPORT IScalableMeshNodeEditPtr AddNode(const IScalableMeshNodePtr& parentNode,
                                                        DRange3d& extent,
-                                                            StatusInt&                  status,
+                                                            SMStatus&                  status,
                                                             bool computeNodeID = true,
                                                             uint64_t nodeId = 0);
 
