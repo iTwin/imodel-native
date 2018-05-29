@@ -45,7 +45,8 @@ IWSRepositoryClient::~IWSRepositoryClient()
 WSRepositoryClient::WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection) :
 m_connection(connection),
 m_serverClient(WSClient::Create(m_connection)),
-m_infoProvider(std::make_shared<RepositoryInfoProvider>(m_connection))
+m_infoProvider(std::make_shared<RepositoryInfoProvider>(m_connection)),
+m_config(std::make_shared<Configuration>(Configuration(*m_connection)))
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -64,6 +65,7 @@ IHttpHandlerPtr customHandler
     BeAssert(!repositoryId.empty());
     BeAssert(nullptr != clientInfo);
     auto configuration = std::make_shared<ClientConfiguration>(serverUrl, repositoryId, clientInfo, schemaProvider, customHandler);
+    configuration->SetPersistenceProviderId(ParsePluginIdFromRepositoryId(repositoryId));
     return std::shared_ptr<WSRepositoryClient>(new WSRepositoryClient(std::make_shared<ClientConnection>(configuration)));
     }
 
@@ -89,6 +91,14 @@ IWSClientPtr WSRepositoryClient::GetWSClient() const
 Utf8StringCR WSRepositoryClient::GetRepositoryId() const
     {
     return m_connection->GetConfiguration().GetRepositoryId();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+WSRepositoryClient::Configuration& WSRepositoryClient::Config()
+    {
+    return *m_config;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -459,6 +469,22 @@ ICancellationTokenPtr ct
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSRepositoryClient::Configuration::SetPersistenceProviderId(Utf8StringCR provider)
+    {
+    m_connection.GetConfiguration().SetPersistenceProviderId(provider);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR WSRepositoryClient::Configuration::GetPersistenceProviderId() const
+    {
+    return m_connection.GetConfiguration().GetPersistenceProviderId();
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                               Vilius.Kazlauskas    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSRepository WSRepositoryClient::ParseRepositoryUrl(Utf8StringCR url, Utf8StringP remainingPathOut)
@@ -524,6 +550,20 @@ WSRepository WSRepositoryClient::ParseRepositoryUrl(Utf8StringCR url, Utf8String
     repository.SetLocation(location);
 
     return repository;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String WSRepositoryClient::ParsePluginIdFromRepositoryId(Utf8StringCR repositoryId)
+    {
+    bvector<Utf8String> splits;
+    BeStringUtilities::Split(repositoryId.c_str(), "--", splits);
+
+    if (2 != splits.size())
+        return "";
+
+    return splits[0];
     }
 
 Utf8String WSRepositoryClient::UrlDecode(Utf8String url)

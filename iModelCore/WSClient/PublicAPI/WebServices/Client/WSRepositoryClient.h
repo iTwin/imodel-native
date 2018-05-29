@@ -429,11 +429,14 @@ struct IWSRepositoryClient::JobOptions
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WSRepositoryClient : public IWSRepositoryClient
     {
+    struct Configuration;
+
     private:
         std::shared_ptr<struct ClientConnection> m_connection;
         IWSClientPtr m_serverClient;
         mutable LimitingTaskQueue<WSFileResult> m_fileDownloadQueue;
         std::shared_ptr<struct RepositoryInfoProvider> m_infoProvider;
+        std::shared_ptr<struct Configuration> m_config;
 
     private:
         WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection);
@@ -463,6 +466,8 @@ struct WSRepositoryClient : public IWSRepositoryClient
         //! @return parsed WSRepository or invalid if there was an error
         WSCLIENT_EXPORT static WSRepository ParseRepositoryUrl(Utf8StringCR url, Utf8StringP remainingPathOut = nullptr);
 
+        WSCLIENT_EXPORT static Utf8String ParsePluginIdFromRepositoryId(Utf8StringCR repositoryId);
+
         //! Set limit for paralel file downloads. Default is 0 - no limit. Useful for older servers that could not cope with multiple
         //! file downloads at once.
         WSCLIENT_EXPORT void SetFileDownloadLimit(size_t limit);
@@ -471,6 +476,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
         WSCLIENT_EXPORT Utf8StringCR GetRepositoryId() const override;
 
         WSCLIENT_EXPORT void SetCredentials(Credentials credentials, AuthenticationType type = AuthenticationType::Basic);
+        WSCLIENT_EXPORT Configuration& Config();
 
         //! Check if user can access repository
         WSCLIENT_EXPORT AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const override;

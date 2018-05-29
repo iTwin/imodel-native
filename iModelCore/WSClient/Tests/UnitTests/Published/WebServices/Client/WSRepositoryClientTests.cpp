@@ -412,6 +412,30 @@ TEST_F(WSRepositoryClientTests, VerifyAccess_ResponseWithSchemaNotFound_ReturnsS
     EXPECT_TRUE(result.IsSuccess());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SetRepositoryid_RepositoryId_RepositoryIdSet)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    client->Config().SetPersistenceProviderId("id");
+    EXPECT_STREQ("id", client->Config().GetPersistenceProviderId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetRepositoryid_RepositoryIdNotSet_RepositoryIdIsPluginId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testId--plugin", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    EXPECT_STREQ("testId", client->Config().GetPersistenceProviderId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV11_SendsUrlWithoutWebApiVersion)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
