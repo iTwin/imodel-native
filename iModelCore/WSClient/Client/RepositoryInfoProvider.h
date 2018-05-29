@@ -39,7 +39,7 @@ struct RepositoryInfoProvider
         void UpdateInfo(WSRepositoryCR info);
         void NotifyInfoUpdated(WSRepositoryCR info) const;
 
-        AsyncTaskPtr<WSRepositoryResult> GetRepository(ICancellationTokenPtr ct) const;
+        AsyncTaskPtr<WSRepositoryResult> GetRepositoryInfo(ICancellationTokenPtr ct) const;
 
     public:
         RepositoryInfoProvider(std::shared_ptr<const ClientConnection> connection);

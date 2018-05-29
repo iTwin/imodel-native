@@ -123,7 +123,7 @@ struct WebApiV1 : public WebApi
 
         static bool IsSupported(WSInfoCR info);
 
-        virtual AsyncTaskPtr<WSRepositoryResult> SendGetRepositoryRequest(ICancellationTokenPtr ct = nullptr) const override;
+        virtual AsyncTaskPtr<WSRepositoryResult> SendGetRepositoryInfoRequest(ICancellationTokenPtr ct = nullptr) const override;
 
         virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (

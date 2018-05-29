@@ -317,7 +317,7 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(HttpResponse& response, bool re
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryRequest(ICancellationTokenPtr ct) const
+AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryInfoRequest(ICancellationTokenPtr ct) const
     {
     Utf8String url = GetUrl("/");
     HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
