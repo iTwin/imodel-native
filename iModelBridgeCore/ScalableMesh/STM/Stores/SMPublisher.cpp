@@ -359,12 +359,13 @@ StatusInt SM3SMPublisher::PublishRecursive(IScalableMeshNodePtr sourceNode, SMNo
 StatusInt SM3SMPublisher::CreateAndAddNewNode(IScalableMeshNodePtr sourceNode, IScalableMeshNodeEditPtr parentDestNode, IScalableMeshNodeEditPtr& newDestNode)
     {
     StatusInt status = SUCCESS;
+    SMStatus smStatus = S_SUCCESS;
     auto extent = sourceNode->GetNodeExtent();
     {
     std::lock_guard<std::mutex> lock(m_newNodeMtx);
-    newDestNode = m_params->GetDestination()->AddNode(parentDestNode, extent, status);
+    newDestNode = m_params->GetDestination()->AddNode(parentDestNode, extent, smStatus);
     }
-    if (SUCCESS != status || newDestNode == nullptr)
+    if (SUCCESS != status || newDestNode == nullptr || smStatus == S_ERROR)
         return ERROR;
 
     return SUCCESS;

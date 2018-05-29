@@ -465,7 +465,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                   SetInvertClip(bool invertClips);
 
-        BENTLEY_SM_EXPORT void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
+        void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
 
         BENTLEY_SM_EXPORT void                   GetAllClipIds(bvector<uint64_t>& ids);
 

@@ -4172,17 +4172,18 @@ void PerformNodeCreationTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : stmFileName attribute not found\r\n");
         }
     int openStatus;
+    SMStatus addNodeStatus;
     IScalableMeshNodeCreatorPtr ptr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshNodeCreator::GetFor(stmFileName.c_str(), openStatus);
     IScalableMeshNodeEditPtr rootNode = ptr->AddNode(openStatus);
     DRange3d extent = DRange3d::FromMinMax(-1.0, 1.0);
     rootNode->SetNodeExtent(extent);
     rootNode->SetContentExtent(extent);
     DRange3d childExt = DRange3d::From(BENTLEY_NAMESPACE_NAME::DPoint3d::From(-1.0, -1.0), BENTLEY_NAMESPACE_NAME::DPoint3d::From(0.0, 0.0));
-    IScalableMeshNodeEditPtr childNode = ptr->AddNode(rootNode, childExt, openStatus);
+    IScalableMeshNodeEditPtr childNode = ptr->AddNode(rootNode, childExt, addNodeStatus);
     childExt = DRange3d::From(BENTLEY_NAMESPACE_NAME::DPoint3d::From(-1.0, 0.0), BENTLEY_NAMESPACE_NAME::DPoint3d::From(0.0, 1.0));
-    childNode = ptr->AddNode(rootNode, childExt, openStatus);
+    childNode = ptr->AddNode(rootNode, childExt, addNodeStatus);
     childExt = DRange3d::From(BENTLEY_NAMESPACE_NAME::DPoint3d::From(0.0, -1.0), BENTLEY_NAMESPACE_NAME::DPoint3d::From(1.0, 0.0));
-    childNode = ptr->AddNode(rootNode, childExt, openStatus);
+    childNode = ptr->AddNode(rootNode, childExt, addNodeStatus);
     }
 
 void PerformLoadingTest(BeXmlNodeP pTestNode, FILE* pResultFile)
