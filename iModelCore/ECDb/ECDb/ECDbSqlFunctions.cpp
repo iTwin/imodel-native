@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSqlFunctions.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -125,9 +125,9 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
 
     Utf8CP ecsql = nullptr;
     if (state == ChangedValueState::BeforeUpdate || state == ChangedValueState::BeforeDelete)
-        ecsql = "SELECT RawOldValue, TYPEOF(RawOldValue) FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
+        ecsql = "SELECT RawOldValue,TYPEOF(RawOldValue) FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
     else
-        ecsql = "SELECT RawNewValue, TYPEOF(RawNewValue) FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
+        ecsql = "SELECT RawNewValue,TYPEOF(RawNewValue) FROM " ECSCHEMA_ALIAS_ECDbChange "." ECDBCHANGE_CLASS_PropertyValueChange " WHERE InstanceChange.Id=? AND AccessString=?";
 
     CachedECSqlStatementPtr stmt = m_statementCache.GetPreparedStatement(m_ecdb, ecsql);
     if (stmt == nullptr)
@@ -155,37 +155,39 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
 
     Utf8CP valType = stmt->GetValueText(1);
 
-    if (BeStringUtilities::StricmpAscii("integer", valType) == 0)
+    if (valType[0] == 'i' /*BeStringUtilities::StricmpAscii("integer", valType) == 0*/)
         {
+        BeAssert(BeStringUtilities::StricmpAscii("integer", valType) == 0);
         ctx.SetResultInt64(stmt->GetValueInt64(0));
         return;
         }
 
-    if (BeStringUtilities::StricmpAscii("real", valType) == 0)
+    if (valType[0] == 'r' /*BeStringUtilities::StricmpAscii("real", valType) == 0*/)
         {
+        BeAssert(BeStringUtilities::StricmpAscii("real", valType) == 0);
         ctx.SetResultDouble(stmt->GetValueDouble(0));
         return;
         }
 
-    if (BeStringUtilities::StricmpAscii("text", valType) == 0)
+    if (valType[0] == 't' /*BeStringUtilities::StricmpAscii("text", valType) == 0*/)
         {
+        BeAssert(BeStringUtilities::StricmpAscii("text", valType) == 0);
         Utf8CP strVal = stmt->GetValueText(0);
         const int len = (int) strlen(strVal);
         ctx.SetResultText(strVal, len, Context::CopyData::Yes);
         return;
         }
 
-    if (BeStringUtilities::StricmpAscii("blob", valType) == 0)
+    if (valType[0] == 'b' /*BeStringUtilities::StricmpAscii("blob", valType) == 0*/)
         {
+        BeAssert(BeStringUtilities::StricmpAscii("blob", valType) == 0);
         int blobSize = -1;
         void const* blob = stmt->GetValueBlob(0, &blobSize);
         ctx.SetResultBlob(blob, blobSize, Context::CopyData::Yes);
         return;
         }
 
-    Utf8String msg;
-    msg.Sprintf("SQL function " SQLFUNC_ChangedValue " failed: executing the ECSQL '%s' returned an unsupported data type (%s).", stmt->GetECSql(), valType);
-    ctx.SetResultError(msg.c_str());
+    ctx.SetResultError(SqlPrintfString("SQL function " SQLFUNC_ChangedValue " failed: executing the ECSQL '%s' returned an unsupported data type (%s).", stmt->GetECSql(), valType));
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

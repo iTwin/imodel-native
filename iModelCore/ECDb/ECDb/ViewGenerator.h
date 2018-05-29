@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ViewGenerator.h $ 
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -155,7 +155,6 @@ struct ViewGenerator final
 
         ViewGenerator();
         ~ViewGenerator();
-
         static BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, Context&, ClassMap const&);
         static BentleyStatus GenerateChangeSummaryViewSql(NativeSqlBuilder&, SelectFromViewContext&, ClassMap const&);
 

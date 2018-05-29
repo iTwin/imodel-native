@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSqlFunctions.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define ECSQLFUNC_Changes "Changes"
 #define SQLFUNC_ChangedValue "ChangedValue"
 #define SQLFUNC_ChangedValueStateToOpCode "ChangedValueStateToOpCode"
-
 
 //=======================================================================================
 //! INT ChangedValueStateToOpCode(ChangedValueState TEXT|INT)
@@ -55,6 +54,5 @@ struct ChangedValueSqlFunction final : ScalarFunction
 
         void ClearCache() { m_statementCache.Empty(); }
     };
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
