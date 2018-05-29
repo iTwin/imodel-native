@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 %include    mdl.mki
 %include    $(SharedMki)HtmlHelp.mki
-
+xxxx
 %if defined (DONT_BUILD_DOC)
     %return
 %endif
