@@ -1004,7 +1004,7 @@ void GetCoverageTerrainAbsFileName(BeFileName& coverageFileName, const WString& 
 
     BeFileName coverageBeFileName(coverageName);
     coverageFileName.AppendString(coverageBeFileName);
-    coverageFileName.AppendString(L".3sm");
+    coverageFileName.AppendString(L".stm2");
     }
 
 
