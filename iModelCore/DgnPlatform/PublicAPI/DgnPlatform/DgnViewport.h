@@ -172,6 +172,7 @@ protected:
     bool m_is3dView = false;         // view is of a 3d model
     bool m_isCameraOn = false;       // view is 3d and the camera is turned on.
     bool m_undoActive = false;
+    bool m_fadeOutActive = false;
     bool m_renderContinuously = false;
     Byte m_dynamicsTransparency = 64;
     Byte m_flashingTransparency = 100;
@@ -277,6 +278,9 @@ public:
     DGNVIEW_EXPORT void ApplyNext(BeDuration animationTime); 
     DGNVIEW_EXPORT void ApplyPrevious(BeDuration animationTime);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
+
+    void SetFadeOutActive(bool val);
+    bool IsFadeOutActive() const { return m_fadeOutActive; }
 
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.

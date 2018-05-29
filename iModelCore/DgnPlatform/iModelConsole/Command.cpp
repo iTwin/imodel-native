@@ -1384,7 +1384,7 @@ void ExportCommand::RunExportChangeSummary(Session& session, ECInstanceId change
     const int opCodeIx = 4;
     const int isIndirectIx = 5;
 
-    if (ECSqlStatus::Success != ctx.m_accessStringStmt.Prepare(ctx.m_ecdb, "SELECT AccessString, RawOldValue, TYPEOF(RawOldValue), RawNewValue, TYPEOF(RawNewValue) FROM ecchange.change.PropertyValueChange WHERE InstanceChange.Id=?"))
+    if (ECSqlStatus::Success != ctx.m_accessStringStmt.Prepare(ctx.m_ecdb, "SELECT AccessString FROM ecchange.change.PropertyValueChange WHERE InstanceChange.Id=?"))
         {
         IModelConsole::WriteErrorLine("Failed to prepare ECSQL to retrieve property value changes for instance changes.");
         return;
@@ -1462,57 +1462,49 @@ BentleyStatus ExportCommand::PropertyValueChangesToJson(Json::Value& propValJson
 
     ChangeSummaryExportContext::Timer perf(ctx, Utf8PrintfString("Process Changed %s", changedInstanceLabel.c_str()));
 
-    const bool useOldValue = changedValueState == ChangedValueState::BeforeUpdate || changedValueState == ChangedValueState::BeforeDelete;
-    const int rawValueColIx = useOldValue ? 1 : 3;
-    const int rawValueTypeColIx = useOldValue ? 2 : 4;
-
-    propValJson = Json::Value(Json::objectValue);
+    Utf8String propValECSql("SELECT ");
+    bool isFirstRow = true;
     while (BE_SQLITE_ROW == ctx.m_accessStringStmt.Step())
         {
-        if (ctx.m_accessStringStmt.IsValueNull(rawValueColIx))
-            continue;
+        if (!isFirstRow)
+            propValECSql.append(",");
 
         Utf8CP accessString = ctx.m_accessStringStmt.GetValueText(0);
-        Utf8CP valType = ctx.m_accessStringStmt.GetValueText(rawValueTypeColIx);
-
-        if (BeStringUtilities::StricmpAscii("integer", valType) == 0)
+        // access string tokens need to be escaped as they might collide with reserved words in ECSQL or SQLite
+        bvector<Utf8String> accessStringTokens;
+        BeStringUtilities::Split(accessString, ".", accessStringTokens);
+        bool isFirstToken = true;
+        for (Utf8StringCR token :  accessStringTokens)
             {
-            int64_t val = ctx.m_accessStringStmt.GetValueInt64(rawValueColIx);
-            propValJson[accessString] = val;
-            continue;
+            if (!isFirstToken)
+                propValECSql.append(".");
+
+            propValECSql.append("[").append(token).append("]");
+            isFirstToken = false;
             }
 
-        if (BeStringUtilities::StricmpAscii("real", valType) == 0)
-            {
-            double val = ctx.m_accessStringStmt.GetValueDouble(rawValueColIx);
-            propValJson[accessString] = val;
-            continue;
-            }
-
-        if (BeStringUtilities::StricmpAscii("text", valType) == 0)
-            {
-            Utf8CP val = ctx.m_accessStringStmt.GetValueText(rawValueColIx);
-            propValJson[accessString] = val;
-            continue;
-            }
-
-        if (BeStringUtilities::StricmpAscii("blob", valType) == 0)
-            {
-            int blobSize = -1;
-            void const* blob = ctx.m_accessStringStmt.GetValueBlob(rawValueColIx, &blobSize);
-            if (SUCCESS != ECN::ECJsonUtilities::BinaryToJson(propValJson[accessString], (Byte const*) blob, (size_t) blobSize))
-                {
-                IModelConsole::WriteErrorLine("Failed to convert BLOB value of property '%s.%s' to JSON.", changedInstanceLabel.c_str(), accessString);
-                return ERROR;
-                }
-
-            continue;
-            }
+        isFirstRow = false;
         }
 
     ctx.m_accessStringStmt.Reset();
     ctx.m_accessStringStmt.ClearBindings();
-    return SUCCESS;
+
+    // Avoiding parameters in the Changes function speeds up performance because ECDb can do optimizations
+    // if it knows the function args at prepare time
+    propValECSql.append(" FROM main.").append(changedInstanceClassName).append(".Changes(").append(ctx.m_summaryIdString).append(",");
+    propValECSql.append(Utf8PrintfString("%d) WHERE ECInstanceId=?", (int) changedValueState));
+    CachedECSqlStatementPtr stmt = ctx.m_changedInstanceStmtCache.GetPreparedStatement(ctx.m_ecdb, propValECSql.c_str());
+    if (stmt == nullptr || ECSqlStatus::Success != stmt->BindId(1, changedInstanceId))
+        {
+        IModelConsole::WriteErrorLine("Failed to retrieve property value changes for %s. Failed to prepare ECSQL '%s'", changedInstanceLabel.c_str(), propValECSql.c_str());
+        return ERROR;
+        }
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return SUCCESS;
+
+    JsonECSqlSelectAdapter adapter(*stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsNumber));
+    return adapter.GetRow(propValJson);
     }
 
 //---------------------------------------------------------------------------------------

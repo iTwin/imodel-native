@@ -423,6 +423,14 @@ DGNPLATFORM_EXPORT static bool Locate(IBRepEntityCR entity, DRay3dCR boresite, b
 //! @see ISubEntity::GetFaceLocation ISubEntity::GetEdgeLocation
 DGNPLATFORM_EXPORT static ISubEntityPtr ClosestSubEntity(IBRepEntityCR entity, DPoint3dCR testPt);
 
+//! Find the closest face on body to a given point.
+//! @param[in] entity The entity to find the closest sub-entity for.
+//! @param[in] testPt The space point.
+//! @param[in] preferredDir Optional direction for choosing the "best" face when closest entity is an edge or vertex.
+//! @return the face that contains the closest point.
+//! @see ISubEntity::GetFaceLocation
+DGNPLATFORM_EXPORT static ISubEntityPtr ClosestFace(IBRepEntityCR entity, DPoint3dCR testPt, DVec3dCP preferredDir = nullptr);
+
 //! Test if a point is inside or on the boundary of the given body.
 //! @param[in] entity The entity to test.
 //! @param[in] testPt The space point.

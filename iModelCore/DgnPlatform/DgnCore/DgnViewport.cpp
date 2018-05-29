@@ -1119,6 +1119,16 @@ void DgnViewport::ClearUndo()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mark.Schlosser                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::SetFadeOutActive(bool val)
+    {
+    if (val != m_fadeOutActive)
+        InvalidateRenderPlan();
+    m_fadeOutActive = val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ChangeViewController(ViewControllerR viewController)

@@ -1243,6 +1243,29 @@ static void autoHandlePropertiesToJson(JsonValueR elementJson, DgnElementCR elem
     adapter.GetRow(elementJson, true);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/18
+//---------------+---------------+---------------+---------------+---------------+------
+void DgnElement::_ToJsValue(Js::Object out, Js::Object opts) const
+    {    
+    Json::Value aOpts;
+    if (!opts.IsEmpty())
+        aOpts = opts.ToJson();
+
+    Json::Value aVal = ToJson(aOpts);
+    for (auto it = aVal.begin(); it != aVal.end(); ++it)
+        out[it.memberName()] = Js::Value::FromJson(out.Factory(), *it);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/18
+//---------------+---------------+---------------+---------------+---------------+------
+void DgnElement::_FromJsValue(Js::Object props)
+    {
+    Json::Value p = props.ToJson();
+    FromJson(p);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1870,6 +1893,7 @@ DgnElementPtr DgnElement::CopyForEdit() const
     {
     DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetUserLabel(), m_parent.m_id, m_parent.m_relClassId, GetFederationGuid());
     createParams.SetElementId(GetElementId());
+    createParams.SetIsLoadingElement(true);
 
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(createParams);
 #ifdef __clang__

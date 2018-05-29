@@ -666,12 +666,12 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     if (!hit.GetGeomDetail().IsValidSurfaceHit())
         return; // AccuSnap will flash edge/segment geometry...
 
-    if (SnapMode::Nearest != static_cast<SnapDetailCR>(hit).GetSnapMode() && ((static_cast<SnapDetailCR>(hit)).IsHot()))
-        return; // Only display if snap is nearest or NOT hot...surface normal is for hit location, not snap location...
+    if ((static_cast<SnapDetailCR>(hit)).PointWasAdjusted())
+        return; // Only display if snap point has not been adjusted...surface normal is for snap location, not adjusted location...
 
     ColorDef    color = ColorDef(~vp.GetHiliteColor().GetValue()); // Invert hilite color for good contrast...
     ColorDef    colorFill = color;
-    DPoint3d    pt = hit.GetHitPoint();
+    DPoint3d    pt = (static_cast<SnapDetailCR>(hit)).GetSnapPoint();
     double      radius = (2.5 * aperture) * vp.GetPixelSizeAtPoint(&pt);
     DVec3d      normal = hit.GetGeomDetail().GetSurfaceNormal();
     RotMatrix   rMatrix = RotMatrix::From1Vector(normal, 2, true);
