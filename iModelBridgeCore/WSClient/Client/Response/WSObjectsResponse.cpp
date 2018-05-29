@@ -2,7 +2,7 @@
 |
 |     $Source: Client/Response/WSObjectsResponse.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -14,9 +14,8 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSObjectsResponse::WSObjectsResponse() :
 m_httpBody(HttpStringBody::Create()),
-m_isModified(true),
-m_eTag(),
-m_reader(WSObjectsReaderV2::Create())
+m_reader(WSObjectsReaderV2::Create()),
+WSResponse(true)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -31,20 +30,11 @@ Utf8String eTag,
 Utf8String skipToken
 ) :
 m_httpBody(httpBody),
-m_isModified(HttpStatus::OK == status),
-m_eTag(eTag),
 m_skipToken(skipToken),
-m_reader(reader)
+m_reader(reader),
+WSResponse(status, eTag)
     {
     BeAssert(m_httpBody != nullptr);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR WSObjectsResponse::GetETag() const
-    {
-    return m_eTag;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -61,14 +51,6 @@ Utf8StringCR WSObjectsResponse::GetSkipToken() const
 bool WSObjectsResponse::IsFinal() const
     {
     return m_skipToken.empty();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool WSObjectsResponse::IsModified() const
-    {
-    return m_isModified;
     }
 
 /*--------------------------------------------------------------------------------------+

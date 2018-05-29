@@ -15,6 +15,7 @@ ClientMkiSourceDir = $(ClientSourceDirectory)Client/
 ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                        \
                     $(ClientMkiPublicApiDir)ObjectId.h                          \
                     $(ClientMkiPublicApiDir)RequestOptions.h                    \
+                    $(ClientMkiPublicApiDir)Response/WSResponse.h               \
                     $(ClientMkiPublicApiDir)Response/WSFileResponse.h           \
                     $(ClientMkiPublicApiDir)Response/WSObjectsReader.h          \
                     $(ClientMkiPublicApiDir)Response/WSObjectsReaderV2.h        \
