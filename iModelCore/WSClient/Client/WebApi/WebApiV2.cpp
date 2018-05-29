@@ -329,26 +329,23 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(HttpResponse& response, bool re
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryInfoRequest(ICancellationTokenPtr ct) const
     {
-    Utf8String url = GetUrl("/");
-    HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
+    auto repository = WSRepositoryClient::ParseRepositoryUrl(GetUrl("/"));
+    if (!repository.IsValid())
+        return CreateCompletedAsyncTask(WSRepositoryResult::Error(WSError::CreateServerNotSupportedError()));
+
+    if (GetMaxWebApiVersion() < BeVersion(2, 7))
+        return CreateCompletedAsyncTask(WSRepositoryResult::Success(repository));
+
+    WSQuery query("Policies", "PolicyAssertion");
+    query.SetTop(1); //TODO:: add aditional options to add to repository info
+    HttpRequest request = CreateQueryRequest(query);
     request.SetCancellationToken(ct);
-
-    return request.PerformAsync()->Then<WSRepositoryResult>([this] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSRepositoryResult>([=] (HttpResponse& response) mutable
         {
-        auto resolvedRepositories = ResolveGetRepositoriesResponse(httpResponse);
+        if (!response.IsSuccess() && HttpStatus::InternalServerError != response.GetHttpStatus())
+            return WSRepositoryResult::Error(response);
 
-        if (!resolvedRepositories.IsSuccess())
-            return WSRepositoryResult::Error(resolvedRepositories.GetError());
-
-        if (1 != resolvedRepositories.GetValue().size())
-            return WSRepositoryResult::Error(WSError::CreateServerNotSupportedError());
-
-        auto repository = resolvedRepositories.GetValue().front();
-        repository.SetPluginVersion(GetRepositoryPluginVersion(httpResponse, repository.GetPluginId()));
-
-        if (!repository.IsValid())
-            return WSRepositoryResult::Error(WSError::CreateServerNotSupportedError());
-
+        repository.SetPluginVersion(GetRepositoryPluginVersion(response, m_configuration->GetPersistenceProviderId()));
         return WSRepositoryResult::Success(repository);
         });
     }
