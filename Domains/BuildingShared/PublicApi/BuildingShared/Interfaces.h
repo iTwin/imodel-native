@@ -26,6 +26,9 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 #define BCSJSONACTIONPERFORMER_ACTION_UPDATE                "Update"
 #define BCSJSONACTIONPERFORMER_ACTION_DELETE                "Delete"
 
+#define BCSFLOORMANAGER_ACTION_ADDFLOOR                     "AddFloor"
+
+
 //=======================================================================================
 // @bsiclass                                     Jonas.Valiunas                 05/2018
 //=======================================================================================
