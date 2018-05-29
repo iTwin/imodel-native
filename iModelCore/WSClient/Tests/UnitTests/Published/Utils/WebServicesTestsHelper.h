@@ -114,15 +114,7 @@ Response StubHttpResponse(HttpStatus httpStatus, HttpBodyPtr body, const std::ma
 Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String>());
 Response StubHttpResponseWithUrl(HttpStatus httpStatus, Utf8StringCR url);
 
-WSInfo StubWSInfoWebApi(BeVersion webApiVersion = BeVersion(1, 3), WSInfo::Type type = WSInfo::Type::BentleyWSG);
-//! Stub WebApi 1.1 and BentleyConnect server
-Response StubWSInfoHttpResponseBentleyConnectV1();
-//! Stub WebApi 1.1 and BWSG server
-Response StubWSInfoHttpResponseWebApi11();
-//! Stub WebApi 1.2 and BWSG server
-Response StubWSInfoHttpResponseWebApi12();
-//! Stub WebApi 1.3 and BWSG server. Default for testing WSG 1.x client code
-Response StubWSInfoHttpResponseWebApi13();
+WSInfo StubWSInfoWebApi(BeVersion webApiVersion = BeVersion(2, 0), WSInfo::Type type = WSInfo::Type::BentleyWSG);
 //! Stub WebApi 2.0 and BWSG server
 Response StubWSInfoHttpResponseWebApi20();
 //! Stub WebApi 2.1 and BWSG server
@@ -143,12 +135,10 @@ Response StubWSInfoHttpResponseWebApi(BeVersion webApiVersion);
 void WriteStringToHttpBody(Utf8StringCR string, HttpBodyPtr body);
 Utf8String ReadHttpBody(HttpBodyPtr body);
 
-WSInfo StubWSInfo(BeVersion version = BeVersion(1, 2), WSInfo::Type type = WSInfo::Type::BentleyWSG);
+WSInfo StubWSInfo(BeVersion version = BeVersion(2, 0), WSInfo::Type type = WSInfo::Type::BentleyWSG);
 WSQuery StubWSQuery();
 
 Response StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId = "", Utf8StringCR message = "", Utf8StringCR description = "");
-Response StubWSInfoHttpResponseV1();
-Response StubWSInfoHttpResponseV1BentleyConnect();
 Response StubWSInfoHttpResponseV2();
 Response StubWSInfoHttpResponse(BeVersion serverVersion);
 

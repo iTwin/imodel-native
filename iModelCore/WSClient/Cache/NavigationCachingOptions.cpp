@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/NavigationCachingOptions.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -43,7 +43,7 @@ bool NavigationCachingOptions::CanObjectHaveChildren(ObjectIdCR objectId) const
         {
         return true;
         }
-    return true; // TODO: false if NavNode.hasChildren == false or if WebApi2 and not NavNode. Always true for WebApi1
+    return true; // TODO: false if NavNode.hasChildren == false or if WebApi2 and not NavNode.
     }
 
 /*--------------------------------------------------------------------------------------+

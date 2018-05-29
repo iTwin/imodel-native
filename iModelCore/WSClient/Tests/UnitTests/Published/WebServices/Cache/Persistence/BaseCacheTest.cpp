@@ -253,6 +253,20 @@ ECSchemaPtr BaseCacheTest::GetTestSchema2()
     return schema;
     }
 
+ECSchemaPtr BaseCacheTest::GetNavigationSchema()
+    {
+    Utf8String schemaXml =
+        R"xml(<ECSchema schemaName="Navigation" nameSpacePrefix="TS2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="NavNode" >
+                <ECProperty propertyName="TestProperty" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *ECSchemaReadContext::CreateContext());
+    return schema;
+    }
+
 BeFileName BaseCacheTest::GetTestSchemaPath()
     {
     BeFileName testSchemaPath(GetTestsTempDir().AppendToPath(L"TestSchema.xml"));

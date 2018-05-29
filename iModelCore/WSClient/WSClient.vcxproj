@@ -230,7 +230,6 @@
     <ClCompile Include="Connect\Passport.cpp" />
     <ClCompile Include="Client\Response\WSFileResponse.cpp" />
     <ClCompile Include="Client\Response\WSObjectsReader.cpp" />
-    <ClCompile Include="Client\Response\WSObjectsReaderV1.cpp" />
     <ClCompile Include="Client\Response\WSObjectsReaderV2.cpp" />
     <ClCompile Include="Client\Response\WSObjectsResponse.cpp" />
     <ClCompile Include="Client\ServerInfoProvider.cpp" />
@@ -238,8 +237,6 @@
     <ClCompile Include="Licensing\UsageTracking.cpp" />
     <ClCompile Include="Client\Utils.cpp" />
     <ClCompile Include="Client\WebApi\WebApi.cpp" />
-    <ClCompile Include="Client\WebApi\WebApiV1.cpp" />
-    <ClCompile Include="Client\WebApi\WebApiV1BentleyConnect.cpp" />
     <ClCompile Include="Client\WebApi\WebApiV2.cpp" />
     <ClCompile Include="Client\WSClient.cpp" />
     <ClCompile Include="Client\WSError.cpp" />
@@ -461,8 +458,6 @@
     <ClInclude Include="Client\ServerInfoProvider.h" />
     <ClInclude Include="Client\Utils.h" />
     <ClInclude Include="Client\WebApi\WebApi.h" />
-    <ClInclude Include="Client\WebApi\WebApiV1.h" />
-    <ClInclude Include="Client\WebApi\WebApiV1BentleyConnect.h" />
     <ClInclude Include="Client\WebApi\WebApiV2.h" />
     <ClInclude Include="Client\WSError.xliff.h" />
     <ClInclude Include="Client\ChunkedUploadRequest.h" />
@@ -494,7 +489,6 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\Passport.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSFileResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReader.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReaderV1.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReaderV2.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Configuration\UrlProvider.h" />
