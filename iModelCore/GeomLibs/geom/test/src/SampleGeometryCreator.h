@@ -11,14 +11,14 @@
 struct SampleGeometryCreator
 {
 template <typename T> 
-static void StrokeUnitCircle (bvector<T> &points, size_t numPoints)
+static void StrokeUnitCircle (bvector<T> &points, size_t numPoints, double radius = 1.0)
     {
     double dTheta;
     DoubleOps::SafeDivide (dTheta, Angle::TwoPi (), (double)(numPoints - 1), 0.0);
     for (size_t i = 0; i < numPoints; i++)
         {
         double theta = i * dTheta;
-        points.push_back (T::From (cos(theta), sin(theta)));
+        points.push_back (T::From (radius * cos(theta), radius * sin(theta)));
         }
     // enforce exact closure
     points.back () = points.front ();
