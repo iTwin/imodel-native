@@ -1098,15 +1098,15 @@ int                 numPts
 * @param iMax IN index of point at maximal radius, i.e. guaranteed to be on hull.
 * @bsihdr                                       EarlinLutz 08/02
 +---------------+---------------+---------------+---------------+------*/
-static bool    bsiDPoint3dArray_convexHullXY_go
-
-(
-DPoint3dP pOutBuffer,
-int         *pNumOut,
-DPoint4dP pXYZA,
-int         numIn,
-int         iMax
-);
+//static bool    bsiDPoint3dArray_convexHullXY_go
+//
+//(
+//DPoint3dP pOutBuffer,
+//int         *pNumOut,
+//DPoint4dP pXYZA,
+//int         numIn,
+//int         iMax
+//);
 
 /*-----------------------------------------------------------------*//**
 * @description Compute a convex hull of a point array, ignoring z-coordinates.

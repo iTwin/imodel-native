@@ -83,6 +83,9 @@ bool            openAll                /* => forces opening */
                     dot, dist0, dist1;
     DPoint3d        minPt;
     DVec3d lastTan;
+    bool sameNum = true;
+    bool sameKnots = true;
+    bool sameMult = true;
 
     if (numCurves < 2)
         {
@@ -218,9 +221,6 @@ bool            openAll                /* => forces opening */
 
     /* find out if they all have the same number of distinct knots and
        if they are the same distinct knots */
-    bool sameNum = true;
-    bool sameKnots = true;
-    bool sameMult = true;
     for (size_t i=1; i < numCurves; i++)
         {
         if (!sameNum || knotData[i-1].GetNumActiveKnots () != knotData[i].GetNumActiveKnots ())

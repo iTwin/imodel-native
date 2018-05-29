@@ -864,7 +864,7 @@ public:
     //! Stroke length is measured along the stroke, NOT along the arc.
     //! The first point will be the start point of the curve.
     //! The last point is usually NOT the end point of the curve.
-    GEOMDLLIMPEXP bool MSBsplineCurve::StrokeWithFixedChordLength
+    GEOMDLLIMPEXP bool StrokeWithFixedChordLength
     (
     bvector<DPoint3d> &points,  //!< [out] stroke points
     bvector<double> &params,    //!< [out] fraction parameters for the strokes
