@@ -332,6 +332,7 @@
     <ClInclude Include="iModelHubClient\Utils.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\SyncNotifier.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\RequestOptions.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSJob.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectionClientInterface.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectSignInManager.h" />
