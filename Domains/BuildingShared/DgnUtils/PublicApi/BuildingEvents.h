@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-//#include <ConstraintSystem/Domain/ConstraintModelMacros.h>
 #include <DgnClientFx/Messages.h>
 #include "Interfaces/IToolSettingsChangedHandler.h"
 #include "Interfaces/ICreatePressedHandler.h"

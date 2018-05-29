@@ -13,7 +13,6 @@
 #include <DgnView/DgnTool.h>
 #include <dgnPlatform/ViewController.h>
 #include <DgnView/AccuSnap.h>
-//#include <ConstraintSystem/Domain/ConstraintModelMacros.h>
 //#include "PublicApi\GeometryUtils.h"
 #include <DgnPlatform/LineStyle.h>
 #include <RoadRailPhysical\RoadRailPhysicalApi.h>
