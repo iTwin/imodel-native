@@ -10,6 +10,7 @@
 #include <Bentley/bmap.h>
 #include <queue>
 #include <JS/Value.h>
+#include <stdlib.h>
 
 BEGIN_BENTLEY_NAMESPACE
 namespace Js 
@@ -693,7 +694,7 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
             const int totalItemToRemove = std::max(maxUnusedItems - unusedItems, static_cast<int>(maxUnusedItems* (100 / extraTrim)));
             while (q.size() > totalItemToRemove)
                 {
-                Free(q.front());
+                FreeHandle(q.front());
                 q.pop();
                 }
 
@@ -783,12 +784,12 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
             {
             for (auto itA : m_cacheUsed)
                 for (auto itV : itA.second)
-                    Free(itV);
+                    FreeHandle(itV);
 
             for (auto itA : m_cacheUnused)
                 while (!itA.second.empty())
                     {
-                    Free(itA.second.front());
+                    FreeHandle(itA.second.front());
                     itA.second.pop();
                     }
 
@@ -796,7 +797,7 @@ struct GCValueFactoryImpl : public RefCounted<IFactory>
             m_cacheUnused.clear();
             }
 
-        void Free(ValueHandle& v)
+        void FreeHandle(ValueHandle& v)
             {
             if (v->m_type == ValueType::String)
                 delete v->m_val.str;
