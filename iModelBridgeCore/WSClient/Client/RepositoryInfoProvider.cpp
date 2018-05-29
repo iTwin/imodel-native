@@ -84,11 +84,11 @@ void RepositoryInfoProvider::UpdateInfo(WSRepositoryCR info)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSRepositoryResult> RepositoryInfoProvider::GetRepository(ICancellationTokenPtr ct) const
+AsyncTaskPtr<WSRepositoryResult> RepositoryInfoProvider::GetRepositoryInfo(ICancellationTokenPtr ct) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSRepositoryResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendGetRepositoryRequest(ct);
+        return webApi->SendGetRepositoryInfoRequest(ct);
         }, ct);
     }
 
@@ -103,7 +103,7 @@ AsyncTaskPtr<WSRepositoryResult> RepositoryInfoProvider::GetInfo(ICancellationTo
 
     return m_getInfoExecutor.GetTask([=]
         {
-        return GetRepository(ct)->Then<WSRepositoryResult>([=] (WSRepositoryResult result)
+        return GetRepositoryInfo(ct)->Then<WSRepositoryResult>([=] (WSRepositoryResult result)
             {
             BeCriticalSectionHolder lock(m_mutex);
 

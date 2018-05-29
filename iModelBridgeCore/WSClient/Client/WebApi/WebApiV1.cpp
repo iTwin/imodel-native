@@ -413,7 +413,7 @@ WSFileResult WebApiV1::ResolveFileResponse(HttpResponse& response, BeFileName fi
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSRepositoryResult> WebApiV1::SendGetRepositoryRequest(ICancellationTokenPtr ct) const
+AsyncTaskPtr<WSRepositoryResult> WebApiV1::SendGetRepositoryInfoRequest(ICancellationTokenPtr ct) const
     {
     WSRepository repository;
     repository.SetServerUrl(m_configuration->GetServerUrl());

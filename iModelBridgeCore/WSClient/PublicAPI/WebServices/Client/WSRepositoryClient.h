@@ -634,4 +634,24 @@ struct WSRepositoryClient : public IWSRepositoryClient
             ) const override;
     };
 
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     julius.cepukenas    05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct WSRepositoryClient::Configuration
+    {
+    public:
+        friend WSRepositoryClient;
+    
+    private:
+        ClientConnection& m_connection;
+
+    private:
+        Configuration& operator= (const Configuration&) = delete;
+        Configuration(ClientConnection& connection) : m_connection(connection) {};
+
+    public:
+        WSCLIENT_EXPORT void SetPersistenceProviderId(Utf8StringCR id);
+        WSCLIENT_EXPORT Utf8StringCR GetPersistenceProviderId() const;
+    };
+
 END_BENTLEY_WEBSERVICES_NAMESPACE
