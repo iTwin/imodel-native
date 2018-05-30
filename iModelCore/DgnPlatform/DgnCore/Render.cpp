@@ -279,6 +279,7 @@ Render::Plan::Plan(DgnViewportCR vp)
     m_aaLines   = vp.WantAntiAliasLines();
     m_aaText    = vp.WantAntiAliasText();
     m_hiliteSettings = vp.GetHilite();
+    m_fadeOutActive = vp.IsFadeOutActive(); 
 
     auto& controller = vp.GetViewControllerR();
     m_activeVolume = controller.GetActiveVolume();

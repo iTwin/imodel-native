@@ -341,6 +341,8 @@ public:
     };
 
     void Count(Counts& counts) const;
+
+    virtual bool _ToJson(Json::Value&) const { return false; }
 };
 
 /*=================================================================================**//**
@@ -393,7 +395,7 @@ protected:
     Root(DgnDbR, DgnModelId, bool is3d, TransformCR, Utf8CP rootResource, Dgn::Render::SystemP);
 public:
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeDuration partialTimeout);
-    void RequestTiles(MissingNodesCR, BeDuration partialTimeout);
+    DGNPLATFORM_EXPORT void RequestTiles(MissingNodesCR, BeDuration partialTimeout);
 
     //! Select appropriate tiles from available set based on context. If any needed tiles are not available, add them to the context's set of tile requests.
     bvector<TileCPtr> SelectTiles(SceneContextR context);
@@ -479,6 +481,10 @@ public:
 
     bool Is3d() const { return m_is3d; }
     bool Is2d() const { return !Is3d(); }
+
+    virtual bool _ToJson(Json::Value&) const { return false; }
+    virtual TilePtr _FindTileById(Utf8CP id) { return nullptr; }
+    ByteStream GetTileDataFromCache(Utf8StringCR cacheKey) const;
 };
 
 //=======================================================================================
@@ -634,7 +640,7 @@ private:
 
     Set m_set;
 public:
-    void Insert(TileCR tile, bool prioritize);
+    DGNPLATFORM_EXPORT void Insert(TileCR tile, bool prioritize);
     bool Contains(TileCR tile) const;
 
     bool empty() const { return m_set.empty(); }
@@ -833,6 +839,9 @@ struct TileId
     TileId GetRelativeId(TileId parentId) const;
 
     static TileId RootId() { return TileId(0,0,0,0); }
+
+    bool operator==(TileId const& other) const { return m_level == other.m_level && m_i == other.m_i && m_j == other.m_j && m_k == other.m_k; }
+    bool IsRoot() const { return *this == RootId(); }
 };
 
 //=======================================================================================
@@ -877,7 +886,7 @@ public:
     Render::GraphicPtr _GetGraphic() const override { return m_graphic; }
     bool IsLeaf() const { return m_isLeaf; }
 
-    void SetIsLeaf() { m_isLeaf = true; /*m_children.clear();*/ }
+    void SetIsLeaf(bool isLeaf = true) { m_isLeaf = isLeaf; }
     void SetGraphic(Render::GraphicR graphic) { m_graphic = &graphic; }
 };
 

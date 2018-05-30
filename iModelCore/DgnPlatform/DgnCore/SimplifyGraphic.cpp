@@ -605,8 +605,13 @@ void SimplifyGraphic::ClipAndProcessCurveVector(CurveVectorCR geom, bool filled)
     {
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
+#if defined (NOT_NOW_TOPOLOGYID)
+// No point doing this now as it's not being used...
+//   Also, when we switch to doing locate from depth buffer, PickContext and this code won't be involved so
+//   we'll need to provide another method for getting the CurveTopologyId from an edge (ex. SnapGeometryHelper)...
     if (m_currGeomEntryId.IsValid())
         CurveTopologyId::AddCurveVectorIds(geom, CurvePrimitiveId::Type::CurveVector, CurveTopologyId::FromCurveVector(), m_currGeomEntryId.GetIndex(), m_currGeomEntryId.GetPartIndex());
+#endif
 
     // Give output a chance to handle geometry directly...
     if (doClipping)
@@ -1046,11 +1051,16 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
                 int segmentVertexId = (abs(thisIndex) - 1);
                 ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
 
+#if defined (NOT_NOW_TOPOLOGYID)
+// No point doing this now as it's not being used...
+//   Also, when we switch to doing locate from depth buffer, PickContext and this code won't be involved so
+//   we'll need to provide another method for getting the CurveTopologyId from an edge (ex. SnapGeometryHelper)...
                 if (m_currGeomEntryId.IsValid())
                     {
                     CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), m_currGeomEntryId.GetIndex(), m_currGeomEntryId.GetPartIndex());
                     curve->SetId(newId.get());
                     }
+#endif
 
                 CurveVectorPtr curvePtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve);
 
@@ -1089,11 +1099,16 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
                 int segmentVertexId = (abs(firstIndex) - 1);
                 ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
 
+#if defined (NOT_NOW_TOPOLOGYID)
+// No point doing this now as it's not being used...
+//   Also, when we switch to doing locate from depth buffer, PickContext and this code won't be involved so
+//   we'll need to provide another method for getting the CurveTopologyId from an edge (ex. SnapGeometryHelper)...
                 if (m_currGeomEntryId.IsValid())
                     {
                     CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type::PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type::PolyfaceEdge, closeVertexId, segmentVertexId), m_currGeomEntryId.GetIndex(), m_currGeomEntryId.GetPartIndex());
                     curve->SetId(newId.get());
                     }
+#endif
 
                 CurveVectorPtr curvePtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve);
 
