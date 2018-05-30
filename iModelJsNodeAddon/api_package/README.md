@@ -93,19 +93,8 @@ Continuing this example, suppose your imodeljs git repository is here:
 \imjs\imodeljs-core
 ```
 
-On Windows you would install your local build of the native platform by using the `installnativeplatform.bat` file in the root directory of imodeljs-core
-
-On Linux:
-
-```
-export ImodelJsRoot=<The parent directory of imodeljs-core>
-cd $ImodelJsRoot/imodeljs-core/source/backend
-cp $OutRoot/LinuxX64/packages/imodeljs-native-platform-api/* $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley/imodeljs-native-platform-api
-cp -r $OutRoot/LinuxX64/packages/imodeljs-n_8-linux-x64      $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley
-cp -r $OutRoot/LinuxX64/packages/imodeljs-n_8-linux-x64      $ImodelJsRoot/imodeljs-core/tools/native-platform-installer/node_modules/@bentley
-cd $ImodelJsRoot/imodeljs-core
-
-```
+On Windows you would install your local build of the native platform by using the `installnativeplatform.bat` file in the root directory of imodeljs-core.
+There are similar .sh scripts for Linux and MacOS.
 
 Note: to get back to a clean install, do this:
 ```
