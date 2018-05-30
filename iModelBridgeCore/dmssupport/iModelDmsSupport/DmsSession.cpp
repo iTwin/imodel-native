@@ -10,11 +10,11 @@
 #include <ProjectWise_InternalSDK/Include/aaodsapi.h>
 
 USING_NAMESPACE_BENTLEY_DGN
-static const Utf8String s_PWSessionType("PWDI");
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            DmsSession::Initialize(BeFileNameCR pwBinaryPath)
+bool    DmsSession::Initialize(BeFileNameCR pwBinaryPath)
     {
     if (NULL != m_activeDataSource)
         return true;
@@ -76,7 +76,7 @@ bool            DmsSession::UnInitialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DmsSession::DmsSession(Utf8StringCR userName, Utf8StringCR password, Utf8StringCR dataSource, SessionType sessionType)
+DmsSession::DmsSession(Utf8StringCR userName, Utf8StringCR password, Utf8StringCR dataSource, iModelDmsSupport::SessionType sessionType)
     :m_userName(userName), m_activeDataSource(NULL), m_password(password), m_dataSource(dataSource),m_sessionType(sessionType)
     {
 
@@ -112,7 +112,7 @@ BeFileNameCR    DmsSession::GetApplicationResourcePath() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DmsSession::SessionType     DmsSession::GetSessionType() const
+iModelDmsSupport::SessionType     DmsSession::GetSessionType() const
     {
     return m_sessionType;
     }

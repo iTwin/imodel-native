@@ -12,12 +12,6 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct DmsSession
     {
-    enum SessionType
-        {
-            PWDI = 0,
-            PWShare = 1
-        } ;
-
     private:
         Utf8String  m_userName;
         Utf8String  m_password;
@@ -27,23 +21,24 @@ struct DmsSession
         void*  m_activeDataSource;
         //!Search path to find dependant application libraries and symbols
         void SetPWBinaryPath(BeFileNameCR pwBinaryPath);
-        SessionType m_sessionType;
+        iModelDmsSupport::SessionType m_sessionType;
     public:
     
-        IMODEL_DMSSUPPORT_EXPORT DmsSession(Utf8StringCR userName, Utf8StringCR password, Utf8StringCR dataSource, SessionType sessionType);
+        DmsSession(Utf8StringCR userName, Utf8StringCR password, Utf8StringCR dataSource, iModelDmsSupport::SessionType sessionType);
 
+        static Utf8StringCR GetDataSourceFromMoniker(Utf8StringCR moniker);
         //!Return true if the session was succesfully established.
-        IMODEL_DMSSUPPORT_EXPORT bool Initialize(BeFileNameCR pwBinaryPath);
+        bool Initialize(BeFileNameCR pwBinaryPath);
 
         //!Return true if the session was successfully shutdown.
-        IMODEL_DMSSUPPORT_EXPORT bool UnInitialize();
+        bool UnInitialize();
 
         //!Search path to find dependant application libraries and symbols
-        IMODEL_DMSSUPPORT_EXPORT void SetApplicationResourcePath(BeFileNameCR applicationResourcePath);
+        void SetApplicationResourcePath(BeFileNameCR applicationResourcePath);
 
-        IMODEL_DMSSUPPORT_EXPORT BeFileNameCR GetApplicationResourcePath() const;
+        BeFileNameCR GetApplicationResourcePath() const;
 
-        IMODEL_DMSSUPPORT_EXPORT SessionType GetSessionType() const;
+        iModelDmsSupport::SessionType GetSessionType() const;
     };
 
 END_BENTLEY_DGN_NAMESPACE

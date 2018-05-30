@@ -15,39 +15,51 @@ USING_NAMESPACE_BENTLEY_DGN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PWWorkspaceHelper::Initialize()
+bool   PWWorkspaceHelper::_Initialize()
     {
-    return workspace_Initialize() ? true : false;
-    }
+    if (m_initDone)
+        return true;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            PWWorkspaceHelper::UnInitialize()
-    {
-    workspace_UnInitialize();
-    }
+    //TODO: Lookup the projectwise binray or ship it.
+    if (SUCCESS != m_session.Initialize(BeFileName(L"C:\\Program Files\\Bentley\\ProjectWise\\bin")))
+        return false;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            PWWorkspaceHelper::FetchWorkspace(DmsSession& session, int folderId, int documentId, BeFileNameCR destination)
-    {
-    PWWorkspaceHelper helper;
-    if (!helper.Initialize())
-        {
+    BOOL status =  workspace_Initialize();
+    if (status)
+        m_initDone = true;
+    else
         LOG.errorv("Problems initializing workspace support.");
-        }
+    return m_initDone ? true : false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool   PWWorkspaceHelper::_UnInitialize()
+    {
+    if (m_initDone)
+        workspace_UnInitialize();
+    m_initDone = false;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   PWWorkspaceHelper::FetchWorkspace( int folderId, int documentId, BeFileNameCR destination)
+    {
+    _Initialize();
+    
     int statusCodeBefore = aaApi_GetLastErrorId();
     LOG.tracev("Generating workspace configuration file. %d", statusCodeBefore);
-    bool status = true;
+    StatusInt status = SUCCESS;
     wchar_t workspaceFilePath[1024] = {0};
     if (!workspace_GenerateMSConfigurationFile3(0,
                                                 folderId,
                                                 documentId,
                                                 destination.c_str(),//workspaceDir,
                                                 NULL, // additionalCfg
-                                                session.GetApplicationResourcePath().c_str(), // path to MSTN
+                                                m_session.GetApplicationResourcePath().c_str(), // path to MSTN
                                                 NULL, // defaultCfgFile
                                                 NULL, //commandLineArgs,
                                                 NULL, // fnCallback
@@ -59,10 +71,47 @@ bool            PWWorkspaceHelper::FetchWorkspace(DmsSession& session, int folde
         LOG.errorv("Unable to fetch workspace for file. Status Code: %d", statusCodeAfter);
         LOG.errorv(aaApi_GetLastErrorMessage());
         LOG.errorv(aaApi_GetLastErrorDetail());
-        
-        status = false;
+        status = statusCodeAfter;
         }
+
     LOG.tracev("Finished workspace configuration file: %S", workspaceFilePath);
-    helper.UnInitialize();
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PWWorkspaceHelper::PWWorkspaceHelper(DmsSession& session)
+    :m_initDone(false),m_session(session)
+    {
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PWWorkspaceHelper::~PWWorkspaceHelper()
+    {
+    _UnInitialize();
+    m_session.UnInitialize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   PWWorkspaceHelper::_FetchWorkspace(Utf8StringCR pwMoniker, BeFileNameCR workspaceDir)
+    {
+    int folderId, documentId;
+    if (SUCCESS != GetFolderIdFromMoniker(folderId, documentId, pwMoniker))
+        return ERROR;
+
+    return FetchWorkspace(folderId, documentId, workspaceDir);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       PWWorkspaceHelper::GetFolderIdFromMoniker(int& folderId, int& documentId, Utf8StringCR pwMoniker)
+    {
+    return SUCCESS;
     }
