@@ -58,7 +58,7 @@
     </Product>
 
 
-    <Part Name="RunAecUnitsTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=AecUnitsTests\Assemblies\  -dGTEST_NAME=AecUnitsTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="RunAecUnitsTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=AecUnitsTests\Assemblies\  -dGTEST_NAME=AecUnitsTests" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubProduct ProductName="AecUnitsTests" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/AecUnitsTests.log</Files>
