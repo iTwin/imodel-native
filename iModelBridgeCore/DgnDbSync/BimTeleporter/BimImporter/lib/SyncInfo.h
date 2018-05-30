@@ -14,7 +14,7 @@
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
 #define SYNCINFO_ATTACH_ALIAS "SYNCINFO"
-#define SYNCINFO_TABLE(name)  "0601sync_" name
+#define SYNCINFO_TABLE(name)  "G0601sync_" name
 #define SYNCINFO_ATTACH(name) SYNCINFO_ATTACH_ALIAS "." name
 
 #define SYNC_TABLE_File         SYNCINFO_TABLE("File")
