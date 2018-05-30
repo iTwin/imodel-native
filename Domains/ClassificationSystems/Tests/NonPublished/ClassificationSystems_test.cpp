@@ -5,10 +5,12 @@
 #include <DgnPlatform/DgnPlatformAPI.h>
 #include "ClassificationSystemsTestsBase.h"
 #include <DgnClientFx/DgnClientApp.h>
+#include <BuildingShared/BuildingSharedApi.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_CLASSIFICATIONSYSTEMS
+USING_NAMESPACE_BUILDING_SHARED
 
 
 //--------------------------------------------------------------------------------------
@@ -44,6 +46,7 @@ TEST_F(ClassificationSystemsTestFixture, StandardInsertion)
         Utf8CP name = system->GetName();
         ASSERT_TRUE(0 == strcmp(name, expectedSystemName)) << "Failed to get name from Classification System";
 
+        BuildingLocks_LockElementForOperation(*system.get(), BeSQLite::DbOpcode::Insert, "Insert for ClassificationSystems_test");
         system->Insert(&stat);
         ASSERT_EQ(DgnDbStatus::Success, stat) << "System failed to be inserted to Db";
 
@@ -64,6 +67,7 @@ TEST_F(ClassificationSystemsTestFixture, StandardInsertion)
         code = classification->GetCode();
         ASSERT_TRUE(code.GetValue().Equals(expectedClassificationCode)) << "Code Value was set wrong";
 
+        BuildingLocks_LockElementForOperation(*classification.get(), BeSQLite::DbOpcode::Insert, "Insert for ClassificationSystems_test");
         classification->Insert(&stat);
         ASSERT_EQ(DgnDbStatus::Success, stat) << "Group failed to be inserted to Db";
         //CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationPtr Create(ClassificationSystemCR system, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes);

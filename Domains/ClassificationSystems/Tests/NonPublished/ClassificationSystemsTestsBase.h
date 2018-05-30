@@ -3,11 +3,40 @@
 #include <DgnPlatform\DgnPlatformApi.h>
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 #include <DgnClientFx/TestHelpers/DgnClientFxTests.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
+#include <DgnPlatform/UnitTests/RepositoryManagerUtil.h>
 
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
-struct ClassificationSystemsTestsBase : BentleyApi::DgnClientFx::TestHelpers::DgnClientFxTests
+
+struct MyTestApp : DgnClientFx::DgnClientApp, Dgn::DgnPlatformLib::Host::RepositoryAdmin
+    {
+    protected:
+        mutable Dgn::TestRepositoryManager   m_server;
+        Dgn::IRepositoryManagerP _GetRepositoryManager(Dgn::DgnDbR) const override { return &m_server; }
+
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Martynas.Saulius   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+struct RepositoryManagerTest : public BentleyApi::DgnClientFx::TestHelpers::DgnClientFxTests
+    {
+    public:
+        typedef Dgn::IRepositoryManager::Request Request;
+        typedef Dgn::IRepositoryManager::Response Response;
+        typedef Dgn::IBriefcaseManager::ResponseOptions ResponseOptions;
+
+
+        DgnClientFx::DgnClientApp* _CreateApp() override { return new MyTestApp(); }
+
+        void ClearRevisions(Dgn::DgnDbR db);
+
+    };
+
+
+struct ClassificationSystemsTestsBase : RepositoryManagerTest
     {
     private:
         static BeFileName GetSeedProjectPath();
