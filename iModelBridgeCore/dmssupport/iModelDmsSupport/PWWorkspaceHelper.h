@@ -19,14 +19,14 @@ struct PWWorkspaceHelper : public IDmsSupport
         DmsSession  m_session;
         virtual bool _Initialize() override;
         virtual bool _UnInitialize() override;
-        virtual bool _InitializeSession(Utf8StringCR pwMoniker) override;
+        virtual bool _InitializeSession(WStringCR pwMoniker) override;
         virtual bool _UnInitializeSession() override;
     public:
         PWWorkspaceHelper(DmsSession& session);
         ~PWWorkspaceHelper();
         StatusInt FetchWorkspace(int folderId, int documentId, BeFileNameCR destination);
-        StatusInt GetFolderIdFromMoniker(int& folderId, int& documentId, Utf8StringCR pwMoniker);
-        virtual StatusInt _FetchWorkspace(Utf8StringCR pWMoniker, BeFileNameCR workspaceDir) override;
+        StatusInt GetFolderIdFromMoniker(int& folderId, int& documentId, WStringCR pwMoniker);
+        virtual StatusInt _FetchWorkspace(WStringCR pWMoniker, BeFileNameCR workspaceDir) override;
     };
 
 END_BENTLEY_DGN_NAMESPACE

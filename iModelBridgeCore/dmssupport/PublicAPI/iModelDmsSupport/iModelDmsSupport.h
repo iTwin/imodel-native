@@ -30,11 +30,11 @@ struct DmsSession;
 
 struct IDmsSupport
     {
-    virtual bool _InitializeSession(Utf8StringCR pwMoniker) = 0;
+    virtual bool _InitializeSession(WStringCR pwMoniker) = 0;
     virtual bool _UnInitializeSession() = 0;
     virtual bool _Initialize() = 0;
     virtual bool _UnInitialize() = 0;
-    virtual StatusInt _FetchWorkspace(Utf8StringCR pWMoniker, BeFileNameCR workspaceDir) = 0;
+    virtual StatusInt _FetchWorkspace(WStringCR pWMoniker, BeFileNameCR workspaceDir) = 0;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -49,13 +49,13 @@ struct iModelDmsSupport
         };
 
     IMODEL_DMSSUPPORT_EXPORT static IDmsSupport* GetInstance(SessionType sessionType, Utf8StringCR userName, Utf8StringCR password);
-
     };
+
 END_BENTLEY_DGN_NAMESPACE
 
 extern "C"
     {
-    IMODEL_DMSSUPPORT_EXPORT BentleyApi::Dgn::IDmsSupport*   iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password);
+    typedef BentleyApi::Dgn::IDmsSupport* T_iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password);
     }
 
 

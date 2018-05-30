@@ -94,7 +94,7 @@ PWWorkspaceHelper::~PWWorkspaceHelper()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PWWorkspaceHelper::_FetchWorkspace(Utf8StringCR pwMoniker, BeFileNameCR workspaceDir)
+StatusInt   PWWorkspaceHelper::_FetchWorkspace(WStringCR pwMoniker, BeFileNameCR workspaceDir)
     {
     _Initialize();
 
@@ -108,12 +108,11 @@ StatusInt   PWWorkspaceHelper::_FetchWorkspace(Utf8StringCR pwMoniker, BeFileNam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       PWWorkspaceHelper::GetFolderIdFromMoniker(int& folderId, int& documentId, Utf8StringCR pwMoniker)
+StatusInt       PWWorkspaceHelper::GetFolderIdFromMoniker(int& folderId, int& documentId, WStringCR pwMoniker)
     {
     HMONIKER moniker;
     DWORD monikerFlags = AAMONIKERF_USE_EXISTING_LOGIN| AAMONIKERF_RESOURCE_LOCATION;
-    WString wideMoniker(pwMoniker.c_str(), true);
-    LPCWSTR monikerArray = &wideMoniker[0];
+    LPCWSTR monikerArray = &pwMoniker[0];
     if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, monikerFlags))
         return ERROR;
 
@@ -142,11 +141,10 @@ StatusInt       PWWorkspaceHelper::GetFolderIdFromMoniker(int& folderId, int& do
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PWWorkspaceHelper::_InitializeSession(Utf8StringCR pwMoniker)
+bool            PWWorkspaceHelper::_InitializeSession(WStringCR pwMoniker)
     {
     HMONIKER moniker;
-    WString wideMoniker(pwMoniker.c_str(), true);
-    LPCWSTR monikerArray = &wideMoniker[0];
+    LPCWSTR monikerArray = &pwMoniker[0];
     if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, AAMONIKERF_DONT_VALIDATE))
         return false;
     
