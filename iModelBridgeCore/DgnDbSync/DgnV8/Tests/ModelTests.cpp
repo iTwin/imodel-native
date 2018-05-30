@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/ModelTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -214,8 +214,8 @@ TEST_F(ModelTests, DrawingModelUnicodeName)
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_TRUE(db->IsDbOpen());
 
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -265,8 +265,8 @@ TEST_F(ModelTests, Design2D)
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_TRUE(db->IsDbOpen());
 
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -324,8 +324,8 @@ TEST_F(ModelTests, Design2dAsDefault)
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_TRUE(db->IsDbOpen());
 
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -422,8 +422,8 @@ TEST_F(ModelTests, DrawingModel2D)
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_TRUE(db->IsDbOpen());
 
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
 
     //Drawing_Model_not2D
     auto jobSubject = GetJobHierarchySubject(*db);
@@ -452,8 +452,8 @@ TEST_F(ModelTests, DrawingModel_Only2d)
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_TRUE(db->IsDbOpen());
 
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
 
     auto jobSubject = GetJobHierarchySubject(*db);
     ASSERT_TRUE(jobSubject.IsValid());
@@ -491,8 +491,8 @@ TEST_F(ModelTests, DrawingModelAsDefault)
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_TRUE(db->IsDbOpen());
 
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -515,8 +515,8 @@ TEST_F(ModelTests, SheetModel2D)
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_TRUE(db->IsDbOpen());
 
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Sheet)));
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_SheetModel)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Sheet)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_SheetModel)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -574,8 +574,8 @@ TEST_F(ModelTests, SheetModelAsDefault)
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
     ASSERT_TRUE(db->IsDbOpen());
 
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Sheet)));
-    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_SheetModel)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Sheet)));
+    ASSERT_EQ(1, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_SheetModel)));
     }
 
 /*---------------------------------------------------------------------------------**//**
