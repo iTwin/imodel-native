@@ -34,6 +34,7 @@ struct ElementAspectTests1 : public DgnDbTestFixture
 
 public:
     void LogTiming (StopWatch& timer, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialInstanceCount, int opCount) const;
+    void LogTiming (double timer, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialInstanceCount, int opCount) const;
 };
 
 /*=================================================================================**//**
@@ -50,6 +51,22 @@ void ElementAspectTests1::LogTiming (StopWatch& timer, Utf8CP description, Utf8C
     int pos = desc.find ("API");
     Utf8String opType = desc.substr (pos + 4);
     LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), opCount, totalDescription.c_str (), totalDescription.c_str (), opType.ToUpper (), initialInstanceCount);
+}
+
+/*=================================================================================**//**
+* @bsiclass                                                     Taslim.Murad      05/18
++===============+===============+===============+===============+===============+======*/
+void ElementAspectTests1::LogTiming (double timer, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialInstanceCount, int opCount) const
+{
+    Utf8CP noClassIdFilterStr = omitClassIdFilter ? "w/o ECClassId filter " : " ";
+
+    Utf8String totalDescription;
+    totalDescription.Sprintf ("%s %s '%s' [Initial count: %d]", description, noClassIdFilterStr, testClassName, initialInstanceCount);
+    Utf8String desc;
+    desc.Sprintf ("%s", description);
+    int pos = desc.find ("API");
+    Utf8String opType = desc.substr (pos + 4);
+    LOGTODB (TEST_DETAILS, timer, opCount, totalDescription.c_str (), totalDescription.c_str (), opType.ToUpper (), initialInstanceCount);
 }
 
 /*=================================================================================**//**
@@ -231,29 +248,28 @@ TEST_F (ElementAspectTests1, MultiAspectPerformance_Insert)
 {
     SetupSeedProject ();
     ECN::ECClassCR aclass = *TestMultiAspect::GetECClass (*m_db);
-    TestElementCPtr el;
-    int const count = 1001;
-    TestMultiAspectPtr a1[count];
-    EC::ECInstanceId a1id[count];
+    int const Aspectcount = 11;
+    int const EleCount = 101;
+    TestMultiAspectPtr a1[Aspectcount];
+    EC::ECInstanceId a1id[Aspectcount];
+    TestElementPtr tempEl[EleCount];
+    TestElementCPtr el[EleCount];
 
     //  Insert an element with a multi aspect...
     StopWatch timer1 (true);
-    TestElementPtr tempEl = TestElement::Create (*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
-    for (int i = 1; i < count; i++)
+    for (int j = 1; j < EleCount; j++)
     {
-        a1[i] = TestMultiAspect::Create ("test");
-        DgnElement::MultiAspect::AddAspect (*tempEl, *(a1[i]));
+        tempEl[j] = TestElement::Create (*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
+        for (int i = 1; i < Aspectcount; i++)
+        {
+            a1[i] = TestMultiAspect::Create ("test");
+            DgnElement::MultiAspect::AddAspect (*tempEl[j], *(a1[i]));
+        }
+        el[j] = m_db->Elements ().Insert (*tempEl[j]);
+        ASSERT_TRUE (el[j].IsValid ());
     }
-    el = m_db->Elements ().Insert (*tempEl);
-    ASSERT_TRUE (el.IsValid ());
     timer1.Stop ();
-    LogTiming (timer1, "Insert an Element With Multi Aspect " , "TestElement", false, 0, 1);
-
-    for (int i = 1; i < count; i++)
-    {
-        a1id[i] = a1[i]->GetAspectInstanceId ();
-        ASSERT_TRUE (a1id[i].IsValid ());
-    }
+    LogTiming (timer1, "Insert an Element With Multi Aspect ", "TestElement", false, 0, EleCount-1);
 }
 
 /*=================================================================================**//**
@@ -263,45 +279,59 @@ TEST_F (ElementAspectTests1, MultiAspectPerformance_Update)
 {
     SetupSeedProject ();
     ECN::ECClassCR aclass = *TestMultiAspect::GetECClass (*m_db);
-    TestElementCPtr el;
-    int const count = 1001;
-    TestMultiAspectPtr a1[count];
-    EC::ECInstanceId a1id[count];
+    int const Aspectcount = 11;
+    int const EleCount = 101;
+    TestMultiAspectPtr a1[EleCount][Aspectcount];
+    EC::ECInstanceId a1id[EleCount][Aspectcount];
+    TestElementPtr tempEl[EleCount];
+    TestElementCPtr el[EleCount];
 
-    TestElementPtr tempEl = TestElement::Create (*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
-    for (int i = 1; i < count; i++)
-    {
-        a1[i] = TestMultiAspect::Create ("test");
-        DgnElement::MultiAspect::AddAspect (*tempEl, *(a1[i]));
-    }
-    el = m_db->Elements ().Insert (*tempEl);
-    ASSERT_TRUE (el.IsValid ());
-    for (int i = 1; i < count; i++)
-    {
-        a1id[i] = a1[i]->GetAspectInstanceId ();
-        ASSERT_TRUE (a1id[i].IsValid ());
-    }
-
-    TestElementPtr tempE2 = el->MakeCopy<TestElement> ();
-    TestMultiAspectP aspect[count];
-    for (int i = 1; i < count; i++)
-    {
-         aspect[i] = DgnElement::MultiAspect::GetP<TestMultiAspect> (*tempE2, aclass, a1id[i]);
-         TestMultiAspectCP aspectPersist = DgnElement::MultiAspect::Get<TestMultiAspect> (*el, aclass, a1id[i]);
-         ASSERT_TRUE (aspectPersist != nullptr);
-         ASSERT_EQ (aspectPersist, DgnElement::MultiAspect::Get<TestMultiAspect> (*el, aclass, a1id[i]));
-         ASSERT_EQ (aspect[i], DgnElement::MultiAspect::GetP<TestMultiAspect> (*tempE2, aclass, a1id[i]));
-        
-    }
-
+    //  Insert an element with a multi aspect...
     StopWatch timer1 (true);
-    for (int i = 1; i < count; i++)
+    for (int j = 1; j < EleCount; j++)
     {
-        aspect[i]->SetTestMultiAspectProperty ("updated");
+        tempEl[j] = TestElement::Create (*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
+        for (int i = 1; i < Aspectcount; i++)
+        {
+            a1[j][i] = TestMultiAspect::Create ("test");
+            DgnElement::MultiAspect::AddAspect (*tempEl[j], *(a1[j][i]));
+        }
+        el[j] = m_db->Elements ().Insert (*tempEl[j]);
+        ASSERT_TRUE (el[j].IsValid ());
+
+        for (int i = 1; i < Aspectcount; i++)
+        {
+            a1id[j][i] = a1[j][i]->GetAspectInstanceId ();
+            ASSERT_TRUE (a1id[j][i].IsValid ());
+        }
     }
-    ASSERT_TRUE (m_db->Elements ().Update (*tempE2).IsValid ());
-    timer1.Stop ();
-    LogTiming (timer1, "Update an Element With Multiple Aspect", "TestElement", false, 1, 1);
+
+    //  update element with multi aspects 
+    TestElementPtr tempE2[EleCount]; 
+    TestMultiAspectP aspect[Aspectcount];
+    double timeCount = 0;
+    for (int j = 1; j < EleCount; j++)
+    {
+        tempE2[j] = el[j]->MakeCopy<TestElement> ();
+        for (int i = 1; i < Aspectcount; i++)
+        {
+            aspect[i] = DgnElement::MultiAspect::GetP<TestMultiAspect> (*tempE2[j], aclass, a1id[j][i]);
+            TestMultiAspectCP aspectPersist = DgnElement::MultiAspect::Get<TestMultiAspect> (*el[j], aclass, a1id[j][i]);
+            ASSERT_TRUE (aspectPersist != nullptr);
+            ASSERT_EQ (aspectPersist, DgnElement::MultiAspect::Get<TestMultiAspect> (*el[j], aclass, a1id[j][i]));
+            ASSERT_EQ (aspect[i], DgnElement::MultiAspect::GetP<TestMultiAspect> (*tempE2[j], aclass, a1id[j][i]));
+        }
+
+        StopWatch timer1 (true);
+        for (int i = 1; i < Aspectcount; i++)
+        {
+            aspect[i]->SetTestMultiAspectProperty ("updated");
+        }
+        ASSERT_TRUE (m_db->Elements ().Update (*tempE2[j]).IsValid ());
+        timer1.Stop ();
+        timeCount = timeCount + timer1.GetElapsedSeconds ();
+    }
+    LogTiming (timeCount, "Update an Element With Multiple Aspect", "TestElement", false, EleCount-1, EleCount-1);
 }
 
 /*=================================================================================**//**
@@ -311,27 +341,32 @@ TEST_F (ElementAspectTests1, MultiAspectPerformance_Delete)
 {
     SetupSeedProject ();
     ECN::ECClassCR aclass = *TestMultiAspect::GetECClass (*m_db);
-    TestElementCPtr el;
-    int const count = 1001;
-    TestMultiAspectPtr a1[count];
-    EC::ECInstanceId a1id[count];
+    int const Aspectcount = 11;
+    int const EleCount = 101;
+    TestMultiAspectPtr a1[Aspectcount];
+    EC::ECInstanceId a1id[Aspectcount];
+    TestElementPtr tempEl[EleCount];
+    TestElementCPtr el[EleCount];
 
-    TestElementPtr tempEl = TestElement::Create (*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
-    for (int i = 1; i < count; i++)
+    //  Insert an element with multi aspect...
+    for (int j = 1; j < EleCount; j++)
     {
-        a1[i] = TestMultiAspect::Create ("test");
-        DgnElement::MultiAspect::AddAspect (*tempEl, *(a1[i]));
-    }
-    el = m_db->Elements ().Insert (*tempEl);
-    ASSERT_TRUE (el.IsValid ());
-    for (int i = 1; i < count; i++)
-    {
-        a1id[i] = a1[i]->GetAspectInstanceId ();
-        ASSERT_TRUE (a1id[i].IsValid ());
+        tempEl[j] = TestElement::Create (*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
+        for (int i = 1; i < Aspectcount; i++)
+        {
+            a1[i] = TestMultiAspect::Create ("test");
+            DgnElement::MultiAspect::AddAspect (*tempEl[j], *(a1[i]));
+        }
+        el[j] = m_db->Elements ().Insert (*tempEl[j]);
+        ASSERT_TRUE (el[j].IsValid ());
     }
 
+    //  delete an element with multi aspects
     StopWatch timer1 (true);
-    tempEl->Delete ();
+    for (int j = 1; j < EleCount; j++)
+    {
+        tempEl[j]->Delete ();
+    }
     timer1.Stop ();
-    LogTiming (timer1, "Delete an Element With Multi Aspects", "TestElement", false, 1, 1);
+    LogTiming (timer1, "Delete an Element With Multi Aspects", "TestElement", false, EleCount-1, EleCount-1);
 }
