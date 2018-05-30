@@ -150,6 +150,12 @@ public:
         return (JSObjectRef)cbwrapper.InvokeCallback();
     }
     
+    static bool HasInstance (JSContextRef ctx, JSObjectRef constructor, JSValueRef possibleInstance, JSValueRef* exception) {
+        auto classCBData = reinterpret_cast<JSClassCallbackData*>(JSObjectGetPrivate(constructor));
+        auto instanceProto = JSObjectGetPrototype(ctx, (JSObjectRef)possibleInstance);
+        return JSValueIsStrictEqual(ctx, instanceProto, classCBData->Prototype());
+    }
+    
 private:
     JSContextRef _context;
     size_t _args_length;
@@ -315,6 +321,7 @@ napi_status napi_define_class(napi_env env,
     JSClassDefinition classDef = kJSClassDefinitionEmpty;
     classDef.className = utf8name;
     classDef.callAsConstructor = JSCFunctionCallbackWrapper::CallAsConstructor;
+    classDef.hasInstance = JSCFunctionCallbackWrapper::HasInstance;
     
     JSClassRef classRef = JSClassCreate(&classDef);
     auto classCBData = new JSClassCallbackData(env,constructor,callback_data,prototypeObj);
@@ -727,7 +734,9 @@ napi_status napi_create_array_with_length(napi_env env,
     CHECK_ARG(env, result);
 
     JSContextRef ctx = env->GetContext();
-    *result = JSObjectMakeArray(ctx, length, NULL, NULL);
+    
+    *result = JSObjectMakeArray(ctx, 0, NULL, NULL);
+    napi_set_named_property(env, *result, "length", JSValueMakeNumber(ctx, length));
 
     return napi_clear_last_error(env);
 }
@@ -1674,9 +1683,9 @@ napi_status napi_escape_handle(napi_env env,
   CHECK_ARG(env, result);
 
 //  JSContextRef ctx = env->GetContext();
-  // TODO
+  *result = escapee;
 
-  return napi_set_last_error(env, napi_escape_called_twice);
+  return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
