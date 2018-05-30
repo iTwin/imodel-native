@@ -11,11 +11,9 @@
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
 #include <BuildingShared/BuildingSharedApi.h>
-//#include <DimensionHandler.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
-USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_BUILDING
 USING_NAMESPACE_BUILDING_SHARED
 
@@ -259,8 +257,7 @@ bvector<CurveVectorPtr> const& surfaces
 BentleyStatus                   ElevationGrid::CreateElevationGridPlanes
 (
 bvector<CurveVectorPtr> const& surfaces,
-GridAxisCR gridAxis,
-bool createDimensions
+GridAxisCR gridAxis
 )
     {
     BentleyStatus status = BentleyStatus::ERROR;
@@ -290,16 +287,12 @@ bool createDimensions
 
             CurveVectorPtr surface = gridPlaneGeom->Clone (negatedElev);
 
-            ElevationGridSurface::CreateParams params (*subModel, gridAxis, *surface, elevation);
+            ElevationGridSurface::CreateParams params (*subModel, gridAxis, surface.get(), elevation);
             ElevationGridSurfacePtr gridPlane = ElevationGridSurface::Create (params);
             BuildingLocks_LockElementForOperation (*gridPlane, BeSQLite::DbOpcode::Insert, "Inserting ElevationSurface");
             gridPlane->Insert ();
             DPlane3d planeThis;
             planeThis = gridPlane->GetPlane ();
-            if (lastGridPlane.IsValid () && createDimensions)
-                {
-                DimensionHandler::Insert(GetDgnDb(), lastGridPlane->GetElementId(), gridPlane->GetElementId(), 0, 0, planeThis.normal, planeLast.Evaluate(planeThis.origin));
-                }
             planeLast = planeThis;
             lastGridPlane = gridPlane;
             }
@@ -312,8 +305,7 @@ bool createDimensions
 ElevationGridPtr        ElevationGrid::CreateAndInsertWithSurfaces
 (
 CreateParams const& params,
-bvector<CurveVectorPtr> const& surfaces,
-bool createDimensions
+bvector<CurveVectorPtr> const& surfaces
 )
     {
     if (BentleyStatus::SUCCESS != ValidateSurfaces (surfaces))
@@ -321,7 +313,7 @@ bool createDimensions
 
     ElevationGridPtr thisGrid = ElevationGrid::CreateAndInsert (params);
     
-    if (BentleyStatus::SUCCESS != thisGrid->CreateElevationGridPlanes (surfaces, *thisGrid->GetAxis(), createDimensions))
+    if (BentleyStatus::SUCCESS != thisGrid->CreateElevationGridPlanes (surfaces, *thisGrid->GetAxis()))
         BeAssert (!"error inserting gridSurfaces into elevation grid..");
     return thisGrid;
     }
@@ -403,6 +395,47 @@ GridAxisCPtr                    ElevationGrid::GetAxis
 ) const
     {
     return GetDgnDb().Elements().Get<GridAxis>((*MakeAxesIterator().begin()).GetElementId());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ElevationGridSurfaceCPtr ElevationGrid::GetSurface
+(
+    double elevation
+) const
+    {
+    for (Dgn::ElementIteratorEntry surfaceEntry : MakeIterator())
+        {
+        ElevationGridSurfaceCPtr surface = GetDgnDb().Elements().Get<ElevationGridSurface>(surfaceEntry.GetElementId());
+        if (surface.IsNull())
+            continue;
+
+        if (DoubleOps::AlmostEqual(surface->GetElevation(), elevation))
+            return surface;
+        }
+
+    return nullptr;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ElevationGridSurfaceCPtr ElevationGrid::GetTopSurface() const
+    {
+    ElevationGridSurfaceCPtr topMostSurface = nullptr;
+
+    for (Dgn::ElementIteratorEntry surfaceEntry : MakeIterator())
+        {
+        ElevationGridSurfaceCPtr surface = GetDgnDb().Elements().Get<ElevationGridSurface>(surfaceEntry.GetElementId());
+        if (surface.IsNull())
+            continue;
+
+        if (topMostSurface.IsNull() || topMostSurface->GetElevation() < surface->GetElevation())
+            topMostSurface = surface;
+        }
+
+    return topMostSurface;
     }
 
 END_GRIDS_NAMESPACE

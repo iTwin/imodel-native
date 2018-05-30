@@ -18,7 +18,6 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BUILDING_SHARED
-USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -2623,8 +2622,7 @@ TEST_F(GridsTestFixture, OrthogonalGridCurvesAreCreated)
     ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (*m_model,
                                                                             db.Elements ().GetRootSubject ()->GetElementId (),
                                                                             "Floor-Grid"),
-                                                                            floorPlaneCurves,
-                                                                            true);
+                                                                            floorPlaneCurves);
                                                                                             
     db.SaveChanges();
 
@@ -2761,8 +2759,7 @@ TEST_F(GridsTestFixture, RadialGridCurvesAreCreated)
     ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (*m_model,
                                                                               db.Elements ().GetRootSubject ()->GetElementId (),
                                                                               "Floor-Grid"),
-                                                                              floorPlaneCurves,
-                                                                              true);
+                                                                              floorPlaneCurves);
     db.SaveChanges();
 
     /////////////////////////////////////////////////////////////
@@ -2901,8 +2898,7 @@ TEST_F(GridsTestFixture, SketchGridCurvesAreCreated)
     ElevationGridCPtr floorGrid = ElevationGrid::CreateAndInsertWithSurfaces (ElevationGrid::CreateParams (*m_model,
                                                                               db.Elements ().GetRootSubject ()->GetElementId (),
                                                                               "Floor-Grid"),
-                                                                              floorPlaneCurves,
-                                                                              true);
+                                                                              floorPlaneCurves);
     db.SaveChanges();
 
     /////////////////////////////////////////////////////////////

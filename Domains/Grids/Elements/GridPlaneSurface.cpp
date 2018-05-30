@@ -10,8 +10,6 @@ BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BUILDING_SHARED
 
-namespace CML = CONSTRAINTMODEL_NAMESPACE_NAME;
-
 DEFINE_GRIDS_ELEMENT_BASE_METHODS(GridPlanarSurface)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS(PlanGridPlanarSurface)
 DEFINE_GRIDS_ELEMENT_BASE_METHODS(PlanRadialGridSurface)
@@ -123,20 +121,6 @@ DPlane3d                        GridPlanarSurface::_GetPlane
 
     DPoint3d point3 = DPoint3d::FromSumOf (baseShapePoints[0][0], extDetail.m_extrusionVector);
     return DPlane3d::From3Points (baseShapePoints[0][0], baseShapePoints[0][1], point3);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jonas.Valiunas                  03/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus                   GridPlanarSurface::LockDimensionToOther
-(
-GridPlanarSurfaceCR otherSurface
-) const
-    {
-    DPlane3d bottomPlane = GetPlane();
-    DPlane3d topPlane = otherSurface.GetPlane();
-    CML::DimensionHandler::Insert(GetDgnDb(), GetElementId(), otherSurface.GetElementId(), 0, 0, bottomPlane.normal, bottomPlane.Evaluate(topPlane.origin));
-    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -598,6 +582,19 @@ CreateParams const& params
     return surface;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  05/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DgnDbStatus      ElevationGridSurface::_Validate
+(
+) const
+    {
+    if (GetSurface2d().IsNull())
+        return T_Super::T_Super::_Validate();   //it's fine for ElevationGridSurface to have null surface2d
+
+    return T_Super::_Validate();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -635,6 +632,8 @@ Dgn::DgnDbStatus                ElevationGridSurface::RecomputeGeometryStream
     {
 
     CurveVectorPtr shape = GetSurface2d();
+    if (shape.IsNull())
+        return Dgn::DgnDbStatus::Success; //null surface is fine..
 
     Transform translation = Transform::From(0.0, 0.0, GetElevation());
 
@@ -785,7 +784,13 @@ void ElevationGridSurface::_PerformJsonAction (Json::Value const& actionData)
         BeAssert(GetElementId().GetValueUnchecked() == elementData[BCSSERIALIZABLE_ELEMENT_ElementId].asUInt64());
 
         SetElevation(elementData[BCSSERIALIZABLE_ELEVSURFACE_Elevation].asDouble());
-        
+        SetUserLabel(elementData[BCSSERIALIZABLE_ELEMENT_Name].asString().c_str());
+        if (!elementData[BCSSERIALIZABLE_ELEMENT_CodeValue].asString().empty())
+            {
+            DgnCode newCode = DgnCode::From(GetCode().GetCodeSpecId(), GetCode().GetScopeString(), elementData[BCSSERIALIZABLE_ELEMENT_CodeValue].asString());
+            SetCode(newCode);
+            }
+
         BuildingLocks_LockElementForOperation(*this, BeSQLite::DbOpcode::Update, "ElevationGridSurface::UpdateFromJson");
         Update();
         }
