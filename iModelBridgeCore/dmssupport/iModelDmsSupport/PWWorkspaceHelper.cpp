@@ -20,10 +20,6 @@ bool   PWWorkspaceHelper::_Initialize()
     if (m_initDone)
         return true;
 
-    //TODO: Lookup the projectwise binray or ship it.
-    if (SUCCESS != m_session.Initialize(BeFileName(L"C:\\Program Files\\Bentley\\ProjectWise\\bin")))
-        return false;
-
     BOOL status =  workspace_Initialize();
     if (status)
         m_initDone = true;
@@ -47,8 +43,7 @@ bool   PWWorkspaceHelper::_UnInitialize()
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt   PWWorkspaceHelper::FetchWorkspace( int folderId, int documentId, BeFileNameCR destination)
-    {
-    _Initialize();
+    {   
     
     int statusCodeBefore = aaApi_GetLastErrorId();
     LOG.tracev("Generating workspace configuration file. %d", statusCodeBefore);
@@ -93,7 +88,7 @@ PWWorkspaceHelper::PWWorkspaceHelper(DmsSession& session)
 PWWorkspaceHelper::~PWWorkspaceHelper()
     {
     _UnInitialize();
-    m_session.UnInitialize();
+    _UnInitializeSession();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -101,6 +96,8 @@ PWWorkspaceHelper::~PWWorkspaceHelper()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt   PWWorkspaceHelper::_FetchWorkspace(Utf8StringCR pwMoniker, BeFileNameCR workspaceDir)
     {
+    _Initialize();
+
     int folderId, documentId;
     if (SUCCESS != GetFolderIdFromMoniker(folderId, documentId, pwMoniker))
         return ERROR;
@@ -113,5 +110,69 @@ StatusInt   PWWorkspaceHelper::_FetchWorkspace(Utf8StringCR pwMoniker, BeFileNam
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       PWWorkspaceHelper::GetFolderIdFromMoniker(int& folderId, int& documentId, Utf8StringCR pwMoniker)
     {
+    HMONIKER moniker;
+    DWORD monikerFlags = AAMONIKERF_USE_EXISTING_LOGIN| AAMONIKERF_RESOURCE_LOCATION;
+    WString wideMoniker(pwMoniker.c_str(), true);
+    LPCWSTR monikerArray = &wideMoniker[0];
+    if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, monikerFlags))
+        return ERROR;
+
+    LPCGUID guid = aaApi_GetDocumentGuidFromMoniker(moniker);
+    if (NULL == guid)
+        {
+        aaApi_Free(moniker);
+        return ERROR;
+        }
+
+    AADOC_ITEM docItem = { 0 };
+    if (!aaApi_GetDocumentIdsByGUIDs(1, guid, &docItem))
+        {
+        aaApi_Free((void*)guid);
+        aaApi_Free(moniker);
+        return ERROR;
+        }
+    folderId = docItem.lProjectId;
+    documentId = docItem.lDocumentId;
+    aaApi_Free(moniker);
+    aaApi_Free((void*)guid);
+    //aaApi_GetDatasourceNameFromMoniker
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            PWWorkspaceHelper::_InitializeSession(Utf8StringCR pwMoniker)
+    {
+    HMONIKER moniker;
+    WString wideMoniker(pwMoniker.c_str(), true);
+    LPCWSTR monikerArray = &wideMoniker[0];
+    if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, AAMONIKERF_DONT_VALIDATE))
+        return false;
+    
+    LPCWSTR datasourceName = aaApi_GetDatasourceNameFromMoniker(moniker);
+    if (NULL == datasourceName)
+        {
+        aaApi_Free(moniker);
+        return false;
+        }
+
+    m_session.SetDataSource(Utf8String(datasourceName));
+    aaApi_Free(moniker);
+    aaApi_Free((void*)datasourceName);
+
+    //TODO: Lookup the projectwise binray or ship it.
+    if (SUCCESS != m_session.Initialize(BeFileName(L"C:\\Program Files\\Bentley\\ProjectWise\\bin")))
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            PWWorkspaceHelper::_UnInitializeSession()
+    {
+    m_session.UnInitialize();
+    return true;
     }

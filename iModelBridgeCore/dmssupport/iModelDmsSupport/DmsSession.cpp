@@ -76,8 +76,8 @@ bool            DmsSession::UnInitialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DmsSession::DmsSession(Utf8StringCR userName, Utf8StringCR password, Utf8StringCR dataSource, iModelDmsSupport::SessionType sessionType)
-    :m_userName(userName), m_activeDataSource(NULL), m_password(password), m_dataSource(dataSource),m_sessionType(sessionType)
+DmsSession::DmsSession(Utf8StringCR userName, Utf8StringCR password, iModelDmsSupport::SessionType sessionType)
+    :m_userName(userName), m_activeDataSource(NULL), m_password(password),m_sessionType(sessionType)
     {
 
     }
@@ -115,4 +115,19 @@ BeFileNameCR    DmsSession::GetApplicationResourcePath() const
 iModelDmsSupport::SessionType     DmsSession::GetSessionType() const
     {
     return m_sessionType;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DmsSession::SetDataSource(Utf8StringCR dataSource)
+    {
+    if (NULL != m_activeDataSource)
+        {
+        LOG.error("Setting up  a data source without cleaning up the previous session");
+        return false;
+        }
+
+    m_dataSource = dataSource;
+    return true;
     }

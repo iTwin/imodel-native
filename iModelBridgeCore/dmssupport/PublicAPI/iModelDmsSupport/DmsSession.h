@@ -24,7 +24,7 @@ struct DmsSession
         iModelDmsSupport::SessionType m_sessionType;
     public:
     
-        DmsSession(Utf8StringCR userName, Utf8StringCR password, Utf8StringCR dataSource, iModelDmsSupport::SessionType sessionType);
+        DmsSession(Utf8StringCR userName, Utf8StringCR password, iModelDmsSupport::SessionType sessionType);
 
         static Utf8StringCR GetDataSourceFromMoniker(Utf8StringCR moniker);
         //!Return true if the session was succesfully established.
@@ -32,6 +32,8 @@ struct DmsSession
 
         //!Return true if the session was successfully shutdown.
         bool UnInitialize();
+
+        bool SetDataSource(Utf8StringCR dataSource);
 
         //!Search path to find dependant application libraries and symbols
         void SetApplicationResourcePath(BeFileNameCR applicationResourcePath);

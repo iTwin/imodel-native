@@ -19,7 +19,8 @@ struct PWWorkspaceHelper : public IDmsSupport
         DmsSession  m_session;
         virtual bool _Initialize() override;
         virtual bool _UnInitialize() override;
-
+        virtual bool _InitializeSession(Utf8StringCR pwMoniker) override;
+        virtual bool _UnInitializeSession() override;
     public:
         PWWorkspaceHelper(DmsSession& session);
         ~PWWorkspaceHelper();
