@@ -391,3 +391,38 @@ TEST(Polyface,GetNumFacet)
             }
         }
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Polyface,SharedNormals)
+    {
+    // an xz plane arc to rotate around z:
+    auto arc = DEllipse3d::From (
+                0,0,0,
+                4,0,0,
+                0,0,5,
+                0, Angle::DegreesToRadians (70.0));
+    auto prim = ICurvePrimitive::CreateArc (arc);
+    auto cv    = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+    cv->Add (prim);
+    auto rotated = ISolidPrimitive::CreateDgnRotationalSweep (
+            DgnRotationalSweepDetail (
+                cv,
+                DPoint3d::From (0,0,0),
+                DVec3d::From (0,0,1),
+                Angle::DegreesToRadians (45),
+                false));
+    Check::SaveTransformed (*rotated);
+    IFacetOptionsPtr options = IFacetOptions::Create ();
+    options->SetNormalsRequired (true);
+    options->SetParamsRequired (true);
+    options->SetMaxPerFace (4);
+    options->SetAngleTolerance (Angle::DegreesToRadians (14.0));
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
+    builder->AddSolidPrimitive (*rotated);
+    Check::Shift (0,10,0);
+    Check::SaveTransformed (builder->GetClientMeshR ());
+    Check::ClearGeometry ("Polyface.SharedNormals");
+    }
