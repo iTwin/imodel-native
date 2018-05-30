@@ -952,6 +952,34 @@ struct IModelJsECPresentationSerializer : IECPresentationSerializer
     };
 
 /*=================================================================================**//**
+* @bsiclass                                     Aidas.Kililnskas                05/2018
++===============+===============+===============+===============+===============+======*/
+struct LocalState : IJsonLocalState
+    {
+    //! Saves the Utf8String value in the local state. Set to empty to delete value.
+    //! @note The nameSpace and key pair must be unique.
+    private:
+        bmap<Utf8String, Utf8String> m_map;
+    protected:
+        void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
+            {
+            Utf8PrintfString compositeKey("%s:%s", nameSpace, key);
+            m_map[compositeKey] = value;
+            }
+
+        //! Returns a stored Utf8String from the local state. Returns empty if value does not exist.
+        //! @note The nameSpace and key pair uniquely identifies the value.
+        Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
+            {
+            Utf8PrintfString compositeKey("%s:%s", nameSpace, key);
+            auto iter = m_map.find(compositeKey);
+            if (iter != m_map.end())
+                return iter->second;
+            return "";
+            }
+    };
+
+/*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                05/2018
 +===============+===============+===============+===============+===============+======*/
 struct IModelJsECPresentationLocalizationProvider : ILocalizationProvider
@@ -1127,6 +1155,8 @@ public:
     IModelJsECPresentationLocalizationProvider& GetLocalizationProvider() {return *m_localizationProvider;}
     };
 static IModelJsECPresentationStaticSetupHelper s_staticSetup;
+static LocalState s_localState;
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2017
@@ -1137,6 +1167,8 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
     BeFileName tempDir = locations.GetLocalTempDirectoryBaseName();
     RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
     RulesDrivenECPresentationManager* manager = new RulesDrivenECPresentationManager(connections, paths);
+    manager->SetLocalState(&s_localState);
+
 
     BeFileName supplementalsDirectory = BeFileName(assetsDir).AppendToPath(L"PresentationRules");
     manager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalsDirectory.GetNameUtf8().c_str())));
@@ -1232,6 +1264,85 @@ static PageOptions GetPageOptions(JsonValueCR params)
             pageOptions.SetPageSize((size_t)params["pageOptions"]["pageSize"].asUInt64());
         }
     return pageOptions;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kililnskas                 05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPresentationResult ECPresentationUtils::GetUserSetting(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR settingId, Utf8StringCR settingType)
+    {
+    rapidjson::Document response;
+    IUserSettings& settings = manager.GetUserSettings().GetSettings(rulesetId);
+
+    if (settingType.Equals("bool"))
+        response.SetBool(settings.GetSettingBoolValue(settingId.c_str()));
+    else if(settingType.Equals("string"))
+        response.SetString(settings.GetSettingValue(settingId.c_str()).c_str(), response.GetAllocator());
+    else if (settingType.Equals("int"))
+        response.SetInt64(settings.GetSettingIntValue(settingId.c_str()));
+    else if (settingType.Equals("intArray"))
+        {
+        response.SetArray();
+        bvector<int64_t> intValues = settings.GetSettingIntValues(settingId.c_str());
+        for (int64_t value : intValues)
+            response.PushBack(value, response.GetAllocator());
+        }
+    else if (settingType.Equals("id64Array"))
+        {
+        bvector<int64_t> intValues = settings.GetSettingIntValues(settingId.c_str());
+        response.SetArray();
+        
+        for (int64_t value : intValues)
+            response.PushBack(rapidjson::Value(BeInt64Id(value).ToHexStr().c_str(), response.GetAllocator()), response.GetAllocator());
+        }
+    else if (settingType.Equals("id64"))
+        {
+        response.SetString(BeInt64Id(settings.GetSettingIntValue(settingId.c_str())).ToHexStr().c_str(), response.GetAllocator());
+        }
+    else
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "type");
+    return ECPresentationResult(std::move(response));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kililnskas                 05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPresentationResult ECPresentationUtils::SetUserSetting(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR settingId, Utf8StringCR value)
+    {
+    rapidjson::Document jsonObject;
+    jsonObject.Parse(value.c_str());
+    rapidjson::Value& jsonValue = jsonObject["value"];
+    if (jsonValue.IsNull())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "value");
+
+    Utf8StringCR settingType = jsonObject["type"].GetString();
+    IUserSettings& settings = manager.GetUserSettings().GetSettings(rulesetId);
+
+    if (settingType.Equals("bool"))
+        settings.SetSettingBoolValue(settingId.c_str(), jsonValue.GetBool());
+    else if (settingType.Equals("string"))
+        settings.SetSettingValue(settingId.c_str(), jsonValue.GetString());
+    else if (settingType.Equals("id64"))
+        settings.SetSettingIntValue(settingId.c_str(), BeInt64Id::FromString(jsonValue.GetString()).GetValue());
+    else if (settingType.Equals("id64Array"))
+        {
+        bvector<int64_t> values;
+        for (rapidjson::SizeType i = 0; i < jsonValue.Size(); i++)
+            values.push_back(BeInt64Id::FromString(jsonValue[i].GetString()).GetValue());
+        settings.SetSettingIntValues(settingId.c_str(), values);
+        }
+    else if(settingType.Equals("int"))
+        settings.SetSettingIntValue(settingId.c_str(), jsonValue.GetInt64());
+    else if (settingType.Equals("intArray"))
+        {
+        bvector<int64_t> values;
+        for (rapidjson::SizeType i = 0; i < jsonValue.Size(); i++)
+            values.push_back(jsonValue[i].GetInt64());
+        settings.SetSettingIntValues(settingId.c_str(), values);
+        }
+    else
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "type");
+    return ECPresentationResult();
     }
 
 /*---------------------------------------------------------------------------------**//**
