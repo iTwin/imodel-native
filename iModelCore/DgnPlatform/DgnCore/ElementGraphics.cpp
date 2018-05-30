@@ -601,7 +601,7 @@ void WireframeGeomUtil::Draw(ISolidPrimitiveCR primitive, Render::GraphicBuilder
             if (!primitive.TryGetDgnRuledSweepDetail(detail))
                 return;
 
-            uint32_t curveIndex = 0;
+            //uint32_t curveIndex = 0; //unused
 
             for (CurveVectorPtr curves: detail.m_sectionCurves)
                 {

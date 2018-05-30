@@ -3023,6 +3023,7 @@ struct Plan
     ColorDef            m_bgColor;
     ColorDef            m_monoColor;
     HiliteSettings      m_hiliteSettings;
+    bool                m_fadeOutActive;
     AntiAliasPref       m_aaLines;
     AntiAliasPref       m_aaText;
     HiddenLineParams    m_hline;

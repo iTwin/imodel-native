@@ -217,6 +217,9 @@ public:
     Transform GetLocationForTileGeneration() const; //!< @private
 
     template<typename T> auto UnderMutex(T func) const -> decltype(func()) { BeMutexHolder lock(m_mutex); return func(); }
+
+    bool _ToJson(Json::Value&) const override;
+    TileTree::TilePtr _FindTileById(Utf8CP id) override;
 };
 
 ENUM_IS_FLAGS(Root::DebugOptions);
@@ -303,7 +306,13 @@ public:
 
     virtual bool IsCacheable() const;
     void SetGenerator(TileGeneratorUPtr&&);
-	void SetDisplayable(bool displayable) { m_displayable = displayable; }
+    void SetDisplayable(bool displayable) { m_displayable = displayable; }
+
+    bool _ToJson(Json::Value&) const override;
+    Utf8String GetIdString() const;
+    TilePtr FindTile(TileTree::OctTree::TileId id, double zoomFactor);
+    TilePtr FindTile(double zoomFactor);
+    TileP GetElementParent() const { return const_cast<TileP>(static_cast<TileCP>(GetParent())); }
 };
 
 //=======================================================================================

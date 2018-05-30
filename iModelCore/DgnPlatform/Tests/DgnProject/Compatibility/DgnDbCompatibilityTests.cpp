@@ -7,14 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "CompatibilityTestFixture.h"
 
-DGNDB_TESTFILE(EmptyBim)
-
-TESTFILE_CREATEPHYSICAL(EmptyBim)
-    {
-    CreateDgnDbParams createParam(GetFileName());
-    DbResult status;
-    DgnDb::CreateDgnDb(&status, GetResolvedFilePath(), createParam);
-    }
+USING_NAMESPACE_BENTLEY_EC
 
 struct DgnDbCompatibilityTestFixture : CompatibilityTestFixture
     {
@@ -22,38 +15,53 @@ struct DgnDbCompatibilityTestFixture : CompatibilityTestFixture
 
     protected:
        Profile& Profile() const { return ProfileManager().GetProfile(ProfileType::DgnDb); }
+
+       DgnDbPtr CreateNewTestFile(Utf8CP fileName)
+           {
+           BeFileName filePath = Profile().GetPathForNewTestFile(fileName);
+           BeFileName folder = filePath.GetDirectoryName();
+           if (!folder.DoesPathExist())
+               {
+               if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(folder))
+                   return nullptr;
+               }
+
+           CreateDgnDbParams createParam(fileName);
+           return DgnDb::CreateDgnDb(nullptr, filePath, createParam);
+           }
     };
 
-//===========================================================Test===========================================================
 //---------------------------------------------------------------------------------------
-// @bsimethod                                  Affan.Khan                          05/17
+// @bsimethod                                  Krischan.Eberle                      05/18
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DgnDbCompatibilityTestFixture, OpenAllVersionInReadWriteMode)
+TEST_F(DgnDbCompatibilityTestFixture, PreEC32Enums)
     {
-    for (BeFileNameCR testFilePath : Profile().GetAllVersionsOfTestFile(TESTFILE_NAME(EmptyBim)))
+    DgnDbPtr dgndb = CreateNewTestFile("enums.bim");
+    ASSERT_TRUE(dgndb != nullptr);
+
+    ECEnumerationCP ecEnum = dgndb->Schemas().GetEnumeration("BisCore", "CustomHandledPropertyStatementType");
+    ASSERT_TRUE(ecEnum != nullptr) << "BisCore.CustomHandledPropertyStatementType";
+    EXPECT_EQ(PRIMITIVETYPE_Integer, ecEnum->GetType()) << ecEnum->GetFullName();
+    EXPECT_TRUE(ecEnum->GetIsStrict()) << ecEnum->GetFullName();
+    EXPECT_FALSE(ecEnum->GetIsDisplayLabelDefined()) << ecEnum->GetFullName();
+    EXPECT_TRUE(ecEnum->GetDescription().empty()) << ecEnum->GetFullName();
+    EXPECT_EQ(7, ecEnum->GetEnumeratorCount()) << ecEnum->GetFullName();
+
+    std::vector<std::pair<int, Utf8CP>> expectedEnumValues {{0, "None"},
+                                                            {1, "Select"},
+                                                            {2, "Insert"},
+                                                            {3, "ReadOnly = Select|Insert"},
+                                                            {4, "Update"},
+                                                            {6, "InsertUpdate = Insert | Update"},
+                                                            {7, "All = Select | Insert | Update"} };
+
+    size_t i = 0;
+    for (ECEnumeratorCP enumerator : ecEnum->GetEnumerators())
         {
-        DbResult r = BE_SQLITE_OK;
-        DgnDbPtr dgndb = DgnDb::OpenDgnDb(&r, testFilePath, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite)); 
-        ASSERT_EQ(BE_SQLITE_OK, r);
-
-        const ProfileState profileState = ProfileManager::Get().GetFileProfileState(testFilePath);
-        switch (profileState)
-            {
-                case ProfileState::Current:
-                    ASSERT_TRUE(dgndb->TableExists("dgn_txns")) << dgndb->GetDbFileName();
-                    break;
-
-                case ProfileState::Newer:
-                    ASSERT_TRUE(dgndb->TableExists("dgn_txns")) << dgndb->GetDbFileName();
-                    break;
-
-                case ProfileState::Older:
-                    ASSERT_TRUE(dgndb->TableExists("dgn_txns")) << dgndb->GetDbFileName();
-                    break;
-
-                default:
-                    FAIL() << "Unknown ProfileState: " << (int) profileState << " " << dgndb->GetDbFileName();
-            }
+        std::pair<int, Utf8CP> const& expectedEnumValue = expectedEnumValues[i];
+        EXPECT_STRCASEEQ(expectedEnumValue.second, enumerator->GetDisplayLabel().c_str());
+        EXPECT_EQ(expectedEnumValue.first, enumerator->GetInteger()) << "Value: " << expectedEnumValue.first;
+        i++;
         }
     }
 

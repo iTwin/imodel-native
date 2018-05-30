@@ -15,4 +15,4 @@
 EXE_DIR       = $(OutputRootDir)/iModelSchemaEvolution/BackwardsCompatibility/
 
 always:
-    $(EXE_DIR)DgnCompatibility.exe
+    $(EXE_DIR)iModelSchemaEvolution.exe
