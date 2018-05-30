@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/SolidPrimitive/sp_rayIntersection.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // This h file is to be included in only one c file (sp_curveIntersection.cpp)
@@ -601,6 +601,11 @@ double minParameter
         AddAreaHits (m_sectionCurves.back (),
                 pickData, ray, parentId, minParameter,
                 identity, false, true);
+        for (auto &pd : pickData)
+            {
+            if (pd.GetFaceIndices ().IsCap0 ())
+                ISolidPrimitive::ReverseFractionOrientation (pd);
+            }
         }
     FilterMinParameter (pickData, baseSize, minParameter);
     SortTail (pickData, baseSize);

@@ -290,6 +290,8 @@ SolidLocationDetailR pickData
                                     SolidLocationDetail::PrimaryIdCap, capIndex, 0);
                     }
                 }
+            if (pickData.GetFaceIndices().IsCap0())
+                ISolidPrimitive::ReverseFractionOrientation(pickData);
             }
         }
     return HasRealPoint (pickData);
@@ -465,6 +467,8 @@ SolidLocationDetailR pickData
         capShift[0].InitIdentity ();
         capShift[1].InitFrom (m_extrusionVector);
         UpdateByAreaPick (pickData, m_baseCurve, spacePoint, capShift, 2);
+        if (pickData.GetFaceIndices().IsCap0())
+            ISolidPrimitive::ReverseFractionOrientation(pickData);
         }
     return HasRealPoint (pickData);   
     }
@@ -605,6 +609,8 @@ SolidLocationDetailR pickData
         {
         UpdateBySingleAreaPick (pickData, m_sectionCurves.front (), spacePoint, 0);
         UpdateBySingleAreaPick (pickData, m_sectionCurves.back (), spacePoint, 1);
+        if (pickData.GetFaceIndices().IsCap0())
+            ISolidPrimitive::ReverseFractionOrientation(pickData);
         }
     return true;
     }
@@ -659,6 +665,8 @@ SolidLocationDetailR pickData
             capTransforms[0] = Transform::FromIdentity ();
             capTransforms[1] = Transform::FromProduct (localToWorld, localEndRotation, worldToLocal);
             UpdateByAreaPick (pickData, m_baseCurve, spacePoint, capTransforms, 2);
+            if (pickData.GetFaceIndices().IsCap0())
+                ISolidPrimitive::ReverseFractionOrientation(pickData);
             }
         }
     return true;
