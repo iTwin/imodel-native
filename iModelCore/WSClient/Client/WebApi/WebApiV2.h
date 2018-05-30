@@ -53,12 +53,12 @@ struct WebApiV2 : public WebApi
         Http::Request CreateFileDownloadRequest
             (
             Utf8StringCR url,
-            BeFileNameCR filePath,
+            HttpBodyPtr responseBody,
             Utf8StringCR eTag,
             Http::Request::ProgressCallbackCR onProgress,
             ICancellationTokenPtr ct
             ) const;
-        WSFileResult ResolveFileDownloadResponse(Http::Response& response, BeFileName filePath) const;
+        WSResult ResolveFileDownloadResponse(Http::Response& response) const;
 
         AsyncTaskPtr<WSUpdateFileResult> ResolveUpdateFileResponse
             (
@@ -97,10 +97,10 @@ struct WebApiV2 : public WebApi
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
-        virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
+        virtual AsyncTaskPtr<WSResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
-            BeFileNameCR filePath,
+            HttpBodyPtr bodyResponseOut,
             Utf8StringCR eTag = nullptr,
             Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr

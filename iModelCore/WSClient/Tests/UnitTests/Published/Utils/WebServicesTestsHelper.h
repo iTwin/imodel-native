@@ -160,6 +160,7 @@ BeFileName StubFilePath(Utf8StringCR customFileName = "");
 BeFileName StubFile(Utf8StringCR content = "TestContent", Utf8StringCR customFileName = "");
 BeFileName StubFileWithSize(uint64_t bytesCount, Utf8StringCR customFileName = "");
 Utf8String SimpleReadFile(BeFileNameCR filePath);
+Utf8String SimpleReadByteStream(ByteStream stream);
 void SimpleWriteToFile(Utf8StringCR content, BeFileNameCR filePath);
 
 std::set<Utf8String> GetFolderContent(BeFileNameCR dir);

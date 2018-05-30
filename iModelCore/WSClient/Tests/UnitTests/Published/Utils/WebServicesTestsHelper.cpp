@@ -406,6 +406,16 @@ Utf8String SimpleReadFile(BeFileNameCR filePath)
     return stringContents;
     }
 
+Utf8String SimpleReadByteStream(ByteStream stream)
+    {
+    Utf8String stringContents = "";
+
+    for (auto& byte : stream)
+        stringContents += byte;
+
+    return stringContents;
+    }
+
 void SimpleWriteToFile(Utf8StringCR content, BeFileNameCR filePath)
     {
     if (!filePath.GetDirectoryName().DoesPathExist())

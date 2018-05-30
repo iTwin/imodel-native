@@ -188,7 +188,7 @@ WSInfoCR info
     EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponse())))); //add naviggation schema example should be in testschema
 
-    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "TestSchema"), _, _, _, _))
+    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "TestSchema"), ::testing::An<BeFileNameCR>(), _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SchemaWriteStatus status = schema->WriteToXmlFile(filePath);
@@ -196,7 +196,7 @@ WSInfoCR info
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));
 
-    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "Navigation"), _, _, _, _))
+    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "Navigation"), ::testing::An<BeFileNameCR>(), _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SchemaWriteStatus status = navigationSchema->WriteToXmlFile(filePath);
