@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/cv_clone.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -73,8 +73,14 @@ CurveVectorPtr CurveVector::Clone (DMatrix4dCR transform) const
     {
     CurveVectorPtr clone = Create (m_boundaryType);
     for (size_t i = 0, n = size (); i < n; i++)
-        clone->push_back (at(i)->Clone (transform));
-    return clone;
+        {
+        ICurvePrimitivePtr cpClone;
+
+        if (at(i).IsValid() &&
+            (cpClone = at(i)->Clone(transform)).IsValid())
+            clone->push_back (cpClone);
+        }
+    return clone->empty() ? nullptr : clone;
     }
 
 

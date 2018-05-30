@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/ICurvePrimitive.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1498,6 +1498,18 @@ ICurvePrimitivePtr ICurvePrimitive::Clone (DMatrix4dCR transform4d) const
                 }
             }
             break;
+        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
+            {
+            bvector<DPoint3d>const *pointA = GetPointStringCP ();
+            if (pointA != nullptr && pointA->size () > 0)
+                {
+                bvector<DPoint3d> pointB = *pointA;
+                transform4d.MultiplyAndRenormalize (&pointB[0], &pointB[0], (int)pointB.size ());
+                return ICurvePrimitive::CreatePointString (pointB);
+                }
+            }
+            break;
+
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
             {
             auto childA = GetChildCurveVectorCP ();
