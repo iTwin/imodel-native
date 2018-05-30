@@ -32,7 +32,7 @@ RepositoryInfoProvider::~RepositoryInfoProvider()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RepositoryInfoProvider::RegisterInfoListener(std::weak_ptr<IWSRepositoryClient::IRepositoryInfoListener> listener)
     {
-    BeCriticalSectionHolder lock(m_mutex);
+    BeMutexHolder lock(m_mutex);
     m_listeners.push_back(listener);
     }
 
@@ -41,7 +41,7 @@ void RepositoryInfoProvider::RegisterInfoListener(std::weak_ptr<IWSRepositoryCli
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RepositoryInfoProvider::UnregisterInfoListener(std::weak_ptr<IWSRepositoryClient::IRepositoryInfoListener> listener)
     {
-    BeCriticalSectionHolder lock(m_mutex);
+    BeMutexHolder lock(m_mutex);
     auto listenerPtr = listener.lock();
     m_listeners.erase(std::remove_if(m_listeners.begin(), m_listeners.end(),
         [&] (std::weak_ptr<IWSRepositoryClient::IRepositoryInfoListener> candidateWeakPtr)
@@ -97,7 +97,7 @@ AsyncTaskPtr<WSRepositoryResult> RepositoryInfoProvider::GetRepository(ICancella
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSRepositoryResult> RepositoryInfoProvider::GetInfo(ICancellationTokenPtr ct)
     {
-    BeCriticalSectionHolder lock(m_mutex);
+    BeMutexHolder lock(m_mutex);
     if (CanUseCachedInfo())
         return CreateCompletedAsyncTask(WSRepositoryResult::Success(m_info));
 
@@ -105,7 +105,7 @@ AsyncTaskPtr<WSRepositoryResult> RepositoryInfoProvider::GetInfo(ICancellationTo
         {
         return GetRepository(ct)->Then<WSRepositoryResult>([=] (WSRepositoryResult result)
             {
-            BeCriticalSectionHolder lock(m_mutex);
+            BeMutexHolder lock(m_mutex);
 
             if (!result.IsSuccess())
                 return WSRepositoryResult::Error(result.GetError());

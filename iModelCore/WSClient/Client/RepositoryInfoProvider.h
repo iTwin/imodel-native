@@ -8,16 +8,14 @@
 #pragma once
 
 #include <WebServices/Client/WSRepositoryClient.h>
-#include <MobileDgn/Utils/Threading/WorkerThread.h>
-#include <MobileDgn/Utils/Threading/AsyncTask.h>
-#include <MobileDgn/Utils/Threading/UniqueTaskHolder.h>
+#include <Bentley/Tasks/WorkerThread.h>
+#include <Bentley/Tasks/AsyncTask.h>
+#include <Bentley/Tasks/UniqueTaskHolder.h>
 #include <set>
 
 #include "ClientConnection.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
@@ -25,7 +23,7 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 struct RepositoryInfoProvider
     {
     private:
-        BeCriticalSection m_mutex;
+        BeMutex m_mutex;
         UniqueTaskHolder<WSRepositoryResult> m_getInfoExecutor;
 
         std::shared_ptr<const ClientConnection> m_connection;
