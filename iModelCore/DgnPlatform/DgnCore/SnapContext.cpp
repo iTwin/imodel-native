@@ -1449,10 +1449,22 @@ bool ProcessEntry(GeometryCollection::Iterator const& iter, bool preFiltered, Dg
 
     if (nullptr != element && GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType())
         {
-        IBRepEntityPtr entity = BRepDataCache::FindCachedBRepEntity(*element, elemEntryId); // NEEDSWORK: For imodel-js...brep cache is currently only populated through PickContext...
+        IBRepEntityPtr entity = BRepDataCache::FindCachedBRepEntity(*element, elemEntryId);
 
         if (entity.IsValid())
+            {
             geom = GeometricPrimitive::Create(entity);
+            }
+        else
+            {
+            geom = iter.GetGeometryPtr();
+
+            if (!geom.IsValid())
+                return false;
+
+            // Populate brep cache when not using PickContext and calling GeometryStreamIO::Collection::Draw...
+            BRepDataCache::AddCachedBRepEntity(*element, elemEntryId, *geom->GetAsIBRepEntity());
+            }
         }
 
     if (!geom.IsValid())
