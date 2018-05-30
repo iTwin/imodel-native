@@ -21,7 +21,7 @@
 
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <RealityPlatformTools/RealityDataService.h>
-
+#include <Bentley/Desktop/FileSystem.h>
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 
@@ -298,13 +298,13 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
             installDir.DropQuotes();
             BeFileName::AppendSeparator(installDir);
             }
-        else if (0 == wcsncmp(tmpString.c_str(), L"V8I", 3))
+        else if (0 == wcsncmp(tmpString.c_str(), L"DGN_V8I", 7))
             {
             // we could infer this from using "DGN-USER" or "DGN-PROJECT" command line arguments, but at this point we don't.
             isV8i = true;
             }
 
-        else if (0 == wcsncmp(tmpString.c_str(), L"CFGVAR=", 7))
+        else if (0 == wcsncmp(tmpString.c_str(), L"DGN_CFGVAR=", 7))
             {
             // remaining string must have the format MACRO=value 
             WChar    definitionString[1024];
@@ -313,7 +313,7 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
             if (nullptr != wcschr(definitionString, '='))
                 assignmentArgs.push_back(definitionString);
             }            
-        else if (0 == wcsncmp(tmpString.c_str(), L"DEBUGCFG", 8))
+        else if (0 == wcsncmp(tmpString.c_str(), L"DGN_DEBUGCFG", 8))
             {
             if ( (tmpString.length()) > 9 && ('=' == tmpString[8]) )
                 swscanf (tmpString.c_str() + 9, L"%i", &debugLevel);
@@ -324,28 +324,18 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
 
     // if we didn't find any of our command line arguments, then we don't try to use any configuration files, and don't install the MacroConfigurationAdmin ConfigurationAdmin
     // NOTE: Need to revisit this if we ship fallback configuration files.
-    if (!configRootDir.empty() || !installDir.empty())
+    if (!configRootDir.empty() || !installDir.empty() ||!msConfigFileName.empty())
         {
         s_macros = new DgnV8Api::MacroConfigurationAdmin;
         DgnV8Api::ConfigurationManager::SetGetAdminFunc(getConvertMacros);  // *** TRICKY: Our startup code, including LoadMacros below, makes calls on ConfigurationManager, but it isn't set up yet,
                                                                              // so Sam implemented this scheme to get it while it's used. It's not really right, but it works. See comment in MicroStation's msmacro.cpp
 
-    #if defined (SHIP_FALLBACK_CONFIGURATION_FILES)
-        // If we want to operate without a MicroStation installation we have to ship fallback configuration files for both V8i and CONNECT with the DgnV8 converter. We find those relative to this dll.
-        wchar_t moduleFileName[MAX_PATH];
-        ::GetModuleFileNameW (nullptr, moduleFileName, _countof(moduleFileName));
-
-        WString device;
-        WString directory;
-        BeFileName::ParseName(&device, &directory, nullptr, nullptr, moduleFileName);
-
-        // these aren't right yet - for this to work the correct directories need to be specified and the .cfg files from V8i and CONNECT shipped to those directories.
-        BeFileName  fallbackV8iConfigDir(device.c_str(), directory.c_str(), nullptr, nullptr);
-        BeFileName  fallbackConnectConfigDir(device.c_str(), directory.c_str(), nullptr, nullptr);
-    #else
-        BeFileName  fallbackV8iConfigDir;
-        BeFileName  fallbackConnectConfigDir;
-    #endif
+        // If we want to operate without  MicroStation installation we have to ship fallback configuration files for both V8i and CONNECT with the DgnV8 converter. We find those relative to this dll.
+        BeFileName exeDir = Desktop::FileSystem::GetExecutableDir();
+        BeFileName  fallbackV8iConfigDir(exeDir);
+        fallbackV8iConfigDir.AppendToPath(L"Dgnv8\\v8iConfig");
+        BeFileName  fallbackConnectConfigDir(exeDir);
+        fallbackConnectConfigDir.AppendToPath(L"Dgnv8\\CEconfig");
 
         // if enough information is supplied, read either CONNECT or V8i configuration files to define the macros.
         if (!isV8i)

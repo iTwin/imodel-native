@@ -114,6 +114,7 @@
       <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync"/>
       <SubPart PartName="iModelBridgeFwk-en"/>
       <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>
+      <SubPart PartName="iModelDmsSupport" Repository="DmsSupport" PartFile="iModelDmsSupport"/>
       <Bindings>
         <Assemblies>Delivery/$(libprefix)iModelBridgeFwkLib$(ApiNumber)$(shlibext)</Assemblies>
         <Libs Required="false">Delivery/$(libprefix)iModelBridgeFwkLib$(libext)</Libs>
