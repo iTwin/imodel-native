@@ -46,33 +46,6 @@ enum class ProfileState
     Newer = 1
     };
 
-//======================================================================================
-// @bsiclass                                                 Affan.Khan          03/2018
-//======================================================================================
-struct TestFile
-    {
-    private:
-        ProfileType m_profileType;
-        Utf8CP m_fileName = nullptr;
-        BeFileName m_resolvedFileName;
-        bool m_isPersisted = false;
-    
-    protected:
-        TestFile(ProfileType profileType, Utf8CP fileName, bool isPersisted) : m_profileType(profileType), m_fileName(fileName), m_isPersisted(isPersisted) {}
-
-    public:
-        virtual ~TestFile() {}
-        virtual void CreatePhysical() = 0;
-
-        bool IsPersisted() const { return m_isPersisted; }
-        Utf8CP GetFileName() const { return m_fileName; }
-        ProfileType GetProfileType() const { return m_profileType; }
-
-        void SetResolvedFileName(BeFileNameCR fileName) { m_resolvedFileName = fileName; }
-        bool IsResolved() const { return !m_resolvedFileName.empty(); }
-        BeFileName const& GetResolvedFilePath() const { return m_resolvedFileName; }
-        bool Exists() const { return m_resolvedFileName.DoesPathExist(); }
-    };
 
 //======================================================================================
 // @bsiclass                                                 Affan.Khan          03/2018
@@ -87,14 +60,9 @@ struct Profile : NonCopyableClass
         ProfileType m_type;
         Utf8CP m_name = nullptr;
         BeFileName m_profileSeedFolder;
-        std::map<Utf8CP, TestFile*, CompareIUtf8Ascii> m_testFiles;
         mutable std::vector<ProfileVersion> m_versionList;
 
         virtual BentleyStatus _Init() const = 0;
-
-        BentleyStatus GenerateSeedFile(TestFile&, ProfileVersion const&) const;
-        BentleyStatus GenerateAllSeedFiles() const;
-        std::vector<ProfileVersion> const& ReadProfileVersionFromDisk() const;
 
     protected:
         Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name);
@@ -106,10 +74,6 @@ struct Profile : NonCopyableClass
         BentleyStatus Init() const;
 
         ProfileVersion const& GetExpectedVersion() const { return m_expectedVersion; }
-        void RegisterTestFile(TestFile&);
-
-        BentleyStatus GetTestFile(BeFileName& copyPath, Utf8CP testFileName, ProfileVersion const&) const;
-        std::vector<BeFileName> GetAllVersionsOfTestFile(Utf8CP testFileName) const;
 
         static ProfileType ParseProfileType(Utf8CP);
     };
@@ -186,7 +150,7 @@ struct ProfileManager final : NonCopyableClass
     private:
         mutable std::map<ProfileType, std::unique_ptr<Profile>> m_profiles;
 
-        static ProfileManager s_singleton;
+        static ProfileManager* s_singleton;
 
         ProfileManager() {}
 
@@ -196,7 +160,7 @@ struct ProfileManager final : NonCopyableClass
         mutable BeFileName m_outFolder; //this is where they are copied before running the test.
     
     public:
-        static ProfileManager& Get() { return s_singleton; }
+        static ProfileManager& Get() { return *s_singleton; }
 
         BeFileName const& GetSeedFolder() const;
         BeFileName const& GetOutFolder() const;
@@ -213,25 +177,3 @@ struct CompatibilityTestFixture : ::testing::Test
 protected:
     ProfileManager& ProfileManager() const { return ProfileManager::Get(); }
     };
-
-//===========================================================================================================
-#define TESTFILE_NAME(fileName) #fileName
-#define TESTFILE_CLASSNAME(fileName) fileName##TestFile
-#define TESTFILE(profile, fileName, isPersisted) \
-        struct TESTFILE_CLASSNAME(fileName) final : TestFile \
-            { \
-        private: \
-            static TestFile* s_singleton; \
-            void CreatePhysical() override; \
-        public: \
-            TESTFILE_CLASSNAME(fileName) () : TestFile(profile, TESTFILE_NAME(fileName), isPersisted) { ProfileManager::Get().GetProfile(GetProfileType()).RegisterTestFile(*this); } \
-        }; \
-        TestFile* TESTFILE_CLASSNAME(fileName) ::s_singleton = new TESTFILE_CLASSNAME(fileName) ();
-
-#define TESTFILE_CREATEPHYSICAL(fileName) void TESTFILE_CLASSNAME(fileName) ::CreatePhysical()
-
-
-#define ECDB_TESTFILE(fileName) TESTFILE(ProfileType::ECDb, fileName, true)
-#define BEDB_TESTFILE(fileName) TESTFILE(ProfileType::BeDb, fileName, true)
-#define DGNDB_TESTFILE(fileName) TESTFILE(ProfileType::DgnDb, fileName, true)
-
