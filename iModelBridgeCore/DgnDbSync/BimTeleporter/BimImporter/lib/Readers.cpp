@@ -1493,10 +1493,45 @@ BentleyStatus DisplayStyleReader::_Read(Json::Value& object)
     DisplayStyle* displayStyle;
     if (object["Is3d"].asBool())
         {
-        displayStyle = new DisplayStyle3d(*model, displayStyleName);
+        DisplayStyle3d* disp3d = new DisplayStyle3d(*model, displayStyleName);
+         
         if (object.isMember("IsEnvironmentEnabled") && object["IsEnvironmentEnabled"].asBool())
             {
+            DisplayStyle3d::EnvironmentDisplay& envDisplay = disp3d->GetEnvironmentDisplayR();
+            auto& env = object["Environnment"];
+            if (env.isMember("GroundPlaneEnabled"))
+                {
+                auto& groundPlane = env["GroundPlane"];
+                envDisplay.m_groundPlane.m_enabled = true;
+                envDisplay.m_groundPlane.m_elevation = groundPlane["elevation"].asDouble();
+                envDisplay.m_groundPlane.m_aboveColor = ColorDef(groundPlane["aboveColor"].asUInt());
+                envDisplay.m_groundPlane.m_belowColor = ColorDef(groundPlane["belowColor"].asUInt());
+                }
+            else
+                disp3d->GetEnvironmentDisplayR().GetGroundPlane().m_enabled = false;
+
+            if (env.isMember("SkyBoxEnabled"))
+                {
+                auto& skyBox = env["Skybox"];
+                envDisplay.m_skybox.m_enabled = true;
+                envDisplay.m_skybox.m_jpegFile.AssignOrClear(skyBox["jpegFile"].asCString());
+                envDisplay.m_skybox.m_zenithColor = ColorDef(skyBox["zenithColor"].asUInt());
+                envDisplay.m_skybox.m_nadirColor = ColorDef(skyBox["nadirColor"].asUInt());
+                envDisplay.m_skybox.m_groundColor = ColorDef(skyBox["groundColor"].asUInt());
+                envDisplay.m_skybox.m_skyColor = ColorDef(skyBox["skyColor"].asUInt());
+                envDisplay.m_skybox.m_groundExponent = skyBox["groundExponent"].asDouble();
+                envDisplay.m_skybox.m_skyExponent = skyBox["skyExponent"].asDouble();
+                }
+            else
+                disp3d->GetEnvironmentDisplayR().GetSkyBox().m_enabled = false;
+
             }
+        else
+            {
+            disp3d->GetEnvironmentDisplayR().GetGroundPlane().m_enabled = false;
+            disp3d->GetEnvironmentDisplayR().GetSkyBox().m_enabled = false;
+            }
+        displayStyle = disp3d;
         }
     else
         displayStyle = new DisplayStyle2d(*model, displayStyleName);
@@ -1934,7 +1969,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
             {
             Json::Value& schema = *iter2;
             Utf8CP schemaName = iter2.memberName();
-#define EXPORT_0601JSON 1
+//#define EXPORT_0601JSON 1
 #ifdef EXPORT_0601JSON
             BeFileName jsonFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_json").c_str());
             if (!jsonFolder.DoesPathExist())
@@ -1972,7 +2007,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
                 return ERROR;
                 }
 
-#define EXPORT_0601ECSCHEMAS 1
+//#define EXPORT_0601ECSCHEMAS 1
 #ifdef EXPORT_0601ECSCHEMAS
             BeFileName outFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_0601").c_str());
             if (!outFolder.DoesPathExist())
@@ -2103,7 +2138,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
                 }
             }
 
-#define EXPORT_CONVERTEDECSCHEMAS 1
+//#define EXPORT_CONVERTEDECSCHEMAS 1
 #ifdef EXPORT_CONVERTEDECSCHEMAS
         BeFileName convertedFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_converted").c_str());
         if (!convertedFolder.DoesPathExist())

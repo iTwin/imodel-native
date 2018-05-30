@@ -73,6 +73,7 @@ BentleyStatus BisJson1ImporterImpl::InitializeSchemas()
     m_schemaReadContext = ECN::ECSchemaReadContext::CreateContext();
     m_schemaReadContext->AddSchemaLocater(m_dgndb->GetSchemaLocater());
     m_schemaReadContext->SetResolveConflicts(true);
+    m_schemaReadContext->SetSkipValidation(true);
     Planning::PlanningDomain::GetDomain().ImportSchema(*m_dgndb);
 
     bvector<ECSchemaCP> ecSchemas = m_dgndb->Schemas().GetSchemas();
