@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/RasterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ImportConfigEditor.h"
@@ -368,7 +368,7 @@ TEST_F(RasterTests, rasterAttachedTwice)
 
     Utf8String name("12TVL305030_saltLake.itiff");
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*db, RASTER_SCHEMA(RASTER_CLASSNAME_RasterModel)));
+    ASSERT_EQ(2, SelectCountFromECClass(*db, RASTER_SCHEMA(RASTER_CLASSNAME_RasterModel)));
 
     // Validate range. The raster is not reprojected.
     auto geomModelP = FindModel<GeometricModel3d>(*db, name);
@@ -594,7 +594,7 @@ TEST_F(RasterTests, RasterInReferencedDgn)
     Utf8String name = "12TVL305030_saltLake.itiff";
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
 
-    ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*db, RASTER_SCHEMA(RASTER_CLASSNAME_RasterModel)));
+    ASSERT_EQ(2, SelectCountFromECClass(*db, RASTER_SCHEMA(RASTER_CLASSNAME_RasterModel)));
 
     auto geomModelP = FindModel<GeometricModel3d>(*db, name);
     ASSERT_NE(nullptr, geomModelP.get()) << L"Model not found: " << name;
