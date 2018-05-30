@@ -650,12 +650,32 @@ bool SMNodeGroup::DownloadCesiumTileset(const DataSourceURL & url, Json::Value &
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize & readSize, const DataSourceURL & url)
     {
-    DataSource*                           dataSource;
-    DataSourceBuffer::BufferSize          destSize = 5 * 1024 * 1024;
-    return ((dataSource = this->InitializeDataSource(dest, destSize)) != nullptr &&
-             dataSource->open(url, DataSourceMode_Read).isOK()                   &&
-             dataSource->read(dest.get(), destSize, readSize, 0).isOK()          &&
-             dataSource->close().isOK());
+    DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
+    DataSourceStatus                status;
+
+    DataSource *dataSource = this->InitializeDataSource(dest, destSize);
+    if (dataSource == nullptr)
+        return false;
+
+    try
+        {
+        if ((status = dataSource->open(url, DataSourceMode_Read)).isFailed())
+            throw status;
+
+        if ((status = dataSource->read(dest.get(), destSize, readSize, 0)).isFailed())
+            throw status;
+
+        if ((status = dataSource->close()).isFailed())
+            throw status;
+        }
+    catch (DataSourceStatus)
+        {
+        assert(false);
+        }
+
+    DataSourceManager::Get()->destroyDataSource(dataSource);
+
+    return status.isOK();
     }
 
 /*---------------------------------------------------------------------------------**//**
