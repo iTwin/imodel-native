@@ -257,7 +257,7 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& re
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BeVersion WebApiV2::GetRepositoryPluginVersion(HttpResponseCR response, Utf8StringCR pluginId) const
+BeVersion WebApiV2::GetRepositoryPluginVersion(Http::Response& response, Utf8StringCR pluginId) const
     {
     Utf8CP serverHeader = response.GetHeaders().GetValue(HEADER_MasServerHeader);
     if (!serverHeader)
@@ -330,10 +330,10 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, bool 
 AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryRequest(ICancellationTokenPtr ct) const
     {
     Utf8String url = GetUrl("/");
-    HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
+    Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSRepositoryResult>([this] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSRepositoryResult>([this] (Http::Response& httpResponse)
         {
         auto resolvedRepositories = ResolveGetRepositoriesResponse(httpResponse);
 

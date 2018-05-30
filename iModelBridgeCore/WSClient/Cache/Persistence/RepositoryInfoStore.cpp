@@ -110,7 +110,7 @@ void RepositoryInfoStore::CacheRepositoryInfo(WSRepositoryCR info)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RepositoryInfoStore::CacheRepositoryInfo(IDataSourceCache& cache, WSRepositoryCR info)
     {
-    BeCriticalSectionHolder lock(m_infoMutex);
+    BeMutexHolder lock(m_infoMutex);
     m_repositoryInfo = info;
 
     PropertySpec prop(ECDbProperty_RepositoryInfo, ECDbProperty_NAMESPACE);
@@ -144,7 +144,7 @@ BentleyStatus RepositoryInfoStore::PrepareInfo(IDataSourceCache& cache)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSRepository RepositoryInfoStore::GetRepositoryInfo()
     {
-    BeCriticalSectionHolder lock(m_infoMutex);
+    BeMutexHolder lock(m_infoMutex);
     BeAssert(m_repositoryInfo.IsValid());
     return m_repositoryInfo;
     }
