@@ -36,6 +36,7 @@
     </Part>
 
     <Part Name="Docs" DeferType="BuildDocs" BentleyBuildMakeFile="iModelBridge/BuildDoc.mke" >
+        <SubPart PartName="BentleyDocConfig" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="iModelBridgeLibrary" />
         <Bindings>
             <Directory SourceName="Delivery/docs" ProductDirectoryName="iModelBridgeDoc" />

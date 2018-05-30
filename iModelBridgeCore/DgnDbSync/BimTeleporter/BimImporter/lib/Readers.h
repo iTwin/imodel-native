@@ -351,8 +351,19 @@ struct SubCategoryReader : ElementReader
 struct SchemaReader : Reader
     {
     private:
+        ECN::ECClassP m_definitionElement;
+        ECN::ECClassCP m_elementClass;
+        ECN::ECClassCP m_multiAspectClass;
+        ECN::ECClassCP m_uniqueAspectClass;
+        ECN::ECRelationshipClassCP m_elementToMulti;
+        ECN::ECRelationshipClassCP m_elementToUnique;
+        ECN::ECRelationshipClassCP m_elementToElement;
+        bvector<ECN::ECRelationshipClassP> m_relationshipsToRemove;
+
         BentleyStatus ImportSchema(ECN::ECSchemaP schema);
         BentleyStatus ValidateBaseClasses(ECN::ECSchemaP schema);
+        void SetBaseClassForRelationship(ECN::ECRelationshipClassP relClass);
+        void CheckConstraints(ECN::ECRelationshipClassP relClass);
 
     protected:
         BentleyStatus _Read(Json::Value& object) override;

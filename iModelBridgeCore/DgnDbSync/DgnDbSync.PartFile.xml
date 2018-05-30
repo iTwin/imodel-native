@@ -104,6 +104,7 @@
 
     <Part Name="DgnV8Converter-PublishedApiAndDoc" DeferType="BuildDocs" BentleyBuildMakeFile="DgnV8/BuildDoc.mke" OnlyPlatforms="x64">
         <RequiredRepository>Bsitools-Doxygen</RequiredRepository>
+        <SubPart PartName="BentleyDocConfig" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="DgnV8Converter_PublishedApi"/>
     </Part>
 

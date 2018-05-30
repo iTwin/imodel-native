@@ -782,9 +782,9 @@ Utf8String BisJson1ExporterImpl::RemapResourceAuthority(ECN::ECClassCP elementCl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementId BisJson1ExporterImpl::CreateDisplayStyle(ViewControllerCR vc, Utf8CP name, bool is3d)
+DgnElementId BisJson1ExporterImpl::CreateDisplayStyle(ViewControllerCP vc, Utf8CP name, bool is3d, bool isCamera)
     {
-    Render::ViewFlags viewFlags = vc.GetViewFlags();
+    Render::ViewFlags viewFlags = vc->GetViewFlags();
 
     auto displayStyle = Json::Value(Json::ValueType::objectValue);
     displayStyle[JSON_TYPE_KEY] = JSON_TYPE_DisplayStyle;
@@ -813,8 +813,45 @@ DgnElementId BisJson1ExporterImpl::CreateDisplayStyle(ViewControllerCR vc, Utf8C
         if (viewFlags.m_ignoreLighting) vf["noLighting"] = true;
         }
 
-    row["BackgroundColor"] = vc.GetBackgroundColor().GetValue();
+    row["BackgroundColor"] = vc->GetBackgroundColor().GetValue();
     row["Is3d"] = is3d;
+    if (isCamera)
+        {
+        CameraViewControllerCP camera = dynamic_cast<CameraViewControllerCP>(vc);
+        if (nullptr != camera)
+            {
+            row["IsEnvironmentEnabled"] = camera->IsEnvironmentEnabled();
+            if (camera->IsEnvironmentEnabled())
+                {
+                row["Environment"] = Json::Value(Json::ValueType::objectValue);
+                auto& env = row["Environment"];
+                CameraViewController::EnvironmentDisplay display = camera->GetEnvironmentDisplay();
+                if (camera->IsGroundPlaneEnabled())
+                    {
+                    env["GroundPlaneEnabled"] = true;
+                    env["GroundPlane"] = Json::Value(Json::ValueType::objectValue);
+                    auto& ground = env["GroundPlane"];
+                    ground["elevation"] = display.m_groundPlane.m_elevation;
+                    ground["aboveColor"] = display.m_groundPlane.m_aboveColor.GetValue();
+                    ground["belowColor"] = display.m_groundPlane.m_belowColor.GetValue();
+
+                    }
+                if (camera->IsSkyBoxEnabled())
+                    {
+                    env["SkyBoxEnabled"] = true;
+                    env["SkyBox"] = Json::Value(Json::ValueType::objectValue);
+                    auto& skyBox = env["SkyBox"];
+                    skyBox["jpegFile"] = display.m_skybox.m_jpegFile.c_str();
+                    skyBox["zenithColor"] = display.m_skybox.m_zenithColor.GetValue();
+                    skyBox["nadirColor"] = display.m_skybox.m_nadirColor.GetValue();
+                    skyBox["groundColor"] = display.m_skybox.m_groundColor.GetValue();
+                    skyBox["skyColor"] = display.m_skybox.m_skyColor.GetValue();
+                    skyBox["groundExponent"] = display.m_skybox.m_groundExponent;
+                    skyBox["skyExponent"] = display.m_skybox.m_skyExponent;
+                    }
+                }
+            }
+        }
     MakeNavigationProperty(row, BIS_ELEMENT_PROP_Model, m_jobDefinitionModelId);
     (QueueJson)(displayStyle.toStyledString().c_str());
 
@@ -991,7 +1028,7 @@ BentleyStatus BisJson1ExporterImpl::ExportViews()
             continue;
 
         DgnElementId categorySelectorId = CreateCategorySelector(*vc, view->GetName().c_str());
-        DgnElementId displayStyle = CreateDisplayStyle(*vc, view->GetName().c_str(), view->GetElementClass()->Is(m_viewDefinition3dClass));
+        DgnElementId displayStyle = CreateDisplayStyle(vc.get(), view->GetName().c_str(), view->GetElementClass()->Is(m_viewDefinition3dClass), view->GetElementClass()->Is(m_cameraViewDefinitionClass));
         DgnElementId modelSelectorId;
         if (view->GetElementClass()->Is(m_viewDefinition3dClass))
             modelSelectorId = CreateModelSelector(*vc, view->GetName().c_str());
