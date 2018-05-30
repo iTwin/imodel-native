@@ -25,8 +25,8 @@ def main():
     for subdir in os.listdir(testRoot):
         fullPath = os.path.join(testRoot, subdir);
         if (os.path.isdir(fullPath) and subdir != "Assets"):
-            print "calling " + os.path.join(fullPath, "DgnCompatibility.exe")
-            subprocess.check_call(os.path.join(fullPath, "DgnCompatibility.exe"))
+            print "calling " + os.path.join(fullPath, "iModelSchemaEvolution.exe")
+            subprocess.check_call(os.path.join(fullPath, "iModelSchemaEvolution.exe"))
         else:
             print "not a dir: " + fullPath
 
