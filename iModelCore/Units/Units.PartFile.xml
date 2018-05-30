@@ -128,7 +128,7 @@
         <SubPart PartName="PerformanceTests" />
     </Part>
 
-    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=UnitsTest -dTEST_COLLECTION_PRODUCT=Units-Tests TEST_FRAMEWORK_SQLANG=Units_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=UnitsTest -dTEST_COLLECTION_PRODUCT=Units-Tests TEST_FRAMEWORK_SQLANG=Units_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="Units-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -157,10 +157,9 @@
         <SubProduct ProductName="Units-Gtest" />
     </Part>
 
-    <!-- ********************** -->
-    <!-- **** AndroidJUnit **** -->
-    <!-- ********************** -->
-    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=Units-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+  
+  <!-- *** AndroidJUnit *** -->
+  <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=Units-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="Units-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -173,17 +172,15 @@
         <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=Units-AndroidJUnit" OnlyPlatforms="Android*">
+  <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/Android//RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=Units-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="Units-AndroidJUnit"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/Units-AndroidJUnit.log</Files>
         </Bindings>
     </Part>
 
-    <!-- ********************** -->
-    <!-- ***** iOSXCTest ****** -->
-    <!-- ********************** -->
-    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=Units -dTEST_COLLECTION_PRODUCT=Units-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+  <!-- *** iOSXCTest *** -->
+  <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=Units -dTEST_COLLECTION_PRODUCT=Units-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
         <SubProduct ProductName="Units-Tests"/>
         <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -196,7 +193,7 @@
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=Units-iOSXCTest" OnlyPlatforms="iOS*">
+  <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/iOS//RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=Units-iOSXCTest" OnlyPlatforms="iOS*">
         <SubProduct ProductName="Units-iOSXCTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/Units-iOSXCTest.log</Files>
@@ -209,7 +206,7 @@
     <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
     <Part
         Name="UwpTest" DeferType="BuildUnitTests"
-        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=Units -dTEST_COLLECTION_PRODUCT=Units-Tests"
         OnlyPlatforms="WinRT*"
         ApiNumber="B02"
@@ -229,7 +226,7 @@
     <Part
         Name="RunUwpTest"
         DeferType="RunUnitTests"
-        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/RunUwpTestProject.mke"
+        BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke"
         BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=Units-UwpTest"
         OnlyPlatforms="WinRT*"
         >
