@@ -14,7 +14,7 @@
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
 #define SYNCINFO_ATTACH_ALIAS "SYNCINFO"
-#define SYNCINFO_TABLE(name)  "v8sync_" name
+#define SYNCINFO_TABLE(name)  "0601sync_" name
 #define SYNCINFO_ATTACH(name) SYNCINFO_ATTACH_ALIAS "." name
 
 #define SYNC_TABLE_File         SYNCINFO_TABLE("File")
@@ -48,69 +48,7 @@ struct SyncInfoProperty
 struct SyncInfo
     {
     public:
-        //! Information about a file on disk. This struct captures the information that can be extracted from the db disk file itself.
-        struct DiskFileInfo
-            {
-            uint64_t m_lastModifiedTime; // (Unix time in seconds)
-            uint64_t m_fileSize;
-            BentleyApi::BentleyStatus GetInfo(BentleyApi::BeFileNameCR);
-            DiskFileInfo() { m_lastModifiedTime = m_fileSize = 0; }
-            };
 
-        //! Information about a file.  This struct captures the information that can be extracted from the db file itself.
-        struct FileInfo : DiskFileInfo
-            {
-            BentleyApi::Utf8String m_fileName;
-            BeSQLite::ProfileVersion m_dbVersion;
-            BeSQLite::ProfileVersion m_ecVersion;
-            BeSQLite::ProfileVersion m_dgnPrjVersion;
-            FileInfo() : m_dbVersion(0, 0, 0, 0), m_ecVersion(0, 0, 0, 0), m_dgnPrjVersion(0, 0, 0, 0) {}
-            };
-
-        struct DbFileId : BeUInt32Id<DbFileId, UINT32_MAX>
-            {
-            DbFileId() { Invalidate(); }
-            explicit DbFileId(uint32_t u) : BeUInt32Id(u) {}
-            void CheckValue() const { BeAssert(IsValid()); }
-            };
-
-        //! Sync info for a previous generation of db
-        struct DbFileProvenance : FileInfo
-            {
-            SyncInfo& m_syncInfo;
-            DbFileId m_syncId;
-
-            DbFileProvenance(BentleyApi::BeFileNameCR dbFileName, Json::Value& fileInfo, SyncInfo& syncInfo);
-
-            BeSQLite::DbResult Insert();
-            BeSQLite::DbResult Update();
-            bool FindByName(bool fillLastModData);
-            bool IsValid() const {return m_syncId.IsValid(); }
-            };
-
-        struct FileIterator : BeSQLite::DbTableIterator
-            {
-            FileIterator(DgnDbCR db, Utf8CP where);
-            struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-                {
-                private:
-                    friend struct FileIterator;
-                    Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
-                public:
-                    DbFileId GetV8FileSyncInfoId();
-                    Utf8String GetFileName();
-                    uint64_t GetLastModifiedTime();
-                    uint64_t GetFileSize();
-                    BeSQLite::ProfileVersion GetDbVersion();
-                    BeSQLite::ProfileVersion GetECVersion();
-                    BeSQLite::ProfileVersion GetDgnPrjVersion();
-                    Entry const& operator* () const { return *this; }
-                };
-            typedef Entry const_iterator;
-            typedef Entry iterator;
-            const_iterator begin() const;
-            const_iterator end() const { return Entry(NULL, false); }
-            };
 
         struct ModelMapping
             {
@@ -203,7 +141,6 @@ struct SyncInfo
         bmap<LsComponentId, LsComponentId> m_componentMap;
 
     protected:
-        BeSQLite::DbResult InsertFile(DbFileProvenance& provenance, FileInfo const& info);
         BentleyStatus PerformVersionChecks();
 
     public:
