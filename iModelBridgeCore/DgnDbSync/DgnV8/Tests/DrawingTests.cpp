@@ -1042,8 +1042,8 @@ TEST_F(DrawingTests, Attachments_With2dRootModel)
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 2);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 2);
 
-        ASSERT_EQ(4, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
-        ASSERT_EQ(4, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+        ASSERT_EQ(4, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
+        ASSERT_EQ(4, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
 
         DgnElementCPtr ele= db->Elements().GetElement(FindElementByCodeValue(*db, BIS_CLASS_Drawing, "Test2d"));
         ASSERT_TRUE(ele.IsValid());
@@ -1093,8 +1093,8 @@ TEST_F(DrawingTests, Cyclic2dModels)
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
         db->Schemas().CreateClassViewsInDb();
         countModels(*db, 2, 2);
-        ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
-        ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+        ASSERT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
+        ASSERT_EQ(2, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
         }
     }
 /*---------------------------------------------------------------------------------**//**
@@ -1147,8 +1147,8 @@ TEST_F(DrawingTests, Cyclic2dModels_AttachToSheet)
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DrawingViewDefinition), 4);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_CategorySelector), 4);
         countElementsInModelByClass(*GetJobDefinitionModel(*db), getBisClassId(*db, BIS_CLASS_DisplayStyle2d), 4);
-        ASSERT_EQ(3, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
-        ASSERT_EQ(3, DgnDbTestUtils::SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
+        ASSERT_EQ(3, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_Drawing)));
+        ASSERT_EQ(3, SelectCountFromECClass(*db, BIS_SCHEMA(BIS_CLASS_DrawingModel)));
 
         // Root model "Test2d". We expect 2 DrawingGraphics.
         // (Why 2? The root model's line, plus the line from "Test2d" that the converter merged in.)

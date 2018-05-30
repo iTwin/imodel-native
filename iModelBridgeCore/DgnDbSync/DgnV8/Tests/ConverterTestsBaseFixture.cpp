@@ -787,3 +787,24 @@ void ConverterTestBaseFixture::countElementsInModelByClass(DgnModel& model, DgnC
     stmt->Step();
     EXPECT_EQ(expected, stmt->GetValueInt(0));
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2014
+//---------------------------------------------------------------------------------------
+int ConverterTestBaseFixture::SelectCountFromECClass(DgnDbR db, Utf8CP className)
+    {
+    if (!className || !*className)
+        return -1;
+
+    Utf8PrintfString sql("SELECT COUNT(*) FROM %s", className);
+
+    EC::ECSqlStatement statement;
+    EC::ECSqlStatus status = statement.Prepare(db, sql.c_str());
+    if (EC::ECSqlStatus::Success != status)
+        return -1;
+
+    if (BE_SQLITE_ROW != statement.Step())
+        return -1;
+
+    return statement.GetValueInt(0);
+    }
