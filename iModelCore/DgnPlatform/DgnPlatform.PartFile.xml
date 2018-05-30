@@ -87,6 +87,12 @@
         </Bindings>
     </Part>
 
+    <Part Name="BentleyDocConfig" BentleyBuildMakeFile="docs/prewire.mke">
+        <Bindings>
+            <Directory SourceName="Delivery/BentleyDocConfig" SubPartDirectory="BentleyDocConfig"/>
+        </Bindings>
+    </Part>
+
     <Part Name="DgnPlatformExtractions" BentleyBuildMakeFile="docs/DgnPlatformExtractions.mke">
         <SubPart PartName="DgnPlatformDoc-Build-SampleCode" />
         <Bindings>

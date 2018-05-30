@@ -44,6 +44,17 @@ BentleyStatus Profile::Init() const
     }
 
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   05/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BeFileName Profile::GetPathForNewTestFile(Utf8CP testFileName) const
+    {
+    BeFileName path(GetSeedFolder());
+    path.AppendToPath(BeFileName(GetExpectedVersion().ToString())).AppendToPath(BeFileName(testFileName));
+    return path;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -146,8 +157,7 @@ BentleyStatus DgnDbProfile::_Init() const
     if (db == nullptr)
         return ERROR;
 
-    m_expectedVersion = db->GetProfileVersion();
-    return ERROR;
+    return ReadProfileVersion(m_expectedVersion, *db, m_versionPropertySpec);
     }
 
 //=====================================ProfileManager====================================

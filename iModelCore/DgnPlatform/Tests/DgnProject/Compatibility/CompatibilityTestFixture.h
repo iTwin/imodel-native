@@ -74,7 +74,8 @@ struct Profile : NonCopyableClass
         BentleyStatus Init() const;
 
         ProfileVersion const& GetExpectedVersion() const { return m_expectedVersion; }
-
+        BeFileNameCR GetSeedFolder() const { return m_profileSeedFolder; }
+        BeFileName GetPathForNewTestFile(Utf8CP testFileName) const;
         static ProfileType ParseProfileType(Utf8CP);
     };
 
