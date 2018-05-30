@@ -2,13 +2,11 @@
 |
 |     $Source: geom/src/mtg/jmdl_mtgstitch.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include "mtgintrn.h"
-#include "../memory/jmdl_iarray.fdf"
-#include "../memory/jmdl_dpnt3.fdf"
 #include <stdlib.h>
 #include <limits.h>
 #define DEBUG_CODE(_code_) _code_

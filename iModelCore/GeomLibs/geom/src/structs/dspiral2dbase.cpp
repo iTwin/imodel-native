@@ -421,9 +421,18 @@ double maxStrokeLength
         numInterval = numIntervalByDistance;
     if (numInterval < minInterval)
         numInterval = minInterval;
+// worst case max interval . .
 #define MAX_INTERVAL 1000
+
     if (numInterval > MAX_INTERVAL)
         numInterval = MAX_INTERVAL;
+
+// smaller max interval for reasonable turn angle.
+// this protects against metric maxStrokeLength appearing in UOR data ...
+#define TYPICAL_ANGLE_LIMIT 0.45
+#define MAX_INTERVAL_TYPICAL_ANGLE 100
+    if (fabs (beta0 - beta1) < TYPICAL_ANGLE_LIMIT && numInterval > MAX_INTERVAL_TYPICAL_ANGLE)
+        numInterval = MAX_INTERVAL_TYPICAL_ANGLE;
     // Ensure that midpoint of biquadratic does not appera mid-interval ...
     if (numInterval & 0x01)
         numInterval += 1;

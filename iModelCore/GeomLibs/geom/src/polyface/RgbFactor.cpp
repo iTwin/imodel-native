@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/RgbFactor.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -24,15 +24,31 @@ RgbFactor RgbFactor::From (DPoint3dCR data)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
+bool RgbFactor::Equals (RgbFactor const &other) const
+    {
+    return red == other.red
+        && green == other.green
+        && blue  == other.blue;
+    }
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+bool RgbFactor::EqualsInt (RgbFactor const &other) const
+    {
+    return ToIntColor () == other.ToIntColor ();
+    }
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
 RgbFactor RgbFactor::FromIntColor (int32_t source)
     {
     RgbFactor   rgbFactor;
-    double      scale = 1.0 / (double) UCHAR_MAX;
+//    double      scale = 1.0 / (double) UCHAR_MAX;
     uint8_t*    pByte = (uint8_t *) (&source);
 
-    rgbFactor.red   = (double) pByte[0] * scale;
-    rgbFactor.green = (double) pByte[1] * scale;
-    rgbFactor.blue  = (double) pByte[2] * scale;
+    rgbFactor.red   = (double) pByte[0] / (double) UCHAR_MAX;
+    rgbFactor.green = (double) pByte[1] / (double) UCHAR_MAX;
+    rgbFactor.blue  = (double) pByte[2] / (double) UCHAR_MAX;
 
     return rgbFactor;
     }

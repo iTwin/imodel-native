@@ -6,7 +6,7 @@
 |       $Date: 2006/08/02 18:07:13 $
 |     $Author: DavidAssaf $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -29,7 +29,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public int      jmdlRG_intersectCircleSegmentXY
 (
-EmbeddedDoubleArray     *pParamArray,
+bvector<double>     *pParamArray,
 EmbeddedDPoint3dArray   *pPointArray,
 DPoint3d    *pStart,
 DPoint3d    *pEnd,

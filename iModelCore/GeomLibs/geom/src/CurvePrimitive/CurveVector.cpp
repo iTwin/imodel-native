@@ -335,7 +335,7 @@ bool CurveVector::TransformInPlace (TransformCR transform)
     bool ok = true;
     for (size_t i = 0, n = size (); i < n; i++)
         {
-        if (!at(i)->TransformInPlace (transform))
+        if (at(i).IsValid() && !at(i)->TransformInPlace (transform))
             ok = false;
         }
     return ok;

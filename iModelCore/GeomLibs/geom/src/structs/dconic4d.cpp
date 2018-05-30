@@ -2751,8 +2751,8 @@ DConic4dCP pConic1
     bsiDConic4d_getTranslatedRotMatrixXYW (pConic, &T0, &T0inv, &B0);
     bsiDConic4d_getTranslatedRotMatrixXYW (pConic1, &T1, &T1inv, &B1);
 
-    condition0 = bsiRotMatrix_conditionNumber (&B0);
-    condition1 = bsiRotMatrix_conditionNumber (&B1);
+    condition0 = B0.ConditionNumber ();
+    condition1 = B1.ConditionNumber ();
 
     bool0 = bsiRotMatrix_invertRotMatrix (&B0inv, &B0);
     bool1 = bsiRotMatrix_invertRotMatrix (&B1inv, &B1);
@@ -3026,10 +3026,10 @@ DConic4dCP pEllipse
     int numUnbounded = 0;
 
     bsiDConic4d_getXYLocalFrame (pConic, &instanceFrame, NULL);
-    instanceCondition = bsiRotMatrix_conditionNumber (&instanceFrame.matrix);
+    instanceCondition = instanceFrame.matrix.ConditionNumber ();
 
     bsiDConic4d_getXYLocalFrame (pEllipse, &ellipseFrame, NULL);
-    ellipseCondition = bsiRotMatrix_conditionNumber (&ellipseFrame.matrix);
+    ellipseCondition = ellipseFrame.matrix.ConditionNumber ();
 
     if  (instanceCondition > ellipseCondition)
         {
@@ -3195,10 +3195,10 @@ DConic4dCP pEllipse
     int numUnbounded = 0;
 
     bsiDConic4d_getLocalFrame (pConic, &instanceFrame, NULL);
-    instanceCondition = bsiRotMatrix_conditionNumber (&instanceFrame.matrix);
+    instanceCondition = instanceFrame.matrix.ConditionNumber ();
 
     bsiDConic4d_getLocalFrame (pEllipse, &ellipseFrame, NULL);
-    ellipseCondition = bsiRotMatrix_conditionNumber (&ellipseFrame.matrix);
+    ellipseCondition = ellipseFrame.matrix.ConditionNumber ();
 
     if  (instanceCondition > ellipseCondition)
         {
@@ -3311,7 +3311,7 @@ DSegment3dCP pSegment
     static double   s_conditionTol = 1.0e-8;
 
     bsiDConic4d_getLocalFrame (pConic, &ellipseFrame, &ellipseInverse);
-    ellipseCondition = bsiRotMatrix_conditionNumber (&ellipseFrame.matrix);
+    ellipseCondition = ellipseFrame.matrix.ConditionNumber ();
 
     if (ellipseCondition > s_conditionTol)
         {

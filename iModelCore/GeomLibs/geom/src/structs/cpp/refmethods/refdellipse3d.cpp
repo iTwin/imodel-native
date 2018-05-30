@@ -91,9 +91,10 @@ DPoint3dCR endPoint
         {
         localStart = inverseFrame * startPoint;
         localEnd   = inverseFrame * endPoint;
-        aa = localStart.DotProduct (localStart) - 1.0; //localStart.DotProductXY (localStart) - 1.0;
-        ab = localStart.DotProduct (localEnd) - 1.0; //localStart.DotProductXY (localEnd) - 1.0;
-        bb = localEnd.DotProduct (localEnd) - 1.0; //localEnd.DotProductXY (localEnd) - 1.0;
+        // EDL May 2018 Why was this using XYZ dot product?
+        aa = localStart.DotProductXY (localStart) - 1.0; //localStart.DotProduct (localStart) - 1.0;
+        ab = localStart.DotProductXY (localEnd) - 1.0; //localStart.DotProduct (localEnd) - 1.0;
+        bb = localEnd.DotProductXY (localEnd) - 1.0; //localEnd.DotProduct (localEnd) - 1.0;
         numSolution = bsiMath_solveConvexQuadratic (lambda0, lambda1, aa, 2.0 * ab, bb);
         for (i = 0; i < numSolution; i++)
             {
@@ -1225,55 +1226,6 @@ DPoint3dCP pPoint
                     );
     }
 
-/*-----------------------------------------------------------------*//**
-@description Find the intersections of xy projections of an ellipse and line.
-@remarks May return 0, 1, or 2 points.  Both ellipse and line are unbounded.
- @param pEllipse      => ellipse to intersect with line
- @param pCartesianPoints   <= cartesian intersection points
- @param pLineParams        <= array of line parameters (0=start, 1=end)
- @param pEllipseCoffs      <= array of coordinates relative to the ellipse.
-                              For each point, (xy) are the cosine and sine of the
-                              ellipse parameter, (z) is z distance from the plane of
-                              of the ellipse.
- @param pEllipseAngle      <= array of angles on the ellipse
- @param pStartPoint    => line start
- @param pEndPoint      => line end
- @return the number of intersections.
- @group "DEllipse3d Intersection"
- @bsimethod                                                     EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int bsiDEllipse3d_intersectXYLine
-
-(
-DEllipse3dCP pEllipse,
-DPoint3dP pCartesianPoints,
-double        *pLineParams,
-DPoint3dP pEllipseCoffs,
-double        *pEllipseAngle,
-DPoint3dCP pStartPoint,
-DPoint3dCP pEndPoint
-)
-    {
-    Transform frame, inverse;
-    DPoint3d ellipseCoffs[2];
-    int numIntersection;
-    int i;
-    pEllipse->GetLocalFrame (frame, inverse);
-
-    numIntersection  = bsiCylinder_intersectLine (pCartesianPoints, pLineParams, ellipseCoffs,
-                                frame, *pStartPoint, *pEndPoint);
-    if (pEllipseCoffs || pEllipseAngle)
-        {
-        for (i = 0; i < numIntersection; i++)
-            {
-            if (pEllipseCoffs)
-                pEllipseCoffs[i] = ellipseCoffs[i];
-            if (pEllipseAngle)
-                pEllipseAngle[i] = Angle::Atan2 (ellipseCoffs[i].y, ellipseCoffs[i].x);
-            }
-        }
-    return numIntersection;
-    }
 /*-----------------------------------------------------------------*//**
 @description Find the intersections of xy projections of an ellipse and line, applying both ellipse and line parameter bounds.
  @param pEllipse      => ellipse to intersect with line.
@@ -4527,7 +4479,6 @@ DPoint3dCR point1
     double dot00, dot01, disc, root;
     double cc, ss, dss, axisRatio;
     double alpha0, alpha1;
-    double sweep;
     center = centerIN;
     vector0 = DVec3d::FromStartEnd (centerIN, point0);
     DVec3d vector1 = DVec3d::FromStartEnd (center, point1);
@@ -5474,7 +5425,8 @@ DPoint3dCR pointC  //!< [in] point "after" the filleted corner.
     auto fractionC = DoubleOps::ValidatedDivide(pointB.Distance(tangencyC), dB);
     if (fractionA.IsValid() && fractionC.IsValid())
         {
-        double radius = radius0 * DoubleOps::Min(fractionA.Value(), fractionC.Value());
+        // EDL May 2018 This was multiply, wrong final radius
+        double radius = radius0 / DoubleOps::Min(fractionA.Value(), fractionC.Value());
         return DEllipse3d::FromFilletCommonPointAndRaysToTangency
             (
             pointB,

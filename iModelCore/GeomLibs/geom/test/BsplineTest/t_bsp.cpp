@@ -170,8 +170,8 @@ void CheckSpiralStroke (DSpiral2dBaseR spiral)
     bvector <DVec2d> xy0,xy1, xy2;
     bvector <double> f0, f1, f2;
     double e0, e1, e2;
-    double strokeFraction1 = 0.1;   
-    double strokeFraction2 = strokeFraction1 * 0.25;
+    double strokeFraction1 = 0.5;   
+    double strokeFraction2 = strokeFraction1 * 0.5;
     double strokeRadians1 = 1.0;        // try to eliminate this from participating
     DSpiral2dBase::Stroke (spiral, 0.0, 1.0, 0.0, xy0, f0, e0, DEFAULT_SPIRAL_MAX_STROKE_LENGTH);
     DSpiral2dBase::Stroke (spiral, 0.0, 1.0, strokeRadians1, xy1, f1, e1, strokeFraction1 * DEFAULT_SPIRAL_MAX_STROKE_LENGTH);
@@ -185,7 +185,7 @@ void CheckSpiralStroke (DSpiral2dBaseR spiral)
     double d12 = xy1.back ().Distance (xy2.back ());
     // REMARK
     // stroke0 is defaults.    In examples, size0 is "small" -- e.g. 11
-    // if stroke0 is driven by the max edge length (rather than angle), stroke1 and 2 are respectively 10x and 40X points.
+    // if stroke0 is driven by the max edge length (rather than angle), stroke1 and 2 are respectively 2x and 4X points.
     // Difference d12 is "usually" smaller -- one exception being BiQuadratic.   Is the discontinuity affecting things?
     printf("(d01 %8.2g) (d12 %8.2g)\n",d01, d12);
     Check::NearZero (d01, "stroke spirals match", 1000.0);

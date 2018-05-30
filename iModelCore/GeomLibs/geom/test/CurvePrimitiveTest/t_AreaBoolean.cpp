@@ -1889,4 +1889,101 @@ TEST(CurveVector,ReduceToCCWAreas)
     Check::ClearGeometry ("CurveVector.ReduceToCCWAreas");
     }
 
+bvector<DPoint3d> BuildSymbol (DPoint3dCR pointA, DPoint3dCR pointB, bvector<DPoint2d> const &uvPoints)
+    {
+    bvector<DPoint3d> points;
+    for (auto &uv : uvPoints)
+        points.push_back (DPoint3d::FromInterpolateAndPerpendicularXY (
+                pointA, uv.x, pointB, uv.y));
+    return points;
+    }
+void ShowOrientation (ICurvePrimitiveCR primitive, double arrowLength = 0.5, double zShift = 0.1);
 
+void ShowOrientation (CurveVectorCR curves, double arrowLength = 0.5, double zShift = 0.1)
+    {
+    static bvector<DPoint2d> outerArrow {
+        DPoint2d::From (0,0),
+        DPoint2d::From (1,0),
+        DPoint2d::From (0.9, 0.1),
+        DPoint2d::From (0.9,-0.1),
+        DPoint2d::From (1,0)
+        };
+
+    static bvector<DPoint2d> innerArrow {
+        DPoint2d::From (0,0),
+        DPoint2d::From (0.6,0),
+        DPoint2d::From (0.5, 0.05),
+        DPoint2d::From (0.5, 0)
+        };
+    auto btype = curves.GetBoundaryType ();
+    if (btype == CurveVector::BOUNDARY_TYPE_Outer
+        || btype == CurveVector::BOUNDARY_TYPE_Inner)
+        {
+        DPoint3d pointA, pointB;
+        DVec3d unitA, unitB;
+        curves.GetStartEnd (pointA, pointB, unitA, unitB);
+        DPoint3d pointC = pointA; pointC.z += zShift;
+        DPoint3d pointD = pointC + arrowLength * unitA;
+        bvector<DPoint3d> arrow = btype == CurveVector::BOUNDARY_TYPE_Outer 
+            ? BuildSymbol (pointC, pointD,outerArrow)
+            : BuildSymbol (pointC, pointD,innerArrow);
+        Check::SaveTransformed (arrow);
+        }
+    else if (btype == CurveVector::BOUNDARY_TYPE_ParityRegion)
+        {
+        for (auto &child : curves)
+            ShowOrientation (*child, arrowLength, zShift + 1);
+        }
+    else if (btype == CurveVector::BOUNDARY_TYPE_UnionRegion)
+        {
+        for (auto &child : curves)
+            ShowOrientation (*child, arrowLength, zShift + 2);
+        }
+    }
+void ShowOrientation (ICurvePrimitiveCR primitive, double arrowLength, double zShift)
+    {
+    auto childP = primitive.GetChildCurveVectorCP ();
+    if (nullptr != childP)
+        ShowOrientation (*childP, arrowLength, zShift);
+    }
+
+void testFixup (bvector<CurveVectorPtr> &loops)
+    {
+    SaveAndRestoreCheckTransform shifter (0,60,0);
+    double a = 0.5;
+    for (size_t i = 0; i < loops.size (); i++)
+        {
+        ShowOrientation (*loops[i], a);
+        Check::SaveTransformed (*loops[i]);    
+        }
+    for (size_t i0 = 0; i0 < loops.size (); i0++)
+        {
+        SaveAndRestoreCheckTransform shifter (20,0,0);
+        auto parityRegion = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+        parityRegion->Add (loops[i0]);
+        for (size_t i = 0; i < loops.size (); i++)
+            if (i != i0)
+                parityRegion->Add (loops[i]);
+        parityRegion->FixupXYOuterInner (false);
+        Check::SaveTransformed (*parityRegion);
+        Check::Shift (0,10,0);
+        ShowOrientation (*parityRegion);
+        Check::SaveTransformed (*parityRegion->at (0));
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CurveVector,FixupXYOuterInnerA)
+    {
+    bvector<CurveVectorPtr> rectangles {
+        CurveVector::CreateRectangle (0, 0, 5, 5, 0.0, CurveVector::BOUNDARY_TYPE_Outer),
+        CurveVector::CreateRectangle (1, 1, 2, 3, 0.0, CurveVector::BOUNDARY_TYPE_Inner),
+        CurveVector::CreateRectangle (3, 1, 4, 1, 0.0, CurveVector::BOUNDARY_TYPE_Inner),
+        };
+    testFixup (rectangles);
+    rectangles.push_back (
+        CurveVector::CreateRectangle (6, 1, 8, 3, 0.0, CurveVector::BOUNDARY_TYPE_Inner));
+    testFixup (rectangles);
+    Check::ClearGeometry ("CurveVector.FixupXYOuterInnerA");
+    }

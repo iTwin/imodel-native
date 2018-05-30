@@ -310,3 +310,74 @@ TEST (Polyface, ClipTunnel)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     Check::ClearGeometry ("Polyface.ClipTunnel");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST (Polyface, PolygonClipTunnel)
+    {
+    int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
+    //static int s_printGraph = 0;
+
+    IPolyfaceConstructionPtr builder = CreateBuilder (false, false);
+    builder->GetFacetOptionsR ().SetMaxPerFace (4);
+    //varunused double mySize = SetTransformToNewGridSpot (*builder, true);
+
+
+    // tunnel cap in xz plane . .
+    bvector<DPoint3d> outerLoop, innerLoop;
+    bvector<bool> outerVisible, innerVisible;
+    MakeParallelogram (DPoint3d::From (0,0,0), DVec3d::From (10,0,0), DVec3d::From (0,0,10), outerLoop, outerVisible);
+    MakeParallelogram (DPoint3d::From (1,0,1), DVec3d::From (8,0,0), DVec3d::From (0,0,8), innerLoop, innerVisible);
+
+    auto parityRegion = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+    parityRegion->Add (CurveVector::CreateLinear (outerLoop, CurveVector::BOUNDARY_TYPE_Outer));
+    parityRegion->Add(CurveVector::CreateLinear (innerLoop, CurveVector::BOUNDARY_TYPE_Inner));
+    Check::SaveTransformed (*parityRegion);
+    Check::Shift (0,20,0);
+
+    auto solid = ISolidPrimitive::CreateDgnExtrusion (
+        DgnExtrusionDetail (parityRegion, DVec3d::From (0,10,0), true));
+
+    builder->AddSolidPrimitive (*solid);
+
+    DVec3d clipOrigin = DVec3d::From (-1,3,0);
+
+    for (auto sweepVector: {DVec3d::From (0,0,1), DVec3d::From (1,1,3)})
+        {
+        SaveAndRestoreCheckTransform shifter (0,50,0);
+        for (auto diagonal : bvector<DVec3d> {
+                DVec3d::From (14, 5,0),
+                DVec3d::From (14, 5,0),
+                DVec3d::From (14, 10,0),
+                DVec3d::From (14, 5,0),
+                DVec3d::From (5,5,0)
+                })
+            {
+            SaveAndRestoreCheckTransform shifter (30,0,0);
+            Check::SaveTransformed (builder->GetClientMeshR ());
+            bvector<DPoint3d> rectanglePoints;
+            bvector<bool> interiorFlag;
+            double ax = clipOrigin.x;
+            double ay = clipOrigin.y;
+            double bx = clipOrigin.x + diagonal.x;
+            double by = clipOrigin.y + diagonal.y;
+            MakeRectangle (ax, ay, bx, by, 0, rectanglePoints, interiorFlag);
+
+            Check::SaveTransformed (rectanglePoints);
+            Check::Shift (0,20,0);
+            Check::SaveTransformed (rectanglePoints);
+
+            PolyfaceHeaderPtr insideClip;
+            ClipPlaneSet::SweptPolygonClipPolyface (
+                    builder->GetClientMeshR (),
+                    rectanglePoints, sweepVector,
+                    true,
+                    &insideClip, nullptr);
+            if (insideClip.IsValid ())
+                Check::SaveTransformed (*insideClip);
+            }
+        }
+    Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
+    Check::ClearGeometry ("Polyface.PolygonClipTunnel");
+    }

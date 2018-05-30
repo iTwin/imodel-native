@@ -1435,6 +1435,23 @@ PolyfaceHeaderPtr *outside
         (*outside)->Compress ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Earlin.Lutz     05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClipPlaneSet::SweptPolygonClipPolyface
+(
+PolyfaceQueryCR polyface,
+bvector<DPoint3d> &polygon,
+DVec3dCR sweepDirection,
+bool constructNewFacetsOnClipSetPlanes,
+PolyfaceHeaderPtr *inside,
+PolyfaceHeaderPtr *outside
+)
+    {
+    bvector<bool> interiorFlag; // empty ==> all active.
+    ClipPlaneSet clipper = ClipPlaneSet::FromSweptPolygon (polygon.data (), polygon.size (), &sweepDirection);
+    ClipPlaneSet::ClipPlaneSetIntersectPolyface (polyface, clipper, constructNewFacetsOnClipSetPlanes, inside, outside);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz     11/17

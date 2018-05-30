@@ -2667,3 +2667,335 @@ TEST(DEllipse3d,Circle_LLCParallel)
         }
     Check::ClearGeometry ("DEllipse3d.Circle_LLCParallel");
     }
+
+void ShowEllipseLineData (
+DEllipse3dCR arc,
+DSegment3dCR segment,
+DPoint3d xyz[],
+DPoint3d ellipseParams[],
+double lineParams[],
+int n,
+DVec3dCR viewVector     // Expect intersection in this view direction.
+)
+    {
+    Check::SaveTransformed (arc);
+    Check::SaveTransformed (segment);
+
+    double a = 5.0;
+    for (auto i = 0; i < n; i++)
+        {
+        DPoint3d xyzA = segment.FractionToPoint (lineParams[i]);
+        DPoint3d xyzB;
+        arc.Evaluate (xyzB, ellipseParams[i].x, ellipseParams[i].y);
+        Check::SaveTransformedMarker (xyzA);
+        Check::SaveTransformedMarker (xyzB);
+        DPoint3d xyzC = xyz[i] + viewVector * a;
+        DPoint3d xyzD = xyz[i] - viewVector * a;
+        Check::SaveTransformed (DSegment3d::From (xyzC, xyzD));
+        }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DEllipse3d,IntersectSweptLineSegment)
+    {
+    double lineParams[5];
+    DPoint3d ellipseParams[5];
+    double ellipseAngle[5];
+    DPoint3d xyz[5];
+    bool isTangency[5];
+    auto arc = DEllipse3d::From (1,0,0, 4,1,1, -1,-5,1,
+            Angle::DegreesToRadians (-20),
+            Angle::DegreesToRadians (220));
+    auto unitNormal = DVec3d::FromNormalizedCrossProduct (arc.vector0, arc.vector90);
+    auto unitZ = DVec3d::From (0,0,1);
+    for (double xB : {0.0, 4.0, 8.0})
+        {
+        SaveAndRestoreCheckTransform shifter (0, 30, 0);
+        auto segment = DSegment3d::From (-8,0,0,  xB,1,0);
+        auto n = arc.IntersectSweptDSegment3d (xyz, ellipseParams, lineParams, segment);
+        ShowEllipseLineData (arc, segment, xyz, ellipseParams, lineParams, n, unitNormal);
+        Check::Shift (30,0,0);
+        n = arc.IntersectSweptDSegment3dBounded (xyz, ellipseParams, lineParams, segment);
+        ShowEllipseLineData (arc, segment, xyz, ellipseParams, lineParams, n, unitNormal);
+
+        Check::Shift (30, 0, 0);
+        n = arc.IntersectXYLineBounded (xyz, lineParams, ellipseParams, ellipseAngle, isTangency,
+                        segment.point[0], segment.point[1]);
+        ShowEllipseLineData (arc, segment, xyz, ellipseParams, lineParams, n, unitZ);
+        }
+    Check::ClearGeometry ("DEllipse3d.IntersectSweptLineSegment");
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DEllipse3d,ClosestApproachDRay3d)
+    {
+    double rayFraction[5];
+    double arcAngle[5];
+    DPoint3d xyzArc[5];
+    DPoint3d xyzRay[5];
+    auto arc = DEllipse3d::From (1,0,0, 4,1,1, -1,-5,1,
+            Angle::DegreesToRadians (-20),
+            Angle::DegreesToRadians (220));
+    DPoint3d rayOrigin = DPoint3d::From(-2,0,1);
+    for (auto vector : {
+                DVec3d::From (4,0,3),
+                DVec3d::From (1,5,-3)
+                })
+        {
+        SaveAndRestoreCheckTransform shifter (0, 30, 0);
+        auto ray = DRay3d::FromOriginAndVector (rayOrigin, vector);
+
+        auto n = arc.ClosestApproach (arcAngle, rayFraction, xyzArc, xyzRay, ray);
+        Check::SaveTransformed (arc);
+        Check::SaveTransformed (DSegment3d::From (ray.origin, ray.origin + ray.direction));
+        for (int i = 0; i < n; i++)
+            {
+            Check::SaveTransformed (DSegment3d::From (xyzArc[i], xyzRay[i]));
+            DPoint3d xyzA;
+            DVec3d   tangentA, kurvA;
+            arc.Evaluate (xyzA, tangentA, kurvA, arcAngle[i]);
+            Check::Near (xyzArc[i], xyzA);
+            Check::Perpendicular (vector, xyzRay[i] - xyzArc[i]);
+            }
+        }
+    Check::ClearGeometry ("DEllipse3d.ClosestApproachDRay3d");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DEllipse3d,InitArcFromPointPointArcLength)
+    {
+    DPoint3d pointA = DPoint3d::From (1,3,2);
+    DPoint3d pointB = DPoint3d::From (4,5,1);
+    double a = pointA.Distance (pointB);
+    DVec3d planeVector = DVec3d::From (3,6,1);
+    double markerSize = 0.05;
+    // shorter arc length should fail ..
+    DEllipse3d arc;
+    Check::False (arc.InitArcFromPointPointArcLength (pointA, pointB, 0.5 * a, planeVector));
+    for (double factor : {3.0, 1.1, 5.0})
+        {
+        SaveAndRestoreCheckTransform shifter (10, 0, 0);
+        double arcLength = factor * a;
+
+        Check::SaveTransformedMarker (pointA, markerSize);
+        Check::SaveTransformedMarker (pointB, markerSize);
+        if (Check::True (arc.InitArcFromPointPointArcLength (pointA, pointB, arcLength, planeVector)))
+            {
+            Check::Near (arcLength, arc.ArcLength ());
+            Check::SaveTransformed (arc);
+            DPoint3d midPoint = DPoint3d::FromInterpolate (pointA, 0.5, pointB);
+            Check::SaveTransformed (
+                DSegment3d::From (midPoint, midPoint + planeVector));
+            auto normal = DVec3d::FromCrossProduct (arc.vector0, arc.vector90);
+            Check::Near (pointA, arc.FractionToPoint (0.0));
+            Check::Near (pointB, arc.FractionToPoint (1.0));
+            Check::Perpendicular (normal, planeVector);
+            }
+        }
+    Check::ClearGeometry ("DEllipse3d.InitArcFromPointPointArcLength");
+    }
+bool VerifyArcMatch (DEllipse3dCR arc0, DEllipse3dCR arc1)
+    {
+    // 5 points define an unbounded conic.
+    // fractional parameterization is preserved by axis "rotations"
+    for (auto f : {0.0, 0.2, 0.4, 0.6, 0.8, 1.0})
+        {
+        auto point0 = arc0.FractionToPoint (f);
+        auto point1 = arc1.FractionToPoint (f);
+        if (!Check::Near (point0, point1))
+            return false;
+        }
+    return true;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DEllipse3d,DgnFields3d)
+    {
+    for (double sweepDegrees : {360, 290 , -81})
+        {
+        SaveAndRestoreCheckTransform shifter (20, 0, 0);
+        DEllipse3d arc0 = DEllipse3d::From (
+            3,4,5,
+            6,1,0,
+            -1,4,0,
+            Angle::DegreesToRadians (20), Angle::DegreesToRadians (sweepDegrees)
+            );
+
+        double quat [4];
+        DVec3d vector0, vector90;
+        double r0, r90;
+        DPoint3d center;
+        double start, sweep;
+        arc0.GetDGNFields3d (center, quat, vector0, vector90, r0, r90, start, sweep);
+        DEllipse3d arc1;
+        arc1.InitFromDGNFields3d (center, quat, r0, r90, start, sweep);
+        VerifyArcMatch (arc0, arc1);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DEllipse3d,DgnFields2d)
+    {
+    for (double sweepDegrees : {360, 290 , -81})
+        {
+        SaveAndRestoreCheckTransform shifter (20, 0, 0);
+        DEllipse3d arc0 = DEllipse3d::From (
+            3,4,0,
+            6,1,0,
+            -1,4,0,
+            Angle::DegreesToRadians (20), Angle::DegreesToRadians (sweepDegrees)
+            );
+
+        double xAngle;
+        DVec2d direction0;
+        double r0, r90;
+        DPoint2d center;
+        double start, sweep;
+        arc0.GetDGNFields2d (center, xAngle, direction0, r0, r90, start, sweep);
+        DEllipse3d arc1;
+        arc1.InitFromDGNFields2d (center, xAngle, r0, r90, start, sweep, 0.0);
+        VerifyArcMatch (arc0, arc1);
+        }
+    }
+
+TEST(DEllipse3d,InitFromCenterMajorAxisPointAndThirdPoint)
+    {
+    DEllipse3d arc0;
+    auto center = DPoint3d::From (1,2,2);
+    auto majorPoint = DPoint3d::From (8,5,1);
+    auto pointA = DPoint3d::From (5,3,0);
+
+    if (Check::True (arc0.InitFromCenterMajorAxisPointAndThirdPoint (
+            center, majorPoint, pointA)))
+        {
+        Check::Near (center, arc0.center);
+        Check::Near (majorPoint, arc0.FractionToPoint (0.0));
+        Check::Near (pointA, arc0.FractionToPoint (1.0));
+        Check::ExactDouble (arc0.start, 0.0);
+        }
+    }
+
+struct ArcPoints
+{
+DPoint3d m_xyz[10];
+double   m_a[10];
+int m_numPoints;
+int findDouble (double r, double tol = 1.0e-12)
+    {
+    for (int i = 0; i < m_numPoints; i++)
+        {
+        if (fabs (r - m_a[i]) <= tol)
+            return i;
+        }
+    return -1;
+    }
+int findXYZ (DPoint3dCR xyz, double tol = 1.0e-12)
+    {
+    for (int i = 0; i < m_numPoints; i++)
+        {
+        if (xyz.Distance (m_xyz[i]) <= tol)
+            return i;
+        }
+    return -1;
+    }
+
+};
+TEST(DEllipse3d,ProjectPointXY)
+    {
+    double sweepDegrees = 185.0;
+    DEllipse3d arc0 = DEllipse3d::From (
+        3,4,5,
+        6,1,0,
+        -1,4,1,
+        Angle::DegreesToRadians (20), Angle::DegreesToRadians (sweepDegrees)
+        );
+    for (auto fraction : {0.0, 0.5, 1.5})
+        {
+        auto frenetFrame1 = arc0.FractionToFrenetFrame(fraction);
+        Check::True (frenetFrame1.IsValid ());
+        auto frenetFrame = frenetFrame1.Value ();
+        auto arcPoint = frenetFrame.Origin ();
+        ArcPoints searchPoints;
+        searchPoints.m_numPoints = arc0.ProjectPointXY (searchPoints.m_xyz, searchPoints.m_a, arcPoint);
+        Check::True (searchPoints.findXYZ (arcPoint) >= 0);
+        DPoint3d xyzA;
+        frenetFrame.Multiply (xyzA, 0, -0.1, 0); // outside point
+        searchPoints.m_numPoints = arc0.ProjectPoint (searchPoints.m_xyz, searchPoints.m_a, xyzA);
+        Check::True (searchPoints.findXYZ (arcPoint) >= 0);
+
+
+        }
+    }
+void ShowLocalRange (TransformCR transform, DRange3dCR localRange)
+    {
+    DPoint3d corners[8];
+    localRange.Get8Corners (corners);
+    transform.Multiply (corners, 8);
+    Check::SaveTransformed (bvector<DPoint3d> {
+            corners[0], corners[1], corners[3], corners[2], corners[0]});
+    Check::SaveTransformed (bvector<DPoint3d> {
+            corners[4], corners[5], corners[7], corners[6], corners[4]});
+    Check::SaveTransformed (bvector<DPoint3d> {
+            corners[0], corners[4], corners[6], corners[2], corners[0]});
+    Check::SaveTransformed (bvector<DPoint3d> {
+            corners[1], corners[5], corners[7], corners[3], corners[1]});
+    }
+TEST(DEllipse3d,AlignedRange)
+    {
+    for (double sweepDegrees: {360, 10, 90, 180, 275 })
+        {
+        SaveAndRestoreCheckTransform shifter (0, 10, 0);
+        for (double startDegrees: {360, 10, 90, 180, 275, })
+            {
+            SaveAndRestoreCheckTransform shifter (10, 0, 0);
+            DEllipse3d arc0 = DEllipse3d::From (
+                3,4,5,
+                4,1,0,
+                -1,4,1,
+                Angle::DegreesToRadians (startDegrees), Angle::DegreesToRadians (sweepDegrees)
+                );
+           DRange3d localRange;
+           Transform localToWorld, worldToLocal;
+           arc0.AlignedRange (localToWorld, worldToLocal, localRange);
+           Check::SaveTransformed (arc0);
+           ShowLocalRange (localToWorld, localRange);
+           }
+        }
+    Check::ClearGeometry ("DEllipse3d.AlignedRange");
+    }
+
+TEST(DEllipse3d,FilletInBoundedCorner)
+    {
+    DPoint3d pointA = DPoint3d::From (0,0,0);
+    DPoint3d pointC = DPoint3d::From (2,2,0);
+    double r = 1.0;
+    for (double fraction : {0.3, 0.5, 0.8})
+        {
+        SaveAndRestoreCheckTransform shifter (15, 0, 0);
+        for (double perp : {0.1, 0.3, 0.8})
+            {
+            SaveAndRestoreCheckTransform shifter (10, 0, 0);
+            DPoint3d pointB = DPoint3d::FromInterpolateAndPerpendicularXY (pointA, fraction, pointC, -perp);
+            bvector<DPoint3d> corner {pointA, pointB, pointC};
+            Check::SaveTransformed (corner);
+            auto arc = DEllipse3d::FromFilletInBoundedCorner (pointA, pointB, pointC);
+            if (Check::True (arc.IsValid ()))
+                Check::SaveTransformed (arc);
+            Check::Shift (0,10,0);
+            Check::SaveTransformed (corner);
+            auto arc1 = DEllipse3d::FromFilletInCorner (pointA, pointB, pointC, r);
+            if (Check::True (arc1.IsValid ()))
+                Check::SaveTransformed (arc1);
+            }
+        }
+    Check::ClearGeometry ("DEllipse3d.FilletInBoundedCorner");
+    }

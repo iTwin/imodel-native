@@ -701,31 +701,30 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     bool SetVParamsWithUniformKnots (size_t numPoles, size_t order, bool closed);
 
 
-    //! Make a loft surface for a set of curves.
-    //! @param [in] pCurves input curve array.
-    //! @param [in] pStartNormal used when smoothStart is true only, or NULL.
-    //! @param [in] pEndNormal used when smoothEnd is true only, or NULL.
-    //! @param [in] numCurves number of curves.
-    //! @param [in] approxComp true: use approximation for compitibility.
-    //! @param [in] closed true: consider the last curve to be the same as the first curve.
-    //! @param [in] smoothStart true: for degenerate end, use normal to control the tangent.
-    //! @param [in] smoothEnd true: for degenerate end, use normal to control the tangent.
-    //! @param [in] chordLength true: chord length parametrization. false: uniform.
-    //! @param [in] applyComp false means that input curves are already compatible.
-    //! @param [in] tolerance used only when approxComp is true (can be 0.0 for precise compatibility).
-    MSBsplineStatus LoftingSurface (
-                                    MSBsplineCurveP     pCurves,        
-                                    DVec3dP             pStartNormal,   
-                                    DVec3dP             pEndNormal,     
-                                    int                 numCurves,      
-                                    bool                approxComp,     
-                                    bool                closed,         
-                                    bool                smoothStart,    
-                                    bool                smoothEnd,      
-                                    bool                chordLength,    
-                                    bool                applyComp,      
-                                    double              tolerance       
-                                    );
+//! Make a loft surface for a set of curves.
+//! @param [in] curves input curve array.
+//! @param [in] pStartNormal used when smoothStart is true only, or NULL.
+//! @param [in] pEndNormal used when smoothEnd is true only, or NULL.
+//! @param [in] approxComp true: use approximation for compitibility.
+//! @param [in] closed true: consider the last curve to be the same as the first curve.
+//! @param [in] smoothStart true: for degenerate end, use normal to control the tangent.
+//! @param [in] smoothEnd true: for degenerate end, use normal to control the tangent.
+//! @param [in] chordLength true: chord length parametrization. false: uniform.
+//! @param [in] applyComp false means that input curves are already compatible.
+//! @param [in] tolerance used only when approxComp is true (can be 0.0 for precise compatibility).
+MSBsplineStatus InitLoftingSurface
+(
+bvector<MSBsplineCurvePtr> const &curves,        
+DVec3dP             pStartNormal,   
+DVec3dP             pEndNormal,     
+bool                approxComp,     
+bool                closed,         
+bool                smoothStart,    
+bool                smoothEnd,      
+bool                chordLength,    
+bool                applyComp,      
+double              tolerance       
+);
                                     
     //! Return the area, centroid, orientation, and principal moments, treating the surface as a shell.
     //! @param [out] area area

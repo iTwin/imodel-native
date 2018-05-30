@@ -107,7 +107,7 @@ void                *pUserData2
 )
     {
     EmbeddedDPoint3dArray   *pPointArray    = (EmbeddedDPoint3dArray*)pUserData1;
-    EmbeddedDoubleArray   *pParameterArray  = (EmbeddedDoubleArray*)  pUserData2;
+    bvector<double>   *pParameterArray  = (bvector<double>*)  pUserData2;
 
     double localFraction = (rootFraction - startFraction) / (endFraction - startFraction);
     DPoint3d point;
@@ -121,7 +121,7 @@ void                *pUserData2
         }
     if (pParameterArray)
         {
-        jmdlEmbeddedDoubleArray_addDouble (pParameterArray, localFraction);
+        pParameterArray->push_back (localFraction);
         }
     }
 
@@ -208,7 +208,7 @@ static int s_noisy = 0;
 static bool    jmdlRIMSBS_intersectXY_MSBsplineCurve_circle
 (
 RIMSBS_Context          *pContext,          /* => general context */
-EmbeddedDoubleArray     *pParamArray,       /* <= intersection parameters on the ellipse */
+bvector<double>     *pParamArray,       /* <= intersection parameters on the ellipse */
 EmbeddedDPoint3dArray   *pPointArray,       /* <= intersection points on the ellipse */
 MSBsplineCurve          *pCurve,            /* => curve */
 const DPoint3d          *pCenter,           /* => circle center */
@@ -252,7 +252,7 @@ double                  radius              /* => circle radius */
             param = pCurveParam[i];
 
             if (pParamArray)
-                jmdlEmbeddedDoubleArray_addDouble (pParamArray, param);
+                pParamArray->push_back (param);
 
             if (pPointArray)
                 {
@@ -278,7 +278,7 @@ double                  radius              /* => circle radius */
 static bool    jmdlRIMSBS_intersectXY_DEllipse3d_circle
 (
 RIMSBS_Context          *pContext,          /* => general context */
-EmbeddedDoubleArray     *pParameterArray,   /* <= intersection parameters on the ellipse */
+bvector<double>     *pParameterArray,   /* <= intersection parameters on the ellipse */
 EmbeddedDPoint3dArray   *pPointArray,       /* <= intersection points on the ellipse */
 const DEllipse3d        *pEllipse,          /* => the ellipse */
 const DPoint3d          *pCenter,           /* => circle center */
@@ -296,7 +296,7 @@ double                  radius              /* => circle radius */
         printf ("   DEllipse3d intersect circle \n");
 
     if (pParameterArray)
-        jmdlEmbeddedDoubleArray_empty (pParameterArray);
+        pParameterArray->clear();
 
     if (pPointArray)
         jmdlEmbeddedDPoint3dArray_empty (pPointArray);
@@ -334,7 +334,7 @@ double                  radius              /* => circle radius */
         if (pParameterArray)
             {
             fraction = pEllipse->AngleToFraction (ellipseAngle[i]);
-            jmdlEmbeddedDoubleArray_addDouble (pParameterArray, fraction);
+            pParameterArray->push_back (fraction);
             }
         if (pPointArray)
             {
@@ -463,7 +463,7 @@ double                  radius
 Public bool    jmdlRIMSBS_curveCircleIntersectionXY
 (
 RIMSBS_Context          *pContext,          /* => general context */
-EmbeddedDoubleArray     *pParameterArray,   /* <= curve parameters of intersections. */
+bvector<double>     *pParameterArray,   /* <= curve parameters of intersections. */
 EmbeddedDPoint3dArray   *pPointArray,       /* <= curve points of intersections */
 RG_EdgeData             *pEdgeData,         /* => segment edge data */
 const DPoint3d          *pCenter,           /* => circle center */
@@ -550,11 +550,7 @@ double                  radius
         {
         if (pParameterArray)
             {
-            int i;
-            double s;
-            for (i = 0;
-                jmdlEmbeddedDoubleArray_getDouble (pParameterArray, &s, i);
-                i++)
+            for (double s : *pParameterArray)
                 {
                 printf ("    s= %le\n", s);
                 }

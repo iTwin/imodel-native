@@ -8,8 +8,6 @@
 #include <bsibasegeomPCH.h>
 #include <stdlib.h>
 #include <limits.h>
-#include "../memory/jmdl_dpnt3.fdf"
-#include "../memory/jmdl_iarray.fdf"
 #include "../DeprecatedFunctions.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
  typedef struct _sortKey

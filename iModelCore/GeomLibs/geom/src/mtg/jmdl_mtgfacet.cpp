@@ -7,9 +7,19 @@
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
 #include "mtgintrn.h"
-#include "../memory/jmdl_iarray.fdf"
-#include "../memory/jmdl_dpnt3.fdf"
+
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+
+
+template<typename T>
+static int PushedId (bvector<T> &data, T const &value)
+    {
+    size_t id = data.size ();
+    data.push_back(value);
+    return (int)id;
+    }
+
+
 /*----------------------------------------------------------------------+
 |TITLE FacetMemoryManagement Facet Header Memory Management             |
 | The MTGFacets structure is a header for the connectivity and          |
@@ -323,15 +333,13 @@ const DPoint3d      *pNormal
             {
             case MTG_Facets_VertexOnly:
             case MTG_Facets_SeparateNormals:
-                id = jmdlEmbeddedDPoint3dArray_getCount ((&pFacetHeader->vertexArrayHdr));
-                jmdlVArrayDPoint3d_insert ((&pFacetHeader->vertexArrayHdr), pVertex, id);
+                id = PushedId<DPoint3d> (pFacetHeader->vertexArrayHdr, *pVertex);
                 break;
             case MTG_Facets_NormalPerVertex:
-                id = jmdlEmbeddedDPoint3dArray_getCount ((&pFacetHeader->vertexArrayHdr));
-                jmdlVArrayDPoint3d_insert ((&pFacetHeader->vertexArrayHdr), pVertex, id);
+                id = PushedId<DPoint3d> (pFacetHeader->vertexArrayHdr, *pVertex);
                 DPoint3d scaledNormal;
                 scaledNormal.Scale (*pNormal, normalScale);
-                jmdlVArrayDPoint3d_insert ((&pFacetHeader->normalArrayHdr), &scaledNormal, id);
+                pFacetHeader->normalArrayHdr.push_back (scaledNormal);
                 break;
             case MTG_Facets_NoData:
                 break;
@@ -363,8 +371,7 @@ const DPoint3d      *pNormal
     int id = -1;
     if (pFacetHeader && pFacetHeader->normalMode == MTG_Facets_SeparateNormals)
         {
-        id = jmdlEmbeddedDPoint3dArray_getCount ((&pFacetHeader->normalArrayHdr));
-        jmdlVArrayDPoint3d_insert ((&pFacetHeader->normalArrayHdr), pNormal, id);
+        id = PushedId (pFacetHeader->normalArrayHdr, *pNormal);
         }
     return id;
     }
@@ -1239,11 +1246,12 @@ MTGNodeId               nodeId
                             &vertexIndex,
                             nodeId,
                             pHeader->vertexLabelOffset)
-            &&  SUCCESS == jmdlVArrayDPoint3d_setDPoint3d (&pHeader->vertexArrayHdr, (DPoint3d*)pPoint, vertexIndex)
-        )
-        return true;
-
-    return false;
+        && vertexIndex >= 0 && (size_t) vertexIndex < pHeader->vertexArrayHdr.size ())
+            {
+            pHeader->vertexArrayHdr[(size_t)vertexIndex] = *pPoint;
+            return true;
+            }
+      return false;
     }
 
 
@@ -1360,77 +1368,6 @@ MTGNodeId               nodeId
     return false;
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* Return vertex indices and coordinates around a given face.
-* @param pFacetHeader => facet set
-* @param pVertexIndexArray <= buffer receiving vertex indices.  May be null.
-* @param pVertexXYZArray <= buffer receiving vertex xyz coordinates.  May be null.
-* @param pVertexNormalArray <= buffer receiving vertex normal. May be null.
-* @param pVertexParam1Array <= buffer receiving vertex uvw coordinates. May be null.
-* @param pVertexParam2Array <= buffer receiving vertex auxiliary data. May be null.
-* @param pNumNode <= number of indices returned.
-* @param maxVertex => max number of indices that can be placed in the buffer.
-* @return true if the complete array was returned.
-* @bsimethod                                                    EarlinLutz      09/98
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP bool    jmdlMTGFacets_getVertexDataAroundFace
-(
-const   MTGFacets   *pFacetHeader,
-        int         *pVertexIndexArray,
-        DPoint3d    *pXYZArray,
-        DPoint3d    *pNormalArray,
-        DPoint3d    *pParam1Array,
-        DPoint3d    *pParam2Array,
-        int         *pNumVertex,
-        int         maxVertex,
-        MTGNodeId   startNodeId
-)
-    {
-    int i = 0;
-    int vertexIndex = 0;
-    const MTGGraph *pGraph = &pFacetHeader->graphHdr;
-    /* NEEDS WORK: check normal mode, use appropriate indices for other than vertexOnly */
-    MTGARRAY_FACE_LOOP (currNodeId, pGraph, startNodeId)
-        {
-        if (i >= maxVertex)
-            return false;
-        if (!jmdlMTGGraph_getLabel
-                        (
-                        pGraph,
-                        &vertexIndex,
-                        currNodeId,
-                        pFacetHeader->vertexLabelOffset
-                        ))
-             return false;
-
-        if (pVertexIndexArray)
-            pVertexIndexArray[i] = vertexIndex;
-
-        if (pXYZArray)
-            jmdlVArrayDPoint3d_getDPoint3d
-                    (&pFacetHeader->vertexArrayHdr, pXYZArray + i , vertexIndex);
-
-        if (pNormalArray)
-            jmdlVArrayDPoint3d_getDPoint3d
-                    (&pFacetHeader->normalArrayHdr, pNormalArray + i , vertexIndex);
-
-        if (pParam1Array)
-            jmdlVArrayDPoint3d_getDPoint3d
-                    (&pFacetHeader->param1ArrayHdr, pParam1Array + i , vertexIndex);
-
-        if (pParam2Array)
-            jmdlVArrayDPoint3d_getDPoint3d
-                    (&pFacetHeader->param2ArrayHdr, pParam2Array + i , vertexIndex);
-
-        i++;
-        *pNumVertex = i;
-        }
-    MTGARRAY_END_FACE_LOOP (currNodeId, pGraph, startNodeId)
-    return true;
-    }
-
-
 /*---------------------------------------------------------------------------------**//**
 * Copy coordinate data around a face into a flat array.  At each node, indicated label value
 *       is index into source array.
@@ -1497,10 +1434,10 @@ const MTGFacets *    pSourceFacets
     jmdlMTGFacets_empty (pDestFacets);
     jmdlMTGGraph_copy ((&pDestFacets->graphHdr), (&pSourceFacets->graphHdr));
 
-    jmdlVArrayDPoint3d_copy ((&pDestFacets->vertexArrayHdr), (&pSourceFacets->vertexArrayHdr));
-    jmdlVArrayDPoint3d_copy ((&pDestFacets->normalArrayHdr), (&pSourceFacets->normalArrayHdr));
-    jmdlVArrayDPoint3d_copy ((&pDestFacets->param1ArrayHdr), (&pSourceFacets->param1ArrayHdr));
-    jmdlVArrayDPoint3d_copy ((&pDestFacets->param2ArrayHdr), (&pSourceFacets->param2ArrayHdr));
+    pDestFacets->vertexArrayHdr = pSourceFacets->vertexArrayHdr;
+    pDestFacets->normalArrayHdr = pSourceFacets->normalArrayHdr;
+    pDestFacets->param1ArrayHdr = pSourceFacets->param1ArrayHdr;
+    pDestFacets->param2ArrayHdr = pSourceFacets->param2ArrayHdr;
 
     pDestFacets->normalMode = pSourceFacets->normalMode;
     pDestFacets->vertexLabelOffset = pSourceFacets->vertexLabelOffset;
@@ -1614,24 +1551,10 @@ MTGFacets *             pFacetHeader
 
     if (pFacetHeader)
         {
-        EmbeddedDPoint3dArray *pNormalArray;
         jmdlMTGGraph_reverse ((&pFacetHeader->graphHdr));
 
-        pNormalArray = (&pFacetHeader->normalArrayHdr);
-
-        if (pNormalArray)
-            {
-            int numNormal = jmdlEmbeddedDPoint3dArray_getCount
-                        (pNormalArray);
-            int i;
-            DPoint3d normal;
-            for (i = 0; i < numNormal; i++)
-                {
-                jmdlVArrayDPoint3d_getDPoint3d (pNormalArray, &normal, i);
-                normal.Scale (normal, -1.0);
-                jmdlVArrayDPoint3d_setDPoint3d (pNormalArray, &normal, i);
-                }
-            }
+        for (auto &xyz : pFacetHeader->normalArrayHdr)
+            xyz.Scale (xyz, -1.0);
         }
     }
 
@@ -2526,82 +2449,6 @@ wrapup:
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-*
-* Find planar and non planar faces.  Set and clear designated masks
-* on each.   Either mask may be zero.
-*
-* @param pFacetHeader    <=> facets
-* @param planarMask => mask to apply on planar faces
-* @param nonPlanarMask => mask to apply on non-planar faces.
-* @param tol => tolerance for nonplanar vertices.
-*                 If zero, something near machine precision is
-*                       used as a relative error.
-* @see
-* @return number of non-planar faces.
-* @bsihdr                                       EarlinLutz      12/97
-+---------------+---------------+---------------+---------------+---------------+------*/
-Public GEOMDLLIMPEXP int jmdlMTGFacets_markPlanarFaces
-(
-MTGFacets *             pFacetHeader,
-MTGMask         planarMask,
-MTGMask         nonPlanarMask,
-double                  tol
-)
-    {
-    int numNonPlanar = 0;
-    MTGGraph * pGraph = (&pFacetHeader->graphHdr);
-
-    EmbeddedDPoint3dArray *pFaceLoopArray = jmdlEmbeddedDPoint3dArray_grab ();
-    EmbeddedDPoint3dArray *pVertexArray = (&pFacetHeader->vertexArrayHdr);
-    DPoint3d origin, normal;
-    double absTol;
-    double error;
-
-    if (tol == 0.0)
-        tol = 1.0e-14;
-
-    if (tol > 0.0)
-        absTol = tol;
-    else
-        {
-        DRange3d range = DRange3d::From (pFacetHeader->vertexArrayHdr);
-        double maxCoordinate = range.LargestCoordinate ();
-        absTol = tol * maxCoordinate;
-        }
-
-    int vertexLabelOffset = pFacetHeader->vertexLabelOffset;
-
-    MTGMask visitMask = jmdlMTGGraph_grabMask (pGraph);
-    jmdlMTGGraph_clearMaskInSet (pGraph, visitMask | planarMask | nonPlanarMask);
-
-
-    MTGARRAY_SET_LOOP (faceStartNodeId, pGraph)
-        {
-        if (!jmdlMTGGraph_getMask (pGraph, faceStartNodeId, visitMask))
-            {
-            if (   jmdlMTGFacets_getFaceCoordinates (pGraph,
-                            pFaceLoopArray, pVertexArray, faceStartNodeId, vertexLabelOffset)
-                && SUCCESS == jmdlVArrayDPoint3d_getPolygonPlane (pFaceLoopArray, &normal, &origin, &error)
-                && error < tol
-               )
-                {
-                jmdlMTGGraph_setMaskAroundFace (pGraph, faceStartNodeId, planarMask | visitMask);
-                }
-            else
-                {
-                jmdlMTGGraph_setMaskAroundFace (pGraph, faceStartNodeId, nonPlanarMask | visitMask);
-                numNonPlanar++;
-                }
-            }
-        }
-    MTGARRAY_END_SET_LOOP (faceStartNodeId, pGraph)
-
-    jmdlMTGGraph_dropMask (pGraph, visitMask);
-    jmdlEmbeddedDPoint3dArray_drop (pFaceLoopArray);
-    return numNonPlanar;
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @param pFacetHeader    => mesh to query
@@ -2617,7 +2464,6 @@ const MTGFacets *pFacetHeader,
     {
     *pRange = DRange3d::From (pFacetHeader->vertexArrayHdr);
     return pFacetHeader->vertexArrayHdr.size () > 0;
-//    return pFacetHeader ? (SUCCESS == jmdlVArrayDPoint3d_getRange (&pFacetHeader->vertexArrayHdr, pRange)) : false;
     }
 
 
@@ -2638,7 +2484,6 @@ const MTGFacets *pFacetHeader
     {
     return jmdlEmbeddedDPoint3dArray_getCount ((&pFacetHeader->vertexArrayHdr));
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * Transform both the points and normals of a facet set.
@@ -2671,9 +2516,9 @@ bool                    inverseTransposeEffects
 )
     {
     RotMatrix matrixPart, transpose, inverseTranspose;
-    jmdlVArrayDPoint3d_applyTransform ((&pFacetHeader->vertexArrayHdr), pTransform);
+    pTransform->Multiply (pFacetHeader->vertexArrayHdr, pFacetHeader->vertexArrayHdr);
 
-    if (jmdlEmbeddedDPoint3dArray_getCount ((&pFacetHeader->vertexArrayHdr)) > 0)
+    if (pFacetHeader->normalArrayHdr.size () > 0)
         {
         if (inverseTransposeEffects)
             {
@@ -2683,17 +2528,13 @@ bool                    inverseTransposeEffects
 
             if (inverseTranspose.InverseOf (transpose))
                 {
-                jmdlVArrayDPoint3d_applyMatrix (
-                            (&pFacetHeader->normalArrayHdr),
-                            &inverseTranspose
-                            );
+                for (auto &normal : pFacetHeader->normalArrayHdr)
+                    inverseTranspose.Multiply (normal);
                 }
             else
                 {
-                jmdlVArrayDPoint3d_applyMatrix (
-                            (&pFacetHeader->normalArrayHdr),
-                            &matrixPart
-                            );
+                for (auto &normal : pFacetHeader->normalArrayHdr)
+                    matrixPart.Multiply (normal);
                 }
             }
         }
@@ -2897,7 +2738,7 @@ MTGFacets  *pFacetHeader
                         );
             counter = 0;
             loopCount++;
-            jmdlVArrayDPoint3d_getDPoint3d (&pFacetHeader->vertexArrayHdr, &xyz, vertexIndex);
+            xyz = pFacetHeader->vertexArrayHdr[(size_t)vertexIndex];
             printf ("(%lf,%lf,%lf):(node edgemate vertex)\n", xyz.x, xyz.y, xyz.z);
 
             MTGARRAY_VERTEX_LOOP (currNodeId, pGraph, vertNodeId)

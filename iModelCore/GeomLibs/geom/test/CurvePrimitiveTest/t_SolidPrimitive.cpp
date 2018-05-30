@@ -824,6 +824,15 @@ void CheckPrimitiveB (ISolidPrimitivePtr primitive, char const*typeName, bool ex
     
     }
 
+void CheckPrimitiveSimplify (ISolidPrimitivePtr primitiveA)
+    {
+    ISolidPrimitivePtr primitiveB = primitiveA->Clone ();
+    if (ISolidPrimitive::Simplify (primitiveB))
+        {
+        Check::False (primitiveA->IsSameStructureAndGeometry (*primitiveB));
+        }
+    }
+
 void CheckPrimitive (ISolidPrimitivePtr primitive, SolidPrimitiveType primitiveType, DSegment3dCP segment = NULL, int numHits = 0, bool expectExactMeshFaceCountMatch = true)
     {
     static bool s_printNames = false;
@@ -867,7 +876,7 @@ void CheckPrimitive (ISolidPrimitivePtr primitive, SolidPrimitiveType primitiveT
     CheckAreaMoments (primitive);
     
     CheckPrimitiveAsTrimmedSurfaces (primitive);
-
+    CheckPrimitiveSimplify (primitive);
 
     Check::EndScope ();
     }
@@ -3114,4 +3123,39 @@ TEST(RuledSurface,ChiseledPipesFromArbitrarySectionEllipses)
             }
         }
     Check::ClearGeometry ("RuledSurface.ChiseledPipesAnyEllipsePair");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Cone,IntersectgBoundedArc)
+    {
+    auto centerA = DPoint3d::From (1,0,0);
+    auto centerB = DPoint3d::From (3,2,1);
+
+    auto cone = ISolidPrimitive::CreateDgnCone (
+        DgnConeDetail (centerA, centerB,
+            1.0, 0.5, false
+            ));
+    DgnConeDetail detail;
+    Check::SaveTransformed (*cone);
+    if (Check::True(cone->TryGetDgnConeDetail (detail)))
+        {
+        auto xyzC = DPoint3d::FromInterpolate (centerA, 0.1, centerB);
+        auto xyzE = DPoint3d::FromInterpolate (centerA, 0.86, centerB);
+        auto xyzD = DPoint3d::FromInterpolateAndPerpendicularXY (xyzC, 0.5, xyzE, 0.8);
+        auto arc = DEllipse3d::FromPointsOnArc (xyzC, xyzD, xyzE);
+        Transform localToWorld, worldToLocal;
+        double rA, rB;
+        bvector<DPoint3d> normalizedConePoints;
+        bvector<double> arcFractions;
+        detail.IntersectBoundedArc (arc, arcFractions, normalizedConePoints,
+            localToWorld, worldToLocal, rA, rB, true);
+        bvector<DPoint3d> worldPoints;
+        for (auto f : arcFractions)
+            worldPoints.push_back (arc.FractionToPoint (f));
+        Check::SaveTransformed (arc);
+        Check::SaveTransformedMarkers (worldPoints, 0.08);
+        }
+    Check::ClearGeometry ("Cone.IntersectgBoundedArc");
     }

@@ -109,7 +109,7 @@ void UpdateCurve(double maxStrokeLength)
     m_strokes.m_xyz.clear ();
     m_strokes.m_f.clear ();
     CaptureSpiralStrokes capture(m_strokes, m_placement, uvA);
-    DSpiral2dBase::StrokeToAnnouncer (*m_placement.spiral, m_placement.fractionA, m_placement.fractionB, s_defaultStrokeRadians, capture, error, s_defaultMinIntervals);
+    DSpiral2dBase::StrokeToAnnouncer (*m_placement.spiral, m_placement.fractionA, m_placement.fractionB, s_defaultStrokeRadians, capture, error, s_defaultMinIntervals, maxStrokeLength);
     // fractions are relative to the parent spiral. Normalize to the actual ...
     DoubleOps::Normalize (m_strokes.m_f, m_placement.fractionA, m_placement.fractionB);
 #ifndef NDEBUG

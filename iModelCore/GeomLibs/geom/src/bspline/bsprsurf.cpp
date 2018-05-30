@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/bspline/bsprsurf.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -1108,7 +1108,7 @@ double                  processTol
     int             i, j, rational, status = SUCCESS, numU, numV, numPoints;
     double          *wPts = NULL, *wPoles = NULL, length, relativeTol, step, param;
     DPoint3d        *pPts = NULL, *pPoles = NULL, *pointsP;
-    MSBsplineCurve  *cvArray[MAX_POLES], *inArray[MAX_POLES], ruleCurves[2];
+    MSBsplineCurve  ruleCurves[2];
 
     /* If two curves pased in, use ruled surface */
     if (numCurves == 2)
@@ -1170,18 +1170,10 @@ double                  processTol
         }
     else
         {
+        bvector<MSBsplineCurvePtr> inArray, cvArray;
         for (i = 0; i < numCurves; i++)
             {
-            if (NULL == (inArray[i] = (MSBsplineCurve*)msbspline_malloc (sizeof(MSBsplineCurve), HEAPSIG_BSRF)) ||
-                NULL == (cvArray[i] = (MSBsplineCurve*)msbspline_malloc (sizeof(MSBsplineCurve), HEAPSIG_BSRF)))
-                {
-                status = ERROR;
-                goto wrapup;
-                }
-
-            memset (inArray[i], 0, sizeof(MSBsplineCurve));
-            memset (cvArray[i], 0, sizeof(MSBsplineCurve));
-            inArray[i] = &curves[i];
+            inArray.push_back (curves[i].CreateCopy ());
             }
         if (processCurves)
             {
@@ -1216,7 +1208,7 @@ double                  processTol
                     if (currentClosed != lastClosed)
                         mixed = true;
                     }
-                bspcurv_c2CubicInterpolateCurve (cvArray[i], pointsP, NULL,
+                bspcurv_c2CubicInterpolateCurve (cvArray[i].get (), pointsP, NULL,
                     numPoints, false, 1.0, NULL, currentClosed);
                 }
             free (pointsP);
@@ -1224,8 +1216,7 @@ double                  processTol
 
         if (!processCurves || mixed)
             {
-            if (SUCCESS != (status = bspcurv_makeCurvesCompatible (cvArray,
-                inArray, numCurves, false, true)))
+            if (!MSBsplineCurve::CloneCompatibleCurves (cvArray, inArray, false, true))
                 goto wrapup;
             lastClosed = false;
             }
@@ -1311,8 +1302,6 @@ double                  processTol
         bspknot_computeKnotVector (surface->vKnots, &surface->vParams, NULL);
 
 wrapup:
-        for (i = 0; i < numCurves; i++)
-            bspcurv_freeCurve (cvArray[i]);
         if (pPts)
             msbspline_free (pPts);
         if (wPts)

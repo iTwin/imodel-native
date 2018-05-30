@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/GeomApi.r.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -91,6 +91,10 @@ static GEOMDLLIMPEXP RgbFactor From (DPoint3dCR data);
 static GEOMDLLIMPEXP RgbFactor From (double r, double g, double b);
 void GEOMDLLIMPEXP AddInPlace (RgbFactor const &other);
 void GEOMDLLIMPEXP ScaleInPlace (double a);
+//! Exact equality test -- beware of last bit, EqualsInt is probably mor appropriate
+bool GEOMDLLIMPEXP Equals (RgbFactor const &other) const;
+//! Return true if the int equivalents are equal.
+bool GEOMDLLIMPEXP EqualsInt (RgbFactor const &other) const;
 //! Pack double colors into int bytes.
 GEOMDLLIMPEXP int32_t ToIntColor () const;
 #endif

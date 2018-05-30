@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/regions/rg_merge2.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -549,7 +549,7 @@ VertexSortData      *pSortData,
 int                 numSort,
 double              radius,
 EmbeddedDPoint3dArray *pXYZArray,
-EmbeddedDoubleArray   *pParamArray
+bvector<double>   *pParamArray
 )
     {
     DPoint3d xyzCenter, xyzCurr;
@@ -558,7 +558,7 @@ EmbeddedDoubleArray   *pParamArray
     int numFail;
     int i;
     jmdlEmbeddedDPoint3dArray_empty (pXYZArray);
-    jmdlEmbeddedDoubleArray_empty (pParamArray);
+    pParamArray->clear();
     jmdlRG_getVertexData (pRG, &xyzCenter, 0, NULL, pSortData[0].nodeId, 0.0);
     numFail = 0;
     for (i = 0; i < numSort; i++)
@@ -605,14 +605,14 @@ int                 i,
 int                 j,
 double              fraction,
 EmbeddedDPoint3dArray *pXYZArray,
-EmbeddedDoubleArray   *pParamArray
+bvector<double>   *pParamArray
 )
     {
     double sOffsetFraction = 1.0e-6;
     // Look at the tangent magnitudes.
     // Make a circle which is a small fraction of the smaller tangent magnitude.
     // Intersect curves with the circle.
-    int n0, n1;
+    size_t n0, n1;
     DPoint3d xyz[2][2];
     DVec3d vector[2];
     double param [2];
@@ -627,17 +627,17 @@ EmbeddedDoubleArray   *pParamArray
     jmdlRG_edgeCircleXYIntersection (pRG, pParamArray, pXYZArray,
                 pSortData[i].nodeId, &xyz[0][0], r);
 
-    if ((n0 = jmdlEmbeddedDoubleArray_getCount (pParamArray)) == 1)
+    if ((n0 = pParamArray->size ()) == 1)
         {
-        jmdlEmbeddedDoubleArray_getDouble (pParamArray, &param[0], 0);
+        param[0] = pParamArray->at (0);
         jmdlEmbeddedDPoint3dArray_getDPoint3d (pXYZArray, &xyzTarget[0], 0);
         jmdlRG_edgeCircleXYIntersection (pRG, pParamArray, pXYZArray,
                     pSortData[j].nodeId, &xyz[1][0], r);
 
-        if ((n1 = jmdlEmbeddedDoubleArray_getCount (pParamArray)) == 1)
+        if ((n1 = pParamArray->size ()) == 1)
             {
             double cp;
-            jmdlEmbeddedDoubleArray_getDouble (pParamArray, &param[1], 0);
+            param[1] = pParamArray->at (0);
             jmdlEmbeddedDPoint3dArray_getDPoint3d (pXYZArray, &xyzTarget[1], 0);
             bsiDVec3d_subtractDPoint3dDPoint3d (&vector[0], &xyzTarget[0], &xyz[0][0]);
             bsiDVec3d_subtractDPoint3dDPoint3d (&vector[1], &xyzTarget[1], &xyz[1][0]);
@@ -678,7 +678,7 @@ VertexSortData      *pSortData,
 int                 numSort,
 double              fraction,
 EmbeddedDPoint3dArray *pXYZArray,
-EmbeddedDoubleArray   *pParamArray,
+bvector<double>   *pParamArray,
 double              angleTol
 )
     {
@@ -760,7 +760,7 @@ RG_Header           *pRG,
 VertexSortData      *pSortData,
 int                 numSort,
 double              refDist,
-EmbeddedDoubleArray   *pParamArray,
+bvector<double>   *pParamArray,
 EmbeddedDPoint3dArray *pXYZArray
 )
     {
@@ -788,10 +788,10 @@ static         void            sortAndJoinAroundVertex
 (
 RG_Header           *pRG,
 int                 *pNodeIdBuffer,
-int                 numNodeId,
+size_t              numNodeId,
 MTGMask             nullFaceMask,
 MTGMask             deleteMask,
-EmbeddedDoubleArray   *pParamArray,
+bvector<double>   *pParamArray,
 EmbeddedDPoint3dArray *pXYZArray
 )
     {
@@ -864,12 +864,12 @@ MTGMask             nullFaceMask,
 MTGMask             deleteMask
 )
     {
-    int numIndex = jmdlEmbeddedIntArray_getCount (pBlockedNodeIdArray);
-    int *pIndex  = jmdlEmbeddedIntArray_getPtr (pBlockedNodeIdArray, 0);
-    EmbeddedDoubleArray   *pParamArray = jmdlEmbeddedDoubleArray_grab ();
-    EmbeddedDPoint3dArray *pXYZArray    = jmdlEmbeddedDPoint3dArray_grab ();
+    size_t numIndex = pBlockedNodeIdArray->size ();
+    int *pIndex  = pBlockedNodeIdArray->data ();
+    bvector<double> paramArray;
+    bvector<DPoint3d> xyzArray;
 
-    int i0, i1;
+    size_t i0, i1;
     for (i0 = 0; i0 < numIndex; i0 = i1 + 1)
         {
         /* Count to first position after this block of nodeId's */
@@ -877,11 +877,9 @@ MTGMask             deleteMask
             {
             }
         sortAndJoinAroundVertex (pRG, pIndex + i0, i1 - i0, nullFaceMask, deleteMask,
-                        pParamArray, pXYZArray);
+                        &paramArray, &xyzArray);
         }
 
-    jmdlEmbeddedDoubleArray_drop (pParamArray);
-    jmdlEmbeddedDPoint3dArray_drop (pXYZArray);
     }
 
 /*---------------------------------------------------------------------------------**//**
