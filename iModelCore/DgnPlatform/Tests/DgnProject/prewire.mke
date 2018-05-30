@@ -14,6 +14,9 @@ baseDir                     = $(_makeFilePath)
 
 $(BuildContext)Delivery/UnitTests/ECSchemas : $(baseDir)ECSchemas
     $(LinkFirstDepToFirstTargetAsDirectory)
+	
+$(BuildContext)Delivery/UnitTests/PerformanceTestData : $(baseDir)PerformanceTestData
+    $(LinkFirstDepToFirstTargetAsDirectory)
 
 $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
