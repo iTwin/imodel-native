@@ -17,7 +17,7 @@ Ultimately, it is up to an app to deliver and load a native platform at run time
 
 # iModelJsNodeAddon
 
-The native platform and its API are not in git. The code for the native platform and the declaration of the API are in the hg repository called iModelJsNodeAddon. The native platform is built by BentleyBuild. 
+The native platform and its API are not in git. The code for the native platform and the declaration of the API are in the hg repository called iModelJsNodeAddon. The native platform is built by BentleyBuild.
 
 The native platform and API packages are generated. See the iModelJsNodeAddon::MakePackages part.
 
@@ -31,7 +31,7 @@ The package version number for the native platform and its API are stored in the
 
 # Changing and Publishing the Addon
 
-**Key point:** The native platform packages and the API package must all be published with the same version number. 
+**Key point:** The native platform packages and the API package must all be published with the same version number.
 **Key point:** The native platform and imodeljs-native-platform-api.d.ts must be in sync.
 
 ## Build
@@ -80,11 +80,9 @@ When you bb build the MakePackages part,
 That will print the location of the generated packages. For example:
 
 ``` bat
-%OutRoot%Winx64\packages\imodeljs-e_1_6_11-win32-x64
+%OutRoot%Winx64\packages\imodeljs-e_2-win32-x64
 %OutRoot%Winx64\packages\imodeljs-n_8-win32-x64
 %OutRoot%Winx64\packages\imodeljs-native-platform-api
-%OutRoot%Winx64\packages\imodeljs-native-platform-node
-%OutRoot%Winx64\packages\imodeljs-native-platform-electron
 ```
 
 That message identifies the (generated) npm packages that contain the native platform, as well as the API package. This example is from a Windows build. The messages from a Linux or MacOS build will be similar, but will show names that are specific to those platforms. Note MakePackages produces several packages from the same source. In the case of a Windows build, there is one native platform package for node apps and another for electron apps. The API package is the same for both.
@@ -95,50 +93,16 @@ Continuing this example, suppose your imodeljs git repository is here:
 \imjs\imodeljs-core
 ```
 
-On Windows you would install your local build of the native platform like this:
-
-```
-REM Installs local builds of the platform-specific native platform packages for Windows.
-
-if .%ImodelJsRoot% == . goto :missingvar
-
-cd %OutRoot%Winx64\packages\imodeljs-native-platform-node
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-native-platform-api %OutRoot%Winx64\packages\imodeljs-n_8-win32-x64
-
-cd %OutRoot%Winx64\packages\imodeljs-native-platform-electron
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-native-platform-api %OutRoot%Winx64\packages\imodeljs-e_1_6_11-win32-x64
-
-cd %ImodelJsRoot%imodeljs-core
-xcopy /Y /I %OutRoot%Winx64\packages\imodeljs-native-platform-api         %ImodelJsRoot%imodeljs-core\common\temp\node_modules\@bentley\imodeljs-native-platform-api
-xcopy /Y /I %OutRoot%Winx64\packages\imodeljs-native-platform-node        %ImodelJsRoot%imodeljs-core\common\temp\node_modules\@bentley\imodeljs-native-platform-node
-xcopy /Y /I %OutRoot%Winx64\packages\imodeljs-native-platform-node        %ImodelJsRoot%imodeljs-core\nativePlatformForTests\node_modules\@bentley\imodeljs-native-platform-node
-xcopy /Y /I %OutRoot%Winx64\packages\imodeljs-native-platform-electron    %ImodelJsRoot%imodeljs-core\common\temp\node_modules\@bentley\imodeljs-native-platform-electron
-xcopy /Y /I %OutRoot%Winx64\packages\imodeljs-native-platform-electron    %ImodelJsRoot%imodeljs-core\nativePlatformForTests\node_modules\@bentley\imodeljs-native-platform-electron
-xcopy /Y /I /S %OutRoot%Winx64\packages\imodeljs-n_8-win32-x64            %ImodelJsRoot%imodeljs-core\common\temp\node_modules\@bentley\imodeljs-n_8-win32-x64
-xcopy /Y /I /S %OutRoot%Winx64\packages\imodeljs-n_8-win32-x64            %ImodelJsRoot%imodeljs-core\nativePlatformForTests\node_modules\@bentley\imodeljs-n_8-win32-x64
-xcopy /Y /I /S %OutRoot%Winx64\packages\imodeljs-e_1_6_11-win32-x64       %ImodelJsRoot%imodeljs-core\common\temp\node_modules\@bentley\imodeljs-e_1_6_11-win32-x64
-xcopy /Y /I /S %OutRoot%Winx64\packages\imodeljs-e_1_6_11-win32-x64       %ImodelJsRoot%imodeljs-core\nativePlatformForTests\node_modules\@bentley\imodeljs-e_1_6_11-win32-x64
-
-cd %ImodelJsRoot%imodeljs-core
-
-goto :xit
-
-:missingvar
-echo Define ImodelJsRoot to point to the parent directory that contains imodeljs-core. For example: set ImodelJsRoot=d:\imjs\
-
-:xit
-```
+On Windows you would install your local build of the native platform by using the `installnativeplatform.bat` file in the root directory of imodeljs-core
 
 On Linux:
 
 ```
 export ImodelJsRoot=<The parent directory of imodeljs-core>
-cd $OutRoot/LinuxX64/packages/imodeljs-native-platform-node
-npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-native-platform-api $OutRoot/LinuxX64/packages/imodeljs-n_8-linux-x64
 cd $ImodelJsRoot/imodeljs-core/source/backend
-cp $OutRoot/LinuxX64/packages/imodeljs-native-platform-api/*          $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley/imodeljs-native-platform-api
-cp $OutRoot/LinuxX64/packages/imodeljs-native-platform-node/*         $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley/imodeljs-native-platform-node
-cp -r $OutRoot/LinuxX64/packages/imodeljs-n_8-linux-x64               $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley
+cp $OutRoot/LinuxX64/packages/imodeljs-native-platform-api/* $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley/imodeljs-native-platform-api
+cp -r $OutRoot/LinuxX64/packages/imodeljs-n_8-linux-x64      $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley
+cp -r $OutRoot/LinuxX64/packages/imodeljs-n_8-linux-x64      $ImodelJsRoot/imodeljs-core/tools/native-platform-installer/node_modules/@bentley
 cd $ImodelJsRoot/imodeljs-core
 
 ```
@@ -156,7 +120,7 @@ The native platform packages are published by PRG, not by developers.
 
 ### How imodeljs-backend Checks Version Compatibility
 
-imodeljs-core/backend/AddonRegistry.registerAddon verifies that the loaded native platform implements the API that imodeljs-backend expects. There are three tests: 1) The native platform and the API must be the same generation (same major version). 2) The native platform must include all of the classes and methods that the backend expects and may include new classes that the backend is not yet using (same or greater minor version). And, 3) the native platform must include all required bug fixes and may include more recent bug fixes (same or higher patch version). 
+imodeljs-core/backend/AddonRegistry.registerAddon verifies that the loaded native platform implements the API that imodeljs-backend expects. There are three tests: 1) The native platform and the API must be the same generation (same major version). 2) The native platform must include all of the classes and methods that the backend expects and may include new classes that the backend is not yet using (same or greater minor version). And, 3) the native platform must include all required bug fixes and may include more recent bug fixes (same or higher patch version).
 
 # APPENDIX: How to Move to a New Version of Node
 
@@ -164,7 +128,7 @@ The native platform is still specific to a major.minor version of nodejs. (That 
 
 ### Get new node-gyp package, if necessary
 
-node-gyp contains the node header files and the .lib for the desired version. You do not always have to update node-gyp when you update node. 
+node-gyp contains the node header files and the .lib for the desired version. You do not always have to update node-gyp when you update node.
 
 If you haven't already, install node-gyp:
 `npm install -g node-gyp`

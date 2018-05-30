@@ -54,11 +54,11 @@ def setMacros(packagefile, NODE_VERSION_CODE = None, NODE_OS = None, NODE_CPU = 
             str = str.replace(r'${DECL_FILE_NAME}', DECL_FILE_NAME)
         pf.write(str)
 
-# Compute the range of versions of addon apis that are compatible with this addon. 
-# They are apis with the same or lower minor and/or patch version, within the same major version. 
+# Compute the range of versions of addon apis that are compatible with this addon.
+# They are apis with the same or lower minor and/or patch version, within the same major version.
 def compute_compatible_api_version_range(packageVersion):
     return "<=" + packageVersion + "  >=" + packageVersion.split('.')[0] + ".0.0";
-    
+
 # Tell copytree to ignore binary files that should not be in the addon
 def filterOutUnwantedFiles(dirname, files):
     if dirname.endswith('Assets'):
@@ -100,9 +100,9 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
         print '***'
         print('*** ' + inputProductdir + ' -- invalid or incomplete iModelJsNodeAddon Product.')
         if not os.path.exists(srcnodefile):
-            print ' ***   not found: ' + srcnodefile 
+            print ' ***   not found: ' + srcnodefile
         if not os.path.exists(srcsupportdir):
-            print ' ***   not found: ' + srcsupportdir 
+            print ' ***   not found: ' + srcsupportdir
         print('***')
         exit(1)
 
@@ -158,73 +158,6 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
 
     return outputpackagedir;
 
-
-# Generate imodeljs-native-platform-node
-# @param outdirParent The path to the output package's parent directory
-# @param parentSourceDir The iModelJsNodeAddon source directory, i.e., %SrcRoot%iModelJsNodeAddon
-# @param node_engine The version (family) of node that supports this addon. E.g., N_8
-# @param packageVersion The semantic version number for the generated package
-# @return the full path to the generated package directory
-def generate_imodeljs_nodeaddon(outputpackagedir, parentSourceDir, node_engine, packageVersion):
-
-    outputpackagedir = os.path.join(outdirParent, 'imodeljs-native-platform-node')
-
-    addonSourceDir = os.path.join(parentSourceDir, 'addon_package');
-
-    os.makedirs(outputpackagedir);
-
-    declFileName = 'NodeAddonLoader.d.ts'
-    packageTemplateFileName = 'package.json.template'
-
-    # Copy some files into place without modifying them.
-    filesToCopy = [declFileName, 'NodeAddonLoader.js', 'README.md']
-
-    for fileToCopy in filesToCopy:
-        shutil.copyfile(os.path.join(addonSourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
-
-    # Generate the package.json file
-    dstpackagefile = os.path.join(outputpackagedir, 'package.json')
-    shutil.copyfile(os.path.join(addonSourceDir, packageTemplateFileName), dstpackagefile);
-
-    compatibleApiPackageVersionRange = compute_compatible_api_version_range(packageVersion)
-
-    setMacros(dstpackagefile, NODE_VERSION_CODE = node_engine, PACKAGE_VERSION = packageVersion, COMPATIBLE_API_PACKAGE_VERSIONS = compatibleApiPackageVersionRange, DECL_FILE_NAME = declFileName)
-    
-    return outputpackagedir;
-
-# Generate imodeljs-native-platform-electron
-# @param outdirParent The path to the output package's parent directory
-# @param parentSourceDir The iModelJsNodeAddon source directory, i.e., %SrcRoot%iModelJsNodeAddon
-# @param electron_engine The version of electron that supports this addon.  E.g., E_1_6_11
-# @param packageVersion The semantic version number for the generated package
-# @return the full path to the generated package directory
-def generate_imodeljs_electronaddon(outputpackagedir, parentSourceDir, electron_engine, packageVersion):
-
-    outputpackagedir = os.path.join(outdirParent, 'imodeljs-native-platform-electron')
-
-    addonSourceDir = os.path.join(parentSourceDir, 'addon_package');
-
-    os.makedirs(outputpackagedir);
-
-    declFileName = 'NodeAddonLoader.d.ts'
-    packageTemplateFileName = 'electron-package.json.template'
-
-    # Copy some files into place without modifying them.
-    filesToCopy = [declFileName, 'NodeAddonLoader.js', 'README.md']
-
-    for fileToCopy in filesToCopy:
-        shutil.copyfile(os.path.join(addonSourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
-
-    # Generate the package.json file
-    dstpackagefile = os.path.join(outputpackagedir, 'package.json')
-    shutil.copyfile(os.path.join(addonSourceDir, packageTemplateFileName), dstpackagefile);
-
-    compatibleApiPackageVersionRange = compute_compatible_api_version_range(packageVersion)
-
-    setMacros(dstpackagefile, NODE_VERSION_CODE = electron_engine, PACKAGE_VERSION = packageVersion, COMPATIBLE_API_PACKAGE_VERSIONS = compatibleApiPackageVersionRange, DECL_FILE_NAME = declFileName)
-    
-    return outputpackagedir;
-
 #
 #   main
 #
@@ -270,12 +203,12 @@ if __name__ == '__main__':
     # Generate a platform-specific package fo each platform that was built
     nodeversion = ''
     electronversion = ''
-    for versionsubdir in os.listdir(addonDir):    
+    for versionsubdir in os.listdir(addonDir):
         # We are looking for the version-specific addon subdirectories. They tell us the names of the addons
         if (re.match(r'^([a-z])_(\d+)_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)$', versionsubdir) is None):
             print '*** ' + versionsubdir + ' is unexpected. Only version-specific subdirectories should appear under addon.';
             continue
-        
+
         publishPackage(generate_addon_for_platform(outdirParent, productdir, versionsubdir, nodeOS, nodeCPU, packageVersion, sourceDir), doPublish, tag);
 
         if versionsubdir.startswith("n_"):
@@ -290,7 +223,5 @@ if __name__ == '__main__':
         doPublish = False;
 
     publishPackage(generate_imodeljs_native_platform_api(outdirParent, sourceDir, packageVersion), doPublish, tag);
-    publishPackage(generate_imodeljs_nodeaddon(outdirParent, sourceDir, nodeversion, packageVersion), doPublish, tag);
-    publishPackage(generate_imodeljs_electronaddon(outdirParent, sourceDir, electronversion, packageVersion), doPublish, tag);
 
     exit(0)
