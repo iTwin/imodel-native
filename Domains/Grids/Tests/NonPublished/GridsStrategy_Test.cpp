@@ -22,6 +22,8 @@ USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 
+namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
+
 #define ASSERT_EQ_Plane(lhs, rhs)                                                            \
             ASSERT_TRUE(lhs.origin.AlmostEqual(rhs.origin)) << "Plane origin is incorrect";  \
             ASSERT_TRUE(lhs.normal.AlmostEqual(rhs.normal)) << "Plane normal is incorrect";
@@ -101,9 +103,12 @@ void GridsStrategyTests::SetUp()
     GridsTestFixtureBase::SetUp();
     DgnDbR db = *DgnClientApp::App().Project();
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    SpatialLocationPartitionCPtr partition = SpatialLocationPartition::CreateAndInsert(*rootSubject, "GridSpatialPartition");
+    SpatialLocationPartitionPtr partition = SpatialLocationPartition::Create(*rootSubject, "GridSpatialPartition");
+    BS::BuildingLocks_LockElementForOperation(*partition.get(), BeSQLite::DbOpcode::Insert, "SpatialLocationPartition : Insert for GridsStrategy_Test");
+    db.Elements().Insert<SpatialLocationPartition>(*partition);
     m_model = SpatialLocationModel::CreateAndInsert(*partition);
     m_sketchGrid = SketchGrid::Create(*m_model.get(), partition->GetElementId(), "Sketch grid", 0.0, 10.0);
+    BS::BuildingLocks_LockElementForOperation(*m_sketchGrid.get(), BeSQLite::DbOpcode::Insert, "SketchGrid :  Insert for GridsStrategy_Test");
     m_sketchGrid->Insert();
     }
 

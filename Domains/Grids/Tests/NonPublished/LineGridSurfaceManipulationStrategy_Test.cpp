@@ -41,9 +41,12 @@ void LineGridSurfaceManipulationStrategyTestFixture::SetUp()
     GridsTestFixtureBase::SetUp();
     DgnDbR db = GetDgnDb();
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    SpatialLocationPartitionCPtr partition = SpatialLocationPartition::CreateAndInsert(*rootSubject, "GridSpatialPartition");
+    SpatialLocationPartitionPtr partition = SpatialLocationPartition::Create(*rootSubject, "GridSpatialPartition");
+    BuildingLocks_LockElementForOperation(*partition.get(), BeSQLite::DbOpcode::Insert, "SpatialLocationPartition : Insert for LineGridSurfacePlacementStrategy_Test");
+    db.Elements().Insert<SpatialLocationPartition>(*partition);
     m_model = SpatialLocationModel::CreateAndInsert(*partition);
     m_sketchGrid = SketchGrid::Create(*m_model.get(), partition->GetElementId(), "Sketch grid", 0.0, 10.0);
+    BuildingLocks_LockElementForOperation(*m_sketchGrid.get(), BeSQLite::DbOpcode::Insert, "SketchGrid :  Insert for LineGridSurfacePlacementStrategy_Test");
     m_sketchGrid->Insert();
     }
 
@@ -64,6 +67,7 @@ TEST_F(LineGridSurfaceManipulationStrategyTestFixture, ModifyExisting)
     {
     SketchGridPtr grid = SketchGrid::Create(*m_model, m_model->GetModeledElementId(), "TEST_GRID", 0, 10);
     ASSERT_TRUE(grid.IsValid());
+    BuildingLocks_LockElementForOperation(*grid.get(), BeSQLite::DbOpcode::Insert, "SketchGrid :  Insert for LineGridSurfacePlacementStrategy_Test");
     ASSERT_TRUE(grid->Insert().IsValid());
 
     Dgn::DefinitionModelCR defModel = GetDgnDb().GetDictionaryModel();
@@ -73,6 +77,7 @@ TEST_F(LineGridSurfaceManipulationStrategyTestFixture, ModifyExisting)
     SketchLineGridSurface::CreateParams surfaceCreateParams(*m_model, *axis, 0, 10, DPoint2d::From(0,0), DPoint2d::From(10,0));
     SketchLineGridSurfacePtr surface = SketchLineGridSurface::Create(surfaceCreateParams);
     ASSERT_TRUE(surface.IsValid());
+    BuildingLocks_LockElementForOperation(*surface.get(), BeSQLite::DbOpcode::Insert, "SketchGrid :  Insert for LineGridSurfacePlacementStrategy_Test");
     ASSERT_TRUE(surface->Insert().IsValid());
 
     ASSERT_EQ(SUCCESS, GetDgnDb().SaveChanges());

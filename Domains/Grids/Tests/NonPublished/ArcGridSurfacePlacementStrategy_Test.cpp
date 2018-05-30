@@ -41,9 +41,12 @@ void ArcGridSurfacePlacementStrategyTestFixture::SetUp()
     GridsTestFixtureBase::SetUp();
     DgnDbR db = GetDgnDb();
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    SpatialLocationPartitionCPtr partition = SpatialLocationPartition::CreateAndInsert(*rootSubject, "GridSpatialPartition");
+    SpatialLocationPartitionPtr partition = SpatialLocationPartition::Create(*rootSubject, "GridSpatialPartition");
+    BuildingLocks_LockElementForOperation(*partition.get(), BeSQLite::DbOpcode::Insert, "SpatialLocationPartition : Insert for ArcGridSurfacePlacementStrategy_Test");
+    db.Elements().Insert<SpatialLocationPartition>(*partition);
     m_model = SpatialLocationModel::CreateAndInsert(*partition);
     m_sketchGrid = SketchGrid::Create(*m_model.get(), partition->GetElementId(), "Sketch grid", 0.0, 10.0);
+    BuildingLocks_LockElementForOperation(*m_sketchGrid.get(), BeSQLite::DbOpcode::Insert, "SketchGrid :  Insert for ArcGridSurfacePlacementStrategy_Test");
     m_sketchGrid->Insert();
     }
 
