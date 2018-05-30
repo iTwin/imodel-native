@@ -52,8 +52,9 @@ DPoint3dCR spacePoint,
 DBilinearPatch3dCR patch,
 int id0,
 int id1,
-double u0,
-double u1
+int id2 = 0,
+double u0 = 0.0,
+double u1 = 1.0
 )
     {
     bvector<DPoint2d> uv;
@@ -65,8 +66,7 @@ double u1
             DPoint3d xyz;
             DVec3d dXdu, dXdv;
             patch.Evaluate (uv[i].x, uv[i].y, xyz, dXdu, dXdv);
-            double u = u0 + uv[i].x * (u1 - u0);
-            UpdatePick (pickData, spacePoint, xyz, u, uv[i].y, id0, id1, 0);
+            UpdatePick (pickData, spacePoint, xyz, uv[i].x, uv[i].y, id0, id1, id2);
             }
         }
     }
@@ -76,8 +76,6 @@ static bool HasRealPoint (SolidLocationDetailR pickData)
     return pickData.GetPickParameter () < DBL_MAX;
     }
    
-
-
 // Update pick data with closest point on body of region bounded by transformed curves.Intersect a ray with a (possibly transformed) region bounded by a curve.
 void UpdateByAreaPick
 (
@@ -130,6 +128,50 @@ int numTransform
                 }
             }        
         }
+    }
+
+// Update pick data with closest point on body of region.
+void UpdateBySingleAreaPick
+(
+SolidLocationDetail &pickData,
+CurveVectorPtr curve,
+DPoint3dCR spacePoint,
+int index1
+)
+    {
+    if (!curve->IsAnyRegionType ())
+        return;
+
+    Transform regionToWorld, worldToRegion;
+    DRange3d localRange;
+    // We have to make a copy of the curve rotated to xy plane.
+    // But instead of moving it to end position, we will move the point back into the xy system.
+    // This saves one cuve copy. (And anyway the inout test only happens in xy space);
+    CurveVectorPtr localCurve = curve->CloneInLocalCoordinates
+            (
+            LOCAL_COORDINATE_SCALE_01RangeBothAxes,
+            regionToWorld, worldToRegion,
+            localRange
+            );
+            
+    DPoint3d worldRetract, regionRetract;
+    worldRetract = spacePoint;
+    worldToRegion.Multiply (regionRetract, worldRetract);
+    if (localRange.IsContainedXY (regionRetract))
+        {
+        CurveVector::InOutClassification inout = localCurve->PointInOnOutXY (regionRetract);
+        if (  inout == CurveVector::INOUT_In
+            || inout == CurveVector::INOUT_On
+            )
+            {
+            DPoint3d xyzA, xyzB;
+            xyzA = regionRetract;
+            xyzA.z = 0.0;
+            regionToWorld.Multiply (xyzB, xyzA);
+            UpdatePick (pickData, spacePoint, xyzB, regionRetract.x, regionRetract.y,
+                        SolidLocationDetail::PrimaryIdCap, index1, 0);                
+            }
+        }        
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -192,8 +234,6 @@ SolidLocationDetailR pickData
     return HasRealPoint (pickData);
     }
 
-
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
@@ -254,8 +294,6 @@ SolidLocationDetailR pickData
         }
     return HasRealPoint (pickData);
     }
-
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
@@ -335,7 +373,7 @@ SolidLocationDetailR pickData
         int id0 = BoxFaces::FaceIdToPrimarySelector (faceIndex);
         int id1 = BoxFaces::FaceIdToSecondarySelector (faceIndex);
         DBilinearPatch3d patch = cornerData.GetFace (faceIndex);
-        UpdatePatchPick (pickData, spacePoint, patch, id0, id1, 0.0, 1.0);
+        UpdatePatchPick (pickData, spacePoint, patch, id0, id1);
         // Projection only considered interior to face.   Maybe we are close to an edge but
         //   not projection to a face directly.
         // Hmmm.. if there was a projection, it will certainly be closer than any edge point.
@@ -367,8 +405,9 @@ SolidLocationDetailR pickData
     return HasRealPoint (pickData);        
     }
 
-
-
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
 bool DgnExtrusionDetail::TryGetExtrusionFrame (TransformR localToWorld, TransformR worldToLocal) const
     {
     DPoint3d origin;
@@ -386,6 +425,7 @@ bool DgnExtrusionDetail::TryGetExtrusionFrame (TransformR localToWorld, Transfor
     worldToLocal.InitIdentity ();
     return false;
     }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
@@ -429,6 +469,9 @@ SolidLocationDetailR pickData
     return HasRealPoint (pickData);   
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
 static void RuledSurfaceClosestPoint_primtivePair
 (
 SolidLocationDetail &pickData,
@@ -458,7 +501,7 @@ int parentId
         )
         {
         DBilinearPatch3d patch (segmentA, segmentB);
-        UpdatePatchPick (pickData, spacePoint, patch, (int)index0, (int)primitiveCounter, 0.0, 1.0);
+        UpdatePatchPick (pickData, spacePoint, patch, (int)index0, (int)primitiveCounter);
         // um..  edges??
         }
     else if (typeA == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc
@@ -479,12 +522,12 @@ int parentId
         size_t nB = pointsA->size ();
         if (nA != nB || nA < 2)
             return;
-        double df = 1.0 / (double)nA;
+        double df = 1.0 / (double)(nA-1);
         for (size_t i = 0; curveA.TryGetSegmentInLineString (segmentA, i)
                         && curveB.TryGetSegmentInLineString (segmentB, i); i++)
             {
             DBilinearPatch3d patch (segmentA, segmentB);
-            UpdatePatchPick (pickData, spacePoint, patch, (int)index0, (int)primitiveCounter, i * df, (i+1) * df);
+            UpdatePatchPick (pickData, spacePoint, patch, (int)index0, (int)primitiveCounter, (int) i, i * df, (i+1) * df);
             }
         }
     else if (   NULL != (bcurveA = curveA.GetProxyBsplineCurveCP ())
@@ -496,6 +539,7 @@ int parentId
            UpdatePick (pickData, pickData1);
         }
     }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
@@ -559,9 +603,8 @@ SolidLocationDetailR pickData
 
     if (m_capped)
         {
-        Transform identity = Transform::FromIdentity ();        
-        UpdateByAreaPick (pickData, m_sectionCurves.front (), spacePoint, &identity, 1);
-        UpdateByAreaPick (pickData,  m_sectionCurves.back (), spacePoint, &identity, 1);
+        UpdateBySingleAreaPick (pickData, m_sectionCurves.front (), spacePoint, 0);
+        UpdateBySingleAreaPick (pickData, m_sectionCurves.back (), spacePoint, 1);
         }
     return true;
     }
@@ -620,7 +663,6 @@ SolidLocationDetailR pickData
         }
     return true;
     }
-
 
 END_BENTLEY_GEOMETRY_NAMESPACE
 
