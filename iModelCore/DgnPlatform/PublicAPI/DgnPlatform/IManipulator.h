@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/IManipulator.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -221,6 +221,24 @@ HANDLER_EXTENSION_DECLARE_MEMBERS(IEditManipulatorExtension, DGNPLATFORM_EXPORT)
 virtual ~IEditManipulatorExtension() {}
 
 }; // IEditManipulatorExtension
+
+//=======================================================================================
+// Controls tool behavior on grouped elements (either with a group or parent-child relationships)
+// Avoid individual modifications and selection by default
+// Tools won't modify/select individually if the extension is not present
+// @bsistruct                                                   Diego.Pinate    05/18
+//=======================================================================================
+struct GroupEditExtension : DgnDomain::Handler::Extension
+{
+public:
+virtual bool    _CanModifyChildrenIndividually() { return false; }
+virtual bool    _CanSelectChildrenIndividually() { return false; }
+
+HANDLER_EXTENSION_DECLARE_MEMBERS(GroupEditExtension, DGNPLATFORM_EXPORT)
+
+//! @private
+virtual ~GroupEditExtension() {}
+}; // GroupEditExtension
 
 END_BENTLEY_DGN_NAMESPACE
 

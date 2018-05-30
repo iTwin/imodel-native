@@ -10,7 +10,9 @@
 #include <DgnPlatform/TileReader.h>
 #include <folly/BeFolly.h>
 #include <DgnPlatform/RangeIndex.h>
+#include <DgnPlatform/JsonUtils.h>
 #include <numeric>
+#include <inttypes.h>
 #if defined (BENTLEYCONFIG_PARASOLID) 
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
@@ -892,7 +894,7 @@ bool Tile::IsCacheable() const
 
     // Don't cache tiles refined for zoom...
     if (HasZoomFactor() && GetZoomFactor() > 1.0)
-        return false;
+        return T_HOST.GetTileAdmin()._WantCachedHiResTiles(GetRoot().GetDgnDb());
 
     return true;
 #endif
@@ -1173,8 +1175,8 @@ BentleyStatus Loader::DoGetFromSource()
         {
         // TBD -- Avoid round trip through m_tileBytes when loading from elements.
         // NB: Tile may not be a leaf, but may have zoom factor of 1.0 indicating it should not be sub-divided
-        // (it can be refined to higher zoom level - those tiles are not cached).
-        BeAssert(!tile.HasZoomFactor() || 1.0 == tile.GetZoomFactor());
+        // (it can be refined to higher zoom level - those tiles are not cached unless admin specifically requests so).
+        BeAssert(!tile.HasZoomFactor() || 1.0 == tile.GetZoomFactor() || T_HOST.GetTileAdmin()._WantCachedHiResTiles(root.GetDgnDb()));
         bool isLeaf = tile.IsLeaf() || tile.HasZoomFactor();
         if (SUCCESS != TileTree::IO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter(), isLeaf))
             return ERROR;
@@ -1691,7 +1693,7 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Tile::_GetTileCacheKey() const
     {
-    return GetElementRoot().GetModelId().ToString() + Utf8PrintfString("%d/%d/%d/%d:%f", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, m_zoomFactor);
+    return GetElementRoot().GetModelId().ToString() + GetIdString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1954,6 +1956,7 @@ void Tile::_ValidateChildren() const
                 auto child = static_cast<TileP>(m_children[0].get());
                 if (!child->HasZoomFactor())
                     {
+                    child->SetIsLeaf(false);
                     child->SetZoomFactor(2.0 * GetZoomFactor());
                     child->InitTolerance(s_minToleranceRatio);
                     }
@@ -3240,7 +3243,8 @@ Utf8CP TileCache::GetCurrentVersion()
     //  7: Fix out-of-control subdivision in specific cases (TFS#884193, TFS#886685)
     //  8: Fix issue in which MeshGenerator::AddPolyface() decimates a polyface in a tile which later becomes a leaf tile (TFS#889847)
     //  9: We were failing to align most chunks of the binary data. In JavaScript this produces exceptions when trying to read unaligned data.
-    return "9";
+    //  10: Change tile cache key such that if tile has no 'zoom factor', it is written as 0, not 1.
+    return "10";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3282,5 +3286,131 @@ bool TileCache::_ValidateData() const
     // Binary format has changed. Discard existing tile data.
     WriteCurrentVersion();
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Root::_ToJson(Json::Value& json) const
+    {
+    json["id"] = GetModelId().ToHexStr();
+    json["maxTilesToSkip"] = 1;
+    JsonUtils::TransformToJson(json["location"], GetLocation());
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tile::_ToJson(Json::Value& json) const
+    {
+    json["id"]["treeId"] = GetElementRoot().GetModelId().ToHexStr();
+    json["id"]["tileId"] = GetIdString();
+
+    JsonUtils::DRange3dToJson(json["range"], GetRange());
+    if (HasContentRange())
+        JsonUtils::DRange3dToJson(json["contentRange"], _GetContentRange());
+
+    if (HasZoomFactor())
+        json["zoomFactor"] = GetZoomFactor();
+
+    if (nullptr != GetParent())
+        json["parentId"] = GetElementParent()->GetIdString();
+    
+    auto children = _GetChildren(true);
+    json["childIds"] = Json::arrayValue;
+    if (nullptr != children)
+        {
+        for (auto const& child : *children)
+            json["childIds"].append(static_cast<TileR>(*child).GetIdString());
+        }
+
+    ByteStream geometry = GetRoot().GetTileDataFromCache(_GetTileCacheKey());
+    if (!geometry.empty())
+        {
+        Utf8String encodedGeometry;
+        Base64Utilities::Encode(encodedGeometry, geometry.GetData(), geometry.size());
+        json["geometry"] = encodedGeometry;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Tile::GetIdString() const
+    {
+    return Utf8PrintfString("%u/%u/%u/%u:%f", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k, m_zoomFactor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::TilePtr Root::_FindTileById(Utf8CP strId)
+    {
+    if (GetRootTile().IsNull())
+        return nullptr;
+    
+    TileTree::OctTree::TileId id;
+    double zoomFactor;
+    if (nullptr == strId || 5 != BE_STRING_UTILITIES_UTF8_SSCANF(strId, "%" SCNu8 "/%u/%u/%u:%lf", &id.m_level, &id.m_i, &id.m_j, &id.m_k, &zoomFactor))
+        {
+        BeAssert(false && "Invalid tile id string");
+        return nullptr;
+        }
+
+    return static_cast<TileR>(*GetRootTile()).FindTile(id, zoomFactor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TilePtr Tile::FindTile(TileTree::OctTree::TileId id, double zoomFactor)
+    {
+    if (id == GetTileId())
+        return FindTile(zoomFactor);
+
+    auto children = _GetChildren(true);
+    if (nullptr == children)
+        return nullptr;
+
+    if (id.m_level <= m_id.m_level)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    auto imod = id.m_i % 2, jmod = id.m_j % 2, kmod = id.m_k % 2;
+    for (auto const& child : *children)
+        {
+        auto elemChild = static_cast<TileP>(child.get());
+        auto childId = elemChild->GetTileId();
+        if (childId.m_i % 2 == imod && childId.m_j % 2 == jmod && childId.m_k % 2 == kmod)
+            return elemChild->FindTile(id, zoomFactor);
+        }
+
+    BeAssert(false && "missing child tile");
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TilePtr Tile::FindTile(double zoomFactor)
+    {
+    BeAssert(HasZoomFactor() == m_zoomFactor > 0.0);
+    if (zoomFactor == m_zoomFactor)
+        return this;
+
+    BeAssert(zoomFactor > 0.0 && HasZoomFactor());
+    auto children = _GetChildren(true);
+    if (nullptr == children || 1 != children->size())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return static_cast<TileR>(**children->begin()).FindTile(zoomFactor);
     }
 

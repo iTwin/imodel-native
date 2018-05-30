@@ -158,6 +158,7 @@
         <Bindings>
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
             <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="ECSchemas"> Delivery/UnitTests/ECSchemas/*.xml</Files>
+			<Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="PerformanceTestData"> Delivery/UnitTests/PerformanceTestData/*.json</Files>
             <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="CompatibilityTestFiles" SourceName="Delivery/UnitTests/CompatibilityTestFiles" />
         </Bindings>
     </Part>
