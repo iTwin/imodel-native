@@ -8,6 +8,7 @@
 #include "ClientInternal.h"
 #include "WebApiV2.h"
 #include <WebServices/Client/Response/WSObjectsReaderV2.h>
+#include <BeHttp/ProxyHttpHandler.h>
 
 #define HEADER_SkipToken                "SkipToken"
 #define HEADER_MasAllowRedirect         "Mas-Allow-Redirect"
@@ -368,22 +369,22 @@ ICancellationTokenPtr ct
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-AsyncTaskPtr<WSFileResult> WebApiV2::SendGetFileRequest
+AsyncTaskPtr<WSResult> WebApiV2::SendGetFileRequest
 (
 ObjectIdCR objectId,
-BeFileNameCR filePath,
+HttpBodyPtr bodyResponseOut,
 Utf8StringCR eTag,
 Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    if (!objectId.IsValid() || filePath.empty())
-        return CreateCompletedAsyncTask(WSFileResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+    if (!objectId.IsValid())
+        return CreateCompletedAsyncTask(WSResult::Error(WSError::CreateFunctionalityNotSupportedError()));
 
     bool isExternalFileAccessSupported = GetMaxWebApiVersion() >= BeVersion(2, 4);
 
     Utf8String url = GetUrl(CreateFileSubPath(objectId));
-    Http::Request request = CreateFileDownloadRequest(url, filePath, eTag, downloadProgressCallback, ct);
+    Http::Request request = CreateFileDownloadRequest(url, bodyResponseOut, eTag, downloadProgressCallback, ct);
 
     if (isExternalFileAccessSupported)
         {
@@ -391,23 +392,22 @@ ICancellationTokenPtr ct
         request.SetFollowRedirects(false);
         }
 
-    auto finalResult = std::make_shared<WSFileResult>();
+    auto finalResult = std::make_shared<WSResult>();
     return request.PerformAsync()->Then([=] (Http::Response& response)
         {
         if (HttpStatus::TemporaryRedirect != response.GetHttpStatus())
             {
-            *finalResult = ResolveFileDownloadResponse(response, filePath);
+            *finalResult = ResolveFileDownloadResponse(response);
             return;
             }
 
         Utf8String redirectUrl = response.GetHeaders().GetLocation();
-        Http::Request request = CreateFileDownloadRequest(redirectUrl, filePath, eTag, downloadProgressCallback, ct);
+        Http::Request request = CreateFileDownloadRequest(redirectUrl, bodyResponseOut, eTag, downloadProgressCallback, ct);
         request.PerformAsync()->Then([=] (Http::Response& response)
             {
-            *finalResult = ResolveFileDownloadResponse(response, filePath);
+            *finalResult = ResolveFileDownloadResponse(response);
             });
-        })
-            ->Then<WSFileResult>([=]
+        })->Then<WSResult>([=]
             {
             return *finalResult;
             });
@@ -419,14 +419,14 @@ ICancellationTokenPtr ct
 Http::Request WebApiV2::CreateFileDownloadRequest
 (
 Utf8StringCR url,
-BeFileNameCR filePath,
+HttpBodyPtr responseBody,
 Utf8StringCR eTag,
 Http::Request::ProgressCallbackCR onProgress,
 ICancellationTokenPtr ct
 ) const
     {
     Http::Request request = m_configuration->GetHttpClient().CreateGetRequest(url);
-    request.SetResponseBody(HttpFileBody::Create(filePath));
+    request.SetResponseBody(responseBody);
     request.SetRetryOptions(Http::Request::RetryOption::ResumeTransfer, 0);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::FileDownload);
@@ -439,15 +439,15 @@ ICancellationTokenPtr ct
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSFileResult WebApiV2::ResolveFileDownloadResponse(Http::Response& response, BeFileName filePath) const
+WSResult WebApiV2::ResolveFileDownloadResponse(Http::Response& response) const
     {
     HttpStatus status = response.GetHttpStatus();
     if (HttpStatus::OK == status ||
         HttpStatus::NotModified == status)
         {
-        return WSFileResult::Success(WSFileResponse(filePath, status, response.GetHeaders().GetETag()));
+        return WSResult::Success(WSResponse(status, response.GetHeaders().GetETag()));
         }
-    return WSFileResult::Error(response);
+    return WSResult::Error(response);
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -360,6 +360,37 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndAzureRedirectRece
     EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
     }
 
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetFileRequestForStream_WebApiV24AndAzureRedirectReceived_DownloadsFileFromExternalLocation)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    auto responseBody = Http::HttpByteStreamBody::Create();
+
+    EXPECT_REQUEST_COUNT(GetHandler(), 3);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
+                {HEADER_Location, "https://foo.com/boo"},
+                                {HEADER_MasFileAccessUrlType, "AzureBlobSasUrl"}});
+        });
+    GetHandler().ForRequest(3, [=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        EXPECT_STREQ("https://foo.com/boo", request.GetUrl().c_str());
+        WriteStringToHttpBody("TestResponseBody", request.GetResponseBody());
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    auto response = client->SendGetFileRequest(StubObjectId(), responseBody)->GetResult();
+    EXPECT_TRUE(response.IsSuccess());
+
+    EXPECT_STREQ("TestResponseBody", SimpleReadByteStream(responseBody->GetByteStream()).c_str());
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -387,6 +418,32 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectRe
     auto response = client->SendGetFileRequest(StubObjectId(), filePath)->GetResult();
     EXPECT_TRUE(response.IsSuccess());
     EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
+    }
+
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendGetFileRequestForStream_WebApiV24_SendsCorrectUrlAndAllowRedirectHeader)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    auto responseBody = Http::HttpByteStreamBody::Create();
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        EXPECT_STREQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
+        EXPECT_STREQ("true", request.GetHeaders().GetValue("Mas-Allow-Redirect"));
+        WriteStringToHttpBody("TestResponseBody", request.GetResponseBody());
+        return StubHttpResponse(HttpStatus::OK);
+        });
+
+    auto response = client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, responseBody)->GetResult();
+    EXPECT_TRUE(response.IsSuccess());
+
+    EXPECT_STREQ("TestResponseBody", SimpleReadByteStream(responseBody->GetByteStream()).c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
