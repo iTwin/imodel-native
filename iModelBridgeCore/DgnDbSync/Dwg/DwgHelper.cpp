@@ -1559,3 +1559,45 @@ uint32_t    DwgHelper::GetDwgImporterVersion ()
 #endif
     return  importerVersion;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgHelper::GetTransformForSharedParts (TransformP out, double* uniformScale, TransformCR in)
+    {
+    // Factor out a transform to a pure uniform rotation + a translation for shared parts.
+    RotMatrix   matrix, rotation, skew;
+    DPoint3d    translation;
+
+    in.GetMatrix (matrix);
+    in.GetTranslation (translation);
+
+    auto isValid = matrix.RotateAndSkewFactors (rotation, skew, 0, 1);
+    if (isValid)
+        {
+        isValid = skew.IsIdentity ();
+        if (!isValid)
+            {
+            RotMatrix   rigid;
+            double      scale = 1.0;
+
+            isValid = skew.IsRigidSignedScale (rigid, scale);
+            if (isValid && nullptr != uniformScale)
+                *uniformScale = scale;
+            }
+        }
+    else
+        {
+        // should not occur!
+        rotation.InitIdentity ();
+        skew.InitIdentity ();
+        }
+
+    if (nullptr != out)
+        {
+        out->SetMatrix (rotation);
+        out->SetTranslation (translation);
+        }
+
+    return  isValid;
+    }

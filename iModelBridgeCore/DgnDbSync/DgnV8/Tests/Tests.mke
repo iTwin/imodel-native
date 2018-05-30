@@ -63,6 +63,8 @@ $(o)ECTests.obj                 : $(BEGTEST_INPUT)ECTests.cpp                   
 
 $(o)ModelTests.obj              : $(BEGTEST_INPUT)ModelTests.cpp                $(TestsHeaders) ${MultiCompileDepends}
 
+$(o)MultiBridgeTests.obj        : $(BEGTEST_INPUT)MultiBridgeTests.cpp          $(TestsHeaders) ${MultiCompileDepends}
+
 $(o)DrawingTests.obj            : $(BEGTEST_INPUT)DrawingTests.cpp              $(TestsHeaders) ${MultiCompileDepends}
 
 $(o)ProgressMeterTests.obj      : $(BEGTEST_INPUT)ProgressMeterTests.cpp        $(TestsHeaders) ${MultiCompileDepends}
@@ -148,13 +150,13 @@ $(BuildContext)Delivery/ImportConfig.xsd : $(baseDir)../ImportConfig/ImportConfi
 
 $(BuildContext)Delivery/ImportConfig.xml : $(baseDir)../ImportConfig/ImportConfig.xml
     $(LinkFirstDepToFirstTarget)
-    
+
 $(BuildContext)Delivery/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)Delivery/DgnDbSyncTestData/ : $(baseDir)data/
     $(LinkFirstDepToFirstTargetAsDirectory)
-	
+
 $(BuildContext)Delivery/NamedGroupTestSchema_DgnDbSync.01.00.ecschema.xml : $(baseDir)data/Schemas/NamedGroupTestSchema_DgnDbSync.01.00.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
