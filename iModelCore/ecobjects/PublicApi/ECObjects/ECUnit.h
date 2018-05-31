@@ -241,7 +241,7 @@ private:
     ECFormatCP m_ecFormat;
 
 protected:
-    bool _ToJson(Json::Value& out, bool verbose) const override;
+    ECOBJECTS_EXPORT bool _ToJson(Json::Value& out, bool verbose) const override;
     void SetParentFormat(ECFormatCP parent) {m_ecFormat = parent;}
 
 public:
