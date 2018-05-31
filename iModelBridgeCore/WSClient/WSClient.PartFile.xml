@@ -346,6 +346,7 @@
     <ProductDirectoryList ListName="iModelHubNativeTests">
         <ProductDirectory Name="Gtest-NativeAssemblies"    Path=""/>
         <ProductDirectory Name="Assemblies"                Path=""/>
+        <ProductDirectory Name="Assemblies"                Path="" LibType="Static" Deliver="false"/>
         <ProductDirectory Name="Assets"                    Path="Assets"/>
         <ProductDirectory Name="Assets"                    Path="Assets" LibType="static"/>
         <ProductDirectory Name="sqlang"                    Path="sqlang" RelativeTo="Assets"/>
@@ -355,6 +356,7 @@
         <ProductDirectory Name="VendorNotices"             Deliver="false" LibType="static" />
         <ProductDirectory Name="LoggingManagedAssemblies"  Deliver="false"/>
         <ProductDirectory Name="LoggingNativeAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="UnitTests-Objects"         Deliver="false" LibType="Static"/>
         
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
         <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
