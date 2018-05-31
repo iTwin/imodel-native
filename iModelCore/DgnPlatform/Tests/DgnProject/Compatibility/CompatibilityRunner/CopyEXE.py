@@ -14,7 +14,7 @@ from shutil import copyfile, rmtree, copytree
 #------------------------------------------------------------------------
 def main():
     if len(sys.argv) < 3:
-        print "Must give the <nuget path> <nuget dst path> <current dataset dir>"
+        print "Must give the <nuget path> <nuget dst path> <nuget dataset dir>"
         return
     
     nugetSrcPath = sys.argv[1]

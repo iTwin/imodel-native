@@ -9,7 +9,7 @@ import sys
 import os
 import zipfile
 import imp
-from shutil import copyfile, rmtree
+from shutil import copyfile, copytree, rmtree
 
 #-------------------------------------------------------------------------------------------
  # bsimethod                         Kyle.Abramowitz             05/2018
@@ -71,6 +71,17 @@ def main():
         zip_ref = zipfile.ZipFile(path, "a")
         zip_ref.extractall(os.path.splitext(path)[0])
         zip_ref.close()
+
+    extractedDataDir = os.path.join(nugetPath, "SeedData")
+    for subdir in os.listdir(nugetPath):
+        path = os.path.join(nugetPath, subdir)
+        if os.path.isdir(path) and subdir != "Datasets":
+            datasetPath = os.path.join(path, "Datasets")
+            for db in os.listdir(datasetPath):
+                dbPath = os.path.join(datasetPath, db)
+                for version in os.listdir(dbPath):
+                    if not os.path.exists(os.path.join(extractedDataDir, db, version)):
+                        copytree(os.path.join(dbPath, version), os.path.join(extractedDataDir, db, version))
 
 if __name__ == "__main__":
     main()
