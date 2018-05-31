@@ -216,10 +216,7 @@ Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    auto finalResult = std::make_shared<WSFileResult>();
-
-    auto task =
-     m_fileDownloadQueue.Push([=]
+    auto task = m_fileDownloadQueue.Push([=]
         {
         return m_connection->GetWebApiAndReturnResponse<WSResult>([=] (WebApiPtr webApi)
             {
@@ -230,14 +227,13 @@ ICancellationTokenPtr ct
             }, ct);
         }, ct);
 
-        return task
-        ->Then<WSFileResult>([=] (WSResult response)
-            {
-            if (!response.IsSuccess())
-                return WSFileResult::Error(response.GetError());
+    return task->Then<WSFileResult>([=] (WSResult response)
+        {
+        if (!response.IsSuccess())
+            return WSFileResult::Error(response.GetError());
 
-            return WSFileResult::Success(WSFileResponse(filePath, response.GetValue().IsModified() ? Http::HttpStatus::OK : Http::HttpStatus::BadRequest, response.GetValue().GetETag()));
-            });
+        return WSFileResult::Success(WSFileResponse(filePath, response.GetValue().IsModified() ? Http::HttpStatus::OK : Http::HttpStatus::BadRequest, response.GetValue().GetETag()));
+        });
     }
 
 /*--------------------------------------------------------------------------------------+

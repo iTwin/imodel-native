@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <Bentley/BeTimeUtilities.h>
-#include "WebApi/WebApiV1.h"
 #include "WebApi/WebApiV2.h"
 
 #define SERVER_INFO_REFRESH_MS (30*60*1000)
