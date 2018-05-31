@@ -108,32 +108,6 @@ void Expect4_jSrS(MockHttpHandler& handler, HttpStatus status)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, GetInfo_WebApi13_ReturnsMinimalRequiredRepositoryInfo)
-    {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testId", StubClientInfo(), nullptr, GetHandlerPtr());
-
-    std::map<Utf8String, Utf8String> headers {{"Mas-Server", "foo/4.2"}};
-
-    GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
-
-    auto result = client->GetInfo()->GetResult();
-    EXPECT_TRUE(result.IsSuccess());
-
-    auto dataSource = result.GetValue();
-    EXPECT_EQ("https://srv.com/ws", dataSource.GetServerUrl());
-    EXPECT_EQ("testId", dataSource.GetId());
-
-    EXPECT_EQ("", dataSource.GetLabel());
-    EXPECT_EQ("", dataSource.GetDescription());
-    EXPECT_EQ("", dataSource.GetLocation());
-    EXPECT_EQ("", dataSource.GetPluginId());
-    EXPECT_TRUE(dataSource.GetPluginVersion().IsEmpty());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                               julius.cepukenas    05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, GetInfo_WebApi20_SendsGetRepositoryUrl)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
