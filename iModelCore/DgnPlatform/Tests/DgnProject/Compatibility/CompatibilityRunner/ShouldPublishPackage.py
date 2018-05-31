@@ -18,6 +18,9 @@ def main():
     oldDatasetPath = sys.argv[2]
     currentVersions = []
 
+    if not os.path.exists(oldDatasetPath):
+        sys.exit(0)
+
     #Append bedb, dgndb, ecdb versions in that order to list
     for subdir in os.listdir(currentDatasetPath):
         currentVersions.append(os.listdir(os.path.join(currentDatasetPath, subdir))[0])
