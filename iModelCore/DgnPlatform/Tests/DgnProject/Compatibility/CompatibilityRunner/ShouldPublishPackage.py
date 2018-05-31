@@ -30,9 +30,9 @@ def main():
     for subdir in os.listdir(oldDatasetPath):
         dirs = os.listdir(os.path.join(oldDatasetPath, subdir))
         if currentVersions[i] in dirs:
-            sys.exit(0)
+            sys.exit(1)
         i = i + 1 
-    sys.exit(1)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
