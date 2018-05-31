@@ -14,21 +14,25 @@ from shutil import rmtree
 # bsimethod                         Kyle.Abramowitz             05/2018
 #------------------------------------------------------------------------
 def main():
-    if len(sys.argv) < 2:
-        print "Must give the test root"
-        return
-    
-    testRoot = sys.argv[1]
+    currentDatasetPath = sys.argv[1]
+    oldDatasetPath = sys.argv[2]
+    currentVersions = []
 
-    print "TestRoot: " + testRoot + "\n"
-    # All these packages should be of the form DgnCompatiblityNugetxx.xx.xx.xx
-    for subdir in os.listdir(testRoot):
-        fullPath = os.path.join(testRoot, subdir);
-        if (os.path.isdir(fullPath) and subdir != "Assets"):
-            print "calling " + os.path.join(fullPath, "DgnCompatibility.exe")
-            subprocess.check_call(os.path.join(fullPath, "DgnCompatibility.exe"))
-        else:
-            print "not a dir: " + fullPath
+    if not os.path.exists(oldDatasetPath):
+        sys.exit(0)
+
+    #Append bedb, dgndb, ecdb versions in that order to list
+    for subdir in os.listdir(currentDatasetPath):
+        currentVersions.append(os.listdir(os.path.join(currentDatasetPath, subdir))[0])
+
+    # check to see if we already have this version
+    i = 0
+    for subdir in os.listdir(oldDatasetPath):
+        dirs = os.listdir(os.path.join(oldDatasetPath, subdir))
+        if currentVersions[i] in dirs:
+            sys.exit(1)
+        i = i + 1 
+    sys.exit(0)
 
 
 if __name__ == "__main__":
