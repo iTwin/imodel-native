@@ -32,6 +32,7 @@ GeometryStreamEntryId   m_hitEntryId;
 CurveLocationDetail     m_hitCurveDetail;
 DVec3d                  m_hitNormalLocal = DVec3d::FromZero();
 HitGeomType             m_hitGeomType = HitGeomType::None;
+HitParentGeomType       m_hitParentGeomType = HitParentGeomType::None;
 
 DPoint3d                m_hitClosePtLocal;
 Transform               m_hitWorldToLocal;
@@ -46,7 +47,7 @@ protected:
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool EvaluateInterior()
     {
-    if (!m_hitGeom.IsValid() || m_hitGeom->IsWire())
+    if (!m_hitGeom.IsValid())
         return false;
 
     // NOTE: Nearest snap tracks surface when edge not within locate aperture...
@@ -275,12 +276,6 @@ bool EvaluateInterior()
             }
 #endif
 
-         case GeometricPrimitive::GeometryType::TextString:
-            {
-            // NEEDSWORK: Unify with DoTextSnap...
-            return false;
-            }
-
         default:
             {
             // Shouldn't be any surface type not covered above...
@@ -302,7 +297,7 @@ bool EvaluateInterior()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool EvaluateArcCenter()
     {
-    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != m_hitCurveDetail.curve->GetCurvePrimitiveType())
+    if (nullptr == m_hitCurveDetail.curve || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != m_hitCurveDetail.curve->GetCurvePrimitiveType())
         return false;
 
     DEllipse3dCP arc = m_hitCurveDetail.curve->GetArcCP();
@@ -333,9 +328,30 @@ bool EvaluateArcCenter()
 bool EvaluateCurve()
     {
     if (nullptr == m_hitCurveDetail.curve)
-        return (SnapMode::Nearest == m_snapMode);
+        return (SnapMode::Nearest == m_snapMode || HitGeomType::Point == m_hitGeomType);
 
-    switch (m_snapMode)
+    SnapMode effectiveSnapMode = m_snapMode;
+
+    if (HitParentGeomType::Text == m_hitParentGeomType)
+        {
+        switch (effectiveSnapMode)
+            {
+            case SnapMode::Nearest:
+                effectiveSnapMode = SnapMode::NearestKeypoint;
+                break;
+
+            case SnapMode::MidPoint:
+            case SnapMode::Bisector:
+                effectiveSnapMode = SnapMode::Center;
+                break;
+
+            case SnapMode::NearestKeypoint:
+                effectiveSnapMode = SnapMode::Origin; // NOTE: Will use lower left of identified TextString. Ideally we'd want user origin for overall text block, but we can't get that from just the GeometryStream...
+                break;
+            }
+        }
+
+    switch (effectiveSnapMode)
         {
         case SnapMode::Nearest:
             {
@@ -527,13 +543,14 @@ void SimplifyHitDetail()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UpdateIfCloser(CurveLocationDetailCR curveDetail, HitGeomType hitGeomType)
+bool UpdateIfCloser(CurveLocationDetailCR curveDetail, HitGeomType geomType, HitParentGeomType parentGeomType)
     {
-    if (nullptr == m_hitCurveDetail.curve || curveDetail.a < m_hitCurveDetail.a)
+    if ((nullptr == m_hitCurveDetail.curve && HitGeomType::None == m_hitGeomType) || (curveDetail.a < m_hitCurveDetail.a))
         {
-        m_hitCurveDerived = const_cast<ICurvePrimitiveP>(curveDetail.curve); // Make sure m_hitCurveDetail.curve remains valid...
-        m_hitCurveDetail  = curveDetail;
-        m_hitGeomType     = hitGeomType;
+        m_hitCurveDerived   = const_cast<ICurvePrimitiveP>(curveDetail.curve); // Make sure m_hitCurveDetail.curve remains valid...
+        m_hitCurveDetail    = curveDetail;
+        m_hitGeomType       = geomType;
+        m_hitParentGeomType = parentGeomType;
 
         return true;
         }
@@ -597,33 +614,49 @@ DRay3d GetBoresite(DPoint3dCR localPoint, DMatrix4dCR viewToLocal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessICurvePrimitive(ICurvePrimitiveCR curve, DPoint3dCR localPoint, HitGeomType hitGeomType)
+bool ProcessPointString(ICurvePrimitiveCR curve, DPoint3dCR localPoint)
+    {
+    // NOTE: When using PickContext, this code won't be used. When locating from tiles, localPoint is known to be a vertex, so we can just use ClosestPointBounded.
+    CurveLocationDetail curveDetail;
+
+    if (!curve.ClosestPointBounded(localPoint, curveDetail))
+        return false;
+
+    curveDetail.curve = nullptr; // Don't store curve for point string hit...
+
+    return UpdateIfCloser(curveDetail, HitGeomType::Point, HitParentGeomType::None);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ProcessICurvePrimitive(ICurvePrimitiveCR curve, DPoint3dCR localPoint, HitGeomType geomType, HitParentGeomType parentGeomType)
     {
     CurveLocationDetail curveDetail;
 
     if (!curve.ClosestPointBounded(localPoint, curveDetail))
         return false;
 
-    return UpdateIfCloser(curveDetail, hitGeomType);
+    return UpdateIfCloser(curveDetail, geomType, parentGeomType);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessCurveVector(CurveVectorCR curves, DPoint3dCR localPoint, HitGeomType hitGeomType)
+bool ProcessCurveVector(CurveVectorCR curves, DPoint3dCR localPoint, HitGeomType geomType, HitParentGeomType parentGeomType)
     {
     CurveLocationDetail curveDetail;
 
     if (!curves.ClosestPointBounded(localPoint, curveDetail))
         return false;
 
-    return UpdateIfCloser(curveDetail, hitGeomType);
+    return UpdateIfCloser(curveDetail, geomType, parentGeomType);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint)
+bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint, HitParentGeomType parentGeomType)
     {
     bool    foundCurve = false;
 
@@ -631,7 +664,7 @@ bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint)
         {
         CurveVectorPtr curves = surface.GetUnstructuredBoundaryCurves(0.0, true, true);
 
-        if (curves.IsValid() && ProcessCurveVector(*curves, localPoint, HitGeomType::None))
+        if (curves.IsValid() && ProcessCurveVector(*curves, localPoint, HitGeomType::None, parentGeomType))
             foundCurve = true;
 
         if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -668,7 +701,7 @@ bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint)
             {
             ICurvePrimitivePtr  curve = ICurvePrimitive::CreateBsplineCurveSwapFromSource(*isoCurveU);
 
-            if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
+            if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
                 foundCurve = true;
 
             if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -686,7 +719,7 @@ bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint)
             {
             ICurvePrimitivePtr  curve = ICurvePrimitive::CreateBsplineCurveSwapFromSource(*isoCurveV);
 
-            if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
+            if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
                 foundCurve = true;
 
             if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -700,7 +733,7 @@ bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR localPoint, TransformCR worldToLocal)
+bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR localPoint, TransformCR worldToLocal, HitParentGeomType parentGeomType)
     {
     int     divisorU = m_snapDivisor;
     int     divisorV = divisorU;
@@ -722,7 +755,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 double              uFraction = (1.0 / divisorU) * uRule;
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(detail.UFractionToVSectionDEllipse3d(uFraction));
 
-                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
                     foundCurve = true;
                 }
 
@@ -745,7 +778,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction));
 
-                if (ProcessICurvePrimitive(*curve, localPoint, hitGeomType))
+                if (ProcessICurvePrimitive(*curve, localPoint, hitGeomType, parentGeomType))
                     foundCurve = true;
                 }
 
@@ -765,7 +798,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 {
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(ellipse1);
 
-                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None, parentGeomType))
                     foundCurve = true;
                 }
 
@@ -775,7 +808,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 {
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(ellipse2);
 
-                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None, parentGeomType))
                     foundCurve = true;
                 }
 
@@ -791,7 +824,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
 
-                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
                     foundCurve = true;
                 }
             
@@ -810,7 +843,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
                     ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(silhouette[iSilhouette]);
 
-                    if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
+                    if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
                         foundCurve = true;
                     }
                 }
@@ -832,7 +865,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 double              uFraction = (1.0 / divisorU) * uRule;
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(detail.UFractionToVSectionDEllipse3d(uFraction));
 
-                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
                     foundCurve = true;
                 }
 
@@ -854,7 +887,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction));
 
-                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
                     foundCurve = true;
                 }
 
@@ -868,12 +901,12 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
             if (!primitive.TryGetDgnExtrusionDetail(detail))
                 return false;
 
-            if (ProcessCurveVector(*detail.m_baseCurve, localPoint, HitGeomType::None))
+            if (ProcessCurveVector(*detail.m_baseCurve, localPoint, HitGeomType::None, parentGeomType))
                 foundCurve = true;
 
             CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone(Transform::From(detail.m_extrusionVector));
 
-            if (tmpCurve.IsValid() && ProcessCurveVector(*tmpCurve, localPoint, HitGeomType::None))
+            if (tmpCurve.IsValid() && ProcessCurveVector(*tmpCurve, localPoint, HitGeomType::None, parentGeomType))
                 foundCurve = true;
 
             if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -887,7 +920,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 {
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
 
-                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None, parentGeomType))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -903,7 +936,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 DSegment3d          segment = DSegment3d::FromOriginAndDirection(pt, detail.m_extrusionVector);
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
 
-                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -922,7 +955,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
             if (!Angle::IsFullCircle(detail.m_sweepAngle))
                 {
-                if (ProcessCurveVector(*detail.m_baseCurve, localPoint, HitGeomType::None))
+                if (ProcessCurveVector(*detail.m_baseCurve, localPoint, HitGeomType::None, parentGeomType))
                     foundCurve = true;
 
                 DPoint3d  axisPoint;
@@ -933,7 +966,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
                 CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone(transform);
 
-                if (tmpCurve.IsValid() && ProcessCurveVector(*tmpCurve, localPoint, HitGeomType::None))
+                if (tmpCurve.IsValid() && ProcessCurveVector(*tmpCurve, localPoint, HitGeomType::None, parentGeomType))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -948,7 +981,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 {
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(arc);
 
-                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None, parentGeomType))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -978,7 +1011,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(ellipse);
 
-                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -999,7 +1032,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
                 CurveVectorPtr  curve = detail.VFractionToProfile(vFraction);
 
-                if (curve.IsValid() && ProcessCurveVector(*curve, localPoint, HitGeomType::Surface))
+                if (curve.IsValid() && ProcessCurveVector(*curve, localPoint, HitGeomType::Surface, parentGeomType))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -1018,7 +1051,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
             for (CurveVectorPtr curves : detail.m_sectionCurves)
                 {
-                if (ProcessCurveVector(*curves, localPoint, HitGeomType::None))
+                if (ProcessCurveVector(*curves, localPoint, HitGeomType::None, parentGeomType))
                     foundCurve = true;
                 }
 
@@ -1033,7 +1066,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 {
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
 
-                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None, parentGeomType))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -1061,7 +1094,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                     DSegment3d          segment = DSegment3d::From(rulePts1.at(iRule), rulePts2.at(iRule));
                     ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
 
-                    if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
+                    if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface, parentGeomType))
                         foundCurve = true;
 
                     if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -1085,12 +1118,13 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ProcessSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR localPoint, TransformCR worldToLocal)
     {
+    HitParentGeomType parentGeomType = (primitive.GetCapped() ? HitParentGeomType::Solid : HitParentGeomType::Sheet);
     bvector<SolidLocationDetail::FaceIndices> faceIndices;
 
     primitive.GetFaceIndices(faceIndices);
 
     if (faceIndices.size() < 2)
-        return ProcessSingleFaceSolidPrimitive(primitive, localPoint, worldToLocal);
+        return ProcessSingleFaceSolidPrimitive(primitive, localPoint, worldToLocal, parentGeomType);
 
     SolidLocationDetail location;
 
@@ -1108,21 +1142,21 @@ bool ProcessSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR localPoint, T
             {
             CurveVectorPtr faceCurves = faceGeom->GetAsCurveVector();
 
-            return (faceCurves.IsValid() && ProcessCurveVector(*faceCurves, location.GetXYZ(), HitGeomType::None));
+            return (faceCurves.IsValid() && ProcessCurveVector(*faceCurves, location.GetXYZ(), HitGeomType::None, parentGeomType));
             }
 
         case IGeometry::GeometryType::SolidPrimitive:
             {
             ISolidPrimitivePtr facePrimitive = faceGeom->GetAsISolidPrimitive();
 
-            return (facePrimitive.IsValid() && ProcessSingleFaceSolidPrimitive(*facePrimitive, location.GetXYZ(), worldToLocal));
+            return (facePrimitive.IsValid() && ProcessSingleFaceSolidPrimitive(*facePrimitive, location.GetXYZ(), worldToLocal, parentGeomType));
             }
 
         case IGeometry::GeometryType::BsplineSurface:
             {
             MSBsplineSurfacePtr faceSurface = faceGeom->GetAsMSBsplineSurface();
 
-            return (faceSurface.IsValid() && ProcessBsplineSurface(*faceSurface, location.GetXYZ()));
+            return (faceSurface.IsValid() && ProcessBsplineSurface(*faceSurface, location.GetXYZ(), parentGeomType));
             }
 
         default:
@@ -1167,7 +1201,7 @@ bool ProcessSingleFacePolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
                 int segmentVertexId = (abs(thisIndex) - 1);
                 ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
 
-                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None, HitParentGeomType::Mesh))
                     foundCurve = true;
                 }
 
@@ -1185,7 +1219,7 @@ bool ProcessSingleFacePolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
                 int segmentVertexId = (abs(firstIndex) - 1);
                 ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
 
-                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None, HitParentGeomType::Mesh))
                     foundCurve = true;
                 }
 
@@ -1246,6 +1280,7 @@ struct BRepFaceHatchProcessor : IParasolidWireOutput
     SnapGeometryHelper&     m_processor;
     DPoint3d                m_localPoint;
     Transform               m_entityTransform;
+    HitParentGeomType       m_parentGeomType;
     bool                    m_foundCurve = false;
 
     /*---------------------------------------------------------------------------------**//**
@@ -1257,7 +1292,7 @@ struct BRepFaceHatchProcessor : IParasolidWireOutput
 
         curve->TransformInPlace(m_entityTransform);
 
-        if (m_processor.ProcessCurveVector(*curve, m_localPoint, HitGeomType::Surface))
+        if (m_processor.ProcessCurveVector(*curve, m_localPoint, HitGeomType::Surface, m_parentGeomType))
             m_foundCurve = true;
 
         return (nullptr != m_processor.m_stopTester && m_processor.m_stopTester->_CheckStop() ? ERROR : SUCCESS);
@@ -1265,7 +1300,7 @@ struct BRepFaceHatchProcessor : IParasolidWireOutput
 
     bool GetFoundCurve() {return m_foundCurve;}
 
-    BRepFaceHatchProcessor(SnapGeometryHelper& processor, DPoint3dCR localPoint, TransformCR entityTransform) : m_processor(processor), m_localPoint(localPoint), m_entityTransform(entityTransform) {}
+    BRepFaceHatchProcessor(SnapGeometryHelper& processor, DPoint3dCR localPoint, TransformCR entityTransform, HitParentGeomType parentGeomType) : m_processor(processor), m_localPoint(localPoint), m_entityTransform(entityTransform), m_parentGeomType(parentGeomType) {}
 
     }; // BRepFaceHatchProcessor
 
@@ -1279,6 +1314,23 @@ bool ProcessBody(IBRepEntityCR entity, DPoint3dCR localPoint)
     if (!closeEntity.IsValid())
         return false;
 
+    HitParentGeomType parentGeomType = HitParentGeomType::None;
+
+    switch (entity.GetEntityType())
+        {
+        case IBRepEntity::EntityType::Wire:
+            parentGeomType = HitParentGeomType::Wire;
+            break;
+
+        case IBRepEntity::EntityType::Sheet:
+            parentGeomType = HitParentGeomType::Sheet;
+            break;
+
+        case IBRepEntity::EntityType::Solid:
+            parentGeomType = HitParentGeomType::Solid;
+            break;
+        } 
+
     switch (closeEntity->GetSubEntityType())
         {
         case ISubEntity::SubEntityType::Edge:
@@ -1290,7 +1342,7 @@ bool ProcessBody(IBRepEntityCR entity, DPoint3dCR localPoint)
                 {
                 ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
 
-                return ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None);
+                return ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None, parentGeomType);
                 }
 
             return false;
@@ -1301,13 +1353,13 @@ bool ProcessBody(IBRepEntityCR entity, DPoint3dCR localPoint)
             CurveVectorPtr faceCurves = BRepUtil::Create::PlanarFaceToCurveVector(*closeEntity);
 
             if (faceCurves.IsValid())
-                return ProcessCurveVector(*faceCurves, localPoint, HitGeomType::None);
+                return ProcessCurveVector(*faceCurves, localPoint, HitGeomType::None, parentGeomType);
 
             break;
             }
         }
 
-    BRepFaceHatchProcessor output(*this, localPoint, entity.GetEntityTransform());
+    BRepFaceHatchProcessor output(*this, localPoint, entity.GetEntityTransform(), parentGeomType);
 
     PSolidGoOutput::ProcessFaceHatching(output, m_snapDivisor, PSolidSubEntity::GetSubEntityTag(*closeEntity));
 
@@ -1333,7 +1385,7 @@ bool ProcessBody(IBRepEntityCR entity, DPoint3dCR localPoint)
 
         ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
 
-        if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
+        if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None, parentGeomType))
             foundCurve = true;
         }
 
@@ -1356,7 +1408,7 @@ bool ProcessTextString(TextStringCR text, DPoint3dCR localPoint)
 
     ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLineString(points, 5);
 
-    return ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None);
+    return ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None, HitParentGeomType::Text);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1384,14 +1436,17 @@ bool ProcessGeometry(GeometricPrimitiveR geom, TransformCR localToWorld, bool ch
             {
             ICurvePrimitiveCR curve = *geom.GetAsICurvePrimitive();
 
-            return ProcessICurvePrimitive(curve, localPoint, HitGeomType::None);
+            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString == curve.GetCurvePrimitiveType())
+                return ProcessPointString(curve, localPoint);
+
+            return ProcessICurvePrimitive(curve, localPoint, HitGeomType::None, HitParentGeomType::Wire);
             }
 
         case GeometricPrimitive::GeometryType::CurveVector:
             {
             CurveVectorCR curves = *geom.GetAsCurveVector();
 
-            return ProcessCurveVector(curves, localPoint, HitGeomType::None);
+            return ProcessCurveVector(curves, localPoint, HitGeomType::None, curves.IsAnyRegionType() ? HitParentGeomType::Sheet : HitParentGeomType::Wire);
             }
 
         case GeometricPrimitive::GeometryType::SolidPrimitive:
@@ -1405,7 +1460,7 @@ bool ProcessGeometry(GeometricPrimitiveR geom, TransformCR localToWorld, bool ch
             {
             MSBsplineSurfaceCR surface = *geom.GetAsMSBsplineSurface();
 
-            return ProcessBsplineSurface(surface, localPoint);
+            return ProcessBsplineSurface(surface, localPoint, HitParentGeomType::Sheet);
             }
 
         case GeometricPrimitive::GeometryType::Polyface:
@@ -1606,6 +1661,7 @@ GeometryParamsCR GetHitGeometryParams() const {return m_hitParams;}
 GeometryStreamEntryIdCR GetHitGeometryStreamEntryId() const {return m_hitEntryId;}
 CurveLocationDetailCR GetHitCurveDetail() const {return m_hitCurveDetail;}
 HitGeomType GetHitGeomType() const {return m_hitGeomType;}
+HitParentGeomType GetHitParentGeomType() const {return m_hitParentGeomType;}
 DPoint3d GetHitPointWorld() const {DPoint3d hitPtWorld = m_hitCurveDetail.point; m_hitLocalToWorld.Multiply(hitPtWorld); return hitPtWorld;}
 DVec3d GetHitNormalWorld() const {DVec3d hitNormalWorld = m_hitNormalLocal; m_hitLocalToWorld.MultiplyMatrixOnly(hitNormalWorld); return hitNormalWorld;}
 
@@ -1696,7 +1752,7 @@ bool ComputeSnapLocation()
 SnapStatus GetClosestCurve(GeometrySourceCR source, ViewFlagsCP viewFlags = nullptr, DgnElementIdSet const* offSubCategories = nullptr, CheckStop* stopTester = nullptr)
     {
     // NEEDSWORK: For imodel-js...
-    //  DgnSubCategory::Appearance.GetDontLocate is a problem, geometry will get located and used by tools that aren't snapping...
+    //  DgnSubCategory::Appearance.GetDontLocate is a problem, geometry will get located and used by tools that aren't snapping...remove from imodel-js api...
     //  ViewController overrides for DgnSubCategory::Appearance.GetDontSnap is a problem...return hit subcategory to front end to let it check?
     //  Can we ignore snappable patterns/linestyles? These will locate currently, snap will just go to "base" geometry...
     GeometryCollection     collection(source);
@@ -1751,7 +1807,7 @@ SnapStatus GetClosestCurve(GeometrySourceCR source, ViewFlagsCP viewFlags = null
 
     SimplifyHitDetail();
 
-    return (nullptr != m_hitCurveDetail.curve ? SnapStatus::Success : SnapStatus::NoSnapPossible);
+    return (nullptr != m_hitCurveDetail.curve || HitGeomType::Point == m_hitGeomType ? SnapStatus::Success : SnapStatus::NoSnapPossible);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1877,8 +1933,10 @@ SnapStatus SnapContext::DoSnapUsingCurve(SnapMode snapMode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus SnapContext::DoTextSnap()
     {
-    // NEEDSWORK: What about snapping to capsule/leaders???
     GeomDetailCR detail = GetSnapDetail()->GetGeomDetail();
+
+    if (HitParentGeomType::Text != detail.GetParentGeomType())
+        return DoDefaultDisplayableSnap(); // Use normal snap logic for a hit to leader/capsule geometry...
 
     switch (GetSnapMode())
         {
