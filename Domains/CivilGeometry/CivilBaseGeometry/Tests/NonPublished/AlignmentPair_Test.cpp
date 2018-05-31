@@ -1472,7 +1472,8 @@ void AlignmentPVI_ProvenanceTests()
     ASSERT_TRUE(provenance.IsValid());
     EXPECT_FALSE(provenance->ContainsLineString());
 
-    cvProvenance->push_back(ICurvePrimitive::CreateLineString({ DPoint3d::FromZero(), DPoint3d::FromOne() }));
+    bvector<DPoint3d> points = { DPoint3d::FromZero(), DPoint3d::FromOne() };
+    cvProvenance->push_back(ICurvePrimitive::CreateLineString(points));
     provenance = AlignmentPVI::Provenance::Create(*cvProvenance);
     ASSERT_TRUE(provenance.IsValid());
     EXPECT_TRUE(provenance->ContainsLineString());
