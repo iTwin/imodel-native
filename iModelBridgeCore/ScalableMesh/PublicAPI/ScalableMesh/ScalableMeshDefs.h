@@ -65,13 +65,19 @@ enum ScalableMeshMesherType
     SCM_MESHER_QTY,
     };
 
-enum ScalableMeshSourceCreationMethod
+enum ScalableMeshCreationMethod
     {
-    SCM_SOURCE_CREATION_ONE_SPLIT = 0,     //Old method indexing the data with the final split threshold (e.g. : 10000)
-    SCM_SOURCE_CREATION_BIG_SPLIT_CUT = 1, //New method which uses bigger split during the indexing phase
-    SCM_SOURCE_CREATION_QTY,
+    SCM_CREATION_METHOD_ONE_SPLIT = 0,     //Old method indexing the data with the final split threshold (e.g. : 10000)
+    SCM_CREATION_METHOD_BIG_SPLIT_CUT, //New method which uses bigger split during the indexing phase.
+    SCM_CREATION_METHOD_QTY,
     };
 
+enum ScalableMeshCreationCompleteness
+    {
+    SCM_CREATION_COMPLETENESS_INDEX_ONLY = 0,  //Only create the index without any meshing operations.
+    SCM_CREATION_COMPLETENESS_FULL,            //Do complete creation.
+    SCM_CREATION_COMPLETENESS_QTY,
+    };
 
 enum ScalableMeshSaveType
     {

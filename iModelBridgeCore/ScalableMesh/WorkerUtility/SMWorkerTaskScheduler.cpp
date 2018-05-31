@@ -16,7 +16,7 @@
 #include <ScalableMesh\Import\ScalableMeshData.h>
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshPolicy.h>
-
+#include <ScalableMesh\IScalableMeshSourceCreator.h>
 
 #include "SMWorkerDefinitions.h"
 
@@ -225,11 +225,11 @@ void GetSourceDataType(DTMSourceDataType& dataType, BeXmlNodeP pSourceNode)
 }
 
 
-bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode)
+bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pXmlTaskNode)
 {
     bool isSuccess = true;
 
-    BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
+    BeXmlNodeP pTestChildNode = pXmlTaskNode->GetFirstChild();
 
     while ((0 != pTestChildNode) && (isSuccess == true))
     {
@@ -337,24 +337,35 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
             isThereTaskAvaialble = false;
 
             BeDirectoryIterator dirIter(m_taskFolderName);
-            
-            while (dirIter.ToNext() == SUCCESS)
-                {
-                isThereTaskAvaialble = true; 
 
-                BeFileName name;
-                bool isDir;
-
-                StatusInt status = dirIter.GetCurrentEntry(name, isDir);
-
-                if (status == SUCCESS && isDir == false)
+            BeFileName name;
+            bool isDir;
+                        
+            while (SUCCESS == dirIter.GetCurrentEntry(name, isDir))
+                {                                
+                if (isDir == false && 0 == name.GetExtension().CompareTo(L"xml"))
                     {
-                    FILE* file = _wfopen(name, L"rb+");
+                    isThereTaskAvaialble = true;
 
-                    if (file == nullptr) continue;
+                    struct _stat64i32 buffer;
 
+                    if (_wstat(name.c_str(), &buffer) != 0 || buffer.st_size == 0) continue;
+
+                    FILE* file = _wfopen(name, L"ab+");                    
+                                        
                     ProcessTask(file);
+
+                    file = _wfreopen(name, L"w", file);
+
+                    fclose(file);
+
+                    while (0 != _wremove(name))
+                        {
+                        if (_wstat(name.c_str(), &buffer) != 0) break;
+                        }
                     }
+
+                dirIter.ToNext();
                 }                   
             }
         }
@@ -397,7 +408,7 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
         WString     errorMsg;
 
         bvector<char> xmlFileContent(size);
-        size_t readSize = fread(&xmlFileContent[0], size, 1, file);
+        size_t readSize = fread(&xmlFileContent[0], 1, size, file);
         assert(readSize == size);
 
         //BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(status, testPlanPath.c_str(), &errorMsg); 
@@ -453,7 +464,7 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
                 default: break;
                 }
 /*
-            pTestNode = pTestNode->GetNextSibling();
+            pXmlTaskNode = pXmlTaskNode->GetNextSibling();
             }
 
         if (pResultFile != 0)
@@ -477,11 +488,120 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pTes
         }
 
     void TaskScheduler::PerformIndexTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
-        {
-        IDTMSourceCollection sourceCollection;
+        {        
+        BeFileName smFileName(m_taskFolderName);
 
-        bool result = ParseSourceSubNodes(sourceCollection, pXmlTaskNode);
-        assert(result == true);
+        smFileName.AppendString(L"\\generated3sm.3sm");
+
+        _wremove(smFileName.c_str());
+        
+        StatusInt createStatus;
+        BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(smFileName.c_str(), createStatus));
+
+        if (creatorPtr == 0)
+            {
+            //printf("ERROR : cannot create STM file\r\n");
+            return;
+            }
+       
+
+        ScalableMeshCreationMethod creationMethod = SCM_CREATION_METHOD_ONE_SPLIT;
+
+        creatorPtr->SetCreationMethod(creationMethod);
+        creatorPtr->SetCreationCompleteness(SCM_CREATION_COMPLETENESS_INDEX_ONLY);
+        
+
+/*
+        double nTimeToCreateSeeds = 0, nTimeToEstimateParams = 0, nTimeToFilterGround = 0;*/
+
+        WString gcsKeyName;//
+
+        auto status = pXmlTaskNode->GetAttributeStringValue(gcsKeyName, "gcsKeyName");
+
+        if (status == BEXML_Success)
+            {
+            BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr baseGCSPtr(BaseGCS::CreateGCS(gcsKeyName.c_str()));
+            StatusInt status = creatorPtr->SetBaseGCS(baseGCSPtr);
+            assert(status == SUCCESS);
+            }//
+
+        bool streamFromMapBox = false;
+        bool streamFromBingMap = false;
+
+        WString streamAttr;
+        auto readStatus = pXmlTaskNode->GetAttributeStringValue(streamAttr, "textureStreaming");
+
+        if (readStatus == BEXML_Success)
+            {
+            if (0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"mapbox"))
+                {
+                    streamFromMapBox = true;
+                }
+                else
+                    if (0 == BeStringUtilities::Wcsicmp(streamAttr.c_str(), L"bingmap"))
+                    {
+                        streamFromBingMap = true;
+                    }
+                    else
+                    {
+                        //assert(!"Unknown textureStreaming value");
+                    }
+                }
+
+        if (ParseSourceSubNodes(creatorPtr->EditSources(), pXmlTaskNode) == true)
+            {
+#if 0
+                SetGroundDetectionDuration(0.0);
+                clock_t t = clock();
+
+                bool importInProgress = true;
+                std::thread mythread([&importInProgress, &creatorPtr]()
+                {
+                    float lastProgress = 0;
+                    int lastStep = 0;
+                    while (importInProgress)
+                    {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+                        {
+                            float progress = 0;
+                            int step = 0;
+                            int nSteps = 0;
+                            if (!creatorPtr.IsValid() || creatorPtr->GetProgress() == nullptr) continue;
+
+                            progress = creatorPtr->GetProgress()->GetProgress();
+                            step = creatorPtr->GetProgress()->GetProgressStep();
+                            nSteps = creatorPtr->GetProgress()->GetTotalNumberOfSteps();
+                            if ((fabs(progress - lastProgress) > 0.01 || abs(step - lastStep) > 0))
+                            {
+                                std::cout << " PROGRESS: " << progress * 100.0 << " % ON STEP " << step << " OUT OF " << nSteps << std::endl;
+                                lastProgress = progress;
+                                lastStep = step;
+                            }
+                        }
+                    }
+                });
+#endif
+
+            bool isSingleFile = true;
+
+            StatusInt status = creatorPtr->Create(isSingleFile);
+
+#if 0
+            importInProgress = false;
+            mythread.join();
+#endif
+
+            creatorPtr->SaveToFile();
+            creatorPtr = nullptr;
+
+/*
+            IDTMSourceCollection sourceCollection;
+
+            bool result = ParseSourceSubNodes(sourceCollection, pXmlTaskNode);
+            assert(result == true);*/
+            }
+        
     
         }
 

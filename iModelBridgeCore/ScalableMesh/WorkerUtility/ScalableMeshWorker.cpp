@@ -6,6 +6,8 @@
 #include <ImagePP\all\h\HRFFileFormats.h>
 #include <ImagePP/all/h/HRFRasterFileFactory.h>
 #include "Initialize.h"
+#include "SMWorkerDefinitions.h"
+#include "SMWorkerTaskScheduler.h"
 
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
@@ -216,11 +218,11 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
     
     //m_optionClean = false;
     
-    for (int iArg = 2; iArg < argc; ++iArg)
+    for (int iArg = 1; iArg < argc; ++iArg)
         {
-        if (argv[iArg] == wcsstr(argv[iArg], L"--help") || argv[iArg] == wcsstr(argv[iArg], L"-h"))
+        if (argv[iArg] == wcsstr(argv[iArg], L"-help") || argv[iArg] == wcsstr(argv[iArg], L"-h"))
             return PrintUsage(argv[0]);        
-        if (argv[iArg] == wcsstr(argv[iArg], L"--taskFolder=") || argv[iArg] == wcsstr(argv[iArg], L"-tf="))
+        if (argv[iArg] == wcsstr(argv[iArg], L"-taskFolder=") || argv[iArg] == wcsstr(argv[iArg], L"-tf="))
             {
             BeFileName::FixPathName(m_taskFolderName, GetArgValueW(argv[iArg]).c_str());
             if (!BeFileName::DoesPathExist(m_taskFolderName.c_str()))
@@ -243,6 +245,12 @@ int ScalableMeshWorker::ParseCommandLine(int argc, WCharP argv[])
 
 void ScalableMeshWorker::Start()
     {
+
+    TaskScheduler taskScheduler(m_taskFolderName);
+
+    taskScheduler.Start();
+
+
 #if 0
     if (BeFileName::IsDirectory(m_inputFileName.c_str()))
         {
@@ -285,19 +293,21 @@ void ScalableMeshWorker::Start()
 END_BENTLEY_SCALABLEMESH_WORKER_NAMESPACE
 
 
-//USING_NAMESPACE_BENTLEY_SCALABLEMESH_WORKER/
+USING_NAMESPACE_BENTLEY_SCALABLEMESH_WORKER
 
 int wmain(int argc, wchar_t* argv[])
     {
-/*
     _set_error_mode(_OUT_TO_MSGBOX);
-    ScalableMeshWorker::ScalableMeshWorker app;
+
+
+    ScalableMeshWorker app;
+
     if (SUCCESS != app.ParseCommandLine(argc, argv))
         return 1;
 
     app.Initialize(argc, argv);
     app.Start();
-*/
+
     //ScalableMeshWorker::CloseATP();
 
     return 0;

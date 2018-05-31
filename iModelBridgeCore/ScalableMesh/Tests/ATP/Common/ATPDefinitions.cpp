@@ -659,7 +659,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
     else
         {                                
-        ScalableMeshSourceCreationMethod creationMethod = SCM_SOURCE_CREATION_ONE_SPLIT;
+        ScalableMeshCreationMethod creationMethod = SCM_CREATION_METHOD_ONE_SPLIT;
         int64_t useCpuVal = 0;
         WString accelerator;
         status = pTestNode->GetAttributeStringValue(accelerator, "accelerator");
@@ -691,12 +691,12 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             {
             if (0 == BeStringUtilities::Wcsicmp(creationMethodStr.c_str(), L"BIG_SPLIT_CUT"))
                 {
-                creationMethod = SCM_SOURCE_CREATION_BIG_SPLIT_CUT;
+                creationMethod = SCM_CREATION_METHOD_BIG_SPLIT_CUT;
                 }
             else
             if (0 == BeStringUtilities::Wcsicmp(creationMethodStr.c_str(), L"ONE_SPLIT"))
                 {
-                creationMethod = SCM_SOURCE_CREATION_ONE_SPLIT;
+                creationMethod = SCM_CREATION_METHOD_ONE_SPLIT;
                 }
             else
                 {
