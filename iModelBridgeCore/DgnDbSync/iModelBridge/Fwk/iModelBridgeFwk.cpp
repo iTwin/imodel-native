@@ -1234,9 +1234,8 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     // Stage the workspace and input file if  necessary.
     if (BSISUCCESS != SetupDmsFiles())
-        {
         return RETURN_STATUS_SERVER_ERROR;
-        }
+
     //  Make sure we have a briefcase.
     Briefcase_MakeBriefcaseName(); // => defines m_briefcaseName
     bool createdNewRepo = false;
@@ -1837,6 +1836,9 @@ BentleyStatus   iModelBridgeFwk::ReleaseDmsLibrary()
 BentleyStatus   iModelBridgeFwk::SetupDmsFiles()
     {
     BentleyStatus status = BentleyStatus::SUCCESS;
+    if (m_jobEnvArgs.m_dmsLibraryName.empty())
+        return status;
+
     if (SUCCESS != (status = LoadDmsLibrary()))
         return status;
 
