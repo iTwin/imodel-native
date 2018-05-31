@@ -25,9 +25,9 @@ def main():
         name = os.path.splitext(filename)[0]
         split = os.path.join(nugetSrcPath, name)
         if os.path.isdir(split):
-            dst = os.path.join(nugetDstPath, name, "DgnCompatibility.exe")
+            dst = os.path.join(nugetDstPath, name, "iModelSchemaEvolution.exe")
             os.remove(dst)
-            copyfile(os.path.join(split, "DgnCompatibility.exe"), dst)
+            copyfile(os.path.join(split, "iModelSchemaEvolution.exe"), dst)
             rmtree(os.path.join(nugetDstPath, name, "run", "SeedData"), ignore_errors=True)
             copytree(dataDir, os.path.join(nugetDstPath, name, "run", "SeedData"))
 if __name__ == "__main__":
