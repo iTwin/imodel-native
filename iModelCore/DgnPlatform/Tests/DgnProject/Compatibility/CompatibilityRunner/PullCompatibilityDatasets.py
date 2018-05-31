@@ -9,10 +9,11 @@ import sys
 import os
 import zipfile
 import imp
-from shutil import copyfile, rmtree
+from shutil import copyfile, copytree, rmtree
 
 #-------------------------------------------------------------------------------------------
- # bsimethod                         Kyle.Abramowitz             05/2018
+# bsimethod                         Kyle.Abramowitz             05/2018
+# Download a nuget package from a server over http
 #-------------------------------------------------------------------------------------------
 def DownloadPackage(pkgAddress, pkgName, version, localDir):
     import nugetpkg
@@ -35,6 +36,7 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir):
 
  #------------------------------------------------------------------------
  # bsimethod                         Kyle.Abramowitz             05/2018
+ # Pull all test data nugets to path
  #------------------------------------------------------------------------
 def pullAllNugets(path, pathToNugetPuller):
     import nugetpkg
@@ -60,17 +62,28 @@ def main():
     nugetPath = sys.argv[1]
     sys.path.insert(0, sys.argv[2])
     pullAllNugets(nugetPath, sys.argv[2])
-     # All these packages should be of the form DgnCompatiblityNugetxx.xx.xx.xx
+    # Remove old extracted nugets to prevent issues with extraction overwrites
     for filename in os.listdir(nugetPath):
         path = os.path.join(nugetPath, filename)
         if (os.path.isdir(path)):
             rmtree(path, ignore_errors=True)
-
+    # Extract all nugets
     for filename in os.listdir(nugetPath):
         path = os.path.join(nugetPath, filename)
         zip_ref = zipfile.ZipFile(path, "a")
         zip_ref.extractall(os.path.splitext(path)[0])
         zip_ref.close()
+    # Extract datasets out of nugets and put into seeddata folder. Only 1 file per version for now. #TODO
+    extractedDataDir = os.path.join(nugetPath, "SeedData")
+    for subdir in os.listdir(nugetPath):
+        path = os.path.join(nugetPath, subdir)
+        if os.path.isdir(path) and subdir != "Datasets":
+            datasetPath = os.path.join(path, "Datasets")
+            for db in os.listdir(datasetPath):
+                dbPath = os.path.join(datasetPath, db)
+                for version in os.listdir(dbPath):
+                    if not os.path.exists(os.path.join(extractedDataDir, db, version)):
+                        copytree(os.path.join(dbPath, version), os.path.join(extractedDataDir, db, version))
 
 if __name__ == "__main__":
     main()

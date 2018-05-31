@@ -22,6 +22,7 @@ def main():
     for subdir in os.listdir(currentDatasetPath):
         currentVersions.append(os.listdir(os.path.join(currentDatasetPath, subdir))[0])
 
+    # check to see if we already have this version
     i = 0
     for subdir in os.listdir(oldDatasetPath):
         dirs = os.listdir(os.path.join(oldDatasetPath, subdir))
