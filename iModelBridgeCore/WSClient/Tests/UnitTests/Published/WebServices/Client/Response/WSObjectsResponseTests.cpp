@@ -2,14 +2,14 @@
 |
 |  $Source: Tests/UnitTests/Published/WebServices/Client/Response/WSObjectsResponseTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "WSObjectsResponseTests.h"
 
 #include <WebServices/Client/Response/WSObjectsResponse.h>
-#include <WebServices/Client/Response/WSObjectsReaderV1.h>
+#include <WebServices/Client/Response/WSObjectsReaderV2.h>
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
@@ -47,18 +47,6 @@ TEST_F(WSObjectsResponseTests, GetRapidJsonDocument_DefaultCtor_ReturnsNull)
     BeTest::SetFailOnAssert(false);
     EXPECT_TRUE(WSObjectsResponse().GetRapidJsonDocument().IsNull());
     BeTest::SetFailOnAssert(true);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSObjectsResponseTests, GetInstances_CtorWithReaderAndBody_ReturnsInstances)
-    {
-    auto reader = WSObjectsReaderV1::Create("Schema", "Class");
-    WSObjectsResponse result(reader, HttpStringBody::Create(R"({"$id":"A"})"), HttpStatus::OK, "", "");
-
-    EXPECT_FALSE(result.GetInstances().IsEmpty());
-    EXPECT_EQ(ObjectId("Schema", "Class", "A"), (*result.GetInstances().begin()).GetObjectId());
     }
 
 /*--------------------------------------------------------------------------------------+

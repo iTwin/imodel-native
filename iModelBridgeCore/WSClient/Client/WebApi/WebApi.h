@@ -53,10 +53,10 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
-        virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
+        virtual AsyncTaskPtr<WSResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
-            BeFileNameCR filePath,
+            HttpBodyPtr bodyResponseOut,
             Utf8StringCR eTag = nullptr,
             Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr

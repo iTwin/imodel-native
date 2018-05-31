@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/BaseCachingDataSourceTest.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -176,19 +176,30 @@ WSInfoCR info
     if (schema.IsNull())
         schema = GetTestSchema();
 
+    ECSchemaPtr navigationSchema = GetNavigationSchema();
+
     StubInstances schemaDefs;
     schemaDefs.Add({"MetaSchema.ECSchemaDef", "TestSchema"}, {{"Name", "TestSchema"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
+    schemaDefs.Add({"MetaSchema.ECSchemaDef", "Navigation"}, {{"Name", "Navigation"}, {"VersionMajor", 1}, {"VersionMinor", 0}}); //navigation
 
     EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
         .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(info))));
 
     EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
-        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponse()))));
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponse())))); //add naviggation schema example should be in testschema
 
-    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "TestSchema"), _, _, _, _))
+    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "TestSchema"), ::testing::An<BeFileNameCR>(), _, _, _))
         .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         SchemaWriteStatus status = schema->WriteToXmlFile(filePath);
+        EXPECT_EQ(SchemaWriteStatus::Success, status);
+        return CreateCompletedAsyncTask(StubWSFileResult(filePath));
+        }));
+
+    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "Navigation"), ::testing::An<BeFileNameCR>(), _, _, _))
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        SchemaWriteStatus status = navigationSchema->WriteToXmlFile(filePath);
         EXPECT_EQ(SchemaWriteStatus::Success, status);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));
         }));

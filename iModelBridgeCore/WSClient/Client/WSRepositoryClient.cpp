@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include "WebApi/WebApiV1.h"
 #include <regex>
 
 #define HEADER_MasConnectionInfo "Mas-Connection-Info"
@@ -217,11 +216,47 @@ Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    auto finalResult = std::make_shared<WSFileResult>();
+
+    auto task =
+     m_fileDownloadQueue.Push([=]
+        {
+        return m_connection->GetWebApiAndReturnResponse<WSResult>([=] (WebApiPtr webApi)
+            {
+            if (filePath.empty())
+                return CreateCompletedAsyncTask(WSResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+
+            return webApi->SendGetFileRequest(objectId, HttpFileBody::Create(filePath), eTag, downloadProgressCallback, ct);
+            }, ct);
+        }, ct);
+
+        return task
+        ->Then<WSFileResult>([=] (WSResult response)
+            {
+            if (!response.IsSuccess())
+                return WSFileResult::Error(response.GetError());
+
+            return WSFileResult::Success(WSFileResponse(filePath, response.GetValue().IsModified() ? Http::HttpStatus::OK : Http::HttpStatus::BadRequest, response.GetValue().GetETag()));
+            });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas    05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSResult> WSRepositoryClient::SendGetFileRequest
+(
+ObjectIdCR objectId,
+Http::HttpBodyPtr responseBodyOut,
+Utf8StringCR eTag,
+Http::Request::ProgressCallbackCR downloadProgressCallback,
+ICancellationTokenPtr ct
+) const
+    {
     return m_fileDownloadQueue.Push([=]
         {
-        return m_connection->GetWebApiAndReturnResponse<WSFileResult>([=] (WebApiPtr webApi)
+        return m_connection->GetWebApiAndReturnResponse<WSResult>([=] (WebApiPtr webApi)
             {
-            return webApi->SendGetFileRequest(objectId, filePath, eTag, downloadProgressCallback, ct);
+            return webApi->SendGetFileRequest(objectId, responseBodyOut, eTag, downloadProgressCallback, ct);
             }, ct);
         }, ct);
     }
