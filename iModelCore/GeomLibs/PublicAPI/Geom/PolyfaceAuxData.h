@@ -121,7 +121,16 @@ template <typename T_Data>  struct T_PolyfaceAuxChannel : RefCountedBase
 
         return new T_PolyfaceAuxChannel(GetDataType(), GetName().c_str(), GetInputName().c_str(), std::move(dataVector));
         }
+    DRange1d   GetValueRange() const
+        {
+        DRange1d        range = DRange1d::NullRange();
 
+        for (auto& data : GetData())
+            for (auto value : data->GetValues())
+                range.Extend((double) value);
+        
+        return range;
+        }
     };
 
 using PolyfaceAuxChannel = T_PolyfaceAuxChannel<double>;
