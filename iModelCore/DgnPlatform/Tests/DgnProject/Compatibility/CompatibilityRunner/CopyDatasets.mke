@@ -13,7 +13,7 @@
 
 #Copy files
 
-COPYDIR_INPUT   = $(OutputRootDir)Product/GTest-DgnPlatform-Compatibility/
+COPYDIR_INPUT   = $(OutputRootDir)Product/iModelSchemaEvolutionGTest/
 COPYDIR_OUTPUT  = $(OutputRootDir)iModelSchemaEvolution/BackwardsCompatibility/
 
 always:
