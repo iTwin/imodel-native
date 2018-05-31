@@ -13,7 +13,7 @@ class Timer
         LARGE_INTEGER m_Start;
         LARGE_INTEGER m_Stop;
         LARGE_INTEGER m_Freq;
-        __int64 m_Overhead;
+        int64_t m_Overhead;
         bool m_started;
     public:
         Timer ()

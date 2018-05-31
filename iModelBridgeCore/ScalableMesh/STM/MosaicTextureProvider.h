@@ -1,8 +1,9 @@
 #pragma once
 
-#include <ScalableMesh\ITextureProvider.h>
+#include <ScalableMesh/ITextureProvider.h>
 #include "ImagePPHeaders.h"
 
+USING_NAMESPACE_IMAGEPP
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 struct MosaicTextureProvider : virtual public ITextureProvider

@@ -6,7 +6,7 @@
 |       $Date: 2011/08/19 13:50:36 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -125,7 +125,7 @@ struct ImportPolicy::Impl : public ShareableObjectTypeTrait<Impl>::type
 +---------------+---------------+---------------+---------------+---------------+------*/
 const TypeSelectionPolicy& ImportPolicy::GetDefaultSourceTypeSelectionPolicy ()
     {
-    static const DefaultTypeSelectionPolicy INSTANCE;
+    static const DefaultTypeSelectionPolicy INSTANCE = {};
     return INSTANCE;
     }
 
@@ -135,7 +135,7 @@ const TypeSelectionPolicy& ImportPolicy::GetDefaultSourceTypeSelectionPolicy ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 const TypeSelectionPolicy& ImportPolicy::GetDefaultTargetTypeSelectionPolicy ()
     {
-    static const DefaultTypeSelectionPolicy INSTANCE;
+    static const DefaultTypeSelectionPolicy INSTANCE = {};
     return INSTANCE;
     }
 

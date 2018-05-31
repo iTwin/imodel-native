@@ -15,7 +15,7 @@
 #include "SMMemoryPool.h"
 
 #ifndef VANCOUVER_API
-    #include <Bentley\BeSystemInfo.h>
+    #include <Bentley/BeSystemInfo.h>
 #endif
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

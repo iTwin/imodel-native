@@ -90,9 +90,7 @@ SMSQLiteSisterFile::~SMSQLiteSisterFile()
         assert(m_smFeatureSQLiteFile->GetRefCount() == 1);
         m_smFeatureSQLiteFile->Close();
         m_smFeatureSQLiteFile = 0;
-        WString dbFileNameW;
-        dbFileNameW.AssignUtf8(dbFileName.c_str());
-        _wremove(dbFileNameW.c_str());
+        remove(dbFileName.c_str());
         }
     }
 
@@ -121,7 +119,8 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 WString sqlFileName;
                 GetSisterSQLiteFileName(sqlFileName, dataType);
 
-                _wremove(sqlFileName.c_str());
+                Utf8String sqlNameUtf8(sqlFileName.c_str());
+                remove(sqlNameUtf8.c_str());
                 StatusInt status;
                 m_smFeatureSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_GENERATION_FILE);
                 m_smFeatureSQLiteFile->Create(sqlFileName, SQLDatabaseType::SM_GENERATION_FILE);

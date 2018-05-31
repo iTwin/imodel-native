@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/IDTMFeatureArray.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -40,6 +40,7 @@ public:
     typedef PointType                       value_type;
     typedef value_type*                     iterator;
     typedef const value_type*               const_iterator;
+    typedef typename HPU::CompositeFacadeBaseWExtCopy<IDTMFeatureFacade<PointType, HeaderType>,HeaderType,IDTMFeatureArray<PointType, HeaderType> >::facade_type facade_type;
 
 
     feature_type                            GetType                            () const;
@@ -187,6 +188,9 @@ public:
 
     typedef HPU::CompositeArrayBase<IDTMFeatureFacade<PointType, HeaderType>,HeaderType,IDTMFeatureArray<PointType, HeaderType> >
               IDTMFeatureArray_Type1;  
+    typedef IDTMFeatureArray_Type1 super_class;
+
+    typedef IDTMFeatureArray_Type1::const_reference const_reference;
 
     explicit                                IDTMFeatureArray                   (size_t                      pi_Capacity = 0,
                                                                                 size_t                      pi_TotalPointCapacity = 0);
@@ -198,10 +202,10 @@ public:
                                                                                 size_t                      pi_TotalPointCapacity = 0);
 
 
-    IDTMFeatureArray_Type1::iterator                                Insert                             (const_iterator   pi_Position,
+    typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Insert                             (const_iterator   pi_Position,
                                                                                 IDTMFeatureArray_Type1::const_reference  pi_rFeature);
 
-    iterator                                Insert                             (const_iterator              pi_Position,
+    typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Insert                             (const_iterator              pi_Position,
                                                                                 feature_type                pi_FeatureType,
                                                                                 group_id_type               pi_GroupId = header_type::GetNullID());
 
@@ -211,7 +215,7 @@ public:
 
     void                                    Append                             (const_reference             pi_rFeature);
 
-    iterator                                Append                             (feature_type                pi_FeatureType,
+    typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Append                             (feature_type                pi_FeatureType,
                                                                                 group_id_type               pi_GroupId = header_type::GetNullID());
 
     template <typename InputIter>
@@ -225,9 +229,9 @@ public:
 
     void                                    Clear                              ();
 
-    iterator                                Erase                              (const_iterator              pi_Position);
+    typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Erase                              (const_iterator              pi_Position);
 
-    iterator                                Erase                              (const_iterator              pi_Begin,
+    typename IDTMFeatureArray<PointType, HeaderType>::iterator                                Erase                              (const_iterator              pi_Begin,
                                                                                 const_iterator              pi_End);
 
     /*---------------------------------------------------------------------------------**//**
@@ -235,7 +239,7 @@ public:
     * existing tools such as back_inserter & inserter.
     +---------------+---------------+---------------+---------------+---------------+------*/
     void                                    push_back                          (const_reference             pi_rFeature);
-    iterator                                insert                             (const_iterator              pi_Position,
+    typename IDTMFeatureArray<PointType, HeaderType>::iterator                                insert                             (const_iterator              pi_Position,
                                                                                 const_reference             pi_rFeature);
     /*---------------------------------------------------------------------------------**//**
     * If the user decided to manually sort or rearrange directly the underlying header array,

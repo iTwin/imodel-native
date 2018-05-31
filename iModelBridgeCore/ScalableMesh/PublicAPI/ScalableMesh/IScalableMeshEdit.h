@@ -11,8 +11,8 @@
 
 /*__PUBLISH_SECTION_START__*/
 #include <ScalableMesh/ScalableMeshDefs.h>
-#include <Geom\Polyface.h>
-#include <Bentley\RefCounted.h>
+#include <Geom/Polyface.h>
+#include <Bentley/RefCounted.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/ClipVector.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
@@ -33,7 +33,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #endif
 
 
-class IScalableMeshEdit abstract : public RefCountedBase
+class IScalableMeshEdit  : public RefCountedBase
     {
     protected:
         virtual int _RemoveWithin(CLIP_VECTOR_NAMESPACE::ClipVectorCP clipPlaneSet, const bvector<IScalableMeshNodePtr>& priorityNodes) = 0;

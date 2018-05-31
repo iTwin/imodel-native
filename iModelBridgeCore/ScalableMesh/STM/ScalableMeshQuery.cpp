@@ -14,9 +14,11 @@
 #include "ImagePPHeaders.h"
 //#define GPU
 #undef static_assert
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <ppl.h>
 #ifdef GPU
 #include <amp.h>
+#endif
 #endif
 
 // NEEDS_WORK_SM : add pragma to disable wnarning for templating
@@ -37,7 +39,7 @@ extern bool   GET_HIGHEST_RES;
 #include "ScalableMeshQuadTreeQueries.h"
 #include "ScalableMeshQuery.h"
 #include "ScalableMeshQuery.hpp"
-#include "ScalableMesh\ScalableMeshGraph.h"
+#include "ScalableMesh/ScalableMeshGraph.h"
 #include "DrapeOnGraph.h"
 #include "LogUtils.h"
 
@@ -235,12 +237,12 @@ IScalableMeshFixResolutionMaxPointsQueryParams::~IScalableMeshFixResolutionMaxPo
     {
     }
 
-__int64 IScalableMeshFixResolutionMaxPointsQueryParams::GetMaxNumberPoints()
+int64_t IScalableMeshFixResolutionMaxPointsQueryParams::GetMaxNumberPoints()
     {
     return _GetMaxNumberPoints();
     }
 
-void IScalableMeshFixResolutionMaxPointsQueryParams::SetMaximumNumberPoints(__int64 maxNumberPoints)
+void IScalableMeshFixResolutionMaxPointsQueryParams::SetMaximumNumberPoints(int64_t maxNumberPoints)
     {
     _SetMaximumNumberPoints(maxNumberPoints);
     }
@@ -821,7 +823,7 @@ void CheckFaceIndexes(size_t& nbFaceIndexes, int32_t* faceIndexes, size_t nbPoin
         size_t p2 = faceIndexes[i + 1] - 1;
         size_t p3 = faceIndexes[i + 2] - 1;
 
-        if (p1 < 0 || p1 >= nbPoints || p2 < 0 || p2 >= nbPoints || p3 < 0 || p3 >= nbPoints)
+        if (p1 >= nbPoints || p2 >= nbPoints || p3 >= nbPoints)
             {
             faceIndexes[i] = faceIndexes[nbFaceIndexes - 3];
             faceIndexes[i + 1] = faceIndexes[nbFaceIndexes - 2];
@@ -833,6 +835,7 @@ void CheckFaceIndexes(size_t& nbFaceIndexes, int32_t* faceIndexes, size_t nbPoin
 
     }
 
+#ifndef LINUX_SCALABLEMESH_BUILD
 double checkNormal (DVec3dCR viewNormal, DVec3dCR normal) restrict (amp,cpu)
     {
     return (viewNormal.x*normal.x + viewNormal.y*normal.y + viewNormal.z*normal.z);
@@ -930,7 +933,7 @@ void ScalableMeshMesh::CalcNormals () const
             }
         }
     }
-
+#endif
    
 static bool s_dontCalculNormal = true;
 
@@ -948,12 +951,14 @@ const PolyfaceQuery* ScalableMeshMesh::_GetPolyfaceQuery() const
             delete [] m_pNormalAuto;
             m_pNormalAuto = nullptr;
             }
+#ifndef LINUX_SCALABLEMESH_BUILD
         if (nullptr == m_pNormal && !s_dontCalculNormal)
             {
             CalcNormals ();
             m_polyfaceQueryCarrier = new PolyfaceQueryCarrier (3, false/*twoSided*/, m_nbFaceIndexes, m_nbPoints, m_points, m_faceIndexes, m_nbPoints, m_pNormalAuto, m_faceIndexes, m_uvCount, m_pUv, m_pUvIndex);
             }
         else
+#endif
             m_polyfaceQueryCarrier = new PolyfaceQueryCarrier(3, false/*twoSided*/, m_nbFaceIndexes, m_nbPoints, m_points, m_faceIndexes, m_normalCount, m_pNormal, m_pNormalIndex, m_uvCount, m_pUv, m_pUvIndex);
         }
 
@@ -1364,6 +1369,7 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DP
     return false;
     }
 
+#if 0
 size_t s_nGetDTMs=0;
 size_t s_nMissedDTMs=0;
 
@@ -1531,6 +1537,7 @@ errexit:
     if (ret == DTM_SUCCESS) ret = DTM_ERROR;
     goto cleanup;
     }
+#endif
 
 DTMStatusInt ScalableMeshMesh::_GetBoundary(bvector<DPoint3d>& pts)
     {
@@ -1827,12 +1834,21 @@ ScalableMeshTexture::ScalableMeshTexture(RefCountedPtr<SMMemoryPoolBlobItem<Byte
     if (m_texturePtr.IsValid() && m_texturePtr->GetSize() > 0)
         {        
         int dimensionX;
+#if _WIN32
         memcpy_s(&dimensionX, sizeof(int), m_texturePtr->GetData(), sizeof(int));
         m_dimension.x = dimensionX;
         int dimensionY;
         memcpy_s(&dimensionY, sizeof(int), (int*)m_texturePtr->GetData() + 1, sizeof(int));
         m_dimension.y = dimensionY;
         memcpy_s(&m_nbChannels, sizeof(int), (int*)m_texturePtr->GetData() + 2, sizeof(int));
+#else
+        memcpy(&dimensionX, m_texturePtr->GetData(), sizeof(int));
+        m_dimension.x = dimensionX;
+        int dimensionY;
+        memcpy(&dimensionY, (int*)m_texturePtr->GetData() + 1, sizeof(int));
+        m_dimension.y = dimensionY;
+        memcpy(&m_nbChannels, (int*)m_texturePtr->GetData() + 2, sizeof(int));
+#endif
         if (!m_texturePtr->IsCompressedType())
             {
             m_dataSize = m_dimension.x * m_dimension.y * m_nbChannels;
@@ -2773,7 +2789,7 @@ DRange3d  IScalableMeshNode::GetContentExtent() const
     return _GetContentExtent();
     }
 
-__int64 IScalableMeshNode::GetNodeId() const
+int64_t IScalableMeshNode::GetNodeId() const
     {
     return _GetNodeId();
     }

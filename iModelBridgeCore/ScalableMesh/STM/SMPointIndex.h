@@ -22,13 +22,15 @@
 #include "SMMemoryPool.h"
 #include <ImagePP/all/h/HVEShape.h>
 
-#include <ScalableMesh\IScalableMeshQuery.h>
+#include <ScalableMesh/IScalableMeshQuery.h>
 
-#include "Stores\SMSQLiteStore.h"
+#include "Stores/SMSQLiteStore.h"
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
+#endif
 #include "SMNodeGroup.h"
 
-#include <ScalableMesh\IScalableMeshCreator.h>
+#include <ScalableMesh/IScalableMeshCreator.h>
 
 class DataSourceAccount;
 class SMNodeGroup;
@@ -145,7 +147,7 @@ public:
             HFCPtr<SMPointIndexNode<POINT, EXTENT>> m_indexNode;
         };
 
-    typedef std::map<__int64, HFCPtr<SMPointIndexNode<POINT, EXTENT>>> CreatedNodeMap;
+    typedef std::map<int64_t, HFCPtr<SMPointIndexNode<POINT, EXTENT>>> CreatedNodeMap;
 
    
     SMPointIndexNode(uint64_t nodeInd, 
@@ -1235,17 +1237,15 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
     public:
         SMIndexNodeVirtual(const NODE* rParentNode) : NODE(rParentNode->GetSplitTreshold(), rParentNode->GetNodeExtent(), const_cast<NODE*>(rParentNode))
             {
-            m_nodeHeader.m_contentExtent = rParentNode->m_nodeHeader.m_contentExtent;
-            m_nodeHeader.m_nodeExtent = rParentNode->m_nodeHeader.m_nodeExtent;
-            m_nodeHeader.m_numberOfSubNodesOnSplit = rParentNode->m_nodeHeader.m_numberOfSubNodesOnSplit;
-            m_nodeHeader.m_totalCount = rParentNode->m_nodeHeader.m_totalCount;
-            m_nodeHeader.m_IsLeaf = true;
-            m_nodeHeader.m_IsBranched = false;
+            this->m_nodeHeader.m_contentExtent = rParentNode->m_nodeHeader.m_contentExtent;
+            this->m_nodeHeader.m_nodeExtent = rParentNode->m_nodeHeader.m_nodeExtent;
+            this->m_nodeHeader.m_numberOfSubNodesOnSplit = rParentNode->m_nodeHeader.m_numberOfSubNodesOnSplit;
+            this->m_nodeHeader.m_totalCount = rParentNode->m_nodeHeader.m_totalCount;
+            this->m_nodeHeader.m_IsLeaf = true;
+            this->m_nodeHeader.m_IsBranched = false;
             }
         virtual bool IsVirtualNode() const override
             {
-            volatile bool a = 1;
-            a = a;
             return true;
            }      
 
@@ -1415,7 +1415,7 @@ public:
 #endif
 
 #ifdef SCALABLE_MESH_ATP
-    unsigned __int64    m_nbInputPoints;
+    uint64_t    m_nbInputPoints;
 #endif    
 
     void SetNextID(const uint64_t& id);
@@ -2080,7 +2080,7 @@ template<class POINT, class EXTENT> class ISMPointIndexSpatialLimitWrapQuery : p
     {
 private:
     HFCPtr<HVE2DShape> m_limit;
-    ISMPointIndexQuery* m_wrappedQuery;
+    ISMPointIndexQuery<POINT, EXTENT>* m_wrappedQuery;
 
     bool IsNodeDisjointFromLimit(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node)
         {
@@ -2098,7 +2098,7 @@ private:
 
 
 public:
-    ISMPointIndexSpatialLimitWrapQuery(HFCPtr<HVE2DShape> pi_Limit, ISMPointIndexQuery* pi_Query)
+    ISMPointIndexSpatialLimitWrapQuery(HFCPtr<HVE2DShape> pi_Limit, ISMPointIndexQuery<POINT, EXTENT>* pi_Query)
         {
         m_limit = pi_Limit;
         m_wrappedQuery = pi_Query;
@@ -2112,7 +2112,7 @@ public:
     /*======================================================================================================
     ** @return Returns the wrapped query
     **====================================================================================================*/
-    ISMPointIndexQuery* GetWrappedQuery() const {
+    ISMPointIndexQuery<POINT, EXTENT>* GetWrappedQuery() const {
         return m_wrappedQuery;
         }
 
@@ -2505,7 +2505,7 @@ private:
 public:
 
     HGFAutoLevelPointIndexQuery(const EXTENT* exent, size_t levelBias = 0)
-        : HGFLevelPointIndexQuery (extent, 0)
+        : HGFLevelPointIndexQuery<POINT, EXTENT> (extent, 0)
         {
         m_levelBias = levelBias;
         m_levelSet = false;

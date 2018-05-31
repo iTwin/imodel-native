@@ -6,7 +6,7 @@
 |       $Date: 2011/11/07 14:26:47 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -85,7 +85,7 @@ struct TransfoModelHandler
     template <typename T>
     static bool                         OfType                         (const TransfoModel&             tranform)
         {
-        return typename T::s_GetClassID() == GetClassID(tranform);
+        return T::s_GetClassID() == GetClassID(tranform);
         }
 
     static bool                         IsConvertibleToMatrix          (const TransfoModel&             tranform)

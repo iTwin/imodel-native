@@ -6,7 +6,7 @@
 |       $Date: 2011/09/07 14:20:36 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -201,22 +201,6 @@ inline RawCapacities RawCapacities::CreateFrom     (IterT   capacitiesBegin,
     RawCapacities capacities;
     std::copy(capacitiesBegin, capacitiesEnd, back_inserter(capacities));
     return capacities;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  
-* TDORAY: Implement an internal non-typed wrap on which the typed wrap depends.
-* @bsimethod                                                  Raymond.Gauthier   02/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T>
-void Packet::Wrap  (const T*    data,
-                    size_t      size)
-    {
-    SetReadOnly(true);
-    GetRawPacket().Wrap(data, size, size);
-
-    NotifyOfRealloc();
     }
 
 END_BENTLEY_SCALABLEMESH_MEMORY_NAMESPACE

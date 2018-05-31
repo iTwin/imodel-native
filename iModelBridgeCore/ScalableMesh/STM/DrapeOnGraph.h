@@ -6,12 +6,12 @@
 |       $Date: 2015/08/07 12:30:58 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
-#include "ScalableMesh\ScalableMeshGraph.h"
+#include "ScalableMesh/ScalableMeshGraph.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

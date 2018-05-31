@@ -12,6 +12,7 @@
   
 #include <ScalableMeshPCH.h>
 #include "ImagePPHeaders.h"
+USING_NAMESPACE_IMAGEPP
 #include "ScalableMeshInfo.h"
 #include "RasterUtilities.h"
 
@@ -41,6 +42,7 @@ class BingMapLogoRetriever
         +---------------+---------------+---------------+---------------+---------------+------*/
         bool DownloadBitmapToRgba(bvector<Byte>& imageData, DPoint2d& size, WChar const* pURI, DPoint2d* pRequestedSize)
             {
+#ifndef LINUX_SCALABLEMESH_BUILD
             WChar localFilename[MAX_PATH];
 
             if (0 != URLDownloadToCacheFileW(NULL, pURI, localFilename, MAX_PATH, 0, NULL))
@@ -66,7 +68,7 @@ class BingMapLogoRetriever
 
             if (status == SUCCESS)
                 return true;
-
+#endif
             return false;               
             }
 

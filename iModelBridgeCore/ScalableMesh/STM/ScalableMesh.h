@@ -24,7 +24,7 @@
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/IScalableMeshProgress.h>
 #include <ScalableMesh/IScalableMeshClipContainer.h>
-#include <ScalableMesh\IScalableMeshRDSProvider.h>
+#include <ScalableMesh/IScalableMeshRDSProvider.h>
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshClippingOptions.h"
 
@@ -58,7 +58,9 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "ScalableMeshVolume.h"
 
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
+#endif
 
 //extern DataSourceManager s_dataSourceManager;
 
@@ -98,8 +100,10 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
 
     WString                             m_baseExtraFilesPath;
     bool                                m_useTempPath;
-    
+ 
+ #ifndef LINUX_SCALABLEMESH_BUILD  
     DataSourceAccount*                  m_dataSourceAccount;
+#endif
 
     // NOTE: Stored in order to make it possible for the creator to use this. Remove when creator does not depends on
     // this interface anymore (take only a path).
@@ -123,9 +127,11 @@ public:
 
     BENTLEY_SM_EXPORT const WChar*                        GetPath                 () const;
 
+#ifndef LINUX_SCALABLEMESH_BUILD
     static DataSourceManager &          GetDataSourceManager    (void)                                  {return *DataSourceManager::Get();}
     void                                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)  {m_dataSourceAccount = dataSourceAccount;}
     DataSourceAccount *                 GetDataSourceAccount    (void) const                            {return m_dataSourceAccount;}
+#endif
 
     void                                SetUseTempPath(bool useTempPath)                                {m_useTempPath = useTempPath;}
    
@@ -242,11 +248,11 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         int                             Close                          ();
 
   
-        unsigned __int64                CountPointsInExtent(Extent3dType&  extent, 
+        uint64_t                CountPointsInExtent(Extent3dType&  extent, 
                                                             HFCPtr<SMPointIndexNode<INDEXPOINT, Extent3dType>> nodePtr,
-                                                            const unsigned __int64& maxNumberCountedPoints) const;
+                                                            const uint64_t& maxNumberCountedPoints) const;
 
-        unsigned __int64                CountLinearsInExtent(YProtFeatureExtentType& extent, unsigned __int64 maxFeatures) const;        
+        uint64_t                CountLinearsInExtent(YProtFeatureExtentType& extent, uint64_t maxFeatures) const;        
 
         bool                            AreDataCompressed              ();
 
@@ -264,7 +270,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         HFCPtr<SMPointIndexNode<INDEXPOINT, Extent3dType>> GetRootNode();                    
         virtual void                               _TextureFromRaster(ITextureProviderPtr provider) override;
  
-        virtual __int64          _GetPointCount() override;
+        virtual int64_t          _GetPointCount() override;
 
         virtual uint64_t          _GetNodeCount() override;
 
@@ -289,9 +295,9 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
 
     // Inherited from IMRDTM                   
-        virtual Count                  _GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
+        virtual Count                  _GetCountInRange (const DRange2d& range, const CountType& type, const uint64_t& maxNumberCountedPoints) const;
         virtual int                    _GenerateSubResolutions() override;
-        virtual __int64                _GetBreaklineCount() const override;
+        virtual int64_t                _GetBreaklineCount() const override;
         virtual ScalableMeshCompressionType   _GetCompressionType() const override;          
         virtual int                    _GetNbResolutions() const override;    
         virtual size_t                    _GetTerrainDepth() const override;
@@ -479,7 +485,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual void                               _TextureFromRaster(ITextureProviderPtr provider) override;
 
         // Inherited from IDTM   
-        virtual __int64          _GetPointCount() override;
+        virtual int64_t          _GetPointCount() override;
 
         virtual uint64_t          _GetNodeCount() override;
 
@@ -502,9 +508,9 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual StatusInt         _GetBoundary(bvector<DPoint3d>& boundary) override;
 
         // Inherited from IMRDTM             
-        virtual Count                  _GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const override;
+        virtual Count                  _GetCountInRange (const DRange2d& range, const CountType& type, const uint64_t& maxNumberCountedPoints) const override;
         virtual int                    _GenerateSubResolutions() override;
-        virtual __int64                _GetBreaklineCount() const override;
+        virtual int64_t                _GetBreaklineCount() const override;
         virtual ScalableMeshCompressionType   _GetCompressionType() const override;           
         virtual int                    _GetNbResolutions() const override;    
         virtual size_t                    _GetTerrainDepth() const override;

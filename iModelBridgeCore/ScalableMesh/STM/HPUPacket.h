@@ -14,6 +14,8 @@
 #include <ImagePP/all/h/HFCPtr.h>
 #include <ImagePP/all/h/HCDPacket.h>
 
+USING_NAMESPACE_IMAGEPP
+
 namespace HPU {
 
 /*---------------------------------------------------------------------------------**//**

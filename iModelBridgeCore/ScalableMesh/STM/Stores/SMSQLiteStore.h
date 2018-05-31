@@ -3,7 +3,7 @@
 #include "ISMDataStore.h"
 #include "SMSQLiteSisterFile.h"
 #include "SMStoreUtils.h"
-#include "..\ScalableMeshSources.h"
+#include "../ScalableMeshSources.h"
 
 template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>, public SMSQLiteSisterFile
     {        

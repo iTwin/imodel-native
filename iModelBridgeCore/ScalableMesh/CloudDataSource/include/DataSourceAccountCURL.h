@@ -13,7 +13,7 @@
 #include "Manager.h"
 
 
-#include <Bentley\WString.h>
+#include <Bentley/WString.h>
 
 
 class OpenSSLMutexes 

@@ -6,7 +6,7 @@
 |       $Date: 2015/09/08 15:28:13 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -15,7 +15,7 @@
 #include <Geom/GeomApi.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include "DifferenceSet.h"
-#include <TerrainModel\TerrainModel.h>
+#include <TerrainModel/TerrainModel.h>
 #include <array>
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 class ScalableMeshMesh;

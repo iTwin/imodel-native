@@ -1,6 +1,6 @@
 #pragma once
-#include <Bentley\Bentley.h>
-#include <Bentley\WString.h>
+#include <Bentley/Bentley.h>
+#include <Bentley/WString.h>
 #ifdef SCALABLE_MESH_ATP
 /*__PUBLISH_SECTION_START__*/
 
@@ -33,7 +33,7 @@ struct IScalableMeshATP
 
         IScalableMeshATP() {};
         IScalableMeshATP(const IScalableMeshATP&) {};
-        IScalableMeshATP&  operator=   (const IScalableMeshATP&) {};
+        IScalableMeshATP&  operator=   (const IScalableMeshATP&) {return *this;};
        /*__PUBLISH_SECTION_START__*/
     public:
         BENTLEY_SM_EXPORT static IScalableMeshATP*   GetInstance();

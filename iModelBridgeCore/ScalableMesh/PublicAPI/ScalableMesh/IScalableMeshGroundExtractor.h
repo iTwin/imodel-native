@@ -9,8 +9,8 @@
 
 /*__PUBLISH_SECTION_START__*/
 #include <ScalableMesh/ScalableMeshDefs.h>
-#include <ScalableMesh\IScalableMesh.h>
-#include <Bentley\Bentley.h>
+#include <ScalableMesh/IScalableMesh.h>
+#include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
 
 #undef static_assert
@@ -27,7 +27,7 @@ typedef RefCountedPtr<IScalableMeshGroundExtractor> IScalableMeshGroundExtractor
 /*=================================================================================**//**
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IScalableMeshGroundExtractor abstract: virtual public RefCountedBase
+struct IScalableMeshGroundExtractor: virtual public RefCountedBase
     {
     private:        
 

@@ -15,7 +15,7 @@
 
 #include "IScalableMesh.h"
 #include "IScalableMeshQuery.h"
-#include <Bentley\bset.h>
+#include <Bentley/bset.h>
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -29,7 +29,7 @@ typedef RefCountedPtr<IScalableMeshProgressiveQueryEngine> IScalableMeshProgress
 struct SmCachedDisplayMesh;
 struct SmCachedDisplayTexture;
 
-struct IScalableMeshDisplayCacheManager abstract: RefCountedBase
+struct IScalableMeshDisplayCacheManager :  RefCountedBase
     {
     public:                                         
         
@@ -71,7 +71,7 @@ struct IScalableMeshDisplayCacheManager abstract: RefCountedBase
     };
 
 
-struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
+struct IScalableMeshProgressiveQueryEngine: RefCountedBase
     {
     /*__PUBLISH_SECTION_END__*/
     /*__PUBLISH_CLASS_VIRTUAL__*/

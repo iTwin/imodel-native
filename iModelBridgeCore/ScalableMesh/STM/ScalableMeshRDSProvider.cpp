@@ -10,6 +10,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include "ScalableMeshRDSProvider.h"
 #include <CCApi\CCPublic.h>
 #include <ScalableMesh\ScalableMeshAdmin.h>
@@ -244,3 +245,4 @@ Utf8String ScalableMeshRDSProvider::GetRootDocumentName()
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+#endif

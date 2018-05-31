@@ -3,19 +3,19 @@
 #include "RasterUtilities.h"
 #include "ReprojectionModel.h"
 
-#include <ImagePP\all\h\HRPPixelTypeV24R8G8B8.h>
-#include <ImagePP\all\h\HRPPixelTypeV24B8G8R8.h>
-#include <ImagePP\all\h\HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <ImagePP/all/h/HRPPixelTypeV24B8G8R8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
 #include <ImagePP/all/h/HRARaster.h>
 #include <ImagePP/all/h/HIMMosaic.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
 #include <ImagePP/all/h/HRACopyFromOptions.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 #include <ImagePP/all/h/HCDCodecIdentity.h>
-#include <ImagePP\all\h\HCDPacket.h>
-#include <ImagePP\all\h\HRFiTiffCacheFileCreator.h>
-#include <ImagePP\all\h\HRFUtility.h>
-#include <Imagepp/all/h/HRSObjectStore.h>
+#include <ImagePP/all/h/HCDPacket.h>
+#include <ImagePP/all/h/HRFiTiffCacheFileCreator.h>
+#include <ImagePP/all/h/HRFUtility.h>
+#include <ImagePP/all/h/HRSObjectStore.h>
 #include <ImagePP/all/h/HGF2DIdentity.h>
 #include <ImagePP/all/h/HCPGCoordUtility.h>
 //#include <ImagePP/all/h/HRFVirtualEarthFile.h>
@@ -134,7 +134,7 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path)
                                       pLogicalCoordSys);
 
     // Get the raster from the store
-    HFCPtr<HRARaster> rasterSource = pObjectStore->LoadRaster();
+    HFCPtr<HRARaster> rasterSource = &*pObjectStore->LoadRaster();
     return rasterSource;
     }
 
@@ -271,7 +271,7 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
                                       pRasterLogicalCS);
 
     // Get the raster from the store
-    HFCPtr<HRARaster> rasterSource = pObjectStore->LoadRaster();
+    HFCPtr<HRARaster> rasterSource = &*pObjectStore->LoadRaster();
     
     HVEShape imageReprojectShape(imageExtent);
     rasterSource->SetShape(imageReprojectShape);
@@ -439,10 +439,12 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
 
     WChar outputFileName[1000];
 
+#if _WIN32
     _snwprintf(outputFileName,
                1000,
                L"file://D:\\MyDoc\\RMA Iter 6\\BingMap\\Log\\bitmap%i.bmp",
                ind++);
+#endif
 
 
     // NEEDS_WORK_SM : Imagepp needs update on bim02

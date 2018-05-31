@@ -9,7 +9,7 @@
 
 /*__PUBLISH_SECTION_START__*/
 #include <ScalableMesh/ScalableMeshDefs.h>
-#include <Bentley\Bentley.h>
+#include <Bentley/Bentley.h>
 #include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/ITextureProvider.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
@@ -112,7 +112,7 @@ struct IScalableMeshProgress;
 /*=================================================================================**//**
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IScalableMeshGroundPreviewer abstract : virtual public RefCountedBase
+struct IScalableMeshGroundPreviewer  : virtual public RefCountedBase
 {
 private:
 
@@ -139,7 +139,7 @@ public:
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IScalableMesh abstract:  IRefCounted 
+struct IScalableMesh :  IRefCounted 
     {
     private:
         
@@ -149,7 +149,7 @@ struct IScalableMesh abstract:  IRefCounted
     protected:                         
 
         //Methods for the public interface.       
-        virtual __int64          _GetPointCount() = 0;
+        virtual int64_t          _GetPointCount() = 0;
 
         virtual uint64_t          _GetNodeCount() = 0;
 
@@ -169,11 +169,11 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual int                    _GenerateSubResolutions() = 0;      
 
-        virtual __int64                _GetBreaklineCount() const = 0;
+        virtual int64_t                _GetBreaklineCount() const = 0;
 
         virtual ScalableMeshCompressionType   _GetCompressionType() const = 0;        
         
-        virtual Count                  _GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const = 0;
+        virtual Count                  _GetCountInRange (const DRange2d& range, const CountType& type, const uint64_t& maxNumberCountedPoints) const = 0;
 
         virtual int                    _GetNbResolutions() const = 0;
 
@@ -345,7 +345,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void TextureFromRaster(ITextureProviderPtr provider);
 
-        BENTLEY_SM_EXPORT __int64          GetPointCount();
+        BENTLEY_SM_EXPORT int64_t          GetPointCount();
 
         BENTLEY_SM_EXPORT uint64_t          GetNodeCount();
 
@@ -365,7 +365,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT int                    GenerateSubResolutions();
 
-        BENTLEY_SM_EXPORT __int64                GetBreaklineCount() const;
+        BENTLEY_SM_EXPORT int64_t                GetBreaklineCount() const;
             
         BENTLEY_SM_EXPORT ScalableMeshCompressionType   GetCompressionType() const;
 
@@ -426,7 +426,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
 
-        Count                  GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
+        Count                  GetCountInRange (const DRange2d& range, const CountType& type, const uint64_t& maxNumberCountedPoints) const;
 
         BENTLEY_SM_EXPORT uint64_t               AddClip(const DPoint3d* pts, size_t ptsSize);
 
@@ -573,9 +573,9 @@ struct IScalableMesh abstract:  IRefCounted
 
 struct Count
     {
-    unsigned __int64 m_nbPoints;
-    unsigned __int64 m_nbLinears;
-    Count(unsigned __int64 nbPoints, unsigned __int64 nbLinears) { m_nbPoints = nbPoints; m_nbLinears = nbLinears; }
+    uint64_t m_nbPoints;
+    uint64_t m_nbLinears;
+    Count(uint64_t nbPoints, uint64_t nbLinears) { m_nbPoints = nbPoints; m_nbLinears = nbLinears; }
     };
 
 

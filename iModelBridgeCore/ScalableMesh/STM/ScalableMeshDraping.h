@@ -6,7 +6,7 @@
 |       $Date: 2015/04/20 12:32:17 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,6 +14,7 @@
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include <queue>
+#include <future>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -54,6 +55,7 @@ struct ScalableMeshDraping : IDTMDraping
 
     public:
         ScalableMeshDraping(IScalableMeshPtr scMesh);
+        virtual ~ScalableMeshDraping(){}
         void SetTransform(TransformR transform)
             {
             m_transform = transform;
@@ -106,7 +108,7 @@ struct MeshTraversalQueue
         size_t m_numPointsOnPolyline = 0;
         IScalableMesh*   m_scm = nullptr;
         MeshTraversalStep m_currentStep;
-        std::set<__int64> allVisitedNodes;
+        std::set<int64_t> allVisitedNodes;
         //The ID of the plane that is shared with the next node in the direction of the line.
         // 0 = right, 1 = left, 2 = bottom, 3 = top 
         unsigned char m_intersectionWithNextNode = 255;

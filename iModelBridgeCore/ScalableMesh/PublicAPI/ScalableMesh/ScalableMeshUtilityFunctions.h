@@ -6,7 +6,7 @@
 |       $Date: 2013/03/27 15:53:36 $
 |     $Author: Jean-Francois.Cote $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -26,7 +26,6 @@
 
 #include <ScalableMesh/IScalableMeshQuery.h>
 #include <ScalableMesh/IScalableMeshClipContainer.h>
-#include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH

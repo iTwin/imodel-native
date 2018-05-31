@@ -6,7 +6,7 @@
 |       $Date: 2012/11/14 18:20:56 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -38,7 +38,7 @@
 +------------------------------------------------------------------*/
 #include "ScalableMeshCoreFns.h"
 
-#include <ScalableMesh\ScalableMeshUtilityFunctions.h>
+#include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 
 /*----------------------------------------------+
 | Constant definitions                          |
@@ -47,6 +47,8 @@
 /*----------------------------------------------+
 | Private type definitions                      |
 +----------------------------------------------*/
+
+USING_NAMESPACE_IMAGEPP
 
 /*==================================================================*/
 /*                                                                  */
@@ -2853,9 +2855,9 @@ int bcdtmMultiResolution_sortBinaryXYZFile
 {
  int  ret=DTM_SUCCESS,dbg=0,tdbg=0,cdbg=0 ;
  long n,m,point,merge,isSorted,isDuplicates,startTime=0,firstPoint,lastPoint,saveLastPoint=0 ;
- __int64 filePosition=0,endFilePosition=0,numRecords=0,numFilePartitions=0 ;  
- __int64 fileWritePosition=0,sortPartitionSize,numXyzPoints=0 ;
- __int64 isDtmPoint[1000],partitionFileOffset[1000],partitionFileSize[1000] ;
+ int64_t filePosition=0,endFilePosition=0,numRecords=0,numFilePartitions=0 ;  
+ int64_t fileWritePosition=0,sortPartitionSize,numXyzPoints=0 ;
+ int64_t isDtmPoint[1000],partitionFileOffset[1000],partitionFileSize[1000] ;
  double xMin,yMin,zMin,xMax,yMax,zMax ;
  long   numCachePoints=0,numPartitionPoints=0,partitionCacheOffset[1000],dtmPointsOffset[1000] ;
  DPoint3d    *pointCacheP=NULL,dtmPoint,dtmPoint1 ;
@@ -3036,7 +3038,7 @@ int bcdtmMultiResolution_sortBinaryXYZFile
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Writing %10ld Points To Partition %2ld",dtmP->numPoints,n) ; 
        _fseeki64(xyzFP,fileWritePosition,SEEK_SET) ;
-       for( point = 0 ; point < ( __int64 ) dtmP->numPoints ; ++point )
+       for( point = 0 ; point < ( int64_t ) dtmP->numPoints ; ++point )
          {
           pointP = pointAddrP(dtmP,point) ;
           if( bcdtmFwrite(pointP,sizeof(DPoint3d),1,xyzFP) != 1 )
@@ -3301,7 +3303,7 @@ int bcdtmMultiResolution_sortBinaryXYZFile
 int bcdtmMultiResolution_tileXYZFile
 (
  char                      *xyzFileNameP,
- __int64                   tilePartitionSize,
+ int64_t                   tilePartitionSize,
  BC_MRES_FILE_TILE_OFFSETS **tileFileOffsetsPP,
  long                      *numTilesP
 )
@@ -3309,8 +3311,8 @@ int bcdtmMultiResolution_tileXYZFile
  int     ret=DTM_SUCCESS,dbg=0,tdbg=0,cdbg=0 ;
  long    n,pnt,tile,firstPoint,lastPoint,startTime=0,tileTime=0 ;
  long    numTiles,memTiles=0,memTileInc=10000,minTilePts=20000,tileMaxPts,tileMinPts ;
- __int64 point,numRecords,filePosition,endFilePosition,fileWritePosition,numFilePartitions ;
- __int64 partitionFileOffset[1000],partitionFileSize[1000] ;
+ int64_t point,numRecords,filePosition,endFilePosition,fileWritePosition,numFilePartitions ;
+ int64_t partitionFileOffset[1000],partitionFileSize[1000] ;
  double  xMin,yMin,zMin,xMax,yMax,zMax ;
  DPoint3d     *pntP,dtmPoint ;
  BC_DTM_OBJ *dtmP=NULL ;
@@ -3683,7 +3685,7 @@ int bcdtmMultiResolution_filterTiledXYZFile
  long n,point,filterTime,numFilteredPts,totalFilteredPts=0,numFulcrumPts=0,numPointsRemove=0 ;
  long numTilePoints=0,memTilePoints=0,firstPoint,lastPoint,numResTilePoints ;
  long numTileIndex=0,memTileIndex=0,startTime,edgeOption ;
- __int64  fileWritePosition=0 ;
+ int64_t  fileWritePosition=0 ;
  double maxSide=0.0,xMin,yMin,zMin,xMax,yMax,zMax ;
  char label[32],buffer[1024] ;
  DPoint3d  *p3dP,dtmPoint,*tilePointsP=NULL,tileHullPts[5];
@@ -4374,7 +4376,7 @@ int bcdtmMultiResolution_filterToLowestResolutionLevelDtmObject
  long dtmFeature,tileNumber,firstPoint,lastPoint,numTilePoints,filterTime=0 ;
  long numFilteredTiles=0,memFilteredTiles=0,memFilteredTilesInc=0 ;
  long totalPoints,numPointsBeforeFilter,resolutionPoints[100],mrDtmResolutionLevels ;
- __int64 fileOffset=0 ;
+ int64_t fileOffset=0 ;
  char label[24],buffer[128],dtmFileName[128] ;
  DPoint3d  *p3dP,*tilePtsP=NULL ;
  DTM_TIN_POINT  *pointP ;

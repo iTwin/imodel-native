@@ -79,7 +79,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #define SCALABLE_MESH_TIMINGS
 
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
-extern bool s_inEditing = false; 
+bool s_inEditing = false; 
 bool s_useThreadsInStitching = false;
 bool s_useThreadsInMeshing = false;
 bool s_useThreadsInFiltering = false;
@@ -236,7 +236,7 @@ const GeoCoords::GCS& IScalableMeshCreator::GetGCS () const
 
 #ifdef SCALABLE_MESH_ATP
 
-static unsigned __int64 s_getNbImportedPoints = 0;
+static uint64_t s_getNbImportedPoints = 0;
 static double s_getImportPointsDuration = -1; 
 static double s_getLastPointBalancingDuration = -1;
 static double s_getLastMeshBalancingDuration = -1;
@@ -246,8 +246,7 @@ static double s_getLastStitchingDuration = -1;
 static double s_getLastClippingDuration = -1;
 static double s_getLastFinalStoreDuration = -1;
 
-
-unsigned __int64 IScalableMeshCreator::GetNbImportedPoints()
+uint64_t IScalableMeshCreator::GetNbImportedPoints()
     {
     return s_getNbImportedPoints;
     }
@@ -612,8 +611,12 @@ SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString&
             const WChar* path = source.GetPath(status);
             if (BSISUCCESS != status)
                 throw SourceNotFoundException();
-
+#ifndef LINUX_SCALABLEMESH_BUILD
             if (0 == wcsicmp(path, m_stmPath.c_str()))
+#else
+            //Not case-insensitive here because as a rule paths aren't on Linux. Willing to reconsider if sufficient benefit.
+            if (0 == wcscmp(path, m_stmPath.c_str()))
+#endif
                 throw CustomException(L"STM and source are the same");
 
             LocalFileSourceRef localSourceRef(path);
@@ -992,6 +995,7 @@ int IScalableMeshCreator::Impl::SaveToFile()
 
 void IScalableMeshCreator::Impl::ShowMessageBoxWithTimes(double meshingDuration, double filteringDuration, double stitchingDuration)
     {
+#if _WIN32
     string meshing = to_string(meshingDuration);
     string filtering = to_string(filteringDuration);
     string stitching = to_string(stitchingDuration);
@@ -1001,6 +1005,7 @@ void IScalableMeshCreator::Impl::ShowMessageBoxWithTimes(double meshingDuration,
     msg += "Stitching: "; msg += stitching; msg += " min.\n";
 
     MessageBoxA(NULL, msg.c_str(), "Information", MB_ICONINFORMATION | MB_OK);
+#endif
     }
 
 /*==================================================================*/

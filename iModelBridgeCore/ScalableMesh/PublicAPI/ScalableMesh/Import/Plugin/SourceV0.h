@@ -6,7 +6,7 @@
 |       $Date: 2012/03/21 18:37:04 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,7 +44,7 @@ struct SourceBase : private Uncopyable
 protected:
     typedef const std::type_info*               ClassID;
 private:
-    friend struct                               Source;
+    friend struct                               BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source;
     friend struct                               SourceCreatorBase;
 
     struct                                      Impl;   
@@ -121,7 +121,7 @@ public:
 struct SourceCreatorBase : private Uncopyable
     {
 private:
-    friend struct                               SourceCreator;
+    friend struct                               BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::SourceCreator;
 
     const void*                                 m_implP; // Reserve some space for further use
 
@@ -157,7 +157,7 @@ typedef const WChar*                         ExtensionFilter;
 struct LocalFileSourceCreatorBase : private Uncopyable
     {
 private:
-    friend struct                               LocalFileSourceCreator;
+    friend struct                               BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::LocalFileSourceCreator;
 
     struct                                      Impl; 
     std::auto_ptr<Impl>                         m_pImpl;
@@ -187,7 +187,7 @@ public:
 struct DGNElementSourceCreatorBase : private Uncopyable
     {
 private:
-    friend struct                               DGNElementSourceCreator;
+    friend struct                               BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DGNElementSourceCreator;
 
     const void*                                 m_implP; // Reserve some space for further use
 

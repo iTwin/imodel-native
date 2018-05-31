@@ -72,7 +72,7 @@ struct IScalableMeshSourceCreator : public IScalableMeshCreator
 
 #ifdef SCALABLE_MESH_ATP
 
-        BENTLEY_SM_IMPORT_EXPORT static unsigned __int64 GetNbImportedPoints();
+        BENTLEY_SM_IMPORT_EXPORT static uint64_t GetNbImportedPoints();
 
         BENTLEY_SM_IMPORT_EXPORT static double GetImportPointsDuration();
 

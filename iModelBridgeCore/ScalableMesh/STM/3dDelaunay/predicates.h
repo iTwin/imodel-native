@@ -4013,7 +4013,7 @@ const double *pe
     return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
     }
 
-__forceinline double insphereFast (DPoint3dCR pa, DPoint3dCR pb, DPoint3dCR pc, DPoint3dCR pd, DPoint3dCR pe)
+inline double insphereFast (DPoint3dCR pa, DPoint3dCR pb, DPoint3dCR pc, DPoint3dCR pd, DPoint3dCR pe)
     {
     double aex, bex, cex, dex;
     double aey, bey, cey, dey;
@@ -4095,7 +4095,7 @@ __forceinline double insphereFast (DPoint3dCR pa, DPoint3dCR pb, DPoint3dCR pc, 
     return 0;   // Needs exact predicate
     }
 
-__forceinline double inspherefast (DPoint3dCR pa, DPoint3dCR pb, DPoint3dCR pc, DPoint3dCR pd, DPoint3dCR pe)
+inline double inspherefast (DPoint3dCR pa, DPoint3dCR pb, DPoint3dCR pc, DPoint3dCR pd, DPoint3dCR pe)
     {
     double aex, bex, cex, dex;
     double aey, bey, cey, dey;

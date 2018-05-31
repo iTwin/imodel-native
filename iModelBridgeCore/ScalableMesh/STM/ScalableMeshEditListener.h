@@ -6,7 +6,7 @@
 |       $Date: 2011/09/13 13:30:57 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,7 +27,7 @@ private:
     virtual void                            _NotifyOfLastEditUpdate    (Time            updatedLastEditTime) = 0;
 
 protected:
-    virtual                                 ~EditListener              () = 0 {}
+    virtual                                 ~EditListener              () {}
 
 public: 
     void                                    NotifyOfPublicEdit         ();

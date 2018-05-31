@@ -6,7 +6,7 @@
 |       $Date: 2011/08/30 19:04:18 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -69,7 +69,7 @@ private:
     // Ensure that points types are only based on DataTypeFamilyImplBase template
     template <typename T>
     friend                  struct StaticDataTypeFamilyBase;
-    friend                  struct DataTypeFamily;
+    friend                  struct BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DataTypeFamily;
 
     typedef const void*     ClassID;
 

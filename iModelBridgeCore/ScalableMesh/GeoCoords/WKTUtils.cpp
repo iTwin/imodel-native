@@ -6,14 +6,14 @@
 |       $Date: 2011/12/20 16:24:01 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "../STM/ImagePPHeaders.h"
 #include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #include <STMInternal/Foundations/PrivateStringTools.h>
-#include "WktUtils.h"
+#include "WKTUtils.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
 
@@ -279,10 +279,16 @@ namespace {
 +---------------+---------------+---------------+---------------+---------------+------*/
 const struct WKTKeywordLess : std::binary_function<WKTKeyword, WKTKeyword, bool>
     {
+#if _WIN32
     bool operator() (const WKTKeyword& lhs, const WKTKeyword& rhs) const        { return 0 > _wcsicmp(lhs.str, rhs.str); }
     bool operator() (const WChar* lhs, const WKTKeyword& rhs) const              { return 0 > _wcsnicmp(lhs, rhs.str, rhs.strLen); }
     bool operator() (const WKTKeyword& lhs, const WChar* rhs) const              { return 0 > _wcsnicmp(lhs.str, rhs, lhs.strLen); }
-    } WKT_KEYWORD_LESS;
+#else
+    bool operator() (const WKTKeyword& lhs, const WKTKeyword& rhs) const        { return 0 > wcscasecmp(lhs.str, rhs.str); }
+    bool operator() (const WChar* lhs, const WKTKeyword& rhs) const              { return 0 > wcscasecmp(lhs, rhs.str); }
+    bool operator() (const WKTKeyword& lhs, const WChar* rhs) const              { return 0 > wcscasecmp(lhs.str, rhs); }
+#endif
+    } WKT_KEYWORD_LESS = {};
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -290,10 +296,16 @@ const struct WKTKeywordLess : std::binary_function<WKTKeyword, WKTKeyword, bool>
 +---------------+---------------+---------------+---------------+---------------+------*/
 const struct WKTKeywordEqual : std::binary_function<WKTKeyword, WKTKeyword, bool>
     {
+#if _WIN32
     bool operator() (const WKTKeyword& lhs, const WKTKeyword& rhs) const        { return 0 == _wcsicmp(lhs.str, rhs.str); }
     bool operator() (const WChar* lhs, const WKTKeyword& rhs) const              { return 0 == _wcsnicmp(lhs, rhs.str, rhs.strLen); }
     bool operator() (const WKTKeyword& lhs, const WChar* rhs) const              { return 0 == _wcsnicmp(lhs.str, rhs, lhs.strLen); }
-    } WKT_KEYWORD_EQUAL;
+#else
+    bool operator() (const WKTKeyword& lhs, const WKTKeyword& rhs) const        { return 0 == wcscasecmp(lhs.str, rhs.str); }
+    bool operator() (const WChar* lhs, const WKTKeyword& rhs) const              { return 0 == wcscasecmp(lhs, rhs.str); }
+    bool operator() (const WKTKeyword& lhs, const WChar* rhs) const              { return 0 == wcscasecmp(lhs.str, rhs); }
+#endif
+    } WKT_KEYWORD_EQUAL = {};
 
 
 const WKTKeyword WKT_NULL_KEY(L"", WKTKeyword::TYPE_NULL);

@@ -6,7 +6,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include "ScalableMeshPCH.h"
-#include <Imagepp/h/ImagePPAPI.h>
+#include <ImagePP/h/ImageppAPI.h>
 #ifndef VANCOUVER_API
 #include "HPUPacket.h"
    

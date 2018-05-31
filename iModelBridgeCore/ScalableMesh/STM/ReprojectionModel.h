@@ -7,7 +7,7 @@
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
-#include <Imagepp/all/h/HGF2DTransfoModel.h>
+#include <ImagePP/all/h/HGF2DTransfoModel.h>
 
 #ifndef VANCOUVER_API
 #define TRANSFOMODEL ImagePP::HGF2DTransfoModel
@@ -17,7 +17,7 @@
 #define DISPLACEMENT HGF2DDisplacement
 #define RefCountedCPtr RefCountedPtr
 #endif
-
+USING_NAMESPACE_IMAGEPP
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 //----------------------------------------------------------------------------------------

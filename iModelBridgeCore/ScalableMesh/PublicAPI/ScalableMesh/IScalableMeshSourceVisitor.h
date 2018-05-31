@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:45 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,7 +30,7 @@ struct                              IDTMSourceGroup;
 
 struct IDTMSourceVisitor
     {
-    virtual                         ~IDTMSourceVisitor             () = 0 {}
+    virtual                         ~IDTMSourceVisitor             () {}
 
     //virtual void                    _Visit                         (const IDTMSource&                   source) =0;
     virtual void                    _Visit                         (const IDTMLocalFileSource&          source) = 0;   

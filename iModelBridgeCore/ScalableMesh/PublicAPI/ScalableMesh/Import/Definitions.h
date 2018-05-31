@@ -6,7 +6,7 @@
 |       $Date: 2011/10/20 18:48:20 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,12 +27,15 @@
 //    #error "Export name conflict with another definition of the same name"
 #endif
 
+#if _WIN32
 #ifdef __BENTLEYSTM_BUILD__ //BENTLEY_SCALABLEMESH_IMPORT_EXPORTS
     #define IMPORT_DLLE __declspec(dllexport)
 #else
     #define IMPORT_DLLE __declspec(dllimport)
 #endif
-
+#else
+ #define IMPORT_DLLE
+#endif
 
 #ifndef BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 #define BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE namespace BENTLEY_NAMESPACE_NAME { namespace ScalableMesh { namespace Import {
@@ -45,13 +48,21 @@
 #define BEGIN_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_NAMESPACE BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE namespace Plugin {
 #define END_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_NAMESPACE END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE }
 
-
+#if _WIN32
 #define BEGIN_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VXX_NAMESPACE(version) BEGIN_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_NAMESPACE namespace V ## version ## { 
 #define END_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VXX_NAMESPACE END_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_NAMESPACE }
+#else
+#define BEGIN_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VXX_NAMESPACE(version) BEGIN_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_NAMESPACE namespace V ## version { 
+#define END_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VXX_NAMESPACE END_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_NAMESPACE }
+#endif
 
 #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Plugin;
+#if _WIN32
 #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(version) using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Plugin::V ## version ## ;
-
+#else
+#define MYVER(version) V ## version
+#define USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(version) using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Plugin::MYVER(version) ;
+#endif
 
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VXX_NAMESPACE(0)

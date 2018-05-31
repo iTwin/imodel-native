@@ -1,9 +1,9 @@
 #pragma once
 
 #include "SMMemoryPool.h"
-#include "Stores\SMSQLiteStore.h"
+#include "Stores/SMSQLiteStore.h"
 
-#include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+#include <ScalableMesh/IScalableMeshProgressiveQuery.h>
 #include "Tracer.h"
 
 template <class POINT, class EXTENT> class SMMeshIndexNode;

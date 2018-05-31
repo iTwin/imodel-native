@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 00:37:01 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -90,7 +90,7 @@ public:
         if (HasPostponedUnregister())
             RunPostponedUnregister();
 
-        CreatorList::const_iterator foundIt = find_if(m_creators.begin(), m_creators.end(), predicate);
+        typename CreatorList::const_iterator foundIt = find_if(m_creators.begin(), m_creators.end(), predicate);
 
         return (foundIt != m_creators.end() ? &*foundIt : 0);
         }

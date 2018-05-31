@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 22:19:19 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -48,7 +48,7 @@ private:
 
 
 public:
-    virtual                     ~IDTMSourceSerializer  () = 0 {}
+    virtual                     ~IDTMSourceSerializer  ()  {}
 
     };
 
@@ -90,7 +90,7 @@ private:
 protected:
 
 
-    virtual                     ~IDTMSourceCreator     () = 0 {}
+    virtual                     ~IDTMSourceCreator     ()  {}
     };
 
 
@@ -624,7 +624,7 @@ IDTMSourcePtr SourceSerializer::Deserialize(SourceDataSQLite&          sourceDat
         return 0;
     }
 
-    static const IDTMSourceFactory SOURCE_FACTORY;
+    static IDTMSourceFactory SOURCE_FACTORY;
 
     return SOURCE_FACTORY.Create(sourceData, env);
 }

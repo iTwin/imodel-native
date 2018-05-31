@@ -125,7 +125,7 @@ private:
     const void*                                 m_implP; // Reserve some space for further use
 public:
     // Implicitly convert from DataType
-    IMPORT_DLLE                                 TypeDescriptor                     (const DataType&                     type);
+    IMPORT_DLLE                                 TypeDescriptor                     (DataType                     type);
 
 
     IMPORT_DLLE                                 ~TypeDescriptor                    ();
@@ -325,7 +325,7 @@ bool                                            operator<                       
 
 
 
-#include <ScalableMesh/Import/ContentDescriptor.hpp>
+//#include <ScalableMesh/Import/ContentDescriptor.hpp>
 
 
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE

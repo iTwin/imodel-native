@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -10,6 +10,7 @@
 
 #include <ImagePP/all/h/HPMDataStore.h>
 
+USING_NAMESPACE_IMAGEPP
 /** --------------------------------------------------------------------------------------------------------
 This interface defines the methods required for a scalable mesh data store. In short, a scalable mesh 
 data store uses block IDs (HPMBlockID) to identify blocks of data of type DataType. Blocks of data can 

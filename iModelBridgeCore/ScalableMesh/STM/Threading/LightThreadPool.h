@@ -13,6 +13,11 @@
 #pragma once
 
 #include <ScalableMesh/IScalableMesh.h>
+#include <atomic>
+#include <future>
+#include <map>
+#include <thread>
+#include <functional>
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
@@ -24,7 +29,7 @@ class LightThreadPool
         std::thread*                               m_threads;
         std::atomic<bool>*                         m_areThreadsBusy;
         std::recursive_mutex                       m_nodeMapLock;
-        std::map<void*, std::atomic<unsigned int>> m_nodeMap;
+        std::map<void*, std::shared_ptr<std::atomic<unsigned int>>> m_nodeMap;
 
         LightThreadPool();
 
@@ -40,7 +45,7 @@ class LightThreadPool
 
 
 
-bool TryReserveNodes(std::map<void*, std::atomic<unsigned int>>& map, void** reservedNodes, size_t nNodesToReserve, unsigned int id);
+bool TryReserveNodes(std::map<void*, std::shared_ptr<std::atomic<unsigned int>>>& map, void** reservedNodes, size_t nNodesToReserve, unsigned int id);
 void SetThreadAvailableAsync(size_t threadId);
 void RunOnNextAvailableThread(std::function<void(size_t threadId)> lambda);
 void WaitForThreadStop(IScalableMeshProgress* p =nullptr);

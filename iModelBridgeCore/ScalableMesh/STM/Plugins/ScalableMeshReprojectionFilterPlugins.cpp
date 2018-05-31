@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:07:09 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -445,10 +445,10 @@ class RegisterMeshAsIDTMLinearReprojector
 
 
 // Register point converters:
-const RegisterIDTMPointReprojector<DPoint3d> s_ptReproj0; 
+RegisterIDTMPointReprojector<DPoint3d> s_ptReproj0; 
 
 // Register linear feature converters
-const RegisterIDTMLinearReprojector<DPoint3d> s_ftReproj0; 
+RegisterIDTMLinearReprojector<DPoint3d> s_ftReproj0; 
 
 
 

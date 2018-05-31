@@ -185,6 +185,7 @@ Time GetFileLastModificationTimeFor(const WChar*  filePath)
     if (IsUrl(filePath))
         return CreateTimeFrom(0);
 
+#if _WIN32
     struct _stat64 fileStats;
     int status = _wstat64(filePath, &fileStats);
     
@@ -192,6 +193,16 @@ Time GetFileLastModificationTimeFor(const WChar*  filePath)
         return CreateUnknownModificationTime();
     
     return CreateTimeFrom(fileStats.st_mtime);
+#else
+    struct stat64 fileStats;
+    Utf8String utf8Name(filePath);
+    int status = stat64(utf8Name.c_str(), &fileStats);
+    
+    if (0 != status)
+        return CreateUnknownModificationTime();
+    
+    return CreateTimeFrom(fileStats.st_mtime);
+#endif
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

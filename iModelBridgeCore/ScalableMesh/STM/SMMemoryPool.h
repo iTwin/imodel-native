@@ -11,14 +11,14 @@
 
 #include <limits>   
 
-#include <ImagePP\all\h\HFCPtr.h>
-#include <ImagePP\all\h\HPMDataStore.h>
+#include <ImagePP/all/h/HFCPtr.h>
+#include <ImagePP/all/h/HPMDataStore.h>
 #include <ImagePP/h/HIterators.h>
 #include "ComputeMemoryUseTraits.h"
 #include <iostream>
 
-#include "Stores\ISMDataStore.h"
-#include "Stores\SMStoreUtils.h"
+#include "Stores/ISMDataStore.h"
+#include "Stores/SMStoreUtils.h"
 
 #include "Tracer.h"
 
@@ -356,7 +356,7 @@ template <typename DataType> class SMStoredMemoryPoolMultiItems : public SMMemor
             
             if (m_size > 0)
                 {
-                HPMBlockID blockID(m_nodeId);
+                HPMBlockID blockID(this->m_nodeId);
                 size_t nbBytesLoaded = m_dataStore->LoadBlock(&multiData, m_size, blockID);
                 assert(nbBytesLoaded <= m_size);
                 }                                    
@@ -391,7 +391,7 @@ template <typename DataType> class SMStoredMemoryPoolMultiItems : public SMMemor
 
         virtual void NotifyListener(SMMemoryPoolItemBase* poolMemoryItem, int64_t sizeDelta, int64_t nbItemDelta) override
             {            
-            HPMBlockID blockID(m_nodeId);
+            HPMBlockID blockID(this->m_nodeId);
 
             m_dataStore->ModifyBlockDataCount(blockID, nbItemDelta, GetStoreDataType(poolMemoryItem->GetDataType()));            
             m_size += sizeDelta;
@@ -517,21 +517,21 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
 #endif
 
         SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& dataStore, SMStoreDataType dataType, uint64_t smId)
-            : SMMemoryPoolGenericBlobItem(nullptr,dataStore->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
+            : SMMemoryPoolGenericBlobItem<DataType>(nullptr,dataStore->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
             {
             m_dataStore = dataStore;
 
             if (m_size > 0)
                 {
                 m_data = (Byte*)new DataType();
-                HPMBlockID blockID(m_nodeId);
+                HPMBlockID blockID = HPMBlockID(this->m_nodeId);
                 size_t nbBytesLoaded = m_dataStore->LoadBlock((DataType*)m_data, m_size, blockID);
                 m_size = nbBytesLoaded;
                 }
             }
 
         SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, const DataType* data, uint64_t dataSize, SMStoreDataType dataType, uint64_t smId)
-            : SMMemoryPoolGenericBlobItem((DataType*)new Byte[dataSize],dataSize, nodeId, dataType, smId)
+            : SMMemoryPoolGenericBlobItem<DataType>((DataType*)new Byte[dataSize],dataSize, nodeId, dataType, smId)
             {
             m_store = store;
 
@@ -561,7 +561,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
             {            
             if (m_dirty)
                 {
-                HPMBlockID blockID(m_nodeId);                
+                HPMBlockID blockID = HPMBlockID(this->m_nodeId);                
                 m_dataStore->StoreBlock((DataType*)m_data, 1, blockID);                
                 }
             }
@@ -587,20 +587,20 @@ template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryP
 #endif
         
         SMStoredMemoryPoolBlobItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, SMStoreDataType dataType, uint64_t smId)
-            : SMMemoryPoolBlobItem(store->GetBlockDataCount(HPMBlockID(nodeId)) * sizeof(DataType), nodeId, dataType, smId)
+            : SMMemoryPoolBlobItem<DataType>(store->GetBlockDataCount(HPMBlockID(nodeId)) * sizeof(DataType), nodeId, dataType, smId)
             {                                    
             m_dataStore = store;            
             
             if (m_size > 0)
                 {                
-                HPMBlockID blockID(m_nodeId);
+                HPMBlockID blockID = HPMBlockID(this->m_nodeId);
                 size_t nbBytesLoaded = m_dataStore->LoadBlock ((DataType*)m_data, m_size, blockID);
                 assert(nbBytesLoaded == m_size);
                 }           
             }
          
         SMStoredMemoryPoolBlobItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, const DataType* data, uint64_t dataSize, SMStoreDataType dataType, uint64_t smId)
-            : SMMemoryPoolBlobItem(dataSize, nodeId, dataType, smId)
+            : SMMemoryPoolBlobItem<DataType>(dataSize, nodeId, dataType, smId)
             {                                    
             m_dataStore = store;                        
 
@@ -615,7 +615,7 @@ template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryP
             {
             if (m_dirty)
                 {                
-                HPMBlockID blockID(m_nodeId);
+                HPMBlockID blockID = HPMBlockID(this->m_nodeId);
                 m_dataStore->StoreBlock(m_data, m_size, blockID);                                
                 }
             }    
@@ -637,6 +637,7 @@ public:
     
     template <class T> class iteratorBase : public RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<typename ImagePP::ReverseConstTrait<T>::type >, T>
         {
+typedef RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<typename ImagePP::ReverseConstTrait<T>::type >, T> super_class;
     public:
         static const size_t npos = -1;
 
@@ -648,12 +649,12 @@ public:
             m_vector = vector;
             m_index = initialPosition; 
             }
-        const_iterator_t    ConvertToConst () const
+        typename super_class::const_iterator_t    ConvertToConst () const
             {
-            return const_iterator_t(m_vector, m_index);
+            return typename super_class::const_iterator_t(m_vector, m_index);
             }
 
-        const_reference     Dereference    () const {
+        typename super_class::const_reference     Dereference    () const {
             return m_vector->operator[](m_index);
             }
 
@@ -672,7 +673,7 @@ public:
                 m_index--;
             }
 
-        void                AdvanceOf        (difference_type increment)
+        void                AdvanceOf        (typename super_class::difference_type increment)
             {
             //HASSERT (m_index + increment > m_vector->size());
 
@@ -682,7 +683,7 @@ public:
                 m_index = npos;
             }
 
-        difference_type     DistanceFrom   (const iterator_t& otherItr) const
+        typename super_class::difference_type     DistanceFrom   (const typename super_class::iterator_t& otherItr) const
             {
             HASSERT (m_index != npos);
             HASSERT (otherItr.m_index != npos);
@@ -692,14 +693,14 @@ public:
             return m_index - otherItr.m_index;
             }
 
-        bool                EqualTo        (const iterator_t& otherItr) const
+        bool                EqualTo        (const typename super_class::iterator_t& otherItr) const
             {
             HASSERT (m_vector == otherItr.m_vector);
 
             return ((m_vector == otherItr.m_vector) && (m_index == otherItr.m_index));
 
             }
-        bool                LessThan       (const iterator_t&) const
+        bool                LessThan       (const typename super_class::iterator_t&) const
             {
             HASSERT (m_vector == otherItr.m_vector);
 
@@ -1163,13 +1164,13 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
 #endif
                         
         SMStoredMemoryPoolGenericVectorItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& dataStore, SMStoreDataType dataType, uint64_t smId)
-            : SMMemoryPoolGenericVectorItem(dataStore->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
+            : SMMemoryPoolGenericVectorItem<DataType>(dataStore->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
             {                                    
             m_dataStore = dataStore;            
             
             if (m_nbItems > 0)
                 {                
-                HPMBlockID blockID(m_nodeId);
+                HPMBlockID blockID = HPMBlockID(this->m_nodeId);
                 size_t nbBytesLoaded = m_dataStore->LoadBlock ((DataType*)m_data, m_nbItems, blockID);
                 m_size = nbBytesLoaded;
                 }           
@@ -1179,7 +1180,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
             {
             if (m_dirty && m_nbItems > 0)
                 {
-                HPMBlockID blockID(m_nodeId);
+                HPMBlockID blockID = HPMBlockID(m_nodeId);
                 m_dataStore->StoreBlock((DataType*)m_data, m_nbItems, blockID);                                
                 }
             }    
@@ -1199,33 +1200,33 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
                 }
 #endif
             SMStoredMemoryPoolVectorItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& dataStore, SMStoreDataType dataType, uint64_t smId)
-                : SMMemoryPoolVectorItem(dataStore->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
+                : SMMemoryPoolVectorItem<DataType>(dataStore->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
                 {                
                 m_dataStore = dataStore;
 
-                if (m_nbItems > 0)
+                if (this->m_nbItems > 0)
                     {
-                    HPMBlockID blockID(m_nodeId);
-                    size_t nbBytesLoaded = m_dataStore->LoadBlock((DataType*)m_data, m_nbItems, blockID);
-                    assert(nbBytesLoaded == sizeof(DataType) * m_nbItems);
+                    HPMBlockID blockID(this->m_nodeId);
+                    size_t nbBytesLoaded = m_dataStore->LoadBlock((DataType*)this->m_data, this->m_nbItems, blockID);
+                    assert(nbBytesLoaded == sizeof(DataType) * this->m_nbItems);
                     }
                 }
 
             virtual ~SMStoredMemoryPoolVectorItem()
                 {
-                if (m_dirty)
+                if (this->m_dirty)
                     {
-                    HPMBlockID blockID(m_nodeId);                    
-                    m_dataStore->StoreBlock((DataType*)m_data, m_nbItems, blockID);                
+                    HPMBlockID blockID(this->m_nodeId);                    
+                    m_dataStore->StoreBlock((DataType*)this->m_data, this->m_nbItems, blockID);                
                     }
                 }
 
             virtual void NotifySizeChangePoolItem(int64_t sizeDelta, int64_t nbItemDelta)
                 {               
-                HPMBlockID blockID(m_nodeId);
+                HPMBlockID blockID(this->m_nodeId);
                 m_dataStore->ModifyBlockDataCount(blockID, nbItemDelta);                
 
-                __super::NotifySizeChangePoolItem(sizeDelta, nbItemDelta);
+                SMMemoryPoolVectorItem<DataType>::NotifySizeChangePoolItem(sizeDelta, nbItemDelta);
                 }
         };
 

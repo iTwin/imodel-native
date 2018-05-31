@@ -9,14 +9,14 @@
 #include "ScalableMeshPCH.h" //precompile header, always first
 #include "ImagePPHeaders.h"
 #include "ReprojectionModel.h"
-#include <Imagepp/all/h/HGF2DDisplacement.h>
-#include <Imagepp/all/h/HGF2DIdentity.h>
-#include <Imagepp/all/h/HCPGCoordUtility.h>
+#include <ImagePP/all/h/HGF2DDisplacement.h>
+#include <ImagePP/all/h/HGF2DIdentity.h>
+#include <ImagePP/all/h/HCPGCoordUtility.h>
 #ifndef VANCOUVER_API
-#include <Imagepp/all/h/HCPGCoordLatLongModel.h>
+#include <ImagePP/all/h/HCPGCoordLatLongModel.h>
 #endif
-#include <Imagepp/all/h/HVE2DShape.h>
-#include <Imagepp/all/h/HVE2DPolygonOfSegments.h>
+#include <ImagePP/all/h/HVE2DShape.h>
+#include <ImagePP/all/h/HVE2DPolygonOfSegments.h>
 
 #include <GeoCoord\BaseGeoCoord.h>
 

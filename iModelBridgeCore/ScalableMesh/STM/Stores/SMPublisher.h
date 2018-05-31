@@ -82,7 +82,7 @@ struct SM3SMPublisher : virtual public IScalableMeshPublisher
 
         bvector<ClipRangeInfo> m_clipRanges;
         SM3SMPublishParamsPtr m_params = nullptr;
-        std::atomic<uint64_t> m_numPublishedNodes = 0;
+        std::atomic<uint64_t> m_numPublishedNodes = {0};
         SMPublishThreadPoolPtr m_publishThreadPool = nullptr;
         std::mutex m_newNodeMtx;
 

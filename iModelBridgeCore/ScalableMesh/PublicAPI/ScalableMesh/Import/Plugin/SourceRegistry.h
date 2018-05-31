@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:07:37 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -62,8 +62,9 @@ public:
     struct AutoRegister 
         : public RAIIAutoRegisterMixin<AutoRegister<CreatorT>, CreatorT, SourceRegistry, typename CreatorT::ID> 
         {
+typedef RAIIAutoRegisterMixin<AutoRegister<CreatorT>, CreatorT, SourceRegistry, typename CreatorT::ID>  super_class;
         explicit                                AutoRegister                       () {}
-        explicit                                AutoRegister                       (registry_type&                      registry) 
+        explicit                                AutoRegister                       (typename super_class::registry_type&                      registry) 
             : super_class(registry) {}
         };
 
@@ -71,9 +72,10 @@ public:
     struct PriorizedAutoRegister 
         : public RAIIPriorizedAutoRegisterMixin<AutoRegister<CreatorT>, CreatorT, SourceRegistry, typename CreatorT::ID, int> 
         {
+typedef RAIIPriorizedAutoRegisterMixin<AutoRegister<CreatorT>, CreatorT, SourceRegistry, typename CreatorT::ID, int>  super_class;
         explicit                                PriorizedAutoRegister              (int                                 priority) 
             : super_class(priority) {}
-        explicit                                PriorizedAutoRegister              (registry_type&                      registry,
+        explicit                                PriorizedAutoRegister              (typename super_class::registry_type&                      registry,
                                                                                     int                                 priority) 
             : super_class(registry, priority) {}
         };

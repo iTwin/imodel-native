@@ -497,7 +497,7 @@ static bool s_validateIs3dDataState = false;
 
 #ifdef SCALABLE_MESH_ATP
 
-static unsigned __int64 s_getNbImportedPoints = 0;
+static unsigned int64_t s_getNbImportedPoints = 0;
 static double s_getImportPointsDuration = -1;
 static double s_getLastPointBalancingDuration = -1;
 static double s_getLastMeshBalancingDuration = -1;
@@ -507,8 +507,7 @@ static double s_getLastStitchingDuration = -1;
 static double s_getLastClippingDuration = -1;
 static double s_getLastFinalStoreDuration = -1;
 
-
-unsigned __int64 IScalableMeshSourceCreator::GetNbImportedPoints()
+unsigned int64_t IScalableMeshSourceCreator::GetNbImportedPoints()
     {
     return s_getNbImportedPoints;
     }

@@ -11,7 +11,7 @@ struct IClipDefinitionDataProvider;
 
 typedef RefCountedPtr<IClipDefinitionDataProvider> IClipDefinitionDataProviderPtr;
 
-struct IClipDefinitionDataProvider abstract : virtual public RefCountedBase
+struct IClipDefinitionDataProvider: virtual public RefCountedBase
 {
 
 public:

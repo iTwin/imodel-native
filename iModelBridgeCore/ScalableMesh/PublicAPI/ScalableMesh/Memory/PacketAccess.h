@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:47:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -64,9 +64,9 @@ public:
 template <typename T>
 class ConstPacketProxyBase : public PacketProxyBase
     {
-    template <typename T>
+    template <typename T2>
     friend class                        ConstPacketProxy;
-    template <typename T>
+    template <typename T3>
     friend class                        NonConstPacketProxyBase;
 
     explicit                            ConstPacketProxyBase               (const RawPacket&    impl);
@@ -101,9 +101,9 @@ public:
 template <typename T>
 class NonConstPacketProxyBase : public ConstPacketProxyBase<T>
     {    
-    template <typename T>
+    template <typename T2>
     friend class                        ClassPacketProxy;
-    template <typename T>
+    template <typename T3>
     friend class                        PODPacketProxy;
 
     explicit                            NonConstPacketProxyBase            (RawPacket&              impl);
@@ -112,12 +112,12 @@ class NonConstPacketProxyBase : public ConstPacketProxyBase<T>
     void                                SetImpl                            (RawPacket&              impl);
 
 protected:
-    using ConstPacketProxyBase::GetImpl;
+    using ConstPacketProxyBase<T>::GetImpl;
 
     RawPacket&                          GetImpl                            ();
 
 public:
-    typedef value_type*                 iterator;
+    typedef typename ConstPacketProxyBase<T>::value_type*                 iterator;
 
     using                               ConstPacketProxyBase<T>::begin;
     using                               ConstPacketProxyBase<T>::end;
@@ -136,21 +136,27 @@ public:
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  Packet proxy for non mutating access to packets.
+* @description  Packet proxy for accessing "Plain Old Data" (POD) packets. 
 * @bsiclass                                                  Raymond.Gauthier   01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename T>
-class ConstPacketProxy : public ConstPacketProxyBase<T>
+class PODPacketProxy : public NonConstPacketProxyBase<T>
     {
+    static_assert(is_pod<T>::value, "T should be plain old data type!");
+
     friend class                        RawPacket;
-    friend class                        ClassPacketProxy<T>;
+    typedef NonConstPacketProxyBase<T>::iterator iterator;
 
 public:
-    explicit                            ConstPacketProxy                   (const Packet&           packet);
-    explicit                            ConstPacketProxy                   ();
+    explicit                            PODPacketProxy                     (Packet&                 packet);
+    explicit                            PODPacketProxy                     ();
 
-    void                                AssignTo                           (const Packet&           packet);
+    void                                AssignTo                           (Packet&                 packet);
 
+    void                                SetSize                            (size_t                  size);
+    void                                SetEnd                             (typename NonConstPacketProxyBase<T>::iterator                newEndIt);
+
+    typename ConstPacketProxyBase<T>::value_type*                         Edit                               () { return begin(); }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -173,27 +179,25 @@ public:
 
 
 /*---------------------------------------------------------------------------------**//**
-* @description  Packet proxy for accessing "Plain Old Data" (POD) packets. 
+* @description  Packet proxy for non mutating access to packets.
 * @bsiclass                                                  Raymond.Gauthier   01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename T>
-class PODPacketProxy : public NonConstPacketProxyBase<T>
+class ConstPacketProxy : public ConstPacketProxyBase<T>
     {
-    static_assert(is_pod<T>::value, "T should be plain old data type!");
-
     friend class                        RawPacket;
+    friend class                        ClassPacketProxy<T>;
 
 public:
-    explicit                            PODPacketProxy                     (Packet&                 packet);
-    explicit                            PODPacketProxy                     ();
+    explicit                            ConstPacketProxy                   (const Packet&           packet);
+    explicit                            ConstPacketProxy                   ();
 
-    void                                AssignTo                           (Packet&                 packet);
+    void                                AssignTo                           (const Packet&           packet);
 
-    void                                SetSize                            (size_t                  size);
-    void                                SetEnd                             (iterator                newEndIt);
-
-    value_type*                         Edit                               () { return begin(); }
     };
+
+
+
 
 
 #include <ScalableMesh/Memory/PacketAccess.hpp>

@@ -6,7 +6,7 @@
 |       $Date: 2012/11/14 18:21:00 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -45,7 +45,7 @@ int bcdtmMultiResolution_filterTiledXYZFile(char *xyzFileNameP,char *mrDtmFileNa
 int bcdtmMultiResolution_filteredTilePointsCompareFunction(const void *p1P,const void *p2P) ;
 
 int bcdtmMultiResolution_filterToLowestResolutionLevelDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ *indexP,FILE *mrDtmFP,BC_MRES2_DTM mrDtmHeader,long numResolutionPoints,long decimationFactor,BC_MRES2_TILE_FILE_OFFSETS *tileOffsetsP,long numTiles) ;
-int bcdtmMultiResolution_tileXYZFile( char *xyzFileNameP,__int64 tilePartitionSize,BC_MRES_FILE_TILE_OFFSETS **tileFileOffsetsPP,long *numTilesP) ;
+int bcdtmMultiResolution_tileXYZFile( char *xyzFileNameP,int64_t tilePartitionSize,BC_MRES_FILE_TILE_OFFSETS **tileFileOffsetsPP,long *numTilesP) ;
 int bcdtmMultiResolution_getRotationMatrix(double omega, double phi, double kappa, double* rotMatrixP) ;
 int bcdtmMultiResolution_getSampleCameraOri(double viewportRotMatrix[][3], int* camOriP) ;
 int bcdtmMultiResolution_getRootToViewScale(double rootToViewMatrix[][4], BC_MRES_TILE_LIMIT * tileLimitP, double* rootToViewScaleP) ;

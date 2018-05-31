@@ -3,6 +3,7 @@
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshQuadTreeQueries.h"
 #include <queue>
+#include <future>
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 bool s_civilDraping = true;
 struct SMDrapedLine;
@@ -228,7 +229,7 @@ void MeshTraversalQueue::CollectAll()
 			step.linkedNode = node;
 			if (m_nodesToLoad.count(step.linkedNode->GetNodeId()) == 0)
 			    {
-				m_nodesToLoad.insert(std::make_pair(step.linkedNode->GetNodeId(), std::async([](MeshTraversalStep& step)
+				m_nodesToLoad.insert(std::make_pair(step.linkedNode->GetNodeId(), std::async([](MeshTraversalStep step)
 				    {
 					if (step.linkedNode->ArePoints3d() || step.linkedNode->GetBcDTM() != nullptr)
 						return DTM_SUCCESS;

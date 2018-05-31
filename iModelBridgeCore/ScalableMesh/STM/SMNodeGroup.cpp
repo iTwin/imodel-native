@@ -31,23 +31,39 @@ void SMNodeGroupMasterHeader::SaveToFile(const WString pi_pOutputDirPath) const
     {
     assert(!m_oldMasterHeader.empty()); // Old master header must be set!
 
-                                        // NEEDS_WORK_SM_STREAMING : use new CloudDataSource
+#if _WIN32                                        // NEEDS_WORK_SM_STREAMING : use new CloudDataSource
     wchar_t buffer[10000];
+#else
+    char buffer[10000];
+    Utf8String outDirPath(pi_pOutputDirPath.c_str());
+#endif
     switch (m_parametersPtr->GetStrategyType())
         {
         case SMGroupGlobalParameters::StrategyType::NORMAL:
         {
+#if _WIN32
         swprintf(buffer, L"%s/MasterHeaderWith%sGroups.bin", pi_pOutputDirPath.c_str(), L"");
+#else
+        sprintf(buffer, "%s/MasterHeaderWith%sGroups.bin", outDirPath.c_str(), "");
+#endif
         break;
         }
         case SMGroupGlobalParameters::StrategyType::VIRTUAL:
         {
+#if _WIN32
         swprintf(buffer, L"%s/MasterHeaderWith%sGroups.bin", pi_pOutputDirPath.c_str(), L"Virtual");
+#else
+        sprintf(buffer, "%s/MasterHeaderWith%sGroups.bin", outDirPath.c_str(), L"Virtual");
+#endif
         break;
         }
         case SMGroupGlobalParameters::StrategyType::CESIUM:
         {
+#if _WIN32
         swprintf(buffer, L"%s/MasterHeaderWith%sGroups.bin", pi_pOutputDirPath.c_str(), L"Cesium");
+#else
+        sprintf(buffer, "%s/MasterHeaderWith%sGroups.bin", outDirPath.c_str(), L"Cesium");
+#endif
         break;
         }
         default:
@@ -112,7 +128,11 @@ void SMNodeGroupMasterHeader::SaveToFile(const WString pi_pOutputDirPath) const
     uncompressedPacket.SetDataSize(totalSize);
     WriteCompressedPacket(uncompressedPacket, compressedPacket);
 
+#if _WIN32
     std::wstring group_header_filename(buffer);
+#else
+    std::string group_header_filename(buffer);
+#endif
     BeFile file;
     if (OPEN_OR_CREATE_FILE(file, group_header_filename.c_str(), BeFileAccess::Write))
         {
@@ -244,13 +264,15 @@ StatusInt SMNodeGroup::SaveTileToCache(Json::Value & tile, uint64_t tileID)
                 {
                 assert(!tile.isMember("children"));
                 // the tile references a new tileset (group)
-                static std::atomic<uint32_t> s_currentGroupID = 0;
+                static std::atomic<uint32_t> s_currentGroupID = {0};
 
                 auto newPrefix = this->m_dataSourcePrefix;
                 newPrefix.append(BEFILENAME(GetDirectoryName, contentURL));
                 auto tilesetURL = BEFILENAME(GetFileNameAndExtension, contentURL);
                 SMNodeGroupPtr newGroup = SMNodeGroup::Create(this->m_parametersPtr, this->m_groupCachePtr, s_currentGroupID);
+#ifndef LINUX_SCALABLEMESH_BUILD
                 newGroup->SetURL(DataSourceURL(tilesetURL.c_str()));
+#endif
                 newGroup->SetDataSourcePrefix(newPrefix);
                 //newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
                 newGroup->m_tilesetRootNode = tile;
@@ -270,7 +292,7 @@ StatusInt SMNodeGroup::SaveTileToCache(Json::Value & tile, uint64_t tileID)
         }
     return this->SaveNode(tileID, &tile);
     }
-
+#ifndef LINUX_SCALABLEMESH_BUILD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -293,7 +315,7 @@ DataSource * SMNodeGroup::InitializeDataSource(std::unique_ptr<DataSource::Buffe
 
     return dataSource;
     }
-
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -307,7 +329,7 @@ StatusInt SMNodeGroup::Load()
     else
         {
         m_isLoading = true;
-
+#ifndef LINUX_SCALABLEMESH_BUILD
         if (m_parametersPtr->GetStrategyType() == SMGroupGlobalParameters::VIRTUAL)
             {
             this->LoadGroupParallel();
@@ -354,6 +376,7 @@ StatusInt SMNodeGroup::Load()
                 return ERROR;
                 }
             }
+#endif
 
         m_isLoading = false;
         m_groupCV.notify_all();
@@ -371,6 +394,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
     unique_lock<mutex> lk(m_groupMutex, std::defer_lock);
     //auto nodeHeader = this->GetNodeHeader(priorityNodeID);
     //assert(nodeHeader != nullptr);
+#ifndef LINUX_SCALABLEMESH_BUILD
     if (!lk.try_lock() || m_isLoading)
         {
         //// Someone else is loading the group
@@ -488,6 +512,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
         }
 
     // Loading completed successfully
+#endif
     m_isLoading = false;
     m_isLoaded = true;
     return SUCCESS;
@@ -536,7 +561,7 @@ void SMNodeGroup::LoadGroupParallel()
         });
     thread.detach();
     }
-
+#ifndef LINUX_SCALABLEMESH_BUILD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -564,6 +589,7 @@ void SMNodeGroup::SetURL(DataSourceURL url)
     {
     m_url = url;
     }
+#endif
 
 Json::Value* SMNodeGroup::GetSMMasterHeaderInfo()
     {
@@ -612,6 +638,7 @@ void SMNodeGroup::SetHeaderDataAtCurrentPosition(const uint64_t& nodeID, const u
     m_currentPosition += nodeHeader->size;
     }
 
+#ifndef LINUX_SCALABLEMESH_BUILD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -657,12 +684,14 @@ bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, Data
              dataSource->read(dest.get(), destSize, readSize, 0).isOK()          &&
              dataSource->close().isOK());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t SMNodeGroup::GetSingleNodeFromStore(const uint64_t & pi_pNodeID, bvector<uint8_t>& pi_pData)
     {
+#ifndef LINUX_SCALABLEMESH_BUILD
     std::unique_ptr<DataSource::Buffer[]>dest;
     DataSource::DataSize                 readSize;
 
@@ -677,6 +706,9 @@ uint64_t SMNodeGroup::GetSingleNodeFromStore(const uint64_t & pi_pNodeID, bvecto
 
     assert(readSize > 0); // A problem occured while downloading a blob
     return readSize;
+#else
+    return 0;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -883,7 +915,7 @@ SMGroupCache::Ptr SMGroupCache::Create(node_header_cache* nodeCache)
     {
     return new SMGroupCache(nodeCache);
     }
-
+#ifndef LINUX_SCALABLEMESH_BUILD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -916,4 +948,5 @@ SMGroupGlobalParameters::Ptr SMGroupGlobalParameters::Create(StrategyType strate
     {
     return new SMGroupGlobalParameters(strategy, account, session);
     }
+#endif
 
