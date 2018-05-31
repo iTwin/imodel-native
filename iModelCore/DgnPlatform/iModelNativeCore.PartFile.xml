@@ -9,9 +9,8 @@
     <!-- ======================================================================================================================================== -->
 
     <Part Name="iModelNativeCorePRG" PrgOutputDir="iModelNativeCore">
-        <SubPart PartName="iModelNativeCore"/>
-        <SubPart PartName="RunAllTests"/>
-        <SubPart PartName="__ParasiteSubParts"/>
+        <SubPart PartName="__iModelNativeCorePRGDynamicPlats"/>
+        <SubPart PartName="__iModelNativeCorePRGStaticPlats"/>
     </Part>
     
     <!--
@@ -52,6 +51,18 @@
     <!-- ======================================================================================================================================== -->
     <!-- == PRIVATE ============================================================================================================================= -->
     <!-- ======================================================================================================================================== -->
+
+    <Part Name="__iModelNativeCorePRGDynamicPlats" OnlyPlatforms="x64,winrt*">
+        <SubPart PartName="iModelNativeCore" LibType="Dynamic"/>
+        <SubPart PartName="RunAllTests" LibType="Dynamic"/>
+        <SubPart PartName="__ParasiteSubParts" LibType="Dynamic"/>
+    </Part>
+
+    <Part Name="__iModelNativeCorePRGStaticPlats" OnlyPlatforms="android*,ios*,macos*,linux*">
+        <SubPart PartName="iModelNativeCore" LibType="Static"/>
+        <SubPart PartName="RunAllTests" LibType="Static"/>
+        <SubPart PartName="__ParasiteSubParts" LibType="Static"/>
+    </Part>
 
     <!--
         These are "parasites" because they aren't strictly required for the iModelJsNodeAddon
