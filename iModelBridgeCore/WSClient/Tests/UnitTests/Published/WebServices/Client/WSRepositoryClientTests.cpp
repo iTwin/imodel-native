@@ -140,7 +140,7 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi20_SendsGetRepositoryUrl)
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
-    GetHandler().ForRequest(2, [=](HttpRequestCR request)
+    GetHandler().ForRequest(2, [=](Http::RequestCR request)
         {
         EXPECT_STRCASEEQ("https://srv.com/ws/v2.0/Repositories/foo//", request.GetUrl().c_str());
         EXPECT_STREQ("GET", request.GetMethod().c_str());
