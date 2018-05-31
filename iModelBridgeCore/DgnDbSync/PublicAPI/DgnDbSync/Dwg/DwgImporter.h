@@ -670,8 +670,27 @@ public:
         void        SetTransform (TransformCR trans) { m_geometryToPart = trans; }
         };  // SharedPartEntry
     typedef bvector<SharedPartEntry>                    T_SharedPartList;
-    typedef bpair<DwgDbObjectId, T_SharedPartList>      T_BlockPartsEntry;
-    typedef bmap<DwgDbObjectId, T_SharedPartList>       T_BlockPartsMap;
+
+    //! Cache key for a shared part collection
+    struct SharedPartKey
+        {
+    private:
+        DwgDbObjectId               m_blockId;
+        double                      m_partScale;
+    public:
+        SharedPartKey (DwgDbObjectIdCR id, double scale) : m_blockId(id), m_partScale(scale) {}
+        SharedPartKey () : m_partScale(0.0) { m_blockId.SetNull(); }
+
+        DwgDbObjectIdCR GetBlockId () const { return m_blockId; }
+        void    SetBlockId (DwgDbObjectIdCR id) { m_blockId = id; }
+        double  GetPartScale () const { return m_partScale; }
+        void    SetPartScale (double scale) { m_partScale = scale; }
+        bool    IsMirrored () const { return m_partScale < -1.0e-5; }
+        //! The left-hand operand of the key
+        bool operator < (SharedPartKey const& rho) const;
+        };  // SharedPartKey
+    typedef bpair<SharedPartKey, T_SharedPartList>      T_BlockPartsEntry;
+    typedef bmap<SharedPartKey, T_SharedPartList>       T_BlockPartsMap;
 
     typedef bpair<DwgDbObjectId, DgnElementId>          T_DwgDgnTextStyleId;
     typedef bmap<DwgDbObjectId, DgnElementId>           T_TextStyleIdMap;
