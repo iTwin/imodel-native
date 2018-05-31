@@ -1169,6 +1169,13 @@ DwgSyncInfo::DwgObjectProvenance::DwgObjectProvenance (DwgDbObjectCR obj, DwgSyn
     memset (&m_primaryHash, 0, sizeof(m_primaryHash));
     memset (&m_secondaryHash, 0, sizeof(m_secondaryHash));
 
+    // optionally single out ASM objects for the sake of performance
+    if (!sync.GetDwgImporter().GetOptions().GetSyncAsmBodyInFull() && BSISUCCESS == this->CreateAsmObjectHash(obj))
+        {
+        m_primaryHash = m_hasher.GetHashVal ();
+        return;
+        }
+
     // hash the DWG object via DxfFiler
     m_hasher.Reset ();
     DwgObjectHash::HashFiler filer(m_hasher, obj);
@@ -1235,6 +1242,78 @@ BentleyStatus   DwgSyncInfo::DwgObjectProvenance::CreateBlockHash (DwgDbObjectId
         }
 
     return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   DwgSyncInfo::DwgObjectProvenance::CreateAsmObjectHash (DwgDbObjectCR obj)
+    {
+    /*-----------------------------------------------------------------------------------
+    DxfOut from an ASM entity outputs the whole Brep data and is unnecessarily expensive.
+    Select and only hash some properties for the sake of performance.
+    -----------------------------------------------------------------------------------*/
+    auto entity = DwgDbEntity::Cast (&obj);
+    if (nullptr == entity)
+        return  BSIERROR;
+
+    auto solid3d = DwgDb3dSolid::Cast (entity);
+    auto body = DwgDbBody::Cast (entity);
+    auto region = DwgDbRegion::Cast (entity);
+    if (nullptr == solid3d && nullptr == body && nullptr == region)
+        return  BSIERROR;
+
+    DRange3d    range;
+    if (entity->GetRange(range) != DwgDbStatus::Success)
+        return  BSIERROR;
+
+    auto ecs = Transform::FromIdentity ();
+    entity->GetEcs (ecs);
+
+    auto color = entity->GetColor().GetMRGB ();
+    auto layer = entity->GetLayerId().ToUInt64 ();
+    auto material = entity->GetMaterialId().ToUInt64 ();
+    auto transparency = entity->GetTransparency().SerializeOut ();
+    bool visibility = entity->GetVisibility() == DwgDbVisibility::Visible;
+
+    // hash entity properties
+    m_hasher.Add (&range, sizeof(range));
+    m_hasher.Add (&ecs, sizeof(ecs));
+    m_hasher.Add (&color, sizeof(color));
+    m_hasher.Add (&layer, sizeof(layer));
+    m_hasher.Add (&material, sizeof(material));
+    m_hasher.Add (&transparency, sizeof(transparency));
+    m_hasher.Add (&visibility, sizeof(visibility));
+
+    // hash solid properties
+    if (nullptr != solid3d)
+        {
+        auto numChanges = solid3d->GetNumChanges ();
+        m_hasher.Add (&numChanges, sizeof(numChanges));
+        
+        DwgDb3dSolid::MassProperties    massProps;
+        if (DwgDbStatus::Success == solid3d->GetMassProperties(massProps))
+            m_hasher.Add (&massProps, sizeof(DwgDb3dSolid::MassProperties));
+
+        double area = 0.0;
+        if (DwgDbStatus::Success == solid3d->GetArea(area))
+            m_hasher.Add (&area, sizeof(area));
+        }
+    else if (nullptr != body)
+        {
+        auto numChanges = body->GetNumChanges ();
+        m_hasher.Add (&numChanges, sizeof(numChanges));
+        }
+    else if (nullptr != region)
+        {
+        auto numChanges = region->GetNumChanges ();
+        m_hasher.Add (&numChanges, sizeof(numChanges));
+        double area = 0.0;
+        if (DwgDbStatus::Success == region->GetArea(area))
+            m_hasher.Add (&area, sizeof(area));
+        }
+
+    return  BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
