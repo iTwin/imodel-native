@@ -313,7 +313,7 @@
     <Part Name="RuniModelSchemaEvolutionTests">
         <SubPart PartName="iModelSchemaEvolutionRunGTestForwards"/>
         <SubNuGetProduct NuGetProductName="iModelSchemaEvolutionTestNuget"/>
-        <!--<SubNuGetProduct NuGetProductName="iModelSchemaEvolutionTestFilesNuget"/>-->
+        <SubNuGetProduct NuGetProductName="iModelSchemaEvolutionTestFilesNuget"/>
     </Part>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
