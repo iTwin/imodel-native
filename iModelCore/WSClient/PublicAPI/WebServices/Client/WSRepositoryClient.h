@@ -31,6 +31,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 typedef std::shared_ptr<struct IWSRepositoryClient>     IWSRepositoryClientPtr;
 
+typedef AsyncResult<WSResponse, WSError>                WSResult;
 typedef AsyncResult<WSObjectsResponse, WSError>         WSObjectsResult;
 typedef AsyncResult<WSFileResponse, WSError>            WSFileResult;
 typedef AsyncResult<WSUploadResponse, WSError>          WSCreateObjectResult;
@@ -132,10 +133,20 @@ struct IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
+        //! DEPRECATED- Use SendGetFileRequest with http response body instead
         virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
+            Utf8StringCR eTag = nullptr,
+            Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSResult> SendGetFileRequest
+            (
+            ObjectIdCR objectId,
+            Http::HttpBodyPtr responseBodyOut,
             Utf8StringCR eTag = nullptr,
             Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
@@ -516,10 +527,20 @@ struct WSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
+        //! DEPRECATED- Use SendGetFileRequest with http response body instead
         WSCLIENT_EXPORT AsyncTaskPtr<WSFileResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
+            Utf8StringCR eTag = nullptr,
+            Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        WSCLIENT_EXPORT AsyncTaskPtr<WSResult> SendGetFileRequest
+            (
+            ObjectIdCR objectId,
+            Http::HttpBodyPtr responseBodyOut,
             Utf8StringCR eTag = nullptr,
             Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr

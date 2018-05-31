@@ -154,6 +154,18 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
+        virtual AsyncTaskPtr<WSResult> SendGetFileRequest
+            (
+            ObjectIdCR objectId,
+            HttpBodyPtr bodyResponseOut,
+            Utf8StringCR eTag = nullptr,
+            Request::ProgressCallbackCR downloadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSResult);
+            }
+
         virtual AsyncTaskPtr<WSObjectsResult> SendGetSchemasRequest
             (
             Utf8StringCR eTag = nullptr,

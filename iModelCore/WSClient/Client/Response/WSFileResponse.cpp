@@ -2,7 +2,7 @@
 |
 |     $Source: Client/Response/WSFileResponse.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -13,8 +13,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSFileResponse::WSFileResponse() :
 m_filePath(),
-m_isModified(false),
-m_eTag()
+WSResponse()
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -22,17 +21,8 @@ m_eTag()
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSFileResponse::WSFileResponse(BeFileName filePath, HttpStatus status, Utf8String eTag) :
 m_filePath(filePath),
-m_isModified(HttpStatus::OK == status),
-m_eTag(eTag)
+WSResponse(status, eTag)
     {}
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool WSFileResponse::IsModified() const
-    {
-    return m_isModified;
-    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
@@ -40,12 +30,4 @@ bool WSFileResponse::IsModified() const
 BeFileNameCR WSFileResponse::GetFilePath() const
     {
     return m_filePath;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR WSFileResponse::GetETag() const
-    {
-    return m_eTag;
     }
