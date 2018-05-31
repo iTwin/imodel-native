@@ -31,6 +31,7 @@ def main():
             os.remove(dst)
             copyfile(os.path.join(split, "iModelSchemaEvolution.exe"), dst)
             rmtree(os.path.join(nugetDstPath, name, "run", "SeedData"), ignore_errors=True)
-            copytree(dataDir, os.path.join(nugetDstPath, name, "run", "SeedData"))
+            if os.path.exists(dataDir):
+                copytree(dataDir, os.path.join(nugetDstPath, name, "run", "SeedData"))
 if __name__ == "__main__":
     main()
