@@ -1158,6 +1158,7 @@ DwgSyncInfo::DwgObjectProvenance::DwgObjectProvenance(StatementP sql)
     else
         memset (&m_secondaryHash, 0, sizeof(m_secondaryHash));
     m_idPolicy = sql->IsColumnNull(3) ? StableIdPolicy::ByHash : StableIdPolicy::ById;
+    m_syncAsmBodyInFull = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1170,7 +1171,9 @@ DwgSyncInfo::DwgObjectProvenance::DwgObjectProvenance (DwgDbObjectCR obj, DwgSyn
     memset (&m_secondaryHash, 0, sizeof(m_secondaryHash));
 
     // optionally single out ASM objects for the sake of performance
-    if (!sync.GetDwgImporter().GetOptions().GetSyncAsmBodyInFull() && BSISUCCESS == this->CreateAsmObjectHash(obj))
+    m_syncAsmBodyInFull = sync.GetDwgImporter().GetOptions().GetSyncAsmBodyInFull ();
+
+    if (!m_syncAsmBodyInFull && BSISUCCESS == this->CreateAsmObjectHash(obj))
         {
         m_primaryHash = m_hasher.GetHashVal ();
         return;
@@ -1228,6 +1231,10 @@ BentleyStatus   DwgSyncInfo::DwgObjectProvenance::CreateBlockHash (DwgDbObjectId
 
         DwgDbObjectP    child = DwgDbObject::Cast(entity.get());
         if (nullptr == child)
+            continue;
+
+        // optionally single out ASM objects for the sake of performance
+        if (!m_syncAsmBodyInFull && BSISUCCESS == this->CreateAsmObjectHash(*child))
             continue;
 
         // hash current child entity itself and add to output hasher:

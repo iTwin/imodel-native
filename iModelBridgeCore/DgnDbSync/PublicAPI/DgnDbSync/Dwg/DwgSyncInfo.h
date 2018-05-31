@@ -452,7 +452,8 @@ struct DwgSyncInfo
     struct DwgObjectProvenance
         {
     private:
-        BentleyApi::MD5   m_hasher;
+        BentleyApi::MD5 m_hasher;
+        bool            m_syncAsmBodyInFull;
 
     public:
         StableIdPolicy  m_idPolicy;
