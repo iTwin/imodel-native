@@ -5,7 +5,6 @@
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
-from __future__ import print_function
 import sys
 import os
 import subprocess
@@ -28,11 +27,9 @@ def main():
     for subdir in os.listdir(oldDatasetPath):
         dirs = os.listdir(os.path.join(oldDatasetPath, subdir))
         if currentVersions[i] in dirs:
-            return  
-    
-    import sys
-
-    print("No changes, publishing datasets not necessary", file=sys.stderr)
+            sys.exit(0)
+        i = i + 1 
+    sys.exit(1)
 
 
 if __name__ == "__main__":
