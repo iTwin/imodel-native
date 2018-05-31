@@ -1066,6 +1066,66 @@ DWGDB_DEFINE_OBJECTPTR (Face)
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
+class DwgDb3dSolid : public DWGDB_EXTENDCLASS(3dSolid)
+    {
+public:
+    //! Mass properties
+    struct MassProperties
+        {
+    private:
+        double      m_volume;
+        DPoint3d    m_centroid;
+        double      m_inertiaMoments[3];
+        double      m_inertiaProducts[3];
+        double      m_principleMoments[3];
+        DVec3d      m_principleAxes[3];
+        double      m_gyrationRadii[3];
+        DRange3d    m_extents;
+    public:
+        DWGDB_EXPORT MassProperties ();
+        double  GetVolume () const { return m_volume; }
+        void    SetVolume (double v) { m_volume = v; }
+        DPoint3dCR GetCentroid () const { return m_centroid; }
+        void    SetCentroid (DPoint3dCR c) { m_centroid = c; }
+        void    GetInertiaMoments (double out[3]) const { ::memcpy(out, m_inertiaMoments, sizeof(out)); }
+        void    SetInertiaMoments (double in[3]) { ::memcpy(m_inertiaMoments, in, sizeof(m_inertiaMoments)); }
+        void    GetInertiaProducts (double out[3]) const { ::memcpy(out, m_inertiaProducts, sizeof(out)); }
+        void    SetInertiaProducts (double in[3]) { ::memcpy(m_inertiaProducts, in, sizeof(m_inertiaProducts)); }
+        void    GetPrincipleMoments (double out[3]) const { ::memcpy(out, m_principleMoments, sizeof(out)); }
+        void    SetPrincipleMoments (double in[3]) { ::memcpy(m_principleMoments, in, sizeof(m_principleMoments)); }
+        void    GetPrincipleAxes (DVec3d out[3]) const { ::memcpy(out, m_principleAxes, sizeof(out)); }
+        void    SetPrincipleAxes (DVec3d const in[3]) { ::memcpy(m_principleAxes, in, sizeof(m_principleAxes)); }
+        void    GetGyrationRadii (double out[3]) const { ::memcpy(out, m_gyrationRadii, sizeof(out)); }
+        void    SetGyrationRadii (double in[3]) { ::memcpy(m_gyrationRadii, in, sizeof(m_gyrationRadii)); }
+        DRange3dCR GetExtents () const { return m_extents; }
+        void    SetExtents (DRange3dR r) { m_extents = r; }
+        };  // MassProperties
+
+    DWGDB_DECLARE_COMMON_MEMBERS(3dSolid)
+    DWGDB_DECLARE_ENTITY_MEMBERS()
+
+    DWGDB_EXPORT DwgDbStatus    GetArea (double& area) const;
+    DWGDB_EXPORT DwgDbStatus    GetMassProperties (MassProperties& massProps) const;
+    DWGDB_EXPORT uint32_t       GetNumChanges () const;
+    };  // DwgDb3dSolid
+DWGDB_DEFINE_OBJECTPTR (3dSolid)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbBody : public DWGDB_EXTENDCLASS(Body)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(Body)
+    DWGDB_DECLARE_ENTITY_MEMBERS()
+
+    DWGDB_EXPORT uint32_t   GetNumChanges () const;
+    };  // DwgDbBody
+DWGDB_DEFINE_OBJECTPTR (Body)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
 class DwgDbRegion : public DWGDB_EXTENDCLASS(Region)
     {
 public:
@@ -1073,6 +1133,8 @@ public:
     DWGDB_DECLARE_ENTITY_MEMBERS()
 
     DWGDB_EXPORT DVec3d     GetNormal () const;
+    DWGDB_EXPORT uint32_t   GetNumChanges () const;
+    DWGDB_EXPORT DwgDbStatus GetArea (double& area) const;
     };  // DwgDbRegion
 DWGDB_DEFINE_OBJECTPTR (Region)
 

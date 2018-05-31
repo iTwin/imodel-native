@@ -452,7 +452,8 @@ struct DwgSyncInfo
     struct DwgObjectProvenance
         {
     private:
-        BentleyApi::MD5   m_hasher;
+        BentleyApi::MD5 m_hasher;
+        bool            m_syncAsmBodyInFull;
 
     public:
         StableIdPolicy  m_idPolicy;
@@ -463,6 +464,7 @@ struct DwgSyncInfo
         DwgObjectProvenance (DwgDbObjectCR, DwgSyncInfo&, StableIdPolicy, bool hash2nd = false);
         DwgObjectProvenance () {}
         BentleyStatus  CreateBlockHash (DwgDbObjectIdCR blockId);
+        BentleyStatus  CreateAsmObjectHash (DwgDbObjectCR obj);
         bool HasSecondaryHash () const { return !m_secondaryHash.IsNull(); }
         bool IsSame (DwgObjectProvenance const& other, bool check2nd = false) const { return m_primaryHash.IsSame(other.m_primaryHash) && (!check2nd || m_secondaryHash.IsSame(other.m_secondaryHash)); }
         DwgObjectHash const& GetPrimaryHash () const { return m_primaryHash; }
