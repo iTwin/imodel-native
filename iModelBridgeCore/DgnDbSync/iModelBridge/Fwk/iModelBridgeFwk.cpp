@@ -198,7 +198,8 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-logging-config-file=  (optional)  The name of the logging configuration file.\n"
         L"--fwk-argsJson=             (optional)  Additional arguments in JSON format.\n"
         L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish.\n"
-        L"--fwk-inputFileUri=         (optional)  The uri to fetch the input file. This and associated workspace will be downloaded and stored in the location specified by --fwk-input and --fwk-workspaceDir=\n"
+        L"--fwk-inputFileUrn=         (optional)  The urn to fetch the input file. This and associated workspace will be downloaded and stored in the location specified by --fwk-input and --fwk-workspaceDir=\n"
+                                                  "eg.pw://server:datasource/Documents/D{c6cbe438-e200-4567-a98c-dfa55aba33be}\n"
         L"--fwk-workspaceDir=         (optional)  Directory to cache workspace files.\n"
         L"--fwk-dms-library=          (optional)  The full path to the dms library. Use this for direct Dms support from the framework.\n"
         );
@@ -358,7 +359,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             BeFileName::FixPathName (m_inputFileName, getArgValueW(argv[iArg]).c_str());
             continue;
             }
-
+        
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-input-sheet="))
             {
             BeFileName fn;
@@ -425,7 +426,17 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             m_dmsLibraryName.SetName(getArgValueW(argv[iArg]));
             continue;
             }
-
+        //--fwk-inputFileUri=
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-inputFileUrn="))
+            {
+            if (!m_inputFileUrn.empty())
+                {
+                fwprintf(stderr, L"The --fwk-input= option may appear only once.\n");
+                return BSIERROR;
+                }
+            m_inputFileUrn =  getArgValueW(argv[iArg]);
+            continue;
+            }
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized fwk argument\n", argv[iArg]);
         return BSIERROR;
@@ -1813,7 +1824,7 @@ BentleyStatus   iModelBridgeFwk::LoadDmsLibrary()
         return BentleyStatus::ERROR;
         }
     
-    if (!m_dmsSupport->_InitializeSession(m_jobEnvArgs.inputFileUri))
+    if (!m_dmsSupport->_InitializeSession(m_jobEnvArgs.m_inputFileUrn))
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
@@ -1867,7 +1878,7 @@ BentleyStatus   iModelBridgeFwk::StageWorkspace()
     {
     BentleyStatus status = BentleyStatus::SUCCESS;
     m_dmsSupport->_Initialize();
-    m_dmsSupport->_FetchWorkspace(m_jobEnvArgs.inputFileUri, m_jobEnvArgs.m_workspaceDir);
+    m_dmsSupport->_FetchWorkspace(m_jobEnvArgs.m_inputFileUrn, m_jobEnvArgs.m_workspaceDir);
     m_dmsSupport->_UnInitialize();
     return status;
     }

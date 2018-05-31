@@ -128,7 +128,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName m_fwkAssetsDir;
         Json::Value m_argsJson; // additional arguments, in JSON format. Some of these may be intended for the bridge.
         bvector<WString> m_bargs;
-        WString     inputFileUri;
+        WString     m_inputFileUrn;
         IMODEL_BRIDGE_FWK_EXPORT JobDefArgs();
 
         //! Parse the command-line arguments required by the iModelBridgeFwk itself, and return a vector of pointers to the remaining
