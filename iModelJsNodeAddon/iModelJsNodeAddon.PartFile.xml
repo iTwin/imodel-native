@@ -25,6 +25,7 @@
 
   <Product Name="iModelJsNodeAddon-Darwin">
     <SubPart PartName="iModelJsNodeAddonLib-Darwin" LibType="Static" />
+    <SubPart PartName="iModelJsNodeAddonLibElectron-Darwin" LibType="Static" />
     <Directories DirectoryListName="iModelJsNodeAddonDeliveryList" />
   </Product>
 
@@ -122,6 +123,20 @@
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8">
         Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
+      </Files>
+      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
+        Delivery/PresentationRules/*.xml
+      </Files>	  
+    </Bindings>
+  </Part>
+
+  <Part Name="iModelJsNodeAddonLibElectron-Darwin" OnlyPlatforms="MacOSX64" ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=electron-addon-api" >
+    <SubPart PartName="electron-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
+    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
+    <SubPart PartName="iModelJsNodeAddonSqlang"/>
+    <Bindings>
+      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="e_2">
+        Delivery/iModelJsNodeAddon/electron-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
         Delivery/PresentationRules/*.xml
