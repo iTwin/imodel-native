@@ -1,5 +1,5 @@
 #pragma once
-#if WINDOWS
+#if _WIN32
 #ifdef __CLOUD_DATA_SOURCE_BUILD__ 
     #define CLOUD_EXPORT __declspec(dllexport)
 #else

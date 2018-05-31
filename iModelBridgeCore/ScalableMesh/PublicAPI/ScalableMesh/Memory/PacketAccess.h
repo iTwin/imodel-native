@@ -145,9 +145,9 @@ class PODPacketProxy : public NonConstPacketProxyBase<T>
     static_assert(is_pod<T>::value, "T should be plain old data type!");
 
     friend class                        RawPacket;
-    typedef NonConstPacketProxyBase<T>::iterator iterator;
 
 public:
+    typedef NonConstPacketProxyBase<T>::iterator iterator;
     explicit                            PODPacketProxy                     (Packet&                 packet);
     explicit                            PODPacketProxy                     ();
 

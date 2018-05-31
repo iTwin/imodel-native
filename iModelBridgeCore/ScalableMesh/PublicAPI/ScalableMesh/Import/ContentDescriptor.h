@@ -325,7 +325,7 @@ bool                                            operator<                       
 
 
 
-//#include <ScalableMesh/Import/ContentDescriptor.hpp>
+#include <ScalableMesh/Import/ContentDescriptor.hpp>
 
 
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE

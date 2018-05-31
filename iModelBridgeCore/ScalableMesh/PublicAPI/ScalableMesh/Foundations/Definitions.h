@@ -205,8 +205,10 @@ template <> struct is_pod<short> {enum {value = 1};};
 template <> struct is_pod<unsigned short> {enum {value = 1};};
 template <> struct is_pod<int> {enum {value = 1};};
 template <> struct is_pod<unsigned int> {enum {value = 1};};
+#ifndef _WIN32
 template <> struct is_pod<int64_t> {enum {value = 1};};
 template <> struct is_pod<unsigned int64_t> {enum {value = 1};};
+#endif
 template <> struct is_pod<long> {enum {value = 1};};
 template <> struct is_pod<unsigned long> {enum {value = 1};};
 template <> struct is_pod<float> {enum {value = 1};};

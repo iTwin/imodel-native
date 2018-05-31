@@ -1369,8 +1369,9 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DP
     return false;
     }
 
-#if 0
+
 size_t s_nGetDTMs=0;
+#if 0
 size_t s_nMissedDTMs=0;
 
 int bcdtmObject_triangulateStmTrianglesDtmObjectOld
