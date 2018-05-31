@@ -1106,6 +1106,9 @@ ISubEntityPtr BRepUtil::ClosestSubEntity(IBRepEntityCR entity, DPoint3dCR testPt
 ISubEntityPtr BRepUtil::ClosestFace(IBRepEntityCR entity, DPoint3dCR testPt, DVec3dCP preferredDir)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
+    if (IBRepEntity::EntityType::Wire == entity.GetEntityType())
+        return nullptr;
+
     ISubEntityPtr closeEntity = BRepUtil::ClosestSubEntity(entity, testPt);
 
     if (!closeEntity.IsValid())

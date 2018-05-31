@@ -51,7 +51,7 @@ bool EvaluateInterior()
 
     // NOTE: Nearest snap tracks surface when edge not within locate aperture...
     bool        interiorPt = (HitGeomType::Point != m_hitGeomType && SnapMode::Nearest == m_snapMode && m_hitDistanceView > m_snapAperture);
-    DPoint3d    localPoint = interiorPt ? m_hitClosePtLocal : m_hitCurveDetail.point;
+    DPoint3d    localPoint = interiorPt ? m_hitClosePtLocal : m_hitCurveDetail.point; // NOTE: m_hitClosePtLocal is only exact when using PickContext...
 
     switch (m_hitGeom->GetGeometryType())
         {
@@ -70,32 +70,77 @@ bool EvaluateInterior()
             if (CurveVector::InOutClassification::INOUT_In != result && CurveVector::InOutClassification::INOUT_On != result)
                 return false;
 
-            m_hitCurveDetail.point = solidDetail.GetXYZ();
+            if (interiorPt)
+                m_hitCurveDetail.point = solidDetail.GetXYZ();
             m_hitNormalLocal.NormalizedCrossProduct(solidDetail.GetUDirection(), solidDetail.GetVDirection());
             break;
             }
 
         case GeometricPrimitive::GeometryType::SolidPrimitive:
             {
-#if defined (NEEDSWORK) // Get best face like BRepEntity does...
+            if (HitGeomType::None != m_hitGeomType) // Don't need to find "best" face for view direction if hatch line/arc center hit...
+                {
+                SolidLocationDetail solidDetail;
+
+                if (!m_hitGeom->GetAsISolidPrimitive()->ClosestPoint(localPoint, solidDetail))
+                    return false;
+
+                DVec3d    uDir, vDir;
+                DPoint3d  point;
+
+                if (!m_hitGeom->GetAsISolidPrimitive()->TryUVFractionToXYZ(solidDetail.GetFaceIndices(), solidDetail.GetU(), solidDetail.GetV(), point, uDir, vDir))
+                    return false;
+
+#if defined (NOT_NOW_DEBUG)
+                printf("\n>>> ClosestPoint/TryUVFractionToXYZ: %d - %d - %d\n", (int) solidDetail.GetFaceIndices().Index0(), (int) solidDetail.GetFaceIndices().Index1(), (int) solidDetail.GetFaceIndices().Index2());
+                if (!DPoint3dOps::AlmostEqual(solidDetail.GetXYZ(), point, 1.0e-3))
+                    printf("(BAD)\n");
+
+                DRay3d boresite = GetBoresite(localPoint, m_hitLocalToView.M1);
+                bvector<SolidLocationDetail> intersectLocationDetail;
+
+                m_hitGeom->GetAsISolidPrimitive()->AddRayIntersections(intersectLocationDetail, boresite);
+
+                if (!intersectLocationDetail.empty())
+                    {
+                    DVec3d    uDir2, vDir2;
+                    DPoint3d  point2;
+
+                    for (SolidLocationDetail& rayDetail : intersectLocationDetail)
+                        {
+                        if (!rayDetail.GetFaceIndices().Is(solidDetail.GetFaceIndices().Index0(), solidDetail.GetFaceIndices().Index1(), solidDetail.GetFaceIndices().Index2()))
+                            continue;
+
+                        printf("\n>>> AddRayIntersections/TryUVFractionToXYZ: %d - %d - %d\n", (int) rayDetail.GetFaceIndices().Index0(), (int) rayDetail.GetFaceIndices().Index1(), (int) rayDetail.GetFaceIndices().Index2());
+                        if (!m_hitGeom->GetAsISolidPrimitive()->TryUVFractionToXYZ(rayDetail.GetFaceIndices(), rayDetail.GetU(), rayDetail.GetV(), point2, uDir2, vDir2))
+                            printf("(BAD)\n");
+
+                        if (!DPoint3dOps::AlmostEqual(rayDetail.GetXYZ(), point2, 1.0e-3))
+                            printf("(BAD)\n");
+                        }
+                    }
+#endif
+
+                if (interiorPt)
+                    m_hitCurveDetail.point = point;
+                m_hitNormalLocal.NormalizedCrossProduct(uDir, vDir);
+                break;
+                }
+
             SolidLocationDetail solidDetail;
 
-            if (!m_hitGeom->GetAsISolidPrimitive()->ClosestPoint(localPoint, solidDetail))
+            if (!m_hitGeom->GetAsISolidPrimitive()->ClosestPoint(m_hitClosePtLocal, solidDetail)) // Prefer face identified by original hit location...
                 return false;
 
-            DVec3d    uDir, vDir;
-            DPoint3d  point;
+            // NOTE: U/V directions don't ensure outward normals, so instead of trying to compare normals, we'll just look for a different face at point closer to eye...
+            DRay3d boresite = GetBoresite(localPoint, m_hitLocalToView.M1);
+            DPoint3d testPt;
+            SolidLocationDetail offsetDetail;
+                    
+            testPt.SumOf(solidDetail.GetXYZ(), boresite.direction, -1.0e-3);
 
-            if (!m_hitGeom->GetAsISolidPrimitive()->TryUVFractionToXYZ(solidDetail.GetFaceIndices(), solidDetail.GetU(), solidDetail.GetV(), point, uDir, vDir))
-                return false;
-
-            m_hitCurveDetail.point = point;
-            m_hitNormalLocal.NormalizedCrossProduct(uDir, vDir);
-#else
-            SolidLocationDetail solidDetail;
-
-            if (!m_hitGeom->GetAsISolidPrimitive()->ClosestPoint(m_hitClosePtLocal, solidDetail)) // Prefer face identified at original hit location...
-                return false;
+            if (m_hitGeom->GetAsISolidPrimitive()->ClosestPoint(testPt, offsetDetail) && !offsetDetail.GetFaceIndices().Is(solidDetail.GetFaceIndices().Index0(), solidDetail.GetFaceIndices().Index1(), solidDetail.GetFaceIndices().Index2()))
+                solidDetail = offsetDetail;
 
             IGeometryPtr faceGeom = m_hitGeom->GetAsISolidPrimitive()->GetFace(solidDetail.GetFaceIndices());
 
@@ -106,14 +151,13 @@ bool EvaluateInterior()
                 {
                 case IGeometry::GeometryType::CurveVector:
                     {
-                    DRay3d boresite = GetBoresite(localPoint, m_hitLocalToView.M1);
-
                     CurveVector::InOutClassification result = faceGeom->GetAsCurveVector()->RayPierceInOnOut(boresite, solidDetail);
 
                     if (CurveVector::InOutClassification::INOUT_In != result && CurveVector::InOutClassification::INOUT_On != result)
                         return false;
 
-                    m_hitCurveDetail.point = solidDetail.GetXYZ();
+                    if (interiorPt)
+                        m_hitCurveDetail.point = solidDetail.GetXYZ();
                     m_hitNormalLocal.NormalizedCrossProduct(solidDetail.GetUDirection(), solidDetail.GetVDirection());
                     break;
                     }
@@ -129,7 +173,8 @@ bool EvaluateInterior()
                     if (!faceGeom->GetAsISolidPrimitive()->TryUVFractionToXYZ(solidDetail.GetFaceIndices(), solidDetail.GetU(), solidDetail.GetV(), point, uDir, vDir))
                         return false;
 
-                    m_hitCurveDetail.point = point;
+                    if (interiorPt)
+                        m_hitCurveDetail.point = point;
                     m_hitNormalLocal.NormalizedCrossProduct(uDir, vDir);
                     break;
                     }
@@ -142,7 +187,8 @@ bool EvaluateInterior()
 
                     faceGeom->GetAsMSBsplineSurface()->ClosestPoint(surfacePoint, surfaceUV, localPoint);
 
-                    m_hitCurveDetail.point = surfacePoint;
+                    if (interiorPt)
+                        m_hitCurveDetail.point = surfacePoint;
                     faceGeom->GetAsMSBsplineSurface()->EvaluateAllPartials(surfacePoint, uDir, vDir, dPdUU, dPdVV, dPdUV, m_hitNormalLocal, surfaceUV.x, surfaceUV.y);
                     m_hitNormalLocal.Normalize();
                     break;
@@ -151,7 +197,6 @@ bool EvaluateInterior()
                 default:
                     return false;
                 }
-#endif
             break;
             }
 
@@ -163,7 +208,8 @@ bool EvaluateInterior()
 
             m_hitGeom->GetAsMSBsplineSurface()->ClosestPoint(surfacePoint, surfaceUV, localPoint);
 
-            m_hitCurveDetail.point = surfacePoint;
+            if (interiorPt)
+                m_hitCurveDetail.point = surfacePoint;
             m_hitGeom->GetAsMSBsplineSurface()->EvaluateAllPartials(surfacePoint, uDir, vDir, dPdUU, dPdVV, dPdUV, m_hitNormalLocal, surfaceUV.x, surfaceUV.y);
             m_hitNormalLocal.Normalize();
             break;
@@ -176,19 +222,25 @@ bool EvaluateInterior()
 
             visitor->SetNumWrap(1);
 
-            for (; visitor->AdvanceToNextFace();) // NEEDSWORK: Get best facet like BRepEntity does...
+            for (; visitor->AdvanceToNextFace();)
                 {
-                DPoint3d thisFacePoint;
+                DPoint3d thisPoint;
 
-                if (!visitor->TryFindCloseFacetPoint(localPoint, 1.0e-5, thisFacePoint))
+                if (!visitor->TryFindCloseFacetPoint(localPoint, 1.0e-5, thisPoint))
                     continue;
 
                 FacetLocationDetail thisDetail;
 
-                if (visitor->LoadVertexData(thisDetail, 0) && thisDetail.TryGetNormal(m_hitNormalLocal))
-                    m_hitNormalLocal.Normalize();
+                if (!visitor->LoadVertexData(thisDetail, 0))
+                    continue;
 
-                m_hitCurveDetail.point = thisFacePoint;
+                if (interiorPt)
+                    m_hitCurveDetail.point = thisPoint;
+
+                DVec3d thisNormal;
+
+                if (thisDetail.TryGetNormal(thisNormal))
+                    m_hitNormalLocal.Normalize(thisNormal);
                 found = true;
                 break;
                 }
@@ -201,9 +253,10 @@ bool EvaluateInterior()
 #if defined (BENTLEYCONFIG_PARASOLID)
         case GeometricPrimitive::GeometryType::BRepEntity:
             {
-            DRay3d         boresite = GetBoresite(m_hitClosePtLocal, m_hitLocalToView.M1); boresite.direction.Negate();
+            DRay3d         boresite = GetBoresite(m_hitClosePtLocal, m_hitLocalToView.M1);
+            DVec3d         viewZ = DVec3d::FromScale(boresite.direction, -1.0);
             IBRepEntityCR  entity = *m_hitGeom->GetAsIBRepEntity();
-            ISubEntityPtr  closeEntity = BRepUtil::ClosestFace(entity, m_hitClosePtLocal, &boresite.direction); // Prefer face identified at original hit location...
+            ISubEntityPtr  closeEntity = BRepUtil::ClosestFace(entity, m_hitClosePtLocal, &viewZ); // Prefer face identified by original hit location...
 
             if (!closeEntity.IsValid())
                 return false;
@@ -215,7 +268,8 @@ bool EvaluateInterior()
             if (!BRepUtil::ClosestPointToFace(*closeEntity, localPoint, point, param) || SUCCESS != BRepUtil::EvaluateFace(*closeEntity, point, normal, uDir, vDir, param))
                 return false;
 
-            m_hitCurveDetail.point = point;
+            if (interiorPt)
+                m_hitCurveDetail.point = point;
             m_hitNormalLocal = normal;
             break;
             }
@@ -473,12 +527,13 @@ void SimplifyHitDetail()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UpdateIfCloser(CurveLocationDetailCR curveDetail)
+bool UpdateIfCloser(CurveLocationDetailCR curveDetail, HitGeomType hitGeomType)
     {
     if (nullptr == m_hitCurveDetail.curve || curveDetail.a < m_hitCurveDetail.a)
         {
         m_hitCurveDerived = const_cast<ICurvePrimitiveP>(curveDetail.curve); // Make sure m_hitCurveDetail.curve remains valid...
         m_hitCurveDetail  = curveDetail;
+        m_hitGeomType     = hitGeomType;
 
         return true;
         }
@@ -542,27 +597,27 @@ DRay3d GetBoresite(DPoint3dCR localPoint, DMatrix4dCR viewToLocal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessICurvePrimitive(ICurvePrimitiveCR curve, DPoint3dCR localPoint)
+bool ProcessICurvePrimitive(ICurvePrimitiveCR curve, DPoint3dCR localPoint, HitGeomType hitGeomType)
     {
     CurveLocationDetail curveDetail;
 
     if (!curve.ClosestPointBounded(localPoint, curveDetail))
         return false;
 
-    return UpdateIfCloser(curveDetail);
+    return UpdateIfCloser(curveDetail, hitGeomType);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessCurveVector(CurveVectorCR curves, DPoint3dCR localPoint)
+bool ProcessCurveVector(CurveVectorCR curves, DPoint3dCR localPoint, HitGeomType hitGeomType)
     {
     CurveLocationDetail curveDetail;
 
     if (!curves.ClosestPointBounded(localPoint, curveDetail))
         return false;
 
-    return UpdateIfCloser(curveDetail);
+    return UpdateIfCloser(curveDetail, hitGeomType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -576,7 +631,7 @@ bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint)
         {
         CurveVectorPtr curves = surface.GetUnstructuredBoundaryCurves(0.0, true, true);
 
-        if (curves.IsValid() && ProcessCurveVector(*curves, localPoint))
+        if (curves.IsValid() && ProcessCurveVector(*curves, localPoint, HitGeomType::None))
             foundCurve = true;
 
         if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -613,7 +668,7 @@ bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint)
             {
             ICurvePrimitivePtr  curve = ICurvePrimitive::CreateBsplineCurveSwapFromSource(*isoCurveU);
 
-            if (ProcessICurvePrimitive(*curve, localPoint))
+            if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
                 foundCurve = true;
 
             if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -631,7 +686,7 @@ bool ProcessBsplineSurface(MSBsplineSurfaceCR surface, DPoint3dCR localPoint)
             {
             ICurvePrimitivePtr  curve = ICurvePrimitive::CreateBsplineCurveSwapFromSource(*isoCurveV);
 
-            if (ProcessICurvePrimitive(*curve, localPoint))
+            if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
                 foundCurve = true;
 
             if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -667,7 +722,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 double              uFraction = (1.0 / divisorU) * uRule;
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(detail.UFractionToVSectionDEllipse3d(uFraction));
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
                     foundCurve = true;
                 }
 
@@ -683,9 +738,14 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 if (fullTorus && DoubleOps::AlmostEqual(vFraction, 1.0))
                     continue; // Don't duplicate first arc for a full torus...
 
+                HitGeomType hitGeomType = HitGeomType::Surface;
+
+                if (!fullTorus && (DoubleOps::AlmostEqual(vFraction, 0.0) || DoubleOps::AlmostEqual(vFraction, 1.0)))
+                    hitGeomType = HitGeomType::None;
+
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction));
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, hitGeomType))
                     foundCurve = true;
                 }
 
@@ -705,7 +765,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 {
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(ellipse1);
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
                     foundCurve = true;
                 }
 
@@ -715,7 +775,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 {
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(ellipse2);
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
                     foundCurve = true;
                 }
 
@@ -731,7 +791,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
                     foundCurve = true;
                 }
             
@@ -750,7 +810,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
                     ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(silhouette[iSilhouette]);
 
-                    if (ProcessICurvePrimitive(*curve, localPoint))
+                    if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
                         foundCurve = true;
                     }
                 }
@@ -772,7 +832,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 double              uFraction = (1.0 / divisorU) * uRule;
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(detail.UFractionToVSectionDEllipse3d(uFraction));
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
                     foundCurve = true;
                 }
 
@@ -794,7 +854,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(detail.VFractionToUSectionDEllipse3d(vFraction));
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
                     foundCurve = true;
                 }
 
@@ -808,12 +868,12 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
             if (!primitive.TryGetDgnExtrusionDetail(detail))
                 return false;
 
-            if (ProcessCurveVector(*detail.m_baseCurve, localPoint))
+            if (ProcessCurveVector(*detail.m_baseCurve, localPoint, HitGeomType::None))
                 foundCurve = true;
 
             CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone(Transform::From(detail.m_extrusionVector));
 
-            if (tmpCurve.IsValid() && ProcessCurveVector(*tmpCurve, localPoint))
+            if (tmpCurve.IsValid() && ProcessCurveVector(*tmpCurve, localPoint, HitGeomType::None))
                 foundCurve = true;
 
             if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -827,7 +887,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 {
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -843,7 +903,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 DSegment3d          segment = DSegment3d::FromOriginAndDirection(pt, detail.m_extrusionVector);
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -862,7 +922,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
             if (!Angle::IsFullCircle(detail.m_sweepAngle))
                 {
-                if (ProcessCurveVector(*detail.m_baseCurve, localPoint))
+                if (ProcessCurveVector(*detail.m_baseCurve, localPoint, HitGeomType::None))
                     foundCurve = true;
 
                 DPoint3d  axisPoint;
@@ -873,7 +933,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
                 CurveVectorPtr tmpCurve = detail.m_baseCurve->Clone(transform);
 
-                if (tmpCurve.IsValid() && ProcessCurveVector(*tmpCurve, localPoint))
+                if (tmpCurve.IsValid() && ProcessCurveVector(*tmpCurve, localPoint, HitGeomType::None))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -888,7 +948,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 {
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(arc);
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -918,7 +978,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateArc(ellipse);
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -939,7 +999,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
                 CurveVectorPtr  curve = detail.VFractionToProfile(vFraction);
 
-                if (curve.IsValid() && ProcessCurveVector(*curve, localPoint))
+                if (curve.IsValid() && ProcessCurveVector(*curve, localPoint, HitGeomType::Surface))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -958,7 +1018,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
 
             for (CurveVectorPtr curves : detail.m_sectionCurves)
                 {
-                if (ProcessCurveVector(*curves, localPoint))
+                if (ProcessCurveVector(*curves, localPoint, HitGeomType::None))
                     foundCurve = true;
                 }
 
@@ -973,7 +1033,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                 {
                 ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
                     foundCurve = true;
 
                 if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -1001,7 +1061,7 @@ bool ProcessSingleFaceSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR loc
                     DSegment3d          segment = DSegment3d::From(rulePts1.at(iRule), rulePts2.at(iRule));
                     ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(segment);
 
-                    if (ProcessICurvePrimitive(*curve, localPoint))
+                    if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::Surface))
                         foundCurve = true;
 
                     if (nullptr != m_stopTester && m_stopTester->_CheckStop())
@@ -1048,21 +1108,21 @@ bool ProcessSolidPrimitive(ISolidPrimitiveCR primitive, DPoint3dCR localPoint, T
             {
             CurveVectorPtr faceCurves = faceGeom->GetAsCurveVector();
 
-            return (faceCurves.IsValid() && ProcessCurveVector(*faceCurves, localPoint));
+            return (faceCurves.IsValid() && ProcessCurveVector(*faceCurves, location.GetXYZ(), HitGeomType::None));
             }
 
         case IGeometry::GeometryType::SolidPrimitive:
             {
             ISolidPrimitivePtr facePrimitive = faceGeom->GetAsISolidPrimitive();
 
-            return (facePrimitive.IsValid() && ProcessSingleFaceSolidPrimitive(*facePrimitive, localPoint, worldToLocal));
+            return (facePrimitive.IsValid() && ProcessSingleFaceSolidPrimitive(*facePrimitive, location.GetXYZ(), worldToLocal));
             }
 
         case IGeometry::GeometryType::BsplineSurface:
             {
             MSBsplineSurfacePtr faceSurface = faceGeom->GetAsMSBsplineSurface();
 
-            return (faceSurface.IsValid() && ProcessBsplineSurface(*faceSurface, localPoint));
+            return (faceSurface.IsValid() && ProcessBsplineSurface(*faceSurface, location.GetXYZ()));
             }
 
         default:
@@ -1107,7 +1167,7 @@ bool ProcessSingleFacePolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
                 int segmentVertexId = (abs(thisIndex) - 1);
                 ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
                     foundCurve = true;
                 }
 
@@ -1125,7 +1185,7 @@ bool ProcessSingleFacePolyface(PolyfaceQueryCR meshData, DPoint3dCR localPoint)
                 int segmentVertexId = (abs(firstIndex) - 1);
                 ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
 
-                if (ProcessICurvePrimitive(*curve, localPoint))
+                if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
                     foundCurve = true;
                 }
 
@@ -1197,7 +1257,7 @@ struct BRepFaceHatchProcessor : IParasolidWireOutput
 
         curve->TransformInPlace(m_entityTransform);
 
-        if (m_processor.ProcessCurveVector(*curve, m_localPoint))
+        if (m_processor.ProcessCurveVector(*curve, m_localPoint, HitGeomType::Surface))
             m_foundCurve = true;
 
         return (nullptr != m_processor.m_stopTester && m_processor.m_stopTester->_CheckStop() ? ERROR : SUCCESS);
@@ -1230,7 +1290,7 @@ bool ProcessBody(IBRepEntityCR entity, DPoint3dCR localPoint)
                 {
                 ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
 
-                return ProcessICurvePrimitive(*curve, localPoint);
+                return ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None);
                 }
 
             return false;
@@ -1241,7 +1301,7 @@ bool ProcessBody(IBRepEntityCR entity, DPoint3dCR localPoint)
             CurveVectorPtr faceCurves = BRepUtil::Create::PlanarFaceToCurveVector(*closeEntity);
 
             if (faceCurves.IsValid())
-                return ProcessCurveVector(*faceCurves, localPoint);
+                return ProcessCurveVector(*faceCurves, localPoint, HitGeomType::None);
 
             break;
             }
@@ -1273,7 +1333,7 @@ bool ProcessBody(IBRepEntityCR entity, DPoint3dCR localPoint)
 
         ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
 
-        if (ProcessICurvePrimitive(*curve, localPoint))
+        if (ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None))
             foundCurve = true;
         }
 
@@ -1296,7 +1356,7 @@ bool ProcessTextString(TextStringCR text, DPoint3dCR localPoint)
 
     ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLineString(points, 5);
 
-    return ProcessICurvePrimitive(*curve, localPoint);
+    return ProcessICurvePrimitive(*curve, localPoint, HitGeomType::None);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1324,14 +1384,14 @@ bool ProcessGeometry(GeometricPrimitiveR geom, TransformCR localToWorld, bool ch
             {
             ICurvePrimitiveCR curve = *geom.GetAsICurvePrimitive();
 
-            return ProcessICurvePrimitive(curve, localPoint);
+            return ProcessICurvePrimitive(curve, localPoint, HitGeomType::None);
             }
 
         case GeometricPrimitive::GeometryType::CurveVector:
             {
             CurveVectorCR curves = *geom.GetAsCurveVector();
 
-            return ProcessCurveVector(curves, localPoint);
+            return ProcessCurveVector(curves, localPoint, HitGeomType::None);
             }
 
         case GeometricPrimitive::GeometryType::SolidPrimitive:
@@ -1389,10 +1449,22 @@ bool ProcessEntry(GeometryCollection::Iterator const& iter, bool preFiltered, Dg
 
     if (nullptr != element && GeometryCollection::Iterator::EntryType::BRepEntity == iter.GetEntryType())
         {
-        IBRepEntityPtr entity = BRepDataCache::FindCachedBRepEntity(*element, elemEntryId); // NEEDSWORK: For imodel-js...brep cache is currently only populated through PickContext...
+        IBRepEntityPtr entity = BRepDataCache::FindCachedBRepEntity(*element, elemEntryId);
 
         if (entity.IsValid())
+            {
             geom = GeometricPrimitive::Create(entity);
+            }
+        else
+            {
+            geom = iter.GetGeometryPtr();
+
+            if (!geom.IsValid())
+                return false;
+
+            // Populate brep cache when not using PickContext and calling GeometryStreamIO::Collection::Draw...
+            BRepDataCache::AddCachedBRepEntity(*element, elemEntryId, *geom->GetAsIBRepEntity());
+            }
         }
 
     if (!geom.IsValid())
