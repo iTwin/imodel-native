@@ -21,6 +21,8 @@ def main():
     nugetDstPath = sys.argv[2]
     dataDir = sys.argv[3]
 
+    # Copy out exectuable file to product dir. It can't be symlinked because it will execute where the actual
+    # executable is and not in the product directory. We need to to be a sibling of the run dir we give it.
     for filename in os.listdir(nugetSrcPath):
         name = os.path.splitext(filename)[0]
         split = os.path.join(nugetSrcPath, name)
