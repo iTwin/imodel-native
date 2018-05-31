@@ -40,7 +40,7 @@ def pullAllNugets(path, pathToNugetPuller):
     import nugetpkg
     address = "http://nuget.bentley.com/nuget/default/"
     name = "iModelSchemaEvolutionTestNuget_bim0200dev_x64";
-    versions = nugetpkg.SearchVersionsFromServer(address, name) #TODO Address?
+    versions = nugetpkg.SearchVersionsFromServer(address, name)
 
     for v in versions:
         # Dowload and save all versions
