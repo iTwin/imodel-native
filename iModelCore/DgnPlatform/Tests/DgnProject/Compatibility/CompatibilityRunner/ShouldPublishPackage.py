@@ -26,8 +26,8 @@ def main():
     i = 0
     for subdir in os.listdir(oldDatasetPath):
         dirs = os.listdir(os.path.join(oldDatasetPath, subdir))
-        if currentVersions[i] in dirs
-        return  
+        if currentVersions[i] in dirs:
+            return  
     
     from __future__ import print_function
     import sys
