@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #
-#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/PullCompatibilityNugets.py $
+#     $Source: Tests/DgnProject/Compatibility/CompatibilityRunner/PullCompatibilityDatasets.py $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -39,13 +39,13 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir):
 def pullAllNugets(path, pathToNugetPuller):
     import nugetpkg
     address = "http://nuget.bentley.com/nuget/default/"
-    name = "iModelSchemaEvolutionTestNuget_bim0200dev_x64";
+    name = "iModelSchemaEvolutionTestFilesNuget_bim0200dev_x64";
     versions = nugetpkg.SearchVersionsFromServer(address, name)
 
     for v in versions:
         # Dowload and save all versions
         pkgAddress = "http://nuget.bentley.com/nuget/default/"
-        pkgName = "iModelSchemaEvolutionTestNuget_bim0200dev_x64"
+        pkgName = "iModelSchemaEvolutionTestFilesNuget_bim0200dev_x64"
         localDir = path
         DownloadPackage(pkgAddress, pkgName, v, localDir)
 

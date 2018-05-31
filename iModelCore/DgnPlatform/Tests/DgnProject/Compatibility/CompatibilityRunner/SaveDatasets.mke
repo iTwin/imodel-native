@@ -7,7 +7,7 @@
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
 
-TestOutputDir = D:\bim0200dev\out\Winx64\Product\iModelSchemaEvolutionGTest\run\SeedData
+TestOutputDir = $(OutputRootDir)Product/iModelSchemaEvolutionGTest/run/SeedData/
 CacheDir = $(OutBuildDir)iModelSchemaEvolutionDatasets/
 ContextDir = $(BuildContext)iModelSchemaEvolutionDatasets/
 
@@ -21,11 +21,11 @@ COPYDIR_OUTPUT = $(CacheDir)
 always:
     ~mkdir $(ContextDir)
 
-#%include $(SrcRoot)bsicommon/build/copyDir.mki
+%include $(SrcRoot)bsicommon/build/copyDir.mki
 
-#%if !exists($(CacheDir))
-#    %error This part must be run at least once after a full execution of the DgnPlatform GTest suite.
-#%endif
+%if !exists($(CacheDir))
+    %error This part must be run at least once after a full execution of the DgnPlatform GTest suite.
+%endif
 
-#always:
-#    python $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(CacheDir) $(ContextDir)
+always:
+    python $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(CacheDir) $(ContextDir)
