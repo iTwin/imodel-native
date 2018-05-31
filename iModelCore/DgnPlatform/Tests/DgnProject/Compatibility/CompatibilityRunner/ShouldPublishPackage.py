@@ -5,6 +5,7 @@
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
+from __future__ import print_function
 import sys
 import os
 import subprocess
@@ -29,7 +30,6 @@ def main():
         if currentVersions[i] in dirs:
             return  
     
-    from __future__ import print_function
     import sys
 
     print("No changes, publishing datasets not necessary", file=sys.stderr)
