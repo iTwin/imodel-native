@@ -73,6 +73,7 @@
         <SubPart PartName="LoggingManagedInterop" PartFile="LoggingSDK" Repository="LoggingSDK"/>
         <SubPart PartName="DgnPlatformExtractions" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="Docs" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="BentleyDocConfig" PartFile="DgnPlatform" Repository="DgnPlatform"/>
 
         <SubPart PartName="NuGetPackage" PartFile="ecobjects" Repository="ecobjects"/>
         <SubPart PartName="NuGetPackage" PartFile="ecdb" Repository="ECDb"/>
