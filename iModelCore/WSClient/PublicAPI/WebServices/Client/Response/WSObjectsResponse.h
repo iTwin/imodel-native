@@ -2,13 +2,14 @@
 |
 |     $Source: PublicAPI/WebServices/Client/Response/WSObjectsResponse.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
+#include <WebServices/Client/Response/WSResponse.h>
 #include <BeHttp/HttpClient.h>
 #include <WebServices/Client/Response/WSObjectsReader.h>
 
@@ -19,12 +20,10 @@ USING_NAMESPACE_BENTLEY_HTTP
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct WSObjectsResponse
+struct WSObjectsResponse : public WSResponse
     {
     protected:
         HttpBodyPtr m_httpBody;
-        bool        m_isModified;
-        Utf8String  m_eTag;
         Utf8String  m_skipToken;
 
         mutable std::shared_ptr<Json::Value>         m_jsonValue;
@@ -48,11 +47,8 @@ struct WSObjectsResponse
             Utf8String skipToken
             );
 
-        WSCLIENT_EXPORT Utf8StringCR GetETag() const;
         WSCLIENT_EXPORT Utf8StringCR GetSkipToken() const;
 
-        //! Check if response contains data or data was not modified and data is empty.
-        WSCLIENT_EXPORT bool IsModified() const;
         //! Check if response is final or contains additional pages of data.
         WSCLIENT_EXPORT bool IsFinal() const;
 

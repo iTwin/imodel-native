@@ -344,7 +344,7 @@ ICancellationTokenPtr ct
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CachingDataSource::FinalizeOpen(CacheTransactionCR txn)
     {
-    if (SUCCESS != m_infoStore->PrepareServerInfo(txn.GetCache()))
+    if (SUCCESS != m_infoStore->PrepareInfo(txn.GetCache()))
         return ERROR;
     m_isOpen = true;
     return SUCCESS;
@@ -376,7 +376,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
     auto temporaryFiles = std::make_shared<bvector<TempFilePtr>>();
     auto result = std::make_shared<Result>(Result::Success());
 
-    return m_client->GetWSClient()->GetServerInfo(ct)
+    auto getServerInfoTask = m_client->GetWSClient()->GetServerInfo(ct)
         ->Then(m_cacheAccessThread, [=] (WSInfoResult infoResult)
         {
         if (!infoResult.IsSuccess())
@@ -388,7 +388,27 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
         auto txn = StartCacheTransaction();
         m_infoStore->CacheServerInfo(txn.GetCache(), infoResult.GetValue());
         txn.Commit();
-        })
+        });
+
+    auto getRepositoryInfoTask = m_client->GetInfo(ct)
+        ->Then(m_cacheAccessThread, [=] (WSRepositoryResult infoResult)
+        {
+        if (!infoResult.IsSuccess())
+            {
+            result->SetError(infoResult.GetError());
+            return;
+            }
+
+        auto txn = StartCacheTransaction();
+        m_infoStore->CacheRepositoryInfo(txn.GetCache(), infoResult.GetValue());
+        txn.Commit();
+        });
+
+    bvector<AsyncTaskPtr<void>> tasks;
+    tasks.push_back(getServerInfoTask);
+    tasks.push_back(getRepositoryInfoTask);
+
+    return AsyncTask::WhenAll(tasks)
             ->Then(m_cacheAccessThread, [=]
             {
             if (ct->IsCanceled())
@@ -599,6 +619,14 @@ WSInfo CachingDataSource::GetServerInfo(CacheTransactionCR txn)
 WSInfo CachingDataSource::GetServerInfo()
     {
     return m_infoStore->GetServerInfo();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+WSRepository CachingDataSource::GetRepositoryInfo()
+    {
+    return m_infoStore->GetRepositoryInfo();
     }
 
 /*--------------------------------------------------------------------------------------+

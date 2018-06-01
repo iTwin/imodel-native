@@ -2,14 +2,14 @@
 |
 |  $Source: Tests/UnitTests/Published/WebServices/Client/Response/WSUploadResponseTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "WSUploadResponseTests.h"
 
-#include <WebServices/Client/Response/WSObjectsResponse.h>
-#include <WebServices/Client/Response/WSObjectsReaderV1.h>
+#include <WebServices/Client/Response/WSObjectsResponse.h>/*
+#include <WebServices/Client/Response/WSObjectsReaderV2.h>*/
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2017

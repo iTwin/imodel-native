@@ -113,14 +113,14 @@
         <SubPart PartName="WSClient-Xliffs" />
     </Part>
 
-    <Part Name="FakeServer-PublicAPI" DeferType="BuildUnitTests" BentleyBuildMakeFile="FakeServerPrewire.mke">
+    <Part Name="FakeServer-PublicAPI" BentleyBuildMakeFile="FakeServerPrewire.mke">
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <Bindings>
             <PublicAPI Domain="FakeServer" />
         </Bindings>
     </Part>
 
-    <Part Name="FakeServer-Library" DeferType="BuildUnitTests" BentleyBuildMakeFile="FakeServerLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
+    <Part Name="FakeServer-Library"  BentleyBuildMakeFile="FakeServerLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
         <SubPart PartName="WebServicesClient" />
 		<SubPart PartName="DgnPlatformDLL"              PartFile="DgnPlatform"    	Repository="DgnPlatform"/>
         <Bindings>
