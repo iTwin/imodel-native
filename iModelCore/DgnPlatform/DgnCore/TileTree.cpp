@@ -92,12 +92,17 @@ folly::Future<BentleyStatus> TileLoader::Perform()
                     tile.SetNotFound();
                 return ERROR;
                 }
-            
+
             T_HOST.GetTileAdmin()._OnNewTileReady(tile.GetRoot().GetDgnDb());
             tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
             
             // On a successful load, potentially store the tile in the cache.   
-            me->_SaveToDb();    // don't wait on the save.
+            auto saveToDb = me->_SaveToDb();
+
+            // don't wait on the save unless caller wants to immediately extract data from cache.
+            if (T_HOST.GetTileAdmin()._WantWaitOnSave(tile.GetRoot().GetDgnDb()))
+                saveToDb.get();
+
             return SUCCESS;
             });
     }
