@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "IntegrationTestsSettings.h"
 #include <Bentley/BeTest.h>
+#include <Bentley/BeSystemInfo.h>
 
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 USING_NAMESPACE_BENTLEY_HTTP
@@ -103,8 +104,20 @@ Utf8String IntegrationTestsSettings::GetProjectId() const
 
 ClientInfoPtr IntegrationTestsSettings::GetClientInfo() const
     {
-    //Use Navigator Desktop product id for now
-    return std::shared_ptr<WebServices::ClientInfo>(new WebServices::ClientInfo("Bentley-Test", BeVersion(1, 0), "TestAppGUID", "TestDeviceId", "TestSystem", "1654"));
+    Utf8String deviceId = BeSystemInfo::GetDeviceId();
+
+    Utf8String model = BeSystemInfo::GetMachineName();
+    if (!model.empty())
+        {
+        model += "; ";
+        }
+
+    Utf8PrintfString systemDescription("%s %s %s",
+        model.c_str(),
+        BeSystemInfo::GetOSName().c_str(),
+        BeSystemInfo::GetOSVersion().c_str());
+    
+    return std::shared_ptr<WebServices::ClientInfo>(new WebServices::ClientInfo("iModelHub.ClientAPITests", BeVersion(1, 0), "05f0c41d-413f-4431-8e66-22999dfe16fa", deviceId, systemDescription, "2485"));
     }
 
 UrlProvider::Environment IntegrationTestsSettings::GetEnvironment() const
