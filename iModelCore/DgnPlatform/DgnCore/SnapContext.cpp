@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <GeomSerialization/GeomLibsSerialization.h>
+#include <GeomSerialization/GeomLibsJsonSerialization.h>
 #if defined (BENTLEYCONFIG_PARASOLID) 
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
@@ -1660,6 +1662,7 @@ TransformCR GetHitLocalToWorld() const {return m_hitLocalToWorld;}
 GeometryParamsCR GetHitGeometryParams() const {return m_hitParams;}
 GeometryStreamEntryIdCR GetHitGeometryStreamEntryId() const {return m_hitEntryId;}
 CurveLocationDetailCR GetHitCurveDetail() const {return m_hitCurveDetail;}
+ICurvePrimitivePtr& GetHitCurvePrimitivePtr() {return m_hitCurveDerived;} // Valid when m_hitCurveDetail.curve is not nullptr...
 HitGeomType GetHitGeomType() const {return m_hitGeomType;}
 HitParentGeomType GetHitParentGeomType() const {return m_hitParentGeomType;}
 DPoint3d GetHitPointWorld() const {DPoint3d hitPtWorld = m_hitCurveDetail.point; m_hitLocalToWorld.Multiply(hitPtWorld); return hitPtWorld;}
@@ -1834,6 +1837,12 @@ Json::Value SnapContext::DoSnap(JsonValueCR input, DgnDbR db)
     if (!elementId.IsValid())
         return output; // NOTE: Maybe to support snappable decorations the GeometryStream/Placement can be supplied in lieu of an element id?
 
+    DgnElementCPtr element = db.Elements().GetElement(elementId);
+    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
+
+    if (nullptr == source)
+        return output;
+
     DPoint3d closePoint;
     JsonUtils::DPoint3dFromJson(closePoint, input["closePoint"]); // World coordinate point of mesh tile geometry...
 
@@ -1859,17 +1868,24 @@ Json::Value SnapContext::DoSnap(JsonValueCR input, DgnDbR db)
     if (!input["snapDivisor"].isNull())
         snapDivisor = input["snapDivisor"].asUInt();
 
-    DgnElementCPtr element = db.Elements().GetElement(elementId);
-    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
-
-    if (nullptr == source)
-        return output;
-
     if (SnapMode::Origin != GetSnapMode())
         {
+        DgnElementIdSet offSubCategories;
+
+        if (!input["offSubCategories"].isNull() && input["offSubCategories"].isArray())
+            {
+            uint32_t nEntries = (uint32_t) input["offSubCategories"].size();
+            for (uint32_t i=0; i < nEntries; i++)
+                {
+                DgnSubCategoryId subCategoryId;
+                subCategoryId.FromJson(input["offSubCategories"][i]);
+                offSubCategories.insert(subCategoryId);
+                }
+            }
+
         SnapGeometryHelper helper(snapMode, snapDivisor, snapAperture, closePoint, worldToViewMap);
 
-        SnapStatus status = helper.GetClosestCurve(*source, &viewFlags, nullptr, nullptr); // NEEDSWORK: off sub-categories and stop tester...
+        SnapStatus status = helper.GetClosestCurve(*source, &viewFlags, offSubCategories.empty() ? nullptr : &offSubCategories, nullptr); // NEEDSWORK: stop tester...
 
         if (SnapStatus::Aborted == status)
             {
@@ -1879,28 +1895,39 @@ Json::Value SnapContext::DoSnap(JsonValueCR input, DgnDbR db)
 
         if (SnapStatus::Success == status && helper.ComputeSnapLocation())
             {
-//TransformCR GetHitLocalToWorld() const {return m_hitLocalToWorld;}
-//GeometryParamsCR GetHitGeometryParams() const {return m_hitParams;}
-//CurveLocationDetailCR GetHitCurveDetail() const {return m_hitCurveDetail;}
-//HitGeomType GetHitGeomType() const {return m_hitGeomType;}
-//HitParentGeomType GetHitParentGeomType() const {return m_hitParentGeomType;}
-
-//            GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(helper.GetHitCurveDetail().curve, &helper.GetHitLocalToWorld(), helper.GetHitGeomType());
-
-//            if (0.0 != helper.GetHitNormalWorld().Magnitude())
-//                GetSnapDetail()->GetGeomDetailW().SetSurfaceNormal(helper.GetHitNormalWorld());
-
             output["status"] = (uint32_t) status;
             JsonUtils::DPoint3dToJson(output["snapPoint"], helper.GetHitPointWorld());
+
+            output["geomType"] = (uint32_t) helper.GetHitGeomType();
+            output["parentGeomType"] = (uint32_t) helper.GetHitParentGeomType();
+            output["subCategory"] = helper.GetHitGeometryParams().GetSubCategoryId().ToHexStr();
+
+            if (!helper.GetHitGeometryParams().IsWeightFromSubCategoryAppearance())
+                output["weight"] = helper.GetHitGeometryParams().GetWeight();
+
+            if (0.0 != helper.GetHitNormalWorld().Magnitude())
+                JsonUtils::DVec3dToJson(output["normal"], helper.GetHitNormalWorld());
+
+            if (nullptr != helper.GetHitCurveDetail().curve)
+                {
+                Json::Value  geomValue;
+                IGeometryPtr geomPtr = IGeometry::Create(helper.GetHitCurvePrimitivePtr());
+
+                if (geomPtr.IsValid() && IModelJson::TryGeometryToIModelJsonValue(geomValue, *geomPtr))
+                    {
+                    output["curve"] = geomValue;
+
+                    if (!helper.GetHitLocalToWorld().IsIdentity())
+                        JsonUtils::TransformToJson(output["localToWorld"], helper.GetHitLocalToWorld());
+                    }
+                }
 
             return output;
             }
         }
 
     DPoint3d origin;
-
     source->GetPlacementTransform().GetTranslation(origin);
-
     output["status"] = (uint32_t) SnapStatus::Success;
     JsonUtils::DPoint3dToJson(output["snapPoint"], origin);
 
@@ -1913,14 +1940,61 @@ Json::Value SnapContext::DoSnap(JsonValueCR input, DgnDbR db)
 SnapStatus SnapContext::DoDefaultDisplayableSnap()
     {
 #if defined (NOT_NOW_USE_HITDETAIL)
-    bool            useFullHitDetail = false;
+    Json::Value input;
+
+    input["elementId"] = GetSnapDetail()->GetElementId().ToHexStr();
+    JsonUtils::DPoint3dToJson(input["closePoint"], GetSnapDetail()->GetGeomDetail().GetClosestPoint());
+    JsonUtils::DMatrix4dToJson(input["worldToView"], GetWorldToView().M0);
+    input["viewFlags"] = m_viewflags.ToJson();
+
+    input["snapMode"] = (uint32_t) GetSnapMode();
+    input["snapAperture"] = GetSnapAperture();
+    input["snapDivisor"] = GetSnapDivisor();
+
+    Json::Value output = SnapContext::DoSnap(input, GetDgnDb());
+
+    SnapStatus status = (output["status"].isNull() ? SnapStatus::NotSnappable : (SnapStatus) output["status"].asUInt());
+
+    if (SnapStatus::Success == status)
+        {
+        DPoint3d snapPoint;
+
+        JsonUtils::DPoint3dFromJson(snapPoint, output["snapPoint"]);
+
+        if (!output["normal"].isNull())
+            {
+            DVec3d normal;
+
+            JsonUtils::DVec3dFromJson(normal, output["normal"]);
+            GetSnapDetail()->GetGeomDetailW().SetSurfaceNormal(normal);
+            }
+
+        HitGeomType hitGeomType = (output["geomType"].isNull() ? HitGeomType::None : (HitGeomType) output["geomType"].asUInt());
+        Transform hitLocalToWorld = Transform::FromIdentity();
+        ICurvePrimitivePtr curve;
+
+        if (!output["localToWorld"].isNull())
+            JsonUtils::TransformFromJson(hitLocalToWorld, output["localToWorld"]);
+
+        if (!output["curve"].isNull())
+            {
+            bvector<IGeometryPtr> geometry;
+
+            if (IModelJson::TryIModelJsonValueToGeometry(output["curve"], geometry) && 1 == geometry.size())
+                curve = geometry.at(0)->GetAsICurvePrimitive();
+            }
+
+        GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(curve.IsValid() ? curve.get() : nullptr, &hitLocalToWorld, hitGeomType);
+
+        SetSnapInfo(*GetSnapDetail(), GetSnapMode(), GetSnapSprite(GetSnapMode()), snapPoint, SnapMode::Center == GetSnapMode(), GetSnapAperture(), false);
+        }
+
+    return status;
 #else
-    bool            useFullHitDetail = true;
-#endif
     GeomDetailCR    detail = GetSnapDetail()->GetGeomDetail();
 
     // Don't require a curve primitive if hit geom is point or mode is nearest because current hit point is correct...
-    if (useFullHitDetail && (SnapMode::Nearest == GetSnapMode() || HitGeomType::Point == detail.GetGeomType()))
+    if (SnapMode::Nearest == GetSnapMode() || HitGeomType::Point == detail.GetGeomType())
         {
         DPoint3d    hitPoint = GetSnapDetail()->GetHitPoint();
 
@@ -1929,10 +2003,10 @@ SnapStatus SnapContext::DoDefaultDisplayableSnap()
         return SnapStatus::Success;
         }
 
-    if (!useFullHitDetail || nullptr == detail.GetCurvePrimitive())
+    if (nullptr == detail.GetCurvePrimitive())
         {
         // Surface w/o curve is interior hit...only nearest should "track" surface...
-        if (!useFullHitDetail || HitGeomType::Surface == detail.GetGeomType())
+        if (HitGeomType::Surface == detail.GetGeomType())
             {
             bool             usePlacement = true;
             DgnElementCPtr   element = GetSnapDetail()->GetElement();
@@ -1953,8 +2027,7 @@ SnapStatus SnapContext::DoDefaultDisplayableSnap()
                 {
                 SnapGeometryHelper helper(GetSnapMode(), GetSnapDivisor(), GetSnapAperture(), GetSnapDetail()->GetGeomDetail().GetClosestPoint(), GetWorldToView());
 
-                if (useFullHitDetail)
-                    helper.SetHitGeometryStreamEntryId(GetSnapDetail()->GetGeomDetail().GetGeometryStreamEntryId(true)); // Supply HitDetail entry id so that we can trivially reject GeometryStream entries...
+                helper.SetHitGeometryStreamEntryId(GetSnapDetail()->GetGeomDetail().GetGeometryStreamEntryId(true)); // Supply HitDetail entry id so that we can trivially reject GeometryStream entries...
 
                 // NOTE: This can be fairly expensive...but we need something more meaningful than snapping to center of range...
                 SnapStatus status = helper.GetClosestCurve(*source, &m_viewflags, nullptr, this);
@@ -1964,9 +2037,6 @@ SnapStatus SnapContext::DoDefaultDisplayableSnap()
 
                 if (SnapStatus::Success == status && helper.ComputeSnapLocation())
                     {
-                    if (!useFullHitDetail)
-                        GetSnapDetail()->GetGeomDetailW().SetGeometryStreamEntryId(helper.GetHitGeometryStreamEntryId());
-
                     GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(helper.GetHitCurveDetail().curve, &helper.GetHitLocalToWorld(), helper.GetHitGeomType());
 
                     if (0.0 != helper.GetHitNormalWorld().Magnitude())
@@ -1993,6 +2063,7 @@ SnapStatus SnapContext::DoDefaultDisplayableSnap()
         }
 
     return DoSnapUsingCurve(GetSnapMode());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
