@@ -351,6 +351,7 @@
         BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=BeHttp-UwpTest"
         OnlyPlatforms="WinRT*"
         >
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <SubProduct ProductName="BeHttp-UwpTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/BeHttp-UwpTest.log</Files>
