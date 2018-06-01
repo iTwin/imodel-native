@@ -70,14 +70,14 @@ struct ECPresentationUtils
     static ECPresentationResult RemoveRuleSet(SimpleRuleSetLocater&, Utf8StringCR ruleSetId);
     static ECPresentationResult ClearRuleSets(SimpleRuleSetLocater&);
 
-    static ECPresentationResult GetRootNodesCount(IECPresentationManagerR, ECDbR, JsonValueCR params);
-    static ECPresentationResult GetRootNodes(IECPresentationManagerR, ECDbR, JsonValueCR params);
-    static ECPresentationResult GetChildrenCount(IECPresentationManagerR, ECDbR, JsonValueCR params);
-    static ECPresentationResult GetChildren(IECPresentationManagerR, ECDbR, JsonValueCR params);
+    static folly::Future<ECPresentationResult> GetRootNodesCount(IECPresentationManagerR, ECDbR, JsonValueCR params);
+    static folly::Future<ECPresentationResult> GetRootNodes(IECPresentationManagerR, ECDbR, JsonValueCR params);
+    static folly::Future<ECPresentationResult> GetChildrenCount(IECPresentationManagerR, ECDbR, JsonValueCR params);
+    static folly::Future<ECPresentationResult> GetChildren(IECPresentationManagerR, ECDbR, JsonValueCR params);
 
-    static ECPresentationResult GetContentDescriptor(IECPresentationManagerR, ECDbR, JsonValueCR params);
-    static ECPresentationResult GetContent(IECPresentationManagerR, ECDbR, JsonValueCR params);
-    static ECPresentationResult GetContentSetSize(IECPresentationManagerR, ECDbR, JsonValueCR params);
+    static folly::Future<ECPresentationResult> GetContentDescriptor(IECPresentationManagerR, ECDbR, JsonValueCR params);
+    static folly::Future<ECPresentationResult> GetContent(IECPresentationManagerR, ECDbR, JsonValueCR params);
+    static folly::Future<ECPresentationResult> GetContentSetSize(IECPresentationManagerR, ECDbR, JsonValueCR params);
 
     static ECPresentationResult SetUserSetting(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR settingId, Utf8StringCR value);
     static ECPresentationResult GetUserSetting(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR settingId, Utf8StringCR settingType);

@@ -836,9 +836,9 @@ declare class NativeECPresentationManager implements IDisposable {
      * Handles an ECPresentation manager request
      * @param db The db to run the request on
      * @param options Serialized JSON object that contains parameters for the request
-     * @return Serialized JSON response
+     * @param callback Callback which is called with ECPresentation result to request
      */
-    handleRequest(db: NativeDgnDb, options: string): ErrorStatusOrResult<NativeECPresentationStatus, string>;
+    handleRequest(db: NativeDgnDb, options: string, callback: (result: ErrorStatusOrResult<NativeECPresentationStatus, string>) => void): void;
     /**
      * Terminates the presentation manager.
      */

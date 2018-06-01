@@ -1359,55 +1359,82 @@ static folly::Future<NavNodeCPtr> GetNode(IECPresentationManager& mgr, IConnecti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::GetRootNodesCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
-    size_t count = manager.GetRootNodesCount(db, GetManagerOptions(params)).get();
-    return ECPresentationResult(rapidjson::Value((int64_t)count));
+    return manager.GetRootNodesCount(db, GetManagerOptions(params))
+        .then([](size_t count)
+            {
+            return ECPresentationResult(rapidjson::Value((int64_t) count));
+            });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::GetRootNodes(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
-    rapidjson::Document json;
-    json.SetArray();
-    DataContainer<NavNodeCPtr> nodes = manager.GetRootNodes(db, GetPageOptions(params), GetManagerOptions(params)).get();
-    for (NavNodeCPtr const& node : nodes)
-        json.PushBack(node->AsJson(&json.GetAllocator()), json.GetAllocator());
-    return ECPresentationResult(std::move(json));
+    return manager.GetRootNodes(db, GetPageOptions(params), GetManagerOptions(params))
+        .then([](DataContainer<NavNodeCPtr> nodes)
+            {
+            rapidjson::Document json;
+            json.SetArray();
+            for (NavNodeCPtr const& node : nodes)
+                json.PushBack(node->AsJson(&json.GetAllocator()), json.GetAllocator());
+            return ECPresentationResult(std::move(json));
+            });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::GetChildrenCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
-    NavNodeCPtr parentNode = GetNode(manager, *connection, params).get();
-    if (parentNode.IsNull())
-        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");
-
-    size_t count = manager.GetChildrenCount(db, *parentNode, GetManagerOptions(params)).get();
-    return ECPresentationResult(rapidjson::Value((int64_t)count));
+    JsonValueCR managerOptions = GetManagerOptions(params);
+    return GetNode(manager, *connection, params)
+        .then([&manager, &db, managerOptions](NavNodeCPtr parentNode)
+            {
+            if (parentNode.IsNull())
+                {
+                BeAssert(false);
+                return folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");});
+                }
+            
+            return manager.GetChildrenCount(db, *parentNode, managerOptions)
+                .then([](size_t count)
+                    {
+                    return ECPresentationResult(rapidjson::Value((int64_t) count));
+                    });
+            });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::GetChildren(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
-    NavNodeCPtr parentNode = GetNode(manager, *connection, params).get();
-    if (parentNode.IsNull())
-        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");
+    JsonValueCR managerOptions = GetManagerOptions(params);
+    PageOptions pageOptions = GetPageOptions(params);
+    return GetNode(manager, *connection, params)
+        .then([&manager, &db, managerOptions, pageOptions](NavNodeCPtr parentNode)
+            {
+            if (parentNode.IsNull())
+                {
+                BeAssert(false);
+                return folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "parent node");});
+                }
 
-    rapidjson::Document json;
-    json.SetArray();
-    DataContainer<NavNodeCPtr> nodes = manager.GetChildren(db, *parentNode, GetPageOptions(params), GetManagerOptions(params)).get();
-    for (NavNodeCPtr const& node : nodes)
-        json.PushBack(node->AsJson(&json.GetAllocator()), json.GetAllocator());
-    return ECPresentationResult(std::move(json));
+            return manager.GetChildren(db, *parentNode, pageOptions, managerOptions)
+                .then([](DataContainer<NavNodeCPtr> nodes)
+                    {
+                    rapidjson::Document json;
+                    json.SetArray();
+                    for (NavNodeCPtr const& node : nodes)
+                        json.PushBack(node->AsJson(&json.GetAllocator()), json.GetAllocator());
+                    return ECPresentationResult(std::move(json));
+                    });
+            });
     }
 
 /*=================================================================================**//**
@@ -1473,44 +1500,59 @@ static KeySetPtr GetKeys(IConnectionCR connection, JsonValueCR params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::GetContentDescriptor(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetContentDescriptor(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
-    ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, GetDisplayType(params), *GetKeys(*connection, params), nullptr, GetManagerOptions(params)).get();
-    if (descriptor.IsValid())
-        return ECPresentationResult(descriptor->AsJson());
-    return ECPresentationResult();
+    return manager.GetContentDescriptor(db, GetDisplayType(params), *GetKeys(*connection, params), nullptr, GetManagerOptions(params))
+        .then([](ContentDescriptorCPtr descriptor)
+            {
+            if (descriptor.IsValid())
+                return ECPresentationResult(descriptor->AsJson());
+            return ECPresentationResult();
+            });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::GetContent(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
-    DescriptorOverrideHelper helper(params["descriptorOverrides"]);
-    ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, helper.GetDisplayType(), *GetKeys(*connection, params), nullptr, GetManagerOptions(params)).get();
-    if (descriptor.IsNull())
-        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor");
+    JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
+    PageOptions pageOptions = GetPageOptions(params);
+    return manager.GetContentDescriptor(db,  GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, GetManagerOptions(params))
+        .then([&manager, descriptorOverridesJson, pageOptions](ContentDescriptorCPtr descriptor)
+            {
+            if (descriptor.IsNull())
+                return folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor");});
 
-    ContentDescriptorCPtr overridenDescriptor = helper.GetOverridenDescriptor(*descriptor);
-    ContentCPtr content = manager.GetContent(*overridenDescriptor, GetPageOptions(params)).get();
-    return ECPresentationResult(content->AsJson());
+            ContentDescriptorCPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
+            return manager.GetContent(*overridenDescriptor, pageOptions)
+                .then([](ContentCPtr content)
+                    {
+                    return ECPresentationResult(content->AsJson());
+                    });
+            });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::GetContentSetSize(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
     {
     IConnectionCPtr connection = manager.Connections().GetConnection(db);
-    DescriptorOverrideHelper helper(params["descriptorOverrides"]);
-    ContentDescriptorCPtr descriptor = manager.GetContentDescriptor(db, helper.GetDisplayType(), *GetKeys(*connection, params), nullptr, GetManagerOptions(params)).get();
-    if (descriptor.IsNull())
-        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor");
+    JsonValueCR descriptorOverridesJson = params["descriptorOverrides"];
+    return manager.GetContentDescriptor(db, GetDisplayType(descriptorOverridesJson), *GetKeys(*connection, params), nullptr, GetManagerOptions(params))
+        .then([&manager, descriptorOverridesJson](ContentDescriptorCPtr descriptor)
+            {
+            if (descriptor.IsNull())
+                return folly::makeFutureWith([]() {return ECPresentationResult(ECPresentationStatus::InvalidArgument, "descriptor");});
 
-    ContentDescriptorCPtr overridenDescriptor = helper.GetOverridenDescriptor(*descriptor);
-    size_t size = manager.GetContentSetSize(*overridenDescriptor).get();
-    return ECPresentationResult(rapidjson::Value((int64_t)size));
+            ContentDescriptorCPtr overridenDescriptor = DescriptorOverrideHelper(descriptorOverridesJson).GetOverridenDescriptor(*descriptor);
+            return manager.GetContentSetSize(*overridenDescriptor)
+                .then([](size_t size)
+                    {
+                    return ECPresentationResult(rapidjson::Value((int64_t)size));
+                    });
+            });
     }
-

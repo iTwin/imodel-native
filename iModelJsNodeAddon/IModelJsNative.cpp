@@ -2764,6 +2764,30 @@ public:
 //=======================================================================================
 struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManager>
     {
+    //=======================================================================================
+    // Async Worker which sends ECPresentationResult via callback
+    //! @bsiclass
+    //=======================================================================================
+    struct ResponseSender : Napi::AsyncWorker
+    {
+    private:
+        ECPresentationResult m_result;
+    protected:
+        //Nothing is executed in worker thread because result was set in ECPresentation thread
+        void Execute() override {}
+        void OnOK() override
+            {
+            Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), m_result, true)});
+            }
+        void OnError(const Napi::Error& e) override
+            {
+            Callback().MakeCallback(Receiver().Value(), {CreateReturnValue(Env(), ECPresentationResult(ECPresentationStatus::Error, "callback error"))});
+            }
+    public:
+        ResponseSender(Napi::Function& callback) : Napi::AsyncWorker(callback) {}
+        void SetResult(ECPresentationResult&& result) {m_result = std::move(result);}
+    };
+
     static Napi::FunctionReference s_constructor;
 
     ConnectionManager m_connections;
@@ -2817,40 +2841,58 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
         s_constructor.SuppressDestruct();
         }
 
-    Napi::Value CreateReturnValue(ECPresentationResult const& result, bool serializeResponse = false)
+    static Napi::Value CreateReturnValue(Napi::Env const& env, ECPresentationResult const& result, bool serializeResponse = false)
         {
         if (result.IsError())
             {
-            return NapiUtils::CreateBentleyReturnErrorObject(result.GetStatus(), result.GetErrorMessage().c_str(), Env());
+            return NapiUtils::CreateBentleyReturnErrorObject(result.GetStatus(), result.GetErrorMessage().c_str(), env);
             }
         if (serializeResponse)
             {
             rapidjson::StringBuffer buffer;
             rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
             result.GetSuccessResponse().Accept(writer);
-            return NapiUtils::CreateBentleyReturnSuccessObject(Napi::String::New(Env(), buffer.GetString()), Env());
+            return NapiUtils::CreateBentleyReturnSuccessObject(Napi::String::New(env, buffer.GetString()), env);
             }
-        return NapiUtils::CreateBentleyReturnSuccessObject(NapiUtils::Convert(Env(), result.GetSuccessResponse()), Env());
+        return NapiUtils::CreateBentleyReturnSuccessObject(NapiUtils::Convert(env, result.GetSuccessResponse()), env);
         }
 
-    Napi::Value HandleRequest(Napi::CallbackInfo const& info)
+    Napi::Value CreateReturnValue(ECPresentationResult const& result, bool serializeResponse = false)
         {
-        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "iModel")));
-        if (!db->IsOpen())
-            return CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "iModel: not open"));
+        return CreateReturnValue(Env(), result, serializeResponse);
+        }
 
-        REQUIRE_ARGUMENT_STRING(1, serializedRequest, CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "request")));
+    void HandleRequest(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_FUNCTION(2, responseCallback, );
+
+        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db, );
+        if (!db->IsOpen())
+            {
+            responseCallback.Call({CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "iModel: not open"))});
+            return;
+            }
+
+        REQUIRE_ARGUMENT_STRING(1, serializedRequest, );
         Json::Value request = Json::Value::From(serializedRequest);
         if (request.isNull())
-            return CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "request"));
+            {
+            responseCallback.Call({CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "request"))});
+            return;
+            }
         Utf8CP requestId = request["requestId"].asCString();
         if (Utf8String::IsNullOrEmpty(requestId))
-            return CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "request.requestId"));
+            {
+            responseCallback.Call({CreateReturnValue(ECPresentationResult(ECPresentationStatus::InvalidArgument, "request.requestId"))});
+            return;
+            }
 
         m_connections.NotifyConnectionOpened(db->GetDgnDb());
 
         JsonValueCR params = request["params"];
-        ECPresentationResult result(ECPresentationStatus::InvalidArgument, "request.requestId");
+
+        ResponseSender* responseSender = new ResponseSender(responseCallback);
+        folly::Future<ECPresentationResult> result = folly::makeFutureWith([](){return ECPresentationResult(ECPresentationStatus::InvalidArgument, "request.requestId");});
 
         if (0 == strcmp("GetRootNodesCount", requestId))
             result = ECPresentationUtils::GetRootNodesCount(*m_presentationManager, db->GetDgnDb(), params);
@@ -2866,7 +2908,16 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params);
         else if (0 == strcmp("GetContentSetSize", requestId))
             result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params);
-        return CreateReturnValue(result, true);
+
+        result.then([responseSender](ECPresentationResult result)
+            {
+            responseSender->SetResult(std::move(result));
+            responseSender->Queue();
+            }).onError([responseSender](folly::exception_wrapper)
+            {
+            responseSender->SetResult(ECPresentationResult(ECPresentationStatus::Error, "future error"));
+            responseSender->Queue();
+            });
         }
 
     Napi::Value SetupRulesetDirectories(Napi::CallbackInfo const& info)
