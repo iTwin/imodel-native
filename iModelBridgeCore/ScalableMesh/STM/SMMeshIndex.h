@@ -266,7 +266,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     /**----------------------------------------------------------------------------
     Initiates the meshing of the node.
     -----------------------------------------------------------------------------*/
-    virtual void Mesh();    
+    virtual void Mesh(bvector<uint64_t>* pNodesToMesh);
 
     void                SetClipRegistry(HFCPtr<ClipRegistry>& registry)
         {
@@ -945,7 +945,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             GetMesher3d();
 
 
-        virtual void        Mesh();
+        virtual void        Mesh(bvector<uint64_t>* pNodesToMesh = nullptr);
                         
         StatusInt           Publish3DTiles(const WString& path, TransformCR transform, ClipVectorPtr clips, const uint64_t& clipID, const GeoCoordinates::BaseGCSCPtr sourceGCS, bool outputTexture);
 

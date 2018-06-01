@@ -1341,7 +1341,7 @@ template<class POINT, class EXTENT> ISMPointIndexMesher<POINT, EXTENT>* SMMeshIn
 //=======================================================================================
 // @bsimethod                                                   Mathieu.St-Pierre 08/14
 //=======================================================================================
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh(bvector<uint64_t>* pNodesToMesh)
     {
     if (!IsLoaded())
         Load();
@@ -1363,7 +1363,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
 #endif                        
 
             if (static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->NeedsMeshing())
-                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->Mesh();
+                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->Mesh(pNodesToMesh);
             }
         else
             {
@@ -1375,7 +1375,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
 #endif
                 if (static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->NeedsMeshing())
                     {
-                     static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->Mesh();
+                     static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->Mesh(pNodesToMesh);
                     }
                 }
 
@@ -1386,6 +1386,13 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
         {
         assert(this->NeedsMeshing() == true);
 
+        //Juste accumulate the node ids to mesh, don't mesh anything.
+        if (pNodesToMesh != nullptr)
+            {
+            pNodesToMesh->push_back(GetBlockID().m_integerID);
+            return;
+            }
+        
 
         m_SMIndex->m_nMeshedNodes++;
         float progressForLevel = (float)m_SMIndex->m_nMeshedNodes / m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level];
@@ -5616,22 +5623,25 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::PropagateFu
 Mesh
 Mesh the data.
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh()
+template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh(bvector<uint64_t>* pNodesToMesh)
     {
     HINVARIANTS;
 
-    bool result = m_mesher2_5d->Init(*this);
-    assert(result == true);
+    if (pNodesToMesh == nullptr)
+        {
+        bool result = m_mesher2_5d->Init(*this);
+        assert(result == true);
 
-    result = m_mesher3d->Init(*this);
-    assert(result == true);
+        result = m_mesher3d->Init(*this);
+        assert(result == true);
+        }
 
 
     // Check if root node is present
     if (m_pRootNode != NULL)
         {
         HFCPtr<SMMeshIndexNode<POINT, EXTENT>> node = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode);
-            node->Mesh();
+            node->Mesh(pNodesToMesh);
         }
 
     HINVARIANTS;

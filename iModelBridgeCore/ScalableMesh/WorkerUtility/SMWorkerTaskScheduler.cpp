@@ -596,6 +596,13 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pXml
             creatorPtr = nullptr;
 
 /*
+smFileName
+
+            
+            creatorPtr->SaveToFile();
+*/
+
+/*
             IDTMSourceCollection sourceCollection;
 
             bool result = ParseSourceSubNodes(sourceCollection, pXmlTaskNode);
