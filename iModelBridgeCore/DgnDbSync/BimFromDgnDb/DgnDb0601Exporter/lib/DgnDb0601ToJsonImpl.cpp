@@ -1576,7 +1576,17 @@ BentleyStatus DgnDb0601ToJsonImpl::ExportModel(Utf8CP schemaName, Utf8CP classNa
         if (obj.isMember("Properties"))
             {
             if (!obj["Properties"].isNull() && !Utf8String::IsNullOrEmpty(obj["Properties"].asString().c_str()))
-                obj["JsonProperties"] = obj["Properties"].asString().c_str();
+                {
+                Utf8String properties = obj["Properties"].asString();
+                if (properties.Contains("DisplayInfo"))
+                    {
+                    Utf8String tmp = obj["Properties"].asString();
+                    tmp.ReplaceAll("DisplayInfo", "formatter");
+                    obj["JsonProperties"] = tmp.c_str();
+                    }
+                else
+                    obj["JsonProperties"] = properties.c_str();
+                }
             obj.removeMember("Properties");
             }
 
