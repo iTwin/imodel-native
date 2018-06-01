@@ -569,42 +569,6 @@ DbResult JsInterop::RemovePendingChangeSet(DgnDbR dgndb, Utf8StringCR changeSetI
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                               Ramanujam.Raman                 09/17
-//---------------------------------------------------------------------------------------
-DbResult JsInterop::SetupBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken)
-    {
-    PRECONDITION(!briefcaseToken.isNull() && briefcaseToken.isObject(), BE_SQLITE_ERROR);
-    PRECONDITION(briefcaseToken.isMember(json_pathname()) && briefcaseToken.isMember(json_briefcaseId()) && briefcaseToken.isMember(json_openMode()), BE_SQLITE_ERROR);
-
-    BeFileName briefcasePathname(briefcaseToken[json_pathname()].asCString(), true);
-    int briefcaseId = briefcaseToken[json_briefcaseId()].asInt();
-    //DgnDb::OpenMode mode = (DgnDb::OpenMode) briefcaseToken["openMode"].asInt();
-
-    /** Open the first time to set the briefcase id and get the DbGuid (used for creating change sets) */
-    DbResult result;
-    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
-    DgnDbPtr db = DgnDb::OpenDgnDb(&result, briefcasePathname, openParams);
-    if (!EXPECTED_CONDITION(result == BE_SQLITE_OK))
-        return result;
-
-    BeBriefcaseId newBriefcaseId((uint32_t)briefcaseId);
-    if (db->GetBriefcaseId() != newBriefcaseId)
-        {
-        if (!EXPECTED_CONDITION(db->IsMasterCopy() && "Expected briefcase to be a master copy"))
-            return BE_SQLITE_ERROR;
-        result = db->SetAsBriefcase(newBriefcaseId);
-        if (!EXPECTED_CONDITION(result == BE_SQLITE_OK && "Couldn't setup the briefcase id"))
-            return BE_SQLITE_ERROR;
-        }
-
-    if (db.IsValid())
-        db->AddIssueListener(s_listener);
-
-    outDb = db;
-    return result;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
 void JsInterop::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt) 

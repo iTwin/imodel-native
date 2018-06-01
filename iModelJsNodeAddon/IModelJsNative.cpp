@@ -823,20 +823,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), modelJson.ToString().c_str()));
         }
 
-    // Sets up a briefcase and opens it
-    Napi::Value SetupBriefcase(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, briefcaseToken, Env().Undefined());
-        Json::Value jsonBriefcaseToken = Json::Value::From(briefcaseToken);
-
-        DbResult result = JsInterop::SetupBriefcase(m_dgndb, jsonBriefcaseToken);
-        Napi::Object ret;
-        if (BE_SQLITE_OK == result)
-            OnDgnDbOpened(m_dgndb.get());
-
-        return Napi::Number::New(Env(), (int)result);
-        }
-
     Napi::Value DumpChangeSet(Napi::CallbackInfo const& info)
         {
         REQUIRE_DB_TO_BE_OPEN
@@ -1014,15 +1000,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_ARGUMENT_STRING(0, changeSetId, Env().Undefined());
         DbResult result = JsInterop::RemovePendingChangeSet(*m_dgndb, changeSetId);
         return Napi::Number::New(Env(), (int) result);
-        }
-
-    Napi::Value GetCachedBriefcaseInfos(Napi::CallbackInfo const& info)
-        {
-        REQUIRE_ARGUMENT_STRING(0, cachePath, Env().Undefined());
-        Json::Value cachedBriefcaseInfos;
-        BeFileName cacheFile(cachePath.c_str(), true);
-        DbResult result = JsInterop::GetCachedBriefcaseInfos(cachedBriefcaseInfos, cacheFile);
-        return CreateBentleyReturnObject(result, Napi::String::New(Env(), cachedBriefcaseInfos.ToString().c_str()));
         }
 
     Napi::Value GetIModelProps(Napi::CallbackInfo const& info)
@@ -1701,7 +1678,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("extractCodesFromFile", &NativeDgnDb::ExtractCodesFromFile),
             InstanceMethod("finishCreateChangeSet", &NativeDgnDb::FinishCreateChangeSet),
             InstanceMethod("getBriefcaseId", &NativeDgnDb::GetBriefcaseId),
-            InstanceMethod("getCachedBriefcaseInfos", &NativeDgnDb::GetCachedBriefcaseInfos),
             InstanceMethod("getDbGuid", &NativeDgnDb::GetDbGuid),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
@@ -1733,7 +1709,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerPessimisticConcurrencyControlPolicy),
             InstanceMethod("setDbGuid", &NativeDgnDb::SetDbGuid),
             InstanceMethod("setAsMaster", &NativeDgnDb::SetAsMaster),
-            InstanceMethod("setupBriefcase", &NativeDgnDb::SetupBriefcase),
             InstanceMethod("startCreateChangeSet", &NativeDgnDb::StartCreateChangeSet),
             InstanceMethod("txnManagerGetCurrentTxnId", &NativeDgnDb::TxnManagerGetCurrentTxnId),
             InstanceMethod("txnManagerGetTxnDescription", &NativeDgnDb::TxnManagerGetTxnDescription),
