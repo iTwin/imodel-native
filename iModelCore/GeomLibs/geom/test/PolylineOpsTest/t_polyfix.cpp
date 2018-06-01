@@ -415,5 +415,35 @@ TEST(Polyfix,HorizontalSteps)
         }
     Check::ClearGeometry ("Polyfix.HorizontalSteps");
     }
+void SaveShapes (bvector<bvector<DPoint2d>> &loops)
+    {
+    for (auto &loop : loops)
+        {
+        bvector<DPoint3d> loop3d;
+        for (auto &xy : loop)
+            loop3d.push_back (DPoint3d::From (xy));
+        auto shape = CurveVector::CreateLinear (loop3d, CurveVector::BOUNDARY_TYPE_Outer);
+        Check::SaveTransformed (*shape);
+        }
+    }
+TEST(Polyfix,vu_fixupLoopParity)
+    {
+    bvector<bvector<DPoint2d>> inputLoops;
+
+    inputLoops.push_back (bvector<DPoint2d> ());
+    SampleGeometryCreator::StrokeUnitCircle (inputLoops.back (), 6, 3.0);
 
 
+    inputLoops.push_back (bvector<DPoint2d> ());
+    SampleGeometryCreator::StrokeUnitCircle (inputLoops.back (), 6, 5.0);
+
+    auto shift1 = Transform::From (1,3,0);
+    shift1.Multiply (inputLoops.back (), inputLoops.back ());
+
+    bvector<bvector<DPoint2d>> outputLoops;
+    vu_fixupLoopParity (outputLoops, inputLoops, 3, 1);
+    SaveShapes (inputLoops);
+    Check::Shift (0,10,0);
+    SaveShapes (outputLoops);
+    Check::ClearGeometry ("Polyfix.vu_fixupLoopParity");
+    }

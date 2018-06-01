@@ -47,7 +47,10 @@ double sweep;       //!< Sweep angle in parameterization
 //! @return DEllipse3d object.
 //! 
 //!
-static DEllipse3d From (double cx, double cy, double cz, double ux, double uy, double uz, double vx, double vy, double vz, double theta0, double sweep);
+static DEllipse3d From (double cx, double cy, double cz, double ux, double uy, double uz, double vx, double vy, double vz,
+double theta0 = 0.0,
+double sweep = msGeomConst_2pi
+);
 
 //! Return an xy-plane full circle with center and radius.
 static DEllipse3d FromCenterRadiusXY
@@ -83,8 +86,10 @@ double endFraction
 //! @return DEllipse3d object.
 //! 
 //!
-static DEllipse3d FromXYMajorMinor (double cx, double cy, double cz, double rx, double ry, double thetaX, double theta0, double sweep);
-
+static DEllipse3d FromXYMajorMinor (double cx, double cy, double cz, double rx, double ry, double thetaX,
+double theta0 = 0.0,
+double sweep = msGeomConst_2pi
+);
 //!
 //! @description Returns a DEllipse3d with fill in ellipse data from center, 0 degree, and 90 degree points.
 //!
