@@ -6,8 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "UnitsTestFixture.h"
-
-#include <BeSqlite/L10N.h>
 #include <fstream>
 
 BEGIN_UNITS_UNITTESTS_NAMESPACE
@@ -19,17 +17,6 @@ UnitRegistry* UnitsTestFixture::s_unitsContext = nullptr;
 //----------------------------------------------------------------------------------------
 void UnitsTestFixture::SetUp()
     {
-    BeFileName sqlangFile;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
-    sqlangFile.AppendToPath(L"sqlang");
-    sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
-
-    BeFileName temporaryDirectory;
-    BeTest::GetHost().GetTempDir(temporaryDirectory);
-
-    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
-    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
-
     if (nullptr == s_unitsContext)
         s_unitsContext = new UnitRegistry();
     }
@@ -39,7 +26,6 @@ void UnitsTestFixture::SetUp()
 //----------------------------------------------------------------------------------------
 void UnitsTestFixture::TearDown()
     {
-    BeSQLite::L10N::Shutdown();
     }
 
 //---------------------------------------------------------------------------------------

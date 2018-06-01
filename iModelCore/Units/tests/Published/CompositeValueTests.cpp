@@ -84,7 +84,7 @@ TEST_F(CompositeValueSpecTest, Constructors)
     CompositeValueSpec cvs1unit(*s_mile);
     ASSERT_EQ(1, cvs1unit.GetUnitCount());
     ASSERT_FALSE(cvs1unit.IsProblem());
-    EXPECT_STREQ("mi", cvs1unit.GetMajorUnit()->GetLabel().c_str());
+    EXPECT_STREQ("MILE", cvs1unit.GetMajorUnit()->GetLabel().c_str());
     EXPECT_EQ(nullptr, cvs1unit.GetMiddleUnit());
     EXPECT_EQ(nullptr, cvs1unit.GetMinorUnit());
     EXPECT_EQ(nullptr, cvs1unit.GetSubUnit());
@@ -93,8 +93,8 @@ TEST_F(CompositeValueSpecTest, Constructors)
     CompositeValueSpec cvs2unit(*s_mile, *s_yrd);
     ASSERT_EQ(2, cvs2unit.GetUnitCount());
     ASSERT_FALSE(cvs2unit.IsProblem());
-    EXPECT_STREQ("mi", cvs2unit.GetMajorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("yd", cvs2unit.GetMiddleUnit()->GetLabel().c_str());
+    EXPECT_STREQ("MILE", cvs2unit.GetMajorUnit()->GetLabel().c_str());
+    EXPECT_STREQ("YRD", cvs2unit.GetMiddleUnit()->GetLabel().c_str());
     EXPECT_EQ(nullptr, cvs2unit.GetMinorUnit());
     EXPECT_EQ(nullptr, cvs2unit.GetSubUnit());
     EXPECT_DOUBLE_EQ(1760.0, cvs2unit.GetMajorToMiddleRatio());
@@ -103,9 +103,9 @@ TEST_F(CompositeValueSpecTest, Constructors)
     CompositeValueSpec cvs3unit(*s_mile, *s_yrd, *s_ft);
     ASSERT_EQ(3, cvs3unit.GetUnitCount());
     ASSERT_FALSE(cvs3unit.IsProblem());
-    EXPECT_STREQ("mi", cvs3unit.GetMajorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("yd", cvs3unit.GetMiddleUnit()->GetLabel().c_str());
-    EXPECT_STREQ("ft", cvs3unit.GetMinorUnit()->GetLabel().c_str());
+    EXPECT_STREQ("MILE", cvs3unit.GetMajorUnit()->GetLabel().c_str());
+    EXPECT_STREQ("YRD", cvs3unit.GetMiddleUnit()->GetLabel().c_str());
+    EXPECT_STREQ("FT", cvs3unit.GetMinorUnit()->GetLabel().c_str());
     EXPECT_EQ(nullptr, cvs3unit.GetSubUnit());
     EXPECT_DOUBLE_EQ(1760.0, cvs3unit.GetMajorToMiddleRatio());
     EXPECT_DOUBLE_EQ(3.0, cvs3unit.GetMiddleToMinorRatio());
@@ -114,10 +114,10 @@ TEST_F(CompositeValueSpecTest, Constructors)
     CompositeValueSpec cvs4unit(*s_mile, *s_yrd, *s_ft, *s_inch);
     ASSERT_EQ(4, cvs4unit.GetUnitCount());
     ASSERT_FALSE(cvs4unit.IsProblem());
-    EXPECT_STREQ("mi", cvs4unit.GetMajorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("yd", cvs4unit.GetMiddleUnit()->GetLabel().c_str());
-    EXPECT_STREQ("ft", cvs4unit.GetMinorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("in", cvs4unit.GetSubUnit()->GetLabel().c_str());
+    EXPECT_STREQ("MILE", cvs4unit.GetMajorUnit()->GetLabel().c_str());
+    EXPECT_STREQ("YRD", cvs4unit.GetMiddleUnit()->GetLabel().c_str());
+    EXPECT_STREQ("FT", cvs4unit.GetMinorUnit()->GetLabel().c_str());
+    EXPECT_STREQ("IN", cvs4unit.GetSubUnit()->GetLabel().c_str());
     EXPECT_DOUBLE_EQ(1760.0, cvs4unit.GetMajorToMiddleRatio());
     EXPECT_DOUBLE_EQ(3.0, cvs4unit.GetMiddleToMinorRatio());
     EXPECT_DOUBLE_EQ(12.0, cvs4unit.GetMinorToSubRatio());
@@ -131,8 +131,8 @@ TEST_F(CompositeValueSpecTest, NonIntegerRatios)
     CompositeValueSpec cvs1unit(*s_mile, *s_meter);
     ASSERT_EQ(2, cvs1unit.GetUnitCount());
     ASSERT_FALSE(cvs1unit.IsProblem());
-    EXPECT_STREQ("mi", cvs1unit.GetMajorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("m", cvs1unit.GetMiddleUnit()->GetLabel().c_str());
+    EXPECT_STREQ("MILE", cvs1unit.GetMajorUnit()->GetLabel().c_str());
+    EXPECT_STREQ("M", cvs1unit.GetMiddleUnit()->GetLabel().c_str());
     EXPECT_EQ(nullptr, cvs1unit.GetMinorUnit());
     EXPECT_EQ(nullptr, cvs1unit.GetSubUnit());
     EXPECT_DOUBLE_EQ(1609.344, cvs1unit.GetMajorToMiddleRatio());
@@ -260,48 +260,6 @@ TEST_F(CompositeValueSpecTest, Quatro_SetUnitLabels)
     }
 
 //===================================================
-// CompositeValue
-//===================================================
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeValueTest, Constructors)
-    {
-    CompositeValue cv;
-    ASSERT_FALSE(cv.IsProblem());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeValueTest, DataMemberSettersAndGetters)
-    {
-    CompositeValue cv;
-
-    cv.SetMajor(1.0);
-    cv.SetMiddle(2.0);
-    cv.SetMinor(3.0);
-    cv.SetSub(4.0);
-    EXPECT_EQ(1.0, cv.GetMajor());
-    EXPECT_EQ(2.0, cv.GetMiddle());
-    EXPECT_EQ(3.0, cv.GetMinor());
-    EXPECT_EQ(4.0, cv.GetSub());
-
-    cv.SetPositive();
-    EXPECT_STREQ("", cv.GetSignPrefix().c_str());
-    EXPECT_STREQ("", cv.GetSignPrefix(true).c_str());
-    EXPECT_STREQ("", cv.GetSignSuffix().c_str());
-    EXPECT_STREQ("", cv.GetSignSuffix(true).c_str());
-
-    cv.SetNegative();
-    EXPECT_STREQ("-", cv.GetSignPrefix().c_str());
-    EXPECT_STREQ("(", cv.GetSignPrefix(true).c_str());
-    EXPECT_STREQ("", cv.GetSignSuffix().c_str());
-    EXPECT_STREQ(")", cv.GetSignSuffix(true).c_str());
-    }
-
-//===================================================
 // FormatCompositeStringTest
 //===================================================
 
@@ -333,7 +291,7 @@ TEST_F(FormatCompositeStringTest, CompositeValueUsesThousandSeparatorForLastUnit
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CompositeValueSpecJsonTest, JsonTest)
     {
-    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    CompositeValueSpec spec(*s_mile, *s_yrd, *s_ft, *s_inch);
     spec.SetMajorLabel("apple");
     spec.SetMiddleLabel("banana");
     spec.SetMinorLabel("cactus pear");
@@ -383,7 +341,7 @@ TEST_F(CompositeValueSpecJsonTest, JsonTest)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CompositeValueSpecJsonTest, JsonVerboseTest)
     {
-    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    CompositeValueSpec spec(*s_mile, *s_yrd, *s_ft, *s_inch);
     spec.SetSpacer("-");
     Json::Value json;
     spec.ToJson(json);
@@ -394,19 +352,19 @@ TEST_F(CompositeValueSpecJsonTest, JsonVerboseTest)
                                 "units": [
                                         {
                                         "name": "MILE",
-                                        "label": "mi"
+                                        "label": "MILE"
                                         },
                                         {
                                         "name": "YRD",
-                                        "label": "yd"
+                                        "label": "YRD"
                                         },
                                         {
                                         "name": "FT",
-                                        "label": "ft"
+                                        "label": "FT"
                                         },
                                         {
                                         "name": "IN",
-                                        "label": "in"
+                                        "label": "IN"
                                         }
                                     ]
                                 })json";

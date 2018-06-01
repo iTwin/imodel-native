@@ -177,7 +177,7 @@ Utf8String Format::StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::Uni
     if (nfs.HasComposite())  // procesing composite parts
         {
         CompositeValueSpecCP compS = nfs.GetCompositeSpec();
-        CompositeValue dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
+        auto dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
         Utf8String pref = dval.GetSignPrefix();
         Utf8String suff = dval.GetSignSuffix();
         Utf8String uomSeparator;
