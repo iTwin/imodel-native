@@ -1,0 +1,36 @@
+#----------------------------------------------------------------------
+#
+#     $Source: TestUtils/TestUtils.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+
+%include mdl.mki
+
+%include mdl.mki
+%include $(SrcRoot)Building/ConceptBuilding/privmki/ConceptBuilding.mki
+
+%ifndef TestDir
+    %error must define TestDir
+%endif
+
+baseDir = $(_MakeFilePath)
+
+
+BEGTEST_NAME  = $(TestDir)TestUtils
+BEGTEST_INPUT = $(baseDir)$(TestDir)/
+
+
+BEGTEST_OUTPUT=$(OutputRootDir)build/BuildingShared/Utils/
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+
+# ignore: local variable is initialized but not referenced
+CCompOpts + -wd4189
+
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
+
+# Deliver 
+$(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
