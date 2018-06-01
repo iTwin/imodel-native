@@ -24,16 +24,6 @@ ECSchemaPtr ECTestFixture::s_formatsSchema;
 //---------------------------------------------------------------------------------------
 void ECTestFixture::SetUp()
     {
-    BeFileName sqlangFile;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
-    sqlangFile.AppendToPath(L"sqlang");
-    sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
-
-    BeFileName temporaryDirectory;
-    BeTest::GetHost().GetTempDir(temporaryDirectory);
-
-    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
-    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
     }
 
 //----------------------------------------------------------------------------------------
@@ -41,7 +31,6 @@ void ECTestFixture::SetUp()
 //----------------------------------------------------------------------------------------
 void ECTestFixture::TearDown()
     {
-    BeSQLite::L10N::Shutdown();
     }
 
 /*---------------------------------------------------------------------------------**//**
