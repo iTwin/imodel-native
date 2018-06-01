@@ -1819,6 +1819,95 @@ SnapGeometryHelper(SnapMode mode, int divisor, double aperture, DPoint3d closePt
 END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value SnapContext::DoSnap(JsonValueCR input, DgnDbR db)
+    {
+    Json::Value output;
+
+    if (input["elementId"].isNull() || input["closePoint"].isNull() || input["worldToView"].isNull())
+        return output;
+
+    DgnElementId elementId;
+    elementId.FromJson(input["elementId"]);
+
+    if (!elementId.IsValid())
+        return output; // NOTE: Maybe to support snappable decorations the GeometryStream/Placement can be supplied in lieu of an element id?
+
+    DPoint3d closePoint;
+    JsonUtils::DPoint3dFromJson(closePoint, input["closePoint"]); // World coordinate point of mesh tile geometry...
+
+    DMatrix4d worldToView, viewToWorld;
+    DMap4d worldToViewMap;
+    JsonUtils::DMatrix4dFromJson(worldToView, input["worldToView"]); // World to view DMatrix4d...
+    viewToWorld.QrInverseOf(worldToView);
+    worldToViewMap.InitFrom(worldToView, viewToWorld);
+
+    ViewFlags viewFlags;
+    if (!input["viewFlags"].isNull())
+        viewFlags.FromJson(input["viewFlags"]);
+
+    SnapMode snapMode = SnapMode::NearestKeypoint;
+    if (!input["snapMode"].isNull())
+        snapMode = (SnapMode) input["snapMode"].asUInt();
+
+    double snapAperture = 12.0; // Hot distance in view coordinates (pixels). Locate aperture * hot distance factor...
+    if (!input["snapAperture"].isNull())
+        snapAperture = input["snapAperture"].asDouble();
+
+    int snapDivisor = 2;
+    if (!input["snapDivisor"].isNull())
+        snapDivisor = input["snapDivisor"].asUInt();
+
+    DgnElementCPtr element = db.Elements().GetElement(elementId);
+    GeometrySourceCP source = (element.IsValid() ? element->ToGeometrySource() : nullptr);
+
+    if (nullptr == source)
+        return output;
+
+    if (SnapMode::Origin != GetSnapMode())
+        {
+        SnapGeometryHelper helper(snapMode, snapDivisor, snapAperture, closePoint, worldToViewMap);
+
+        SnapStatus status = helper.GetClosestCurve(*source, &viewFlags, nullptr, nullptr); // NEEDSWORK: off sub-categories and stop tester...
+
+        if (SnapStatus::Aborted == status)
+            {
+            output["status"] = (uint32_t) SnapStatus::Aborted;
+            return output;
+            }
+
+        if (SnapStatus::Success == status && helper.ComputeSnapLocation())
+            {
+//TransformCR GetHitLocalToWorld() const {return m_hitLocalToWorld;}
+//GeometryParamsCR GetHitGeometryParams() const {return m_hitParams;}
+//CurveLocationDetailCR GetHitCurveDetail() const {return m_hitCurveDetail;}
+//HitGeomType GetHitGeomType() const {return m_hitGeomType;}
+//HitParentGeomType GetHitParentGeomType() const {return m_hitParentGeomType;}
+
+//            GetSnapDetail()->GetGeomDetailW().SetCurvePrimitive(helper.GetHitCurveDetail().curve, &helper.GetHitLocalToWorld(), helper.GetHitGeomType());
+
+//            if (0.0 != helper.GetHitNormalWorld().Magnitude())
+//                GetSnapDetail()->GetGeomDetailW().SetSurfaceNormal(helper.GetHitNormalWorld());
+
+            output["status"] = (uint32_t) status;
+            JsonUtils::DPoint3dToJson(output["snapPoint"], helper.GetHitPointWorld());
+
+            return output;
+            }
+        }
+
+    DPoint3d origin;
+
+    source->GetPlacementTransform().GetTranslation(origin);
+
+    output["status"] = (uint32_t) SnapStatus::Success;
+    JsonUtils::DPoint3dToJson(output["snapPoint"], origin);
+
+    return output;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 SnapStatus SnapContext::DoDefaultDisplayableSnap()
