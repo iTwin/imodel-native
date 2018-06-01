@@ -133,8 +133,9 @@ BentleyStatus RepositoryInfoStore::PrepareInfo(IDataSourceCache& cache)
         return ERROR;
 
     m_repositoryInfo = ReadRepositoryInfo(cache);
-    if (!m_repositoryInfo.IsValid())
-        return ERROR;
+    // TODO: cannot fail when opening cache that did not have repository info before
+    //if (!m_repositoryInfo.IsValid())
+    //    return ERROR;
 
     return SUCCESS;
     }
