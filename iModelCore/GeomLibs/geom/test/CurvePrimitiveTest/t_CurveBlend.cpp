@@ -3052,3 +3052,172 @@ TEST(LineString,OffsetB)
         }
     Check::ClearGeometry ("LineString.OffsetB");
     }
+
+struct FrameWithGeometry
+{
+Transform localToWorld;
+Transform worldToLocal;
+bvector<DPoint3d>  samplePoints;
+IGeometryPtr geometry;
+};
+//!
+//! Place frames along a CurveVectorWithDistanceIndex, at true arc length distance {frameStep}
+//! The frame origins are equally spaced by arc length
+//! Each frame's z direction is forward along the curve tangent.
+//! Each frame's x direction is perpendicular and in the global xy plane.
+void PlaceFramesAtUniformArcLength
+(
+bvector<FrameWithGeometry> &frames,          //!< [out] frames with Transforms and local geoemtry
+CurveVectorWithDistanceIndexCR path,    //!< [in] track curve.
+IGeometryPtr const &geometry,           //!< [in] optional geometry to place in the local frame.
+double frameStep                        //!< [in] arc length between stations.
+)
+    {
+    DVec3d vectorZ = DVec3d::From (0,0,1);
+    frames.clear ();
+    double totalPathLength = path.TotalPathLength ();
+    for (size_t i = 0; i * frameStep <= totalPathLength; i++)
+        {
+        double d = i * frameStep;
+        auto ray = path.DistanceAlongToPointAndUnitTangent (d).Value ();
+        DVec3d sideVector = DVec3d::FromNormalizedCrossProduct (vectorZ, ray.direction);
+        DVec3d upVector =  DVec3d::FromNormalizedCrossProduct (ray.direction, sideVector);
+        FrameWithGeometry planeData;
+        planeData.localToWorld = Transform::FromOriginAndVectors (ray.origin,
+                        sideVector, upVector, ray.direction);
+        planeData.worldToLocal = planeData.localToWorld.ValidatedInverse ().Value ();
+        if (geometry.IsValid ())
+            planeData.geometry = geometry->Clone (planeData.localToWorld);
+        frames.push_back (planeData);
+        }
+    }
+
+//!
+//! Place rearTrackFrames along a CurveVectorWithDistanceIndex, at true arc length distance {frameStep}
+//! The origin of a rearTrackFrame is the position of the bogie center.
+//! For each rearTrackFrame, also create a corresponging carFrame that points (at an angle to the track) from
+//! the rear bogie center to the forward bogie center.
+void PlaceFramesForBogieCenters
+(
+bvector<FrameWithGeometry> &rearTrackFrames,
+bvector<FrameWithGeometry> &carFrames,
+CurveVectorWithDistanceIndexCR path,
+IGeometryPtr const& carGeometry,
+double frameStep,       // step between placements of the rear bogie.
+double bogieDistance,        // bogie-to-bogie distance
+double maxTurnAngle = Angle::DegreesToRadians (45.0)    // maximum plausible turn angle 
+)
+    {
+    // make an arc to be placed in each frame and the intersected with the curve ahead.
+    // REMARK: This intersection is as viewed in xy.  If the curve has elevation changes, do some
+    // work to iterate to a spherical intersection instead of the xy cylinder intersection.
+    // (That may also have to consider distance from track to frame vector?)
+    auto referenceArc = ICurvePrimitive::CreateArc (DEllipse3d::From (
+            0,0,0,
+            0,0,bogieDistance,
+            bogieDistance,0,0,
+            -maxTurnAngle, 2.0 * maxTurnAngle
+            ));
+    DVec3d vectorZ = DVec3d::From (0,0,1);
+
+    bvector<FrameWithGeometry> candidateRearTrackFrames;
+    rearTrackFrames.clear ();
+    carFrames.clear ();
+    PlaceFramesAtUniformArcLength (candidateRearTrackFrames, path, nullptr, frameStep);
+
+    CurveVectorPtr intersectionsA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    CurveVectorPtr intersectionsB = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);\
+    // bypass const pointer ...
+    CurveVectorP pathCurveVector = const_cast <CurveVectorP> (path.GetCurveVector().get ());
+    for (auto rearFrame : candidateRearTrackFrames)
+        {
+        auto localArc = referenceArc->Clone (rearFrame.localToWorld);
+        intersectionsA->clear ();
+        intersectionsB->clear ();
+        // Check::SaveTransformed (*localArc);
+        CurveCurve::IntersectionsXY (
+            *intersectionsA, *intersectionsB,
+            *localArc,
+            *pathCurveVector,
+            nullptr);
+        DPoint3d pointA, forwardPoint;
+        double fractionA, fractionB;
+        size_t numIntersection = intersectionsB->size ();
+        if (numIntersection != 1)
+            {
+            }
+        else if (CurveCurve::IsSinglePointPair (
+                *intersectionsA, *intersectionsB, 0,
+                fractionA, pointA, fractionB, forwardPoint
+            ))
+            {
+            auto rearPoint = rearFrame.localToWorld.Origin ();
+            DVec3d carAxisVector = DVec3d::FromStartEndNormalize (rearPoint, forwardPoint);
+            DVec3d sideVector = DVec3d::FromNormalizedCrossProduct (vectorZ, carAxisVector);
+            DVec3d upVector = DVec3d::FromNormalizedCrossProduct (carAxisVector, sideVector);
+            FrameWithGeometry carFrame;
+            carFrame.localToWorld = Transform::FromOriginAndVectors (rearPoint,
+                        sideVector, upVector, carAxisVector);
+            carFrame.worldToLocal = carFrame.localToWorld.ValidatedInverse ().Value ();
+            if (carGeometry.IsValid ())
+                carFrame.geometry = carGeometry->Clone (carFrame.localToWorld);
+            carFrames.push_back (carFrame);
+            rearTrackFrames.push_back (rearFrame);
+            }
+        }
+    }
+
+void Save (bvector <FrameWithGeometry> &frames)
+    {
+    for (auto &frame : frames)
+        if (frame.geometry.IsValid ())
+            Check::SaveTransformed (frame.geometry);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Train,Envelope)
+    {
+    CurveVectorPtr path = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+    path->Add (ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 100,0,0)));
+
+    auto endPoint = path->at(0)->FractionToPointAndUnitTangent (1.0).Value ();
+    path->Add(ICurvePrimitive::CreateArc (DEllipse3d::FromStartTangentNormalRadiusSweep (
+                endPoint.origin, endPoint.direction, DVec3d::From (0,0,1), 150.0, Angle::DegreesToRadians (45.0))));
+    auto pathWithDistanceIndex = CurveVectorWithDistanceIndex::Create ();
+    pathWithDistanceIndex->SetPath (path);
+
+    double dx = 3.0;
+    double dy = 10.0;
+    auto crossSectionGeometry = IGeometry::Create (
+        CurveVector::CreateRectangle (-dx, 0.0, dx, dy, 0.0,
+            CurveVector::BOUNDARY_TYPE_Open));
+    // just a bogie-to-bogie box for the car -- the geometry used for sweep has to extend beyond the bogies.
+    // (yes, the car is flipped up in the z direction -- thats the way the placements work.
+    double width = 2.5;
+    double halfWidth = width * 0.5;
+    double height = 3.5;
+    double bogieDistance = 15.0;
+    auto bogieToBogieBox = IGeometry::Create (ISolidPrimitive::CreateDgnBox (
+            DgnBoxDetail (
+                DPoint3d::From (-halfWidth,0,0),
+                DPoint3d::From (-halfWidth,0,bogieDistance),
+                DVec3d::From (1,0,0), DVec3d::From (0,1,0),
+                width, height, width, height, true)));
+
+    Check::SaveTransformed (*path);
+
+    bvector <FrameWithGeometry> allPlanes, carRear, carOnTrack;
+    double crossSectionStep = 2.0;
+    PlaceFramesAtUniformArcLength (allPlanes, *pathWithDistanceIndex, crossSectionGeometry, crossSectionStep);
+    Save(allPlanes);
+    double carStep = 5.0;
+    PlaceFramesForBogieCenters (carRear, carOnTrack, *pathWithDistanceIndex, bogieToBogieBox, carStep, bogieDistance);
+
+    Check::Shift (0,100,0);
+    Check::SaveTransformed (*path);
+    Save(carOnTrack);
+
+
+    Check::ClearGeometry ("Train.Envelope");
+    }

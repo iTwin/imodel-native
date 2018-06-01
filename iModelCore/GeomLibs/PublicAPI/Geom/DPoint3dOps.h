@@ -1536,6 +1536,19 @@ bvector<DPoint2d> const &polygonPoints,
 double      tol
 );
 
+//! Classify a point with respect to a polygon.
+//! @param point => point to test
+//! @param polygonPoints => polygon points.  Last point does not need to be duplicated.
+//! @param tol => tolerance for "on" detection. May be zero.
+//! @return 1 if point is "in" by parity, 0 if "on", -1 if "out", -2 if nothing worked.
+public: static GEOMDLLIMPEXP int PointPolygonParity
+(
+DPoint2dCR point,
+DPoint2d const *points,
+size_t numPoint,
+double      tol
+);
+
 //! Return the 3D polygon centroid, normal and area.
 //! Disconnects are allowed.   Areas of each loop are added without test for containment or xy orientation.
 //! Enter holes with opposite orientation from their containing loop.

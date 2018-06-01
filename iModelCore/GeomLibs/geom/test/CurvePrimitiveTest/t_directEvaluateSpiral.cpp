@@ -463,3 +463,36 @@ TEST(Spiral,SignedDistanceLangham)
     Check::ClearGeometry ("Spiral.SignedDistanceAlongLangham");
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Spiral,AustralianReversal)
+    {
+    double R1 = 0.0;
+    double L = 20.0;
+    for (double R0 : {-350.0, -200.0, -100.0, 100.0, 200.0, 350.0})
+        {
+        SaveAndRestoreCheckTransform shifter (0, 10.0 * L,0);
+        for (double beta0 : {0.0, 1.0, 3.0, 4.74, 6.0 })
+            {
+            SaveAndRestoreCheckTransform shifter (10.0 * L,0,0);
+            DPoint3d origin = DPoint3d::From (0,0,0);
+            auto curve1 = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (
+                    DSpiral2dBase::TransitionType_Australian,
+                    DPoint3d::From (0,0,0),
+                    beta0,
+                    R0,
+                    L,
+                    R1
+                    );
+            DVec3d startTangent = DVec3d::From (-L * cos (beta0), -L * sin (beta0), 0);
+            auto arc = DEllipse3d::FromStartTangentNormalRadiusSweep (origin, startTangent,
+                        DVec3d::From (0,0,1), -R0, 0.5);
+
+            Check::SaveTransformed (*curve1);
+            Check::SaveTransformed (arc);
+            }
+        }
+    Check::ClearGeometry ("Spiral.AustralianReversal");
+    }

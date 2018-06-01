@@ -994,6 +994,44 @@ TEST(MSBsplineSurface, Disk)
     Check::EndScope ();
     }
     
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(MSBsplineSurface, LinearBoundaries)
+    {
+    Check::StartScope ("bsurf linear bounds checks");
+    auto linearPrim = CurveVector::CreateLinear (
+        bvector<DPoint3d> {
+            DPoint3d::From (0.3, 0.3),
+            DPoint3d::From (0.8, 0.3),
+            DPoint3d::From (0.7,0.6),
+            DPoint3d::From (0.4, 0.6),
+            DPoint3d::From (0.3, 0.3)},
+            CurveVector::BOUNDARY_TYPE_Outer);
+
+    auto bsurf = SurfaceWithSinusoidalControlPolygon (
+                3,4,4, 7, 0.0, 0.4, 0.1, 0.8,
+                0.0
+                );
+    bsurf->SetTrim (*linearPrim);
+    Check::SaveTransformed (bsurf);
+    DPoint2d uv;
+    uv.Init (0.55, 0.52);
+    Check::True (bsputil_pointInBounds (&uv, bsurf->boundaries, bsurf->numBounds, bsurf->holeOrigin != 0), "(in)");
+    Check::True (bsputil_pointOnSurface (&uv, bsurf.get ()),"_pointOnSurface");
+    uv.Init (0.91, 0.93);
+    Check::False (bsputil_pointInBounds (&uv, bsurf->boundaries, bsurf->numBounds, bsurf->holeOrigin != 0), "(out)");
+    
+    bvector<double> fractions;
+    bspsurf_intersectBoundariesWithUVLine (&fractions, 0.51, bsurf.get (), true);
+    Check::Size (2, fractions.size (), "Horizontal Cut");
+    bspsurf_intersectBoundariesWithUVLine (&fractions, 0.51, bsurf.get (), false);
+    Check::Size (2, fractions.size (), "Vertical Cut");
+    Check::EndScope ();
+    Check::ClearGeometry ("MSBsplineSurface.LinearBoundaries");
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
