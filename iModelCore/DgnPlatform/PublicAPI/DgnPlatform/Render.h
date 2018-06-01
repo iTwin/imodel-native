@@ -3116,8 +3116,8 @@ public:
     bool FindIndex(uint32_t& index, FeatureCR feature) const
         {
         auto iter = m_map.find(feature);
-        bool found;
-        if (found = (m_map.end() != iter))
+        bool found = (m_map.end() != iter);
+        if (found)
             index = iter->second;
 
         return found;
