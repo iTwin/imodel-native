@@ -18,6 +18,9 @@ def main():
     oldDatasetPath = sys.argv[2]
     currentVersions = []
 
+    if not os.path.exists(oldDatasetPath):
+        sys.exit(0)
+
     #Append bedb, dgndb, ecdb versions in that order to list
     for subdir in os.listdir(currentDatasetPath):
         currentVersions.append(os.listdir(os.path.join(currentDatasetPath, subdir))[0])
@@ -27,12 +30,9 @@ def main():
     for subdir in os.listdir(oldDatasetPath):
         dirs = os.listdir(os.path.join(oldDatasetPath, subdir))
         if currentVersions[i] in dirs:
-            return  
-    
-    from __future__ import print_function
-    import sys
-
-    print("No changes, publishing datasets not necessary", file=sys.stderr)
+            sys.exit(1)
+        i = i + 1 
+    sys.exit(0)
 
 
 if __name__ == "__main__":
