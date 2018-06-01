@@ -13,6 +13,10 @@
 #include "ValueHelpers.h"
 #include "../Localization/Xliffs/ECPresentation.xliff.h"
 
+const int ContentDescriptor::Property::DEFAULT_PRIORITY = 0;
+
+const int DefaultCategorySupplier::NESTED_CONTENT_CATEGORY_PRIORITY = 400000; // matches Standard::General
+
 const Utf8CP ContentDisplayType::Undefined = "Undefined";
 const Utf8CP ContentDisplayType::Grid = "Grid";
 const Utf8CP ContentDisplayType::PropertyPane = "PropertyPane";
