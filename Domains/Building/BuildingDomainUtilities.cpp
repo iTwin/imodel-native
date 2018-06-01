@@ -51,8 +51,8 @@ namespace BuildingDomain
 		//if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::MechanicalFunctional::MechanicalFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
 		//	return BentleyStatus::ERROR;
 
-        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( ConstraintModel::ConstraintModelDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-            return BentleyStatus::ERROR;
+//        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( ConstraintModel::ConstraintModelDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+//            return BentleyStatus::ERROR;
 
         if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( Grids::GridsDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
             return BentleyStatus::ERROR;
