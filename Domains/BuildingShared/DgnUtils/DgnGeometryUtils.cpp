@@ -425,6 +425,28 @@ CurveVectorPtr DgnGeometryUtils::GetXYCrossSection(Dgn::IBRepEntityCR solid, dou
             }
 
         CurveVectorPtr crossSectionCV = Dgn::BRepUtil::Create::BodyToCurveVector(*crossSection);
+        if (crossSectionCV.IsNull()) // probably the body has multiple non intersecting faces
+            {
+            Dgn::BRepUtil::GetBodyFaces(&faces, *crossSectionSheetBody);
+
+            CurveVectorPtr cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion);
+            for (Dgn::ISubEntityPtr const& face : faces)
+                {
+                CurveVectorPtr faceCV = Dgn::BRepUtil::Create::PlanarFaceToCurveVector(*face);
+                if (faceCV.IsNull()) // face was not planar
+                    {
+                    continue;
+                    }
+
+                cv->Add(faceCV);
+                }
+
+            crossSectionCV = cv;
+            }
+
+        if (crossSectionCV.IsNull())
+            return nullptr;
+
         crossSectionCV->ConsolidateAdjacentPrimitives();
         return crossSectionCV;
         }
@@ -529,7 +551,6 @@ bvector<double>& zElevationVector
         Dgn::BRepUtil::Modify::BooleanCut(slice, *elevatedSheetBodyBottom, Dgn::BRepUtil::Modify::CutDirectionMode::Backward, Dgn::BRepUtil::Modify::CutDepthMode::All, 0.0, true);
         if ((pIter + 1) == zElevationVector.end())
             {
-            slicedGeometry.push_back({ slice, *pIter });
             break;
             }
 

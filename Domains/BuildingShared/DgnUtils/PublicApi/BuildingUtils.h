@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-//#include <ConstraintSystem/Domain/ConstraintModelMacros.h>
 #include <dgnPlatform/DgnModel.h>
 #include <dgnPlatform/ViewController.h>
 #include <DgnPlatform/DgnDb.h>
