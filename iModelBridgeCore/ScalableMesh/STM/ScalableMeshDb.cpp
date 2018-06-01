@@ -74,7 +74,7 @@ DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
     Utf8String versonJson(currentVersion.ToJson());
     stmt->BindText(1, versonJson.c_str(), Statement::MakeCopy::Yes);
     stmt->BindText(2, "", Statement::MakeCopy::Yes);
-    DbResult status = stmt->Step();
+    stmt->Step();
         
     return BeSQLite::Db::_OnDbCreated(params);
     }
