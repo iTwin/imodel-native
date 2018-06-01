@@ -79,8 +79,6 @@ $(o)NumericFormatUtils$(oext)  : $(formatSrcDir)NumericFormatUtils.cpp $(formatH
 
 $(o)FormatMappings$(oext)   : $(formatSrcDir)FormatMappings.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
-$(o)FormatMappings$(oext) : $(formatSrcDir)FormatMappings.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
-
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
 CCPchOpts =
@@ -102,6 +100,5 @@ DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeJsonCpp$(stlibext)
-LINKER_LIBRARIES           + $(BuildContext)SubParts/Libs/$(libprefix)BeSQLite$(stlibext)
 
 %include $(sharedMki)linkLibrary.mki

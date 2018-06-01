@@ -8,9 +8,6 @@
 
 #include "UnitsPCH.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
-#include "../Localization/xliffs/Units.xliff.h"
-#include <BeSQLite/L10N.h>
-#include <Bentley/md5.h>
 
 using namespace std;
 
@@ -173,18 +170,7 @@ ExpressionCR Unit::Evaluate() const
 Utf8StringCR Unit::GetLabel() const
     {
     if (m_displayLabel.empty())
-        {
-        MD5 md5;
-        Utf8PrintfString fullUnitName("%s:%s", GetPhenomenon()->GetName().c_str(), GetName().c_str());
-        Utf8PrintfString resname("LABEL_%s", md5(fullUnitName).c_str());
-        m_displayLabel = BeSQLite::L10N::GetString(BeSQLite::L10N::NameSpace("unit_labels"), BeSQLite::L10N::StringId(resname.c_str()));
-
-        if (m_displayLabel.empty())
-            {
-            LOG.errorv("Missing localized label for Unit %s", fullUnitName.c_str());
-            m_displayLabel = GetName();
-            }
-        }
+        m_displayLabel = GetName();
 
     return m_displayLabel;
     }
@@ -205,18 +191,7 @@ Utf8StringCR Unit::GetInvariantLabel() const
 Utf8CP Unit::GetDescription() const
     {
     if (m_displayDescription.empty())
-        {
-        MD5 md5;
-        Utf8PrintfString fullUnitName("%s:%s", GetPhenomenon()->GetName().c_str(), GetName().c_str());
-        Utf8PrintfString resname("DESCRIPTION_%s", md5(fullUnitName).c_str());
-        m_displayDescription = BeSQLite::L10N::GetString(BeSQLite::L10N::NameSpace("unit_labels"), BeSQLite::L10N::StringId(resname.c_str()));
-
-        if (m_displayLabel.empty())
-            {
-            LOG.errorv("Missing localized description for Unit %s", GetLabel().c_str());
-            m_displayLabel = GetName();
-            }
-        }
+        m_displayLabel = GetName();
 
     return m_displayDescription.c_str();
     }
@@ -544,7 +519,6 @@ Utf8StringCR Phenomenon::GetLabel() const
     if (m_displayLabel.empty())
         {
         Utf8PrintfString stringId("PHENOMENON_%s", GetName().c_str());
-        m_displayLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(stringId.c_str()));
         if(m_displayLabel.empty())
             return m_name;
         }

@@ -13,8 +13,6 @@
 
 #include "../FormattingTestsPch.h"
 
-#include <BeSQLite/L10N.h>
-
 USING_BENTLEY_FORMATTING
 
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE

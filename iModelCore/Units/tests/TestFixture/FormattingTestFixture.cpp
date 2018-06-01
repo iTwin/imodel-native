@@ -144,17 +144,6 @@ void FormattingTestFixture::CreateStdFormats()
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::SetUp()
     {
-    BeFileName sqlangFile;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
-    sqlangFile.AppendToPath(L"sqlang");
-    sqlangFile.AppendToPath(L"Units_en.sqlang.db3");
-
-    BeFileName temporaryDirectory;
-    BeTest::GetHost().GetTempDir(temporaryDirectory);
-
-    BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
-    BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
-
     if (nullptr == s_unitsContext)
         s_unitsContext = new BEU::UnitRegistry();
     if (s_stdFormats.empty())
@@ -166,7 +155,6 @@ void FormattingTestFixture::SetUp()
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::TearDown()
     {
-    BeSQLite::L10N::Shutdown();
     }
 
 //----------------------------------------------------------------------------------------
