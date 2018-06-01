@@ -19,6 +19,7 @@ struct DmsSession
         BeFileName  m_applicationResourcePath;
         BeFileName  m_pwBinaryPath;
         void*  m_activeDataSource;
+        
         //!Search path to find dependant application libraries and symbols
         void SetPWBinaryPath(BeFileNameCR pwBinaryPath);
         iModelDmsSupport::SessionType m_sessionType;
@@ -27,8 +28,10 @@ struct DmsSession
         DmsSession(Utf8StringCR userName, Utf8StringCR password, iModelDmsSupport::SessionType sessionType);
 
         static Utf8StringCR GetDataSourceFromMoniker(Utf8StringCR moniker);
+        
+        bool InitPwLibraries(BeFileNameCR pwBinaryPath);
         //!Return true if the session was succesfully established.
-        bool Initialize(BeFileNameCR pwBinaryPath);
+        bool Initialize();
 
         //!Return true if the session was successfully shutdown.
         bool UnInitialize();

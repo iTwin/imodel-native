@@ -14,11 +14,8 @@ USING_NAMESPACE_BENTLEY_DGN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    DmsSession::Initialize(BeFileNameCR pwBinaryPath)
+bool            DmsSession::InitPwLibraries(BeFileNameCR pwBinaryPath)
     {
-    if (NULL != m_activeDataSource)
-        return true;
-
     SetPWBinaryPath(pwBinaryPath);
 
     if (!aaApi_Initialize(0))
@@ -32,7 +29,19 @@ bool    DmsSession::Initialize(BeFileNameCR pwBinaryPath)
         LOG.fatalv("Unable to initialize projectwise oapi");
         return false;
         }
+    
+    return true;
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DmsSession::Initialize()
+    {
+    if (NULL != m_activeDataSource)
+        return true;
+
+    
     LOG.tracev("PW Initialized successfully.");
     LOG.tracev("Logging into data source. %s with user %s", m_dataSource.c_str(), m_userName.c_str());
     WString userName(m_userName.c_str(), true);
@@ -44,7 +53,7 @@ bool    DmsSession::Initialize(BeFileNameCR pwBinaryPath)
         return false;
         }
 
-    aaOApi_Initialize();
+    //aaOApi_Initialize();
     aaOApi_InitializeSession();
 //    aaOApi_LoadAllClasses(NULL);
 

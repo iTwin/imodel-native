@@ -110,7 +110,7 @@ StatusInt   PWWorkspaceHelper::_FetchWorkspace(WStringCR pwMoniker, BeFileNameCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       PWWorkspaceHelper::GetFolderIdFromMoniker(int& folderId, int& documentId, WStringCR pwMoniker)
     {
-    HMONIKER moniker;
+    HMONIKER moniker = NULL;
     DWORD monikerFlags = AAMONIKERF_USE_EXISTING_LOGIN| AAMONIKERF_RESOURCE_LOCATION;
     LPCWSTR monikerArray = &pwMoniker[0];
     if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, monikerFlags))
@@ -143,7 +143,9 @@ StatusInt       PWWorkspaceHelper::GetFolderIdFromMoniker(int& folderId, int& do
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            PWWorkspaceHelper::_InitializeSession(WStringCR pwMoniker)
     {
-    HMONIKER moniker;
+    m_session.InitPwLibraries(BeFileName(L"C:\\Program Files\\Bentley\\ProjectWise\\bin"));
+
+    HMONIKER moniker = NULL;
     LPCWSTR monikerArray = &pwMoniker[0];
     if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, AAMONIKERF_DONT_VALIDATE))
         return false;
@@ -160,7 +162,7 @@ bool            PWWorkspaceHelper::_InitializeSession(WStringCR pwMoniker)
     aaApi_Free((void*)datasourceName);
 
     //TODO: Lookup the projectwise binray or ship it.
-    if (SUCCESS != m_session.Initialize(BeFileName(L"C:\\Program Files\\Bentley\\ProjectWise\\bin")))
+    if (!m_session.Initialize())
         return false;
 
     return true;
