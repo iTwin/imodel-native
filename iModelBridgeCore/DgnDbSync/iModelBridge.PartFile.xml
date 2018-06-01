@@ -239,7 +239,12 @@
         <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <Directories DirectoryListName="iModelBridge-TestsDirs"/>
     </Product>
+
+    <ProductDirectoryList ListName="iModelBridge-TestsDirs">
+        <ProductDirectory Name="DgnV8Dlls" Deliver="false"/>
+    </ProductDirectoryList>
 
     <!-- ********************** -->
     <!-- **** Gtest **** -->
