@@ -766,6 +766,7 @@
 
     <Part
         Name="RunUwpTest"
+        DeferType="RunUnitTests"
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke"
         BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=WSClient-UwpTest"
         OnlyPlatforms="WinRT*"
