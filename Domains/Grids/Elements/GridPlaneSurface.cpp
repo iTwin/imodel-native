@@ -556,7 +556,7 @@ Dgn::DgnDbStatus                PlanRadialGridSurface::_OnInsert
 ElevationGridSurface::ElevationGridSurface
 (
 CreateParams const& params
-) : T_Super(params, params.m_surface.IsValid() ? params.m_surface->Clone (Transform::From(0.0, 0.0, params.m_elevation)) : params.m_surface)
+) : T_Super(params, params.m_surface.IsValid() ? params.m_surface->Clone (Transform::From(0.0, 0.0, params.m_elevation)) : nullptr)
     {
     if (!params.m_isLoadingElement) // should not set properties on elements created via handler
         {
@@ -630,11 +630,7 @@ Dgn::DgnDbStatus                ElevationGridSurface::RecomputeGeometryStream
 (
 )
     {
-
     CurveVectorPtr shape = GetSurface2d();
-    if (shape.IsNull())
-        return Dgn::DgnDbStatus::Success; //null surface is fine..
-
     Transform translation = Transform::From(0.0, 0.0, GetElevation());
 
     GridCPtr grid = GetDgnDb().Elements().Get<Grid>(GetGridId());
@@ -654,11 +650,18 @@ Dgn::DgnDbStatus                ElevationGridSurface::RecomputeGeometryStream
     Dgn::GeometrySourceP geomElem = ToGeometrySourceP();
     Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*geomElem);
 
-    if (!builder->Append(*shape, Dgn::GeometryBuilder::CoordSystem::Local))
-        return Dgn::DgnDbStatus::WriteError;
+    if (shape.IsValid())
+        {
+        if (!builder->Append(*shape, Dgn::GeometryBuilder::CoordSystem::Local))
+            return Dgn::DgnDbStatus::WriteError;
 
-    if (SUCCESS != builder->Finish(*geomElem))
-        return Dgn::DgnDbStatus::WriteError;
+        if (SUCCESS != builder->Finish(*geomElem))
+            return Dgn::DgnDbStatus::WriteError;
+        }
+    else
+        {
+        GetGeometryStreamR().Clear();
+        }
 
     return Dgn::DgnDbStatus::Success;
     }
@@ -702,24 +705,29 @@ void                            ElevationGridSurface::SetSurface2d
 CurveVectorPtr surface
 )
     {
-    if (!surface.IsValid())
-        return;
-    Transform localToWorld, worldToLocal;
-    DRange3d range;
-    surface->IsPlanar (localToWorld, worldToLocal, range);
-    DPlane3d surfacePlane;
-    bsiTransform_getOriginAndVectors (&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
+    if (surface.IsValid())
+        {
+        Transform localToWorld, worldToLocal;
+        DRange3d range;
+        surface->IsPlanar(localToWorld, worldToLocal, range);
+        DPlane3d surfacePlane;
+        bsiTransform_getOriginAndVectors(&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
 
-    if (!DoubleOps::AlmostEqualFraction (surfacePlane.origin.z, 0.0) ||
-        !DoubleOps::AlmostEqualFraction (abs (surfacePlane.normal.z), 1.0)) //must be a zero Z plane
-        return;
+        if (!DoubleOps::AlmostEqualFraction(surfacePlane.origin.z, 0.0) ||
+            !DoubleOps::AlmostEqualFraction(abs(surfacePlane.normal.z), 1.0)) //must be a zero Z plane
+            return;
 
-    IGeometryPtr geometryPtr = IGeometry::Create (surface);
-
-    ECN::ECValue surface2dValue;
-    surface2dValue.SetIGeometry (*geometryPtr);
-
-    SetPropertyValue (prop_Surface2d (), surface2dValue);
+        IGeometryPtr geometryPtr = IGeometry::Create(surface);
+        ECN::ECValue surface2dValue;
+        surface2dValue.SetIGeometry(*geometryPtr);
+        SetPropertyValue(prop_Surface2d(), surface2dValue);
+        }
+    else
+        {
+        ECN::ECValue surface2dValue(ECN::PrimitiveType::PRIMITIVETYPE_IGeometry);
+        surface2dValue.SetToNull();
+        SetPropertyValue(prop_Surface2d(), surface2dValue);
+        }
     }
 
 
