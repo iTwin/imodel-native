@@ -2867,6 +2867,9 @@ TEST(DEllipse3d,DgnFields2d)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,InitFromCenterMajorAxisPointAndThirdPoint)
     {
     DEllipse3d arc0;
@@ -2909,6 +2912,9 @@ int findXYZ (DPoint3dCR xyz, double tol = 1.0e-12)
     }
 
 };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,ProjectPointXY)
     {
     double sweepDegrees = 185.0;
@@ -2949,6 +2955,9 @@ void ShowLocalRange (TransformCR transform, DRange3dCR localRange)
     Check::SaveTransformed (bvector<DPoint3d> {
             corners[1], corners[5], corners[7], corners[3], corners[1]});
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,AlignedRange)
     {
     for (double sweepDegrees: {360, 10, 90, 180, 275 })
@@ -2973,6 +2982,9 @@ TEST(DEllipse3d,AlignedRange)
     Check::ClearGeometry ("DEllipse3d.AlignedRange");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,FilletInBoundedCorner)
     {
     DPoint3d pointA = DPoint3d::From (0,0,0);
@@ -2999,3 +3011,127 @@ TEST(DEllipse3d,FilletInBoundedCorner)
         }
     Check::ClearGeometry ("DEllipse3d.FilletInBoundedCorner");
     }
+
+void AnnotateArc (DEllipse3dCR arc, double fA = 1.05, double fB = 1.4, double yShift = -5.0,
+uint32_t select = 0xFF
+)
+    {
+    Check::SaveTransformed (arc);
+    // primary vector linework
+
+    DPoint3d key00 = arc.center + arc.vector0;
+    DPoint3d key90 = arc.center + arc.vector90;
+    DPoint3d key180 = arc.center - arc.vector0;
+    DPoint3d key270 = arc.center - arc.vector90;
+
+    if (select & 0x01)
+        {
+        // Add primary vectors
+        Check::SaveTransformed (DSegment3d::From (arc.center, key00));
+        Check::SaveTransformed (DSegment3d::From (arc.center, key90));
+        }
+
+    if (select & 0x02)
+        {
+        // Add negative vectors
+        Check::SaveTransformed (DSegment3d::From (arc.center, key180));
+        Check::SaveTransformed (DSegment3d::From (arc.center, key270));
+        }
+
+    if (select & 0x04)
+        {
+    // add polygon
+    // enclosing parallelogram linework
+        bvector<DPoint3d> parallelogram {
+            key00 + arc.vector90,
+            key90 - arc.vector0,
+            key180 - arc.vector90,
+            key270 + arc.vector0,
+            key00 + arc.vector90};
+        Check::SaveTransformed (parallelogram);
+        }
+
+
+    if (select & 0x08)
+        {
+        // add outer tics for start end
+        // start and endpoint linework ouside of ellipse
+        auto pointP = arc.FractionToPoint (0.0);
+        auto pointQ = arc.FractionToPoint (1.0);
+        Check::SaveTransformed (DSegment3d::From (
+            DPoint3d::FromInterpolate (arc.center, fA, pointP),
+            DPoint3d::FromInterpolate (arc.center, fB, pointP)));
+        Check::SaveTransformed (DSegment3d::From (
+            DPoint3d::FromInterpolate (arc.center, fA, pointQ),
+            DPoint3d::FromInterpolate (arc.center, fB, pointQ)));
+        }
+    Check::Shift (0, yShift, 0);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DEllipse3d,EllipseExamples)
+    {
+    for (auto sweep : {Angle::DegreesToRadians (360), Angle::DegreesToRadians (135)})
+        {
+        SaveAndRestoreCheckTransform shifter (10, 0, 0);
+        // a circular arc
+        auto arcA = DEllipse3d::From (0,0,0, 1,0,0, 0,1,0, 0.0, sweep);
+        AnnotateArc (arcA);
+        // 2:1 major:minor
+        auto arcB = DEllipse3d::From (0,0,0, 2,0,0, 0,1,0, 0.0, sweep);
+        AnnotateArc (arcB);
+        // Same xyz points, but with parameter space shifts applied to defining vectors.
+        for (auto degrees : { 10, 30, 45})
+            {
+            auto arcC = DEllipse3d::FromRotatedAxes (arcB, Angle::DegreesToRadians (degrees));
+            AnnotateArc (arcC);
+            }
+        }
+    Check::ClearGeometry ("DEllipse3d.EllipseExamples");
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DEllipse3d,CutConeExamples)
+    {
+    bvector<double> allSweep {Angle::DegreesToRadians (360), Angle::DegreesToRadians (360), Angle::DegreesToRadians (90)};
+    bvector<double> allDf {0.25, 0.125, 0.25};
+    for (size_t k = 0; k < allSweep.size (); k++)
+        {
+        double sweep = allSweep[k];
+        double df = allDf[k];
+        SaveAndRestoreCheckTransform shifter (10, 0, 0);
+        auto baseArc = DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0,0,0), 2.0);
+        baseArc.SetSweep (0, sweep);
+        bvector<DEllipse3d> arcs;
+        arcs.push_back (baseArc);
+        for (size_t i = 0; i < 5; i ++)
+            {
+            auto arc = baseArc;
+            double z = 6.0 * (i + 1);
+            arc.center.z += z;
+            arc.vector0.z = 2.0 * cos ((double) i * i);
+            arc.vector90.z += 2.5 * cos (2.0 + (double) i * i);
+            arcs.push_back (arc);
+            }
+
+        for (size_t i = 0; i < arcs.size (); i++)
+            {
+            AnnotateArc (arcs[i], 1, 2, 0.0, 0x01);
+            if (i & 0x01)
+                {
+                for (double f = 0; f <= 1.0 + 0.99999 * df; f += df)
+                    {
+                    DPoint3d pointA = arcs[i-1].FractionToPoint (f);
+                    DPoint3d pointB = arcs[i].FractionToPoint (f);
+                    Check::SaveTransformed (DSegment3d::From (pointA, pointB));
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry ("DEllipse3d.CutConeExamples");
+    }
+
