@@ -20,16 +20,10 @@ def main():
     
     testRoot = sys.argv[1]
 
-    print "TestRoot: " + testRoot + "\n"
-    # All these packages should be of the form DgnCompatiblityNugetxx.xx.xx.xx
     for subdir in os.listdir(testRoot):
         fullPath = os.path.join(testRoot, subdir);
         if (os.path.isdir(fullPath) and subdir != "Assets"):
-            print "calling " + os.path.join(fullPath, "DgnCompatibility.exe")
-            subprocess.check_call(os.path.join(fullPath, "DgnCompatibility.exe"))
-        else:
-            print "not a dir: " + fullPath
-
+            subprocess.check_call(os.path.join(fullPath, "iModelSchemaEvolution.exe"))
 
 if __name__ == "__main__":
     main()

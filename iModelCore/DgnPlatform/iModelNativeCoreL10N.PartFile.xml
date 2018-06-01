@@ -25,14 +25,22 @@
         <SubPart PartName="iModelNativeCoreSqlang-pseudo"/>
     </Part>
 
+    <!--
+        You may see that components with L10N have a series of L10N-***Xliffs-** parts, where the
+        later ** indicates language name. The 'en' parts act /differently/ than all other variants;
+        these parts push the xliff, but do /not/ actually generate it, unlike all other variants.
+        Therefore, the 'en' (and 'pseudo') gatherers here pull in the parts that actually generate
+        the 'en' xliff file, and the rest of the language gatherers are cookie-cutter.
+    -->
+
     <Part Name="iModelNativeCoreSqlang-en"
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)build/iModelNativeCoreL10N/iModelNativeCore_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-en" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-BeHttpXliffs-en" PartFile="BeHttp" Repository="BeHttp"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-en" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-en" PartFile="Units" Repository="Units"/>
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="BeHttp-Xliffs" PartFile="BeHttp" Repository="BeHttp"/>
+        <SubPart PartName="ECPresentation-Xliffs" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="Units-Xliffs" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelNativeCore_en.sqlang.db3</Files>
         </Bindings>
@@ -42,10 +50,10 @@
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
         BentleyBuildMakeOptions="-dSQLANG_PseudoLocalize=Latin1 -dSQLANG_OutputDb=$(OutputRootDir)build/iModelNativeCoreL10N/iModelNativeCore_pseudo.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff"
         >
-        <SubPart PartName="L10N-DgnPlatformXliffs-en" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-        <SubPart PartName="L10N-BeHttpXliffs-en" PartFile="BeHttp" Repository="BeHttp"/>
-        <SubPart PartName="L10N-ECPresentationXliffs-en" PartFile="ECPresentation" Repository="ECPresentation"/>
-        <SubPart PartName="L10N-UnitsXliffs-en" PartFile="Units" Repository="Units"/>
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="BeHttp-Xliffs" PartFile="BeHttp" Repository="BeHttp"/>
+        <SubPart PartName="ECPresentation-Xliffs" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="Units-Xliffs" PartFile="Units" Repository="Units"/>
         <Bindings>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/iModelNativeCore_pseudo.sqlang.db3</Files>
         </Bindings>

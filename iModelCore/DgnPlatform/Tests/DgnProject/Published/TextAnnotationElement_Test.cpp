@@ -507,16 +507,16 @@ TEST_F(TextAnnotationTest, BasicCrud3d)
 //     AnnotationFramePtr annotationFrame2 = AnnotationFrame::Create(*db, frameCloudStyleId);
 //     TextAnnotation annotation2(*db);
 //         annotation2.SetFrame(annotationFrame2.get());
-//         annotation2.SetOrigin(DPoint3d::From(0.0, -8000.0, 0.0));
 //         annotation2.SetText(annotationText2.get());
 
 //     TextAnnotation3dPtr annotationElement2 = new TextAnnotation3d(TextAnnotation3d::CreateParams(*db, modelId, TextAnnotation3d::QueryDgnClassId(*db), categoryId));
+//         annotationElement2->SetPlacement(Placement3d(DPoint3d::From(0.0, -8000.0, 0.0), YawPitchRollAngles()));
 //         annotationElement2->SetAnnotation(&annotation2);
 
 //     TextAnnotation3dCPtr insertedAnnotationElement2 = annotationElement2->Insert();
 
 //     //.........................................................................................
-//     AnnotationTextBlockPtr annotationText3 = AnnotationTextBlock::Create(*db, textStyleId, "My friend Dave was a victim if ID theft. Now we just call him Dav.");
+//     AnnotationTextBlockPtr annotationText3 = AnnotationTextBlock::Create(*db, textStyleId, "My friend David was a victim if ID theft. Now we just call him Dav.");
 //     AnnotationFramePtr annotationFrame3 = AnnotationFrame::Create(*db, frameEllipseStyleId);
 //     AnnotationLeaderPtr annotationLeader3A = AnnotationLeader::Create(*db, leaderStyleId);
 //         annotationLeader3A->SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType::Id);
@@ -529,13 +529,13 @@ TEST_F(TextAnnotationTest, BasicCrud3d)
 //         annotationLeader3B->SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType::PhysicalPoint);
 //         annotationLeader3B->SetTargetAttachmentDataForPhysicalPoint(DPoint3d::From(30000.0, 20000.0, 0.0));
 //     TextAnnotation annotation3(*db);
-//         annotation3.SetOrigin(DPoint3d::From(0.0, 8000.0, 0.0));
 //         annotation3.SetFrame(annotationFrame3.get());
 //         annotation3.GetLeadersR().push_back(annotationLeader3A);
 //         annotation3.GetLeadersR().push_back(annotationLeader3B);
 //         annotation3.SetText(annotationText3.get());
 
 //     TextAnnotation3dPtr annotationElement3 = new TextAnnotation3d(TextAnnotation3d::CreateParams(*db, modelId, TextAnnotation3d::QueryDgnClassId(*db), categoryId));
+//         annotationElement3->SetPlacement(Placement3d(DPoint3d::From(0.0, 8000.0, 0.0), YawPitchRollAngles()));
 //         annotationElement3->SetAnnotation(&annotation3);
 
 //     TextAnnotation3dCPtr insertedAnnotationElement3 = annotationElement3->Insert();
