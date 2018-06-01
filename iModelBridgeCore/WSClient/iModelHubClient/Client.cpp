@@ -262,7 +262,6 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelI
         });
     }
 
-#ifdef WIP_THUMBNAILS_API
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Andrius.Zonys                  04/2018
 //---------------------------------------------------------------------------------------
@@ -283,38 +282,18 @@ ICancellationTokenPtr cancellationToken
     return ExecuteWithRetry<Render::Image>([=]()
         {
         IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
-        BeFileName thumbnailFilePath = ThumbnailsManager::BuildThumbnailPathname(imodelId);
-        return client->SendGetFileRequest(thumbnailObjectId, thumbnailFilePath, nullptr, nullptr, cancellationToken)
-            ->Then<ThumbnailImageResult>([=](const WSFileResult& fileResult)
+        HttpByteStreamBodyPtr responseBody = HttpByteStreamBody::Create();
+        return client->SendGetFileRequest(thumbnailObjectId, responseBody, nullptr, nullptr, cancellationToken)
+            ->Then<ThumbnailImageResult>([=](const WSResult& streamResult)
             {
-            if (!fileResult.IsSuccess())
+            if (!streamResult.IsSuccess())
                 {
-                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, fileResult.GetError().GetMessage().c_str());
-                return ThumbnailImageResult::Error(fileResult.GetError());
+                LogHelper::Log(SEVERITY::LOG_WARNING, methodName, streamResult.GetError().GetMessage().c_str());
+                return ThumbnailImageResult::Error(streamResult.GetError());
                 }
 
-            // TODO: optimize this after SendGetFileRequest function overload that returns ByteStream will be added.
-            // Write to file and read from file should not be required.
-            //-------------------------------------------------------------------------------------------
-            BeFile thumbnailFile;
-            ByteStream byteStream;
-            BeFileStatus openReadStatus = thumbnailFile.Open(thumbnailFilePath, BeFileAccess::Read);
-            if (BeFileStatus::Success == openReadStatus)
-                openReadStatus = thumbnailFile.ReadEntireFile(byteStream);
-
-            BeFileStatus closeStatus = thumbnailFile.Close();
-            BeAssert(BeFileStatus::Success == closeStatus && "Failed to close thumbnail file");
-            BeFileNameStatus deleteStatus = thumbnailFilePath.BeDeleteFile();
-            BeAssert(BeFileNameStatus::Success == deleteStatus && "Failed to delete thumbnail file");
-
+            ByteStream byteStream = responseBody->GetByteStream();
             Render::Image image = Render::Image::FromPng(byteStream.GetData(), byteStream.GetSize());
-
-            if (BeFileStatus::Success != openReadStatus)
-                {
-                Utf8String errorMessage = Utf8PrintfString("File open/read failed with '%s' status", openReadStatus);
-                return ThumbnailImageResult::Error(Error(Error::Id::DgnDbError, errorMessage));
-                }
-            //-------------------------------------------------------------------------------------------
 
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
             LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
@@ -322,7 +301,6 @@ ICancellationTokenPtr cancellationToken
             });
         });
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
