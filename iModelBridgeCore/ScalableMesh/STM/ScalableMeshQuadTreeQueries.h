@@ -6,7 +6,7 @@
 //:>       $Date: 2012/11/29 17:30:30 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -91,7 +91,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
                                              const double       rootToViewMatrix[][4],
                                              const double       viewportRotMatrix[][3],                                                                 
                                              bool               gatherTileBreaklines)
-                            : HGFViewDependentPointIndexQuery(extent, rootToViewMatrix, viewportRotMatrix, gatherTileBreaklines)
+                            : HGFViewDependentPointIndexQuery<POINT, EXTENT>(extent, rootToViewMatrix, viewportRotMatrix, gatherTileBreaklines)
                             {  
                             m_meanScreenPixelsPerPoint = MEAN_SCREEN_PIXELS_PER_POINT;                            
                             m_maxPixelError = 1.0;
@@ -120,7 +120,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
                                                                  const double   viewportRotMatrix[][3],                                                                 
                                                                  const DPoint3d viewBox[],                                                                 
                                                                  bool           gatherTileBreaklines)
-                            : HGFViewDependentPointIndexQuery(extent, rootToViewMatrix, viewportRotMatrix, gatherTileBreaklines)
+                            : HGFViewDependentPointIndexQuery<POINT, EXTENT>(extent, rootToViewMatrix, viewportRotMatrix, gatherTileBreaklines)
                             {  
                             m_meanScreenPixelsPerPoint = MEAN_SCREEN_PIXELS_PER_POINT;
                             m_maxPixelError = 1.0;
@@ -222,7 +222,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelPointIndexQue
                             ScalableMeshQuadTreeLevelPointIndexQuery(const EXTENT   extent, 
                                                               size_t         level,                                                     
                                                               const DPoint3d viewBox[]) 
-                            : HGFLevelPointIndexQuery(extent, level)                              
+                            : HGFLevelPointIndexQuery<POINT,EXTENT>(extent, level)                              
                                 {                                                             
                                 memcpy(m_viewBox, viewBox, sizeof(DPoint3d) * 8);                                
                                 }                            
@@ -267,7 +267,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
                                                 size_t         level,
                                                 const DPoint3d viewBox[],
                                                 double         pixelTol=0.0)
-            : HGFLevelPointIndexQuery(extent, level), m_useAllRes(false), m_extent3d(nullptr), m_alwaysVisible(false), m_includeUnbalancedLeafs(true), m_ignoreFaceIndexes(false), m_pixelTolerance(pixelTol)
+            : HGFLevelPointIndexQuery<POINT,EXTENT>(extent, level), m_useAllRes(false), m_extent3d(nullptr), m_alwaysVisible(false), m_includeUnbalancedLeafs(true), m_ignoreFaceIndexes(false), m_pixelTolerance(pixelTol)
             {
             memcpy(m_viewBox, viewBox, sizeof(DPoint3d) * 8);
             }
@@ -277,7 +277,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
                                                 bool           alwaysVisible,
                                                 bool           includeUnbalancedLeafs,
                                                 bool           ignoreIndexes)
-            : HGFLevelPointIndexQuery(extent, level), m_useAllRes(false), m_extent3d(nullptr), m_alwaysVisible(alwaysVisible), m_includeUnbalancedLeafs(includeUnbalancedLeafs), m_ignoreFaceIndexes(ignoreIndexes), m_pixelTolerance(0.0)
+            : HGFLevelPointIndexQuery<POINT,EXTENT>(extent, level), m_useAllRes(false), m_extent3d(nullptr), m_alwaysVisible(alwaysVisible), m_includeUnbalancedLeafs(includeUnbalancedLeafs), m_ignoreFaceIndexes(ignoreIndexes), m_pixelTolerance(0.0)
             {
 
             }
@@ -287,7 +287,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
                                                 ClipVectorCP   extent3d,
                                                 bool           useAllResolutions,
                                                 double         pixelTol = 0.0)
-            : HGFLevelPointIndexQuery(extent, level), m_useAllRes(useAllResolutions), m_extent3d(extent3d), m_alwaysVisible(false), m_includeUnbalancedLeafs(true), m_ignoreFaceIndexes(false), m_pixelTolerance(pixelTol)
+            : HGFLevelPointIndexQuery<POINT,EXTENT>(extent, level), m_useAllRes(useAllResolutions), m_extent3d(extent3d), m_alwaysVisible(false), m_includeUnbalancedLeafs(true), m_ignoreFaceIndexes(false), m_pixelTolerance(pixelTol)
             {
 
             }
@@ -346,7 +346,7 @@ public:
                                                      double depth = -1,
                                                      bool useUnboundedRay = true,
                                                                RaycastOptions intersectType = RaycastOptions::LAST_INTERSECT)
-                                                               : HGFLevelPointIndexQuery(extent, level), m_intersect(intersectType), m_target(ray), m_bestHitScore(numeric_limits<double>::quiet_NaN()), m_is2d(is2d), m_depth(depth), m_useUnboundedRay(useUnboundedRay)
+                                                               : HGFLevelPointIndexQuery<POINT,EXTENT>(extent, level), m_intersect(intersectType), m_target(ray), m_bestHitScore(numeric_limits<double>::quiet_NaN()), m_is2d(is2d), m_depth(depth), m_useUnboundedRay(useUnboundedRay)
                                 {                                                             
                                 }                            
 
@@ -389,7 +389,7 @@ public:
                                                               size_t         level,                                                    
                                                                DPlane3d plane,
                                                                double depth = -1)
-                                                               : HGFLevelPointIndexQuery(extent, level),  m_target(plane), m_bestHitScore(numeric_limits<double>::quiet_NaN()),m_depth(depth)
+                                                               : HGFLevelPointIndexQuery<POINT,EXTENT>(extent, level),  m_target(plane), m_bestHitScore(numeric_limits<double>::quiet_NaN()),m_depth(depth)
                                 {                                                             
                                 }                            
 
@@ -437,7 +437,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                                             const ClipVectorPtr& viewClipVector,
                                             bool invertClips = false,
                                             size_t               maxNumberOfPoints = std::numeric_limits<std::size_t>::max())
-        : ScalableMeshQuadTreeViewDependentPointQuery(extent,
+        : ScalableMeshQuadTreeViewDependentPointQuery<POINT, EXTENT>(extent,
                                               rootToViewMatrix,
                                               viewportRotMatrix,                                                                 
                                               gatherTileBreaklines)
@@ -469,7 +469,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                                                                  const ClipVectorPtr& viewClipVector,
                                                                  bool invertClips = false,
                                                                  size_t               maxNumberOfPoints = std::numeric_limits<std::size_t>::max())
-                            : ScalableMeshQuadTreeViewDependentPointQuery(extent, 
+                            : ScalableMeshQuadTreeViewDependentPointQuery<POINT, EXTENT>(extent, 
                                                                   rootToViewMatrix,
                                                                   viewportRotMatrix,                                                                 
                                                                   viewBox,                                                                 
@@ -525,7 +525,7 @@ public:
                                          const double         rootToViewMatrix[][4],
                                          const double         viewportRotMatrix[][3],
                                          const ClipVectorPtr& viewClipVector)
-                                         :ScalableMeshQuadTreeViewDependentMeshQuery(extent, rootToViewMatrix, viewportRotMatrix, false, viewClipVector)
+                                         :ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>(extent, rootToViewMatrix, viewportRotMatrix, false, viewClipVector)
         {
         }
 

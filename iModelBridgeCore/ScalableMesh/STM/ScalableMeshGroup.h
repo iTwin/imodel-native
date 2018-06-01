@@ -14,7 +14,10 @@
 #include "ScalableMesh.h"
 
 #include "ScalableMeshClippingOptions.h"
+
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
+#endif
 
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
@@ -124,7 +127,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual void                               _TextureFromRaster(ITextureProviderPtr provider) override {}
 
-        virtual __int64          _GetPointCount() override;
+        virtual int64_t          _GetPointCount() override;
 
         virtual uint64_t          _GetNodeCount() override;
 
@@ -148,9 +151,9 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
 
         // Inherited from IMRDTM                   
-        virtual Count                  _GetCountInRange(const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
+        virtual Count                  _GetCountInRange(const DRange2d& range, const CountType& type, const uint64_t& maxNumberCountedPoints) const;
         virtual int                    _GenerateSubResolutions() override { return ERROR; }
-        virtual __int64                _GetBreaklineCount() const override;
+        virtual int64_t                _GetBreaklineCount() const override;
         virtual ScalableMeshCompressionType   _GetCompressionType() const override;
         virtual int                    _GetNbResolutions() const override;
         virtual size_t                    _GetTerrainDepth() const override;

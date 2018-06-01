@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 00:36:34 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -95,7 +95,7 @@ BEGIN_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_NAMESPACE
 struct TypeConversionFilterCreatorPlugin
     {
 private:
-    friend struct                           TypeConversionFilterCreator;
+    friend struct                           BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::TypeConversionFilterCreator;
 
     typedef Plugin::V0::TypeConversionFilterCreatorBase   
                                             Base;

@@ -6,7 +6,7 @@
 |       $Date: 2011/08/30 19:04:16 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -49,7 +49,7 @@ protected:
 struct StaticDataTypeCreatorBase : protected DataTypeCreatorBase
     {
 private:
-    friend struct                           StaticDataTypeCreator;
+    friend struct                           BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::StaticDataTypeCreator;
 
     virtual const DataType&                 _Create                            () const = 0;
 
@@ -76,7 +76,7 @@ private:
     // Ensure that points types are only based on DataTypeImplBase template
     template <typename T>
     friend                  struct StaticDataTypeBase;
-    friend                  struct DataType;
+    friend                  struct BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DataType;
 
     typedef const void*     ClassID;
 
@@ -140,7 +140,7 @@ protected:
         m_classID = GenerateClassID();
         }
 
-    virtual                 ~StaticDataTypeBase                    () = 0 {}
+    virtual                 ~StaticDataTypeBase                    () {}
 
 private:
     ClassID                  GenerateClassID                       () const 

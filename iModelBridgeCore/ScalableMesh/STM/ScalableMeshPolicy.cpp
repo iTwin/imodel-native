@@ -44,6 +44,7 @@
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_FOUNDATIONS
+USING_NAMESPACE_IMAGEPP
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -286,7 +287,7 @@ public:
 
     Range                               FindConvertionsFor                     (const DataTypeFamily&           sourceType) const
         {
-        return equal_range(s_TypeConvertionMap.m_map.begin(), s_TypeConvertionMap.m_map.end(), sourceType, Compare());
+        return equal_range(m_map.begin(), m_map.end(), sourceType, Compare());
         }
 
     } s_TypeConvertionMap;

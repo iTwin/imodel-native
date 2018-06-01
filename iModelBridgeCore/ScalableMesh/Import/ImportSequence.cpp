@@ -6,14 +6,14 @@
 |       $Date: 2011/07/20 20:22:14 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 
 #include <ScalableMesh/Import/ImportSequence.h>
 #include <ScalableMesh/Import/Command/Base.h>
-#include <ScalableMesh\Type\IScalableMeshPoint.h>
+#include <ScalableMesh/Type/IScalableMeshPoint.h>
 
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE

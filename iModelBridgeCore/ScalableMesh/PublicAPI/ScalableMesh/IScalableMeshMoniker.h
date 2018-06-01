@@ -6,7 +6,7 @@
 |       $Date: 2011/10/21 17:32:50 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -51,7 +51,7 @@ typedef RefCountedPtr<IMonikerCreator>   IMonikerCreatorPtr;
 
 struct IMonikerVisitor
     {
-    virtual                             ~IMonikerVisitor               () = 0 {}
+    virtual                             ~IMonikerVisitor               (){}
 
     virtual void                        _Visit                         (const IMoniker&                     moniker) { /*Do nothing*/ }
 

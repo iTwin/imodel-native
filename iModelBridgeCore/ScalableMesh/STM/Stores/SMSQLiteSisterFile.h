@@ -11,7 +11,7 @@
 
 
 #include "ISMDataStore.h"
-#include "..\SMSQLiteFile.h"
+#include "../SMSQLiteFile.h"
 #include "SMStoreUtils.h"
 
 class SMSQLiteSisterFile

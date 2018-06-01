@@ -25,6 +25,7 @@ strname ## .append(std::to_string(ExtentOp<EXTENT>::GetYMin(node ## ->m_nodeHead
     strname ## .append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node ## ->m_nodeHeader.m_nodeExtent)).c_str()); \
 }
 
+#if _WIN32
 #define LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(_filename, _nvertex, _nindex, _vbuffer, _indbuffer ) { \
      size_t _nVertices = _nvertex; \
     size_t _nIndices = _nindex; \
@@ -35,7 +36,11 @@ strname ## .append(std::to_string(ExtentOp<EXTENT>::GetYMin(node ## ->m_nodeHead
     fwrite(_indbuffer, sizeof(int32_t), _nIndices, _meshFile); \
     fclose(_meshFile); \
 }
+#else
+#define LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(_filename, _nvertex, _nindex, _vbuffer, _indbuffer ) 
+#endif
 
+#if _WIN32
 #define LOG_POLY_FROM_FILENAME_AND_BUFFERS_W(_filename, _nvertex,_vbuffer) { \
      size_t _nVertices = _nvertex; \
     FILE* _meshFile = _wfopen(_filename.c_str(), L"wb"); \
@@ -43,6 +48,9 @@ strname ## .append(std::to_string(ExtentOp<EXTENT>::GetYMin(node ## ->m_nodeHead
     fwrite(_vbuffer, sizeof(DPoint3d), _nVertices, _meshFile); \
     fclose(_meshFile); \
 }
+#else
+#define LOG_POLY_FROM_FILENAME_AND_BUFFERS_W(_filename, _nvertex, _nindex, _vbuffer, _indbuffer ) 
+#endif
 
 #define LOG_STATS_FOR_NODE(_filename, _node) { \
     std::ofstream stats; \

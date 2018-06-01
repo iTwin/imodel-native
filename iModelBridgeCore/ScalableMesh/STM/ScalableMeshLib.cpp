@@ -12,29 +12,30 @@
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #endif
 
-#include <ScalableMesh\ScalableMeshLib.h>
+#include <ScalableMesh/ScalableMeshLib.h>
 //#include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>
-#include "Plugins\ScalableMeshTypeConversionFilterPlugins.h"
+#include "Plugins/ScalableMeshTypeConversionFilterPlugins.h"
 #include "ScalableMeshFileMoniker.h"
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include "ScalableMeshRDSProvider.h"
-#include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+#endif
+#include <ScalableMesh/IScalableMeshProgressiveQuery.h>
 #include "SMMemoryPool.h"
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
+#endif
 #include <ImagePP/all/h/HFCCallbacks.h>
 #include <ImagePP/all/h/HFCCallbackRegistry.h>
 #include <ImagePP/all/h/ImageppLib.h>
+#include <Logging/bentleylogging.h>
+#ifndef LINUX_SCALABLEMESH_BUILD
+#include <DgnPlatform/DgnPlatformLib.h>
+#endif
+
+#ifndef LINUX_SCALABLEMESH_BUILD
+#include <CCApi/CCPublic.h>
 #include <curl/curl.h>
-
-
-#include    <CCApi\CCPublic.h>
-#include <Logging\bentleylogging.h>
-
-#include <DgnPlatform\DgnPlatformLib.h>
-
-
-#include <CCApi\CCPublic.h>
-#include <curl\curl.h>
-
+#endif
 
 #ifndef VANCOUVER_API
 USING_NAMESPACE_IMAGEPP
@@ -79,7 +80,7 @@ STMAdmin& ScalableMeshLib::Host::_SupplySTMAdmin()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RegisterPODImportPlugin();
 
-
+#ifndef LINUX_SCALABLEMESH_BUILD
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -441,7 +442,7 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
 
 static BingAuthenticationCallbackPtr s_bingAuthCallback;
 
-
+#endif
 void ScalableMeshLib::Host::Initialize()
     {
     BeAssert(NULL == m_scalableTerrainModelAdmin);
@@ -459,6 +460,7 @@ void ScalableMeshLib::Host::Initialize()
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
 
+#ifndef LINUX_SCALABLEMESH_BUILD
     //Ensure to avoid overwriting any specialized Imagepp authentication provided by an application.
     if (m_scalableTerrainModelAdmin->_ProvideImageppAuthentication())
         {
@@ -466,6 +468,7 @@ void ScalableMeshLib::Host::Initialize()
 
         HFCCallbackRegistry::GetInstance()->AddCallback(s_bingAuthCallback.get());
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -507,7 +510,9 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     t_scalableTerrainModelHost = NULL;
     TerminateProgressiveQueries();
 
+#ifndef LINUX_SCALABLEMESH_BUILD
     DataSourceManager::Shutdown();
+#endif
 
     }
 
@@ -551,37 +556,37 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
         return;
 
     // Register point converters:
-    static const RegisterIDTMPointConverter<DPoint3d, DPoint3d>                        s_ptTypeConv0;
+    static RegisterIDTMPointConverter<DPoint3d, DPoint3d>                        s_ptTypeConv0;
 
-    static const RegisterConverter<IDTMPointConverter< IDTMPointDimConverter<DPoint3d, DPoint3d> >,
+    static RegisterConverter<IDTMPointConverter< IDTMPointDimConverter<DPoint3d, DPoint3d> >,
         PointType3d64f_R16G16B16_I16Creator,
         PointType3d64fCreator>                                  s_ptTypeConvSp0;
 
 
     // Register linear converters
-    static const RegisterIDTMLinearConverter<DPoint3d, DPoint3d>                       s_linTypeConv0;
+    static RegisterIDTMLinearConverter<DPoint3d, DPoint3d>                       s_linTypeConv0;
 
     // Register linear to point converters
-    static const RegisterIDTMLinearToPointConverter<DPoint3d, DPoint3d>                s_linToPtTypeConv0;
+    static RegisterIDTMLinearToPointConverter<DPoint3d, DPoint3d>                s_linToPtTypeConv0;
 
 
 
     // Register mesh converters
-    static const RegisterMeshAsIDTMLinearConverter<DPoint3d, DPoint3d>                 s_meshTypeConv0;
+    static RegisterMeshAsIDTMLinearConverter<DPoint3d, DPoint3d>                 s_meshTypeConv0;
     // Register mesh to points converters
-    static const RegisterMeshAsIDTMLinearToPointConverter                                  s_meshToPtTypeConv0;
+    static RegisterMeshAsIDTMLinearToPointConverter                                  s_meshToPtTypeConv0;
     // Register mesh to linear converters
-    static const RegisterMeshAsIDTMLinearToIDTMLinearConverter                             s_meshToLinTypeConv0;
+    static RegisterMeshAsIDTMLinearToIDTMLinearConverter                             s_meshToLinTypeConv0;
 
 
     // Register TIN converters
-    static const RegisterTINAsIDTMLinearConverter<DPoint3d, DPoint3d>                  s_tinTypeConv0;
+    static RegisterTINAsIDTMLinearConverter<DPoint3d, DPoint3d>                  s_tinTypeConv0;
     // Register TIN to points converters
-    static const RegisterTINAsIDTMLinearToPointConverter                                   s_tinToPtTypeConv0;
+    static RegisterTINAsIDTMLinearToPointConverter                                   s_tinToPtTypeConv0;
     // Register TIN to linear converters
-    static const RegisterTINAsIDTMLinearToIDTMLinearConverter                              s_tinToLinTypeConv0;
+    static RegisterTINAsIDTMLinearToIDTMLinearConverter                              s_tinToLinTypeConv0;
 
-    static const RegisterMeshConverter<DPoint3d, DPoint3d>                        s_ptMeshConv0;
+    static RegisterMeshConverter<DPoint3d, DPoint3d>                        s_ptMeshConv0;
 
 
     // Register Moniker
@@ -596,9 +601,11 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
 #else
+#ifndef LINUX_SCALABLEMESH_BUILD
     DgnPlatformLib::Host::IKnownLocationsAdmin& locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
     tempDir = locationAdmin.GetLocalTempDirectoryBaseName();
     assert(!tempDir.IsEmpty());
+#endif
 #endif
 
     BeSQLiteLib::Initialize(tempDir);

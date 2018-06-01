@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 00:36:57 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,7 +16,7 @@
 * @bsiclass                                                  Raymond.Gauthier   02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename PluginCreatorT>
-typename const PluginRegistry<PluginCreatorT>::CreatorList& PluginRegistry<PluginCreatorT>::GetCreators () const 
+const typename PluginRegistry<PluginCreatorT>::CreatorList& PluginRegistry<PluginCreatorT>::GetCreators () const 
     {
     if (HasPostponedUnregister())
         RunPostponedUnregister();

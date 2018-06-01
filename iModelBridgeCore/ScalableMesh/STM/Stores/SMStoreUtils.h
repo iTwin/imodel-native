@@ -101,7 +101,7 @@ public:
             extent1.high.z >= extent2.low.z &&
             extent1.low.z <= extent2.high.z;
         }
-    __forceinline static DRange3d Create(double xMin, double yMin, double zMin, double xMax, double yMax, double zMax)
+    inline static DRange3d Create(double xMin, double yMin, double zMin, double xMax, double yMax, double zMax)
     {
     return DRange3d::From(xMin, yMin, zMin, xMax, yMax, zMax);
         }
@@ -110,7 +110,7 @@ public:
         return DRange3d::From(xMin, yMin, 0.0, xMax, yMax, 0.0);
         }
 
-    __forceinline static DRange3d MergeExtents(const DRange3d& extent1, const DRange3d& extent2)
+    inline static DRange3d MergeExtents(const DRange3d& extent1, const DRange3d& extent2)
         {
         DRange3d ext = extent1;
         ext.Extend(extent2);

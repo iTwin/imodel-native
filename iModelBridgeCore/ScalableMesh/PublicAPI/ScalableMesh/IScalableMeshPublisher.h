@@ -8,7 +8,7 @@
 #pragma once
 
 #include <ScalableMesh/IScalableMeshQuery.h>
-#include <ScalableMesh\IScalableMesh.h>
+#include <ScalableMesh/IScalableMesh.h>
 #include <Bentley/RefCounted.h>
 #include <json/json.h>
 
@@ -34,12 +34,12 @@ enum class SMPublishType
     CESIUM
     };
 
-struct IScalableMeshPublishParams abstract : virtual public RefCountedBase
+struct IScalableMeshPublishParams: virtual public RefCountedBase
     {
     BENTLEY_SM_IMPORT_EXPORT static IScalableMeshPublishParamsPtr Create(const SMPublishType& type);
     };
 
-struct IScalableMeshPublisher abstract : virtual public RefCountedBase
+struct IScalableMeshPublisher: virtual public RefCountedBase
     {
 
     /*__PUBLISH_SECTION_END__*/

@@ -332,7 +332,7 @@ struct ReprojectionFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
 
     void                            OnUnhandledStatus(SMStatus                          status)
         {
-        assert(BSISUCCESS != status);
+        assert(S_SUCCESS != status);
 
         // TDORAY: Evaluate different statuses
       //  CustomError error(L"Error creating reprojection!");

@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 16:26:51 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,6 +28,7 @@ END_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 struct FilterCreator;
 struct FilteringConfig;
+struct Filter;
 
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 
@@ -43,7 +44,7 @@ struct FilterBase;
 struct FilterCreatorBase : private Uncopyable, protected PacketGroupBinder
     {
 private:
-    friend struct                           FilterCreator;
+    friend struct                           BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::FilterCreator;
     friend struct                           CustomFilterFactoryBase;
     struct                                  Impl;
     Impl*                                   m_implP; // Reserve some space for future uses
@@ -77,8 +78,8 @@ public:
 struct FilterBase : private Uncopyable, public ShareableObjectTypeTrait<FilterBase>::type
     {
 private:
-    friend struct                   Filter;
-    friend struct                   FilterCreator;
+    friend struct                   BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Filter;
+    friend struct                   BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::FilterCreator;
     friend struct                   FilterCreatorBase;
 
     struct                          Impl;

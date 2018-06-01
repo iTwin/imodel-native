@@ -6,7 +6,7 @@
 |       $Date: 2011/08/16 15:36:45 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -59,7 +59,7 @@ private:
 protected:
     BaseT                           m_base;
 
-    explicit                        Type                       (const BaseT&                base) : m_base(base) 
+    explicit                        ConstForward<BaseT, PolicyT>                       (const BaseT&                base) : m_base(base) 
                                                                                                         {} 
     const BaseT&                    GetBase                    () const                                 { return m_base; }
 
@@ -104,7 +104,7 @@ private:
     friend typename                 Policy::container_type;
 
 protected:
-    explicit                        Type                       (const BaseT&                base) : MyBase(base) 
+    explicit                        Forward<BaseT, PolicyT>                        (const BaseT&                base) : MyBase(base) 
                                                                                                         {} 
 public:
     typedef typename Policy::value_type      
@@ -145,7 +145,7 @@ private:
 protected:
     BaseT                           m_base;
 
-    explicit                        Type                       (const BaseT&                base) : m_base(base) 
+    explicit                        ConstBidirectional<BaseT, PolicyT>                        (const BaseT&                base) : m_base(base) 
                                                                                                         {} 
     const BaseT&                    GetBase                    () const                                 { return m_base; }
 
@@ -191,7 +191,7 @@ private:
     friend typename                 Policy::container_type;
 
 protected:
-    explicit                        Type                       (const BaseT&                base) : MyBase(base) 
+    explicit                        Bidirectional<BaseT, PolicyT>                         (const BaseT&                base) : MyBase(base) 
                                                                                                         {} 
 public:
     typedef typename Policy::value_type      
@@ -204,14 +204,14 @@ public:
     using                           MyBase::operator*;
     using                           MyBase::operator->;
 
-    reference                       operator*                  ()                                       { return m_base.Dereference(); }
-    pointer                         operator->                 ()                                       { return &m_base.Dereference(); }
+    reference                       operator*                  ()                                       { return this->m_base.Dereference(); }
+    pointer                         operator->                 ()                                       { return &this->m_base.Dereference(); }
 
-    Type&                           operator++                 ()                                       { m_base.Increment(); return *this; }
-    Type                            operator++                 (int)                                    { Type tmp = *this; m_base.Increment(); return tmp; }
+    Type&                           operator++                 ()                                       { this->m_base.Increment(); return *this; }
+    Type                            operator++                 (int)                                    { Type tmp = *this; this->m_base.Increment(); return tmp; }
 
-    Type&                           operator--                 ()                                       { m_base.Decrement(); return *this; }
-    Type                            operator--                 (int)                                    { Type tmp = *this; m_base.Decrement(); return tmp; }
+    Type&                           operator--                 ()                                       { this->m_base.Decrement(); return *this; }
+    Type                            operator--                 (int)                                    { Type tmp = *this; this->m_base.Decrement(); return tmp; }
     };
 
 

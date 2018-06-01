@@ -12,7 +12,7 @@
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/IScalableMeshProgress.h>
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
-#include <ScalableMesh\IScalableMeshGroundExtractor.h>
+#include <ScalableMesh/IScalableMeshGroundExtractor.h>
 /*__PUBLISH_SECTION_END__*/
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct IScalableMeshDetectGround

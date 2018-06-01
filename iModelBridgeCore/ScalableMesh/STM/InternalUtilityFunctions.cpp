@@ -6,7 +6,7 @@
 |       $Date: 2012/08/20 16:31:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,11 +19,13 @@
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
 
+#if _WIN32
 //#define GPU
 #undef static_assert
 #include <ppl.h>
 #ifdef GPU
 #include <amp.h>
+#endif
 #endif
 
 USING_NAMESPACE_IMAGEPP;
@@ -59,6 +61,7 @@ void PtToPtConverter::Transform(DPoint3d* ptsOut, const DPoint3d* ptsIn, size_t 
     memcpy(ptsOut, ptsIn, nbPts * sizeof(DPoint3d));
     }
     
+#if _WIN32
 /*---------------------------------------------------------------------------------**//**
 * Calculate normals for points of a mesh
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -165,7 +168,7 @@ void CalcNormals (DVec3d**      calculatedNormals,
             }
         }
     }
-
+#endif
 /*---------------------------------------------------------------------------------**//**
 * Creates a shape from a list of DPoint3d. The coordinate system is provided.
 * This list of point must contain the closing point. If the first point is not

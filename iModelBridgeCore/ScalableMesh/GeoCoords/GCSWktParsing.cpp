@@ -6,18 +6,18 @@
 |       $Date: 2011/10/20 18:47:32 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "../STM/ImagePPHeaders.h"
 #include "GCSWktParsing.h"
-#include "WktUtils.h"
+#include "WKTUtils.h"
 #include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/GeoCoords/Transformation.h>
 #include <ScalableMesh/GeoCoords/LocalTransform.h>
-#include <ScalableMesh\Import\DataTypeDescription.h>
+#include <ScalableMesh/Import/DataTypeDescription.h>
 
 #include <STMInternal/Foundations/PrivateStringTools.h>
 
@@ -333,7 +333,11 @@ bool ExtractParameter (const WKTSection&    wktSection,
 
     static const WChar ELT_PREFIX[] = L"elt_";
 
+#if _WIN32
     if (0 != wcsnicmp(ELT_PREFIX, &name[0], CSTRING_LEN(ELT_PREFIX)) ||
+#else
+if (0 != wcscasecmp(ELT_PREFIX, &name[0]) ||
+#endif
         !isdigit(name[4]),
         L'_' != name[5] ||
         !isdigit(name[6]) ||
@@ -380,7 +384,11 @@ bool ExtractParamMt (const WKTSection&   wktSection,
     static const WChar AFFINE_NAME[] = L"Affine";
 
     if (!nameParameter.IsQuoted() ||
+#if _WIN32
         0 != wcsnicmp(AFFINE_NAME, wktSection[0].strBeginInsideQuote(), CSTRING_LEN(AFFINE_NAME)))
+#else
+        0 != wcscasecmp(AFFINE_NAME, wktSection[0].strBeginInsideQuote()))
+#endif
         return false;
 
     TransfoMatrix extracted;

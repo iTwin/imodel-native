@@ -10,13 +10,13 @@
 #pragma once
 
 #include "ISMDataStore.h"
-#include "..\SMNodeGroup.h"
+#include "../SMNodeGroup.h"
 #include "SMStoreUtils.h"
 #include "SMSQLiteSisterFile.h"
 #include <json/json.h>
 #include <codecvt>
 #include <ImagePP/all/h/HCDCodecIJG.h>
-#include <ScalableMesh\IScalableMeshRDSProvider.h>
+#include <ScalableMesh/IScalableMeshRDSProvider.h>
 
 BENTLEY_SM_EXPORT extern bool s_stream_from_wsg;
 extern bool s_stream_using_cesium_3d_tiles_format;
@@ -139,11 +139,15 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         bool m_use_virtual_grouping = false;
         SMStreamingSettingsPtr m_settings;
         FormatType m_formatType = FormatType::Binary;
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceAccount* m_dataSourceAccount;
         DataSource::SessionName m_dataSourceSessionName;
+#endif
         WString m_rootDirectory;
         WString m_masterFileName;
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceURL m_pathToHeaders;
+#endif
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
         bvector<SMNodeGroupPtr> m_nodeHeaderGroups;
         map<uint64_t, Json::Value*> m_nodeHeaderCache;
@@ -166,8 +170,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         void ReadNodeHeaderFromJSON(SMIndexNodeHeader<EXTENT>* header, const Json::Value& nodeHeader);
 
     private :
-
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceStatus InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const SMStreamingSettingsPtr& settings);
+#endif
 
     public : 
     
@@ -187,7 +192,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             return new SMStreamingStore(settings, smRDSProvider);
             }
 #endif
-
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSource *InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const;
 
         BENTLEY_SM_EXPORT void SetDataSourceAccount(DataSourceAccount *dataSourceAccount);
@@ -195,7 +200,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         void SetDataSourceSessionName(const DataSource::SessionName &session);
         const DataSource::SessionName & GetDataSourceSessionName(void) const;
-
+#endif
         void SetDataFormatType(FormatType formatType);
 
         void SetIsPublishing(bool isPublishing)
@@ -296,10 +301,11 @@ struct StreamingDataBlock : public bvector<uint8_t>
         void LockAndWait();
 
         void SetLoading();
-
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize);
 
         void Load(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, SMStoreDataType dataType, uint64_t dataSize = uint64_t(-1));
+#endif
 
         void UnLoad();
 
@@ -308,7 +314,7 @@ struct StreamingDataBlock : public bvector<uint8_t>
         void SetID(const uint64_t& pi_ID);
 
         uint64_t GetID();
-
+#ifndef LINUX_SCALABLEMESH_BUILD
         void SetURL(const DataSourceURL& url);
 
         void SetDataSourceURL(const DataSourceURL& pi_DataSource);
@@ -316,7 +322,7 @@ struct StreamingDataBlock : public bvector<uint8_t>
         void SetDataSourcePrefix(const std::wstring& prefix);
 
         void SetDataSourceExtension(const std::wstring& extension);
-
+#endif
         void SetTransform(const Transform& transform);
 
         void SetGltfUpAxis(UpAxis gltfUpAxis);
@@ -334,16 +340,18 @@ struct StreamingDataBlock : public bvector<uint8_t>
         uint32_t GetTextureSize();
 
     protected:
-
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSource::DataSize LoadDataBlock(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, std::unique_ptr<DataSource::Buffer[]>& destination, uint64_t dataSizeKnown);
-
+#endif
     protected:
 
         bool m_pIsLoading = false;
         bool m_pIsLoaded = false;
         uint64_t m_pID = -1;
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceURL m_url;
         DataSourceURL m_pDataSourceURL;
+#endif
         std::wstring m_pPrefix = L"p_";
         std::wstring m_extension = L".bin";
         condition_variable m_pDataBlockCV;
@@ -373,10 +381,13 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
     {        
 
     public:
-
+#ifndef LINUX_SCALABLEMESH_BUILD
         SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroupPtr nodeGroup = nullptr, bool compress = true);
 
         SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup = nullptr, bool isPublishing = false, bool compress = true);
+#else
+SMStreamingNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup = nullptr, bool isPublishing = false, bool compress = true);
+#endif
         
         virtual ~SMStreamingNodeDataStore();
 
@@ -398,9 +409,11 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
         SMIndexNodeHeader<EXTENT>*    m_nodeHeader;
         const Json::Value*            m_jsonHeader;
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceAccount*            m_dataSourceAccount;
         DataSource::SessionName       m_dataSourceSessionName;
         DataSourceURL                 m_dataSourceURL;
+#endif
         Transform                     m_transform;
 
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
@@ -416,9 +429,10 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
         SMStoreDataType               m_dataType;
 
         uint64_t GetBlockSizeFromNodeHeader() const;
-
+#ifndef LINUX_SCALABLEMESH_BUILD
         DataSourceAccount               *   GetDataSourceAccount        (void)  { return m_dataSourceAccount; }
         const DataSource::SessionName   &   GetDataSourceSessionName    (void)  { return m_dataSourceSessionName; }
+#endif
     };
 
 
@@ -431,9 +445,11 @@ struct StreamingTextureBlock : public StreamingDataBlock
 
         StreamingTextureBlock(const int& width, const int& height, const int& numChannels);
 
+#ifndef LINUX_SCALABLEMESH_BUILD
         void Load(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, uint64_t blockSizeKnown = uint64_t(-1));
 
         void Store(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, uint8_t* DataTypeArray, size_t countData, const HPMBlockID& blockID);
+#endif
 
         size_t GetWidth() { return m_Width; }
         size_t GetHeight() { return m_Height; }
@@ -458,8 +474,9 @@ template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public
     public:
 
         StreamingTextureBlock& GetTexture(HPMBlockID blockID) const;
-            
+#ifndef LINUX_SCALABLEMESH_BUILD          
         StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, SMIndexNodeHeader<EXTENT>* nodeHeader);
+#endif
 
         virtual bool DestroyBlock(HPMBlockID blockID) override;            
                         
@@ -478,12 +495,14 @@ template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public
         virtual void   ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) override;
                             
         virtual size_t LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
-            
+     
+#ifndef LINUX_SCALABLEMESH_BUILD       
         void                            SetDataSourceAccount    (DataSourceAccount *dataSourceAccount);
         DataSourceAccount *             GetDataSourceAccount    (void) const;
 
         void                            SetDataSourceSessionName(const DataSource::SessionName &session);
         const DataSource::SessionName & GetDataSourceSessionName(void) const;
+#endif
 
     private:
 

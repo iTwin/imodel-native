@@ -6,12 +6,12 @@
 |       $Date: 2009/04/20 15:27:58 $
 |     $Author: Earlin.Lutz $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //#include <STDVectorDPoint3d.h>
-#include <Vu/vuApi.h>
+#include <Vu/VuApi.h>
 
 typedef bvector<DPoint3d> vuVectorDPoint3d;
 typedef vuVectorDPoint3d& vuVectorDPoint3dR;

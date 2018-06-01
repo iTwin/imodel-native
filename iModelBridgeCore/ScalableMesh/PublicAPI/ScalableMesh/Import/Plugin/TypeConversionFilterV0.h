@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:07:38 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,7 +41,7 @@ struct TypeConversionFilterBase : public FilterBase
     {
 private:
     friend struct                           TypeConversionFilterCreatorBase;
-    friend struct                           TypeConversionFilterCreator;
+    friend struct                           BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::TypeConversionFilterCreator;
 
     struct                                  Impl;
     const void*                             m_implP; // Reserved for further use
@@ -61,8 +61,8 @@ public:
 struct TypeConversionFilterCreatorBase : private Uncopyable, public PacketGroupBinder
     {
 private:
-    friend struct                           TypeConversionFilterCreatorPlugin;
-    friend struct                           TypeConversionFilterCreator;
+    friend struct                           BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Plugin::TypeConversionFilterCreatorPlugin;
+    friend struct                           BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::TypeConversionFilterCreator;
 
     DataType                                m_sourceType;
     DataType                                m_targetType;

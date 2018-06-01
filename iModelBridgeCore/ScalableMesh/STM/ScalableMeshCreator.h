@@ -25,8 +25,9 @@
 // NTERAY: A whole lot of dependencies for a single header... This is bad. Reduce these to strict minimum.
 
 #include <ctime> //benchmarking
+#if _WIN32
 #include <windows.h> //for showing info.
-
+#endif
 
 #include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/IScalableMeshCreator.h>
@@ -56,7 +57,7 @@
 
 #include "ScalableMeshEditListener.h"
 #include "ScalableMeshStorage.h"
-#include "Stores\SMSQLiteStore.h"
+#include "Stores/SMSQLiteStore.h"
 
 //#include <HGF3DExtent.h>
 
@@ -91,7 +92,12 @@ typedef SMMeshIndex <PointType, PointIndexExtentType> MeshIndexType;
 BENTLEY_SM_EXPORT void RegisterDelayedImporters();
 inline bool fileExist(const WChar* fileName)
     {
+#if _WIN32
     ifstream file(fileName, ios::in | ios::binary);
+#else
+    Utf8String fileUtf8(fileName);
+    ifstream file(fileUtf8.c_str(), ios::in | ios::binary);
+#endif
     return file.good() && (char_traits<char>::eof() != file.peek());
     }
 
@@ -129,8 +135,9 @@ struct IScalableMeshCreator::Impl
 
 
         //CREATOR2
-
+#ifndef LINUX_SCALABLEMESH_BUILD
         static DataSourceManager            s_dataSourceManager;
+#endif
 
         BENTLEY_SM_EXPORT StatusInt                           GetStreamedTextureProvider(ITextureProviderPtr& textureStreamProviderPtr, const WString& url);
 

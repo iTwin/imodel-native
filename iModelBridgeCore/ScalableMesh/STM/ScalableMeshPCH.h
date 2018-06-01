@@ -12,40 +12,45 @@
 #pragma once
 
 
-
+#if _WIN32
 #include <amp.h> 
 #include <amp_math.h>
+#endif
 #include <thread>
 #include <atomic>
 #include <mutex> 
+#if _WIN32
 #include <excpt.h> 
+#endif
 #include <map>
 
 
-#include <BeSQLite\BeSQLite.h>
+#include <BeSQLite/BeSQLite.h>
 #include <ScalableMesh/Foundations/Definitions.h>
 #include <ScalableMesh/GeoCoords/Definitions.h>
 #include <ScalableMesh/Import/Definitions.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
 
+#if _WIN32
 #ifndef VANCOUVER_API    
     #include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #endif 
+#endif
 
-
-#include <Bentley\Bentley.h>
+#include <Bentley/Bentley.h>
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/bcDTMBaseDef.h>
 #include <TerrainModel/Core/bcDTMClass.h>
 #include <TerrainModel/Core/bcdtminlines.h>
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <TerrainModel\Formats\InroadsImporter.h>
-
+#endif
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 
-#include <Bentley\BeStringUtilities.h>
-#include <DgnPlatform\DgnPlatform.h>
+#include <Bentley/BeStringUtilities.h>
+#include <DgnPlatform/DgnPlatform.h>
 #include <Geom/GeomApi.h>
 #include <Mtg/MtgStructs.h>
 #include <GeoCoord/BaseGeoCoord.h>
@@ -54,7 +59,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #ifdef VANCOUVER_API
 #undef static_assert
-#include <DgnGeoCoord\DgnGeoCoord.h>
+#include <DgnGeoCoord/DgnGeoCoord.h>
 #include <DgnPlatform\DgnAttachment.h>
 #include <DgnPlatform\DgnPlatform.h>
 #include <DgnPlatform\DgnFileIO\ModelInfo.h>
@@ -68,7 +73,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #endif
 
 
-#include <DgnPlatform\DgnPlatform.r.h>
+#include <DgnPlatform/DgnPlatform.r.h>
 
 
 #ifdef VANCOUVER_API
@@ -111,13 +116,13 @@ USING_NAMESPACE_BENTLEY_POINTCLOUD
 #include <ScalableMesh/GeoCoords/Definitions.h>
 #include <ScalableMesh/Import/Definitions.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
-
+#if _WIN32
 #ifndef VANCOUVER_API    
 #include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #endif 
+#endif
 
-
-#include <Logging\bentleylogging.h>
+#include <Logging/bentleylogging.h>
 
 
 //Useful for detecting memory leak

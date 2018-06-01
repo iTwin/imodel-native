@@ -24,23 +24,17 @@ void CalcNormals (DVec3d**      calculatedNormals,
                   size_t        nbFaceIndexes, 
                   int32_t*        pFaceIndexes);
 
-BENTLEY_SM_EXPORT HFCPtr<HVE2DShape> CreateShapeFromPoints (const DPoint3d* points, size_t numberOfPoints, HFCPtr<HGF2DCoordSys> coordSys);
+BENTLEY_SM_EXPORT ImagePP::HFCPtr<ImagePP::HVE2DShape> CreateShapeFromPoints (const DPoint3d* points, size_t numberOfPoints, ImagePP::HFCPtr<ImagePP::HGF2DCoordSys> coordSys);
 
-HFCPtr<HVEShape> CreateShapeFromClips (const DRange3d&               spatialIndexRange,
+ImagePP::HFCPtr<ImagePP::HVEShape> CreateShapeFromClips (const DRange3d&               spatialIndexRange,
                                        const IScalableMeshClipContainerPtr& clips);
 
-HFCPtr<HVEShape> CreateShapeFromClips (const HFCPtr<HVEShape>        areaShape,
+ImagePP::HFCPtr<ImagePP::HVEShape> CreateShapeFromClips (const ImagePP::HFCPtr<ImagePP::HVEShape>        areaShape,
                                        const IScalableMeshClipContainerPtr& clips);
 
-#if 0
-int CutLinears(list<HFCPtr<HVEDTMLinearFeature>>& linearList, 
-               list<HFCPtr<HVEDTMLinearFeature>>& cutLinearList, 
-               HFCPtr<HVE2DPolygonOfSegments> queryPolyLine);
-
-#endif
-HFCPtr<HVE2DShape> GetGCSDomainsIntersection (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& firstGCSPtr, 
+ImagePP::HFCPtr<ImagePP::HVE2DShape> GetGCSDomainsIntersection (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& firstGCSPtr, 
                                               BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& secondGCSPtr, 
-                                              HFCPtr<HGF2DCoordSys> latitudeLongitudeCoordSys);
+                                              ImagePP::HFCPtr<ImagePP::HGF2DCoordSys> latitudeLongitudeCoordSys);
 
 void GetReprojectedBox (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,
@@ -52,7 +46,7 @@ StatusInt GetReprojectedBoxDomainLimited (BENTLEY_NAMESPACE_NAME::GeoCoordinates
                                           DPoint3d    boxPoints[],
                                           DPoint3d    reprojectedBoxPoints[],
                                           DRange3d    additionalSourceExtent,
-                                          HFCPtr<HVE2DShape>    queryShape);
+                                          ImagePP::HFCPtr<ImagePP::HVE2DShape>    queryShape);
 
 StatusInt ReprojectPoint (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                           BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,
@@ -64,23 +58,23 @@ StatusInt ReprojectRangeDomainLimited (DRange3d& reprojectedRange,
                                        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCS,
                                        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS);
 
-HFCPtr<HVE2DShape> ReprojectShapeDomainLimited (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr, 
+ImagePP::HFCPtr<ImagePP::HVE2DShape> ReprojectShapeDomainLimited (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr, 
                                                 BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,  
                                                 const DPoint3d*   pi_pSourcePt,
                                                 size_t  pi_SourcePtQty);
 
 BENTLEY_SM_EXPORT int SetClipToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
                   const DRange3d&                spatialIndexRange,
-                  const HVE2DShape&              shape);
+                  const ImagePP::HVE2DShape&              shape);
 
 int AddClipToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&           dtmPtr,
-                 const HVE2DShape& shape);
+                 const ImagePP::HVE2DShape& shape);
 
 struct BENTLEY_SM_EXPORT PtToPtConverter
     {        
     DPoint3d operator () (const DPoint3d& inputPt) const;
 
-    DPoint3d operator () (const HGF3DCoord<double>& inputPt) const;
+    DPoint3d operator () (const ImagePP::HGF3DCoord<double>& inputPt) const;
 
     static void Transform(DPoint3d* ptsOut, const DPoint3d* ptsIn, size_t nbPts);
     };

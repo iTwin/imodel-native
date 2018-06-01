@@ -17,12 +17,12 @@
 #include <ImagePP/all/h/HGFSpatialIndex.h>
 #include <ImagePP/all/h/HVEDTMLinearFeature.h>
 #include <ImagePP/all/h/HGFPointTileStore.h>*/
-#include <ImagePP\all\h\HFCAccessMode.h>
+#include <ImagePP/all/h/HFCAccessMode.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include "SMSQLiteFile.h"
 
 
-#include "Stores\SMStoreUtils.h"
+#include "Stores/SMStoreUtils.h"
 
 USING_NAMESPACE_IMAGEPP
 

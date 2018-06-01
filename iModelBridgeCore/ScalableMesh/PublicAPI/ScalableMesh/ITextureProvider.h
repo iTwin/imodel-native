@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -10,7 +10,7 @@
 /*__PUBLISH_SECTION_START__*/
 #include <ScalableMesh/ScalableMeshDefs.h>
 
-#include <Bentley\Bentley.h>
+#include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
 
 #undef static_assert
@@ -22,7 +22,7 @@ struct ITextureProvider;
 typedef RefCountedPtr<ITextureProvider> ITextureProviderPtr;
 
 
-struct ITextureProvider abstract : virtual public RefCountedBase
+struct ITextureProvider  : virtual public RefCountedBase
     {
     private:        
 

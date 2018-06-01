@@ -25,19 +25,30 @@
 #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Import;
 #endif //!BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE
 
+#if _WIN32
 #ifdef __BENTLEYSTM_BUILD__ 
     #define BENTLEY_SM_EXPORT __declspec(dllexport)
 #else
     #define BENTLEY_SM_EXPORT __declspec(dllimport)
 #endif
+#else
+    #define BENTLEY_SM_EXPORT
+#endif
     
 
+#if _WIN32
 #ifdef __BENTLEYSTMIMPORT_BUILD__ 
 #define BENTLEY_SM_IMPORT_EXPORT __declspec(dllexport)
 #else
 #define BENTLEY_SM_IMPORT_EXPORT __declspec(dllimport)
 #endif
+#else
+    #define BENTLEY_SM_IMPORT_EXPORT
+#endif
 
+#if !defined(_WIN32)
+typedef uint8_t byte;
+#endif
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

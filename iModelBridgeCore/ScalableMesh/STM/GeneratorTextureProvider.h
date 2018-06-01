@@ -1,6 +1,6 @@
 #pragma once
-#include <ScalableMesh\IScalableMeshTextureGenerator.h>
-#include <ScalableMesh\ITextureProvider.h>
+#include <ScalableMesh/IScalableMeshTextureGenerator.h>
+#include <ScalableMesh/ITextureProvider.h>
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

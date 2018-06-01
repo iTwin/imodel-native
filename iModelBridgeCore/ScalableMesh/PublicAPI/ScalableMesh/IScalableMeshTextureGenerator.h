@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -26,7 +26,7 @@ typedef RefCountedPtr<IScalableMeshTextureGenerator> IScalableMeshTextureGenerat
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IScalableMeshTextureGenerator abstract: virtual public RefCountedBase
+struct IScalableMeshTextureGenerator : virtual public RefCountedBase
     {
     private:        
 

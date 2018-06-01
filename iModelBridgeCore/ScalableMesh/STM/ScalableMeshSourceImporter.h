@@ -6,7 +6,7 @@
 |       $Date: 2011/12/21 17:04:24 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -25,8 +25,9 @@
 // NTERAY: A whole lot of dependencies for a single header... This is bad. Reduce these to strict minimum.
 
 #include <ctime> //benchmarking
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <windows.h> //for showing info.
-
+#endif
 
 #include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/IScalableMeshSourceImporter.h>

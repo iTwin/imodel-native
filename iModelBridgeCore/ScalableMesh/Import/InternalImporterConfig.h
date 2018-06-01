@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:06:52 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -59,7 +59,7 @@ namespace Internal {
     const ExtractionConfig*         m_extractionConfigP;
     const FilteringConfig*          m_filteringConfigP;
 
-    const HFCPtr<HVEClipShape> m_clipShapeP;
+    const ImagePP::HFCPtr<ImagePP::HVEClipShape> m_clipShapeP;
 
 
     virtual void _SetAreAttachmentsImported(bool importAttachments) override
@@ -109,12 +109,12 @@ namespace Internal {
         }
     virtual const CustomFilteringSequence&  _GetTargetFilters() const { return m_targetFilters; }
 
-    virtual void _SetClipShape(const HFCPtr<HVEClipShape>& clipShapePtr)
+    virtual void _SetClipShape(const ImagePP::HFCPtr<ImagePP::HVEClipShape>& clipShapePtr)
         {
-        const_cast<HFCPtr<HVEClipShape>&>(m_clipShapeP) = clipShapePtr.GetPtr();
+        const_cast<ImagePP::HFCPtr<ImagePP::HVEClipShape>&>(m_clipShapeP) = clipShapePtr.GetPtr();
         }
 
-    virtual const HVEClipShape* _GetClipShape() const
+    virtual const ImagePP::HVEClipShape* _GetClipShape() const
         {
         return m_clipShapeP.GetPtr();
         }
@@ -129,7 +129,7 @@ public:
         : m_sourceFilters(config.m_sourceFilters), m_filteringConfigP(config.m_filteringConfigP), m_extractionConfigP(config.m_extractionConfigP),
         m_defaultSourceGCSP(config.m_defaultSourceGCSP), m_defaultTargetSMDataP(config.m_defaultTargetSMDataP), m_defaultTargetTypeP(config.m_defaultTargetTypeP),
         m_defaultTargetLayer(config.m_defaultTargetLayer), m_hasDefaultTargetLayer(config.m_hasDefaultTargetLayer), m_defaultTargetGCSP(config.m_defaultTargetGCSP),
-        m_targetFilters(config.m_targetFilters), m_clipShapeP(m_clipShapeP.GetPtr())
+        m_targetFilters(config.m_targetFilters), m_clipShapeP(config.m_clipShapeP.GetPtr())
         {
         }
 
@@ -145,7 +145,7 @@ public:
         m_hasDefaultTargetLayer = config.m_hasDefaultTargetLayer;
         m_defaultTargetGCSP = config.m_defaultTargetGCSP;
         m_targetFilters = config.m_targetFilters;
-        const_cast<HFCPtr<HVEClipShape>&>(m_clipShapeP) = m_clipShapeP.GetPtr();
+        const_cast<ImagePP::HFCPtr<ImagePP::HVEClipShape>&>(m_clipShapeP) = config.m_clipShapeP.GetPtr();
         return *this;
         }
     

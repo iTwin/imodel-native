@@ -6,7 +6,7 @@
 |       $Date: 2011/08/10 17:03:32 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,7 +38,7 @@ BEGIN_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VXX_NAMESPACE(0)
 struct DGNElementSourceRefBase : private Unassignable
     {
 private:
-    friend struct                       DGNElementSourceRef;
+    friend struct                       BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DGNElementSourceRef;
 
     virtual DGNElementSourceRefBase*    _Clone                                 () const = 0;
 
@@ -54,7 +54,7 @@ private:
 protected:
     typedef LocalFileSourceRef          LocalFileSourceRef;
 public:
-    virtual                             ~DGNElementSourceRefBase               () = 0 {}
+    virtual                             ~DGNElementSourceRefBase               () {}
     };
 
 END_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VXX_NAMESPACE

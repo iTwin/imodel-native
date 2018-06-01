@@ -20,12 +20,12 @@
 #include <TerrainModel/Core/bcDTMClass.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMeshFeature.h>
-#include <Mtg\MtgStructs.h>
-#include <Geom\Polyface.h>
+#include <Mtg/MtgStructs.h>
+#include <Geom/Polyface.h>
 #include <list>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/ClipVector.h>
-#include <Bentley\bset.h>
+#include <Bentley/bset.h>
 
 #ifdef VANCOUVER_API
     USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -105,7 +105,7 @@ enum class SMQueryStatus
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IScalableMeshQueryParameters abstract: virtual public RefCountedBase
+struct IScalableMeshQueryParameters : virtual public RefCountedBase
     {            
     protected: 
         
@@ -243,15 +243,15 @@ struct IScalableMeshFixResolutionMaxPointsQueryParams : public virtual IScalable
         IScalableMeshFixResolutionMaxPointsQueryParams();
         virtual ~IScalableMeshFixResolutionMaxPointsQueryParams();
 
-        virtual __int64 _GetMaxNumberPoints() = 0;
+        virtual int64_t _GetMaxNumberPoints() = 0;
 
-        virtual void    _SetMaximumNumberPoints(__int64 maxNumberPoints) = 0;            
+        virtual void    _SetMaximumNumberPoints(int64_t maxNumberPoints) = 0;            
                 
     public :                 
 
-        __int64 GetMaxNumberPoints();
+        int64_t GetMaxNumberPoints();
 
-        BENTLEY_SM_EXPORT void SetMaximumNumberPoints(__int64 maxNumberPoints);    
+        BENTLEY_SM_EXPORT void SetMaximumNumberPoints(int64_t maxNumberPoints);    
 
         BENTLEY_SM_EXPORT static IScalableMeshFixResolutionMaxPointsQueryParamsPtr CreateParams();  
     };
@@ -261,7 +261,7 @@ struct IScalableMeshFixResolutionMaxPointsQueryParams : public virtual IScalable
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IScalableMeshPointQuery abstract: RefCountedBase
+struct IScalableMeshPointQuery : RefCountedBase
     {
     /*__PUBLISH_SECTION_END__*/
     /*__PUBLISH_CLASS_VIRTUAL__*/
@@ -413,7 +413,7 @@ public:
 
 typedef size_t ScalableMeshTextureID;
 
-struct IScalableMeshMeshFlags abstract: public RefCountedBase
+struct IScalableMeshMeshFlags : public RefCountedBase
     {
     protected:        
 
@@ -462,7 +462,7 @@ struct IScalableMeshMeshFlags abstract: public RefCountedBase
     };
 
 
-struct IScalableMeshNode abstract: virtual public RefCountedBase
+struct IScalableMeshNode : virtual public RefCountedBase
 
     {
     private:
@@ -507,7 +507,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual DRange3d _GetContentExtent() const = 0;
 
-        virtual __int64 _GetNodeId() const = 0;
+        virtual int64_t _GetNodeId() const = 0;
 
         virtual size_t _GetLevel() const = 0;
 
@@ -593,7 +593,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT DRange3d GetContentExtent() const;
 
-        BENTLEY_SM_EXPORT __int64 GetNodeId() const;
+        BENTLEY_SM_EXPORT int64_t GetNodeId() const;
 
         BENTLEY_SM_EXPORT size_t GetLevel() const;
 
@@ -691,7 +691,7 @@ struct IScalableMeshNodeEdit : public virtual IScalableMeshNode
     };
 
 
-struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
+struct IScalableMeshMeshQueryParams  : virtual public RefCountedBase
     {
     protected:
         IScalableMeshMeshQueryParams();
@@ -740,7 +740,7 @@ struct IScalableMeshMeshQueryParams abstract : virtual public RefCountedBase
 
 typedef bool (*StopQueryCallbackFP)();
 
-struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScalableMeshMeshQueryParams
+struct IScalableMeshViewDependentMeshQueryParams : virtual public IScalableMeshMeshQueryParams
     {
     protected :
      
@@ -811,7 +811,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
     };
 
 
-struct IScalableMeshMeshQuery abstract: RefCountedBase
+struct IScalableMeshMeshQuery : RefCountedBase
     {
     /*__PUBLISH_SECTION_END__*/
     /*__PUBLISH_CLASS_VIRTUAL__*/
@@ -856,7 +856,7 @@ struct IScalableMeshMeshQuery abstract: RefCountedBase
     };
 
 
-struct IScalableMeshNodeQueryParams abstract: RefCountedBase
+struct IScalableMeshNodeQueryParams : RefCountedBase
     {
     protected:
         virtual void _SetDirection(DVec3d direction) = 0;
@@ -890,7 +890,7 @@ struct IScalableMeshNodeQueryParams abstract: RefCountedBase
         BENTLEY_SM_EXPORT static IScalableMeshNodeQueryParamsPtr CreateParams();
     };
 
-struct IScalableMeshNodeRayQuery abstract : RefCountedBase
+struct IScalableMeshNodeRayQuery  : RefCountedBase
     {
     /*__PUBLISH_SECTION_END__*/
     /*__PUBLISH_CLASS_VIRTUAL__*/
@@ -930,7 +930,7 @@ struct IScalableMeshNodeRayQuery abstract : RefCountedBase
     };
 
 
-struct IScalableMeshNodePlaneQueryParams abstract : IScalableMeshMeshQueryParams
+struct IScalableMeshNodePlaneQueryParams  : IScalableMeshMeshQueryParams
     {
     protected:
         virtual void _SetPlane(DPlane3d plane) = 0;

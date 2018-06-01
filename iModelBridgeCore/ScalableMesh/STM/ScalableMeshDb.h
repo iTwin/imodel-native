@@ -1,9 +1,9 @@
 #pragma once
 
 #include <Bentley/RefCounted.h>
-#include <BeSQLite\BeSQLite.h>
-#include <ScalableMesh\ScalableMeshDefs.h>
-#include <ScalableMesh/import/DataSQLite.h>
+#include <BeSQLite/BeSQLite.h>
+#include <ScalableMesh/ScalableMeshDefs.h>
+#include <ScalableMesh/Import/DataSQLite.h>
 
 
 enum class SQLDatabaseType

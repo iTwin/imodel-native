@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:07:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,7 +40,7 @@ struct FilterCreatorBase;
 struct CustomFilterFactoryBase : private Uncopyable, public ShareableObjectTypeTrait<CustomFilterFactoryBase>::type
     {
 private:
-    friend struct                           CustomFilterFactory;
+    friend struct                           BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::CustomFilterFactory;
 
     const void*                             m_implP; // Reserve some space for further use
 

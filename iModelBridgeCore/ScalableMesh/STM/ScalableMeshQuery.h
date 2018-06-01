@@ -20,7 +20,7 @@
 
 #pragma once
 #pragma warning(disable:4250) //yes visual studio I am aware of virtual inheritance thank you
-#include <GeoCoord\BaseGeoCoord.h>
+#include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/GeoCoords/Reprojection.h>
 
@@ -32,7 +32,7 @@
 
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/IScalableMeshClipContainer.h>
-#include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+#include <ScalableMesh/IScalableMeshProgressiveQuery.h>
 
 #include "SMMeshIndex.h"
 #include "./ScalableMesh/ScalableMeshGraph.h"
@@ -254,14 +254,14 @@ struct ScalableMeshFixResolutionMaxPointsQueryParams : public virtual IScalableM
     
     protected :
 
-        __int64 m_maxNumberPoints;
+        int64_t m_maxNumberPoints;
         
-        virtual __int64 _GetMaxNumberPoints() override 
+        virtual int64_t _GetMaxNumberPoints() override 
             {
             return m_maxNumberPoints;
             }
 
-        virtual void    _SetMaximumNumberPoints(__int64 maxNumberPoints) override
+        virtual void    _SetMaximumNumberPoints(int64_t maxNumberPoints) override
             {
             m_maxNumberPoints = maxNumberPoints;
             }
@@ -1374,7 +1374,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual DRange3d _GetContentExtent() const override;
 
-        virtual __int64 _GetNodeId() const override;
+        virtual int64_t _GetNodeId() const override;
 
         virtual size_t _GetLevel() const override;
 
@@ -1456,7 +1456,7 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
     public:             
 
             ScalableMeshCachedMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, bool loadTexture)
-            : ScalableMeshNode(nodePtr)
+            : ScalableMeshNode<POINT>(nodePtr)
                 {           
                 auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
 

@@ -6,7 +6,7 @@
 |       $Date: 2012/03/21 18:37:07 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,7 +21,6 @@
 //#include <ScalableMesh/IScalableMeshMoniker.h>
 #include <ScalableMesh/IScalableMeshTime.h>
 #include <ScalableMesh/IScalableMeshSources.h>
-#include <ScalableMesh\IScalableMeshSourceImporter.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 
 #ifndef VANCOUVER_API

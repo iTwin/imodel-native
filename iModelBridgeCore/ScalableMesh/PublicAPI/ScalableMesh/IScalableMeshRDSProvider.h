@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/IScalableMeshRDSProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,7 +24,7 @@ typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<IScalableMeshRDSProvider> IScalabl
 IScalableMeshRDSProvider defines an interface that enables communications with RDS
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-class IScalableMeshRDSProvider abstract : public IRefCounted
+class IScalableMeshRDSProvider: public IRefCounted
 {
     /*__PUBLISH_SECTION_END__*/
     /*__PUBLISH_CLASS_VIRTUAL__*/

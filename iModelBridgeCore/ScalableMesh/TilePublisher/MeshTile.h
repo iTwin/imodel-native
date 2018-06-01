@@ -12,7 +12,7 @@
 //#include "DgnTexture.h"
 //#include "SolidKernel.h"
 #include <map> // NB: Because bmap doesn't support move semantics...
-#include <ScalableMesh\GeoCoords\GCS.h>
+#include <ScalableMesh/GeoCoords/GCS.h>
 
 #ifdef VANCOUVER_API
 
@@ -410,7 +410,7 @@ private:
     //TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams);
     TileDisplayParams(uint32_t fillColor, TileTextureImagePtr texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting) { }
 public:
-    static TileDisplayParamsPtr Create() { /*return Create(nullptr, nullptr);*/ }
+    static TileDisplayParamsPtr Create() { return Create(0, nullptr,false); }
     //static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams) { return Create(&graphicParams, &geometryParams); }
     //static TileDisplayParamsPtr Create(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) { return new TileDisplayParams(graphicParams, geometryParams); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, TileTextureImagePtr textureImage, bool ignoreLighting) { return new TileDisplayParams(fillColor, textureImage, ignoreLighting); }

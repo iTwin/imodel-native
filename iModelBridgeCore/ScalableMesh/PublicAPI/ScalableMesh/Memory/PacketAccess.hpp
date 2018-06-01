@@ -6,7 +6,7 @@
 |       $Date: 2011/09/07 14:20:38 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,13 +19,14 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 class RawPacket : public Uncopyable, public ShareableObjectTypeTrait<RawPacket>::type
     {
+public:
     template <typename T> struct        ProxyTypeTrait;
 
     class                               ObjectsLifeCycle;
     class                               PODObjectsLifeCycle;
     template <typename T> class         ClassObjectsLifeCycle;
     template <typename T> class         NotOwnerObjectLifeCycle;
-
+private:
     template <typename T> class         LifeCycleTrait;
     template <typename ProxyT> struct   PrepareForAssignTrait;
 
@@ -81,13 +82,29 @@ public:
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
+* TDORAY: Implement an internal non-typed wrap on which the typed wrap depends.
+* @bsimethod                                                  Raymond.Gauthier   02/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename T>
+void Packet::Wrap  (const T*    data,
+                    size_t      size)
+    {
+    SetReadOnly(true);
+    GetRawPacket().Wrap(data, size, size);
+
+    NotifyOfRealloc();
+    }
+
+    template <typename T,bool IS_POD> struct   ImplOfPacket                                {typedef ClassPacketProxy<T>        type;};
+    template <typename T> struct              ImplOfPacket<T,true>                          {typedef PODPacketProxy<T>          type;};
+
+/*---------------------------------------------------------------------------------**//**
+* @description  
 * @bsiclass                                                  Raymond.Gauthier   02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename T> struct RawPacket::ProxyTypeTrait                      
     {
-    template <bool IS_POD> struct   Impl                                {typedef ClassPacketProxy<T>        type;};
-    template <> struct              Impl<true>                          {typedef PODPacketProxy<T>          type;};
-    typedef typename Impl<is_pod<T>::value>::type                                                           type;
+    typedef typename ImplOfPacket<T,is_pod<T>::value>::type                                                           type;
     };
 template <typename T> struct RawPacket::ProxyTypeTrait<const T*>        {/*Fail... Do no support pointers*/};
 template <typename T> struct RawPacket::ProxyTypeTrait<T*>              {/*Fail... Do no support pointers*/};
@@ -108,7 +125,7 @@ public:
 
     explicit                            ObjectsLifeCycle                   (size_t              typeSize,
                                                                             ClassID             classID);
-    virtual                             ~ObjectsLifeCycle                  () = 0 {}
+    virtual                             ~ObjectsLifeCycle                  () {}
 
     virtual void                        Construct                          (void*               begin,
                                                                             void*&              end,
@@ -173,17 +190,18 @@ public:
     };
 
 
+    template <typename T,bool IS_POD> struct   ImplOfObject                                {typedef RawPacket::ClassObjectsLifeCycle<T>   type;};
+    template <typename T> struct              ImplOfObject<T,true>                          {typedef RawPacket::PODObjectsLifeCycle        type;};
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename T> class RawPacket::LifeCycleTrait
     {
-    template <bool IS_POD> struct   Impl                                {typedef ClassObjectsLifeCycle<T>   type;};
-    template <> struct              Impl<true>                          {typedef PODObjectsLifeCycle        type;};
 
 public:
-    typedef typename Impl<is_pod<T>::value>::type                                                           type;
+    typedef typename ImplOfObject<T,is_pod<T>::value>::type                                                           type;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -409,7 +427,7 @@ void RawPacket::ClassObjectsLifeCycle<T>::ConstructFrom    (void*       pi_begin
 * @bsimethod                                                  Raymond.Gauthier   01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename T>
-virtual void RawPacket::ClassObjectsLifeCycle<T>::Destroy  (void*   pi_begin,
+void RawPacket::ClassObjectsLifeCycle<T>::Destroy  (void*   pi_begin,
                                                             void*&  pio_end) const
     {
     T* pBegin = (T*)pi_begin;
@@ -583,8 +601,8 @@ NonConstPacketProxyBase<T>::NonConstPacketProxyBase ()
 template <typename T>
 void NonConstPacketProxyBase<T>::SetImpl (RawPacket& pi_rImpl)
     {
-    assert(0 == m_pImpl);
-    m_pImpl = &pi_rImpl;
+    assert(0 == this->m_pImpl);
+    this->m_pImpl = &pi_rImpl;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -594,8 +612,8 @@ void NonConstPacketProxyBase<T>::SetImpl (RawPacket& pi_rImpl)
 template <typename T>
 RawPacket& NonConstPacketProxyBase<T>::GetImpl ()
     {
-    assert(0 != m_pImpl);
-    return *m_pImpl;
+    assert(0 != this->m_pImpl);
+    return *this->m_pImpl;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -689,7 +707,7 @@ ConstPacketProxy<T>::ConstPacketProxy ()
 template <typename T>
 void ConstPacketProxy<T>::AssignTo (const Packet& packet)
     {
-    SetImpl(PrepareRawPacketFor(packet, *this));
+    this->SetImpl(this->PrepareRawPacketFor(packet, *this));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -699,7 +717,7 @@ void ConstPacketProxy<T>::AssignTo (const Packet& packet)
 template <typename T>
 ClassPacketProxy<T>::ClassPacketProxy (Packet& packet)
     {
-    SetImpl(PrepareRawPacketFor(packet, *this));
+    this->SetImpl(this->PrepareRawPacketFor(packet, *this));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -719,7 +737,7 @@ ClassPacketProxy<T>::ClassPacketProxy ()
 template <typename T>
 void ClassPacketProxy<T>::AssignTo (Packet& packet)
     {
-    SetImpl(PrepareRawPacketFor(packet, *this));
+    this->SetImpl(this->PrepareRawPacketFor(packet, *this));
     }
 
 
@@ -769,8 +787,8 @@ void PODPacketProxy<T>::SetSize (size_t                  pi_Size)
 * @bsimethod                                                  Raymond.Gauthier   02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename T>
-void PODPacketProxy<T>::SetEnd(iterator pi_newEndIt)
+void PODPacketProxy<T>::SetEnd(typename NonConstPacketProxyBase<T>::iterator pi_newEndIt)
     {
-    assert(pi_newEndIt >= GetImpl().m_pBufferBegin && pi_newEndIt <= GetImpl().m_pBufferEnd);
-    GetImpl().m_pEnd = pi_newEndIt;
+    assert(pi_newEndIt >= this->GetImpl().m_pBufferBegin && pi_newEndIt <= this->GetImpl().m_pBufferEnd);
+    this->GetImpl().m_pEnd = pi_newEndIt;
     }

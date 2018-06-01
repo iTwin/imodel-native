@@ -16,7 +16,7 @@
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh/Foundations/Iterator.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
-#include <ScalableMesh\Import\ScalableMeshData.h>
+#include <ScalableMesh/Import/ScalableMeshData.h>
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 //NEEDS_WORK_SM_RENAMING : Rename IDTM so ISM

@@ -21,7 +21,7 @@
 
 #include <STMInternal/Foundations/PrivateStringTools.h>
 
-#include "WktUtils.h"
+#include "WKTUtils.h"
 #include "GCSWktParsing.h"
 
 #ifndef VANCOUVER_API

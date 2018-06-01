@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:07:35 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -45,7 +45,7 @@ struct ReprojectionFilterBase : public FilterBase
     {
 private:
     friend struct                           ReprojectionFilterCreatorBase;
-    friend struct                           ReprojectionFilterCreator;
+    friend struct                           BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::ReprojectionFilterCreator;
 
     struct                                  Impl;
     const void*                             m_implP; // Reserved for further use
@@ -66,8 +66,8 @@ public:
 struct ReprojectionFilterCreatorBase : private Uncopyable, public PacketGroupBinder
     {
 private:
-    friend struct                           ReprojectionFilterCreator;
-    friend struct                           ReprojectionFilterCreatorPlugin;
+    friend struct                           BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::ReprojectionFilterCreator;
+    friend struct                           BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Plugin::ReprojectionFilterCreatorPlugin;
 
     DataType                                m_type;
 

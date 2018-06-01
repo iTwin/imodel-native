@@ -1,8 +1,8 @@
-#include <ImagePP\all\h\HRPPixelTypeV32R8G8B8A8.h>
+#include <ImagePP/all/h/HRPPixelTypeV32R8G8B8A8.h>
 
 #include <ImagePP/all/h/HFCException.h>
-#include <ScalableMesh\ScalableMeshUtilityFunctions.h>
-#include <ScalableMesh\IScalableMeshQuery.h>
+#include <ScalableMesh/ScalableMeshUtilityFunctions.h>
+#include <ScalableMesh/IScalableMeshQuery.h>
 #include <ImagePP/all/h/HCDCodecIdentity.h>
 #include "ScalableMeshProgress.h"
 
@@ -16,10 +16,10 @@
 //#include <PCLWrapper\INormalCalculator.h>
 #include "ScalableMeshQuery.h"
 //#include "MeshingFunctions.h"
-#include <ScalableMesh\ScalableMeshUtilityFunctions.h>
+#include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <Mtg/MtgStructs.h>
 //#include <Geom/bsp/bspbound.fdf>
-#include "ScalableMesh\ScalableMeshGraph.h"
+#include "ScalableMesh/ScalableMeshGraph.h"
 #include <string>
 #include <queue>
 #include "ScalableMeshMesher.h"
@@ -29,7 +29,7 @@
 #include "Edits/ClipUtilities.h"
 #include "vuPolygonClassifier.h"
 #include "LogUtils.h"
-#include "Edits\Skirts.h"
+#include "Edits/Skirts.h"
 #include <map>
 #include <json/json.h>
 
@@ -127,7 +127,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                                                                                      size_t pi_SplitTreshold,
                                                                                      const EXTENT& pi_rExtent,
                                                                                      const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode)
-                                                                                     : SMPointIndexNode<POINT, EXTENT>(nodeId,pi_SplitTreshold, pi_rExtent, dynamic_cast<SMPointIndexNode*>(pi_rpParentNode.GetPtr()))
+                                                                                     : SMPointIndexNode<POINT, EXTENT>(nodeId,pi_SplitTreshold, pi_rExtent, dynamic_cast<SMPointIndexNode<POINT, EXTENT>*>(pi_rpParentNode.GetPtr()))
     {
     m_SMIndex = pi_rpParentNode->m_SMIndex;
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
@@ -147,7 +147,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
 template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndexNode(size_t pi_SplitTreshold,
                 const EXTENT& pi_rExtent,
                 const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode)
-                : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, dynamic_cast<SMPointIndexNode*>(pi_rpParentNode.GetPtr()))
+                : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, dynamic_cast<SMPointIndexNode<POINT,EXTENT>*>(pi_rpParentNode.GetPtr()))
     {
     m_SMIndex = pi_rpParentNode->m_SMIndex;
     m_mesher2_5d = pi_rpParentNode->GetMesher2_5d();
@@ -167,7 +167,7 @@ template <class POINT, class EXTENT> SMMeshIndexNode<POINT, EXTENT>::SMMeshIndex
                                                                                      const EXTENT& pi_rExtent,
                                                                                      const HFCPtr<SMMeshIndexNode<POINT, EXTENT> >& pi_rpParentNode,
                                                                                      bool IsUnsplitSubLevel)
-                                                                                     : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, dynamic_cast<SMPointIndexNode*>(pi_rpParentNode.GetPtr()), IsUnsplitSubLevel)                                                                              
+                                                                                     : SMPointIndexNode<POINT, EXTENT>(pi_SplitTreshold, pi_rExtent, dynamic_cast<SMPointIndexNode<POINT,EXTENT>*>(pi_rpParentNode.GetPtr()), IsUnsplitSubLevel)                                                                              
                                                                                      
     {
     m_SMIndex = pi_rpParentNode->m_SMIndex;
@@ -230,7 +230,7 @@ template <class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::IsGrap
 
 template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy()
     {
-    SMPointIndexNode::Destroy();
+    SMPointIndexNode<POINT,EXTENT>::Destroy();
 
     if (GetBlockID().IsValid())
         {                
@@ -442,11 +442,11 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
     assert(pi_pDataStore != nullptr);
 
     static double startTime = clock();
-    static std::atomic<uint64_t> loadDataTime = 0;
-    static std::atomic<uint64_t> convertTime = 0;
-    static std::atomic<uint64_t> storeTime = 0;
-    static std::atomic<uint64_t> nbProcessedNodes = 0;
-    static std::atomic<uint64_t> nbNodes = 0;
+    static std::atomic<uint64_t> loadDataTime = {0};
+    static std::atomic<uint64_t> convertTime = {0};
+    static std::atomic<uint64_t> storeTime = {0};
+    static std::atomic<uint64_t> nbProcessedNodes = {0};
+    static std::atomic<uint64_t> nbNodes = {0};
 
     if (progress != nullptr && progress->IsCanceled()) return false;
 
@@ -731,8 +731,8 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly)
     {
 
-    static std::atomic<uint64_t> loadHeaderTime = 0;
-    static std::atomic<uint64_t> loadDataTime = 0;
+    static std::atomic<uint64_t> loadHeaderTime = {0};
+    static std::atomic<uint64_t> loadDataTime = {0};
     double t = 0;
     if (this->m_nodeHeader.m_level == 0)
         {
@@ -761,6 +761,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadInd
     //        }
     //    SetThreadAvailableAsync(threadId);
     //    };
+
+#ifndef LINUX_SCALABLEMESH_BUILD
     typedef SMNodeDistributor<HFCPtr<SMMeshIndexNode<POINT, EXTENT>>> Distribution_Type;
     static Distribution_Type::Ptr distributor(new Distribution_Type([](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
         {
@@ -814,6 +816,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadInd
         std::cout << "Time to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / LightThreadPool::GetInstance()->m_nbThreads << std::endl;
         std::cout << "Total time: " << (double)(clock() - t) / CLOCKS_PER_SEC << std::endl;
         }
+#endif
 
     }
 
@@ -830,7 +833,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
     char   TempBuffer[3000];
     int    NbChars;
     size_t NbWrittenChars;
-    __int64 nodeId;
+    int64_t nodeId;
 
     if (GetBlockID().IsValid())
         {
@@ -3761,7 +3764,7 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<int32_t
     {
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;
 
-    if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_featurePoolItemId, GetBlockID().m_integerID, SMStoreDataType::LinearFeature, (uint64_t)m_SMIndex))
+    if (!GetMemoryPool()->template GetItem<int32_t>(poolMemVectorItemPtr, m_featurePoolItemId, GetBlockID().m_integerID, SMStoreDataType::LinearFeature, (uint64_t)m_SMIndex))
         {
         ISMInt32DataStorePtr nodeDataStore;
         bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::LinearFeature);
@@ -3789,11 +3792,11 @@ template<class POINT, class EXTENT>  RefCountedPtr<SMMemoryPoolVectorItem<int32_
 
     if (!m_SMIndex->IsFromCesium())
         {
-        poolMemVectorItemPtr = GetMemoryPoolItem<ISMInt32DataStorePtr, int32_t, SMMemoryPoolVectorItem<int32_t>, SMStoredMemoryPoolVectorItem<int32_t>>(m_triIndicesPoolItemId, SMStoreDataType::TriPtIndices, GetBlockID());
+        poolMemVectorItemPtr = this->template GetMemoryPoolItem<ISMInt32DataStorePtr, int32_t, SMMemoryPoolVectorItem<int32_t>, SMStoredMemoryPoolVectorItem<int32_t>>(m_triIndicesPoolItemId, SMStoreDataType::TriPtIndices, GetBlockID());
         }
     else
         {
-        SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, GetBlockID()).get();
+        SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = this->template  GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, GetBlockID()).get();
         // In the cesium format, indices are packaged with the points
         m_triIndicesPoolItemId = m_pointsPoolItemId;
         bool result = poolMemMultiItemsPtr->GetItem<int32_t>(poolMemVectorItemPtr, SMStoreDataType::TriPtIndices);
@@ -3839,7 +3842,7 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<int32_t
             
     if (!m_SMIndex->IsFromCesium())
         {
-        poolMemVectorItemPtr = GetMemoryPoolItem<ISMInt32DataStorePtr, int32_t, SMMemoryPoolVectorItem<int32_t>, SMStoredMemoryPoolVectorItem<int32_t>>(m_triUvIndicesPoolItemId, SMStoreDataType::TriUvIndices, GetBlockID());
+        poolMemVectorItemPtr = this->template GetMemoryPoolItem<ISMInt32DataStorePtr, int32_t, SMMemoryPoolVectorItem<int32_t>, SMStoredMemoryPoolVectorItem<int32_t>>(m_triUvIndicesPoolItemId, SMStoreDataType::TriUvIndices, GetBlockID());
         }
     else
         {
@@ -3867,7 +3870,7 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
         {
         SMMemoryPoolItemId texPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureData(texID);
 
-        poolMemBlobItemPtr = GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(texPoolItemId, SMStoreDataType::Texture, HPMBlockID(texID));
+        poolMemBlobItemPtr = this->template GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(texPoolItemId, SMStoreDataType::Texture, HPMBlockID(texID));
         assert(poolMemBlobItemPtr.IsValid());
 
         m_textureIds.insert(texID);
@@ -3875,7 +3878,7 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
         }
     else
         {
-        SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, GetBlockID()).get();
+        SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = this->template GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, GetBlockID()).get();
         // In the cesium format, textures are packaged with the points
         m_texturePoolItemId = m_pointsPoolItemId;
         bool result = poolMemMultiItemsPtr->GetItem<Byte>(poolMemBlobItemPtr, SMStoreDataType::Texture);
@@ -3895,7 +3898,7 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
 
     auto texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID : GetBlockID();
 
-    poolMemBlobItemPtr = GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(m_texturePoolItemId, SMStoreDataType::TextureCompressed, texID);
+    poolMemBlobItemPtr = this->template GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(m_texturePoolItemId, SMStoreDataType::TextureCompressed, texID);
     assert(poolMemBlobItemPtr.IsValid());
 
     return poolMemBlobItemPtr;
@@ -4667,7 +4670,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
             }
 #endif
 
-        auto dtm = m_nodeHeader.m_arePoints3d ? Tile3dTM::Create(nodeP) : nodeP->GetBcDTM();
+        DTMPtr dtm = m_nodeHeader.m_arePoints3d ? Tile3dTM::Create(nodeP).get() : nodeP->GetBcDTM().get();
         if (dtm.get() == nullptr) return;
             SkirtBuilder builder(dtm);
             map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
@@ -5717,9 +5720,9 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
                 }
             }
         }
-
+#ifndef LINUX_SCALABLEMESH_BUILD
     // Create store for 3DTiles output
-    typedef SMStreamingStore<EXTENT>::SMStreamingSettings StreamingSettingsType;
+    typedef typename SMStreamingStore<EXTENT>::SMStreamingSettings StreamingSettingsType;
     SMStreamingStore<EXTENT>::SMStreamingSettingsPtr settings = new StreamingSettingsType();
     settings->m_url = Utf8String(path.c_str());
     settings->m_location = StreamingSettingsType::ServerLocation::LOCAL;
@@ -5754,7 +5757,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
 
     m_rootNodeGroup->SetMaxGroupDepth(this->GetDepth() % s_max_group_depth + 1);
 
-    auto strategy = m_rootNodeGroup->GetStrategy<EXTENT>();
+    auto strategy = m_rootNodeGroup->template GetStrategy<EXTENT>();
     strategy->SetOldMasterHeader(oldMasterHeader);
     strategy->SetClipInfo(coverageID, isClipBoundary);
     strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
@@ -5792,7 +5795,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->Publish3DTile(pDataStore, transform, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, m_progress, outputTexture);
 
     if (m_progress != nullptr) m_progress->Progress() = 1.0f;
-    
+#endif
     return SUCCESS;
     }
 
@@ -5942,7 +5945,11 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                     }
                 set<SMMeshIndexNode<POINT, EXTENT>*> stitchedNodes;
                 std::recursive_mutex stitchedMutex;
-                for (auto& node : nodesToStitch) LightThreadPool::GetInstance()->m_nodeMap.insert(std::make_pair((void*)node, (unsigned int)-1));
+                for (auto& node : nodesToStitch)
+                    {
+                    LightThreadPool::GetInstance()->m_nodeMap[(void*)node] = std::make_shared<std::atomic<unsigned int>>();
+                    *LightThreadPool::GetInstance()->m_nodeMap[(void*)node] = -1;
+                    }
                 for (size_t i =0; i < LightThreadPool::GetInstance()->m_nbThreads; ++i)
                     RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>** vec, set<SMMeshIndexNode<POINT,EXTENT>*>* stitchedNodes, std::recursive_mutex* stitchedMutex, size_t nNodes, size_t threadId) ->void
                     {
@@ -5976,7 +5983,9 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                             if(needsStitching) current->Stitch((int)current->m_nodeHeader.m_level, 0);
                             unsigned int val = (unsigned int)-1;
                             unsigned int id = (unsigned int)threadId;
-                            LightThreadPool::GetInstance()->m_nodeMap[current].compare_exchange_strong(id, val);
+                              if(LightThreadPool::GetInstance()->m_nodeMap.count(current) == 0)
+                            LightThreadPool::GetInstance()->m_nodeMap[current] = std::make_shared<std::atomic<unsigned int>>();
+                            LightThreadPool::GetInstance()->m_nodeMap[current]->compare_exchange_strong(id, val);
                             }
                         myNodes.erase(myNodes.begin());
                         if (myNodes.size() == 0 && firstIdx + 1 < nNodes / LightThreadPool::GetInstance()->m_nbThreads * (threadId+1))

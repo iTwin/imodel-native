@@ -48,19 +48,24 @@ extern std::map<void*, std::atomic<unsigned int>> s_nodeMap;
 */
 
 
-bool TryReserveNodes(std::map<void*, std::atomic<unsigned int>>& map, void** reservedNodes, size_t nNodesToReserve, unsigned int id)
+bool TryReserveNodes(std::map<void*, std::shared_ptr<std::atomic<unsigned int>>>& map, void** reservedNodes, size_t nNodesToReserve, unsigned int id)
     {
     bool isReserved = true;
     for (size_t i = 0; i < nNodesToReserve && isReserved; ++i)
         {
         unsigned int val = (unsigned int)-1;
-        if (!map[reservedNodes[i]].compare_exchange_weak(val,id)) isReserved = false;
+        if (map.count(reservedNodes[i]) == 0 || !map[reservedNodes[i]]->compare_exchange_weak(val,id)) isReserved = false;
         }
     if (!isReserved) 
         for (size_t i = 0; i < nNodesToReserve; ++i)
             {
             unsigned int val = (unsigned int)-1;
-            map[reservedNodes[i]].compare_exchange_strong(id, val);
+            if(map.count(reservedNodes[i]) == 0)
+            {
+                map[reservedNodes[i]] = std::make_shared<std::atomic<unsigned int>>();
+                *map[reservedNodes[i]] = (unsigned int)-1;
+            }
+            map[reservedNodes[i]]->compare_exchange_strong(id, val);
             }
     return isReserved;
     }
@@ -119,10 +124,10 @@ void WaitForThreadStop(IScalableMeshProgress* p)
     bool notAllThreadsStopped = true;
     while (notAllThreadsStopped)
         {
-        volatile int n = 0;
-        std::thread* arrayT = LightThreadPool::GetInstance()->m_threads;
-        volatile uint64_t ptr = (uint64_t)arrayT;
-        ptr = ptr;
+          int n = 0;
+//        std::thread* arrayT = LightThreadPool::GetInstance()->m_threads;
+//        volatile uint64_t ptr = (uint64_t)arrayT;
+//        ptr = ptr;
 		if (p != nullptr) p->UpdateListeners();
         for (size_t t = 0; t < LightThreadPool::GetInstance()->m_nbThreads; ++t)
             {

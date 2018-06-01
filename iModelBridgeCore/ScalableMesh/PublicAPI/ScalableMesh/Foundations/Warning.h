@@ -6,7 +6,7 @@
 |       $Date: 2011/10/25 18:53:45 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -91,7 +91,7 @@ protected:
                                                                             StatusInt               errorCode = 0)
         :   Warning(msg, level, errorCode) {}
 
-    virtual                             ~WarningMixinBase                  () = 0 {};
+    virtual                             ~WarningMixinBase                  () {};
 
     };
 

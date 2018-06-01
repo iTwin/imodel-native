@@ -15,7 +15,7 @@
 #include <Bentley/bvector.h>
 #include <ImagePP/all/h/HFCPtr.h>
 #include <ScalableMesh/IScalableMesh.h>
-#include "..\SMPointTileStore.h"
+#include "../SMPointTileStore.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

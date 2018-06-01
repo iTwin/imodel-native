@@ -33,6 +33,7 @@
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
+USING_NAMESPACE_IMAGEPP
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -391,7 +392,8 @@ IDTMSource::Impl::Impl(DTMSourceDataType       sourceDataType,
     {
     m_path = WString(fullPath);
     m_sourceDataType = sourceDataType;
-    
+ 
+#if _WIN32   
     struct _stat64i32 attrib;
 
     if (_wstat(fullPath, &attrib) == 0)
@@ -401,7 +403,20 @@ IDTMSource::Impl::Impl(DTMSourceDataType       sourceDataType,
         time_t time = attrib.st_mtime;    
         data.SetTimeFile(time);
         m_config.SetReplacementSMData(data);
-        }       
+        }     
+#else
+    struct stat64 attrib;
+
+    Utf8String fullPathUtf8(fullPath);
+    if (stat64(fullPathUtf8.c_str(), &attrib) == 0)
+        {        
+        ScalableMeshData data = m_config.GetReplacementSMData();
+    
+        time_t time = attrib.st_mtime;    
+        data.SetTimeFile(time);
+        m_config.SetReplacementSMData(data);
+        }    
+#endif  
 
     m_config.RegisterEditListener(*this);
     }
@@ -489,8 +504,12 @@ bool IDTMSource::Impl::_IsReachable () const
             return false;
             }
         }           
-
+#if _WIN32
     return std::ifstream(m_path.c_str()).good();
+#else
+    Utf8String pathUTF8(m_path.c_str());
+    return std::ifstream(pathUTF8.c_str()).good();
+#endif
     }
 
 

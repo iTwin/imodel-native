@@ -31,27 +31,29 @@ extern bool   GET_HIGHEST_RES;
 #include "ScalableMeshSourcesPersistance.h"
 
 #include <ScalableMesh/IScalableMeshPolicy.h>
-#include <ScalableMesh\IScalableMeshSourceCollection.h>
-#include <ScalableMesh\IScalableMeshDocumentEnv.h>
-#include <ScalableMesh\IScalableMeshGroundExtractor.h>
-#include <ScalableMesh\IScalableMeshSourceImportConfig.h>
-#include <ScalableMesh\IScalableMeshSources.h>
+#include <ScalableMesh/IScalableMeshSourceCollection.h>
+#include <ScalableMesh/IScalableMeshDocumentEnv.h>
+#include <ScalableMesh/IScalableMeshGroundExtractor.h>
+#include <ScalableMesh/IScalableMeshSourceImportConfig.h>
+#include <ScalableMesh/IScalableMeshSources.h>
 
-#include "ScalableMesh\ScalableMeshLib.h"
+#include "ScalableMesh/ScalableMeshLib.h"
+#ifndef LINUX_SCALABLEMESH_BUILD
 #include <CloudDataSource/DataSourceManager.h>
+#endif
 
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshInfo.h"
 #include "ScalableMeshVolume.h"
 
-#include "Edits\ClipRegistry.h"
-#include "Stores\SMStreamingDataStore.h"
+#include "Edits/ClipRegistry.h"
+#include "Stores/SMStreamingDataStore.h"
 
-#include <Vu\VuApi.h>
-#include <Vu\vupoly.fdf>
+#include <Vu/VuApi.h>
+#include <Vu/vupoly.fdf>
 #include "vuPolygonClassifier.h"
-#include <ImagePP\all\h\HIMMosaic.h>
-#include <ImagePP\all\h\HRFVirtualEarthFile.h>
+#include <ImagePP/all/h/HIMMosaic.h>
+#include <ImagePP/all/h/HRFVirtualEarthFile.h>
 #include "LogUtils.h"
 #include "ScalableMeshEdit.h"
 #include "ScalableMeshAnalysis.h"
@@ -61,7 +63,7 @@ extern bool   GET_HIGHEST_RES;
 #include "ScalableMeshGroup.h"
 #include "ScalableMeshMesher.h"
 #include <ScalableMesh/IScalableMeshPublisher.h>
-#include "Stores\SMPublisher.h"
+#include "Stores/SMPublisher.h"
 //#include "CGALEdgeCollapse.h"
 
 //DataSourceManager s_dataSourceManager;
@@ -147,7 +149,7 @@ void IScalableMesh::TextureFromRaster(ITextureProviderPtr provider)
     return _TextureFromRaster(provider);
     }
 
-_int64 IScalableMesh::GetPointCount()
+int64_t IScalableMesh::GetPointCount()
     {
     return _GetPointCount();
     }
@@ -197,7 +199,7 @@ int IScalableMesh::GenerateSubResolutions()
     return _GenerateSubResolutions();
     }
             
-__int64 IScalableMesh::GetBreaklineCount() const
+int64_t IScalableMesh::GetBreaklineCount() const
     {
     return _GetBreaklineCount();
     }
@@ -721,11 +723,13 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
         }
 
     if (ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath) != nullptr) return ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath);
+#ifndef LINUX_SCALABLEMESH_BUILD
     if(isLocal && 0 != _waccess(filePath, 04))
     {
         status = BSISUCCESS;
         return 0; // File not found
     }
+#endif
 
     return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, newBaseEditsFilePath, useTempFolderForEditFiles, needsNeighbors, status);
 
@@ -774,7 +778,7 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
 /*----------------------------------------------------------------------------+
 |IScalableMesh::GetCountInRange
 +----------------------------------------------------------------------------*/
-Count IScalableMesh::GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const
+Count IScalableMesh::GetCountInRange (const DRange2d& range, const CountType& type, const uint64_t& maxNumberCountedPoints) const
     {
     return _GetCountInRange(range, type, maxNumberCountedPoints);
     }
@@ -799,8 +803,11 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
     // NEEDS_WORK_SM_STREAMING : if sqlite file is null, check for streaming parameters
     //HPRECONDITION(smSQliteFile != 0);
     
-        m_useTempPath = true;    
+        m_useTempPath = true;
+
+#ifndef LINUX_SCALABLEMESH_BUILD    
     SetDataSourceAccount(nullptr);
+#endif
 }
 
 
@@ -933,11 +940,11 @@ template <class POINT> ScalableMesh<POINT>::~ScalableMesh()
     Close();
     }
 
-template <class POINT> unsigned __int64 ScalableMesh<POINT>::CountPointsInExtent(Extent3dType& extent, 
+template <class POINT> uint64_t ScalableMesh<POINT>::CountPointsInExtent(Extent3dType& extent, 
                                                                           HFCPtr<SMPointIndexNode<POINT, Extent3dType>> nodePtr,
-                                                                          const unsigned __int64& maxNumberCountedPoints) const
+                                                                          const uint64_t& maxNumberCountedPoints) const
     {
-    const unsigned __int64 maxCount = maxNumberCountedPoints <= 0 ? std::numeric_limits<unsigned __int64>::max() : maxNumberCountedPoints;
+    const uint64_t maxCount = maxNumberCountedPoints <= 0 ? std::numeric_limits<uint64_t>::max() : maxNumberCountedPoints;
 
     if(ExtentOp<Extent3dType>::Overlap(nodePtr->GetContentExtent(),extent))
         {
@@ -954,7 +961,7 @@ template <class POINT> unsigned __int64 ScalableMesh<POINT>::CountPointsInExtent
                 double extentDistanceX = ExtentOp<Extent3dType>::GetWidth(extent);
                 double extentDistanceY = ExtentOp<Extent3dType>::GetHeight(extent);
                 double extentArea = extentDistanceX * extentDistanceY;
-                return unsigned __int64(nodePtr->GetCount()*(extentArea/nodeExtentArea));
+                return uint64_t(nodePtr->GetCount()*(extentArea/nodeExtentArea));
                 }
             else {
                 double nodeExtentDistanceX = ExtentOp<Extent3dType>::GetWidth(nodePtr->GetContentExtent());
@@ -972,7 +979,7 @@ template <class POINT> unsigned __int64 ScalableMesh<POINT>::CountPointsInExtent
                 Extent3dType intersectionExtent = ExtentOp<Extent3dType>::Create(xAxisValuesV[1],yAxisValuesV[1],xAxisValuesV[2],yAxisValuesV[2]);
                 double intersectionArea = ExtentOp<Extent3dType>::GetWidth(intersectionExtent)*ExtentOp<Extent3dType>::GetHeight(intersectionExtent);
                 //return nodePtr->GetCount();
-                return unsigned __int64( (intersectionArea != 0 && nodeExtentArea != 0) ? nodePtr->GetCount()*(intersectionArea/nodeExtentArea) : 0);
+                return uint64_t( (intersectionArea != 0 && nodeExtentArea != 0) ? nodePtr->GetCount()*(intersectionArea/nodeExtentArea) : 0);
                 }
             }
         else if(nodePtr->GetSubNodeNoSplit() != NULL)
@@ -981,7 +988,7 @@ template <class POINT> unsigned __int64 ScalableMesh<POINT>::CountPointsInExtent
             }
         else
             {
-            unsigned __int64 count = 0;
+            uint64_t count = 0;
             for(size_t nodeIndex = 0; nodeIndex < nodePtr->GetNumberOfSubNodesOnSplit() && count < maxCount; nodeIndex++)
                 {
                 count += CountPointsInExtent(extent,nodePtr->m_apSubNodes[nodeIndex],maxCount);
@@ -992,13 +999,13 @@ template <class POINT> unsigned __int64 ScalableMesh<POINT>::CountPointsInExtent
     else return 0;
     }
 
-template <class POINT> unsigned __int64 ScalableMesh<POINT>::CountLinearsInExtent(YProtFeatureExtentType& extent, unsigned __int64 maxFeatures) const
+template <class POINT> uint64_t ScalableMesh<POINT>::CountLinearsInExtent(YProtFeatureExtentType& extent, uint64_t maxFeatures) const
 {
     assert(false && "Not supported!");
     return -1;
 };
 
-template <class POINT> Count ScalableMesh<POINT>::_GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const
+template <class POINT> Count ScalableMesh<POINT>::_GetCountInRange (const DRange2d& range, const CountType& type, const uint64_t& maxNumberCountedPoints) const
     {
     Count qty (0,0);
     switch (type)
@@ -1859,9 +1866,9 @@ template <class POINT> HFCPtr<SMPointIndexNode<POINT, Extent3dType>> ScalableMes
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetPointCount
 +----------------------------------------------------------------------------*/
-template <class POINT> __int64 ScalableMesh<POINT>::_GetPointCount() 
+template <class POINT> int64_t ScalableMesh<POINT>::_GetPointCount() 
     {                
-    __int64 nbPoints = 0;
+    int64_t nbPoints = 0;
 
     if (m_scmIndexPtr != 0)
         {
@@ -1992,7 +1999,7 @@ template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(ITextureProv
 |ScalableMesh::_GetBreaklineCount
 +----------------------------------------------------------------------------*/
 
-template <class POINT> __int64 ScalableMesh<POINT>::_GetBreaklineCount() const
+template <class POINT> int64_t ScalableMesh<POINT>::_GetBreaklineCount() const
     {
    // assert(false && "Not supported!");
     return 0;
@@ -2920,8 +2927,8 @@ template <class POINT> void ScalableMesh<POINT>::_GetExtraFileNames(bvector<BeFi
 
     for (auto& id : ids)
         { 
-        wchar_t idStr[1000];
-        swprintf(idStr, L"%llu", id);
+        //wchar_t idStr[1000];
+        //swprintf(idStr, L"%llu", id);
                     
         //Note that the clips file for the coverage terrain are extra files to the coverage terrain.
         fileName.clear();   
@@ -3640,8 +3647,9 @@ template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WS
     s_is_virtual_grouping = pi_pGroupMode == SMGroupGlobalParameters::VIRTUAL;
 
     //m_smSQLitePtr->SetVirtualGroups(pi_pGroupMode == SMGroupGlobalParameters::VIRTUAL);
-
+#ifndef LINUX_SCALABLEMESH_BUILD    
     m_scmIndexPtr->SaveGroupedNodeHeaders(this->GetDataSourceAccount(), pi_pOutputDirPath, pi_pGroupMode, true);
+#endif
     return SUCCESS;
     }
 #endif
@@ -3683,7 +3691,7 @@ template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_
     {}
 
 // Inherited from IDTM   
-template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>::_GetPointCount()
+template <class POINT> int64_t ScalableMeshSingleResolutionPointIndexView<POINT>::_GetPointCount()
     {
     return m_scmIndexPtr->GetNbObjectsAtLevel(m_resolutionIndex);
     }
@@ -3700,7 +3708,7 @@ template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_
     return false;
     }
 
-template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>::_GetBreaklineCount() const
+template <class POINT> int64_t ScalableMeshSingleResolutionPointIndexView<POINT>::_GetBreaklineCount() const
     {
     assert(0);
     return 0;
@@ -3780,7 +3788,7 @@ template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_G
 // Inherited from IMRDTM     
 template <class POINT> Count ScalableMeshSingleResolutionPointIndexView<POINT>::_GetCountInRange (const DRange2d& range, 
                                                                                            const CountType& type, 
-                                                                                           const unsigned __int64& maxNumberCountedPoints) const
+                                                                                           const uint64_t& maxNumberCountedPoints) const
     {
     // Not implemented
     assert(false);
@@ -3993,8 +4001,10 @@ DTMStatusInt IDTMVolume::ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh,
     }
 */
 
+
 void edgeCollapseTest(WCharCP param)
     {
+#if 0
     FILE* mesh = _wfopen(param, L"rb");
 
     size_t ct;
@@ -4009,10 +4019,12 @@ void edgeCollapseTest(WCharCP param)
     fread(&pts[0], sizeof(DPoint3d), npts, mesh);
     //CGALEdgeCollapse(&g, pts, 20000000);
     fclose(mesh);
+#endif
     }
 
 void edgeCollapsePrintGraph(WCharCP param)
     {
+#if 0
     FILE* mesh = _wfopen(param, L"rb");
 
     size_t ct;
@@ -4029,10 +4041,12 @@ void edgeCollapsePrintGraph(WCharCP param)
     Utf8String path = "E:\\output\\scmesh\\2016-01-28\\";
     Utf8String str1 = "tested";
     PrintGraphWithPointInfo(path, str1, &g, &pts[0], npts);
+#endif
     }
 
 void edgeCollapseShowMesh(WCharCP param, PolyfaceQueryP& outMesh)
     {
+#if 0
     FILE* mesh = _wfopen(param, L"rb");
     size_t ct;
     fread(&ct, sizeof(size_t), 1, mesh);
@@ -4051,6 +4065,7 @@ void edgeCollapseShowMesh(WCharCP param, PolyfaceQueryP& outMesh)
     memcpy(indicesArray, &indices[0], indices.size()*sizeof(int32_t));
     for (size_t i = 0; i < npts; ++i) pts[i].Scale(10000);
     outMesh = new PolyfaceQueryCarrier(3, false, indices.size(), npts, pts,indicesArray);
+#endif
     }
 
 void AddLoopsFromShape(bvector<bvector<DPoint3d>>& polygons, const HGF2DShape* shape, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded)
