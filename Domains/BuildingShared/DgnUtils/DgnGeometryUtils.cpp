@@ -551,7 +551,6 @@ bvector<double>& zElevationVector
         Dgn::BRepUtil::Modify::BooleanCut(slice, *elevatedSheetBodyBottom, Dgn::BRepUtil::Modify::CutDirectionMode::Backward, Dgn::BRepUtil::Modify::CutDepthMode::All, 0.0, true);
         if ((pIter + 1) == zElevationVector.end())
             {
-            slicedGeometry.push_back({ slice, *pIter });
             break;
             }
 
