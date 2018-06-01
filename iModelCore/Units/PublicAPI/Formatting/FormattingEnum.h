@@ -189,21 +189,6 @@ enum class FormatSpecType
 //=======================================================================================
 // @bsienum
 //=======================================================================================
-enum class AccumulatorState
-    {
-    Init = 0,
-    Integer = 1,
-    Fraction = 2,
-    Exponent = 3,
-    Complete = 4,
-    Real = 5,
-    Failure = 10,
-    RejectedSymbol = 11
-    };
-
-//=======================================================================================
-// @bsienum
-//=======================================================================================
 enum class ParsingSegmentType
     {
     Integer = 1,
@@ -331,9 +316,6 @@ public:
     static int const DefaultMinWidth() { return 0; }
     static Utf8String const DefaultSpacer() {return " ";}
 
-    static const size_t MinDecimalPrecisionIndex() { return static_cast<size_t>(DecimalPrecision::Precision0); }
-    static const size_t MaxDecimalPrecisionIndex() { return static_cast<size_t>(DecimalPrecision::Precision12); }
-
     // FPN prefix stands for FormatParameterName
     static Utf8String FPN_NoSign() { return "NoSign"; }
     static Utf8String FPN_OnlyNegative() { return "OnlyNegative"; }
@@ -369,12 +351,7 @@ public:
     static const bool IsEndOfLine(Utf8Char c) { return ('\0' == c); }
     static const Utf8Char NumberSymbol() { return '0'; }
     static const Utf8Char SpaceSymbol() { return 's'; }
-    static const Utf8Char WordSymbol() { return 'a'; }
     static const Utf8Char SignSymbol() { return '-'; }
-    static const Utf8Char FractionSymbol() { return 'r'; }
-    static const size_t DefaultDecimalPrecisionIndex() { return static_cast<int>(DefaultDecimalPrecision()); }
-    static const size_t DefaultFractionalDenominator() { return Utils::FractionalPrecisionDenominator(DefaultFractionalPrecision()); }
-    static const FormatTraits UnitizedFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero) | static_cast<int>(FormatTraits::ShowUnitLabel)); }
     static const unsigned char UTF_2ByteMask() { return  0xE0; }      // 11100000 - complement will select 5 upper bits
     static const unsigned char UTF_2ByteMark() { return  0xC0; }      // 11000000
     static const unsigned char UTF_3ByteMask() { return  0xF0; }    // 11110000  - complement will select 4 upper bits
@@ -384,48 +361,23 @@ public:
     static const size_t UTF_2ByteSelector() { return  0x1F; }  // 00011111
     static const size_t UTF_3ByteSelector() { return  0xF; }   // 00001111
     static const size_t UTF_4ByteSelector() { return  0x7; }   // 00000111
-    static const size_t UTF_5ByteSelector() { return  0x3; }   // 00000011
-    static const size_t UTF_6ByteSelector() { return  0x1; }   // 00000001
     static const unsigned char UTF_TrailingByteMask() { return  0xC0; } // 11000000 - complement will select trailing bits
     static const unsigned char UTF_TrailingByteMark() { return  0x80; } // 10000000 - indicator of the trailing bytes and also an ASCII char
     static const unsigned char UTF_TrailingBitsMask() { return  0x3F; }    // 00111111
     static const unsigned char UTF_NonASCIIMark() { return  0x80; }    // 10000000 - indicator of non ASCII symbol
     static const unsigned char UTF_UpperBitShift() { return  6; }
     static const unsigned char ASCIImask() { return  0x7F; }
-    static const bool IsASCII(size_t symbol) { return (symbol <= ASCIImask()); }
     static const bool IsASCIIChar(Utf8Char c) { return (c & FormatConstant::UTF_NonASCIIMark()) == 0; }
     static const Utf8Char ASCIIcode(size_t symbol) { return (Utf8Char)(symbol & ASCIImask()); }
-    static const int DigitValue(Utf8Char dig) { return (int)(dig - '0'); }
     static const  int GetTrailingShift() { return UTF_UpperBitShift(); }
-    UNITS_EXPORT static const bool IsLittleEndian();
     UNITS_EXPORT static const size_t GetSequenceLength(unsigned char c);
     static bool IsTrailingByteValid(unsigned char c) { return (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask())); }     
-        
     UNITS_EXPORT static bool GetTrailingBits(unsigned char c, Utf8P outBits);
-    UNITS_EXPORT static size_t ExtractTrailingBits(unsigned char c, size_t shift);
-    UNITS_EXPORT static bool GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits);
     static bool IsNegligible(double dval) { return (fabs(dval) < FormatConstant::FPV_MinTreshold()); }
     static bool IsIgnored(double dval) { return (dval < 0.0 || fabs(dval) < FormatConstant::FPV_MinTreshold()); }
     UNITS_EXPORT static const unsigned char TriadBitMask(size_t threeBit);
-    static const Utf8CP BoolText(bool t) { return t ? "true" : "false"; }
-    static const Utf8CP AllocError() { return "AllocError"; }
-    static const Utf8CP HexSymbols() { return "0123456789ABCDEF"; }
     static const Utf8CP Dividers() { return "()[]{}|"; }
     static const Utf8CP DividerMatch() { return ")(][}{|"; }
-    UNITS_EXPORT static const size_t* FractionCodes();
-    static const bool IsBoolEqual(bool val, bool ref) { return val == ref; }
-
-    static const bool IsFractionSymbol(size_t code)
-        {
-        const size_t* p = FractionCodes();
-        while (*p != FormatConstant::EndOfLine())
-            {
-            if (*p == code)
-                return true;
-            p++;
-            }
-        return false;
-        }
     UNITS_EXPORT const static FormatSpecialCodes ParsingPatternCode(Utf8CP name);
 };
 

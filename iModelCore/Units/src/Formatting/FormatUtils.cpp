@@ -172,16 +172,6 @@ UIList UIUtils::GetAvailableTraits(FormatTraits& defaultVal)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-const bool FormatConstant::IsLittleEndian()
-    {
-    union { short int s; char b[4]; } un;
-    un.s = 1;
-    return (un.b[0] == (char)1);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
 const size_t FormatConstant::GetSequenceLength(unsigned char c)
     {
     if (0 == (c & UTF_TrailingByteMark())) // ASCII - single byte
@@ -193,34 +183,6 @@ const size_t FormatConstant::GetSequenceLength(unsigned char c)
     if ((c & UTF_4ByteMask()) == UTF_4ByteMark())
         return 4;
     return 0;
-    }
-
-// the trailing byte should be properly marked for being processed. It always contains only
-//  6 bits that should be shifted accordingly to the location of the byte in the sequence
-//  there are only 3 possible numbers of bytes in sequences: 2, 3 and 4. Accordingly the 
-//  the range of indexes is striclty governed by the sequence lenght. The minimum index
-//  value is always 1 and the maximum is N-1 where N is the sequence length
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-bool FormatConstant::GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits)
-    {
-    if (nullptr != outBits)
-        {
-        // calculate the shift 
-        *outBits = 0;
-        int shift = ((int)seqLength - (int)index - 1);
-        if (0 > shift || 2 < shift)
-            return false;
-        if (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask()))
-            {
-            size_t temp = c & ~UTF_TrailingByteMask();
-            temp <<= shift * UTF_UpperBitShift();
-            *outBits = temp;
-            }
-        return true;
-        }
-    return false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -238,17 +200,6 @@ bool FormatConstant::GetTrailingBits(unsigned char c, Utf8P outBits)
     return false;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-size_t FormatConstant::ExtractTrailingBits(unsigned char c, size_t shift) 
-    { 
-    size_t cod = c & UTF_TrailingBitsMask();
-    if (shift > 0)
-        cod <<= shift;
-    return cod; 
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
@@ -258,17 +209,6 @@ const unsigned char FormatConstant::TriadBitMask(size_t threeBit)
     threeBit &= 0x7;
     return mask[threeBit];
     }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 04/17
-//----------------------------------------------------------------------------------------
-const size_t* FormatConstant::FractionCodes()
-    {
-                          // 1/4  1/2  3/4  1/3   2/3   1/5   2/5   3/5   4/5   1/6   5/6   1/8   3/8   5/8   7/8
-    static size_t cod[16] = {188, 189, 190, 8531, 8532, 8533, 8534, 8535, 8536, 8537, 8538, 8539, 8540, 8541, 8542 };
-    return cod;
-    }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
