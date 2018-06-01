@@ -251,7 +251,7 @@ Utf8CP CompositeValueSpec::GetUnitName(size_t indx, Utf8CP substitute) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
-CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom) const
+CompositeValueSpec::CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom) const
     {
     CompositeValue cv = CompositeValue();
     BEU::UnitCP smallest = GetSmallestUnit();

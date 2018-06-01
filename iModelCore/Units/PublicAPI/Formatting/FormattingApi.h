@@ -18,7 +18,6 @@ namespace BEU = BentleyApi::Units;
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericFormatSpec)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValue)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValueSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Format)
 
@@ -412,7 +411,7 @@ public:
 //=======================================================================================
 struct CompositeValueSpec
 {
-friend struct CompositeValue;
+friend struct Format;
 private:
     DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxy)
     struct UnitProxy
@@ -445,6 +444,37 @@ private:
         bool ToJson(Json::Value& jval, bool verbose = false) const;
         bool IsIdentical(UnitProxyCR other) const {return BEU::Unit::AreEqual(m_unit, other.m_unit) && m_unitLabel.Equals(other.m_unitLabel);}
         bool IsEmpty() const {return nullptr == m_unit;}
+    };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValue)
+    struct CompositeValue
+    {
+    private:
+        bool m_negative;
+        double m_parts[4];
+        FormatProblemDetail m_problem;
+
+    public:
+        CompositeValue() : m_negative(false) {memset(m_parts, 0, sizeof(m_parts));}
+
+        void SetNegative() {m_negative = true;}
+        void SetPositive() {m_negative = false;}
+
+        Utf8String GetSignPrefix(bool useParenth = false) const { return m_negative?  (useParenth ? "(" : "-") : ""; }
+        Utf8String GetSignSuffix(bool useParenth = false) const { return m_negative ? (useParenth ? ")" : "") : ""; }
+
+        double SetMajor(double dval)  {return m_parts[CompositeValueSpec::indxMajor] = dval;}
+        double SetMiddle(double dval) {return m_parts[CompositeValueSpec::indxMiddle] = dval;}
+        double SetMinor(double dval)  {return m_parts[CompositeValueSpec::indxMinor] = dval;}
+        double SetSub(double dval)    {return m_parts[CompositeValueSpec::indxSub] = dval;}
+
+        double GetMajor()  const {return m_parts[CompositeValueSpec::indxMajor];}
+        double GetMiddle() const {return m_parts[CompositeValueSpec::indxMiddle];}
+        double GetMinor()  const {return m_parts[CompositeValueSpec::indxMinor];}
+        double GetSub()    const {return m_parts[CompositeValueSpec::indxSub];}
+
+        bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
+        bool IsProblem() const {return m_problem.IsProblem();}
     };
 
     static size_t const indxMajor  = 0;
@@ -487,6 +517,7 @@ private:
 
     UNITS_EXPORT void SetUnitLabel(size_t index, Utf8CP label);
     UNITS_EXPORT CompositeValueSpec(bvector<BEU::UnitCP> const& units);
+    CompositeValue DecomposeValue(double value, BEU::UnitCP uom = nullptr) const;
 public:
     UNITS_EXPORT CompositeValueSpec();
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit);
@@ -546,13 +577,6 @@ public:
     //! Determine whether a segment of the composite value will be serialized to the resulting string if it evaluates to zero.
     bool IsIncludeZero() const {return m_includeZero;}
 
-    //! Given a double value decompose the value into the units defined within this.
-    //! If uom is not provided we assume that the value is defined in the smallest units defined
-    //! in the current spec.
-    //! @param[in] value The value to decompose into the segments.
-    //! @param[in] uom The Unit of the value provided.
-    //! @return
-    UNITS_EXPORT CompositeValue DecomposeValue(double value, BEU::UnitCP uom = nullptr) const;
     //! Given a vector of 0-4 units, create a composite spec from them. They must be non-null
     //! @param[out] out Output CompositeValueSpec
     //! @param[in]  units Vector of 0-4 non-null units to be added to the composite
@@ -560,38 +584,6 @@ public:
     UNITS_EXPORT static bool CreateCompositeSpec(CompositeValueSpecR out, bvector<BEU::UnitCP> const& units);
 };
 
-//=======================================================================================
-//! @bsistruct
-//=======================================================================================
-struct CompositeValue
-{
-private:
-    bool m_negative;
-    double m_parts[4];
-    FormatProblemDetail m_problem;
-
-public:
-    CompositeValue() : m_negative(false) {memset(m_parts, 0, sizeof(m_parts));}
-
-    void SetNegative() {m_negative = true;}
-    void SetPositive() {m_negative = false;}
-
-    Utf8String GetSignPrefix(bool useParenth = false) const { return m_negative?  (useParenth ? "(" : "-") : ""; }
-    Utf8String GetSignSuffix(bool useParenth = false) const { return m_negative ? (useParenth ? ")" : "") : ""; }
-
-    double SetMajor(double dval)  {return m_parts[CompositeValueSpec::indxMajor] = dval;}
-    double SetMiddle(double dval) {return m_parts[CompositeValueSpec::indxMiddle] = dval;}
-    double SetMinor(double dval)  {return m_parts[CompositeValueSpec::indxMinor] = dval;}
-    double SetSub(double dval)    {return m_parts[CompositeValueSpec::indxSub] = dval;}
-
-    double GetMajor()  const {return m_parts[CompositeValueSpec::indxMajor];}
-    double GetMiddle() const {return m_parts[CompositeValueSpec::indxMiddle];}
-    double GetMinor()  const {return m_parts[CompositeValueSpec::indxMinor];}
-    double GetSub()    const {return m_parts[CompositeValueSpec::indxSub];}
-
-    bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
-    bool IsProblem() const {return m_problem.IsProblem();}
-};
 
 //=======================================================================================
 //! Container for keeping together numeric and composite spec types.

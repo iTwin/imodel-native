@@ -260,48 +260,6 @@ TEST_F(CompositeValueSpecTest, Quatro_SetUnitLabels)
     }
 
 //===================================================
-// CompositeValue
-//===================================================
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeValueTest, Constructors)
-    {
-    CompositeValue cv;
-    ASSERT_FALSE(cv.IsProblem());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeValueTest, DataMemberSettersAndGetters)
-    {
-    CompositeValue cv;
-
-    cv.SetMajor(1.0);
-    cv.SetMiddle(2.0);
-    cv.SetMinor(3.0);
-    cv.SetSub(4.0);
-    EXPECT_EQ(1.0, cv.GetMajor());
-    EXPECT_EQ(2.0, cv.GetMiddle());
-    EXPECT_EQ(3.0, cv.GetMinor());
-    EXPECT_EQ(4.0, cv.GetSub());
-
-    cv.SetPositive();
-    EXPECT_STREQ("", cv.GetSignPrefix().c_str());
-    EXPECT_STREQ("", cv.GetSignPrefix(true).c_str());
-    EXPECT_STREQ("", cv.GetSignSuffix().c_str());
-    EXPECT_STREQ("", cv.GetSignSuffix(true).c_str());
-
-    cv.SetNegative();
-    EXPECT_STREQ("-", cv.GetSignPrefix().c_str());
-    EXPECT_STREQ("(", cv.GetSignPrefix(true).c_str());
-    EXPECT_STREQ("", cv.GetSignSuffix().c_str());
-    EXPECT_STREQ(")", cv.GetSignSuffix(true).c_str());
-    }
-
-//===================================================
 // FormatCompositeStringTest
 //===================================================
 
