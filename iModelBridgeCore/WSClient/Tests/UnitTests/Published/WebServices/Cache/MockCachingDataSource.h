@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/MockCachingDataSource.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -57,8 +57,7 @@ struct MockCachingDataSource : public ICachingDataSource
             return m_cache;
             }
 
-        MOCK_CONST_METHOD0(GetClient,
-            IWSRepositoryClientPtr());
+        MOCK_CONST_METHOD0(GetClient, IWSRepositoryClientPtr());
         MOCK_METHOD1(SetClient,
             void(IWSRepositoryClientPtr client));
         MOCK_METHOD0(CancelAllTasks,
@@ -86,6 +85,8 @@ struct MockCachingDataSource : public ICachingDataSource
             WSInfo(CacheTransactionCR));
         MOCK_METHOD0(GetServerInfo,
             WSInfo());
+        MOCK_METHOD0(GetRepositoryInfo,
+            WSRepository());
         MOCK_METHOD1(SetClassesToAlwaysCacheChildren,
             void(const bset<Utf8String>& classesToAlwaysCacheChildren));
         MOCK_METHOD2(GetNavigationResponseKey,

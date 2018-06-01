@@ -427,7 +427,7 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_InvalidToken_ReturnsEmpty)
     auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
 
     SamlToken token(Utf8String("InvalidToken"));
-    auto info = manager->GetUserInfo(token);
+    auto info = manager->ReadUserInfo(token);
 
     EXPECT_EQ("", info.firstName);
     EXPECT_EQ("", info.lastName);
@@ -536,7 +536,7 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_ValidToken_ReturnsValuesFromToken)
     SamlTokenPtr tokenPtr = std::make_shared<SamlToken>(tokenStr);
     auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
 
-    auto info = manager->GetUserInfo(*tokenPtr);
+    auto info = manager->ReadUserInfo(*tokenPtr);
 
     EXPECT_EQ("ValueA", info.firstName);
     EXPECT_EQ("ValueB", info.lastName);

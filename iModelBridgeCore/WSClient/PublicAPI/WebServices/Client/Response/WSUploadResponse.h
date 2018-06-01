@@ -2,13 +2,14 @@
 |
 |     $Source: PublicAPI/WebServices/Client/Response/WSUploadResponse.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
+#include <WebServices/Client/Response/WSResponse.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -16,16 +17,16 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct WSUploadResponse
+struct WSUploadResponse : public WSResponse
     {
     private:
         HttpBodyPtr m_responseBody;
-        Utf8String m_fileETag;
 
     public:
         WSUploadResponse() {};
         WSUploadResponse(HttpBodyPtr responseJsonBody, Utf8String uploadedFileETag = nullptr) :
-            m_responseBody(responseJsonBody), m_fileETag(uploadedFileETag)
+            m_responseBody(responseJsonBody),
+            WSResponse(true, uploadedFileETag)
             {};
 
         //! Get server upload response
@@ -55,7 +56,7 @@ struct WSUploadResponse
             };
 
         // ! Get new ETag for uploaded file if any. Could return empty if no file or backend does not support renewing ETag
-        Utf8String GetFileETag() const { return m_fileETag; };
+        Utf8String GetFileETag() const { return GetETag(); };
     };
 
 typedef WSUploadResponse& WSUploadResponseR;

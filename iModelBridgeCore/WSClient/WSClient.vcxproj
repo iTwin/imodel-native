@@ -145,6 +145,7 @@
     <ClCompile Include="Client\ClientConnection.cpp" />
     <ClCompile Include="Client\ClientInfo.cpp" />
     <ClCompile Include="Client\ClientInternal.cpp" />
+    <ClCompile Include="Client\RepositoryInfoProvider.cpp" />
     <ClCompile Include="Client\RequestOptions.cpp" />
     <ClCompile Include="Client\WSJob.cpp" />
     <ClCompile Include="Client\WebApi\Jobs\JobApi.cpp" />
@@ -163,6 +164,7 @@
     <ClCompile Include="ConnectC\IMSSearch\IMSSearch.cpp" />
     <ClCompile Include="ConnectC\IMSSearch\IMSSearchBuffer.cpp" />
     <ClCompile Include="Connect\ConnectionClientInterface.cpp" />
+    <ClCompile Include="Connect\IConnectSignInManager.cpp" />
     <ClCompile Include="Connect\ImsClient.cpp" />
     <ClCompile Include="Connect\ConnectAuthenticationHandler.cpp" />
     <ClCompile Include="Connect\ConnectAuthenticationPersistence.cpp" />
@@ -229,7 +231,6 @@
     <ClCompile Include="Connect\Passport.cpp" />
     <ClCompile Include="Client\Response\WSFileResponse.cpp" />
     <ClCompile Include="Client\Response\WSObjectsReader.cpp" />
-    <ClCompile Include="Client\Response\WSObjectsReaderV1.cpp" />
     <ClCompile Include="Client\Response\WSObjectsReaderV2.cpp" />
     <ClCompile Include="Client\Response\WSObjectsResponse.cpp" />
     <ClCompile Include="Client\ServerInfoProvider.cpp" />
@@ -237,8 +238,6 @@
     <ClCompile Include="Licensing\UsageTracking.cpp" />
     <ClCompile Include="Client\Utils.cpp" />
     <ClCompile Include="Client\WebApi\WebApi.cpp" />
-    <ClCompile Include="Client\WebApi\WebApiV1.cpp" />
-    <ClCompile Include="Client\WebApi\WebApiV1BentleyConnect.cpp" />
     <ClCompile Include="Client\WebApi\WebApiV2.cpp" />
     <ClCompile Include="Client\WSClient.cpp" />
     <ClCompile Include="Client\WSError.cpp" />
@@ -262,6 +261,7 @@
     <ClInclude Include="Cache\Compatibility\Schemas.h" />
     <ClInclude Include="Cache\FileDownloadManager.h" />
     <ClInclude Include="Cache\Persistence\DataSourceCache.xliff.h" />
+    <ClInclude Include="Client\RepositoryInfoProvider.h" />
     <ClInclude Include="Cache\Logging.h" />
     <ClInclude Include="Cache\CachingTaskBase.h" />
     <ClInclude Include="Cache\ChangesGraph.h" />
@@ -334,8 +334,10 @@
     <ClInclude Include="iModelHubClient\Utils.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\SyncNotifier.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\RequestOptions.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSJob.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectionClientInterface.h" />
+    <ClInclude Include="PublicAPI\WebServices\Connect\IConnectSignInManager.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ISecurityToken.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BaseFileInfo.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChangeSetCacheManager.h" />
@@ -459,8 +461,6 @@
     <ClInclude Include="Client\ServerInfoProvider.h" />
     <ClInclude Include="Client\Utils.h" />
     <ClInclude Include="Client\WebApi\WebApi.h" />
-    <ClInclude Include="Client\WebApi\WebApiV1.h" />
-    <ClInclude Include="Client\WebApi\WebApiV1BentleyConnect.h" />
     <ClInclude Include="Client\WebApi\WebApiV2.h" />
     <ClInclude Include="Client\WSError.xliff.h" />
     <ClInclude Include="Client\ChunkedUploadRequest.h" />
@@ -492,7 +492,6 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\Passport.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSFileResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReader.h" />
-    <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReaderV1.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsReaderV2.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSObjectsResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Configuration\UrlProvider.h" />

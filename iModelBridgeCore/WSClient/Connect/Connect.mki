@@ -19,6 +19,7 @@ ConnectMkiHeaders = $(ConnectMkiPublicApiDir)ConnectAuthenticationHandler.h     
                     $(ConnectMkiPublicApiDir)ConnectTokenProvider.h                     \
                     $(ConnectMkiPublicApiDir)EulaClient.h                               \
                     $(ConnectMkiPublicApiDir)ISecurityToken.h                           \
+                    $(ConnectMkiPublicApiDir)IConnectSignInManager.h                    \
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationPersistence.h        \
                     $(ConnectMkiPublicApiDir)IConnectAuthenticationProvider.h           \
                     $(ConnectMkiPublicApiDir)IConnectTokenProvider.h                    \
@@ -43,6 +44,8 @@ $(o)ConnectAuthenticationHandler$(oext)             : $(ConnectMkiSourceDir)Conn
 $(o)ConnectAuthenticationPersistence$(oext)         : $(ConnectMkiSourceDir)ConnectAuthenticationPersistence.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
 $(o)ConnectSessionAuthenticationPersistence$(oext)  : $(ConnectMkiSourceDir)ConnectSessionAuthenticationPersistence.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
+
+$(o)IConnectSignInManager$(oext)                    : $(ConnectMkiSourceDir)IConnectSignInManager.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 
 $(o)ConnectSignInManager$(oext)                     : $(ConnectMkiSourceDir)ConnectSignInManager.cpp $(ConnectMkiHeaders) ${MultiCompileDepends}
 

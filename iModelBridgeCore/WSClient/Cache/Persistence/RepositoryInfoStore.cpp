@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/RepositoryInfoStore.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -10,6 +10,7 @@
 
 #define ECDbProperty_NAMESPACE      "RepositoryInfoStore"
 #define ECDbProperty_ServerInfo     "Info"
+#define ECDbProperty_RepositoryInfo "RepositoryInfo"
 #define ECDbProperty_Initialized    "Initialized"
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -31,7 +32,10 @@ m_infoListener(std::make_shared<InfoListener>(this)),
 m_thread(thread)
     {
     if (m_client)
+        {
         m_client->GetWSClient()->RegisterServerInfoListener(m_infoListener);
+        m_client->RegisterRepositoryInfoListener(m_infoListener);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -40,7 +44,10 @@ m_thread(thread)
 RepositoryInfoStore::~RepositoryInfoStore()
     {
     if (m_client)
+        {
         m_client->GetWSClient()->UnregisterServerInfoListener(m_infoListener);
+        m_client->UnregisterRepositoryInfoListener(m_infoListener);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -85,15 +92,62 @@ WSInfo RepositoryInfoStore::GetServerInfo()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void RepositoryInfoStore::CacheRepositoryInfo(WSRepositoryCR info)
+    {
+    m_thread->ExecuteAsync([=]
+        {
+        auto txn = m_cacheTxnManager->StartCacheTransaction();
+        if (SUCCESS != CacheRepositoryInfo(txn.GetCache(), info))
+            return;
+        txn.Commit();
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RepositoryInfoStore::CacheRepositoryInfo(IDataSourceCache& cache, WSRepositoryCR info)
+    {
+    BeMutexHolder lock(m_infoMutex);
+    m_repositoryInfo = info;
+
+    PropertySpec prop(ECDbProperty_RepositoryInfo, ECDbProperty_NAMESPACE);
+    if (DbResult::BE_SQLITE_OK != cache.GetAdapter().GetECDb().SavePropertyString(prop, m_repositoryInfo.ToString()))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RepositoryInfoStore::PrepareServerInfo(IDataSourceCache& cache)
+BentleyStatus RepositoryInfoStore::PrepareInfo(IDataSourceCache& cache)
     {
     BeMutexHolder lock(m_infoMutex);
     m_info = ReadServerInfo(cache);
     if (!m_info.IsValid())
         return ERROR;
+
+    m_repositoryInfo = ReadRepositoryInfo(cache);
+    // TODO: cannot fail when opening cache that did not have repository info before
+    //if (!m_repositoryInfo.IsValid())
+    //    return ERROR;
+
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+WSRepository RepositoryInfoStore::GetRepositoryInfo()
+    {
+    BeMutexHolder lock(m_infoMutex);
+    BeAssert(m_repositoryInfo.IsValid());
+    return m_repositoryInfo;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -105,6 +159,17 @@ WSInfo RepositoryInfoStore::ReadServerInfo(IDataSourceCache& cache)
     Utf8String infoStr;
     cache.GetAdapter().GetECDb().QueryProperty(infoStr, prop);
     return WSInfo(infoStr);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+WSRepository RepositoryInfoStore::ReadRepositoryInfo(IDataSourceCache& cache)
+    {
+    PropertySpec prop(ECDbProperty_RepositoryInfo, ECDbProperty_NAMESPACE);
+    Utf8String infoStr;
+    cache.GetAdapter().GetECDb().QueryProperty(infoStr, prop);
+    return WSRepository(infoStr);
     }
 
 /*--------------------------------------------------------------------------------------+

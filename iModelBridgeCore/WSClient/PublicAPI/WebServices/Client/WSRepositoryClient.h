@@ -31,6 +31,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 typedef std::shared_ptr<struct IWSRepositoryClient>     IWSRepositoryClientPtr;
 
+typedef AsyncResult<WSResponse, WSError>                WSResult;
 typedef AsyncResult<WSObjectsResponse, WSError>         WSObjectsResult;
 typedef AsyncResult<WSFileResponse, WSError>            WSFileResult;
 typedef AsyncResult<WSUploadResponse, WSError>          WSCreateObjectResult;
@@ -38,6 +39,7 @@ typedef AsyncResult<HttpBodyPtr, WSError>               WSChangesetResult;
 typedef AsyncResult<WSUploadResponse, WSError>          WSUpdateObjectResult;
 typedef AsyncResult<WSUploadResponse, WSError>          WSUpdateFileResult;
 typedef AsyncResult<void, WSError>                      WSDeleteObjectResult;
+typedef AsyncResult<WSRepository, WSError>              WSRepositoryResult;
 
 #define WSQuery_CustomParameter_NavigationParentId      "navigationParentId"
 
@@ -51,6 +53,13 @@ struct IWSRepositoryClient
             {
             Basic = 0,
             Windows
+            };
+
+    public:
+        struct IRepositoryInfoListener
+            {
+            virtual ~IRepositoryInfoListener() {};
+            virtual void OnInfoReceived(WSRepositoryCR info) = 0;
             };
 
     struct RequestOptions;
@@ -93,6 +102,14 @@ struct IWSRepositoryClient
         //! @return success if credentials are valid for given repository, else error that occurred
         virtual AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const = 0;
 
+        //! Register for ServerInfo received events
+        virtual void RegisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) = 0;
+        //! Unregister from ServerInfo received events
+        virtual void UnregisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) = 0;
+
+        //! Returns repository or queries server if needs updating
+        virtual AsyncTaskPtr<WSRepositoryResult> GetInfo(ICancellationTokenPtr ct = nullptr) const = 0;
+
         virtual AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
             ObjectIdCR objectId,
@@ -116,10 +133,20 @@ struct IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
+        //! DEPRECATED- Use SendGetFileRequest with http response body instead
         virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
+            Utf8StringCR eTag = nullptr,
+            Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
+        virtual AsyncTaskPtr<WSResult> SendGetFileRequest
+            (
+            ObjectIdCR objectId,
+            Http::HttpBodyPtr responseBodyOut,
             Utf8StringCR eTag = nullptr,
             Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
@@ -428,8 +455,9 @@ struct WSRepositoryClient : public IWSRepositoryClient
     private:
         std::shared_ptr<struct ClientConnection> m_connection;
         IWSClientPtr m_serverClient;
-        mutable LimitingTaskQueue<WSFileResult> m_fileDownloadQueue;
+        mutable LimitingTaskQueue<WSResult> m_fileDownloadQueue;
         std::shared_ptr<struct Configuration> m_config;
+        std::shared_ptr<struct RepositoryInfoProvider> m_infoProvider;
 
     private:
         WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection);
@@ -472,6 +500,11 @@ struct WSRepositoryClient : public IWSRepositoryClient
         //! Check if user can access repository
         WSCLIENT_EXPORT AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const override;
 
+        WSCLIENT_EXPORT void RegisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) override;
+        WSCLIENT_EXPORT void UnregisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener) override;
+
+        WSCLIENT_EXPORT AsyncTaskPtr<WSRepositoryResult> GetInfo(ICancellationTokenPtr ct = nullptr) const override;
+
         WSCLIENT_EXPORT AsyncTaskPtr<WSObjectsResult> SendGetObjectRequest
             (
             ObjectIdCR objectId,
@@ -494,10 +527,20 @@ struct WSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
+        //! DEPRECATED- Use SendGetFileRequest with http response body instead
         WSCLIENT_EXPORT AsyncTaskPtr<WSFileResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
+            Utf8StringCR eTag = nullptr,
+            Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        WSCLIENT_EXPORT AsyncTaskPtr<WSResult> SendGetFileRequest
+            (
+            ObjectIdCR objectId,
+            Http::HttpBodyPtr responseBodyOut,
             Utf8StringCR eTag = nullptr,
             Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr

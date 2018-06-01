@@ -48,7 +48,6 @@ struct ThumbnailsTests : public iModelTestsBase
 bvector<Utf8String> ThumbnailsTests::s_versionIds;
 bvector<Thumbnail::Size> ThumbnailsTests::s_thumbnailSizes;
 
-#ifdef WIP_THUMBNAILS_API
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Andrius.Zonys                   04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -70,7 +69,6 @@ TEST_F(ThumbnailsTests, GetiModelThumbnail)
         EXPECT_TRUE(result.GetValue().GetByteStream().HasData());
         }
     }
-#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Andrius.Zonys                   04/2018

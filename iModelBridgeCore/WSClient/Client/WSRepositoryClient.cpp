@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include "WebApi/WebApiV1.h"
 #include <regex>
 
 #define HEADER_MasConnectionInfo "Mas-Connection-Info"
@@ -45,7 +44,8 @@ IWSRepositoryClient::~IWSRepositoryClient()
 WSRepositoryClient::WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection) :
 m_connection(connection),
 m_serverClient(WSClient::Create(m_connection)),
-m_config(std::make_shared<Configuration>(Configuration(*m_connection)))
+m_config(std::make_shared<Configuration>(Configuration(*m_connection))),
+m_infoProvider(std::make_shared<RepositoryInfoProvider>(m_connection))
     {} 
 
 /*--------------------------------------------------------------------------------------+
@@ -108,6 +108,30 @@ void WSRepositoryClient::SetCredentials(Credentials credentials, AuthenticationT
     m_connection->GetConfiguration().GetHttpClient().SetCredentials(std::move(credentials));
     if (AuthenticationType::Windows == type)
         m_connection->GetConfiguration().GetDefaultHeaders().SetValue(HEADER_MasConnectionInfo, "CredentialType=Windows");
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             julius.cepukenas   5/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSRepositoryClient::RegisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener)
+    {
+    m_infoProvider->RegisterInfoListener(listener);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             julius.cepukenas   5/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSRepositoryClient::UnregisterRepositoryInfoListener(std::weak_ptr<IRepositoryInfoListener> listener)
+    {
+    m_infoProvider->UnregisterInfoListener(listener);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                             julius.cepukenas   5/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSRepositoryResult> WSRepositoryClient::GetInfo(ICancellationTokenPtr ct) const
+    {
+    return m_infoProvider->GetInfo(ct);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -192,11 +216,43 @@ Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    auto task = m_fileDownloadQueue.Push([=]
+        {
+        return m_connection->GetWebApiAndReturnResponse<WSResult>([=] (WebApiPtr webApi)
+            {
+            if (filePath.empty())
+                return CreateCompletedAsyncTask(WSResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+
+            return webApi->SendGetFileRequest(objectId, HttpFileBody::Create(filePath), eTag, downloadProgressCallback, ct);
+            }, ct);
+        }, ct);
+
+    return task->Then<WSFileResult>([=] (WSResult response)
+        {
+        if (!response.IsSuccess())
+            return WSFileResult::Error(response.GetError());
+
+        return WSFileResult::Success(WSFileResponse(filePath, response.GetValue().IsModified() ? Http::HttpStatus::OK : Http::HttpStatus::BadRequest, response.GetValue().GetETag()));
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas    05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSResult> WSRepositoryClient::SendGetFileRequest
+(
+ObjectIdCR objectId,
+Http::HttpBodyPtr responseBodyOut,
+Utf8StringCR eTag,
+Http::Request::ProgressCallbackCR downloadProgressCallback,
+ICancellationTokenPtr ct
+) const
+    {
     return m_fileDownloadQueue.Push([=]
         {
-        return m_connection->GetWebApiAndReturnResponse<WSFileResult>([=] (WebApiPtr webApi)
+        return m_connection->GetWebApiAndReturnResponse<WSResult>([=] (WebApiPtr webApi)
             {
-            return webApi->SendGetFileRequest(objectId, filePath, eTag, downloadProgressCallback, ct);
+            return webApi->SendGetFileRequest(objectId, responseBodyOut, eTag, downloadProgressCallback, ct);
             }, ct);
         }, ct);
     }

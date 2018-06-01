@@ -227,6 +227,7 @@ struct CachingDataSource :
         //! DEPRECATED, use GetServerInfo()
         WSCACHE_EXPORT WSInfo GetServerInfo(CacheTransactionCR txn) override;
         WSCACHE_EXPORT WSInfo GetServerInfo() override;
+        WSCACHE_EXPORT WSRepository GetRepositoryInfo() override;
 
         WSCACHE_EXPORT void SetClassesToAlwaysCacheChildren(const bset<Utf8String>& classesToAlwaysCacheChildren) override;
 
