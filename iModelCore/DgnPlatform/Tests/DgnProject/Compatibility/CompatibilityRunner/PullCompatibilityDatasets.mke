@@ -13,9 +13,7 @@
 
 %include $(SrcRoot)DgnPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
 
-#TODO pull from rsync server instead of local symlink
-
 always:
     ~mkdir $(IMS_DIR)
     ~mkdir $(DATA_DIR)
-    #$(SrcRoot)bsicommon/build/CopyWithSymlinks.py D:\\Temp\\iModelCompat\\Compatibility $(DATA_DIR)
+    python Tests/DgnProject/Compatibility/CompatibilityRunner/PullCompatibilityDatasets.py $(OutputRootDir)iModelSchemaEvolution/Data $(SrcRoot)BentleyBuild/bentleybuild

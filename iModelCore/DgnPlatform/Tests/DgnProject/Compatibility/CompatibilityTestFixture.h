@@ -39,6 +39,9 @@ enum class ProfileType
     DgnDb = 2
     };
 
+//======================================================================================
+// @bsiclass                                                 Affan.Khan          03/2018
+//======================================================================================
 enum class ProfileState
     {
     Current = 0,
@@ -46,6 +49,25 @@ enum class ProfileState
     Newer = 1
     };
 
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct TestFile final
+    {
+    private:
+        Utf8StringCR m_name;
+        BeFileName m_path;
+        ProfileState m_profileState;
+        ProfileVersion m_profileVersion;
+
+    public:
+        TestFile(Utf8StringCR name, BeFileName const& path, ProfileState state, ProfileVersion const& version) : m_name(name), m_path(path), m_profileState(state), m_profileVersion(version) {}
+
+        Utf8StringCR GetName() const { return m_name; }
+        BeFileNameCR GetPath() const { return m_path; }
+        ProfileState GetProfileState() const { return m_profileState; }
+        ProfileVersion const& GetVersion() const { return m_profileVersion; }
+    };
 
 //======================================================================================
 // @bsiclass                                                 Affan.Khan          03/2018
@@ -60,12 +82,13 @@ struct Profile : NonCopyableClass
         ProfileType m_type;
         Utf8CP m_name = nullptr;
         BeFileName m_profileSeedFolder;
-        mutable std::vector<ProfileVersion> m_versionList;
 
         virtual BentleyStatus _Init() const = 0;
+        BentleyStatus RetrieveTestFiles() const;
 
     protected:
         Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name);
+
         static BentleyStatus ReadProfileVersion(ProfileVersion&, Db const&, PropertySpec const&);
 
     public:
@@ -75,6 +98,23 @@ struct Profile : NonCopyableClass
 
         ProfileVersion const& GetExpectedVersion() const { return m_expectedVersion; }
 
+        std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName) const;
+
+        ProfileState GetFileProfileState(ProfileVersion const& fileProfileVersion) const
+            {
+            const int compareRes = fileProfileVersion.CompareTo(m_expectedVersion);
+            if (compareRes == 0)
+                return ProfileState::Current;
+
+            if (compareRes < 0)
+                return ProfileState::Older;
+
+            return ProfileState::Newer;
+            }
+
+        BeFileNameCR GetSeedFolder() const { return m_profileSeedFolder; }
+
+        BeFileName GetPathForNewTestFile(Utf8CP testFileName) const;
         static ProfileType ParseProfileType(Utf8CP);
     };
 
@@ -142,6 +182,8 @@ struct DgnDbProfile final : Profile
             }
     };
 
+
+
 //======================================================================================
 // @bsiclass                                                 Affan.Khan          03/2018
 //======================================================================================
@@ -149,24 +191,21 @@ struct ProfileManager final : NonCopyableClass
     {
     private:
         mutable std::map<ProfileType, std::unique_ptr<Profile>> m_profiles;
+        mutable BeFileName m_testSeedFolder; //this where test file are located
+        mutable BeFileName m_outFolder; //this is where they are copied before running the test.
 
         static ProfileManager* s_singleton;
 
         ProfileManager() {}
 
-
-    protected:
-        mutable BeFileName m_testSeedFolder; //this where test file are created if they do not exist
-        mutable BeFileName m_outFolder; //this is where they are copied before running the test.
-    
+        BeFileName const& GetOutFolder() const;
+   
     public:
         static ProfileManager& Get() { return *s_singleton; }
 
-        BeFileName const& GetSeedFolder() const;
-        BeFileName const& GetOutFolder() const;
+        BeFileNameCR GetSeedFolder() const;
 
         Profile& GetProfile(ProfileType) const;
-        ProfileState GetFileProfileState(BeFileNameCR) const;
     };
 //
 //======================================================================================

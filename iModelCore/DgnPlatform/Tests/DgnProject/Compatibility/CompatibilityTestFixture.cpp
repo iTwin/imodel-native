@@ -43,6 +43,39 @@ BentleyStatus Profile::Init() const
     return _Init();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName) const
+    {
+    std::vector<TestFile> testFiles;
+    BeFileName profileSeedFolder(GetSeedFolder());
+    BeDirectoryIterator it(profileSeedFolder);
+    do
+        {
+        BeFileName entry;
+        bool isDir = false;
+        if (it.GetCurrentEntry(entry, isDir, true) == SUCCESS && !isDir)
+            {
+            Utf8String testFileName(entry.GetFileNameWithoutExtension().c_str());
+            BeFileName profileVersionFolderName = entry.GetDirectoryName().GetBaseName();
+            ProfileVersion profileVersion(0, 0, 0, 0);
+            profileVersion.FromString(profileVersionFolderName.GetNameUtf8().c_str());
+            testFiles.push_back(TestFile(testFileName, entry, GetFileProfileState(profileVersion), profileVersion));
+            }
+        } while (it.ToNext() == SUCCESS);
+        return testFiles;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   05/18
+//+---------------+---------------+---------------+---------------+---------------+------
+BeFileName Profile::GetPathForNewTestFile(Utf8CP testFileName) const
+    {
+    BeFileName path(GetSeedFolder());
+    path.AppendToPath(BeFileName(GetExpectedVersion().ToString())).AppendToPath(BeFileName(testFileName));
+    return path;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
@@ -146,8 +179,7 @@ BentleyStatus DgnDbProfile::_Init() const
     if (db == nullptr)
         return ERROR;
 
-    m_expectedVersion = db->GetProfileVersion();
-    return ERROR;
+    return ReadProfileVersion(m_expectedVersion, *db, m_versionPropertySpec);
     }
 
 //=====================================ProfileManager====================================
@@ -217,29 +249,3 @@ BeFileName const& ProfileManager::GetOutFolder() const
     return m_outFolder;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-ProfileState ProfileManager::GetFileProfileState(BeFileNameCR filePath) const
-    {
-    ProfileType fileProfileType = Profile::ParseProfileType(Utf8String(filePath.GetExtension()).c_str());
-    ProfileVersion const& expectedVersion = GetProfile(fileProfileType).GetExpectedVersion();
-
-    BeFileName fileVersionFolder = filePath.GetDirectoryName();
-    // This is needed because the sscanf does not search the entire file path for the format %d.%d.%d.%d. It only looks for the string
-    // to explicitly match. So drop the version directory and append the parse format to the end.
-    BeFileName parseFormat(fileVersionFolder);
-    parseFormat.PopDir().AppendSeparator().append(WString(VERSION_PARSE_FORMAT, BentleyCharEncoding::Utf8));
-    ProfileVersion fileProfileVersion(0,0,0,0);
-    fileProfileVersion.FromString(fileVersionFolder.GetNameUtf8().c_str(), parseFormat.GetNameUtf8().c_str());
-    BeAssert(!fileProfileVersion.IsEmpty());
-
-    const int compareRes = fileProfileVersion.CompareTo(expectedVersion);
-    if (compareRes == 0)
-        return ProfileState::Current;
-
-    if (compareRes < 0)
-        return ProfileState::Older;
-
-    return ProfileState::Newer;
-    }
