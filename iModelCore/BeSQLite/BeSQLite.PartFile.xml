@@ -176,6 +176,7 @@
         BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=BeSQLite-UwpTest"
         OnlyPlatforms="WinRT*"
         >
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <SubProduct ProductName="BeSQLite-UwpTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/BeSQLite-UwpTest.log</Files>
