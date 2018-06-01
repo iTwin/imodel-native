@@ -560,8 +560,6 @@ BentleyStatus SchemaFlattener::FlattenSchemas(ECN::ECSchemaP ecSchema)
             flatSchema->AddReferencedSchema(*flatRefSchema);
             }
 
-        CopyFlatCustomAttributes(*flatSchema, *sourceSchema);
-
         bvector<ECN::ECClassCP> relationshipClasses;
         for (ECN::ECClassCP sourceClass : sourceSchema->GetClasses())
             {
@@ -665,6 +663,8 @@ BentleyStatus SchemaFlattener::FlattenSchemas(ECN::ECSchemaP ecSchema)
                 }
             }
         // This needs to happen after we have copied all of the properties for all of the classes as the custom attributes could be defined locally
+        CopyFlatCustomAttributes(*flatSchema, *sourceSchema);
+
         for (ECN::ECClassCP sourceClass : sourceSchema->GetClasses())
             {
             ECN::ECClassP targetClass = flatSchema->GetClassP(sourceClass->GetName().c_str());

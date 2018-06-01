@@ -1932,7 +1932,7 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
     m_importedTextstyles.clear ();
     m_importedLinestyles.clear ();
     m_importedMaterials.clear ();
-    m_sharedGeometryPartList.clear ();
+    m_blockPartsMap.clear ();
     m_entitiesImported = 0;
     m_layersImported = 0;
     m_errorCount = 0;
@@ -2064,6 +2064,8 @@ void            DwgImporter::ParseConfigurationFile (T_Utf8StringVectorR userObj
                 m_options.SetPreferRenderableGeometry (boolValue);
             else if (str.EqualsI("SyncDwgVersionGuid"))
                 m_options.SetSyncDwgVersionGuid (boolValue);
+            else if (str.EqualsI("SyncAsmBodyInFull"))
+                m_options.SetSyncAsmBodyInFull(boolValue);
             }
         }
 

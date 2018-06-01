@@ -248,6 +248,7 @@ struct DwgImporter
     friend struct LineStyleFactory;
     friend struct LayoutFactory;
     friend struct LayoutXrefFactory;
+    friend struct ElementFactory;
     friend class DwgProtocalExtension;
     friend class DwgRasterImageExt;
     friend class DwgPointCloudExExt;
@@ -318,6 +319,7 @@ public:
         StandardUnit        m_unspecifiedBlockUnits;
         T_DwgWeightMap      m_lineweightMapping;
         bool                m_syncBlockChanges;
+        bool                m_syncAsmBodyInFull;
         bool                m_syncDwgVersionGuid;
         bool                m_importRasters;
         bool                m_importPointClouds;
@@ -337,6 +339,7 @@ public:
             m_unspecifiedBlockUnits = StandardUnit::MetricMeters;
             m_lineweightMapping.clear ();
             m_syncBlockChanges = false;
+            m_syncAsmBodyInFull = false;
             m_syncDwgVersionGuid = false;
             m_importRasters = false;
             m_importPointClouds = false;
@@ -359,6 +362,7 @@ public:
         void SetUnspecifiedBlockUnits (StandardUnit v) {m_unspecifiedBlockUnits = v;}
         void SetLineWeightMapping (T_DwgWeightMap const& map) { m_lineweightMapping = map; }
         void SetSyncBlockChanges (bool syncBlocks) { m_syncBlockChanges = syncBlocks; }
+        void SetSyncAsmBodyInFull (bool fullSync) { m_syncAsmBodyInFull = fullSync; }
         void SetSyncDwgVersionGuid (bool checkGuid) { m_syncDwgVersionGuid = checkGuid; }
         void SetImportRasterAttachments (bool allow) { m_importRasters = allow; }
         void SetImportPointClouds (bool allow) { m_importPointClouds = allow; }
@@ -384,6 +388,8 @@ public:
         bool CopyLayerIfDifferent() const {return m_copyLayer == CopyLayer::IfDifferent;}
         uint32_t GetDgnLineWeight (DwgDbLineWeight dwgWeight) const;
         bool GetSyncBlockChanges () const { return m_syncBlockChanges; }
+        //! Fully sync ASM Brep data? Recommended for detail editing such as imprinting or edge coloring etc.
+        bool GetSyncAsmBodyInFull () const { return m_syncAsmBodyInFull; }
         //! Can DWG VersionGuid be used for sync?  Recommended for DWG files changed only by AutoCAD based products.
         bool GetSyncDwgVersionGuid () const { return m_syncDwgVersionGuid; }
         bool GetImportRasterAttachments () const { return m_importRasters; }
@@ -613,44 +619,79 @@ public:
         void SetExistingElement (DwgSyncInfo::DwgObjectMapping const& map) { if (map.IsValid()) m_existingElementMapping = map; }
         };  // ElementImportResults
 
-    // a geometry cache used by both primitive geometry and shared parts
-    struct GeometryBuilderInfo
+    //! Cache entry for geometry collection
+    struct GeometryEntry
         {
-    public:
-        // geometry builder containing imported geometry:
-        GeometryBuilderPtr          m_geometryBuilder;
-        // persistent imported display params:
-        DgnCategoryId               m_categoryId;
-        DgnSubCategoryId            m_subCategoryId;
-        RenderMaterialId            m_materialId;
-        uint32_t                    m_weight;
-        ColorDef                    m_lineColor;
-        ColorDef                    m_fillColor;
-        Render::FillDisplay         m_fillDisplay;
-        double                      m_transparency;
-        double                      m_fillTransparency;
-        DgnStyleId                  m_linestyleId;
-        double                      m_linestyleScale;
-        Render::GradientSymbCPtr    m_gradient;
-        // part builder info
-        DgnGeometryPartId           m_partId;
-        uint64_t                    m_entityHandle;
-        DVec3d                      m_scales;
-        BentleyApi::MD5::HashVal    m_geometryHashVal;
-        Utf8String                  m_partNamespace;
-        Utf8String                  m_partCodeValue;
+    private:
+        GeometricPrimitivePtr       m_geometry;
+        Render::GeometryParams      m_display;
         Transform                   m_transform;
-        
+        Utf8String                  m_blockName;
+        DwgDbObjectId               m_blockId;
+        DwgSyncInfo::DwgFileId      m_fileId;
     public:
-        GeometryBuilderInfo () : m_geometryBuilder(nullptr) { m_partId.Invalidate(); }
-        GeometryBuilderInfo (Render::GeometryParamsCR geomParams, uint64_t handle = 0, GeometryBuilderP builder = nullptr);
-        bool                IsSameDisplay (GeometryBuilderInfo const& other) const;
-        Utf8StringCR        GetPartCodeValue (DwgDbEntityCP entity, size_t partIndex);
-        static void         BuildPartCodeValue (Utf8StringR out, DwgDbEntityCP entity, size_t partIndex);
-        };  // GeometryBuilderInfo
+        bool    IsValid () const { return m_geometry.IsValid(); }
+        GeometricPrimitiveCR GetGeometry () const { BeAssert(IsValid()); return *m_geometry; }
+        GeometricPrimitiveP GetGeometryP () { BeAssert(IsValid()); return m_geometry.get(); }
+        void    SetGeometry (GeometricPrimitiveP geom) { m_geometry = geom; }
+        Render::GeometryParamsCR GetGeometryParams () const { return m_display; }
+        Render::GeometryParamsR GetGeometryParamsR () { return m_display; }
+        void    SetGeometryParams (Render::GeometryParamsCR params) { m_display = params; }
+        TransformCR GetTransform () const { return m_transform; }
+        void    SetTransform (TransformCR trans) { m_transform = trans; }
+        Utf8StringCR    GetBlockName () const { return m_blockName; }
+        void    SetBlockName (Utf8StringCR name) { m_blockName = name; }
+        DwgDbObjectIdCR GetBlockId () const { return m_blockId; }
+        void    SetBlockId (DwgDbObjectIdCR id) { m_blockId = id; }
+        DwgSyncInfo::DwgFileId  GetDwgFileId () const { return m_fileId; }
+        void    SetDwgFileId (DwgSyncInfo::DwgFileId  id) { m_fileId = id; }
+        };  // GeometryEntry
+    typedef bvector<GeometryEntry>                      T_GeometryList;
+    typedef bpair<DwgDbObjectId, T_GeometryList>        T_BlockGeometryEntry;
+    typedef bmap<DwgDbObjectId, T_GeometryList>         T_BlockGeometryMap;
 
-    typedef bvector<GeometryBuilderInfo>                T_GeometryBuilderList;
-    typedef bvector<size_t>                             T_PartIndexList;
+    //! Cache entry for a shared part collection
+    struct SharedPartEntry
+        {
+    private:
+        DgnGeometryPartId           m_partId;
+        Render::GeometryParams      m_display;
+        DRange3d                    m_partRange;
+        Transform                   m_geometryToPart;
+    public:
+        bool        IsValid () const { return m_partId.IsValid(); }
+        DgnGeometryPartId GetPartId () const { return m_partId; }
+        void        SetPartId (DgnGeometryPartId id) { m_partId = id; }
+        Render::GeometryParamsCR    GetGeometryParams () const { return m_display; }
+        void        SetGeometryParams (Render::GeometryParamsCR params) { m_display = params; }
+        DRange3dCR  GetPartRange () const { return m_partRange; }
+        void        SetPartRange (DRange3dCR range) { m_partRange = range; }
+        TransformCR GetTransform () const { return m_geometryToPart; }
+        void        SetTransform (TransformCR trans) { m_geometryToPart = trans; }
+        };  // SharedPartEntry
+    typedef bvector<SharedPartEntry>                    T_SharedPartList;
+
+    //! Cache key for a shared part collection
+    struct SharedPartKey
+        {
+    private:
+        DwgDbObjectId               m_blockId;
+        double                      m_partScale;
+    public:
+        SharedPartKey (DwgDbObjectIdCR id, double scale) : m_blockId(id), m_partScale(scale) {}
+        SharedPartKey () : m_partScale(0.0) { m_blockId.SetNull(); }
+
+        DwgDbObjectIdCR GetBlockId () const { return m_blockId; }
+        void    SetBlockId (DwgDbObjectIdCR id) { m_blockId = id; }
+        double  GetPartScale () const { return m_partScale; }
+        void    SetPartScale (double scale) { m_partScale = scale; }
+        bool    IsMirrored () const { return m_partScale < -1.0e-5; }
+        //! The left-hand operand of the key
+        bool operator < (SharedPartKey const& rho) const;
+        };  // SharedPartKey
+    typedef bpair<SharedPartKey, T_SharedPartList>      T_BlockPartsEntry;
+    typedef bmap<SharedPartKey, T_SharedPartList>       T_BlockPartsMap;
+
     typedef bpair<DwgDbObjectId, DgnElementId>          T_DwgDgnTextStyleId;
     typedef bmap<DwgDbObjectId, DgnElementId>           T_TextStyleIdMap;
     typedef bpair<DwgDbObjectId, DgnStyleId>            T_DwgDgnLineStyleId;
@@ -985,7 +1026,7 @@ protected:
     DgnModelId                  m_sheetListModelId;
     DefinitionModelPtr          m_geometryPartsModel;
     DefinitionModelPtr          m_jobDefinitionModel;
-    T_GeometryBuilderList       m_sharedGeometryPartList;
+    T_BlockPartsMap             m_blockPartsMap;
     T_PresentationRuleContents  m_presentationRuleContents;
 
 private:
@@ -993,7 +1034,6 @@ private:
     void                    InitBusinessKeyCodeSpec ();
     BentleyStatus           InitSheetListModel ();
     DgnElementId            CreateModelElement (DwgDbBlockTableRecordCR block, Utf8StringCR modelName, DgnClassId modelId);
-    BentleyStatus           CreateElement (ElementImportResults& results, GeometryBuilderInfo& builderInfo, DgnElement::CreateParams& elemParams, DgnCodeCR parentCode, ElementHandlerP handler);
     void                    ScaleModelTransformBy (TransformR trans, DwgDbBlockTableRecordCR block);
     void                    AlignSheetToPaperOrigin (TransformR trans, DwgDbObjectIdCR layoutId);
     void                    CompoundModelTransformBy (TransformR trans, DwgDbBlockReferenceCR insert);
@@ -1143,8 +1183,6 @@ protected:
     DGNDBSYNC_EXPORT virtual DgnClassId     _GetElementType (DwgDbBlockTableRecordCR block);
     //! Determine graphical element label from an entity
     DGNDBSYNC_EXPORT virtual Utf8String     _GetElementLabel (DwgDbEntityCR entity);
-    //! After geometry has been built from an entity, create or update a DgnElement from the builder:
-    DGNDBSYNC_EXPORT virtual BentleyStatus  _CreateOrUpdateElement (ElementImportResults& results, DgnModelR targetModel, T_GeometryBuilderList const& builders, T_PartIndexList const& parts, ElementCreateParams const& params, DwgDbEntityCR entity, DgnClassId dgnClass);
     //! Should the entity be imported at all?
     DGNDBSYNC_EXPORT virtual bool           _FilterEntity (DwgDbEntityCR entity, DwgDbSpatialFilterP filter=nullptr);
     //! Should create a DgnElement if there is no geometry at all?
@@ -1238,8 +1276,8 @@ public:
     DgnSubCategoryId                    FindSubCategoryFromSyncInfo (DwgDbObjectIdCR layerId, DwgDbDatabaseP xrefDwg = nullptr);
     DgnCategoryId                       GetOrAddDrawingCategory (DgnSubCategoryId& subCategory, DwgDbObjectIdCR layerId, DwgDbObjectIdCR viewportId, DgnModelCR model, DwgDbDatabaseP xrefDwg = nullptr);
     DgnSubCategoryId                    InsertAlternateSubCategory (DgnSubCategoryCPtr subcategory, DgnSubCategory::Appearance const& appearance, Utf8CP desiredName = nullptr);
-    T_GeometryBuilderList&              GetSharedPartListR () { return m_sharedGeometryPartList; }
-    T_GeometryBuilderList const&        GetSharedPartList () const { return m_sharedGeometryPartList; }
+    //! Get the block-geometry map that caches imported geometries.
+    T_BlockPartsMap&                    GetBlockPartsR () { return m_blockPartsMap; }
     //! Get the DefinitionModel that stores GeometryParts
     DefinitionModelPtr                  GetGeometryPartsModel () { return m_geometryPartsModel; }
     //! Get/create the DefinitionModel that stores all other job specific definitions, expcept for GeometryParts.

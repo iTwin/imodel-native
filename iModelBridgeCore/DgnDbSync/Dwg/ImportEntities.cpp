@@ -832,17 +832,40 @@ bool            CanUseByLayer (bool isByLayer)
 
 };  // DrawParameters
 
+
 /*=================================================================================**//**
+* GeometryFactory collects geometries from the entity draw callback of a working toolkit, 
+* and caches them into a local per block-geometry map.  A separate block stack helps tracking 
+* & setting the effective block that is currently being drawn by the toolkit.  The nested 
+* The flat block-geometry map does not capture the nestedness of blocks, but is more 
+* efficient for building a geometry map for shared geometry parts used in next step.  
+* When a same nested block is drawn more than once, the output map will have "duplicated" 
+* geometries per block.  It is for this reason, only the outermost block, i.e. all geometries 
+* collected for the root block from which this class is instantiated can be used for importer's 
+* block-geometry map reuse purpose.
+*
+* @see ElementFactory
+*
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
 struct GeometryFactory : public IDwgDrawGeometry
 {
-typedef DwgImporter::T_GeometryBuilderList          BuilderList;
-typedef DwgImporter::T_GeometryBuilderList&         BuilderListR;
-typedef DwgImporter::T_GeometryBuilderList const&   BuilderListCR;
-typedef DwgImporter::GeometryBuilderInfo            BuilderInfo;
-typedef DwgImporter::GeometryBuilderInfo&           BuilderInfoR;
-typedef DwgImporter::GeometryBuilderInfo const&     BuilderInfoCR;
+    // Block information saved off in a stack to track currently drawn block.
+    struct BlockInfo
+        {
+    private:
+        DwgDbObjectId           m_blockId;
+        Utf8String              m_blockName;
+        DwgSyncInfo::DwgFileId  m_fileId;
+    public:
+        BlockInfo (DwgDbObjectIdCR id, DwgStringCR name, DwgSyncInfo::DwgFileId file) : m_blockId(id), m_fileId(file)
+            {
+            m_blockName.Assign (name.c_str());
+            }
+        DwgDbObjectIdCR GetBlockId () const { return m_blockId; }
+        Utf8StringCR    GetBlockName () const { return m_blockName; }
+        DwgSyncInfo::DwgFileId  GetFileId () const { return m_fileId; }
+        };  // BlockInfo
 
 private:
     // members used by the toolkit
@@ -853,17 +876,12 @@ private:
     // members used locally
     DwgImporter::ElementCreateParams&   m_createParams;
     DwgImporter::GeometryOptions*       m_geometryOptions;
-    BuilderList                         m_outputGeometryList;
-    DwgImporter::T_PartIndexList        m_outputPartIndexList;
+    DwgImporter::T_BlockGeometryMap     m_outputGeometryMap;
     DwgDbEntityCP                       m_entity;
     BentleyStatus                       m_status;
     Transform                           m_worldToElement;
-    bool                                m_isDrawingBlock;
-    bool                                m_isAssembly;
     DwgDbSpatialFilterCP                m_spatialFilter;
-    BentleyApi::MD5                     m_geometryHash;
-    bvector<Utf8String>                 m_partNamespaceStack;
-    BuilderInfo                         m_invalidBuilder;
+    bvector<BlockInfo>                  m_blockStack;
     
 public:
 GeometryFactory (DwgImporter::ElementCreateParams& createParams, DrawParameters& drawParams, DwgImporter::GeometryOptions& opts, DwgDbEntityCP ent) : m_drawParams(drawParams), m_createParams(createParams)
@@ -872,171 +890,39 @@ GeometryFactory (DwgImporter::ElementCreateParams& createParams, DrawParameters&
     m_entity = ent;
     m_status = BSISUCCESS;
     m_transformStack.clear ();
-    m_baseTransform = createParams.m_transform;
+    // will create geometries local to the input entity
+    m_baseTransform.InitIdentity ();
     m_currentTransform = m_baseTransform;
-    m_outputGeometryList.clear ();
-    m_outputPartIndexList.clear ();
     m_worldToElement.InitIdentity ();
-    m_isDrawingBlock = false;
-    m_isAssembly = false;
     m_spatialFilter = nullptr;
-    m_geometryHash.Reset ();
-    m_partNamespaceStack.clear ();
+
+    // start block stack by input entity's block
+    auto dwg = nullptr == ent ? m_drawParams.GetDatabase() : ent->GetDatabase();
+    auto blockId = nullptr == ent ? dwg->GetModelspaceId() : ent->GetOwnerId();
+    m_blockStack.push_back (BlockInfo(blockId, L"ModelSpace", DwgSyncInfo::GetDwgFileId(*dwg)));
     }
 
-BuilderListCR   GetGeometryBuilderList () const { return m_outputGeometryList; }
-DwgImporter::T_PartIndexList const& GetPartIndexList () const { return m_outputPartIndexList; }
+DwgImporter::T_BlockGeometryMap& GetOutputGeometryMap () { return m_outputGeometryMap; }
 BentleyStatus   GetStatus () { return m_status; }
+
 // tracking block drawing - all blocks.
-bool            IsDrawingBlock () { return m_isDrawingBlock; }
-void            SetDrawingBlock (bool inBlock) { m_isDrawingBlock = inBlock; }
-// tracking part creation - only named, non-xref, non-layout blocks.
-bool            IsAssembly () { return m_isAssembly; }
-void            SetIsAssembly (bool isAssembly) { m_isAssembly = isAssembly; }
-void            SetSpatialFilter (DwgDbSpatialFilterCP filter) { m_spatialFilter = filter; }
-void            PushPartNamespace (Utf8StringCR name) { m_partNamespaceStack.push_back(name); }
-void            PopPartNamespace () { m_partNamespaceStack.pop_back(); }
-Utf8StringCR    GetPartNamespace () { return m_partNamespaceStack.back(); }
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    HashTextData (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, double h, double w, double oblique, DwgStringCR string, DgnFontCP font)
+void    PushDrawingBlock (DwgDbBlockTableRecordCR block)
     {
-    m_geometryHash.Reset ();
-    m_geometryHash.Add (&position, sizeof position);
-    m_geometryHash.Add (&normal, sizeof normal);
-    m_geometryHash.Add (&xdir, sizeof xdir);
-    m_geometryHash.Add (&h, sizeof h);
-    m_geometryHash.Add (&w, sizeof w);
-    m_geometryHash.Add (&oblique, sizeof oblique);
-    if (!string.IsEmpty())
-        m_geometryHash.Add (string.AsBufferPtr(), string.GetBufferSize());
-    if (nullptr != font)
-        {
-        Utf8StringCR    name = font->GetName ();
-        if (!name.empty())
-            m_geometryHash.Add (name.data(), name.size() * sizeof(Utf8Char));
-        }
+    auto dwg = block.GetDatabase ();
+    if (!dwg.IsValid())
+        dwg = m_drawParams.GetDatabase ();
+    BeAssert (dwg.IsValid());
+    BlockInfo entry (block.GetObjectId(), block.GetName(), DwgSyncInfo::GetDwgFileId(*dwg));
+    m_blockStack.push_back (entry);
     }
+bool        IsDrawingBlock () { return m_blockStack.size() > 1; }
+void        PopDrawingBlock () { m_blockStack.pop_back(); }
+BlockInfo&  GetCurrentBlock () { return m_blockStack.back(); }
+void        SetSpatialFilter (DwgDbSpatialFilterCP filter) { m_spatialFilter = filter; }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    HashMeshData (size_t nPoints, DPoint3dCP points, DwgGiVertexDataCP verts, size_t nEdges, DwgGiEdgeDataCP edges, size_t nFaces, DwgGiFaceDataCP faces, size_t nFaceList, int32_t const* faceLoops, bool autonorm)
-    {
-    uint8_t const*      visibilities = nullptr;
-    DwgCmEntityColorCP  colors = nullptr;
-    DwgTransparencyCP   transparencies = nullptr;
-    DwgDbObjectIdCP     layers = nullptr;
-    DwgDbObjectIdCP     ltypes = nullptr;
-    DwgDbObjectIdCP     materials = nullptr;
-    DVec3dCP            normals = nullptr;
-    DPoint3dCP          mapCoords = nullptr;
-
-    m_geometryHash.Reset ();
-
-    if (nPoints > 0)
-        {
-        // hash vertices
-        if (nullptr != points)
-            m_geometryHash.Add (points, nPoints * sizeof(DPoint3d));
-
-        // hash vertex data
-        if (nullptr != verts && nullptr != (colors = verts->GetTrueColors()))
-            {
-            for (size_t v = 0; v < nPoints; v++)
-                {
-                uint32_t    rgb = colors[v].GetRGB ();
-                m_geometryHash.Add (&rgb, sizeof(uint32_t));
-                }
-            }
-        }
-
-    if (nullptr != edges && nEdges > 0)
-        {
-        // hash edge data
-        if (nullptr != (visibilities = edges->GetVisibility()))
-            m_geometryHash.Add (visibilities, nEdges * sizeof(uint8_t));
-
-        if (nullptr != (colors = edges->GetTrueColors()))
-            {
-            for (size_t e = 0; e < nEdges; e++)
-                {
-                uint32_t    rgb = colors[e].GetRGB ();
-                m_geometryHash.Add (&rgb, sizeof(uint32_t));
-                }
-            }
-        if (nullptr != (layers = edges->GetLayers()))
-            {
-            for (size_t e = 0; e < nEdges; e++)
-                {
-                uint64_t    ehandle = layers[e].ToUInt64 ();
-                m_geometryHash.Add (&ehandle, sizeof(uint64_t));
-                }
-            }
-        if (nullptr != (ltypes = edges->GetLinetypes()))
-            {
-            for (size_t e = 0; e < nEdges; e++)
-                {
-                uint64_t    ehandle = ltypes[e].ToUInt64 (); 
-                m_geometryHash.Add (&ehandle, sizeof(uint64_t));
-                }
-            }
-        }
-
-    if (nFaces > 0 && nFaceList > 0)
-        {
-        // hash face data
-        if (nullptr != faces)
-            {
-            if (nullptr != (colors = faces->GetTrueColors()))
-                {
-                for (size_t f = 0; f < nFaces; f++)
-                    {
-                    uint32_t    rgb = colors[f].GetRGB ();
-                    m_geometryHash.Add (&rgb, sizeof(uint32_t));
-                    }
-                }
-            if (nullptr != (transparencies = faces->GetTransparencies()))
-                {
-                for (size_t f = 0; f < nFaces; f++)
-                    {
-                    uint32_t    whole = transparencies[f].SerializeOut ();
-                    m_geometryHash.Add (&whole, sizeof(uint32_t));
-                    }
-                }
-            if (nullptr != (layers = faces->GetLayers()))
-                {
-                for (size_t f = 0; f < nFaces; f++)
-                    {
-                    uint64_t    ehandle = layers[f].ToUInt64 ();
-                    m_geometryHash.Add (&ehandle, sizeof(uint64_t));
-                    }
-                }
-            if (nullptr != (materials = faces->GetMaterials()))
-                {
-                for (size_t f = 0; f < nFaces; f++)
-                    {
-                    uint64_t    ehandle = layers[f].ToUInt64 ();
-                    m_geometryHash.Add (&ehandle, sizeof(uint64_t));
-                    }
-                }
-            if (nullptr != (normals = faces->GetNormals()))
-                {
-                for (size_t f = 0; f < nFaces; f++)
-                    m_geometryHash.Add (&normals[f], sizeof(DVec3d));
-                }
-            }
-
-        // hash face topology
-        if (nullptr != faceLoops)
-            m_geometryHash.Add (faceLoops, nFaceList * sizeof(uint32_t));
-        }
-
-    m_geometryHash.Add (&autonorm, sizeof autonorm);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/16
@@ -1087,17 +973,7 @@ virtual void    _Circle (DPoint3dCR center, double radius, DVec3dCR normal) over
 
     ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateArc (circle);
     if (primitive.IsValid() && !this->ApplyThickness(primitive, normal, true))
-        {
-        if (this->IsAssembly())
-            {
-            m_geometryHash.Reset ();
-            m_geometryHash.Add (&center, sizeof center);
-            m_geometryHash.Add (&radius, sizeof radius);
-            m_geometryHash.Add (&normal, sizeof normal);
-            }
-
         this->AppendGeometry (*primitive.get());
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1110,17 +986,7 @@ virtual void    _Circle (DPoint3dCR point1, DPoint3dCR point2, DPoint3dCR point3
     
     ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateArc (circle);
     if (primitive.IsValid())
-        {
-        if (this->IsAssembly())
-            {
-            m_geometryHash.Reset ();
-            m_geometryHash.Add (&point1, sizeof point1);
-            m_geometryHash.Add (&point2, sizeof point2);
-            m_geometryHash.Add (&point3, sizeof point3);
-            }
-
         this->AppendGeometry (*primitive.get());
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1143,20 +1009,7 @@ virtual void    _CircularArc (DPoint3dCR center, double rad, DVec3dCR normal, DV
         // a simple ellipse
         ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateArc (arc);
         if (primitive.IsValid() && !this->ApplyThickness(primitive, normal))
-            {
-            if (this->IsAssembly())
-                {
-                m_geometryHash.Reset ();
-                m_geometryHash.Add (&center, sizeof center);
-                m_geometryHash.Add (&rad, sizeof rad);
-                m_geometryHash.Add (&normal, sizeof normal);
-                m_geometryHash.Add (&start, sizeof start);
-                m_geometryHash.Add (&swept, sizeof swept);
-                m_geometryHash.Add (&arcType, sizeof arcType);
-                }
-
             this->AppendGeometry (*primitive.get());
-            }
         }
 
     // WIP - create a filled area to represent a filled chord or a filled pie shape enclosed by the elliptic arc:
@@ -1173,18 +1026,7 @@ virtual void    _CircularArc (DPoint3dCR start, DPoint3dCR point, DPoint3dCR end
         {
         ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateArc (arc);
         if (primitive.IsValid())
-            {
-            if (this->IsAssembly())
-                {
-                m_geometryHash.Reset ();
-                m_geometryHash.Add (&start, sizeof start);
-                m_geometryHash.Add (&point, sizeof point);
-                m_geometryHash.Add (&end, sizeof end);
-                m_geometryHash.Add (&arcType, sizeof arcType);
-                }
-
             this->AppendGeometry (*primitive.get());
-            }
         }
     // WIP - create a filled area to represent a filled chord or a filled pie shape enclosed by the elliptic arc:
     }
@@ -1196,21 +1038,7 @@ virtual void    _Curve (MSBsplineCurveCR curve) override
     {
     ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateBsplineCurve (curve);
     if (primitive.IsValid())
-        {
-        if (this->IsAssembly())
-            {
-            m_geometryHash.Reset ();
-            m_geometryHash.Add (&curve.type, sizeof curve.type);
-            m_geometryHash.Add (&curve.rational, sizeof curve.rational);
-            m_geometryHash.Add (&curve.display, sizeof curve.display);
-            m_geometryHash.Add (&curve.params, sizeof curve.params);
-            m_geometryHash.Add (curve.GetPoleCP(), curve.GetNumPoles() * sizeof(DPoint3d));
-            m_geometryHash.Add (curve.GetKnotCP(), curve.GetNumKnots() * sizeof(double));
-            m_geometryHash.Add (curve.GetWeightCP(), curve.GetNumPoles() * sizeof(double));
-            }
-
         this->AppendGeometry (*primitive.get());
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1222,19 +1050,7 @@ virtual void    _Ellipse (DEllipse3dCR ellipse, DwgGiArcType arcType = DwgGiArcT
         {
         ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateArc (ellipse);
         if (primitive.IsValid())
-            {
-            if (this->IsAssembly())
-                {
-                m_geometryHash.Reset ();
-                m_geometryHash.Add (&ellipse.center, sizeof ellipse.center);
-                m_geometryHash.Add (&ellipse.vector0, sizeof ellipse.vector0);
-                m_geometryHash.Add (&ellipse.vector90, sizeof ellipse.vector90);
-                m_geometryHash.Add (&ellipse.start, sizeof ellipse.start);
-                m_geometryHash.Add (&ellipse.sweep, sizeof ellipse.sweep);
-                }
-
             this->AppendGeometry (*primitive.get());
-            }
         }
     // WIP - create a filled area to represent a filled chord or a filled pie shape enclosed by the elliptic arc:
     }
@@ -1248,22 +1064,7 @@ virtual void    _Edge (CurveVectorCR edges) override
         {
         GeometricPrimitivePtr   geom = GeometricPrimitive::Create (primitive);
         if (geom.IsValid())
-            {
-            if (this->IsAssembly())
-                {
-                m_geometryHash.Reset ();
-
-                bvector <bvector<bvector<DPoint3d>>> loops;
-                if (edges.CollectLinearGeometry(loops))
-                    {
-                    for (auto& loop : loops)
-                        for (auto& loopPoints : loop)
-                            m_geometryHash.Add (&loopPoints, sizeof(DPoint3d));
-                    }
-                }
-
             this->AppendGeometry (*geom.get());
-            }
         }
     }
 
@@ -1280,12 +1081,6 @@ virtual void    _Polyline (size_t nPoints, DPoint3dCP points, DVec3dCP normal = 
         {
         if (nullptr != normal && this->ApplyThickness(linestring, *normal))
             return;
-
-        if (this->IsAssembly())
-            {
-            m_geometryHash.Reset ();
-            m_geometryHash.Add (points, nPoints * sizeof(DPoint3d));
-            }
 
         this->AppendGeometry (*linestring.get());
         }
@@ -1308,12 +1103,6 @@ virtual void    _Pline (DwgDbPolylineCR pline, size_t fromIndex = 0, size_t numS
     CurveVectorPtr  curveVector = plineFactory.CreateCurveVector (false);
     if (curveVector.IsValid())
         {
-        if (this->IsAssembly())
-            {
-            m_geometryHash.Reset ();
-            plineFactory.HashAndAppendTo (m_geometryHash);
-            }
-
         // extrude the polyline if it has a thickness
         GeometricPrimitivePtr   extruded = plineFactory.ApplyThicknessTo (curveVector);
         if (extruded.IsValid())
@@ -1332,12 +1121,6 @@ virtual void    _Polygon (size_t nPoints, DPoint3dCP points) override
     CurveVectorPtr  curveVector = plineFactory.CreateCurveVector (false);
     if (curveVector.IsValid())
         {
-        if (this->IsAssembly())
-            {
-            m_geometryHash.Reset ();
-            plineFactory.HashAndAppendTo (m_geometryHash);
-            }
-
         // extrude the polyline if it has a thickness
         GeometricPrimitivePtr   extruded = plineFactory.ApplyThicknessTo (curveVector);
         if (extruded.IsValid())
@@ -1355,13 +1138,6 @@ virtual void    _Mesh (size_t nRows, size_t nColumns, DPoint3dCP points, DwgGiEd
     size_t      nTotal = nRows * nColumns;
     if (0 == nTotal)
         return;
-
-    if (this->IsAssembly())
-        {
-        size_t  nEdges = (nRows - 1) * nColumns + nRows * (nColumns -1);
-        size_t  nFaces = (nRows -1) * (nColumns - 1);
-        this->HashMeshData (nTotal, points, verts, nEdges, edges, nFaces, faces, 0, nullptr, autonorm);
-        }
 
     // if the toolkit has not called SetFillType yet, ACAD should display this mesh as unfilled - TFS 527878.
     if (DwgGiFillType::Default == m_drawParams._GetFillType())
@@ -1401,22 +1177,6 @@ virtual void    _Mesh (size_t nRows, size_t nColumns, DPoint3dCP points, DwgGiEd
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void    _Shell (size_t nPoints, DPoint3dCP points, size_t nFaceList, int32_t const* faces, DwgGiEdgeDataCP edgeData = nullptr, DwgGiFaceDataCP faceData = nullptr, DwgGiVertexDataCP vertData = nullptr, DwgResBufCP xData = nullptr, bool autonorm = false) override
     {
-    if (this->IsAssembly())
-        {
-        // count up faces and edges - nFaceList is the size of faces.
-        size_t  nSolidFaces = 0, nEdges = 0;
-        if (nullptr != edgeData && nullptr != faces && nFaceList > 0)
-            {
-            for (size_t f = 0; f < nFaceList; f += abs(faces[f]) + 1)
-                {
-                nEdges += abs(faces[f]);
-                if (faces[f] > 0)
-                    nSolidFaces++;
-                }
-            }
-        this->HashMeshData (nPoints, points, vertData, nEdges, edgeData, nSolidFaces, faceData, nFaceList, faces, autonorm);
-        }
-
     // DwgGiFillType::Always == m_drawParams._GetFillType()
     /*-----------------------------------------------------------------------------------
     A filled hatch, or a filled object created by an object enabler, may be tessellated to
@@ -1593,12 +1353,7 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, doub
 
     GeometricPrimitivePtr   primitive = GeometricPrimitive::Create (dgnText);
     if (primitive.IsValid())
-        {
-        if (this->IsAssembly())
-            this->HashTextData (position, normal, xdir, h, w, oblique, string, font);
-
         this->AppendGeometry (*primitive.get());
-        }
     // NEEDSWORK - extrude text grlyphs
     }
 
@@ -1679,15 +1434,7 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgS
 
     GeometricPrimitivePtr   primitive = GeometricPrimitive::Create (dgnText);
     if (primitive.IsValid())
-        {
-        if (this->IsAssembly())
-            {
-            double  oblique = fontType == DgnFontType::TrueType ? 0.0 : giStyle.GetObliqueAngle();
-            this->HashTextData (position, normal, xdir, height, width, oblique, string, font);
-            }
-
         this->AppendGeometry (*primitive.get());
-        }
 
     // NEEDSWORK - extrude text grlyphs
 
@@ -1762,16 +1509,7 @@ virtual void    _Ray (DPoint3dCR origin, DPoint3dCR point) override
 
     ICurvePrimitivePtr  ray = ICurvePrimitive::CreateLine (line);
     if (ray.IsValid())
-        {
-        if (this->IsAssembly())
-            {
-            m_geometryHash.Reset ();
-            m_geometryHash.Add (&origin, sizeof origin);
-            m_geometryHash.Add (&point, sizeof point);
-            }
-
         this->AppendGeometry (*ray.get());
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1810,15 +1548,7 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
     if (nullptr != block)
         {
         // draw a block, potentially nested:
-        bool    wasInBlock = this->IsDrawingBlock ();
-        this->SetDrawingBlock (true);
-
-        // set part namespace "block name-fileId" for the new block we are about to draw - only use outermost block:
-        if (m_partNamespaceStack.empty())
-            {
-            Utf8PrintfString    partNamespace("%ls-%d", block->GetName().c_str(), DwgSyncInfo::GetDwgFileId(*block->GetDatabase()));
-            this->PushPartNamespace (partNamespace);
-            }
+        this->PushDrawingBlock (*block);
 
         try
             {
@@ -1830,7 +1560,7 @@ virtual void    _Draw (DwgGiDrawableR drawable) override
             }
 
         // done drawing the block - revert drawing controls back to previous state:
-        this->SetDrawingBlock (wasInBlock);
+        this->PopDrawingBlock ();
         return;
         }
 
@@ -1942,15 +1672,7 @@ virtual void    _RowOfDots (size_t count, DPoint3dCR start, DVec3dCR step) overr
 
     ICurvePrimitivePtr  primitive = ICurvePrimitive::CreatePointString (dots);
     if (primitive.IsValid())
-        {
-        if (this->IsAssembly())
-            {
-            m_geometryHash.Reset ();
-            m_geometryHash.Add (&dots.front(), dots.size() * sizeof(DPoint3d));
-            }
-
         this->AppendGeometry (*primitive.get());
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1965,12 +1687,6 @@ virtual void    _WorldLine (DPoint3d points[2]) override
         {
         Transform   curr = m_currentTransform;
         m_currentTransform = m_baseTransform;
-
-        if (this->IsAssembly())
-            {
-            m_geometryHash.Reset ();
-            m_geometryHash.Add (&points[0], 2 * sizeof(DPoint3d));
-            }
 
         this->AppendGeometry (*line.get());
 
@@ -2029,7 +1745,7 @@ virtual void _GetModelTransform (TransformR outTransform) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _PushClipBoundary (DwgGiClipBoundaryCP doundary) override
+virtual void    _PushClipBoundary (DwgGiClipBoundaryCP boundary) override
     {
     BeAssert (false && "_PushClipBoundary not implemented!");
     }
@@ -2067,8 +1783,6 @@ void            AppendGeometry (CurveVectorCR curveVector)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            AppendGeometry (GeometricPrimitiveR geometry)
     {
-    geometry.TransformInPlace (m_currentTransform);
-
     // get or create a category & sub-category for this piece of geometry:
     DgnCategoryId       categoryId;
     DgnSubCategoryId    subCategoryId;
@@ -2082,282 +1796,31 @@ void            AppendGeometry (GeometricPrimitiveR geometry)
     // convert other sub-entity traits to GeometryParams:
     m_drawParams.GetDisplayParams (display);
 
-    if (this->IsAssembly())
-        this->AppendSharedGeometryPart (geometry, display);
-    else
-        this->AppendPrimitiveGeometry (geometry, display);
+    auto block = this->GetCurrentBlock ();
+    auto blockId = block.GetBlockId ();
+
+    // build a new cache entry for the geometry
+    DwgImporter::GeometryEntry   geomEntry;
+    geomEntry.SetGeometry (geometry.Clone().get());
+    geomEntry.SetGeometryParams (display);
+    geomEntry.SetTransform (m_currentTransform);
+    geomEntry.SetBlockName (block.GetBlockName());
+    geomEntry.SetBlockId (blockId);
+    geomEntry.SetDwgFileId (block.GetFileId());
+
+    // cache the new entry for the block
+    auto found = m_outputGeometryMap.find (blockId);
+    if (found == m_outputGeometryMap.end())
+        {
+        DwgImporter::T_GeometryList emptyList;
+        DwgImporter::T_BlockGeometryEntry entry(blockId, emptyList);
+        m_outputGeometryMap.insert (entry);
+        found = m_outputGeometryMap.find (blockId);
+        }
+    found->second.push_back (geomEntry);
 
     // spin the progress meter
     m_drawParams.GetDwgImporter().Progress ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   AppendPrimitiveGeometry (GeometricPrimitiveR geometry, Render::GeometryParamsCR display)
-    {
-    BuilderInfoR    builderInfo = this->GetOrAddGeometryBuilder (m_outputGeometryList, geometry, display);
-    if (!builderInfo.m_geometryBuilder.IsValid())
-        return  BSIERROR;
-    
-    builderInfo.m_geometryBuilder->Append (display);
-
-    // untransform geometry
-    geometry.TransformInPlace (m_worldToElement);
-
-    return  builderInfo.m_geometryBuilder->Append(geometry) ? BSISUCCESS : BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   AppendSharedGeometryPart (GeometricPrimitiveCR geometry, Render::GeometryParamsCR display)
-    {
-    DwgDbEntityCP   entity = m_drawParams.GetSourceEntity ();
-    uint64_t        entityHandle = nullptr == entity ? 0 : entity->GetObjectId().ToUInt64();
-    DRange3d        partRange = DRange3d::NullRange ();
-    size_t          partIndex = 0;
-
-    BuilderListR    sharedParts = m_drawParams.GetDwgImporter().GetSharedPartListR ();
-    BuilderInfoR    builderInfo = this->GetOrAddGeometryBuilder (sharedParts, geometry, display, entityHandle, &partIndex);
-
-    if (builderInfo.m_partId.IsValid())
-        {
-        // found an existing part - use it:
-        if (BSISUCCESS != DgnGeometryPart::QueryGeometryPartRange(partRange, m_createParams.GetModel().GetDgnDb(), builderInfo.m_partId))
-            builderInfo.m_partId = DgnGeometryPartId ();
-
-        Transform   geomToWorld;
-        if (!geometry.GetLocalCoordinateFrame(geomToWorld))
-            geomToWorld.InitIdentity ();
-
-        // transform the part from world to geometry, transform geometry to new world, then from world back to element:
-        m_worldToElement = Transform::FromProduct (builderInfo.m_transform, geomToWorld, builderInfo.m_transform);
-        }
-    else
-        {
-        // no part is found - create a new one:
-        this->CreateGeometryPart (builderInfo, partRange, geometry, entity, sharedParts.size());
-        if (!builderInfo.m_geometryBuilder.IsValid())
-            return  BSIERROR;
-        }
-
-    if (!builderInfo.m_partId.IsValid())
-        {
-        BeAssert (false && "invalid geometry part!");
-        return  BSIERROR;
-        }
-
-    // we should have a valid geometry part - append geometry params to part:
-    builderInfo.m_geometryBuilder->Append (display);
-
-    // append part to the geometry builder:
-    BentleyStatus   status = BSIERROR;
-    if (builderInfo.m_geometryBuilder->Append(builderInfo.m_partId, m_worldToElement, partRange))
-        {
-        // collect the geometry builder as the output for the caller:
-        if (partIndex >= 0 && partIndex < sharedParts.size())
-            m_outputPartIndexList.push_back (partIndex);
-        else
-            BeAssert (false && "Unexpected shared part index!");
-        status = BSISUCCESS;
-        }
-
-    return  status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   CreateGeometryPart (BuilderInfoR builderInfo, DRange3dR partRange, GeometricPrimitiveCR geometry, DwgDbEntityCP entity, size_t partIndex)
-    {
-    // create a new part
-    DwgImporter&    importer = m_drawParams.GetDwgImporter ();
-    DgnDbR          db = m_createParams.GetModel().GetDgnDb ();
-    DwgDbDatabaseP  dwg = m_drawParams.GetDatabase ();
-    if (nullptr == dwg)
-        dwg = &importer.GetDwgDb ();
-    
-    Utf8StringCR    nameSpace = this->GetPartNamespace ();
-    Utf8StringCR    codeValue = builderInfo.GetPartCodeValue (entity, partIndex);
-    DgnCode         partCode = importer.CreateCode (Utf8PrintfString("%s:%s", nameSpace.c_str(), codeValue.c_str()));
-
-    // create a new geometry builder:
-    GeometryBuilderPtr  geomBuilder = GeometryBuilder::CreateGeometryPart (db, m_createParams.GetModel().Is3d());
-    if (!geomBuilder.IsValid())
-        return  BSIERROR;
-
-    auto partsModel = m_createParams.GetGeometryPartsModel ();
-    if (!partsModel.IsValid())
-        {
-        // should not occur!
-        importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "GeometryParts");
-        partsModel = &db.GetDictionaryModel ();
-        }
-
-    // create a new geometry part:
-    DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create (*partsModel, partCode.GetValueUtf8());
-    if (!geomPart.IsValid())
-        return  BSIERROR;
-
-    // set the geometry into the builder
-    geomBuilder->Append (geometry);
-
-    // set the label to source entity name, should the primitive represent an entity:
-    if (nullptr != entity)
-        {
-        Utf8PrintfString    label("%ls", entity->GetDxfName().c_str());
-        geomPart->SetUserLabel (label.c_str());
-        }
-
-    m_status = geomBuilder->Finish (*geomPart);
-    if (BSISUCCESS != m_status)
-        return  m_status;
-
-    m_status = BSIERROR;
-
-    builderInfo.m_partId = DgnGeometryPart::QueryGeometryPartId (*partsModel, partCode.GetValueUtf8());
-    if (!builderInfo.m_partId.IsValid())
-        {
-        // insert the part to DgnDb, and append its ID to our output builder:
-        if (db.Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
-            {
-            partRange = geomPart->GetBoundingBox ();
-            builderInfo.m_partId = geomPart->GetId ();
-            m_status = BSISUCCESS;
-            }
-        }
-    else
-        {
-        // update the part
-        DgnElementCPtr      existingElm = db.Elements().GetElement (builderInfo.m_partId);
-        DgnGeometryPartCP   partElm;
-        if (existingElm.IsValid() && nullptr != (partElm = dynamic_cast<DgnGeometryPartCP>(existingElm.get())))
-            {
-            // get an editable element
-            DgnElementPtr   writable = existingElm->CopyForEdit ();
-            if (writable.IsValid())
-                {
-                writable->CopyFrom (*geomPart);
-
-                DgnDbStatus status = DgnDbStatus::Success;
-                if (db.Elements().Update(*writable, &status).IsValid() && nullptr != (partElm = dynamic_cast<DgnGeometryPartCP>(writable.get())))
-                    {
-                    BeAssert (DgnDbStatus::Success == status);
-                    partRange = partElm->GetBoundingBox ();
-                    m_status = BSISUCCESS;
-                    }
-                }
-            }
-        }
-
-    if (BSISUCCESS == m_status)
-        {
-        builderInfo.m_transform = m_worldToElement;
-        builderInfo.m_partNamespace = nameSpace;
-        builderInfo.m_geometryHashVal = m_geometryHash.GetHashVal ();
-        }
-
-    return  BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BuilderInfoR    GetOrAddGeometryBuilder (BuilderListR builderList, GeometricPrimitiveCR geometry, Render::GeometryParamsCR display, uint64_t entityHandle = 0, size_t* indexOut = nullptr)
-    {
-    // search the input list and find geometry builder that has same display params:
-    struct FindGeometryPredicate
-        {
-        bool    m_isAssembly;
-        DwgImporter::GeometryBuilderInfo const& m_newBuilder;
-
-        FindGeometryPredicate (DwgImporter::GeometryBuilderInfo const& in, bool forPart) : m_newBuilder(in), m_isAssembly(forPart) {}
-
-        // compare all display data for a part geometry but only compare category for an individual geometry:
-        bool IsSameBuilder(DwgImporter::GeometryBuilderInfo const& oldBuilder) { return m_isAssembly ? m_newBuilder.IsSameDisplay(oldBuilder) : m_newBuilder.m_categoryId == oldBuilder.m_categoryId; }
-        bool operator () (DwgImporter::GeometryBuilderInfo const& oldBuilder) { return this->IsSameBuilder(oldBuilder); }
-        };
-
-    // init a new builder from input info:
-    BuilderInfo builderInfo (display);
-    if (this->IsAssembly())
-        {
-        // set required params for unique parts:
-        builderInfo.m_entityHandle = entityHandle;
-        builderInfo.m_scales.Init (m_currentTransform.ColumnX().Normalize(), m_currentTransform.ColumnY().Normalize(), m_currentTransform.ColumnZ().Normalize());
-        builderInfo.m_partNamespace = this->GetPartNamespace ();
-        builderInfo.m_geometryHashVal = m_geometryHash.GetHashVal ();
-        }
-
-    FindGeometryPredicate   predicate (builderInfo, this->IsAssembly());
-
-    auto   entry = std::find_if (builderList.begin(), builderList.end(), predicate);
-
-    if (builderList.end() == entry)
-        {
-        // add a new geometry builder
-        this->CreateGeometryBuilder (builderInfo, geometry);
-
-        if (!builderInfo.m_geometryBuilder.IsValid())
-            return  m_invalidBuilder;
-
-        if (nullptr != indexOut)
-            *indexOut = entry - builderList.begin();
-
-        builderList.push_back (builderInfo);
-        return  builderList.back ();
-        }
-    else
-        {
-        // use existing geometry builder
-        if (nullptr != indexOut)
-            *indexOut = entry - builderList.begin();
-        return *entry;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            CreateGeometryBuilder (BuilderInfoR builderInfo, GeometricPrimitiveCR geometry)
-    {
-    Transform   geomToWorld;
-    if (!geometry.GetLocalCoordinateFrame(geomToWorld))
-        geomToWorld.InitIdentity ();
-
-    DPoint3d    placementPoint;
-    geomToWorld.GetTranslation (placementPoint);
-
-    RotMatrix   matrix;
-    geomToWorld.GetMatrix (matrix);
-
-    YawPitchRollAngles  angles;
-    YawPitchRollAngles::TryFromRotMatrix (angles, matrix);
-
-    DgnModelR   toModel = m_createParams.GetModelR ();
-    if (!toModel.Is3d())
-        {
-        // Element2d only uses Yaw:
-        if (0.0 != angles.GetPitch().Degrees() || 0.0 != angles.GetRoll().Degrees())
-            {
-            angles = YawPitchRollAngles (AngleInDegrees::FromDegrees(0.0), angles.GetPitch(), angles.GetRoll());
-            geomToWorld = Transform::FromProduct (geomToWorld, angles.ToTransform(DPoint3d::FromZero()));
-            }
-        // and has no z-translation:
-        placementPoint.z = 0.0;
-        geomToWorld.SetTranslation (placementPoint);
-        }
-
-    builderInfo.m_geometryBuilder = GeometryBuilder::Create (toModel, builderInfo.m_categoryId, geomToWorld);
-    if (!builderInfo.m_geometryBuilder.IsValid())
-        {
-        BeAssert (false);
-        m_status = BSIERROR;
-        }
-
-    // will need to untranform geoemtry
-    m_worldToElement.InverseOf (geomToWorld);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2429,97 +1892,610 @@ void            ComputeCategory (DgnCategoryId& categoryId, DgnSubCategoryId& su
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          12/16
+* @bsimethod                                                    Don.Fu          05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgImporter::GeometryBuilderInfo::GeometryBuilderInfo (Render::GeometryParamsCR geomParams, uint64_t entityHandle, GeometryBuilderP builder)
+ElementFactory::ElementFactory (DwgImporter::ElementImportResults& results, DwgImporter::ElementImportInputs& inputs, DwgImporter::ElementCreateParams& params, DwgImporter& importer)
+    : m_results(results), m_inputs(inputs), m_createParams(params), m_importer(importer), 
+      m_elementParams(inputs.GetTargetModelR().GetDgnDb(), inputs.GetTargetModelR().GetModelId(), inputs.GetClassId())
     {
-    m_geometryBuilder = builder;
-    m_categoryId = geomParams.GetCategoryId ();
-    m_subCategoryId = geomParams.GetSubCategoryId ();
-    m_materialId = geomParams.IsMaterialFromSubCategoryAppearance() ? RenderMaterialId() : geomParams.GetMaterialId();
-    m_weight = geomParams.IsWeightFromSubCategoryAppearance() ? 0 : geomParams.GetWeight();
-    m_lineColor = geomParams.IsLineColorFromSubCategoryAppearance() ? ColorDef() : geomParams.GetLineColor();
-    m_fillColor = geomParams.IsFillColorFromSubCategoryAppearance() ? ColorDef() : geomParams.GetFillColor();
-    m_fillDisplay = geomParams.GetFillDisplay ();
-    m_transparency = geomParams.GetTransparency ();
-    m_fillTransparency = geomParams.GetFillTransparency ();
+    // update DgnCode & caller will set user label as needed
+    m_elementCode = m_createParams.GetElementCode ();
+    m_elementParams.SetCode (m_elementCode);
+    m_elementLabel = m_importer._GetElementLabel (m_inputs.GetEntity());
+    m_elementParams.SetUserLabel (m_elementLabel.c_str());
 
-    if (geomParams.IsLineStyleFromSubCategoryAppearance())
+    m_partModel = m_importer.GetOrCreateJobDefinitionModel ();
+    if (!m_partModel.IsValid())
         {
-        m_linestyleId = DgnStyleId ();
-        m_linestyleScale = 1.0;
+        // should not occur but back it up anyway!
+        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "GeometryParts");
+        m_partModel = &m_importer.GetDgnDb().GetDictionaryModel ();
+        }
+    m_geometryMap = nullptr;
+
+    m_modelTransform = m_inputs.GetTransform ();
+    m_baseTransform = Transform::FromIdentity ();
+    m_invBaseTransform = Transform::FromIdentity ();
+    m_hasBaseTransform = false;
+    m_basePartScale = 0.0;
+    m_is3d = m_inputs.GetTargetModelR().Is3d ();
+    m_canCreateSharedParts = false;
+    m_sourceBlockId.SetNull ();
+
+    // find the element handler
+    m_elementHandler = dgn_ElementHandler::Element::FindHandler (m_inputs.GetTargetModelR().GetDgnDb(), m_inputs.GetClassId());
+    BeAssert(nullptr != m_elementHandler && "Null element handler!");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ElementFactory::SetDefaultCreation ()
+    {
+    DwgDbBlockReferenceCP   insert = DwgDbBlockReference::Cast(m_inputs.GetEntityP());
+    if (nullptr != insert)
+        {
+        // prefer share parts for a named block
+        m_canCreateSharedParts = true;
+
+        auto blockTrans = Transform::FromIdentity ();
+        insert->GetBlockTransform (blockTrans);
+
+        m_sourceBlockId = insert->GetBlockTableRecordId ();
+
+        // don't need to create shared parts for an anoymouse block
+        DwgDbBlockTableRecordPtr    block (m_sourceBlockId, DwgDbOpenMode::ForRead);
+        if (block.OpenStatus() == DwgDbStatus::Success && block->IsAnonymous())
+            m_canCreateSharedParts = false;
+
+        // this call may also reset m_canCreateSharedParts=false
+        this->SetBaseTransform (blockTrans);
         }
     else
         {
-        m_linestyleId = geomParams.GetLineStyle()->GetStyleId ();
-        m_linestyleScale = geomParams.GetLineStyle()->GetLineStyleSymb().GetScale ();
+        // individual elements for all other entities
+        m_canCreateSharedParts = false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ElementFactory::SetBaseTransform (TransformCR blockTrans)
+    {
+    /*-----------------------------------------------------------------------------------
+    DgnDb geometry requires normalized and uniformly scaled transform.  To create shared
+    parts we normalize base transform and save a uniform scale if it has one. We will call 
+    ApplyUniformPartScale to apply this scale on a part transform at a later step creating
+    elements for the parts.
+
+    For a base transform from which we cannot create parts, we will create individual 
+    elements instead of shared parts.  We will directly transform individual geometry 
+    in-place as needed via TransformGeometry.
+
+    The input transform is the block transform before model transform. Model transform is
+    applied to translation.
+    -----------------------------------------------------------------------------------*/
+    auto blockToModel = Transform::FromProduct (m_modelTransform, blockTrans);
+
+    if (!DwgHelper::GetTransformForSharedParts(&m_baseTransform, &m_basePartScale, blockToModel))
+        m_canCreateSharedParts = false;
+
+    this->Validate2dTransform (m_baseTransform);
+
+    m_invBaseTransform.InverseOf (m_baseTransform);
+
+    if (!m_canCreateSharedParts)
+        m_basePartScale = 0.0;
+
+    m_hasBaseTransform = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ElementFactory::TransformGeometry (GeometricPrimitiveR geometry, TransformR geomTrans) const
+    {
+    /*-----------------------------------------------------------------------------------
+    Factor out "valid" matrix parts of the input DWG geometry transform, build a return 
+    transform from a pure rotaton and a translation, and then apply scales & skews to the
+    input geometry in-place.
+    -----------------------------------------------------------------------------------*/
+    auto inplaceTrans = Transform::FromProduct (m_modelTransform, geomTrans);
+    auto matrix = inplaceTrans.Matrix ();
+    auto translation = inplaceTrans.Translation ();
+
+    RotMatrix   rotation, skew;
+    if (matrix.RotateAndSkewFactors(rotation, skew, 0, 1))
+        {
+        // apply skew transform in place
+        if (skew.IsIdentity())
+            inplaceTrans.InitIdentity ();
+        else
+            inplaceTrans.InitFrom (skew);
+
+        // return a transform of pure ration + translation for GeometryBuilder
+        geomTrans.InitFrom (rotation, translation);
+        }
+    else
+        {
+        // should not occur!
+        geomTrans.InitIdentity ();
         }
 
-    m_gradient = geomParams.GetGradient ();
-    m_entityHandle = entityHandle;
-    m_scales.One ();
-    m_partCodeValue.clear ();
-    m_partNamespace.clear ();
+    // remove/invert the base part scale, if building parts
+    this->ApplyBasePartScale (inplaceTrans, true);
+
+    if (!inplaceTrans.IsIdentity())
+        geometry.TransformInPlace (inplaceTrans);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ElementFactory::ApplyBasePartScale (TransformR transform, bool invert) const
+    {
+    // valid only for building parts - m_basePartScale should have been set to 0 for individual elements.
+    auto scale = fabs (m_basePartScale);
+    if (scale > 0.001 && fabs(scale - 1.0) > 0.001)
+        {
+        if (invert)
+            scale = 1.0 / scale;
+        transform.ScaleMatrixColumns (scale, scale, scale);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ElementFactory::Validate2dTransform (TransformR transform) const
+    {
+    DPoint3d    placementPoint;
+    transform.GetTranslation (placementPoint);
+
+    RotMatrix   matrix;
+    transform.GetMatrix (matrix);
+
+    YawPitchRollAngles  angles;
+    YawPitchRollAngles::TryFromRotMatrix (angles, matrix);
+
+    // validate Placement2d
+    if (!m_is3d)
+        {
+        // Element2d only uses Yaw:
+        if (0.0 != angles.GetPitch().Degrees() || 0.0 != angles.GetRoll().Degrees())
+            {
+            angles = YawPitchRollAngles (AngleInDegrees::FromDegrees(0.0), angles.GetPitch(), angles.GetRoll());
+            transform = Transform::FromProduct (transform, angles.ToTransform(DPoint3d::FromZero()));
+            }
+        // and has no z-translation:
+        placementPoint.z = 0.0;
+        transform.SetTranslation (placementPoint);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            DwgImporter::GeometryBuilderInfo::IsSameDisplay (DwgImporter::GeometryBuilderInfo const& other) const
+Utf8String  ElementFactory::BuildPartCodeValue (DwgImporter::GeometryEntry const& geomEntry, size_t partNo)
     {
-    // compare display params:
-    if (m_categoryId != other.m_categoryId ||
-        m_subCategoryId != other.m_subCategoryId ||
-        m_materialId != other.m_materialId ||
-        m_weight != other.m_weight ||
-        m_lineColor != other.m_lineColor ||
-        m_fillColor != other.m_fillColor ||
-        m_fillDisplay != other.m_fillDisplay ||
-        m_transparency != other.m_transparency ||
-        m_fillTransparency != other.m_fillTransparency ||
-        m_linestyleId != other.m_linestyleId || 
-        fabs(m_linestyleScale - other.m_linestyleScale) > 1.0e-3)
-        return  false;
+    // set a persistent code value, "blockName[fileId:blockId]-partIndex"
+    auto name = geomEntry.GetBlockName().c_str ();
+    auto blockid = geomEntry.GetBlockId().ToUInt64 ();
+    auto fileid = geomEntry.GetDwgFileId ();
 
-    // compare part params:
-    if (m_entityHandle != other.m_entityHandle || 
-        !m_scales.IsEqual(other.m_scales, 1.0e-3) || 
-        m_partNamespace.CompareToI(other.m_partNamespace) != 0 ||
-        memcmp(m_geometryHashVal.m_buffer, other.m_geometryHashVal.m_buffer, sizeof m_geometryHashVal.m_buffer) != 0)
-        return  false;
-
-    if (m_gradient.IsValid() && other.m_gradient.IsValid())
-        return  *m_gradient.get() == *other.m_gradient.get();
-
-    return  m_gradient.IsValid() == other.m_gradient.IsValid();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            DwgImporter::GeometryBuilderInfo::BuildPartCodeValue (Utf8StringR out, DwgDbEntityCP entity, size_t partIndex)
-    {
-    DwgDbObjectId   objectId;
-    if (nullptr != entity)
-        objectId = entity->GetObjectId ();
-
-    // set code value to be parent entity handle + part index
-    if (objectId.IsValid())
-        out.Sprintf ("%llx-%lld", objectId.ToUInt64(), partIndex);
+    // a different code value for a mirrored block
+    if (m_basePartScale < 0.0)
+        return Utf8PrintfString ("%s[%d:%llx:m]-%lld", name, fileid, blockid, partNo);
     else
-        out.Sprintf ("#%ld", partIndex);
+        return Utf8PrintfString ("%s[%d:%llx]-%lld", name, fileid, blockid, partNo);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          12/16
+* @bsimethod                                                    Don.Fu          05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR    DwgImporter::GeometryBuilderInfo::GetPartCodeValue (DwgDbEntityCP entity, size_t partIndex)
+bool    ElementFactory::NeedsSeparateElement (DgnCategoryId id) const
     {
-    if (m_partCodeValue.empty())
-        DwgImporter::GeometryBuilderInfo::BuildPartCodeValue (m_partCodeValue, entity, partIndex);
-
-    return  m_partCodeValue;
+    if (!m_geometryBuilder.IsValid())
+        return  false;
+    // different category    
+    if (m_geometryBuilder->GetGeometryParams().GetCategoryId() != id)
+        return  true;
+    // too big of an element
+    return  m_geometryBuilder->GetCurrentSize() > 20000000;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ElementFactory::GetOrCreateGeometryPart (DwgImporter::SharedPartEntry& part, DwgImporter::GeometryEntry const& geomEntry, size_t partNo)
+    {
+    // this method creates a new shared part geometry
+    auto& db = m_importer.GetDgnDb ();
+    auto codeValue = this->BuildPartCodeValue (geomEntry, partNo);
+    auto partCode = m_importer.CreateCode (codeValue.c_str());
+    auto geomToLocal = geomEntry.GetTransform ();
+
+    auto partId = DgnGeometryPart::QueryGeometryPartId (*m_partModel, partCode.GetValueUtf8());
+    if (!partId.IsValid())
+        {
+        // create a new geometry part:
+        auto partBuilder = GeometryBuilder::CreateGeometryPart (db, m_is3d);
+        if (!partBuilder.IsValid())
+            return  BSIERROR;
+
+        auto geomPart = DgnGeometryPart::Create (*m_partModel, partCode.GetValueUtf8());
+        if (!geomPart.IsValid())
+            return  BSIERROR;
+
+        // show part name as block name
+        geomPart->SetUserLabel (geomEntry.GetBlockName().c_str());
+
+        // build a valid part transform, and transform geometry in-place as necessary
+        auto geometry = geomEntry.GetGeometry ();
+        this->TransformGeometry (geometry, geomToLocal);
+
+        partBuilder->Append (geometry);
+        
+        // insert the new part to db
+        if (partBuilder->Finish(*geomPart) != BSISUCCESS || !db.Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+            return  BSIERROR;
+
+        part.SetPartId (geomPart->GetId());
+        part.SetPartRange (geomPart->GetBoundingBox());
+        }
+    else
+        {
+        // use existing geometry part
+        DRange3d    range;
+        if (DgnGeometryPart::QueryGeometryPartRange(range, db, partId) != BSISUCCESS)
+            BeAssert (false && "cannot query existing part range!!");
+
+        // build a valid part transform from DWG transform
+        geomToLocal.InitProduct (m_modelTransform, geomToLocal);
+        DwgHelper::GetTransformForSharedParts (&geomToLocal, nullptr, geomToLocal);
+
+        part.SetPartId (partId);
+        part.SetPartRange (range);
+        }
+
+    part.SetTransform (Transform::FromProduct(m_invBaseTransform, geomToLocal));
+    part.SetGeometryParams (geomEntry.GetGeometryParams());
+
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ElementFactory::CreateSharedParts ()
+    {
+    BentleyStatus status = BSIERROR;
+    if (nullptr == m_geometryMap || !m_sourceBlockId.IsValid())
+        return  status;
+
+    size_t  partIndex = 0;
+    DwgImporter::T_SharedPartList parts;
+
+    // create shared parts from geometry collection
+    for (auto blockEntry : *m_geometryMap)
+        {
+        // build parts for all geometries, including nested blocks
+        for (auto geomEntry : blockEntry.second)
+            {
+            // create a new geometry builder:
+            DwgImporter::SharedPartEntry  part;
+            status = this->GetOrCreateGeometryPart (part, geomEntry, partIndex++);
+            if (status == BSISUCCESS)
+                parts.push_back (part);
+
+            m_importer.Progress ();
+            }
+        }
+
+    // cache the parts created for this block
+    auto& blockPartsMap = m_importer.GetBlockPartsR ();
+    DwgImporter::SharedPartKey  key(m_sourceBlockId, m_basePartScale);
+    blockPartsMap.insert (DwgImporter::T_BlockPartsEntry(key, parts));
+
+    // create part elements from the part cache:
+    status = this->CreatePartElements (parts);
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ElementFactory::CreatePartElements (DwgImporter::T_SharedPartList const& parts)
+    {
+    // create shared part elements
+    BentleyStatus   status = BSIERROR;
+    if (parts.empty())
+        return  status;
+
+    auto& targetModel = m_inputs.GetTargetModelR ();
+
+    size_t  failed = 0;
+    m_geometryBuilder = nullptr;
+
+    // create elements from shared parts
+    for (auto part : parts)
+        {
+        auto partCategoryId = part.GetGeometryParams().GetCategoryId ();
+
+        // if the part is on a different category, create a new element and reset geometry builder for a new run
+        if (this->NeedsSeparateElement(partCategoryId))
+            status = this->CreateElement ();
+
+        // initialize geometry builder for a new run, either for the 1st element or for a separated child element
+        if (!m_geometryBuilder.IsValid())
+            m_geometryBuilder = GeometryBuilder::Create (targetModel, partCategoryId, m_baseTransform);
+        
+        if (!m_geometryBuilder.IsValid())
+            {
+            BeAssert (false && "GeometryBuilder::Create has failed!");
+            continue;
+            }
+
+        // apply base part scale
+        auto geomToLocal = part.GetTransform ();
+        this->ApplyBasePartScale (geomToLocal, false);
+
+        m_geometryBuilder->Append (part.GetGeometryParams());
+        m_geometryBuilder->Append (part.GetPartId(), geomToLocal, part.GetPartRange());
+
+        m_importer.Progress ();
+        }
+
+    if (!m_geometryBuilder.IsValid())
+        {
+        BeAssert (false && "GeometryBuilder::Create has failed!");
+        return  BSIERROR;
+        }
+
+    status = this->CreateElement ();
+    if (status != BSISUCCESS)
+        failed++;
+
+    if (failed > 0)
+        {
+        Utf8PrintfString msg("%lld out of %lld shared part geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, parts.size(), m_elementCode.GetValueUtf8CP(), m_inputs.GetEntityId().ToUInt64());
+        m_importer.ReportError (DwgImporter::IssueCategory::VisualFidelity(), DwgImporter::Issue::Error(), msg.c_str());
+        if (BSISUCCESS == status)
+            status = BSIERROR;
+        }
+
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ElementFactory::CreateIndividualElements ()
+    {
+    BentleyStatus status = BSIERROR;
+    if (nullptr == m_geometryMap)
+        return  status;
+
+    // create new elements from the geometry collection
+    auto headerCategoryId = m_createParams.GetCategoryId ();
+    auto& targetModel = m_inputs.GetTargetModelR ();
+    auto firstLocalToGeom = Transform::FromIdentity ();
+    auto firstGeomToLocal = Transform::FromIdentity ();
+    auto firstGeomToWorld = Transform::FromIdentity ();
+    auto firstWorldToGeom = Transform::FromIdentity ();
+
+    size_t  failed = 0, total = 0;
+    for (auto blockEntry : *m_geometryMap)
+        {
+        for (auto geomEntry : blockEntry.second)
+            {
+            auto currentGeomToWorld = geomEntry.GetTransform ();
+            auto categoryId = geomEntry.GetGeometryParams().GetCategoryId ();
+            auto geometry = geomEntry.GetGeometryP ();
+            if (nullptr == geometry)
+                {
+                BeAssert (false && "Invalid geometry!");
+                continue;
+                }
+
+            // transform DWG geometry
+            this->TransformGeometry (*geometry, currentGeomToWorld);
+
+            // if the geometry is on a different category, create a separate element and reset geometry builder for a new run
+            if (this->NeedsSeparateElement(categoryId))
+                status = this->CreateElement ();
+
+            if (!m_geometryBuilder.IsValid())
+                {
+                Transform   localToWorld;
+                if (m_hasBaseTransform)
+                    {
+                    // build geometries relative to the base transform
+                    localToWorld = m_baseTransform;
+
+                    firstGeomToLocal.InitProduct (m_invBaseTransform, currentGeomToWorld);
+                    firstLocalToGeom = firstGeomToLocal.ValidatedInverse ();
+                    }
+                else
+                    {
+                    // build geometries relative to the first geometry
+                    if (geometry->GetLocalCoordinateFrame(firstLocalToGeom))
+                        this->Validate2dTransform (firstLocalToGeom);
+                    else
+                        firstLocalToGeom.InitIdentity ();
+                    firstGeomToLocal = firstLocalToGeom.ValidatedInverse ();
+
+                    localToWorld = Transform::FromProduct (currentGeomToWorld, firstLocalToGeom);
+                    }
+
+                m_geometryBuilder = GeometryBuilder::Create (targetModel, categoryId, localToWorld);
+                if (!m_geometryBuilder.IsValid())
+                    continue;
+                
+                // save off of the first geometry transform for rest of the geometries in the collection
+                firstGeomToWorld = currentGeomToWorld;
+                firstWorldToGeom = currentGeomToWorld.ValidatedInverse ();
+                }
+
+            if (m_geometryBuilder.IsValid())
+                {
+                Transform currentLocalToGeom;
+                if (firstGeomToWorld.IsEqual(currentGeomToWorld))
+                    {
+                    // the first geometry or one has the same tranform
+                    currentLocalToGeom = firstLocalToGeom;
+                    }
+                else
+                    {
+                    // transform geometry relative to first local
+                    auto toFirstGeom = Transform::FromProduct (firstWorldToGeom, currentGeomToWorld);
+                    auto toFirstLocal = Transform::FromProduct (firstGeomToLocal, toFirstGeom);
+                    currentLocalToGeom = toFirstLocal.ValidatedInverse ();
+                    }
+
+                if (!currentLocalToGeom.IsIdentity())
+                    {
+                    // transform geometry relative to the first geometry
+                    auto geomToLocal = currentLocalToGeom.ValidatedInverse ();
+                    geometry->TransformInPlace (geomToLocal);
+
+                    // transform pattern but not linestyles
+                    auto& display = geomEntry.GetGeometryParamsR ();
+                    display.ApplyTransform (geomToLocal, 0x01);
+                    }
+
+                m_geometryBuilder->Append (geomEntry.GetGeometryParams());
+                m_geometryBuilder->Append (*geometry);
+
+                m_importer.Progress ();
+                }
+
+            total++;
+            }
+        }
+
+    if (m_geometryBuilder.IsValid())
+        {
+        status = this->CreateElement ();
+        if (status != BSISUCCESS)
+            failed++;
+        }
+
+    if (failed > 0)
+        {
+        Utf8PrintfString msg("%lld out of %lld individual geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, total, m_elementCode.GetValueUtf8CP(), m_inputs.GetEntityId().ToUInt64());
+        m_importer.ReportError (DwgImporter::IssueCategory::VisualFidelity(), DwgImporter::Issue::Error(), msg.c_str());
+        if (BSISUCCESS == status)
+            status = BSIERROR;
+        }
+
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ElementFactory::CreateEmptyElement ()
+    {
+    m_results.m_importedElement = m_elementHandler->Create (m_elementParams);
+
+    auto geomSource = m_results.m_importedElement->ToGeometrySourceP ();
+    if (nullptr == geomSource)
+        {
+        BeAssert (false && L"Null geometry source!");
+        return  BSIERROR;
+        }
+    geomSource->SetCategoryId (m_createParams.GetCategoryId());
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ElementFactory::CreateElement ()
+    {
+    // create elements from current GeometryBuilder containing up to date geometry collection, then flush the builder.
+    if (!m_geometryBuilder.IsValid() || nullptr == m_elementHandler)
+        {
+        BeAssert (false && L"Invalid GeometricBuilder and/or ElementHandler!");
+        return  BSIERROR;
+        }
+
+    if (m_results.m_importedElement.IsValid())
+        {
+        // a parent element has been created - set element params for children
+        Utf8PrintfString    codeValue("%s-%d", m_elementCode.GetValue(), m_results.m_childElements.size() + 1);
+        DgnCode             childCode = m_importer.CreateCode (codeValue);
+        m_elementParams.SetCode (childCode);
+        }
+
+    // create a new element from current geometry builder:
+    DgnElementPtr   element = m_elementHandler->Create (m_elementParams);
+    if (!element.IsValid())
+        {
+        BeAssert (false && L"Null element!");
+        return  BSIERROR;
+        }
+
+    auto geomSource = element->ToGeometrySourceP ();
+    if (nullptr == geomSource)
+        {
+        BeAssert (false && L"Null geometry source!");
+        return  BSIERROR;
+        }
+
+    // category must be preset through GeometryBuilder inialization or else Finish will fail
+    auto categoryId = m_geometryBuilder->GetGeometryParams().GetCategoryId ();
+
+    // set category and save geometry source to the new element
+    if (DgnDbStatus::Success != geomSource->SetCategoryId(categoryId) || BSISUCCESS != m_geometryBuilder->Finish(*geomSource))
+        return  BSIERROR;
+
+    if (!m_results.m_importedElement.IsValid())
+        {
+        // the first geometry builder is the parent element:
+        m_results.m_importedElement = element;
+        }
+    else
+        {
+        // rest of the geomtry collection are children:
+        DwgImporter::ElementImportResults    childResults(element.get());
+        m_results.m_childElements.push_back (childResults);
+        }
+
+    // reset the geometry builder for next new element
+    m_geometryBuilder = nullptr;
+
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ElementFactory::CreateElements (DwgImporter::T_BlockGeometryMap const* geometryMap)
+    {
+    if (nullptr == geometryMap)
+        return  BSIERROR;
+
+    m_geometryMap = geometryMap;
+    m_geometryBuilder = nullptr;
+
+    // if no geometry collected, return an empty element as a host element for ElementAspects etc
+    size_t  num = m_geometryMap->size ();
+    if (num == 0)
+        return  this->CreateEmptyElement ();
+
+    // check the inputs and set the factory to create either shared parts or individual elements
+    this->SetDefaultCreation ();
+
+    // begin creating elements from the input geometry collection
+    if (m_canCreateSharedParts)
+        return this->CreateSharedParts ();
+    else
+        return this->CreateIndividualElements ();
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
@@ -2549,17 +2525,6 @@ static bool     PrepareEntityForImport (DrawParameters& drawParams, GeometryFact
         DwgDbSpatialFilterPtr   spatialFilter;
         if (DwgDbStatus::Success == insert->OpenSpatialFilter(spatialFilter, DwgDbOpenMode::ForRead))
             factory.SetSpatialFilter (spatialFilter.get());
-
-        // set outermost part namespace as "blockname-fileId"
-        DwgDbBlockTableRecordPtr    block(insert->GetBlockTableRecordId(), DwgDbOpenMode::ForRead);
-        if (block.OpenStatus() == DwgDbStatus::Success)
-            {
-            Utf8PrintfString    partNamespace("%ls-%d", block->GetName().c_str(), DwgSyncInfo::GetDwgFileId(*block->GetDatabase()));
-            factory.PushPartNamespace (partNamespace);
-
-            // create shared parts for named blocks
-            factory.SetIsAssembly (!block->IsAnonymous());
-            }
         }
 
     return  entityUpdated;
@@ -2616,31 +2581,31 @@ BentleyStatus   DwgImporter::_ImportEntity (ElementImportResults& results, Eleme
     // set DWG entity draw options:
     GeometryOptions     geomOptions = this->_GetCurrentGeometryOptions ();
     DrawParameters      drawParams (*entity, *this, parent);
-    GeometryFactory     factory(createParams, drawParams, geomOptions, entity);
+    GeometryFactory     geomFactory(createParams, drawParams, geomOptions, entity);
 
     // prepare for import
-    PrepareEntityForImport (drawParams, factory, entity);
+    PrepareEntityForImport (drawParams, geomFactory, entity);
 
     // draw entity and create geometry from it in our factory:
     try
         {
-        entity->Draw (factory, geomOptions, drawParams);
+        entity->Draw (geomFactory, geomOptions, drawParams);
         }
     catch (...)
         {
         this->ReportError (IssueCategory::Unknown(), Issue::Exception(), IssueReporter::FmtEntity(*entity).c_str());
         }
 
-    T_PartIndexList const& partIndices = factory.GetPartIndexList ();
-    T_GeometryBuilderList const& geometryBuilders = partIndices.empty() ? factory.GetGeometryBuilderList() : this->GetSharedPartList();
-    if (geometryBuilders.empty() && this->_SkipEmptyElement(entity))
+    auto geometryMap = geomFactory.GetOutputGeometryMap ();
+    if (geometryMap.empty() && this->_SkipEmptyElement(entity))
         {
         this->ReportIssue (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::EmptyGeometry(), Utf8PrintfString("%ls, ID=%llx", entity->GetDwgClassName().c_str(), entityId).c_str());
         return  BSIERROR;
         }
 
-    // create a new or update existing DgnDb element from the geometry collected:
-    status = this->_CreateOrUpdateElement (results, inputs.GetTargetModelR(), geometryBuilders, partIndices, createParams, *entity, inputs.GetClassId());
+    // create elements from collected geometries
+    ElementFactory  elemFactory(results, inputs, createParams, *this);
+    status = elemFactory.CreateElements (&geometryMap);
 
     if (BSISUCCESS == status)
         m_entitiesImported++;
@@ -2671,10 +2636,10 @@ BentleyStatus   DwgImporter::ImportNewEntity (ElementImportResults& results, Ele
     // set DWG entity draw options:
     GeometryOptions     geomOptions = this->_GetCurrentGeometryOptions ();
     DrawParameters      drawParams (*entity, *this);
-    GeometryFactory     factory(createParams, drawParams, geomOptions, entity);
+    GeometryFactory     geomFactory(createParams, drawParams, geomOptions, entity);
 
     // prepare for import
-    if (PrepareEntityForImport(drawParams, factory, entity))
+    if (PrepareEntityForImport(drawParams, geomFactory, entity))
         {
         // entity is changed, make sure drawble still valid
         drawable = entity->GetDrawable ();
@@ -2685,23 +2650,22 @@ BentleyStatus   DwgImporter::ImportNewEntity (ElementImportResults& results, Ele
     // draw drawble and create geometry in our factory:
     try
         {
-        drawable->Draw (factory, geomOptions, drawParams);
+        drawable->Draw (geomFactory, geomOptions, drawParams);
         }
     catch (...)
         {
         this->ReportError (IssueCategory::Unknown(), Issue::Exception(), IssueReporter::FmtEntity(*entity).c_str());
         }
 
-    T_PartIndexList const& partIndices = factory.GetPartIndexList ();
-    T_GeometryBuilderList const& geometryBuilders = partIndices.empty() ? factory.GetGeometryBuilderList() : this->GetSharedPartList();
-    if (geometryBuilders.empty())
+    auto geometryMap = geomFactory.GetOutputGeometryMap ();
+    if (geometryMap.empty())
         {
         this->ReportIssue (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::EmptyGeometry(), Utf8PrintfString("%ls", entity->GetDwgClassName().c_str()).c_str());
         return  BSIERROR;
         }
 
-    // create a new or update existing DgnDb element from the geometry collected:
-    status = this->_CreateOrUpdateElement (results, inputs.GetTargetModelR(), geometryBuilders, partIndices, createParams, *entity, inputs.GetClassId());
+    ElementFactory  elemFactory(results, inputs, createParams, *this);
+    status = elemFactory.CreateElements (&geometryMap);
 
     return  status;
     }
@@ -2726,157 +2690,12 @@ Utf8String      DwgImporter::_GetElementLabel (DwgDbEntityCR entity)
             DwgString   blockName = block->GetName ();
             if (!blockName.IsEmpty())
                 {
-                Utf8PrintfString    insertName("%s - %ls", label.c_str(), blockName.c_str());
+                Utf8PrintfString    insertName("%ls", blockName.c_str());
                 label.assign (insertName.c_str());
                 }
             }
         }
     return  label;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::_CreateOrUpdateElement (ElementImportResults& results, DgnModelR targetModel, T_GeometryBuilderList const& geometryBuilders, T_PartIndexList const& partIndices, ElementCreateParams const& createParams, DwgDbEntityCR entity, DgnClassId dgnClass)
-    {
-    uint64_t    entityId = entity.GetObjectId().ToUInt64 ();
-
-    // find the element handler
-    ElementHandlerP handler = dgn_ElementHandler::Element::FindHandler (targetModel.GetDgnDb(), dgnClass);
-    if (nullptr == handler)
-        {
-        BeAssert (false && L"Null element handler!");
-        return  BSIERROR;
-        }
-
-    // DgnCode & label for the entity
-    DgnCode     elementCode = createParams.GetElementCode ();
-    Utf8String  label = this->_GetElementLabel (entity);
-
-    DgnElement::CreateParams    elementParams(targetModel.GetDgnDb(), targetModel.GetModelId(), dgnClass, elementCode, label.c_str(), DgnElementId());
-
-    // if no geometry collected, return an empty element as a host element for ElementAspects etc
-    size_t  numBuilders = geometryBuilders.size ();
-    if (numBuilders == 0)
-        {
-        results.m_importedElement = handler->Create (elementParams);
-
-        auto geomSource = results.m_importedElement->ToGeometrySourceP ();
-        if (nullptr == geomSource)
-            {
-            BeAssert (false && L"Null geometry source!");
-            return  BSIERROR;
-            }
-        geomSource->SetCategoryId (createParams.m_categoryId);
-        return  BSISUCCESS;
-        }
-
-    BentleyStatus   status = BSISUCCESS;
-
-    // create new elements from the geometry builders and add them to output results:
-    if (partIndices.empty())
-        {
-        // individual geometries
-        size_t  failed = 0;
-        for (auto entry : geometryBuilders)
-            {
-            status = this->CreateElement (results, entry, elementParams, elementCode, handler);
-            if (status != BSISUCCESS)
-                failed++;
-            }
-
-        if (failed > 0)
-            {
-            Utf8PrintfString msg("%lld out of %lld individual geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, geometryBuilders.size(), label.c_str(), entityId);
-            this->ReportError (IssueCategory::VisualFidelity(), Issue::Error(), msg.c_str());
-            if (BSISUCCESS == status)
-                status = BSIERROR;
-            }
-        }
-    else
-        {
-        // shared part geometries
-        size_t  failed = 0;
-        for (auto index : partIndices)
-            {
-            if (index >= numBuilders)
-                {
-                BeAssert (false && "unexpected part array index!");
-                status = BSIERROR;
-                break;
-                }
-
-            auto entry = geometryBuilders[index];
-
-            status = this->CreateElement (results, entry, elementParams, elementCode, handler);
-            if (status != BSISUCCESS)
-                failed++;
-            }
-
-        if (failed > 0)
-            {
-            Utf8PrintfString msg("%lld out of %lld shared part geometry element(s) is/are not created for entity[%s, handle=%llx]!", failed, partIndices.size(), label.c_str(), entityId);
-            this->ReportError (IssueCategory::VisualFidelity(), Issue::Error(), msg.c_str());
-            if (BSISUCCESS == status)
-                status = BSIERROR;
-            }
-        }
-
-    return  status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::CreateElement (ElementImportResults& results, GeometryBuilderInfo& builderInfo, DgnElement::CreateParams& elementParams, DgnCodeCR parentCode, ElementHandlerP handler)
-    {
-    auto    builder = builderInfo.m_geometryBuilder;
-    if (!builder.IsValid() || handler == nullptr)
-        {
-        BeDataAssert (false && L"Invalid GeometricBuilder and/or ElementHandler!");
-        return  BSIERROR;
-        }
-
-    if (results.m_importedElement.IsValid())
-        {
-        // a parent element has been created - set element params for children
-        Utf8PrintfString    codeValue("%s-%d", parentCode.GetValue(), results.m_childElements.size() + 1);
-        DgnCode             childCode = this->CreateCode (codeValue);
-        elementParams.SetCode (childCode);
-        }
-
-    // create a new element from current geometry builder:
-    DgnElementPtr   element = handler->Create (elementParams);
-    if (!element.IsValid())
-        {
-        BeAssert (false && L"Null element!");
-        return  BSIERROR;
-        }
-
-    auto geomSource = element->ToGeometrySourceP ();
-    if (nullptr == geomSource)
-        {
-        BeAssert (false && L"Null geometry source!");
-        return  BSIERROR;
-        }
-
-    // set category and save geometry source to the new element
-    if (DgnDbStatus::Success != geomSource->SetCategoryId(builderInfo.m_categoryId) || BSISUCCESS != builder->Finish(*geomSource))
-        return  BSIERROR;
-
-    if (!results.m_importedElement.IsValid())
-        {
-        // the first geometry builder is the parent element:
-        results.m_importedElement = element;
-        }
-    else
-        {
-        // rest of the geomtry builder collection are children:
-        ElementImportResults    childResults(element.get());
-        results.m_childElements.push_back (childResults);
-        }
-
-    return  BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3231,12 +3050,74 @@ DgnClassId      DwgImporter::_GetElementType (DwgDbBlockTableRecordCR block)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DwgImporter::SharedPartKey::operator < (SharedPartKey const& rho) const
+    {
+    // a mirrored block (scale < 0) needs a separate set of shared parts:
+    if (m_blockId == rho.GetBlockId())
+        return this->IsMirrored() < rho.IsMirrored();
+    return m_blockId < rho.GetBlockId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& results, ElementImportInputs& inputs)
     {
-    // first import the insert entity
-    BentleyStatus   status = this->_ImportEntity (results, inputs);
+    BentleyStatus   status = BSIERROR;
+    DwgDbBlockReferenceCP   insert = DwgDbBlockReference::Cast(inputs.GetEntityP());
+    if (nullptr == insert)
+        {
+        BeAssert (false && "Not a DwgDbBlockReference!");
+        return  status;
+        }
+
+    /*-----------------------------------------------------------------------------------
+    We attempt to use shared parts for a block, but we first have to check:
+    a) if the block transform is valid for shared parts, and
+    b) if the block has been been previously imported as shared parts.
+    -----------------------------------------------------------------------------------*/
+    auto found = m_blockPartsMap.end ();
+
+    // get the transform of the insert entity:
+    auto blockTrans = Transform::FromIdentity ();
+    insert->GetBlockTransform (blockTrans);
+
+    double  partScale = 0.0;
+    bool    canShareParts = DwgHelper::GetTransformForSharedParts (nullptr, &partScale, blockTrans);
+    if (canShareParts)
+        {
+        // block transform is valid for shared parts, now search the parts cache:
+        SharedPartKey key(insert->GetBlockTableRecordId(), partScale);
+        found = m_blockPartsMap.find (key);
+        }
+
+    if (found == m_blockPartsMap.end())
+        {
+        // either can't share parts or parts cache not found - import the new insert entity from cratch:
+        status = this->_ImportEntity (results, inputs);
+        }
+    else
+        {
+        // found parts from the cache - create elements from them:
+        ElementCreateParams  params(inputs.GetTargetModelR());
+        status = this->_GetElementCreateParams (params, inputs.GetTransform(), inputs.GetEntity());
+        if (BSISUCCESS != status)
+            return  status;
+
+        ElementFactory  elemFactory(results, inputs, params, *this);
+        elemFactory.SetCreateSharedParts (true);
+        elemFactory.SetBaseTransform (blockTrans);
+
+        // we should have avoided a transform not supported by shared parts
+        BeAssert (elemFactory.CanCreateSharedParts() && "Shared parts cannot be created for this insert!!");
+
+        // create elements from the block-parts cache
+        status = elemFactory.CreatePartElements (found->second);
+        }
+    if (status != BSISUCCESS)
+        return  status;
 
     // get imported DgnElement
     DgnElementP     hostElement = nullptr;
@@ -3245,14 +3126,6 @@ BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& result
 
     if (nullptr == hostElement)
         return  BSIERROR;
-
-    // then import attributes, if any.  Do not bail out even if above call failed - always check for attributes
-    DwgDbBlockReferenceCP   insert = DwgDbBlockReference::Cast(inputs.GetEntityP());
-    if (nullptr == insert)
-        {
-        BeAssert (false && "Not a DwgDbBlockReference!");
-        return  BSIERROR;
-        }
 
     // create elements from attributes attached to the block reference:
     AttributeFactory        attribFactory(*this, *hostElement, results, inputs);
@@ -3350,6 +3223,8 @@ BentleyStatus   DwgImporter::InsertOrUpdateResultsInSyncInfo (ElementImportResul
     // insert or update children
     for (auto& child : results.m_childElements)
         status = this->InsertOrUpdateResultsInSyncInfo (child, updatePlan, entity, modelSyncId);
+
+    this->Progress ();
 
     return  status;
     }

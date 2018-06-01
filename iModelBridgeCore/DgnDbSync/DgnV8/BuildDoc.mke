@@ -2,18 +2,18 @@
 #
 #     $Source: DgnV8/BuildDoc.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
 
 # Config
-BENTLEY_DOXYGEN_CONFIG      = $(SrcRoot)DgnPlatform/docs/bentley-doxygen.cfg
-BENTLEY_DOXYGEN_ALIASES     = $(SrcRoot)DgnPlatform/docs/bentley-doxygen-html-aliases.cfg
+BENTLEY_DOXYGEN_CONFIG      = $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen.cfg
+BENTLEY_DOXYGEN_ALIASES     = $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen-html-aliases.cfg
 
 DOXYGEN_CONFIG_FILES        = $(BENTLEY_DOXYGEN_CONFIG)
 DOXYGEN_CONFIG_FILES        + $(BENTLEY_DOXYGEN_ALIASES)
-DOXYGEN_CONFIG_FILES        + $(SrcRoot)DgnPlatform/docs/bentley-doxygen.css
+DOXYGEN_CONFIG_FILES        + $(BuildContext)SubParts/BentleyDocConfig/bentley-doxygen.css
 
 #----------------------------------------------------------------------------------------
 #   Output directory macros

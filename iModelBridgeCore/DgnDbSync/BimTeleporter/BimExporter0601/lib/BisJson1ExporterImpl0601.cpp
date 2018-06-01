@@ -335,6 +335,7 @@ bool BisJson1ExporterImpl::OpenDgnDb()
             }
 
         BentleyApi::BeSQLite::DbResult dbResult;
+        StopWatch timer(true);
         DgnIModel::ExtractUsingDefaults(dbResult, dgndbFileName, m_dbPath, true);
 
         if (BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK != dbResult)
@@ -342,6 +343,7 @@ bool BisJson1ExporterImpl::OpenDgnDb()
             LogMessage(TeleporterLoggingSeverity::LOG_ERROR, "Failed to extract dgndb from imodel");
             return false;
             }
+        LogPerformanceMessage(timer, "Extract dgndb from imodel");
 
 
         }
@@ -391,8 +393,6 @@ bool BisJson1ExporterImpl::ExportDgnDb()
 
     m_meter->AddSteps(8);
 
-    CalculateEntities();
-
     SetStepName(BisJson1ExporterImpl::ProgressMessage::STEP_EXPORT_SCHEMAS());
     StopWatch timer(true);
     StopWatch totalTimer(true);
@@ -401,17 +401,20 @@ bool BisJson1ExporterImpl::ExportDgnDb()
         return false;
 
     LogPerformanceMessage(timer, "Export Schemas");
+    CalculateEntities();
 
     timer.Start();
     if (SUCCESS != (stat = ExportFonts()))
         return false;
     LogPerformanceMessage(timer, "Export Fonts");
 
+    SetStepName(BisJson1ExporterImpl::ProgressMessage::STEP_EXPORT_AUTHORITIES());
     timer.Start();
     if (SUCCESS != (stat = ExportAuthorities()))
         return false;
     LogPerformanceMessage(timer, "Export Authorities");
 
+    SetStepName(BisJson1ExporterImpl::ProgressMessage::STEP_EXPORT_MODELS());
     timer.Start();
     if (SUCCESS != (stat = ExportModels()))
         return false;
@@ -506,10 +509,9 @@ void BisJson1ExporterImpl::CalculateEntities()
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_Authority ");
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_Model ");
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_Font ");
-    sql.append("UNION ALL SELECT count(*) as rows FROM dgn_GeometricElement2d ");
-    sql.append("UNION ALL SELECT count(*) as rows FROM dgn_GeometricElement3d ");
     sql.append("UNION ALL SELECT count(*) as rows FROM dgn_ElementGroupsMembers ");
-    sql.append("UNION ALL SELECT count(*) as rows FROM ec_Schema ");
+    sql.append("UNION ALL SELECT count(*) as rows FROM dgn_TextAnnotationData ");
+    sql.append("UNION ALL SELECT count(*) as rows FROM generic_MultiAspect ");
     sql.append(") u");
     
     Statement stmt;
@@ -520,7 +522,7 @@ void BisJson1ExporterImpl::CalculateEntities()
         {
         auto entry = Json::Value(Json::ValueType::objectValue);
         int64_t id = stmt.GetValueInt64(0);
-        entry["entryCount"] = id;
+        entry["elementCount"] = id;
         (QueueJson) (entry.toStyledString().c_str());
         }
     }
@@ -780,9 +782,9 @@ Utf8String BisJson1ExporterImpl::RemapResourceAuthority(ECN::ECClassCP elementCl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnElementId BisJson1ExporterImpl::CreateDisplayStyle(ViewControllerCR vc, Utf8CP name, bool is3d)
+DgnElementId BisJson1ExporterImpl::CreateDisplayStyle(ViewControllerCP vc, Utf8CP name, bool is3d, bool isCamera)
     {
-    Render::ViewFlags viewFlags = vc.GetViewFlags();
+    Render::ViewFlags viewFlags = vc->GetViewFlags();
 
     auto displayStyle = Json::Value(Json::ValueType::objectValue);
     displayStyle[JSON_TYPE_KEY] = JSON_TYPE_DisplayStyle;
@@ -811,8 +813,45 @@ DgnElementId BisJson1ExporterImpl::CreateDisplayStyle(ViewControllerCR vc, Utf8C
         if (viewFlags.m_ignoreLighting) vf["noLighting"] = true;
         }
 
-    row["BackgroundColor"] = vc.GetBackgroundColor().GetValue();
+    row["BackgroundColor"] = vc->GetBackgroundColor().GetValue();
     row["Is3d"] = is3d;
+    if (isCamera)
+        {
+        CameraViewControllerCP camera = dynamic_cast<CameraViewControllerCP>(vc);
+        if (nullptr != camera)
+            {
+            row["IsEnvironmentEnabled"] = camera->IsEnvironmentEnabled();
+            if (camera->IsEnvironmentEnabled())
+                {
+                row["Environment"] = Json::Value(Json::ValueType::objectValue);
+                auto& env = row["Environment"];
+                CameraViewController::EnvironmentDisplay display = camera->GetEnvironmentDisplay();
+                if (camera->IsGroundPlaneEnabled())
+                    {
+                    env["GroundPlaneEnabled"] = true;
+                    env["GroundPlane"] = Json::Value(Json::ValueType::objectValue);
+                    auto& ground = env["GroundPlane"];
+                    ground["elevation"] = display.m_groundPlane.m_elevation;
+                    ground["aboveColor"] = display.m_groundPlane.m_aboveColor.GetValue();
+                    ground["belowColor"] = display.m_groundPlane.m_belowColor.GetValue();
+
+                    }
+                if (camera->IsSkyBoxEnabled())
+                    {
+                    env["SkyBoxEnabled"] = true;
+                    env["SkyBox"] = Json::Value(Json::ValueType::objectValue);
+                    auto& skyBox = env["SkyBox"];
+                    skyBox["jpegFile"] = display.m_skybox.m_jpegFile.c_str();
+                    skyBox["zenithColor"] = display.m_skybox.m_zenithColor.GetValue();
+                    skyBox["nadirColor"] = display.m_skybox.m_nadirColor.GetValue();
+                    skyBox["groundColor"] = display.m_skybox.m_groundColor.GetValue();
+                    skyBox["skyColor"] = display.m_skybox.m_skyColor.GetValue();
+                    skyBox["groundExponent"] = display.m_skybox.m_groundExponent;
+                    skyBox["skyExponent"] = display.m_skybox.m_skyExponent;
+                    }
+                }
+            }
+        }
     MakeNavigationProperty(row, BIS_ELEMENT_PROP_Model, m_jobDefinitionModelId);
     (QueueJson)(displayStyle.toStyledString().c_str());
 
@@ -827,28 +866,39 @@ DgnElementId BisJson1ExporterImpl::CreateCategorySelector(ViewControllerCR vc, U
     // Need to export the categories before we can create the category selector
     for (DgnCategoryId id : vc.GetViewedCategories())
         {
-        if (m_insertedElements.end() != m_insertedElements.find(id))
-            continue;
+        if (m_insertedElements.end() == m_insertedElements.find(id))
+            {
 
-        DgnCategoryCPtr cat = DgnCategory::QueryCategory(id, *m_dgndb);
-        if (!cat.IsValid())
-            continue;
-        Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, cat->GetElementId().GetValue());
-        auto out = Json::Value(Json::ValueType::objectValue);
-        ExportElements(out, cat->GetElementClass()->GetSchema().GetName().c_str(), cat->GetElementClass()->GetName().c_str(), cat->GetModelId(), whereClause.c_str(), false);
-        auto& entry = out[JSON_OBJECT_KEY];
-        auto& codeSpec = entry[BIS_ELEMENT_PROP_CodeSpec] = Json::Value(Json::ValueType::objectValue);
-        if (vc.IsDrawingView() || vc.IsSheetView())
-            {
-            entry[JSON_CLASSNAME] = "BisCore.DrawingCategory";
-            codeSpec["id"] = m_authorityIds["bis:DrawingCategory"].c_str();
+            DgnCategoryCPtr cat = DgnCategory::QueryCategory(id, *m_dgndb);
+            if (!cat.IsValid())
+                continue;
+            Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, cat->GetElementId().GetValue());
+            auto out = Json::Value(Json::ValueType::objectValue);
+            ExportElements(out, cat->GetElementClass()->GetSchema().GetName().c_str(), cat->GetElementClass()->GetName().c_str(), cat->GetModelId(), whereClause.c_str(), false);
+            auto& entry = out[JSON_OBJECT_KEY];
+            auto& codeSpec = entry[BIS_ELEMENT_PROP_CodeSpec] = Json::Value(Json::ValueType::objectValue);
+            if (vc.IsDrawingView() || vc.IsSheetView())
+                {
+                entry[JSON_CLASSNAME] = "BisCore.DrawingCategory";
+                codeSpec["id"] = m_authorityIds["bis:DrawingCategory"].c_str();
+                }
+            else
+                {
+                entry[JSON_CLASSNAME] = "BisCore.SpatialCategory";
+                codeSpec["id"] = m_authorityIds["bis:SpatialCategory"].c_str();
+                }
+            (QueueJson) (out.toStyledString().c_str());
             }
-        else
+
+        for (DgnSubCategoryId subCatId : DgnSubCategory::QuerySubCategories(*m_dgndb, id))
             {
-            entry[JSON_CLASSNAME] = "BisCore.SpatialCategory";
-            codeSpec["id"] = m_authorityIds["bis:SpatialCategory"].c_str();
+            if (m_insertedElements.end() != m_insertedElements.find(subCatId))
+                continue;
+            DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(subCatId, *m_dgndb);
+            Utf8PrintfString subCatWhereClause(" AND ECInstanceId=%" PRIu64, subCatId.GetValue());
+            auto subCatJson = Json::Value(Json::ValueType::objectValue);
+            ExportElements(subCatJson, subCat->GetElementClass()->GetSchema().GetName().c_str(), subCat->GetElementClass()->GetName().c_str(), subCat->GetModelId(), subCatWhereClause.c_str(), true);
             }
-        (QueueJson) (out.toStyledString().c_str());
         }
 
     auto categorySelector = Json::Value(Json::ValueType::objectValue);
@@ -978,7 +1028,7 @@ BentleyStatus BisJson1ExporterImpl::ExportViews()
             continue;
 
         DgnElementId categorySelectorId = CreateCategorySelector(*vc, view->GetName().c_str());
-        DgnElementId displayStyle = CreateDisplayStyle(*vc, view->GetName().c_str(), view->GetElementClass()->Is(m_viewDefinition3dClass));
+        DgnElementId displayStyle = CreateDisplayStyle(vc.get(), view->GetName().c_str(), view->GetElementClass()->Is(m_viewDefinition3dClass), view->GetElementClass()->Is(m_cameraViewDefinitionClass));
         DgnElementId modelSelectorId;
         if (view->GetElementClass()->Is(m_viewDefinition3dClass))
             modelSelectorId = CreateModelSelector(*vc, view->GetName().c_str());
@@ -992,6 +1042,13 @@ BentleyStatus BisJson1ExporterImpl::ExportViews()
         MakeNavigationProperty(obj, "DisplayStyle", displayStyle.GetValue());
         MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeSpec, m_authorityIds["bis:ViewDefinition"].c_str());
         MakeNavigationProperty(obj, BIS_ELEMENT_PROP_Model, m_jobDefinitionModelId);
+
+        if (vc->HasSubCategoryOverride())
+            {
+            auto const& settings = vc->GetSettings();
+            auto const& subcatJson = settings["subCategories"];
+            obj["overrides"] = subcatJson;
+            }
 
         if (obj.isMember("Source"))
             {
@@ -1160,6 +1217,17 @@ BentleyStatus BisJson1ExporterImpl::ExportCategories(Utf8CP tableName, Utf8CP bi
             }
         MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeSpec, bisAuthorityStr);
         (QueueJson) (entry.toStyledString().c_str());
+
+        for (DgnSubCategoryId subCatId : DgnSubCategory::QuerySubCategories(*m_dgndb, categoryId))
+            {
+            if (m_insertedElements.end() != m_insertedElements.find(subCatId))
+                continue;
+            DgnSubCategoryCPtr subCat = DgnSubCategory::QuerySubCategory(subCatId, *m_dgndb);
+            Utf8PrintfString subCatWhereClause(" AND ECInstanceId=%" PRIu64, subCatId.GetValue());
+            auto subCatJson = Json::Value(Json::ValueType::objectValue);
+            ExportElements(subCatJson, subCat->GetElementClass()->GetSchema().GetName().c_str(), subCat->GetElementClass()->GetName().c_str(), subCat->GetModelId(), subCatWhereClause.c_str(), true);
+            }
+
         }
     return SUCCESS;
     }
@@ -1182,13 +1250,25 @@ BentleyStatus BisJson1ExporterImpl::ExportSchemas() const
     schemaReadContext = ECN::ECSchemaReadContext::CreateContext();
     schemaReadContext->AddSchemaLocater(m_dgndb->GetSchemaLocater());
 
+    bvector<ECSchemaCP> ecSchemas = m_dgndb->Schemas().GetECSchemas();
+
+    int schemaCount = 0;
+    for (ECN::ECSchemaCP ischema : ecSchemas)
+        {
+        if (knownSchemas.end() != std::find(knownSchemas.begin(), knownSchemas.end(), ischema->GetName()))
+            continue;
+        schemaCount++;
+        }
+    auto entryCount = Json::Value(Json::ValueType::objectValue);
+    entryCount["schemaCount"] = schemaCount;
+    (QueueJson) (entryCount.toStyledString().c_str());
+
     auto entry = Json::Value(Json::ValueType::objectValue);
     entry[JSON_TYPE_KEY] = JSON_TYPE_Schema;
     entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::arrayValue);
     entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
     auto& schemas = entry[JSON_OBJECT_KEY];
 
-    bvector<ECSchemaCP> ecSchemas = m_dgndb->Schemas().GetECSchemas();
     for (ECN::ECSchemaCP ischema : ecSchemas)
         {
         bvector<ECSchemaCP> orderedSchemas;
@@ -1697,6 +1777,8 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& entry, Utf8CP sc
             DgnSubCategoryCPtr sub = m_dgndb->Elements().Get<DgnSubCategory>(element->GetElementId());
             if (sub->IsDefaultSubCategory())
                 entry["IsDefaultSubCategory"] = true;
+            else
+                entry["IsDefaultSubCategory"] = false;
             MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeScope, element->GetParentId());
             }
         else if (element->GetElementClass()->Is(m_categoryClass))
@@ -2001,8 +2083,34 @@ BentleyStatus BisJson1ExporterImpl::ExportElementAspects(ECClassId classId, ECIn
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus BisJson1ExporterImpl::ExportTextAnnotationData()
     {
-    return SUCCESS;
 
+    Statement stmt;
+    Utf8PrintfString sql("SELECT ECInstanceId, TextAnnotation FROM dgn_TextAnnotationData WHERE TextAnnotation is NOT NULL ");
+    if (BE_SQLITE_OK != (stmt.Prepare(*m_dgndb, sql.c_str())))
+        {
+        LogMessage(TeleporterLoggingSeverity::LOG_ERROR, "Unable to prepare statement to retrieve TextAnnotationData");
+        return ERROR;
+        }
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        auto entry = Json::Value(Json::ValueType::objectValue);
+        entry[JSON_TYPE_KEY] = JSON_TYPE_TextAnnotationData;
+        entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
+        entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
+        auto& row = entry[JSON_OBJECT_KEY];
+        row.clear();
+        int64_t id = stmt.GetValueInt64(0);
+        MakeNavigationProperty(row, "Element", id);
+
+        ByteCP data = static_cast<ByteCP>(stmt.GetValueBlob(1));
+        size_t dataSize = stmt.GetColumnBytes(1);
+        Utf8String str;
+        Base64Utilities::Encode(str, data, dataSize);
+        row["TextAnnotation"] = str.c_str();
+        (QueueJson) (entry.toStyledString().c_str());
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2201,7 +2309,7 @@ BentleyStatus BisJson1ExporterImpl::ExportLinkTables(Utf8CP schemaName, Utf8CP c
         return SUCCESS;
 
     //Utf8PrintfString ecSql("SELECT s.Name, c.Name, r.SourceECInstanceId, r.TargetECInstanceId FROM [%s].[%s] r, [MetaSchema].[Class] c, [MetaSchema].[Schema] s WHERE c.[Id] = r.ECClassId AND s.Id = c.[SchemaId]", schemaName, className);
-    Utf8PrintfString ecSql("SELECT ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId from [%s].[%s]", schemaName, className);
+    Utf8PrintfString ecSql("SELECT ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId from [%s].[%s] ORDER BY ECClassId", schemaName, className);
     CachedECSqlStatementPtr stmt = m_dgndb->GetPreparedECSqlStatement(ecSql.c_str());
 
     if (!stmt.IsValid())
@@ -2261,7 +2369,7 @@ BentleyStatus BisJson1ExporterImpl::ExportPropertyData()
 
 void BisJson1ExporterImpl::ReportProgress() const
     {
-    if (m_meter && DgnProgressMeter::ABORT_Yes == m_meter->ShowProgress())
+    if (nullptr != m_meter && DgnProgressMeter::ABORT_Yes == m_meter->ShowProgress())
         {
         //OnFatalError();
         }

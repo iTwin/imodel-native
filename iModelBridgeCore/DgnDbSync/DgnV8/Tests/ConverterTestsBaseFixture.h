@@ -81,6 +81,9 @@ struct ConverterTestBaseFixture : public testing::Test
 
     DefinitionModelPtr GetJobDefinitionModel(DgnDbR db);
     bool ShouldImportSchema(BentleyApi::Utf8StringCR fullSchemaName, DgnV8Api::DgnModel& v8Model) { return _ShouldImportSchema(fullSchemaName, v8Model); }
+
+    //! Use ECSql to SELECT COUNT(*) from the specified ECClass name
+    static int SelectCountFromECClass(DgnDbR, Utf8CP className);
     };
 
 struct TestRootModelCreator : RootModelConverter

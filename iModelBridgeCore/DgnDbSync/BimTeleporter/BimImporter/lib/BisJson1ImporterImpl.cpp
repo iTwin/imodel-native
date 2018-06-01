@@ -53,6 +53,8 @@ BisJson1ImporterImpl::BisJson1ImporterImpl(DgnDb* dgndb, bool setQuietAssertions
     if (setQuietAssertions)
         BeAssertFunctions::SetBeAssertHandler(justLogAssertionFailures);
 
+    m_meter = DgnPlatformLib::GetHost().GetProgressMeter();
+    m_importTimer.Init(false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -71,6 +73,7 @@ BentleyStatus BisJson1ImporterImpl::InitializeSchemas()
     m_schemaReadContext = ECN::ECSchemaReadContext::CreateContext();
     m_schemaReadContext->AddSchemaLocater(m_dgndb->GetSchemaLocater());
     m_schemaReadContext->SetResolveConflicts(true);
+    m_schemaReadContext->SetSkipValidation(true);
     Planning::PlanningDomain::GetDomain().ImportSchema(*m_dgndb);
 
     bvector<ECSchemaCP> ecSchemas = m_dgndb->Schemas().GetSchemas();
@@ -124,6 +127,7 @@ BentleyStatus BisJson1ImporterImpl::AttachSyncInfo()
 BentleyStatus BisJson1ImporterImpl::ImportJson(folly::ProducerConsumerQueue<BentleyB0200::Json::Value>& objectQueue, folly::Future<bool>& exporterFuture)
     {
     Json::Value entry;
+    m_importTimer.Start();
     while (!exporterFuture.isReady())
         {
         while (objectQueue.read(entry))
@@ -156,9 +160,24 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
     if (entry.isNull())
         return ERROR;
 
-    if (entry.isMember("entryCount"))
+    if (entry.isMember("schemaCount"))
         {
-        m_entityCount = entry["entryCount"].asInt64();
+        if (nullptr != m_meter)
+            {
+            m_meter->AddSteps(4);
+            m_meter->SetCurrentStepName("Importing Schemas");
+            m_meter->AddTasks(entry["schemaCount"].asInt64());
+            }
+        return SUCCESS;
+        }
+
+    if (entry.isMember("elementCount"))
+        {
+        if (nullptr != m_meter)
+            {
+            m_meter->SetCurrentStepName("Importing Elements");
+            m_meter->AddTasks(entry["elementCount"].asInt64());
+            }
         return SUCCESS;
         }
 
@@ -170,7 +189,10 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
 
     Reader* reader = nullptr;
     if (objectType.Equals(JSON_TYPE_Schema))
+        {
         reader = new SchemaReader(this);
+        m_importTimer.Stop();
+        }
     else if (objectType.Equals(JSON_TYPE_LineStyleProperty))
         reader = new LsComponentReader(this);
     else if (objectType.Equals(JSON_TYPE_FontFaceData))
@@ -221,7 +243,15 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
     else if (objectType.Equals(JSON_TYPE_LineStyleElement))
         reader = new LineStyleReader(this);
     else if (objectType.Equals(JSON_TYPE_LinkTable))
+        {
         reader = new LinkTableReader(this);
+        if (nullptr != m_meter)
+            {
+            Json::Value links = entry[JSON_OBJECT_KEY];
+            if (links.isArray())
+                m_meter->AddTasks(links.size());
+            }
+        }
     else if (objectType.Equals(JSON_TYPE_ElementGroupsMembers))
         reader = new ElementGroupsMembersReader(this);
     else if (objectType.Equals(JSON_TYPE_ElementHasLinks))
@@ -238,14 +268,25 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
         reader = new PropertyDataReader(this);
     else if (objectType.Equals(JSON_TYPE_GenericElementAspect))
         reader = new GenericElementAspectReader(this);
+    else if (objectType.Equals(JSON_TYPE_TextAnnotationData))
+        reader = new TextAnnotationDataReader(this);
 
     if (nullptr == reader)
         return ERROR;
+
+    if (nullptr != m_meter)
+        {
+        m_meter->SetCurrentTaskName(objectType.c_str());
+        m_meter->ShowProgress();
+        }
 
     stat = reader->Read(entry[JSON_OBJECT_KEY]);
     delete reader;
     if (SUCCESS != stat)
         return stat;
+
+    if (objectType.Equals(JSON_TYPE_Schema))
+        m_importTimer.Start();
 
     return SUCCESS;
     }
@@ -255,6 +296,10 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
 //---------------+---------------+---------------+---------------+---------------+-------
 void BisJson1ImporterImpl::FinalizeImport()
     {
+    m_importTimer.Stop();
+    Utf8PrintfString message("Importing elements|%.0f millisecs", m_importTimer.GetElapsedSeconds() * 1000.0);
+    BentleyApi::NativeLogging::LoggingManager::GetLogger("DgnDbToBimConverter.Performance")->info(message.c_str());
+
     m_dgndb->GeoLocation().InitializeProjectExtents();
 //    m_dgndb->Schemas().CreateClassViewsInDb();
 
@@ -277,6 +322,14 @@ void BisJson1ImporterImpl::GenerateThumbnails()
     // Initialize the graphics subsystem, to produce thumbnails.
     DgnViewLib::GetHost().GetViewManager().Startup();
 
+    StopWatch thumbnailTimer(true);
+
+    if (nullptr != m_meter)
+        {
+        SetStepName(BimUpgrader::STEP_GENERATING_THUMBNAILS());
+        m_meter->AddTasks((int32_t) ViewDefinition::QueryCount(*m_dgndb));
+        }
+
     for (auto const& entry : ViewDefinition::MakeIterator(*m_dgndb))
         {
         auto view = ViewDefinition::Get(*m_dgndb, entry.GetId());
@@ -285,12 +338,19 @@ void BisJson1ImporterImpl::GenerateThumbnails()
 
         BeDuration timeout = BeDuration::FromSeconds(30);
         Point2d size = {resolution, resolution};
+        SetTaskName(BimUpgrader::TASK_CREATING_THUMBNAIL(), entry.GetName());
+        if (nullptr != m_meter)
+            m_meter->ShowProgress();
 
         if (DbResult::BE_SQLITE_OK != view->RenderAndSaveThumbnail(size, nullptr, timeout))
             {
             GetLogger().warningv("Failed to create a thumbnail for view %s.", view->GetName().c_str());
             }
         }
+    thumbnailTimer.Stop();
+    Utf8PrintfString message("Generating thumbnails|%.0f millisecs", thumbnailTimer.GetElapsedSeconds() * 1000.0);
+    BentleyApi::NativeLogging::LoggingManager::GetLogger("DgnDbToBimConverter.Performance")->info(message.c_str());
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -424,6 +484,64 @@ DgnTextureId BisJson1ImporterImpl::_RemapTextureId(DgnTextureId sourceId)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnElementId BisJson1ImporterImpl::_RemapAnnotationStyleId(DgnElementId sourceId)
+    {
+    DgnElementId dest = m_remap.Find(sourceId);
+    if (dest.IsValid())
+        return dest;
+
+    DgnElementId destStyle = m_syncInfo->LookupElement(sourceId);
+    if (destStyle.IsValid())
+        return m_remap.Add(sourceId, destStyle);
+    return DgnElementId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void BisJson1ImporterImpl::SetTaskName(BimUpgrader::StringId stringNum, ...) const
+    {
+    Utf8String fmt = BimUpgrader::GetString(stringNum);
+    if (fmt.length() == 0)
+        return;
+
+    if (nullptr == m_meter)
+        return;
+
+    va_list args;
+    va_start(args, stringNum);
+
+    Utf8String value;
+    value.VSprintf(fmt.c_str(), args);
+    va_end(args);
+
+    m_meter->SetCurrentTaskName(value.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void BisJson1ImporterImpl::SetStepName(BimUpgrader::StringId stringNum, ...) const
+    {
+    Utf8String fmt = BimUpgrader::GetString(stringNum);
+    if (fmt.length() == 0)
+        return;
+
+    if (nullptr == m_meter)
+        return;
+
+    va_list args;
+    va_start(args, stringNum);
+
+    Utf8String value;
+    value.VSprintf(fmt.c_str(), args);
+    va_end(args);
+
+    m_meter->SetCurrentStepName(value.c_str());
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 bool SchemaRemapper::_ResolveClassName(Utf8StringR serializedClassName, ECN::ECSchemaCR ecSchema) const
@@ -492,6 +610,5 @@ bool SchemaRemapper::_ResolvePropertyName(Utf8StringR serializedPropertyName, EC
 
     return true;
     }
-
 
 END_BIM_TELEPORTER_NAMESPACE

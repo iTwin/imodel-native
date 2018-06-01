@@ -36,6 +36,8 @@ DWGDB_ENTITY_DEFINE_MEMBERS(PolygonMeshVertex)
 DWGDB_ENTITY_DEFINE_MEMBERS(Hatch)
 DWGDB_ENTITY_DEFINE_MEMBERS(Light)
 DWGDB_ENTITY_DEFINE_MEMBERS(Region)
+DWGDB_ENTITY_DEFINE_MEMBERS(3dSolid)
+DWGDB_ENTITY_DEFINE_MEMBERS(Body)
 DWGDB_ENTITY_DEFINE_MEMBERS(Solid)
 DWGDB_ENTITY_DEFINE_MEMBERS(Shape)
 DWGDB_ENTITY_DEFINE_MEMBERS(Spline)
@@ -1444,10 +1446,10 @@ uint32_t    DwgDbViewBorder::GetShadedDPI () const { DWGDB_CALLSDKMETHOD({BeAsse
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d        DwgDbBlockReference::GetScaleFactors () const
+DVec3d      DwgDbBlockReference::GetScaleFactors () const
     {
     DWGGE_Type(Scale3d) scale = T_Super::scaleFactors ();
-    return DPoint3d::From (scale.sx, scale.sy, scale.sz);
+    return DVec3d::From (scale.sx, scale.sy, scale.sz);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1532,10 +1534,10 @@ DwgDbStatus     DwgDbBlockReference::OpenSpatialFilter (DwgDbSpatialFilterPtr& f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d        DwgDbViewRepBlockReference::GetScaleFactors () const
+DVec3d          DwgDbViewRepBlockReference::GetScaleFactors () const
     {
     DWGGE_Type(Scale3d) scale = T_Super::scaleFactors ();
-    return DPoint3d::From (scale.sx, scale.sy, scale.sz);
+    return DVec3d::From (scale.sx, scale.sy, scale.sz);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
@@ -2081,3 +2083,48 @@ double DwgDbLight::GetLampColorTemperature () const { return T_Super::lampColorT
 DwgDbLight::PresetColor DwgDbLight::GetPresetLampColor () const { return static_cast<PresetColor>(T_Super::lampColorPreset()); }
 DwgDbLight::GlyphDisplay DwgDbLight::GetGlyphDisplay () const { return static_cast<GlyphDisplay>(T_Super::glyphDisplay()); }
 bool   DwgDbLight::IsPlottable () const { return T_Super::isPlottable(); }
+
+uint32_t    DwgDbRegion::GetNumChanges () const { return T_Super::numChanges(); }
+DwgDbStatus DwgDbRegion::GetArea (double& area) const { return ToDwgDbStatus(T_Super::getArea(area)); }
+
+uint32_t    DwgDbBody::GetNumChanges () const { return T_Super::numChanges(); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDb3dSolid::MassProperties::MassProperties ()
+    {
+    m_volume = 0.0;
+    m_centroid.Zero ();
+    ::memset (m_inertiaMoments, 0, sizeof(m_inertiaMoments));
+    ::memset (m_inertiaProducts, 0, sizeof(m_inertiaProducts));
+    ::memset (m_principleMoments, 0, sizeof(m_principleMoments));
+    ::memset (m_principleAxes, 0, sizeof(m_principleAxes));
+    ::memset (m_gyrationRadii, 0, sizeof(m_gyrationRadii));
+    m_extents.Init ();
+    }
+DwgDbStatus DwgDb3dSolid::GetMassProperties (MassProperties& out) const
+    {
+    double  volume, momInertia[3], prodInertia[3], prinMoments[3], radiiGyration[3];
+    DWGGE_Type(Point3d) centroid;
+    DWGGE_Type(Vector3d) prinAxes[3];
+    DWGDB_SDKNAME(OdGeExtents3d,AcDbExtents) extents;
+
+    DwgDbStatus status = ToDwgDbStatus (T_Super::getMassProp(volume, centroid, momInertia, prodInertia, prinMoments, prinAxes, radiiGyration, extents));
+
+    if (status == DwgDbStatus::Success)
+        {
+        DRange3d    range = Util::DRange3dFrom (extents);
+        out.SetVolume (volume);
+        out.SetCentroid (Util::DPoint3dFrom(centroid));
+        out.SetInertiaMoments (momInertia);
+        out.SetInertiaProducts (prodInertia);
+        out.SetPrincipleMoments (prinMoments);
+        out.SetPrincipleAxes (Util::DVec3dCPFrom(prinAxes));
+        out.SetGyrationRadii (radiiGyration);
+        out.SetExtents (range);
+        }
+    return  status;
+    }
+uint32_t    DwgDb3dSolid::GetNumChanges () const { return T_Super::numChanges(); }
+DwgDbStatus DwgDb3dSolid::GetArea (double& area) const { return ToDwgDbStatus(T_Super::getArea(area)); }

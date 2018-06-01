@@ -52,6 +52,7 @@ static Utf8CP const JSON_TYPE_Activity = "Activity";
 static Utf8CP const JSON_TYPE_Baseline = "Baseline";
 static Utf8CP const JSON_TYPE_PropertyData = "PropertyData";
 static Utf8CP const JSON_TYPE_GenericElementAspect = "GenericElementAspect";
+static Utf8CP const JSON_TYPE_TextAnnotationData = "TextAnnotationData";
 
 static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec = "CodeSpec";
 static Utf8CP const  BIS_ELEMENT_PROP_CodeScope = "CodeScope";
@@ -350,8 +351,19 @@ struct SubCategoryReader : ElementReader
 struct SchemaReader : Reader
     {
     private:
+        ECN::ECClassP m_definitionElement;
+        ECN::ECClassCP m_elementClass;
+        ECN::ECClassCP m_multiAspectClass;
+        ECN::ECClassCP m_uniqueAspectClass;
+        ECN::ECRelationshipClassCP m_elementToMulti;
+        ECN::ECRelationshipClassCP m_elementToUnique;
+        ECN::ECRelationshipClassCP m_elementToElement;
+        bvector<ECN::ECRelationshipClassP> m_relationshipsToRemove;
+
         BentleyStatus ImportSchema(ECN::ECSchemaP schema);
         BentleyStatus ValidateBaseClasses(ECN::ECSchemaP schema);
+        void SetBaseClassForRelationship(ECN::ECRelationshipClassP relClass);
+        void CheckConstraints(ECN::ECRelationshipClassP relClass);
 
     protected:
         BentleyStatus _Read(Json::Value& object) override;
@@ -486,6 +498,17 @@ struct PropertyDataReader : Reader
 // @bsimethod                                   Carole.MacDonald            05/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 struct GenericElementAspectReader : Reader
+    {
+    protected:
+        BentleyStatus _Read(Json::Value& object) override;
+    public:
+        using Reader::Reader;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct TextAnnotationDataReader : Reader
     {
     protected:
         BentleyStatus _Read(Json::Value& object) override;

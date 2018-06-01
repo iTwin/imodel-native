@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/SheetAttachmentViewHelper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -101,6 +101,53 @@ static void turnOnAllCategoriesUsedInModel(CategorySelectorR cats, DgnModel cons
         }
     }
 
+
+#ifndef DRAWING_IS_CREATED_BY_MERGE
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void turnOnAllClasses (DisplayStyleR displayStyle)
+    {
+    auto    viewFlags = displayStyle.GetViewFlags();
+
+    viewFlags.SetShowConstructions(true);
+    viewFlags.SetShowDimensions(true);
+    viewFlags.SetShowPatterns(true);
+
+    displayStyle.SetViewFlags(viewFlags);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawingViewDefinitionPtr DrawingViewHelper::CreateView()
+    {
+    DefinitionModelPtr definitionModel = m_converter.GetJobDefinitionModel();
+    if (!definitionModel.IsValid())
+        return nullptr;
+
+    auto dstyle = new DisplayStyle2d(*definitionModel, m_name.c_str());
+    auto catSel = new CategorySelector(*definitionModel, m_name.c_str());
+
+    DrawingViewDefinitionPtr view = new DrawingViewDefinition(*definitionModel, m_name.c_str(), m_drawingModel.GetModelId(), *catSel, *dstyle);
+
+    SetViewGeometry(*view);
+    SetCategories(*view, SyncInfo::Level::Type::Drawing);
+    SetViewFlags(view->GetDisplayStyle());
+
+    // We are creating drawing entirely from displayed geometry - so turn on
+    // all categories and display all viewflags.
+    turnOnAllCategoriesUsedInModel(view->GetCategorySelector(), m_drawingModel);
+    turnOnAllClasses(view->GetDisplayStyle());
+
+    view->SetIsPrivate(true);
+    view->GetDisplayStyle().SetIsPrivate(true);
+    view->GetCategorySelector().SetIsPrivate(true);
+    return view;
+    }
+
+#else
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -135,14 +182,13 @@ DrawingViewDefinitionPtr DrawingViewHelper::CreateView()
     view->GetCategorySelector().SetIsPrivate(true);
     return view;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 SpatialViewDefinitionPtr SpatialViewHelper::CreateView()
     {
-    BeAssert(!m_v8DgnAttachment.IsCameraOn());
-
     DefinitionModelPtr definitionModel = m_converter.GetJobDefinitionModel();
     if (!definitionModel.IsValid())
         return nullptr;
@@ -157,7 +203,7 @@ SpatialViewDefinitionPtr SpatialViewHelper::CreateView()
     SetViewGeometry(*view);     // (depends on modelselector, so populate that first!)
     
     SetCategories(*view, SyncInfo::Level::Type::Spatial);
-    
+
     SetViewFlags(view->GetDisplayStyle());
     auto& env = view->GetDisplayStyle3d().GetEnvironmentDisplayR();
     env.m_groundPlane.m_enabled = false;
@@ -167,6 +213,21 @@ SpatialViewDefinitionPtr SpatialViewHelper::CreateView()
     view->GetModelSelector().SetIsPrivate(true);
     view->GetDisplayStyle().SetIsPrivate(true);
     view->GetCategorySelector().SetIsPrivate(true);
+
+    if (m_v8DgnAttachment.IsCameraOn())
+        {
+        Transform thisTrans = m_converter.ComputeAttachmentTransform(m_converter.GetRootTrans(), m_v8DgnAttachment);
+        ResolvedModelMapping modelMapping = m_converter.FindFirstModelMappedTo(*m_v8DgnAttachment.GetDgnModelP());
+        if (modelMapping.IsValid())
+            {
+            DPoint3d    eyePoint;
+
+            modelMapping.GetTransform().Multiply (eyePoint, (DPoint3dR) m_v8DgnAttachment.GetCameraPosition());
+            view->TurnCameraOn();
+            view->GetCameraR().SetEyePoint(eyePoint);
+            view->GetCameraR().SetFocusDistance(m_v8DgnAttachment.GetCameraFocalLength() * modelMapping.GetTransform().MatrixColumnMagnitude(0));
+            }
+        }
 
     return view;
     }
@@ -358,7 +419,7 @@ void SheetAttachmentViewHelper::SetViewFlags(DisplayStyleR dstyle)
     else
         {
         memset(&flags, 0, sizeof(flags));
-        flags.text_nodes = flags.fast_text = flags.on_off = flags.dimens = flags.fill = flags.transparency = 
+        /* flags.text_nodes = */ flags.fast_text = flags.on_off = flags.dimens = flags.fill = flags.transparency = 
             flags.line_wghts = flags.textureMaps = flags.patterns = true;
         flags.SetRenderMode (DgnV8Api::MSRenderMode::Wireframe);
         }
@@ -406,7 +467,7 @@ DgnViewId Converter::SheetsGetViewForAttachment(bool isFromProxyGraphics, Geomet
 
     // See if we already have a ViewDefinition for this V8 attachment
     IChangeDetector::SearchResults prov;
-    DgnV8Api::EditElementHandle v8AttachmentEh(v8DgnAttachment.GetElementId(), &sheetModelMapping.GetV8Model());
+    DgnV8Api::EditElementHandle v8AttachmentEh(v8DgnAttachment.GetElementId(), v8DgnAttachment.GetParentModelRefP());
     ViewDefinitionPtr newView;
     IChangeDetector::T_SyncInfoElementFilter chooseViewElement = ElementFilters::GetViewDefinitionElementFiter();
     if (GetChangeDetector()._IsElementChanged(prov, *this, v8AttachmentEh, sheetModelMapping, &chooseViewElement))

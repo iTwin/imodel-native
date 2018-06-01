@@ -72,6 +72,8 @@ SERVER:\n\
     --server-password=      (required)  The password for the project.\n\
     --server-retries=       (optional)  The number of times to retry a pull, merge, and/or push to iModelHub. Must be a value between 0 and 255.\n\
     --server-credentials-isEncrypted (optional) The user name and password passed in is encrypted. \n\
+    --server-dmsUser=       (optional) The username for the DMS Project. \n\
+    --server-dmsPassword=   (optional) The password for the DMS Project. \n\
     ");
     }
 
@@ -88,6 +90,21 @@ bool            getNeedsPasswordDecryptionFromEnv()
         return true;
 
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void     DecryptCredentials(Http::Credentials& credentials)
+    {
+    Utf8String userName;
+    CryptoHelper::DecryptString(userName, credentials.GetUsername());
+
+    Utf8String password;
+    CryptoHelper::DecryptString(password, credentials.GetPassword());
+
+    credentials.SetUsername(userName);
+    credentials.SetPassword(password);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -159,6 +176,18 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
                 }
             continue;
             }
+        //Once we support OIDC this can be the same as  iModelHub user
+        if (argv[iArg] == wcsstr(argv[iArg], L"--server-dmsUser="))
+            {
+            m_dmsCredentials.SetUsername(getArgValue(argv[iArg]));
+            continue;
+            }
+
+        if (argv[iArg] == wcsstr(argv[iArg], L"--server-dmsPassword="))
+            {
+            m_dmsCredentials.SetPassword(getArgValue(argv[iArg]));
+            continue;
+            }
 
         if (argv[iArg] == wcsstr(argv[iArg], L"--server-credentials-isEncrypted"))
             {
@@ -173,14 +202,8 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
 
     if (needsDecryption)
         {
-        Utf8String userName;
-        CryptoHelper::DecryptString(userName, m_credentials.GetUsername());
-
-        Utf8String password;
-        CryptoHelper::DecryptString(password, m_credentials.GetPassword());
-        
-        m_credentials.SetUsername(userName);
-        m_credentials.SetPassword(password);
+        DecryptCredentials(m_credentials);
+        DecryptCredentials(m_dmsCredentials);
         }
     return BSISUCCESS;
     }

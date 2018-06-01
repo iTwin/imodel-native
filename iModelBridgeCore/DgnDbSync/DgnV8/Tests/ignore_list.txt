@@ -30,7 +30,7 @@ DrawingTests.Cyclic2dModels_AttachToSheet
     # To be equal to: ndrawings
     # Which is: 5
     # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\DrawingTests.cpp(1150): error:       Expected: 3
-    # To be equal to: DgnDbTestUtils::SelectCountFromECClass(*db, "BisCore" "." "Drawing")
+    # To be equal to: SelectCountFromECClass(*db, "BisCore" "." "Drawing")
     # Which is: 4
 
 DrawingTests.SheetProperties
@@ -118,3 +118,120 @@ LevelTests.LevelMaskfromSheetAttachment_toViewAttachment
     # Which is: 5
     # To be equal to: CountGeometricModels(*db)
     # Which is: 6
+
+DrawingTests.Sheet_SheetAttachment
+    # [ RUN      ] DrawingTests.Sheet_SheetAttachment
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 3
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 2
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 4
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 3
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 3
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 2
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(776): error:       Expected: expected
+    #       Which is: 1
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 2
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(776): error:       Expected: expected
+    #       Which is: 3
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 2
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 2
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 1
+    # [  FAILED  ] DrawingTests.Sheet_SheetAttachment (637 ms)
+
+DrawingTests.Attach3dmodeltoSheet
+    # [ RUN      ] DrawingTests.Attach3dmodeltoSheet
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
+    #       Which is: 1
+    # To be equal to: ndrawings
+    #       Which is: 2
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 2
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 1
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 2
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 1
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 2
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 1
+    # [  FAILED  ] DrawingTests.Attach3dmodeltoSheet (594 ms)
+
+DrawingTests.AttachDwg
+    # [ RUN      ] DrawingTests.AttachDwg
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
+    #       Which is: 3
+    # To be equal to: ndrawings
+    #       Which is: 6
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 4
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 1
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 0
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 3
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 4
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 1
+    # [  FAILED  ] DrawingTests.AttachDwg (1342 ms)
+
+DrawingTests.AttachNameViewtoSheet
+    # [ RUN      ] DrawingTests.AttachNameViewtoSheet
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
+    #       Which is: 1
+    # To be equal to: ndrawings
+    #       Which is: 2
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 2
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 1
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 2
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 1
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 2
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 1
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(776): error:       Expected: expected
+    #       Which is: 1
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 0
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    #       Which is: 1
+    # To be equal to: stmt->GetValueInt(0)
+    #       Which is: 0
+    # [  FAILED  ] DrawingTests.AttachNameViewtoSheet (602 ms)
+
+ECConversionTests.ECXA2d
+    # [ RUN      ] ECConversionTests.ECXA2d
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ECTests.cpp(537): error:       Expected: stmt.Step()
+    #       Which is: 101
+    # To be equal to: DbResult::BE_SQLITE_ROW
+    #       Which is: 100
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\ECTests.cpp(540): error: Value of: bimel.IsValid()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] ECConversionTests.ECXA2d (985 ms)
+
+NamedGroupTests.NamedGroupOf2dElement
+    # [ RUN      ] NamedGroupTests.NamedGroupOf2dElement
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\GeomTestHelper.cpp(54): error: Value of: elem1.IsValid()
+    #   Actual: false
+    # Expected: true
+    # F:\Bim0200\src\DgnDbSync\DgnV8\Tests\NamedGroupTests.cpp(571): error: Value of: elem1.IsValid()
+    #   Actual: false
+    # Expected: true
+    # [  FAILED  ] NamedGroupTests.NamedGroupOf2dElement (330 ms)

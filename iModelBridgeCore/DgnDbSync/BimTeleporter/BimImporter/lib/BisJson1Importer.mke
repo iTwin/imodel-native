@@ -59,10 +59,8 @@ LINKER_LIBRARIES  + user32$(libext)
 
 %include $(sharedMki)LinkLibrary.mki
 
-# -- Localize -------------------------------------------------------------------------------------
-SQLANG_OutputDb         = $(o)$(appName)_en-US.sqlang.db3
-SQLANG_DeliveryDir      = $(BuildContext)Delivery/
-SQLANG_XliffWildcard    = $(BuildContext)SubParts/xliffs/*.xliff
+SQLANG_CHeader      = $(baseDir)BisJson1ImporterImpl.h
+SQLANG_Xliff        = $(o)xliffs/$(appName)Messages_en.xliff
 
-%include $(SrcRoot)bsicommon/sqlang/mki/XliffsToDb.mke
+%include $(sharedMki)CHeaderToXliff.mki
 

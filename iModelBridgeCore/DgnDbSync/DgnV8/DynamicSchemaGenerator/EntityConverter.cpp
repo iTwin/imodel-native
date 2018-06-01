@@ -635,6 +635,10 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(ECClassRemovalContex
     if (!conversionSchema.IsValid())
         conversionSchema = syncContext->LocateSchema(conversionKey, ECN::SchemaMatchType::Latest);
 
+    // Since abstractness was ignored in V8, remove all abstract flags
+    if (inputClass.GetClassModifier() == ECClassModifier::Abstract)
+        inputClass.SetClassModifier(ECClassModifier::None);
+
     if (conversionSchema.IsValid())
         {
         ECN::ECClassCP ecClass = conversionSchema->GetClassCP(inputClass.GetName().c_str());
@@ -787,7 +791,8 @@ BentleyStatus BisClassConverter::ConvertECRelationshipClass(ECClassRemovalContex
             inputClass.RemoveProperty(propName);
         }
 
-    for (BECN::ECClassP childClass : inputClass.GetDerivedClasses())
+    bvector<ECClassP> derivedClasses(inputClass.GetDerivedClasses());
+    for (BECN::ECClassP childClass : derivedClasses)
         {
         BECN::ECRelationshipClassP relClass = childClass->GetRelationshipClassP();
         ECClassName childClassName(*childClass);
@@ -855,56 +860,6 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
         context.ReportIssue(Converter::IssueSeverity::Info, msg.c_str());
         }
     
-    if (0 == constraint.GetConstraintClasses().size())
-        {
-        if (relClass.HasBaseClasses())
-            {
-            ECRelationshipClassCP baseClass = relClass.GetBaseClasses()[0]->GetRelationshipClassCP();
-            ECRelationshipConstraintR baseConstraint = (isSource) ? baseClass->GetSource() : baseClass->GetTarget();
-            constraint.AddClass(*(baseConstraint.GetConstraintClasses()[0]->GetEntityClassCP()));
-            }
-        else if (ECObjectsStatus::SchemaNotFound == constraint.AddClass(*defaultConstraintClass))
-            {
-            relClass.GetSchemaR().AddReferencedSchema(defaultConstraintClass->GetSchemaR());
-            constraint.AddClass(*defaultConstraintClass);
-            }
-        }
-    else if (relClass.HasBaseClasses())
-        {
-        for (auto constraintClass : constraint.GetConstraintClasses())
-            {
-            ECRelationshipClassCP baseClass = relClass.GetBaseClasses()[0]->GetRelationshipClassCP();
-            ECRelationshipConstraintR baseConstraint = (isSource) ? baseClass->GetSource() : baseClass->GetTarget();
-            
-            bvector<ECClassCP> constraintsToRemove;
-            for (auto baseConstraintClass : baseConstraint.GetConstraintClasses())
-                {
-                if (!constraintClass->Is(baseConstraintClass))
-                    constraintsToRemove.push_back(baseConstraintClass);
-                }
-
-            if (constraintsToRemove.size() > 0)
-                {
-                BECN::ECObjectsStatus status = baseConstraint.AddClass(*defaultConstraintClass);
-                if (ECN::ECObjectsStatus::RelationshipConstraintsNotCompatible == status)
-                    {
-                    if (ECN::ECObjectsStatus::Success == baseConstraint.SetAbstractConstraint(*defaultConstraintClass))
-                        status = baseConstraint.AddClass(*defaultConstraintClass);
-                    }
-                if (BECN::ECObjectsStatus::Success != status)
-                    return;
-
-                for (ECClassCP ecClass : constraintsToRemove)
-                    {
-                    if (ecClass->IsEntityClass())
-                        baseConstraint.RemoveClass(*ecClass->GetEntityClassCP());
-                    else if (ecClass->IsRelationshipClass())
-                        baseConstraint.RemoveClass(*ecClass->GetRelationshipClassCP());
-                    }
-                }
-            }
-        }
-
     // It is possible that a constraint can have multiple classes, one of which got turned into an aspect.  This makes for an incompatible constraint.  Need to remove the conflicting type.
     bool haveFirstType = false;
     bool firstIsElement = true;
@@ -923,6 +878,42 @@ void BisClassConverter::ConvertECRelationshipConstraint(BECN::ECRelationshipCons
 
     for (ECClassCP ecClass : constraintsToRemove)
         constraint.RemoveClass(*ecClass->GetEntityClassCP());
+
+    if (0 == constraint.GetConstraintClasses().size())
+        {
+        if (relClass.HasBaseClasses())
+            {
+            ECRelationshipClassCP baseClass = relClass.GetBaseClasses()[0]->GetRelationshipClassCP();
+            ECRelationshipConstraintR baseConstraint = (isSource) ? baseClass->GetSource() : baseClass->GetTarget();
+            constraint.AddClass(*(baseConstraint.GetConstraintClasses()[0]->GetEntityClassCP()));
+            }
+        else if (ECObjectsStatus::SchemaNotFound == constraint.AddClass(*defaultConstraintClass))
+            {
+            relClass.GetSchemaR().AddReferencedSchema(defaultConstraintClass->GetSchemaR());
+            constraint.AddClass(*defaultConstraintClass);
+            }
+        }
+    else if (relClass.HasBaseClasses())
+        {
+        ECRelationshipClassCP baseClass = relClass.GetBaseClasses()[0]->GetRelationshipClassCP();
+        ECRelationshipConstraintR baseConstraint = (isSource) ? baseClass->GetSource() : baseClass->GetTarget();
+
+        bool removed = false;
+        for (auto constraintClass : constraint.GetConstraintClasses())
+            {
+            for (auto baseConstraintClass : baseConstraint.GetConstraintClasses())
+                {
+                if (!constraintClass->Is(baseConstraintClass))
+                    {
+                    removed = true;
+                    relClass.RemoveBaseClass(*baseClass);
+                    break;
+                    }
+                }
+            if (removed)
+                break;
+            }
+        }
 
     IECInstancePtr dropConstraintCA = constraint.GetCustomAttribute("DropConstraints");
     if (dropConstraintCA.IsValid())
@@ -1437,7 +1428,7 @@ BECN::ECRelationshipClassCP BisClassConverter::SchemaConversionContext::GetDomai
         if (asEntity != nullptr && asEntity->IsMixin())
             {
             if (!asEntity->GetAppliesToClass()->Is(GetDefaultConstraintClass()))
-            return nullptr;
+                return nullptr;
             }
         else if (!constraintClass->Is(GetDefaultConstraintClass()))
             return nullptr;

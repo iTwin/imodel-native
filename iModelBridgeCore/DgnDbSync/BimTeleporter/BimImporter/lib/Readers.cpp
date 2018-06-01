@@ -13,6 +13,8 @@
 #include <Logging/bentleylogging.h>
 #include <DgnPlatform/GenericDomain.h>
 #include <DgnPlatform/Render.h>
+#include <DgnPlatform/Annotations/TextAnnotationElement.h>
+#include <DgnPlatform/Annotations/TextAnnotationPersistence.h>
 #include <Bentley/Base64Utilities.h>
 #include <Planning/PlanningApi.h>
 #include "SyncInfo.h"
@@ -1125,6 +1127,26 @@ BentleyStatus ViewDefinitionReader::_Read(Json::Value& viewDefinition)
 
         // WIP: Need to set UserProperties?
 
+        if (viewDefinition.isMember("overrides"))
+            {
+            auto const& subcatJson = viewDefinition["overrides"];
+            for (Json::ArrayIndex i = 0; i < subcatJson.size(); ++i)
+                {
+                JsonValueCR val = subcatJson[i];
+                DgnSubCategoryId subCategoryId(val["subCategoryId"].asUInt64());
+                if (subCategoryId.IsValid())
+                    {
+                    DgnSubCategoryId remapped = DgnSubCategoryId(m_importer->FindElementId(DgnElementId(subCategoryId.GetValue())).GetValue());
+                    if (remapped.IsValid())
+                        {
+                        DgnSubCategory::Override ovr(val);
+                        DisplayStyle3dR disp = viewDef->GetDisplayStyle3d();
+                        disp.OverrideSubCategory(remapped, ovr);
+                        disp.Update();
+                        }
+                    }
+                }
+            }
         DgnDbStatus stat;
         DgnElementCPtr inserted = viewDef->Insert(&stat);
         if (!inserted.IsValid())
@@ -1470,7 +1492,47 @@ BentleyStatus DisplayStyleReader::_Read(Json::Value& object)
 
     DisplayStyle* displayStyle;
     if (object["Is3d"].asBool())
-        displayStyle = new DisplayStyle3d(*model, displayStyleName);
+        {
+        DisplayStyle3d* disp3d = new DisplayStyle3d(*model, displayStyleName);
+         
+        if (object.isMember("IsEnvironmentEnabled") && object["IsEnvironmentEnabled"].asBool())
+            {
+            DisplayStyle3d::EnvironmentDisplay& envDisplay = disp3d->GetEnvironmentDisplayR();
+            auto& env = object["Environnment"];
+            if (env.isMember("GroundPlaneEnabled"))
+                {
+                auto& groundPlane = env["GroundPlane"];
+                envDisplay.m_groundPlane.m_enabled = true;
+                envDisplay.m_groundPlane.m_elevation = groundPlane["elevation"].asDouble();
+                envDisplay.m_groundPlane.m_aboveColor = ColorDef(groundPlane["aboveColor"].asUInt());
+                envDisplay.m_groundPlane.m_belowColor = ColorDef(groundPlane["belowColor"].asUInt());
+                }
+            else
+                disp3d->GetEnvironmentDisplayR().GetGroundPlane().m_enabled = false;
+
+            if (env.isMember("SkyBoxEnabled"))
+                {
+                auto& skyBox = env["Skybox"];
+                envDisplay.m_skybox.m_enabled = true;
+                envDisplay.m_skybox.m_jpegFile.AssignOrClear(skyBox["jpegFile"].asCString());
+                envDisplay.m_skybox.m_zenithColor = ColorDef(skyBox["zenithColor"].asUInt());
+                envDisplay.m_skybox.m_nadirColor = ColorDef(skyBox["nadirColor"].asUInt());
+                envDisplay.m_skybox.m_groundColor = ColorDef(skyBox["groundColor"].asUInt());
+                envDisplay.m_skybox.m_skyColor = ColorDef(skyBox["skyColor"].asUInt());
+                envDisplay.m_skybox.m_groundExponent = skyBox["groundExponent"].asDouble();
+                envDisplay.m_skybox.m_skyExponent = skyBox["skyExponent"].asDouble();
+                }
+            else
+                disp3d->GetEnvironmentDisplayR().GetSkyBox().m_enabled = false;
+
+            }
+        else
+            {
+            disp3d->GetEnvironmentDisplayR().GetGroundPlane().m_enabled = false;
+            disp3d->GetEnvironmentDisplayR().GetSkyBox().m_enabled = false;
+            }
+        displayStyle = disp3d;
+        }
     else
         displayStyle = new DisplayStyle2d(*model, displayStyleName);
     if (!object["BackgroundColor"].isNull())
@@ -1599,8 +1661,8 @@ void createNavigationPropertyOnConstraints(ECN::ECRelationshipClassP relClass)
         {
         relClass->GetSource().SetMultiplicity(ECN::RelationshipMultiplicity::OneOne());
         relClass->GetTarget().SetMultiplicity(ECN::RelationshipMultiplicity::OneMany());
-        bvector<ECEntityClassP> toRemove;
-        bool created = false;
+        bvector<ECEntityClassP> toRemoveTargets;
+        bool createdOnTarget = false;
         for (ECClassCP constraintClass : relClass->GetTarget().GetConstraintClasses())
             {
             ECEntityClassP target = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
@@ -1609,15 +1671,21 @@ void createNavigationPropertyOnConstraints(ECN::ECRelationshipClassP relClass)
 
             NavigationECPropertyP navProp = nullptr;
             if (ECObjectsStatus::Success != target->CreateNavigationProperty(navProp, relClass->GetName(), *relClass, ECRelatedInstanceDirection::Backward, false))
-                toRemove.push_back(target);
+                toRemoveTargets.push_back(target);
             else
-                created = true;
+                createdOnTarget = true;
             }
-        for (ECEntityClassP constraintClass : toRemove)
-            relClass->GetTarget().RemoveClass(*constraintClass);
-        if (!created)
+        if (createdOnTarget)
             {
-            toRemove.clear();
+            for (ECEntityClassP constraintClass : toRemoveTargets)
+                relClass->GetTarget().RemoveClass(*constraintClass);
+            toRemoveTargets.clear();
+            }
+
+        bvector<ECEntityClassP> toRemoveSource;
+        bool createdOnSource = false;
+        if (!createdOnTarget)
+            {
             for (ECClassCP constraintClass : relClass->GetSource().GetConstraintClasses())
                 {
                 ECEntityClassP source = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
@@ -1626,21 +1694,158 @@ void createNavigationPropertyOnConstraints(ECN::ECRelationshipClassP relClass)
 
                 NavigationECPropertyP navProp = nullptr;
                 if (ECObjectsStatus::Success != source->CreateNavigationProperty(navProp, relClass->GetName(), *relClass, ECRelatedInstanceDirection::Forward, false))
-                    toRemove.push_back(source);
+                    toRemoveSource.push_back(source);
                 else
-                    created = true;
+                    createdOnSource = true;
                 }
-            if (created)
+            if (createdOnSource)
                 {
                 relClass->GetSource().SetMultiplicity(ECN::RelationshipMultiplicity::OneMany());
                 relClass->GetTarget().SetMultiplicity(ECN::RelationshipMultiplicity::OneOne());
                 }
-
             }
-        for (ECEntityClassP constraintClass : toRemove)
+        if (!createdOnSource)
+            {
+            for (ECEntityClassP constraintClass : toRemoveTargets)
+                relClass->GetTarget().RemoveClass(*constraintClass);
+            }
+        for (ECEntityClassP constraintClass : toRemoveSource)
             relClass->GetSource().RemoveClass(*constraintClass);
-
         }
+
+    bvector<Utf8CP> propertyNames;
+    for (ECPropertyP prop : relClass->GetProperties(false))
+        propertyNames.push_back(prop->GetName().c_str());
+
+    for (Utf8CP propName : propertyNames)
+        relClass->RemoveProperty(propName);
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool checkConstraints(ECRelationshipConstraintR constraint, ECRelationshipConstraintR baseConstraint)
+    {
+    for (auto constraintClass : constraint.GetConstraintClasses())
+        {
+        for (auto baseConstraintClass : baseConstraint.GetConstraintClasses())
+            {
+            if (!constraintClass->Is(baseConstraintClass))
+                {
+                return false;
+                }
+            }
+        }
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void SchemaReader::CheckConstraints(ECRelationshipClassP relClass)
+    {
+    if (relClass->HasBaseClasses())
+        {
+        ECRelationshipClassCP baseClass = relClass->GetBaseClasses()[0]->GetRelationshipClassCP();
+        bool valid = checkConstraints(relClass->GetSource(), baseClass->GetSource());
+        if (valid)
+            valid = checkConstraints(relClass->GetTarget(), baseClass->GetTarget());
+        if (!valid)
+            {
+            relClass->RemoveBaseClass(*baseClass);
+            if (!relClass->HasBaseClasses())
+                SetBaseClassForRelationship(relClass);
+            }
+        }
+    bool needsRemoval = relClass->GetSource().GetConstraintClasses().size() == 0 || relClass->GetTarget().GetConstraintClasses().size() == 0;
+    if (needsRemoval && m_relationshipsToRemove.end() == std::find(m_relationshipsToRemove.begin(), m_relationshipsToRemove.end(), relClass))
+        m_relationshipsToRemove.push_back(relClass);
+
+    bvector<ECClassP> derivedClasses(relClass->GetDerivedClasses());
+    for (ECClassP derived : derivedClasses)
+        {
+        ECRelationshipClassP nonConst = const_cast<ECRelationshipClassP>(derived->GetRelationshipClassCP());
+        if (needsRemoval)
+            nonConst->RemoveBaseClass(*relClass);
+        CheckConstraints(nonConst);
+        }
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void setDerivedRelationshipProperties(ECClassCP ecClass, ECRelationshipClassP base)
+    {
+    ECN::ECRelationshipClassP relClass = const_cast<ECN::ECRelationshipClassP>(ecClass->GetRelationshipClassCP());
+
+    relClass->GetSource().SetMultiplicity(base->GetSource().GetMultiplicity());
+    relClass->GetTarget().SetMultiplicity(base->GetTarget().GetMultiplicity());
+    relClass->SetStrength(base->GetStrength());
+    relClass->SetStrengthDirection(base->GetStrengthDirection());
+
+    for (ECClassCP derived : relClass->GetDerivedClasses())
+        setDerivedRelationshipProperties(derived, relClass);
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void SchemaReader::SetBaseClassForRelationship(ECRelationshipClassP relClass)
+    {
+    bool hasNav = false;
+    // If there is a class that has a NavigationProperty to this class, then it doesn't need a base class
+    for (ECN::ECClassCP ecClass2 : relClass->GetSchema().GetClasses())
+        {
+        if (!ecClass2->IsEntityClass())
+            continue;
+        for (ECN::ECPropertyCP prop : ecClass2->GetProperties(false))
+            {
+            ECN::NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
+            if (nullptr == navProp)
+                continue;
+            if (navProp->GetRelationshipClass() == relClass)
+                {
+                hasNav = true;
+                break;
+                }
+            }
+        if (hasNav)
+            break;
+        }
+    if (hasNav)
+        return;
+
+    ECN::ECClassCP source = relClass->GetSource().GetConstraintClasses()[0];
+    ECN::ECClassCP target = relClass->GetTarget().GetConstraintClasses()[0];
+    ECN::ECRelationshipClassCP base = nullptr;
+    if (source->Is(m_elementClass))
+        {
+        if (target->Is(m_uniqueAspectClass))
+            base = m_elementToUnique;
+        else if (target->Is(m_multiAspectClass))
+            base = m_elementToMulti;
+        else if (target->Is(m_elementClass))
+            base = m_elementToElement;
+        }
+    else if (source->Is(m_uniqueAspectClass) || source->Is(m_multiAspectClass))
+        {
+        createNavigationPropertyOnConstraints(relClass);
+        }
+    if (nullptr != base)
+        {
+        relClass->GetSource().SetMultiplicity(base->GetSource().GetMultiplicity());
+        relClass->GetTarget().SetMultiplicity(base->GetTarget().GetMultiplicity());
+        relClass->SetStrength(base->GetStrength());
+        relClass->SetStrengthDirection(base->GetStrengthDirection());
+        relClass->AddBaseClass(*base);
+        }
+    CheckConstraints(relClass);
+
+    for (ECClassCP derived : relClass->GetDerivedClasses())
+        setDerivedRelationshipProperties(derived, relClass);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1648,102 +1853,88 @@ void createNavigationPropertyOnConstraints(ECN::ECRelationshipClassP relClass)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SchemaReader::ValidateBaseClasses(ECN::ECSchemaP schema)
     {
-    ECN::ECClassP definitionElement = const_cast<ECN::ECClassP>(m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_DefinitionElement));
-    ECN::ECClassCP elementClass = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
-    ECN::ECClassCP multiAspectClass = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
-    ECN::ECClassCP uniqueAspectClass = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementUniqueAspect);
-    ECN::ECRelationshipClassCP elementToMulti = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects)->GetRelationshipClassCP();
-    ECN::ECRelationshipClassCP elementToUnique = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect)->GetRelationshipClassCP();
-    ECN::ECRelationshipClassCP elementToElement = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements)->GetRelationshipClassCP();
     // need to confirm that all relationship classes have a base class.  In 0601 we were able to get away with not having a base class.  That doesn't work here
+    bvector<ECRelationshipClassP> rootRelationshipClasses;
     for (ECN::ECClassCP ecClass : schema->GetClasses())
         {
         ECN::ECRelationshipClassP relClass = const_cast<ECN::ECRelationshipClassP>(ecClass->GetRelationshipClassCP());
-        if (ecClass->GetBaseClasses().size() != 0)
+        if (nullptr != relClass)
             {
-            if (relClass != nullptr)
+            if (!ecClass->HasBaseClasses())
+                rootRelationshipClasses.push_back(relClass);
+            else
                 {
-                ECN::ECClassCP source = relClass->GetSource().GetConstraintClasses()[0];
-                if (source->Is(uniqueAspectClass) || source->Is(multiAspectClass))
+                bool hasBisBase = false;
+                for (ECClassCP baseClass : relClass->GetBaseClasses())
                     {
-                    for (ECClassCP baseClass : ecClass->GetBaseClasses())
+                    if (baseClass->GetSchema().GetName().Equals(BIS_ECSCHEMA_NAME))
                         {
-                        if (baseClass == elementToElement || baseClass == elementToMulti || baseClass == elementToUnique)
-                            {
-                            ECClassP nonConst = const_cast<ECClassP>(ecClass);
-                            nonConst->RemoveBaseClass(*baseClass);
-                            break;
-                            }
+                        hasBisBase = true;
+                        break;
                         }
                     }
+                if (hasBisBase && relClass->GetBaseClasses().size() == 1)
+                    rootRelationshipClasses.push_back(relClass);
                 }
-            if (ecClass->GetBaseClasses().size() != 0)
-                continue;
             }
 
-        if (ecClass->IsEntityClass())
+        if (!ecClass->HasBaseClasses() && ecClass->IsEntityClass())
             {
             ECN::ECEntityClassP nonConstClass = const_cast<ECN::ECEntityClassP>(ecClass->GetEntityClassCP());
             if (nonConstClass->IsMixin())
                 continue;
 
-            if (ECN::ECObjectsStatus::Success != nonConstClass->AddBaseClass(*definitionElement))
+            if (ECN::ECObjectsStatus::Success != nonConstClass->AddBaseClass(*m_definitionElement))
                 {
-                schema->AddReferencedSchema(definitionElement->GetSchemaR(), "bis");
-                nonConstClass->AddBaseClass(*definitionElement);
+                schema->AddReferencedSchema(m_definitionElement->GetSchemaR(), "bis");
+                nonConstClass->AddBaseClass(*m_definitionElement);
                 }
             continue;
             }
-        if (nullptr == relClass)
-            continue;
+        }
 
-        bool hasNav = false;
-        // If there is a class that has a NavigationProperty to this class, then it doesn't need a base class
-        for (ECN::ECClassCP ecClass2 : schema->GetClasses())
+    for (ECRelationshipClassP relClass : rootRelationshipClasses)
+        {
+        // Even these are the 'root' relationships, they can still have a BIS base class
+        if (relClass->GetBaseClasses().size() != 0)
             {
-            if (!ecClass2->IsEntityClass())
-                continue;
-            for (ECN::ECPropertyCP prop : ecClass2->GetProperties(false))
+            ECN::ECClassCP source = relClass->GetSource().GetConstraintClasses()[0];
+            if (source->Is(m_uniqueAspectClass) || source->Is(m_multiAspectClass))
                 {
-                ECN::NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
-                if (nullptr == navProp)
-                    continue;
-                if (navProp->GetRelationshipClass() == relClass)
+                for (ECClassCP baseClass : relClass->GetBaseClasses())
                     {
-                    hasNav = true;
+                    if (baseClass == m_elementToElement || baseClass == m_elementToMulti || baseClass == m_elementToUnique)
+                        {
+                        relClass->RemoveBaseClass(*baseClass);
+                        break;
+                        }
+                    }
+                }
+
+            if (relClass->GetBaseClasses().size() != 0)
+                {
+                for (ECClassCP base : relClass->GetBaseClasses())
+                    {
+                    ECRelationshipClassCP relBase = base->GetRelationshipClassCP();
+                    if (nullptr == relBase)
+                        continue;
+                    relClass->GetSource().SetMultiplicity(relBase->GetSource().GetMultiplicity());
+                    relClass->GetTarget().SetMultiplicity(relBase->GetTarget().GetMultiplicity());
+                    relClass->SetStrength(relBase->GetStrength());
+                    relClass->SetStrengthDirection(relBase->GetStrengthDirection());
                     break;
                     }
                 }
-            if (hasNav)
-                break;
             }
-        if (hasNav)
-            continue;
-        ECN::ECClassCP source = relClass->GetSource().GetConstraintClasses()[0];
-        ECN::ECClassCP target = relClass->GetTarget().GetConstraintClasses()[0];
-        ECN::ECRelationshipClassCP base = nullptr;
-        if (source->Is(elementClass))
+
+        if (relClass->GetBaseClasses().size() != 0)
             {
-            if (target->Is(uniqueAspectClass))
-                base = elementToUnique;
-            else if (target->Is(multiAspectClass))
-                base = elementToMulti;
-            else if (target->Is(elementClass))
-                base = elementToElement;
-            }
-        else if (source->Is(uniqueAspectClass) || source->Is(multiAspectClass))
-            {
-            createNavigationPropertyOnConstraints(relClass);
-            }
-        if (nullptr == base)
-            {
+            CheckConstraints(relClass);
             continue;
             }
-        relClass->GetSource().SetMultiplicity(base->GetSource().GetMultiplicity());
-        relClass->SetStrength(base->GetStrength());
-        relClass->SetStrengthDirection(base->GetStrengthDirection());
-        relClass->AddBaseClass(*base);
+        SetBaseClassForRelationship(relClass);
         }
+
     return BSISUCCESS;
     }
 
@@ -1758,6 +1949,15 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
     BeFileName bimFileName = GetDgnDb()->GetFileName();
 
     bmap<SchemaKey, bvector<SchemaKey>> originalReferences;
+    StopWatch schemaTimer(true);
+
+    m_definitionElement = const_cast<ECN::ECClassP>(m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_DefinitionElement));
+    m_elementClass = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
+    m_multiAspectClass = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
+    m_uniqueAspectClass = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementUniqueAspect);
+    m_elementToMulti = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects)->GetRelationshipClassCP();
+    m_elementToUnique = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect)->GetRelationshipClassCP();
+    m_elementToElement = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements)->GetRelationshipClassCP();
 
     for (Json::Value::iterator iter = schemas.begin(); iter != schemas.end(); iter++)
         {
@@ -1823,7 +2023,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
             if (outPath.DoesPathExist())
                 outPath.BeDeleteFile();
 
-            ecSchema->WriteToXmlFile(outPath.GetName());
+            ecSchema->WriteToXmlFile(outPath.GetName(), ecSchema->GetECVersion());
 #endif
             if (knownSchemas.end() == std::find(knownSchemas.begin(), knownSchemas.end(), ecSchema->GetName()))
                 keysToImport.push_back(schemaKey);
@@ -1867,7 +2067,12 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
             }
         ECSchemaP toImport = m_importer->m_schemaReadContext->GetCache().GetSchema(key, SchemaMatchType::Latest);
         if (!isSP3d)
+            {
             ValidateBaseClasses(toImport);
+            for (ECRelationshipClassP relClass : m_relationshipsToRemove)
+                toImport->DeleteClass(*relClass);
+            m_relationshipsToRemove.clear();
+            }
 
         for (ECEnumerationCP ecEnum : toImport->GetEnumerations())
             {
@@ -1876,6 +2081,8 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
             ECEnumerationP nonConstEnum = const_cast<ECEnumerationP>(ecEnum);
             nonConstEnum->SetIsStrict(false);
             }
+        m_importer->SetTaskName(BimUpgrader::TASK_IMPORTING_SCHEMA(), toImport->GetName().c_str());
+        m_importer->ShowProgress();
         }
 
     SchemaFlattener flattener2(m_importer->m_schemaReadContext);
@@ -1981,6 +2188,10 @@ BentleyStatus SchemaReader::_Read(Json::Value& schemas)
         return ERROR;
         }
 
+    schemaTimer.Stop();
+    Utf8PrintfString message("Importing schemas|%.0f millisecs", schemaTimer.GetElapsedSeconds() * 1000.0);
+    BentleyApi::NativeLogging::LoggingManager::GetLogger("DgnDbToBimConverter.Performance")->info(message.c_str());
+
     return SUCCESS;
     }
 
@@ -2043,6 +2254,8 @@ BentleyStatus ElementGroupsMembersReader::_Read(Json::Value& groups)
         if (group.isMember("MemberPriority"))
             priority = group["MemberPriority"].asInt();
         groupElement->AddMember(*member, priority);
+        m_importer->SetTaskName(BimUpgrader::TASK_ELEMENT_GROUPS_MEMBERS());
+        m_importer->ShowProgress();
         }
 
     return SUCCESS;
@@ -2085,6 +2298,8 @@ BentleyStatus LinkTableReader::_Read(Json::Value& relationships)
         ECN::ECRelationshipClassCP relClass = GetDgnDb()->Schemas().GetClass(member["Schema"].asString(), member["Class"].asString())->GetRelationshipClassCP();
         ECInstanceKey relKey;
         GetDgnDb()->InsertLinkTableRelationship(relKey, *relClass, mappedSource, mappedTarget);
+        m_importer->SetTaskName(BimUpgrader::TASK_IMPORTING_RELATIONSHIP(), relName.c_str());
+        m_importer->ShowProgress();
         }
 
     return SUCCESS;
@@ -2129,6 +2344,7 @@ BentleyStatus ElementHasLinksReader::_Read(Json::Value& hasLinks)
             continue;
             }
         linkElement->AddToSource(mappedSource);
+        m_importer->ShowProgress();
         }
     return SUCCESS;
     }
@@ -2185,4 +2401,64 @@ BentleyStatus PropertyDataReader::_Read(Json::Value& propData)
         }
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus TextAnnotationDataReader::_Read(Json::Value& object)
+    {
+    DgnElementId mappedElementId = GetMappedElementId(object, "Element");
+    if (!mappedElementId.IsValid())
+        {
+        Utf8PrintfString error("Failed to map ElementId for TextAnnotationData entry.");
+        GetLogger().warning(error.c_str());
+        return ERROR;
+        }
+
+    bvector<Byte> data;
+    size_t size = object["TextAnnotation"].asString().SizeInBytes();
+    Base64Utilities::Decode(data, object["TextAnnotation"].asString().c_str(), size);
+
+    if (data.empty())
+        return SUCCESS;
+
+    TextAnnotationPtr annotation = TextAnnotation::Create(*GetDgnDb());
+    if (SUCCESS != TextAnnotationPersistence::DecodeFromFlatBufWithRemap(*annotation, data.data(), size, *m_importer))
+        {
+        GetLogger().warningv("Failed to decode text annotation data");
+        return ERROR;
+        }
+
+    DgnElementCPtr annotationElement = GetDgnDb()->Elements().GetElement(mappedElementId);
+    if (!annotationElement.IsValid())
+        {
+        GetLogger().error("Failed to get AnnotationElement for TextAnnotationData entry");
+        return ERROR;
+        }
+
+    if (annotationElement->GetElementClass()->Is(GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotation2d)))
+        {
+        TextAnnotation2dPtr text2d = GetDgnDb()->Elements().GetForEdit<TextAnnotation2d>(mappedElementId);
+        if (!text2d.IsValid())
+            {
+            GetLogger().error("Failed to get TextAnnotation2d for TextAnnotationData");
+            return ERROR;
+            }
+        text2d->SetAnnotation(annotation.get());
+        text2d->Update();
+        }
+    else
+        {
+        TextAnnotation3dPtr text3d = GetDgnDb()->Elements().GetForEdit<TextAnnotation3d>(mappedElementId);
+        if (!text3d.IsValid())
+            {
+            GetLogger().error("Failed to get TextAnnotation3d for TextAnnotationData");
+            return ERROR;
+            }
+        text3d->SetAnnotation(annotation.get());
+        text3d->Update();
+        }
+    return SUCCESS;
+    }
 END_BIM_TELEPORTER_NAMESPACE
+

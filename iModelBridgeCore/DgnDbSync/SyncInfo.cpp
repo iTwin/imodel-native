@@ -1076,7 +1076,7 @@ BentleyStatus SyncInfo::InsertExtractedGraphic(V8ElementSource const& attachment
                                                V8ElementSource const& originalElement, 
                                                DgnCategoryId categoryId, DgnElementId extractedGraphic)
     {
-    if (!attachment.IsValid() || !originalElement.IsValid() || !categoryId.IsValid() || !extractedGraphic.IsValid())
+    if (!originalElement.IsValid() || !categoryId.IsValid() || !extractedGraphic.IsValid())
         {
         BeAssert(false);
         return ERROR;

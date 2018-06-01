@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportLights.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -135,14 +135,10 @@ BentleyStatus   DwgLightExt::CreateOrUpdateLightGlyph (ElementResultsR results, 
 
     builder->Append (display);
     
-    DwgImporter::GeometryBuilderInfo builderInfo(display, m_dwgLight->GetObjectId().ToUInt64(), builder.get());
+    ElementFactory  factory(results, inputs, createParams, *m_importer);
+    factory.SetGeometryBuilder (builder.get());
 
-    DwgImporter::T_GeometryBuilderList  geoms;
-    geoms.push_back (builderInfo);
-
-    DwgImporter::T_PartIndexList    noParts;
-
-    status = m_importer->_CreateOrUpdateElement (results, model, geoms, noParts, createParams, m_toBimContext->GetEntity(), inputs.GetClassId());
+    status = factory.CreateElement ();
 
     return  status;
     }

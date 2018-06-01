@@ -117,7 +117,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         BentleyStatus ExportCategories(Utf8CP tableName, Utf8CP bisClassName, Utf8CP bisAuthorityStr, bvector<DgnCategoryId>& duplicateIds);
         DgnElementId CreateModelSelector(ViewControllerCR vc, Utf8CP name);
         DgnElementId CreateCategorySelector(ViewControllerCR vc, Utf8CP name);
-        DgnElementId CreateDisplayStyle(ViewControllerCR vc, Utf8CP name, bool is3d);
+        DgnElementId CreateDisplayStyle(ViewControllerCP vc, Utf8CP name, bool is3d, bool isCamera);
         BentleyStatus ExportModels();
         BentleyStatus ExportModel(Utf8CP schemaName, Utf8CP className, Utf8CP whereClause = nullptr);
         BentleyStatus ExportElements();
@@ -153,7 +153,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         void ReportProgress() const;
 
         //! Report progress. 
-        void ShowProgress() const { m_meter->ShowProgress(); }
+        void ShowProgress() const { if (nullptr != m_meter) m_meter->ShowProgress(); }
 
         //! Specify how many steps remain in the current task
         void AddSteps(int32_t n) const;
