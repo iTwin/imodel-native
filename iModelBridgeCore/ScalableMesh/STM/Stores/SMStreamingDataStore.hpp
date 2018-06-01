@@ -392,26 +392,29 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
 
         DataSourceURL    dataSourceURL(L"MasterHeader.sscm");
 
-        DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource(GetDataSourceSessionName()); //NEEDS_WORK_SM Create this through DataSourceManager
+        DataSource *dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*m_dataSourceAccount, GetDataSourceSessionName());
         assert(dataSource != nullptr);
 
-        if (dataSource->open(dataSourceURL, DataSourceMode_Write).isFailed())
+        DataSourceStatus    status;
+
+        try
             {
-            assert(false); // could not open master header data source!
-            return false;
+            if ((status = dataSource->open(dataSourceURL, DataSourceMode_Write)).isFailed())
+                throw status;                                                    // could not open master header data source!
+
+            if ((status = dataSource->write((const DataSource::Buffer*)buffer.c_str(), buffer_size)).isFailed())
+                throw status;                                                    // error writing to master header data source!
+
+            if ((status = dataSource->close()).isFailed())
+                throw false;                                                    // error closing master header data source!
+            }
+        catch (DataSourceStatus)
+            {
+            assert(false);
             }
 
-        if (dataSource->write((const DataSource::Buffer*)buffer.c_str(), buffer_size).isFailed())
-            {
-            assert(false); // error writing to master header data source!
-            return false;
-            }
+        DataSourceManager::Get()->destroyDataSource(dataSource);
 
-        if (dataSource->close().isFailed())
-            {
-            assert(false); // error closing master header data source!
-            return false;
-            }
         }
 
     return true;
@@ -536,21 +539,25 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             return 0;
             }
 
-        if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+        DataSourceStatus    status;
+
+        try
             {
-            assert(false); // problem opening a datasource
-            return 0;
+            if ((status = dataSource->open(dataSourceURL, DataSourceMode_Read)).isFailed())
+                throw status; // problem opening a datasource
+
+            if ((status = dataSource->read(dest.get(), destSize, readSize, 0)).isFailed())
+                throw status; // problem reading a datasource
+
+            if ((status = dataSource->close()).isFailed())
+                throw status;
+            }
+        catch (DataSourceStatus)
+            {
+            assert(false);
             }
 
-        if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
-            {
-            assert(false); // problem reading a datasource
-            return 0;
-            }
-
-        dataSource->close();
-
-//      this->GetDataSourceAccount()->destroyDataSource(dataSource);
+        DataSourceManager::Get()->destroyDataSource(dataSource);
 
         if (isGrouped)
             {
@@ -1100,25 +1107,25 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
     //else std::cout << "[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
     //}
 
-    if (dataSource->open(dataSourceURL, DataSourceMode_Write).isFailed())
+    DataSourceStatus status;
+
+    try
         {
-        assert(false); // problem opening a datasource
-        return 0;
+        if ((status = dataSource->open(dataSourceURL, DataSourceMode_Write)).isFailed())
+            throw status; // problem opening a datasource
+
+        if ((status = dataSource->write(headerData.get(), headerSize)).isFailed())
+            throw status; // problem writing a datasource
+
+        if ((status = dataSource->close()).isFailed())
+            throw status; // problem closing a datasource
+        }
+    catch (DataSourceStatus)
+        {
+        assert(false);
         }
 
-    if (dataSource->write(headerData.get(), headerSize).isFailed())
-        {
-        assert(false); // problem writing a datasource
-        return 0;
-        }
-
-    if (dataSource->close().isFailed())
-        {
-        assert(false); // problem closing a datasource
-        return 0;
-        }
-
-//  this->GetDataSourceAccount()->destroyDataSource(dataSource);
+    DataSourceManager::Get()->destroyDataSource(dataSource);
 
     //{
     //std::lock_guard<mutex> clk(s_consoleMutex);
@@ -1800,11 +1807,28 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
     DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
     dataSource = this->InitializeDataSource(dest, destSize);
-    if (dataSource == nullptr ||
-        dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed() ||
-        dataSource->read(dest.get(), destSize, readSize, 0).isFailed()  ||
-        dataSource->close().isFailed())
+    if (dataSource == nullptr)
         return;
+
+    DataSourceStatus status;
+
+    try
+        {
+        if ((status = dataSource->open(dataSourceURL, DataSourceMode_Read)).isFailed())
+            throw status;
+
+        if ((status = dataSource->read(dest.get(), destSize, readSize, 0)).isFailed())
+            throw status;
+
+        if ((status = dataSource->close()).isFailed())
+            throw status;
+        }
+        catch (DataSourceStatus)
+            {
+            assert(false);
+            }
+
+    DataSourceManager::Get()->destroyDataSource(dataSource);
 
     if (readSize > 0)
         {
@@ -2136,24 +2160,33 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
                 }
             }
 
-        DataSourceStatus writeStatus;
 
         DataSourceURL url (m_dataSourceURL);
         url.append(L"p_" + std::to_wstring(blockID.m_integerID) + extension);
 
-        DataSource *dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*GetDataSourceAccount(), GetDataSourceSessionName());
-        assert(dataSource != nullptr); // problem creating a new DataSource
+        DataSource      *   dataSource = nullptr;
+        DataSourceStatus    status;
 
-        writeStatus = dataSource->open(url, DataSourceMode_Write);
-        assert(writeStatus.isOK()); // problem opening a DataSource
+        try
+            {
+            if ((dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*GetDataSourceAccount(), GetDataSourceSessionName())) == nullptr)
+                throw DataSourceStatus::Status_Error;
 
-        writeStatus = dataSource->write(dataToWrite, sizeToWrite);
-        assert(writeStatus.isOK()); // problem writing a DataSource
+            if ((status = dataSource->open(url, DataSourceMode_Write)).isFailed())
+                throw status;
 
-        writeStatus = dataSource->close();
-        assert(writeStatus.isOK()); // problem closing a DataSource
+            if ((status = dataSource->write(dataToWrite, sizeToWrite)).isFailed())
+                throw status; // problem writing a DataSource
 
-//      m_dataSourceAccount->destroyDataSource(dataSource);
+            if ((status = dataSource->close()).isFailed())
+                throw status;
+            }
+        catch (DataSourceStatus)
+            {
+            assert(false);
+            }
+
+        DataSourceManager::Get()->destroyDataSource(dataSource);
 
         if (mustCleanup)
             {
@@ -2529,17 +2562,28 @@ inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount 
     if (dataSource == nullptr)
         return 0;
 
-    if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
-        return 0;
+    DataSourceStatus status;
 
-    if (dataSizeKnown == uint64_t(-1)) dataSizeKnown = 0;
-    if (dataSource->read(destination.get(), destSize, readSize, dataSizeKnown).isFailed())
-        return 0;
+    try
+        {
+        if ((status = dataSource->open(dataSourceURL, DataSourceMode_Read)).isFailed())
+            throw status;
 
-    if (dataSource->close().isFailed())
-        return 0;
+        if (dataSizeKnown == uint64_t(-1))
+            dataSizeKnown = 0;
 
-//  DataSourceManager::Get()->destroyDataSource(dataSource);
+        if ((status = dataSource->read(destination.get(), destSize, readSize, dataSizeKnown)).isFailed())
+            throw status;
+
+        if ((status = dataSource->close()).isFailed())
+            throw status;
+        }
+    catch (DataSourceStatus)
+        {
+        assert(false);
+        }
+
+    DataSourceManager::Get()->destroyDataSource(dataSource);
 
     return readSize;
     }
@@ -2897,7 +2941,6 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
     {
     assert(blockID.IsValid());
 
-    DataSourceStatus writeStatus;
     DataSourceURL    url(m_dataSourceURL);
     url.append(L"t_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
@@ -2909,14 +2952,27 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
     //else std::cout << "[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
     //}
 
-    writeStatus = dataSource->open(url, DataSourceMode_Write_Segmented);
-    assert(writeStatus.isOK());
+    DataSourceStatus status;
 
-    writeStatus = dataSource->write(DataTypeArray, (uint32_t)countData);
-    assert(writeStatus.isOK());
+    try
+        {
+        if ((status = dataSource->open(url, DataSourceMode_Write_Segmented)).isFailed())
+            throw status;
 
-    writeStatus = dataSource->close();
-    assert(writeStatus.isOK());
+        if ((status = dataSource->write(DataTypeArray, (uint32_t)countData)).isFailed())
+            throw status;
+
+        if ((status = dataSource->close()).isFailed())
+            throw status;
+        }
+    catch (DataSourceStatus)
+        {
+        assert(false);
+        }
+
+    DataSourceManager::Get()->destroyDataSource(dataSource);
+
+
     //{
     //std::lock_guard<mutex> clk(s_consoleMutex);
     //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
@@ -3015,7 +3071,6 @@ inline void StreamingTextureBlock::Store(DataSourceAccount *dataSourceAccount, c
     pHeader[3] = format;
     memcpy(texData.data() + 4 * sizeof(int), pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
 
-    DataSourceStatus writeStatus;
     DataSourceURL    url(m_pDataSourceURL);
     url.append(L"t_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
@@ -3027,19 +3082,31 @@ inline void StreamingTextureBlock::Store(DataSourceAccount *dataSourceAccount, c
     //else std::cout << "[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
     //}
 
-    writeStatus = dataSource->open(url, DataSourceMode_Write_Segmented);
-    assert(writeStatus.isOK()); // problem opening a DataSource
+    DataSourceStatus status;
 
-    writeStatus = dataSource->write(texData.data(), (uint32_t)(texData.size()));
-    assert(writeStatus.isOK()); // problem writing a DataSource
+    try
+        {
 
-    writeStatus = dataSource->close();
-    assert(writeStatus.isOK()); // problem closing a DataSource
+        if ((status = dataSource->open(url, DataSourceMode_Write_Segmented)).isFailed())
+            throw status;           // problem opening a DataSource
+
+        if ((status = dataSource->write(texData.data(), (uint32_t)(texData.size()))).isFailed())
+            throw status;           // problem writing a DataSource
+
+        if ((status = dataSource->close()).isFailed())
+            throw status;           // problem closing a DataSource
+        }
+    catch (DataSourceStatus)
+        {
+        assert(false);
+        }
+
+    DataSourceManager::Get()->destroyDataSource(dataSource);
+
                                 //{
                                 //std::lock_guard<mutex> clk(s_consoleMutex);
                                 //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
                                 //}
-//  dataSourceAccount->destroyDataSource(dataSource);
     }
 
 inline void StreamingTextureBlock::Load(DataSourceAccount * dataSourceAccount, const DataSource::SessionName &session, uint64_t blockSizeKnown)
