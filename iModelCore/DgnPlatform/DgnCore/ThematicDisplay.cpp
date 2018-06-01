@@ -54,9 +54,20 @@ static FPoint2d    computeTextureParam (double value, double margin)
     return point;
     }
 
-#ifdef TEST_JSON
-#include <GeomSerialization/GeomSerializationApi.h>
-#endif
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+GradientSymbCPtr getThematicGradient(Render::Primitives::DisplayParamsCR displayParams, PolyfaceAuxChannelCR channel)
+    {
+    GradientSymbCPtr    gradient = displayParams.GetGradient();
+
+    if (gradient.IsValid() && gradient->GetThematicSettings().IsValid())
+        return gradient;
+
+    auto thematicSettings  = new ThematicGradientSettings(channel.GetValueRange());
+
+    return new GradientSymb(*thematicSettings);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2018
@@ -65,31 +76,14 @@ void  ElementTileTree::ThematicMeshBuilder::InitThematicDisplay(PolyfaceHeaderR 
     {
     // TBD -- Active channel selection - for now any scalar.
 
-
-    if (mesh.GetAuxDataCP().IsValid())
+    if (mesh.HasFacets() && mesh.GetAuxDataCP().IsValid())
         {
-#ifdef TEST_JSON
-        IGeometryPtr            geometry = IGeometry::Create(&mesh);
-        bvector<IGeometryPtr>   roundTrippedGeometries;
-        Utf8String              string;
-
-        if (IModelJson::TryGeometryToIModelJsonString(string, *geometry))
-            {
-            FILE*    testFile = std::fopen("d:\\tmp\\AuxData.json", "w");
-
-            fwrite(string.c_str(), string.size(), 1, testFile);
-            fclose(testFile);
-
-            bvector<IGeometryPtr>   geometries;
-            if (IModelJson::TryIModelJsonStringToGeometry(string, roundTrippedGeometries))
-                mesh = *roundTrippedGeometries.front()->GetAsPolyfaceHeader();
-            }
-#endif
-
         for (auto& channel : mesh.GetAuxDataCP()->GetChannels())    
             {
-            if (channel->IsScalar() && nullptr != displayParams.GetGradient() && displayParams.GetGradient()->IsThematic())
+            if (channel->IsScalar())
                 {
+                GradientSymbCPtr        gradient = getThematicGradient(displayParams, *channel);
+
                 // Add parameters from initial entry.   Texture will not be published correctly without parameters.
                 mesh.ParamIndex().clear();
                 mesh.Param().clear();
@@ -103,10 +97,10 @@ void  ElementTileTree::ThematicMeshBuilder::InitThematicDisplay(PolyfaceHeaderR 
                 mesh.Param().reserve(values.size());
                 mesh.Param().SetActive(true);
 
-                ThematicCookedRange  cookedRange(displayParams.GetGradient()->GetThematicSettings()->GetRange());
+                ThematicCookedRange  cookedRange(gradient->GetThematicSettings()->GetRange());
 
                 for (auto value : values)
-                    mesh.Param().push_back(DPoint2d::From(computeTextureParam(cookedRange.GetNormalizedValueFromRaw((double) value), displayParams.GetGradient()->GetThematicSettings()->GetMargin())));
+                    mesh.Param().push_back(DPoint2d::From(computeTextureParam(cookedRange.GetNormalizedValueFromRaw((double) value), gradient->GetThematicSettings()->GetMargin())));
                  }
             }
         }
@@ -133,14 +127,15 @@ void   ElementTileTree::ThematicMeshBuilder::BuildMeshAuxData(MeshAuxDataR auxDa
 
                 auto&                               inDataVector = channel->GetData();
                 bvector<AuxParamChannel::DataPtr>   outDataVector;
-                ThematicCookedRange                 cookedRange(displayParams.GetGradient()->GetThematicSettings()->GetRange());
+                GradientSymbCPtr                    gradient = getThematicGradient(displayParams, *channel);
+                ThematicCookedRange                 cookedRange(gradient->GetThematicSettings()->GetRange());
 
                 for (auto inData : inDataVector)
                     {
                     bvector<FPoint2d>   params;
 
                     for (auto& value : inData->GetValues())
-                        params.push_back(computeTextureParam(cookedRange.GetNormalizedValueFromRaw(value),  displayParams.GetGradient()->GetThematicSettings()->GetMargin()));
+                        params.push_back(computeTextureParam(cookedRange.GetNormalizedValueFromRaw(value),  gradient->GetThematicSettings()->GetMargin()));
                     
                     outDataVector.push_back(new AuxParamChannel::Data((float) inData->GetInput(), std::move(params)));
                     }
