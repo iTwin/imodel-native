@@ -114,7 +114,6 @@
     <Part Name="Tests" DeferType="BuildUnitTests">
         <SubPart PartName="PublishedTests" />
         <SubPart PartName="NonPublishedTests" />
-        <SubPart PartName="TestsSqlang"  PartFile="Units" Repository="Units" />
     </Part>
 
     <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts -->
@@ -240,7 +239,6 @@
     <Part Name="PerformanceTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="TestDependencies"/>
         <SubPart PartName="TestFixture"/>
-        <SubPart PartName="TestsSqlang"  PartFile="Units" Repository="Units" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
         </Bindings>

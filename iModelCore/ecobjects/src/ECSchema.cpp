@@ -1809,10 +1809,10 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
                 }
             return source;
             };
-        auto comp = Formatting::CompositeValueSpec(copyIfNecessary(sourceComp->GetMajorUnit()),
-                                                    copyIfNecessary(sourceComp->GetMiddleUnit()),
-                                                    copyIfNecessary(sourceComp->GetMinorUnit()),
-                                                    copyIfNecessary(sourceComp->GetSubUnit()));
+        auto comp = Formatting::CompositeValueSpec(*copyIfNecessary(sourceComp->GetMajorUnit()),
+                                                    *copyIfNecessary(sourceComp->GetMiddleUnit()),
+                                                    *copyIfNecessary(sourceComp->GetMinorUnit()),
+                                                    *copyIfNecessary(sourceComp->GetSubUnit()));
         if (ECObjectsStatus::Success != status)
             return status;
 
