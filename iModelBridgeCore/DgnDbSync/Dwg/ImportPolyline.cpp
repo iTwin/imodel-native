@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportPolyline.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -30,6 +30,7 @@ PolylineFactory::PolylineFactory ()
     m_hasConstantWidth = false;
     m_hasWidths = false;
     m_isClosed = false;
+    m_ecs.InitIdentity ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,6 +60,8 @@ PolylineFactory::PolylineFactory (DwgDbPolylineCR polyline, bool allowClosed)
 
     m_elevation = polyline.GetElevation ();
     m_thickness = polyline.GetThickness ();
+
+    polyline.GetEcs (m_ecs);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,6 +78,7 @@ PolylineFactory::PolylineFactory (size_t nPoints, DPoint3dCP points, bool closed
     m_hasBulges = false;
     m_elevation = 0.0;
     m_thickness = 0.0;
+    m_ecs.InitIdentity ();
 
     for (size_t i = 0; i < m_numPoints; i++)
         m_points.push_back (points[i]);
@@ -96,6 +100,8 @@ CurveVectorPtr  PolylineFactory::CreateCurveVector (bool useElevation)
     CurveVectorPtr  curves = CurveVector::Create (m_isClosed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
     if (!curves.IsValid())
         return  curves;
+
+    bool hasEcs = !m_ecs.IsIdentity ();
 
     ICurvePrimitivePtr  primitive;
     DPoint3dArray       noBulgePoints;
@@ -119,6 +125,13 @@ CurveVectorPtr  PolylineFactory::CreateCurveVector (bool useElevation)
                 noBulgePoints.clear ();
                 }
 
+            // transform the points to ECS:
+            if (hasEcs)
+                {
+                m_ecs.MultiplyTranspose (startPoint);
+                m_ecs.MultiplyTranspose (endPoint);
+                }
+
             // create an arc from the bulge factor, on polyline ECS:
             DEllipse3d  arc;
             DwgHelper::CreateArc2d (arc, startPoint, endPoint, m_bulges[i]);
@@ -128,7 +141,12 @@ CurveVectorPtr  PolylineFactory::CreateCurveVector (bool useElevation)
 
             primitive = ICurvePrimitive::CreateArc (arc);
             if (primitive.IsValid())
+                {
+                // transform the arc to WCS:
+                if (hasEcs)
+                    primitive->TransformInPlace (m_ecs);
                 curves->Add (primitive);
+                }
 
             continue;
             }

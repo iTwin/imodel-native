@@ -175,6 +175,7 @@ private:
     double                  m_elevation;
     double                  m_thickness;
     bool                    m_isClosed;
+    Transform               m_ecs;
 
 public:
     PolylineFactory ();
