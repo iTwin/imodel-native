@@ -467,6 +467,7 @@ public:
 
             virtual bool _WantCachedHiResTiles(DgnDbR) const { return false; } //!< @private
             virtual bool _WantEmbedMaterials(DgnDbR) const { return false; } //!< @private
+            virtual bool _WantWaitOnSave(DgnDbR) const { return false; } //!< @private
 
             //! Return the full path to a .tilecache file for caching generated element tiles.
             DGNPLATFORM_EXPORT BeFileName _GetElementCacheFileName(DgnDbCR db) const;
