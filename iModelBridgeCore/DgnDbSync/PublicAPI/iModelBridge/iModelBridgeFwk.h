@@ -21,7 +21,7 @@
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <Logging/bentleylogging.h>
 #include <WebServices/iModelHub/Client/ClientHelper.h>
-
+#include <iModelDmsSupport/iModelDmsSupport.h>
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct iModelHubFX;
@@ -116,17 +116,19 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         bool m_createRepositoryIfNecessary = false;
         int m_maxWaitForMutex = 60000;
         Utf8String m_revisionComment;
-        WString m_bridgeRegSubKey;
+        WString    m_bridgeRegSubKey;
         BeFileName m_bridgeLibraryName;
-        BeFileName  m_bridgeAssetsDir;
+        BeFileName m_bridgeAssetsDir;
         BeFileName m_loggingConfigFileName;
         BeFileName m_stagingDir;
         BeFileName m_inputFileName;
+        BeFileName m_workspaceDir;
+        BeFileName m_dmsLibraryName;
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
         Json::Value m_argsJson; // additional arguments, in JSON format. Some of these may be intended for the bridge.
         bvector<WString> m_bargs;
-
+        WString     m_inputFileUrn;
         IMODEL_BRIDGE_FWK_EXPORT JobDefArgs();
 
         //! Parse the command-line arguments required by the iModelBridgeFwk itself, and return a vector of pointers to the remaining
@@ -143,6 +145,10 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         T_iModelBridge_getInstance* LoadBridge();
 
         T_iModelBridge_releaseInstance* ReleaseBridge();
+
+
+        T_iModelDmsSupport_getInstance*   LoadDmsLibrary();
+        //void*   ReleaseDmsLibrary();
         };
 
     //! The command-line arguments required by the iModelBridgeFwk that pertain to the iModelHub
@@ -155,7 +161,7 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         WebServices::UrlProvider::Environment m_environment; //!< Connect environment
         uint8_t m_maxRetryCount = 3;                //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
         bvector<WString> m_bargs;
-
+        Http::Credentials m_dmsCredentials;            //!< DMS credentials
         //! Parse the command-line arguments required by the iModelBridgeFwk itself that pertain to the iModelHub, and return a vector of pointers to the remaining
         //! arguments (which are presumably the arguments to the bridge).
         BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);
@@ -191,7 +197,7 @@ protected:
     JobDefArgs m_jobEnvArgs;                  // the framework's command-line arguments
     ServerArgs m_serverArgs;            // the framework's command-line arguments that pertain to the iModelHub
     FwkRepoAdmin* m_repoAdmin {};
-
+    IDmsSupport*    m_dmsSupport;
     BeSQLite::DbResult OpenOrCreateStateDb();
     void PrintUsage(WCharCP programName);
     void RedirectStderr();
@@ -235,6 +241,12 @@ protected:
     BentleyStatus ReleaseBridge();
     BentleyStatus LoadBridge();
     BentleyStatus InitBridge();
+
+    BentleyStatus LoadDmsLibrary();
+    BentleyStatus ReleaseDmsLibrary();
+    BentleyStatus StageInputFile();
+    BentleyStatus StageWorkspace();
+    BentleyStatus SetupDmsFiles();
     int ProcessSchemaChange();
 
 public:

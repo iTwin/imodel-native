@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="BimFromDgnDb.cpp" />
+    <ClCompile Include="InteropHostProvider.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BimFromDgnDb.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="InteropHostProvider.h" />
+    <ClInclude Include="..\..\PublicAPI\BimFromDgnDb\BimFromDgnDb.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\PublicAPI\BimFromDgnDb\BimFromDgnDbAPI.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="PublicApi">
+      <UniqueIdentifier>{2dfdc55f-5fa9-4ba7-88da-94b1347b52ea}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
