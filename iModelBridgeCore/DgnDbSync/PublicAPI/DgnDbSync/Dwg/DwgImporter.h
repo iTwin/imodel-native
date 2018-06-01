@@ -319,6 +319,7 @@ public:
         StandardUnit        m_unspecifiedBlockUnits;
         T_DwgWeightMap      m_lineweightMapping;
         bool                m_syncBlockChanges;
+        bool                m_syncAsmBodyInFull;
         bool                m_syncDwgVersionGuid;
         bool                m_importRasters;
         bool                m_importPointClouds;
@@ -338,6 +339,7 @@ public:
             m_unspecifiedBlockUnits = StandardUnit::MetricMeters;
             m_lineweightMapping.clear ();
             m_syncBlockChanges = false;
+            m_syncAsmBodyInFull = false;
             m_syncDwgVersionGuid = false;
             m_importRasters = false;
             m_importPointClouds = false;
@@ -360,6 +362,7 @@ public:
         void SetUnspecifiedBlockUnits (StandardUnit v) {m_unspecifiedBlockUnits = v;}
         void SetLineWeightMapping (T_DwgWeightMap const& map) { m_lineweightMapping = map; }
         void SetSyncBlockChanges (bool syncBlocks) { m_syncBlockChanges = syncBlocks; }
+        void SetSyncAsmBodyInFull (bool fullSync) { m_syncAsmBodyInFull = fullSync; }
         void SetSyncDwgVersionGuid (bool checkGuid) { m_syncDwgVersionGuid = checkGuid; }
         void SetImportRasterAttachments (bool allow) { m_importRasters = allow; }
         void SetImportPointClouds (bool allow) { m_importPointClouds = allow; }
@@ -385,6 +388,8 @@ public:
         bool CopyLayerIfDifferent() const {return m_copyLayer == CopyLayer::IfDifferent;}
         uint32_t GetDgnLineWeight (DwgDbLineWeight dwgWeight) const;
         bool GetSyncBlockChanges () const { return m_syncBlockChanges; }
+        //! Fully sync ASM Brep data? Recommended for detail editing such as imprinting or edge coloring etc.
+        bool GetSyncAsmBodyInFull () const { return m_syncAsmBodyInFull; }
         //! Can DWG VersionGuid be used for sync?  Recommended for DWG files changed only by AutoCAD based products.
         bool GetSyncDwgVersionGuid () const { return m_syncDwgVersionGuid; }
         bool GetImportRasterAttachments () const { return m_importRasters; }
@@ -665,8 +670,27 @@ public:
         void        SetTransform (TransformCR trans) { m_geometryToPart = trans; }
         };  // SharedPartEntry
     typedef bvector<SharedPartEntry>                    T_SharedPartList;
-    typedef bpair<DwgDbObjectId, T_SharedPartList>      T_BlockPartsEntry;
-    typedef bmap<DwgDbObjectId, T_SharedPartList>       T_BlockPartsMap;
+
+    //! Cache key for a shared part collection
+    struct SharedPartKey
+        {
+    private:
+        DwgDbObjectId               m_blockId;
+        double                      m_partScale;
+    public:
+        SharedPartKey (DwgDbObjectIdCR id, double scale) : m_blockId(id), m_partScale(scale) {}
+        SharedPartKey () : m_partScale(0.0) { m_blockId.SetNull(); }
+
+        DwgDbObjectIdCR GetBlockId () const { return m_blockId; }
+        void    SetBlockId (DwgDbObjectIdCR id) { m_blockId = id; }
+        double  GetPartScale () const { return m_partScale; }
+        void    SetPartScale (double scale) { m_partScale = scale; }
+        bool    IsMirrored () const { return m_partScale < -1.0e-5; }
+        //! The left-hand operand of the key
+        bool operator < (SharedPartKey const& rho) const;
+        };  // SharedPartKey
+    typedef bpair<SharedPartKey, T_SharedPartList>      T_BlockPartsEntry;
+    typedef bmap<SharedPartKey, T_SharedPartList>       T_BlockPartsMap;
 
     typedef bpair<DwgDbObjectId, DgnElementId>          T_DwgDgnTextStyleId;
     typedef bmap<DwgDbObjectId, DgnElementId>           T_TextStyleIdMap;

@@ -68,6 +68,7 @@
         <ProductDirectory Name="PublisherLoggingConfigXml" Path=""          RelativeTo="Assemblies" LibType="Static"/>
         <ProductDirectory Name="VendorApi"                 Path="include"   RelativeTo="applicationroot"/>
         <ProductDirectory Name="VendorApi"                 Path="include"   RelativeTo="applicationroot" LibType="Static"/>
+        <ProductDirectory Name="DgnV8Dlls" Deliver="false"/>
     </ProductDirectoryList>
 
     <Part Name="iModelBridgeFwkExe-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
@@ -115,6 +116,7 @@
       <SubPart PartName="iModelBridgeLibrary" PartFile="iModelBridge" Repository="DgnDbSync"/>
       <SubPart PartName="iModelBridgeFwk-en"/>
       <SubPart PartName="BeSecurity" PartFile="BeSecurity" Repository="BeSecurity"/>
+      <SubPart PartName="iModelDmsSupport" Repository="DmsSupport" PartFile="iModelDmsSupport"/>
       <Bindings>
         <Assemblies>Delivery/$(libprefix)iModelBridgeFwkLib$(ApiNumber)$(shlibext)</Assemblies>
         <Libs Required="false">Delivery/$(libprefix)iModelBridgeFwkLib$(libext)</Libs>

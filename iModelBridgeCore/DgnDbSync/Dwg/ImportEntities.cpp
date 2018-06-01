@@ -2195,7 +2195,8 @@ BentleyStatus   ElementFactory::CreateSharedParts ()
 
     // cache the parts created for this block
     auto& blockPartsMap = m_importer.GetBlockPartsR ();
-    blockPartsMap.insert (DwgImporter::T_BlockPartsEntry(m_sourceBlockId, parts));
+    DwgImporter::SharedPartKey  key(m_sourceBlockId, m_basePartScale);
+    blockPartsMap.insert (DwgImporter::T_BlockPartsEntry(key, parts));
 
     // create part elements from the part cache:
     status = this->CreatePartElements (parts);
@@ -3049,6 +3050,17 @@ DgnClassId      DwgImporter::_GetElementType (DwgDbBlockTableRecordCR block)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DwgImporter::SharedPartKey::operator < (SharedPartKey const& rho) const
+    {
+    // a mirrored block (scale < 0) needs a separate set of shared parts:
+    if (m_blockId == rho.GetBlockId())
+        return this->IsMirrored() < rho.IsMirrored();
+    return m_blockId < rho.GetBlockId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& results, ElementImportInputs& inputs)
@@ -3061,42 +3073,48 @@ BentleyStatus   DwgImporter::_ImportBlockReference (ElementImportResults& result
         return  status;
         }
 
-    // first, check if the block has been imported as shares parts:
-    auto found = m_blockPartsMap.find (insert->GetBlockTableRecordId());
+    /*-----------------------------------------------------------------------------------
+    We attempt to use shared parts for a block, but we first have to check:
+    a) if the block transform is valid for shared parts, and
+    b) if the block has been been previously imported as shared parts.
+    -----------------------------------------------------------------------------------*/
+    auto found = m_blockPartsMap.end ();
+
+    // get the transform of the insert entity:
+    auto blockTrans = Transform::FromIdentity ();
+    insert->GetBlockTransform (blockTrans);
+
+    double  partScale = 0.0;
+    bool    canShareParts = DwgHelper::GetTransformForSharedParts (nullptr, &partScale, blockTrans);
+    if (canShareParts)
+        {
+        // block transform is valid for shared parts, now search the parts cache:
+        SharedPartKey key(insert->GetBlockTableRecordId(), partScale);
+        found = m_blockPartsMap.find (key);
+        }
+
     if (found == m_blockPartsMap.end())
         {
-        // import the new insert entity from cratch:
+        // either can't share parts or parts cache not found - import the new insert entity from cratch:
         status = this->_ImportEntity (results, inputs);
         }
     else
         {
-        // get the transform of the insert entity:
-        auto blockTrans = Transform::FromIdentity ();
-        insert->GetBlockTransform (blockTrans);
+        // found parts from the cache - create elements from them:
+        ElementCreateParams  params(inputs.GetTargetModelR());
+        status = this->_GetElementCreateParams (params, inputs.GetTransform(), inputs.GetEntity());
+        if (BSISUCCESS != status)
+            return  status;
 
-        if (!DwgHelper::GetTransformForSharedParts(nullptr, nullptr, blockTrans))
-            {
-            // can't create shared parts - re-import the entity to create individual elements:
-            status = this->_ImportEntity (results, inputs);
-            }
-        else
-            {
-            // create elements from previously imported shared parts:
-            ElementCreateParams  params(inputs.GetTargetModelR());
-            status = this->_GetElementCreateParams (params, inputs.GetTransform(), inputs.GetEntity());
-            if (BSISUCCESS != status)
-                return  status;
+        ElementFactory  elemFactory(results, inputs, params, *this);
+        elemFactory.SetCreateSharedParts (true);
+        elemFactory.SetBaseTransform (blockTrans);
 
-            ElementFactory  elemFactory(results, inputs, params, *this);
-            elemFactory.SetCreateSharedParts (true);
-            elemFactory.SetBaseTransform (blockTrans);
+        // we should have avoided a transform not supported by shared parts
+        BeAssert (elemFactory.CanCreateSharedParts() && "Shared parts cannot be created for this insert!!");
 
-            // we should have avoided a transform not supported by shared parts
-            BeAssert (elemFactory.CanCreateSharedParts() && "Shared parts cannot be created for this insert!!");
-
-            // create elements from the block-parts cache
-            status = elemFactory.CreatePartElements (found->second);
-            }
+        // create elements from the block-parts cache
+        status = elemFactory.CreatePartElements (found->second);
         }
     if (status != BSISUCCESS)
         return  status;
