@@ -16,7 +16,6 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //===================================================
 
 //---------------------------------------------------------------------------------------
-// Constructor
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
 CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit)
@@ -315,6 +314,7 @@ CompositeValueSpec::CompositeValue CompositeValueSpec::DecomposeValue(double dva
         }
     return cv;
     }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 04/2018
 //--------------------------------------------------------------------------------------
@@ -334,6 +334,7 @@ bool CompositeValueSpec::CreateCompositeSpec(CompositeValueSpecR out, bvector<BE
     out = CompositeValueSpec(units);
     return true;
     }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------

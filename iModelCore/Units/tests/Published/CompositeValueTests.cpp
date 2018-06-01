@@ -291,7 +291,7 @@ TEST_F(FormatCompositeStringTest, CompositeValueUsesThousandSeparatorForLastUnit
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CompositeValueSpecJsonTest, JsonTest)
     {
-    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    CompositeValueSpec spec(*s_mile, *s_yrd, *s_ft, *s_inch);
     spec.SetMajorLabel("apple");
     spec.SetMiddleLabel("banana");
     spec.SetMinorLabel("cactus pear");
@@ -341,7 +341,7 @@ TEST_F(CompositeValueSpecJsonTest, JsonTest)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CompositeValueSpecJsonTest, JsonVerboseTest)
     {
-    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    CompositeValueSpec spec(*s_mile, *s_yrd, *s_ft, *s_inch);
     spec.SetSpacer("-");
     Json::Value json;
     spec.ToJson(json);

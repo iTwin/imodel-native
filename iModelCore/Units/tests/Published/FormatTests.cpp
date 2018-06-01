@@ -438,7 +438,7 @@ TEST_F(FormatStringTest, UnitAndLabelOverride)
 TEST_F(FormatJsonTest, FormatDecimal)
     {
     NumericFormatSpec numericSpec = NumericFormatSpec();
-    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    CompositeValueSpec spec(*s_mile, *s_yrd, *s_ft, *s_inch);
     spec.SetMajorLabel("apple");
     spec.SetMiddleLabel("banana");
     spec.SetMinorLabel("cactus pear");
@@ -502,7 +502,7 @@ TEST_F(FormatJsonTest, FormatFractional)
     NumericFormatSpec numericSpec = NumericFormatSpec();
     numericSpec.SetPresentationType(PresentationType::Fractional);
     numericSpec.SetPrecision(FractionalPrecision::Over_256);
-    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    CompositeValueSpec spec(*s_mile, *s_yrd, *s_ft, *s_inch);
     spec.SetMajorLabel("apple");
     spec.SetMiddleLabel("banana");
     spec.SetMinorLabel("cactus pear");
@@ -566,7 +566,7 @@ TEST_F(FormatJsonTest, FormatScientific)
     NumericFormatSpec numericSpec = NumericFormatSpec();
     numericSpec.SetPresentationType(PresentationType::Scientific);
     numericSpec.SetScientificType(ScientificType::ZeroNormalized);
-    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    CompositeValueSpec spec(*s_mile, *s_yrd, *s_ft, *s_inch);
     spec.SetMajorLabel("apple");
     spec.SetMiddleLabel("banana");
     spec.SetMinorLabel("cactus pear");
@@ -632,7 +632,7 @@ TEST_F(FormatJsonTest, FormatStation)
     numericSpec.SetPresentationType(PresentationType::Station);
     numericSpec.SetStationOffsetSize(4);
     numericSpec.SetStationSeparator('(');
-    CompositeValueSpec spec(s_mile, s_yrd, s_ft, s_inch);
+    CompositeValueSpec spec(*s_mile, *s_yrd, *s_ft, *s_inch);
     spec.SetMajorLabel("apple");
     spec.SetMiddleLabel("banana");
     spec.SetMinorLabel("cactus pear");

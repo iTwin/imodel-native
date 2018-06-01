@@ -216,12 +216,16 @@ private:
     int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
     Utf8String FormatToString(int n, int minSize) const;
     bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
+    //! The following method does not perform buffer related checks and does not use
+    //! parenthesis for indicating negative numbers However it uses other ShowSign options
+    //! the calling function.
+    //! The main purpose of this methind is to form exponent value.
+    UNITS_EXPORT int static FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSign);
     // !TODO====================================================================
 
 public:
     //! Creates a new valid NumericFormatSpec with a 
     UNITS_EXPORT NumericFormatSpec();
-
     NumericFormatSpec(NumericFormatSpecCR other) = default;
     ~NumericFormatSpec() = default;
     NumericFormatSpecR operator=(NumericFormatSpecCR other) = default;
@@ -375,19 +379,6 @@ public:
     //! @param[in] dval Double to format.
     //! @return dval as a formatted string.
     UNITS_EXPORT Utf8String Format(double dval) const;
-    //! Format a double using the format settings of numericFormatSpec.
-    //! @param[in] nfs  NumericFormatSpec used for formatting.
-    //! @param[in] dval Double to format.
-    //! @return dval as a formatted string.
-    UNITS_EXPORT static Utf8String Format(NumericFormatSpecCR nfs, double dval) {return nfs.Format(dval);}
-
-    // TODO: Attempt to remove these methods from the public API================
-    //! The following method does not perform buffer related checks and does not use
-    //! parenthesis for indicating negative numbers However it uses other ShowSign options
-    //! the calling function.
-    //! The main purpose of this methind is to form exponent value.
-    UNITS_EXPORT int static FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSign);
-    // !TODO====================================================================
 };
 
 //=======================================================================================
@@ -517,6 +508,7 @@ private:
 
     UNITS_EXPORT void SetUnitLabel(size_t index, Utf8CP label);
     UNITS_EXPORT CompositeValueSpec(bvector<BEU::UnitCP> const& units);
+    UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit);
     CompositeValue DecomposeValue(double value, BEU::UnitCP uom = nullptr) const;
 public:
     UNITS_EXPORT CompositeValueSpec();
@@ -524,7 +516,6 @@ public:
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit, BEU::UnitCR subUnit);
-    UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
     UNITS_EXPORT bool ToJson(Json::Value& out, bool verbose = false, bool excludeUnits = false) const;
     UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context);
