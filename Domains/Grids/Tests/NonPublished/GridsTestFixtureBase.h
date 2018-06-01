@@ -14,40 +14,14 @@
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnMaterial.h>
 #include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
-#include <DgnPlatform/UnitTests/RepositoryManagerUtil.h>
+#include <BuildingShared\SharedRepositoryManagerTest.h>
+
 
 #define POINTS_MATCH_TOLERANCE 1.0E-7    //1mm
 
 BEGIN_GRIDS_NAMESPACE
 
-struct MyTestApp : DgnClientFx::DgnClientApp, Dgn::DgnPlatformLib::Host::RepositoryAdmin 
-    {
-protected:
-    mutable Dgn::TestRepositoryManager   m_server;
-    Dgn::IRepositoryManagerP _GetRepositoryManager(Dgn::DgnDbR) const override { return &m_server; }
-
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Martynas.Saulius   05/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct RepositoryManagerTest : public BentleyApi::DgnClientFx::TestHelpers::DgnClientFxTests
-    {
-    public:
-        typedef Dgn::IRepositoryManager::Request Request;
-        typedef Dgn::IRepositoryManager::Response Response;
-        typedef Dgn::IBriefcaseManager::ResponseOptions ResponseOptions;
-
-
-        DgnClientFx::DgnClientApp* _CreateApp() override { return new MyTestApp(); }
-
-        void ClearRevisions(Dgn::DgnDbR db);
-
-    };
-
-
-
-struct GridsTestFixtureBase : RepositoryManagerTest
+struct GridsTestFixtureBase : BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::SharedRepositoryManagerTest
     {
     private:
         static BeFileName GetSeedProjectPath ();
