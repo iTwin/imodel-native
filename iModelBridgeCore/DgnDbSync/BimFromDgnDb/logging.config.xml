@@ -33,10 +33,10 @@
     <category name="BeSQLite">
         <priority value="error"/>
     </category>
-    <category name="BimTeleporter">
+    <category name="BimUpgrader">
         <priority value="warn"/>
     </category>
-    <category name="BimTeleporter.Performance">
+    <category name="BimUpgrader.Performance">
         <priority value="info"/>
     </category>
 

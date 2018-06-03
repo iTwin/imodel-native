@@ -1146,6 +1146,109 @@ TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
 
     }
 
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Carole.MacDonald            06/2018
+    //---------------+---------------+---------------+---------------+---------------+-------
+    TEST_F(ECSchemaTests, SchemaWithMultiInheritance)
+        {
+        LineUpFiles(L"SkipSchemaWithVerifier.ibim", L"Test3d.dgn", false);
+        V8FileEditor v8editor;
+        v8editor.Open(m_v8FileName);
+
+        // Schema names that start with "ECXA_" are automatically flattened
+        Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="ECXA_Multi" nameSpacePrefix="testa" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECClass typeName="Ichi" isDomainClass="True">
+            <ECProperty propertyName="Alpha" typeName="string" />
+        </ECClass>
+        <ECClass typeName="Ni" isDomainClass="True">
+            <ECProperty propertyName="Beta" typeName="string" />
+        </ECClass>
+        <ECClass typeName="San" isDomainClass="True">
+            <BaseClass>Ichi</BaseClass>
+            <BaseClass>Ni</BaseClass>
+            <ECProperty propertyName="Gamma" typeName="string" />
+        </ECClass>
+        <ECClass typeName="Shi" isDomainClass="True">
+            <ECProperty propertyName="Delta" typeName="string" />
+        </ECClass>
+        <ECClass typeName="Go" isDomainClass="True">
+            <BaseClass>Ichi</BaseClass>
+            <BaseClass>Shi</BaseClass>
+            <ECProperty propertyName="Epsilon" typeName="string" />
+        </ECClass>
+        <ECClass typeName="Roku" isDomainClass="True">
+            <BaseClass>Shi</BaseClass>
+            <ECProperty propertyName="Zeta" typeName="string" />
+        </ECClass>
+        <ECRelationshipClass typeName="IchiToShi" isDomainClass="True" strength="referencing" strengthDirection="forward">"
+           <Source cardinality="(0,1)" polymorphic="True">"
+               <Class class="Ichi" />
+           </Source>
+           <Target cardinality="(0,N)" polymorphic="True">
+               <Class class="Shi"/>
+           </Target>
+       </ECRelationshipClass>
+
+        <ECRelationshipClass typeName="NiToRoku" isDomainClass="True" strength="referencing" strengthDirection="forward">"
+           <Source cardinality="(0,1)" polymorphic="True">"
+               <Class class="Ni" />
+           </Source>
+           <Target cardinality="(0,N)" polymorphic="True">
+               <Class class="Roku"/>
+           </Target>
+       </ECRelationshipClass>
+
+    </ECSchema>)xml";
+
+        ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+        ECObjectsV8::ECSchemaPtr schema;
+        EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+        EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+
+        DgnV8Api::ElementId eid;
+        v8editor.AddLine(&eid);
+        DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+        DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+        EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"ECXA_Multi", L"Ichi"));
+
+        v8editor.Save();
+        DoConvert(m_dgnDbFileName, m_v8FileName);
+
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+
+        BentleyApi::ECN::ECSchemaCP imported = db->Schemas().GetSchema("ECXA_Multi");
+        ASSERT_TRUE(nullptr != imported);
+
+        ASSERT_EQ(8, imported->GetClassCount());
+
+        for (BentleyApi::ECN::ECClassCP ecClass : imported->GetClasses())
+            {
+            ASSERT_TRUE(ecClass->GetBaseClasses().size() < 2);
+            }
+
+        BentleyApi::ECN::ECClassCP san = imported->GetClassCP("San");
+        BentleyApi::ECN::ECClassCP shi = imported->GetClassCP("Shi");
+        BentleyApi::ECN::ECClassCP go = imported->GetClassCP("Go");
+        BentleyApi::ECN::ECClassCP roku = imported->GetClassCP("Roku");
+        ASSERT_TRUE(nullptr != san);
+        ASSERT_TRUE(nullptr != san->GetPropertyP("Alpha", false));
+        ASSERT_TRUE(nullptr != san->GetPropertyP("Beta", false));
+        ASSERT_TRUE(nullptr != san->GetPropertyP("Gamma", false));
+
+        BentleyApi::ECN::ECRelationshipClassCP ichiToShi = imported->GetClassCP("IchiToShi")->GetRelationshipClassCP();
+        ASSERT_TRUE(ichiToShi->GetTarget().SupportsClass(*roku));
+        ASSERT_TRUE(roku->Is(shi));
+
+        ASSERT_TRUE(ichiToShi->GetTarget().SupportsClass(*go));
+        ASSERT_FALSE(go->Is(shi));
+
+        }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                    Carole.MacDonald            01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
 struct SkipSchemaImportTests : public ConverterTestBaseFixture
     {
     DEFINE_T_SUPER(ConverterTestBaseFixture);
@@ -1281,3 +1384,4 @@ TEST_F(ECSchemaTests, SkipSchemaUsingVerifier)
     DoConvert(m_dgnDbFileName, m_v8FileName);
     delete m_verifier;
     }
+
