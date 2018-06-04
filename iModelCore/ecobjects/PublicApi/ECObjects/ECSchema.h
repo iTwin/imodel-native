@@ -1647,6 +1647,9 @@ public:
     //! Returns true if this class matches the specified schema and class name, or is derived from a matching class
     ECOBJECTS_EXPORT bool Is(Utf8CP schemaName, Utf8CP className) const;
 
+    //! Tries to locate a common base class given the starting class and a list of other classes
+    ECOBJECTS_EXPORT static void FindCommonBaseClass(ECEntityClassCP &commonClass, ECEntityClassCP startingClass, bvector<ECClassCP> const& constraintClasses);
+
     //! If the given name is valid, creates a primitive property object with the default type of STRING
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name);
 
