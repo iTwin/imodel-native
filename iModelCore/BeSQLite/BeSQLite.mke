@@ -17,7 +17,16 @@
 #
 #-----------------------------------------------------------------------------------
 
-GCC_DEFAULT_VISIBILITY = default
+# We used to build BeSQLite with GCC_DEFAULT_VISIBILITY=visible. That was required when we built and deployed 
+# our libraries as multiple .SOs or .dylibs on some *nix platforms. That was wrong on two counts. First, we no longer deliver our
+# libraries in the form of shared objects. That was unworkable. Now, apps always link all of our libraries statically. 
+# Second, we must ensure that our libraries and the app itself all use OUR COPY OF SQLITE.
+# That is, we don't an app or our libraries resolve a symbol such as `sqlite3_open_v2` from the libsqlite.so/dylib
+# that the app FRAMEWORK happens to have already loaded. To prevent that, we must HIDE THE SYMBOLS in our
+# copy of sqlite. That causes the linker to mark these symbols as private, telling the loader not to 
+# try to resolve them from other shared objects but only from definitions within the app shared object
+# (which includes our statically linked libraries, including our libBeSQLite.a).
+
 GCC_NOSTRICT = 1
 HAVE_PERMISSION_TO_COMPILE_AT_W3 = 1
 
