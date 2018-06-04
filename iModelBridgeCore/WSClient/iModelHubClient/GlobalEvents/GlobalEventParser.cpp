@@ -33,7 +33,7 @@ std::shared_ptr<Json::Value> EventPropertiesToJSON(const Utf8String jsonString, 
                 data.isMember(GlobalEvent::Property_EventTopic) &&
                 data.isMember(GlobalEvent::Property_FromEventSubscriptionId) &&
                 data.isMember(GlobalEvent::Property_ToEventSubscriptionId) &&
-                data.isMember(GlobalEvent::Property_IModelId) &&
+                data.isMember(GlobalEvent::Property_iModelId) &&
                 data.isMember(GlobalEvent::Property_ProjectId) &&
                 data.isMember(GlobalEvent::ChangeSetCreatedEventProperties::Property_BriefcaseId) &&
                 data.isMember(GlobalEvent::ChangeSetCreatedEventProperties::Property_ChangeSetId) &&
