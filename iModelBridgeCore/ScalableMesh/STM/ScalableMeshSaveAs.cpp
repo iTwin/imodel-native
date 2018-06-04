@@ -32,6 +32,13 @@ void PrepareClipsForSaveAs(ClipVectorPtr clips)
     }
 
 StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress)
+    {
+    BeAssert(!"Deprecated. Use other version of DoSaveAs");
+    auto transform = Transform::FromIdentity();
+    return DoSaveAs(source, destination, clips, progress, transform);
+    }
+
+StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress, const Transform& transform)
 {
     // Create Scalable Mesh at output path
     StatusInt status;
@@ -60,6 +67,7 @@ StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WS
         smParams->SetClips(clips);
         smParams->SetProgress(progress);
         smParams->SetSaveTextures(textureInfo->IsTextureAvailable() && !textureInfo->IsUsingBingMap());
+        smParams->SetTransform(transform);
 
         auto smPublisher = IScalableMeshPublisher::Create(SMPublishType::THREESM);
         if (SUCCESS != smPublisher->Publish(smParams))
