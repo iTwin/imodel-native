@@ -1,6 +1,5 @@
 #include <BuildingShared/BuildingSharedApi.h>
 #include <DgnPlatform\DgnPlatformApi.h>
-#include "SharedRepositoryManagerTest.h"
 #include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 #include <DgnPlatform/UnitTests/RepositoryManagerUtil.h>
 #include <BuildingShared/BuildingSharedApi.h>
@@ -8,6 +7,7 @@
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 #include <DgnClientFx/TestHelpers/DgnClientFxTests.h>
 #include <Bentley/BeTest.h>
+#include "SharedRepositoryManagerTest.h"
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
