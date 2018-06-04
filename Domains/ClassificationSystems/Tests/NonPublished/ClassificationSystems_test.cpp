@@ -70,7 +70,6 @@ TEST_F(ClassificationSystemsTestFixture, StandardInsertion)
         BuildingLocks_LockElementForOperation(*classification.get(), BeSQLite::DbOpcode::Insert, "Insert for ClassificationSystems_test");
         classification->Insert(&stat);
         ASSERT_EQ(DgnDbStatus::Success, stat) << "Group failed to be inserted to Db";
-        //CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationPtr Create(ClassificationSystemCR system, Utf8CP name, Utf8CP id, Utf8CP description, ClassificationGroupCP group, ClassificationCP specializes);
         
 
         db.SaveChanges();

@@ -1,25 +1,17 @@
-#pragma once
-
 #include <DgnPlatform\DgnPlatformApi.h>
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 #include <DgnClientFx/TestHelpers/DgnClientFxTests.h>
 #include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
-#include <BuildingShared\SharedRepositoryManagerTest.h>
+#include <BuildingShared\SharedRepositoryManagerTestBase.h>
 
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
-struct ClassificationSystemsTestsBase : BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::SharedRepositoryManagerTest
+struct ClassificationSystemsTestsBase : BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::SharedRepositoryManagerTestBase
     {
-    private:
-        static BeFileName GetSeedProjectPath();
-    public:
+        virtual void RegisterDomains() override;
         static void SetUpTestCase();
-        virtual void SetUp() override;
-        virtual void TearDown() override;
-        BeSQLite::L10N::SqlangFiles _GetApplicationSqlangs() override;
-    public:
-        BeFileName GetProjectPath() const;
+
     };
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
