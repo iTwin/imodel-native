@@ -33,6 +33,7 @@ struct SchemaFlattener
     bool ShouldConvertECClassToMixin(ECN::ECSchemaR targetSchema, ECN::ECClassR inputClass);
     static void FindCommonBaseClass(ECN::ECClassP& commonClass, ECN::ECClassP currentClass, ECN::ECBaseClassesList const& classes, const bvector<ECN::ECClassCP> propogationFilter);
     void ProcessConstraints(ECN::ECRelationshipConstraintR constraint, bool isSource, ECN::ECRelationshipClassR relClass, ECN::ECEntityClassP defaultConstraintClass);
+    void CheckConstraintForDerivedClasses(ECN::ECRelationshipConstraintR constraint);
 
     public:
         SchemaFlattener(ECN::ECSchemaReadContextPtr context) : m_schemaReadContext(context) {}

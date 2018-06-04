@@ -21,18 +21,6 @@ USING_NAMESPACE_BENTLEY_SQLITE
 static iModelHubFX* s_iModelHubFXForTesting;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String getArgValue(WCharCP arg)
-    {
-    WString argValue(arg);
-    argValue = argValue.substr(argValue.find_first_of('=', 0) + 1);
-    argValue.Trim(L"\"");
-    argValue.Trim();
-    return Utf8String(argValue);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus getEnvironmentFromString(UrlProvider::Environment& environment, Utf8StringCR str)
@@ -71,31 +59,14 @@ SERVER:\n\
     --server-user=          (required)  The username for the project.\n\
     --server-password=      (required)  The password for the project.\n\
     --server-retries=       (optional)  The number of times to retry a pull, merge, and/or push to iModelHub. Must be a value between 0 and 255.\n\
-    --server-credentials-isEncrypted (optional) The user name and password passed in is encrypted. \n\
-    --server-dmsUser=       (optional) The username for the DMS Project. \n\
-    --server-dmsPassword=   (optional) The password for the DMS Project. \n\
-    ");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  12/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool            getNeedsPasswordDecryptionFromEnv()
-    {
-    CharCP envValue = getenv("BAS_ShouldDataProtectBridgeCredentials");
-    if (NULL == envValue)
-        return false;
-
-    if (0 == BeStringUtilities::Stricmp("1", envValue))
-        return true;
-
-    return false;
+    --server-credentials-isEncrypted (optional) The user name and password passed in is encrypted.\n\
+    \n");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     DecryptCredentials(Http::Credentials& credentials)
+void            iModelBridgeFwk::DecryptCredentials(Http::Credentials& credentials)
     {
     Utf8String userName;
     CryptoHelper::DecryptString(userName, credentials.GetUsername());
@@ -112,7 +83,7 @@ static void     DecryptCredentials(Http::Credentials& credentials)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[])
     {
-    bool needsDecryption = getNeedsPasswordDecryptionFromEnv();
+    m_isEncrypted = true;
     for (int iArg = 1; iArg < argc; ++iArg)
         {
         if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--server", 8))
@@ -176,22 +147,9 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
                 }
             continue;
             }
-        //Once we support OIDC this can be the same as  iModelHub user
-        if (argv[iArg] == wcsstr(argv[iArg], L"--server-dmsUser="))
-            {
-            m_dmsCredentials.SetUsername(getArgValue(argv[iArg]));
-            continue;
-            }
-
-        if (argv[iArg] == wcsstr(argv[iArg], L"--server-dmsPassword="))
-            {
-            m_dmsCredentials.SetPassword(getArgValue(argv[iArg]));
-            continue;
-            }
-
         if (argv[iArg] == wcsstr(argv[iArg], L"--server-credentials-isEncrypted"))
             {
-            needsDecryption = true;
+            m_isEncrypted = true;
             continue;
             }
 
@@ -200,11 +158,8 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
         return BSIERROR;
         }
 
-    if (needsDecryption)
-        {
+    if (m_isEncrypted)
         DecryptCredentials(m_credentials);
-        DecryptCredentials(m_dmsCredentials);
-        }
     return BSISUCCESS;
     }
 

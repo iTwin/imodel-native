@@ -113,7 +113,7 @@ T_iModelBridge_releaseInstance* iModelBridgeFwk::JobDefArgs::ReleaseBridge()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString getArgValueW(WCharCP arg)
+WString         iModelBridgeFwk::getArgValueW(WCharCP arg)
     {
     WString argValue(arg);
     argValue = argValue.substr(argValue.find_first_of('=', 0) + 1);
@@ -125,7 +125,7 @@ static WString getArgValueW(WCharCP arg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String getArgValue(WCharCP arg)
+Utf8String      iModelBridgeFwk::getArgValue(WCharCP arg)
     {
     return Utf8String(getArgValueW(arg));
     }
@@ -180,6 +180,7 @@ void iModelBridgeFwk::PrintUsage(WCharCP programName)
 
     JobDefArgs::PrintUsage();
     ServerArgs::PrintUsage();
+    DmsServerArgs::PrintUsage();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -198,10 +199,6 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-logging-config-file=  (optional)  The name of the logging configuration file.\n"
         L"--fwk-argsJson=             (optional)  Additional arguments in JSON format.\n"
         L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish.\n"
-        L"--fwk-inputFileUrn=         (optional)  The urn to fetch the input file. This and associated workspace will be downloaded and stored in the location specified by --fwk-input and --fwk-workspaceDir=\n"
-                                                  "eg.pw://server:datasource/Documents/D{c6cbe438-e200-4567-a98c-dfa55aba33be}\n"
-        L"--fwk-workspaceDir=         (optional)  Directory to cache workspace files.\n"
-        L"--fwk-dms-library=          (optional)  The full path to the dms library. Use this for direct Dms support from the framework.\n"
         );
     }
 
@@ -408,35 +405,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
                 m_bridgeAssetsDir = assetsDir;
             continue;
             }
-        
-        if (argv[iArg]==wcsstr(argv[iArg],L"--fwk-workspaceDir="))
-            {
-            m_workspaceDir = BeFileName (WString(getArgValueW(argv[iArg]), true));
-            continue;
-            }
 
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-dms-library"))
-            {
-            if (!m_dmsLibraryName.empty())
-                {
-                fwprintf(stderr, L"The --fwk-dms-library= option may appear only once.\n");
-                return BSIERROR;
-                }
-
-            m_dmsLibraryName.SetName(getArgValueW(argv[iArg]));
-            continue;
-            }
-        //--fwk-inputFileUri=
-        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-inputFileUrn="))
-            {
-            if (!m_inputFileUrn.empty())
-                {
-                fwprintf(stderr, L"The --fwk-input= option may appear only once.\n");
-                return BSIERROR;
-                }
-            m_inputFileUrn =  getArgValueW(argv[iArg]);
-            continue;
-            }
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized fwk argument\n", argv[iArg]);
         return BSIERROR;
@@ -566,12 +535,23 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
 
     InitLogging();
 
-    bvector<WCharCP> rawArgPtrs;        // pare down the args once again, removing the server-specific args and leaving the rest for the bridge
-    std::swap(rawArgPtrs, m_bargptrs);
+    bvector<WCharCP> serverRawArgPtrs;        // pare down the args once again, removing the server-specific args and leaving the rest for the bridge
+    std::swap(serverRawArgPtrs, m_bargptrs);
 
     m_bargptrs.push_back(argv[0]);
 
-    if ((BSISUCCESS != m_serverArgs.ParseCommandLine(m_bargptrs, (int)rawArgPtrs.size(), rawArgPtrs.data())) || (BSISUCCESS != m_serverArgs.Validate((int)rawArgPtrs.size(), rawArgPtrs.data())))
+    if ((BSISUCCESS != m_serverArgs.ParseCommandLine(m_bargptrs, (int) serverRawArgPtrs.size(), serverRawArgPtrs.data())) || (BSISUCCESS != m_serverArgs.Validate((int) serverRawArgPtrs.size(), serverRawArgPtrs.data())))
+        {
+        PrintUsage(argv[0]);
+        return BSIERROR;
+        }
+
+    bvector<WCharCP> dmsRawArgPtrs;        // pare down the args once again, removing the dms server-specific args and leaving the rest for the bridge
+    std::swap(dmsRawArgPtrs, m_bargptrs);
+
+    m_bargptrs.push_back(argv[0]);
+
+    if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bargptrs, (int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data(), m_serverArgs.m_isEncrypted)) || (BSISUCCESS != m_serverArgs.Validate((int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data())))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
@@ -1790,95 +1770,4 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
         }
 
     return *m_registry;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-T_iModelDmsSupport_getInstance* iModelBridgeFwk::JobDefArgs::LoadDmsLibrary()
-    {
-    auto getInstance = (T_iModelDmsSupport_getInstance*) GetBridgeFunction(m_dmsLibraryName, "iModelDmsSupport_getInstance");
-    if (!getInstance)
-        {
-        LOG.errorv(L"%ls: Does not export a function called 'iModelBridge_releaseInstance'", m_dmsLibraryName.c_str());
-        return nullptr;
-        }
-
-    return getInstance;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::LoadDmsLibrary()
-    {
-    auto getInstance = m_jobEnvArgs.LoadDmsLibrary();
-    if (nullptr == getInstance)
-        return BentleyStatus::ERROR;
-
-    m_dmsSupport = getInstance(iModelDmsSupport::SessionType::PWDI, m_serverArgs.m_dmsCredentials.GetUsername(), m_serverArgs.m_dmsCredentials.GetPassword());//m_dmsCredentials
-    
-    if (nullptr == m_dmsSupport)
-        {
-        LOG.fatalv(L"%ls: iModelDmsSupport_getInstance function returned a nullptr", m_jobEnvArgs.m_dmsLibraryName.c_str());
-        return BentleyStatus::ERROR;
-        }
-    
-    if (!m_dmsSupport->_InitializeSession(m_jobEnvArgs.m_inputFileUrn))
-        return BentleyStatus::ERROR;
-
-    return BentleyStatus::SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::ReleaseDmsLibrary()
-    {
-    if (m_dmsSupport)
-        m_dmsSupport->_UnInitializeSession();
-
-    return BentleyStatus::SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::SetupDmsFiles()
-    {
-    BentleyStatus status = BentleyStatus::SUCCESS;
-    if (m_jobEnvArgs.m_dmsLibraryName.empty())
-        return status;
-
-    if (SUCCESS != (status = LoadDmsLibrary()))
-        return status;
-
-    if (SUCCESS != (status = StageInputFile()))
-        return ReleaseDmsLibrary();
-
-    if (SUCCESS != (status = StageWorkspace()))
-        return ReleaseDmsLibrary();
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::StageInputFile()
-    {
-    BentleyStatus status = BentleyStatus::SUCCESS;
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   iModelBridgeFwk::StageWorkspace()
-    {
-    BentleyStatus status = BentleyStatus::SUCCESS;
-    m_dmsSupport->_Initialize();
-    m_dmsSupport->_FetchWorkspace(m_jobEnvArgs.m_inputFileUrn, m_jobEnvArgs.m_workspaceDir);
-    m_dmsSupport->_UnInitialize();
-    return status;
     }

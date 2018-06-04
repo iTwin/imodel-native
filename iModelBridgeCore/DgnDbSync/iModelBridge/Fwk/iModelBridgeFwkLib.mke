@@ -2,7 +2,7 @@
 #
 #     $Source: iModelBridge/Fwk/iModelBridgeFwkLib.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -37,6 +37,8 @@ $(o)iModelBridgeRegistry$(oext): $(RegistryDir)iModelBridgeRegistry.cpp $(Regist
 $(o)cpl_spawn$(oext): $(RegistryDir)cpl_spawn.cpp $(RegistryDir)cpl_spawn.h ${MultiCompileDepends}
 
 $(o)Decrypt$(oext): $(baseDir)Decrypt.cpp $(baseDir)Decrypt.h ${MultiCompileDepends}
+
+$(o)iModelBridgeFwkDmsOptions$(oext): $(baseDir)iModelBridgeFwkDmsOptions.cpp  $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

@@ -77,23 +77,20 @@ BentleyStatus SchemaFlattener::CopyFlatConstraint(ECN::ECRelationshipConstraintR
 
     for (auto constraintClass : fromRelationshipConstraint.GetConstraintClasses())
         {
+        ECN::ECClassP destConstraintClass = nullptr;
         if (toRelationshipConstraint.GetRelationshipClass().GetSchema().GetSchemaKey() != constraintClass->GetSchema().GetSchemaKey())
             {
             ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[constraintClass->GetSchema().GetName()];
-            if (ECN::ECObjectsStatus::Success != toRelationshipConstraint.AddClass(*flatBaseSchema->GetClassP(constraintClass->GetName().c_str())->GetEntityClassCP()))
-                return BSIERROR;
+            destConstraintClass = flatBaseSchema->GetClassP(constraintClass->GetName().c_str());
             }
         else
-            {
-            ECN::ECClassP destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
-            if (nullptr == destConstraintClass)
-                {
-                // All classes should already have been created
-                return BSIERROR;
-                }
-            if (ECN::ECObjectsStatus::Success != toRelationshipConstraint.AddClass(*destConstraintClass->GetEntityClassCP()))
-                return BSIERROR;
-            }
+            destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
+
+        // All classes should already have been created
+        if (nullptr == destConstraintClass)
+            return BSIERROR;
+        if (ECN::ECObjectsStatus::Success != toRelationshipConstraint.AddClass(*destConstraintClass->GetEntityClassCP()))
+            return BSIERROR;
         }
     CopyFlatCustomAttributes(toRelationshipConstraint, fromRelationshipConstraint);
     return BSISUCCESS;
@@ -529,6 +526,65 @@ BentleyStatus SchemaFlattener::FindBisBaseClass(ECN::ECClassP targetClass, ECN::
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            06/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void SchemaFlattener::CheckConstraintForDerivedClasses(ECN::ECRelationshipConstraintR constraint)
+    {
+    bvector<ECClassCP> constraintsToAdd;
+    bvector<ECClassCP> constraintsToRemove;
+    if (!constraint.GetIsPolymorphic())
+        return;
+
+    // In the case of flattened schemas, we have broken polymorphism so need to fix that
+    for (auto constraintClass : constraint.GetConstraintClasses())
+        {
+        ECN::ECClassP nonConstConstraint = const_cast<ECN::ECClassP>(constraintClass);
+        // Need to find a common base class between this constraint and any derived classes that were removed
+        ECN::IECInstancePtr droppedInstance = constraintClass->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldDerivedClasses");
+        if (droppedInstance.IsValid())
+            {
+            ECN::ECValue v;
+            droppedInstance->GetValue(v, "Classes");
+            if (!v.IsNull())
+                {
+                bvector<Utf8String> classNames;
+                BeStringUtilities::Split(v.GetUtf8CP(), ";", classNames);
+                bvector<ECN::ECClassCP> searchClasses;
+                for (Utf8String className : classNames)
+                    {
+                    bvector<Utf8String> components;
+                    BeStringUtilities::Split(className.c_str(), ":", components);
+                    if (components.size() != 2)
+                        continue;
+
+                    ECN::ECSchemaPtr droppedSchema = m_flattenedRefs[components[0]];
+                    if (droppedSchema.IsValid())
+                        {
+                        ECN::ECClassCP dropped = droppedSchema->GetClassCP(components[1].c_str());
+                        if (nullptr != dropped)
+                            {
+                            ECN::ECClassP nonConst = const_cast<ECN::ECClassP>(dropped);
+                            searchClasses.push_back(nonConst);
+                            }
+                        }
+                    }
+                ECN::ECEntityClassCP commonClass = nullptr;
+                ECN::ECClass::FindCommonBaseClass(commonClass, constraintClass->GetEntityClassCP(), searchClasses);
+                if (commonClass != nullptr)
+                    {
+                    constraintsToRemove.push_back(nonConstConstraint);
+                    constraintsToAdd.push_back(commonClass);
+                    }
+                }
+            }
+        }
+    for (ECClassCP toRemove : constraintsToRemove)
+        constraint.RemoveClass(*toRemove->GetEntityClassCP());
+    for (ECClassCP toAdd : constraintsToAdd)
+        constraint.AddClass(*toAdd->GetEntityClassCP());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SchemaFlattener::FlattenSchemas(ECN::ECSchemaP ecSchema)
@@ -662,6 +718,17 @@ BentleyStatus SchemaFlattener::FlattenSchemas(ECN::ECSchemaP ecSchema)
                     return BSIERROR;
                 }
             }
+
+        for (auto ecClass : relationshipClasses)
+            {
+            ECClassP flattenedClass = flatSchema->GetClassP(ecClass->GetName().c_str());
+            if (nullptr == flattenedClass)
+                continue;
+            ECRelationshipClassP relClass = flattenedClass->GetRelationshipClassP();
+            CheckConstraintForDerivedClasses(relClass->GetSource());
+            CheckConstraintForDerivedClasses(relClass->GetTarget());
+            }
+
         // This needs to happen after we have copied all of the properties for all of the classes as the custom attributes could be defined locally
         CopyFlatCustomAttributes(*flatSchema, *sourceSchema);
 
@@ -772,6 +839,8 @@ void SchemaFlattener::ProcessConstraints(ECRelationshipConstraintR constraint, b
 
     for (ECClassCP ecClass : constraintsToRemove)
         constraint.RemoveClass(*ecClass->GetEntityClassCP());
+
+    CheckConstraintForDerivedClasses(constraint);
     }
 
 //---------------------------------------------------------------------------------------
