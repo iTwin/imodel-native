@@ -21,18 +21,6 @@ USING_NAMESPACE_BENTLEY_SQLITE
 static iModelHubFX* s_iModelHubFXForTesting;
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String getArgValue(WCharCP arg)
-    {
-    WString argValue(arg);
-    argValue = argValue.substr(argValue.find_first_of('=', 0) + 1);
-    argValue.Trim(L"\"");
-    argValue.Trim();
-    return Utf8String(argValue);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus getEnvironmentFromString(UrlProvider::Environment& environment, Utf8StringCR str)
@@ -71,23 +59,23 @@ SERVER:\n\
     --server-user=          (required)  The username for the project.\n\
     --server-password=      (required)  The password for the project.\n\
     --server-retries=       (optional)  The number of times to retry a pull, merge, and/or push to iModelHub. Must be a value between 0 and 255.\n\
-    --server-credentials-isEncrypted (optional) The user name and password passed in is encrypted. \n\
-    ");
+    --server-credentials-isEncrypted (optional) The user name and password passed in is encrypted.\n\
+    \n");
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  12/2017
+* @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            getNeedsPasswordDecryptionFromEnv()
+void            iModelBridgeFwk::DecryptCredentials(Http::Credentials& credentials)
     {
-    CharCP envValue = getenv("BAS_ShouldDataProtectBridgeCredentials");
-    if (NULL == envValue)
-        return false;
+    Utf8String userName;
+    CryptoHelper::DecryptString(userName, credentials.GetUsername());
 
-    if (0 == BeStringUtilities::Stricmp("1", envValue))
-        return true;
+    Utf8String password;
+    CryptoHelper::DecryptString(password, credentials.GetPassword());
 
-    return false;
+    credentials.SetUsername(userName);
+    credentials.SetPassword(password);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -95,7 +83,7 @@ bool            getNeedsPasswordDecryptionFromEnv()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[])
     {
-    bool needsDecryption = getNeedsPasswordDecryptionFromEnv();
+    m_isEncrypted = true;
     for (int iArg = 1; iArg < argc; ++iArg)
         {
         if (0 != BeStringUtilities::Wcsnicmp(argv[iArg], L"--server", 8))
@@ -159,10 +147,9 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
                 }
             continue;
             }
-
         if (argv[iArg] == wcsstr(argv[iArg], L"--server-credentials-isEncrypted"))
             {
-            needsDecryption = true;
+            m_isEncrypted = true;
             continue;
             }
 
@@ -171,17 +158,8 @@ BentleyStatus iModelBridgeFwk::ServerArgs::ParseCommandLine(bvector<WCharCP>& ba
         return BSIERROR;
         }
 
-    if (needsDecryption)
-        {
-        Utf8String userName;
-        CryptoHelper::DecryptString(userName, m_credentials.GetUsername());
-
-        Utf8String password;
-        CryptoHelper::DecryptString(password, m_credentials.GetPassword());
-        
-        m_credentials.SetUsername(userName);
-        m_credentials.SetPassword(password);
-        }
+    if (m_isEncrypted)
+        DecryptCredentials(m_credentials);
     return BSISUCCESS;
     }
 

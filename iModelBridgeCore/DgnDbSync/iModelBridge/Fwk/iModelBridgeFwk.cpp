@@ -113,7 +113,7 @@ T_iModelBridge_releaseInstance* iModelBridgeFwk::JobDefArgs::ReleaseBridge()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString getArgValueW(WCharCP arg)
+WString         iModelBridgeFwk::getArgValueW(WCharCP arg)
     {
     WString argValue(arg);
     argValue = argValue.substr(argValue.find_first_of('=', 0) + 1);
@@ -125,7 +125,7 @@ static WString getArgValueW(WCharCP arg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String getArgValue(WCharCP arg)
+Utf8String      iModelBridgeFwk::getArgValue(WCharCP arg)
     {
     return Utf8String(getArgValueW(arg));
     }
@@ -180,6 +180,7 @@ void iModelBridgeFwk::PrintUsage(WCharCP programName)
 
     JobDefArgs::PrintUsage();
     ServerArgs::PrintUsage();
+    DmsServerArgs::PrintUsage();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -355,7 +356,7 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             BeFileName::FixPathName (m_inputFileName, getArgValueW(argv[iArg]).c_str());
             continue;
             }
-
+        
         if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-input-sheet="))
             {
             BeFileName fn;
@@ -534,12 +535,23 @@ BentleyStatus iModelBridgeFwk::ParseCommandLine(int argc, WCharCP argv[])
 
     InitLogging();
 
-    bvector<WCharCP> rawArgPtrs;        // pare down the args once again, removing the server-specific args and leaving the rest for the bridge
-    std::swap(rawArgPtrs, m_bargptrs);
+    bvector<WCharCP> serverRawArgPtrs;        // pare down the args once again, removing the server-specific args and leaving the rest for the bridge
+    std::swap(serverRawArgPtrs, m_bargptrs);
 
     m_bargptrs.push_back(argv[0]);
 
-    if ((BSISUCCESS != m_serverArgs.ParseCommandLine(m_bargptrs, (int)rawArgPtrs.size(), rawArgPtrs.data())) || (BSISUCCESS != m_serverArgs.Validate((int)rawArgPtrs.size(), rawArgPtrs.data())))
+    if ((BSISUCCESS != m_serverArgs.ParseCommandLine(m_bargptrs, (int) serverRawArgPtrs.size(), serverRawArgPtrs.data())) || (BSISUCCESS != m_serverArgs.Validate((int) serverRawArgPtrs.size(), serverRawArgPtrs.data())))
+        {
+        PrintUsage(argv[0]);
+        return BSIERROR;
+        }
+
+    bvector<WCharCP> dmsRawArgPtrs;        // pare down the args once again, removing the dms server-specific args and leaving the rest for the bridge
+    std::swap(dmsRawArgPtrs, m_bargptrs);
+
+    m_bargptrs.push_back(argv[0]);
+
+    if ((BSISUCCESS != m_dmsServerArgs.ParseCommandLine(m_bargptrs, (int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data(), m_serverArgs.m_isEncrypted)) || (BSISUCCESS != m_serverArgs.Validate((int) dmsRawArgPtrs.size(), dmsRawArgPtrs.data())))
         {
         PrintUsage(argv[0]);
         return BSIERROR;
@@ -1211,6 +1223,10 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (BSISUCCESS != Briefcase_Initialize(argc, argv))
         return RETURN_STATUS_SERVER_ERROR;
 
+    // Stage the workspace and input file if  necessary.
+    if (BSISUCCESS != SetupDmsFiles())
+        return RETURN_STATUS_SERVER_ERROR;
+
     //  Make sure we have a briefcase.
     Briefcase_MakeBriefcaseName(); // => defines m_briefcaseName
     bool createdNewRepo = false;
@@ -1755,4 +1771,3 @@ IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
 
     return *m_registry;
     }
-

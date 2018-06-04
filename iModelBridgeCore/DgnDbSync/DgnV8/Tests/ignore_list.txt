@@ -30,7 +30,7 @@ DrawingTests.Cyclic2dModels_AttachToSheet
     # To be equal to: ndrawings
     # Which is: 5
     # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\DrawingTests.cpp(1150): error:       Expected: 3
-    # To be equal to: DgnDbTestUtils::SelectCountFromECClass(*db, "BisCore" "." "Drawing")
+    # To be equal to: SelectCountFromECClass(*db, "BisCore" "." "Drawing")
     # Which is: 4
 
 DrawingTests.SheetProperties

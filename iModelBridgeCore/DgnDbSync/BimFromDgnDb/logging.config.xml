@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--!DOCTYPE log4j:configuration SYSTEM "log4j.dtd"-->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+    <!--
+       ALWAYS write logging messages to a file.
+       DO NOT CHANGE THE NAME OF THIS FILE unless you also change DgnV8MirrorICSPlugin.
+    -->
+    <appender name="RollingFileAppender" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${LOCALAPPDATA}\\Bentley\\Logs\\BimTeleporter.log"/> <!-- Required -->
+        <param name="MaxFileSize" value="1000000" /> <!-- Required -->
+        <param name="MaxBackupIndex" value="5"/> <!-- Required -->
+        <param name="createpath" value="true"/> <!-- Optional -->
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %-40.40c - %m%n"/>
+        </layout>
+        <param name="Append" value="true"/>
+    </appender>
+
+    <appender name="Console" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="+++ LOG> %-5p %c - %m%n"/>
+        </layout>
+    </appender>
+
+    <root>                            
+        <priority value="fatal" />
+        <appender-ref ref="RollingFileAppender" />
+        <appender-ref ref="Console"/>
+    </root>
+
+    <category name="BeSQLite">
+        <priority value="error"/>
+    </category>
+    <category name="BimUpgrader">
+        <priority value="warn"/>
+    </category>
+    <category name="BimUpgrader.Performance">
+        <priority value="info"/>
+    </category>
+
+</log4j:configuration>
