@@ -8349,7 +8349,12 @@ template<class POINT, class EXTENT> bool SMPointIndex<POINT, EXTENT>::Store()
 
     if (m_indexHeaderDirty)
     {
-        m_dataStore->StoreMasterHeader (&m_indexHeader, sizeof(m_indexHeader));
+        if (!m_indexHeader.m_HasMaxExtent)
+            {
+            m_indexHeader.m_MaxExtent = m_pRootNode->GetNodeExtent();
+            m_indexHeader.m_HasMaxExtent = true;
+            }
+        m_dataStore->StoreMasterHeader(&m_indexHeader, sizeof(m_indexHeader));
         m_indexHeaderDirty = false;
     }
 
