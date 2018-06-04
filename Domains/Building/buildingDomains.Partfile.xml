@@ -86,8 +86,9 @@
     </Product>
 
 
-    <Part Name="RunBuildingDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=BuildingDomainTests\Assemblies\  -dGTEST_NAME=BuildingDomainTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="RunBuildingDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=BuildingDomainTests\Assemblies\  -dGTEST_NAME=BuildingDomainTests" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubProduct ProductName="BuildingDomainTests" />
+        <SubPart PartName="Base"    PartFile="BeGTest"   Repository="BeGTest" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BuildingDomainTests.log</Files>
         </Bindings>
