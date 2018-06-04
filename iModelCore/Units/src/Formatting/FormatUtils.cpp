@@ -20,9 +20,9 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  11/2017
 //---------------------------------------------------------------------------------------
-bmap<SignOption, Utf8CP> UIUtils::GetAvailableSignOption(SignOption& defaultVal)
+bmap<SignOption, Utf8String> UIUtils::GetAvailableSignOption(SignOption& defaultVal)
     {
-    bmap<SignOption, Utf8CP> signOptions;
+    bmap<SignOption, Utf8String> signOptions;
     signOptions[SignOption::NoSign] = FormatConstant::FPN_NoSign().c_str();
     signOptions[SignOption::OnlyNegative] = FormatConstant::FPN_OnlyNegative().c_str();
     signOptions[SignOption::SignAlways] = FormatConstant::FPN_SignAlways().c_str();
@@ -35,9 +35,9 @@ bmap<SignOption, Utf8CP> UIUtils::GetAvailableSignOption(SignOption& defaultVal)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
-bmap<PresentationType, Utf8CP> UIUtils::GetAvailablePresentationTypes(PresentationType& defaultVal)
+bmap<PresentationType, Utf8String> UIUtils::GetAvailablePresentationTypes(PresentationType& defaultVal)
     {
-    bmap<PresentationType, Utf8CP> presentationTypes;
+    bmap<PresentationType, Utf8String> presentationTypes;
 
     presentationTypes[PresentationType::Decimal] = Utils::GetPresentationTypeString(PresentationType::Decimal).c_str();
     presentationTypes[PresentationType::Fractional] = Utils::GetPresentationTypeString(PresentationType::Fractional).c_str();
@@ -51,9 +51,9 @@ bmap<PresentationType, Utf8CP> UIUtils::GetAvailablePresentationTypes(Presentati
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
-bmap<FormatTraits, Utf8CP> UIUtils::GetAvailableTraits(FormatTraits& defaultVal)
+bmap<FormatTraits, Utf8String> UIUtils::GetAvailableTraits(FormatTraits& defaultVal)
     {
-    bmap<FormatTraits, Utf8CP> traits;
+    bmap<FormatTraits, Utf8String> traits;
 
     traits[FormatTraits::ShowUnitLabel] = FormatConstant::FPN_ShowUnitLabel().c_str();
     traits[FormatTraits::Use1000Separator] = FormatConstant::FPN_Use1000Separator().c_str();

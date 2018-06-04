@@ -72,9 +72,9 @@ BE_JSON_NAME(spacer)
 //=======================================================================================
 struct UIUtils
 {
-    UNITS_EXPORT static bmap<SignOption, Utf8CP> GetAvailableSignOption(SignOption& defaultVal);
-    UNITS_EXPORT static bmap<PresentationType, Utf8CP> GetAvailablePresentationTypes(PresentationType& defaultVal);
-    UNITS_EXPORT static bmap<FormatTraits, Utf8CP> GetAvailableTraits(FormatTraits& defaultVal);
+    UNITS_EXPORT static bmap<SignOption, Utf8String> GetAvailableSignOption(SignOption& defaultVal);
+    UNITS_EXPORT static bmap<PresentationType, Utf8String> GetAvailablePresentationTypes(PresentationType& defaultVal);
+    UNITS_EXPORT static bmap<FormatTraits, Utf8String> GetAvailableTraits(FormatTraits& defaultVal);
 };
 
 //=======================================================================================
