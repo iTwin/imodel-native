@@ -97,6 +97,9 @@ TEST_F(RequestOptionsTests, ToJson_ShouldRefreshInstancesValues_CorrectJson)
     EXPECT_EQ(false, json["RefreshInstances"].asBool());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Julius.Senkus       04/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RequestOptionsTests, ToJson_CustomRequestOptionValues_CorrectJson)
     {
     Json::Value json;
