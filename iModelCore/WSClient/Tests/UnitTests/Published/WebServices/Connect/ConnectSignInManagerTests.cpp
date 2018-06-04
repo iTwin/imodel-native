@@ -221,7 +221,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInPara
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_RequestFailsWithAuthenticationError_NewDelegationTokenWasNotRequested)
+TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_RequestFailsWithAuthenticationError_NewDelegationTokenWasRequested1Time)
     {
     // This test guards of too many Forbidden requests being done
     auto imsClient = std::make_shared<MockImsClient>();
@@ -232,14 +232,14 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_RequestFailsWithAuthe
 
     EXPECT_CALL(*imsClient, RequestToken(creds, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(identityToken))));
     ASSERT_TRUE(manager->SignInWithCredentials(creds)->GetResult().IsSuccess());
-    EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken()))));
+    EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).Times(2).WillRepeatedly(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken()))));
     GetHandler().ForAnyRequest(StubHttpResponse(HttpStatus::Forbidden));
 
     auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
     EXPECT_EQ(0, GetHandler().GetRequestsPerformed());
     Http::Response response = Http::Request("https://foo.com/a", "GET", authHandler).PerformAsync()->GetResult();
-    EXPECT_EQ(1, GetHandler().GetRequestsPerformed());
+    EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
 
     EXPECT_EQ(HttpStatus::Forbidden, response.GetHttpStatus());
     }
