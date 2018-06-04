@@ -51,9 +51,16 @@ BentleyStatus   iModelBridgeFwk::LoadDmsLibrary()
         return BentleyStatus::ERROR;
         }
     
-    if (!m_dmsSupport->_InitializeSession(m_dmsServerArgs.m_inputFileUrn))
-        return BentleyStatus::ERROR;
-
+    if (!m_dmsServerArgs.m_inputFileUrn.empty())
+        {
+        if (!m_dmsSupport->_InitializeSession(m_dmsServerArgs.m_inputFileUrn))
+            return BentleyStatus::ERROR;
+        }
+    else if (!m_dmsServerArgs.m_dataSource.empty())
+        {
+        if (!m_dmsSupport->_InitializeSessionFromDataSource(m_dmsServerArgs.m_dataSource))
+            return BentleyStatus::ERROR;
+        }
     return BentleyStatus::SUCCESS;
     }
 
@@ -116,9 +123,18 @@ BentleyStatus   iModelBridgeFwk::StageWorkspace()
     BentleyStatus status = BentleyStatus::SUCCESS;
     m_dmsSupport->_Initialize();
     m_dmsSupport->SetApplicationResourcePath(m_dmsServerArgs.m_applicationWorkspace);
-    BeFileName workspaceCfgFile;
-    if (SUCCESS == m_dmsSupport->_FetchWorkspace(workspaceCfgFile, m_dmsServerArgs.m_inputFileUrn, m_dmsServerArgs.m_workspaceDir, m_dmsServerArgs.m_isv8i))
-        m_dmsServerArgs.SetDgnArg(L"--DGN_CFGFILE=", workspaceCfgFile, m_bargptrs);
+    if (!m_dmsServerArgs.m_inputFileUrn.empty())
+        {
+        BeFileName workspaceCfgFile;
+        if (SUCCESS == m_dmsSupport->_FetchWorkspace(workspaceCfgFile, m_dmsServerArgs.m_inputFileUrn, m_dmsServerArgs.m_workspaceDir, m_dmsServerArgs.m_isv8i))
+            m_dmsServerArgs.SetDgnArg(L"--DGN_CFGFILE=", workspaceCfgFile, m_bargptrs);
+        }
+    else
+        {
+        BeFileName workspaceCfgFile;
+        if (SUCCESS == m_dmsSupport->_FetchWorkspace(workspaceCfgFile, m_dmsServerArgs.m_folderId, m_dmsServerArgs.m_documentId, m_dmsServerArgs.m_workspaceDir, m_dmsServerArgs.m_isv8i))
+            m_dmsServerArgs.SetDgnArg(L"--DGN_CFGFILE=", workspaceCfgFile, m_bargptrs);
+        }
     m_dmsSupport->_UnInitialize();
     return status;
     }
