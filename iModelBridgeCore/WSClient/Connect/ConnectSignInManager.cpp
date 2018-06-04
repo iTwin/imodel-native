@@ -268,15 +268,17 @@ HeaderPrefix prefix
     // Update: This seems to be good enough for IMS as most of services use generic AppliesTo anyway as of 2017-04 
     Utf8String rpUri = "https://connect-wsg20.bentley.com";
 
-    auto handler = UrlProvider::GetSecurityConfigurator(httpHandler);
+    auto configurationHandler = UrlProvider::GetSecurityConfigurator(httpHandler);
 
-    return ConnectAuthenticationHandler::Create
+    auto connectHandler = ConnectAuthenticationHandler::Create
         (
         serverUrl,
         GetTokenProvider(rpUri),
-        handler,
+        configurationHandler,
         HeaderPrefix::Saml == prefix ? TOKENPREFIX_SAML : TOKENPREFIX_Token
         );
+    connectHandler->EnableExpiredTokenRefresh();
+    return connectHandler;
     }
 
 /*--------------------------------------------------------------------------------------+
