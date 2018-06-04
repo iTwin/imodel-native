@@ -2870,9 +2870,20 @@ struct  InstanceXmlReader
                 {
                 Units::UnitCP oldUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldUnitName);
                 double convertedValue;
-                oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit().GetUnit());
-                
-                ecValue.SetDouble(convertedValue);
+                if (ecValue.GetPrimitiveType() == PrimitiveType::PRIMITIVETYPE_Double)
+                    {
+                    oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit().GetUnit());
+                    ecValue.SetDouble(convertedValue);
+                    }
+                else if (ecValue.GetPrimitiveType() == PrimitiveType::PRIMITIVETYPE_String && !Utf8String::IsNullOrEmpty(ecValue.GetUtf8CP()))
+                    {
+                    double d;
+                    if (1 == BE_STRING_UTILITIES_UTF8_SSCANF(ecValue.GetUtf8CP(), "%lg", &d))
+                        {
+                        oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit().GetUnit());
+                        ecValue.SetDouble(convertedValue);
+                        }
+                    }
                 }
 
             ECObjectsStatus setStatus;
