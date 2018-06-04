@@ -243,9 +243,9 @@ StatusInt SM3SMPublisher::SetNodeMeshData(IScalableMeshNodePtr sourceNode, IScal
         if (!points.empty()) memcpy(points.data(), polyfaceQuery->GetPointCP(), points.size() * sizeof(DPoint3d));
         if (!indices.empty()) memcpy(indices.data(), polyfaceQuery->GetPointIndexCP(), indices.size() * sizeof(int32_t));
         if (!uv.empty()) memcpy(uv.data(), polyfaceQuery->GetParamCP(), uv.size() * sizeof(DPoint2d));
-        if (!uvIndices.empty()) memcpy(uvIndices.data(), polyfaceQuery->GetParamIndexCP(), uvIndices.size() * sizeof(int32_t));
+        if (!uvIndices.empty() && nullptr != polyfaceQuery->GetParamIndexCP()) memcpy(uvIndices.data(), polyfaceQuery->GetParamIndexCP(), uvIndices.size() * sizeof(int32_t));
 
-        if (!points.empty())
+        if (!points.empty() && !indices.empty())
             {
             auto texture = sourceNode->GetTexture();
             if (texture.IsValid() && texture->GetSize() > 0)

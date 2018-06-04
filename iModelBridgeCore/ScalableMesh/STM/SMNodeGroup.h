@@ -451,6 +451,8 @@ FORWARD_DECL_GROUPING_STRATEGY(SMCesium3DTileStrategy);
 
 enum class UpAxis { X, Y, Z };
 
+BENTLEY_SM_EXPORT extern SMGroupingStrategy<DRange3d>* s_groupingStrategy;
+
 class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     ADD_GROUPING_STRATEGY_FRIENDSHIPS
@@ -650,7 +652,6 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         template<class EXTENT> SMGroupingStrategy<EXTENT>* GetStrategy()
             {
-            static SMGroupingStrategy<EXTENT>* s_groupingStrategy = nullptr;
             if (!s_groupingStrategy)
                 {
                 switch (m_parametersPtr->GetStrategyType())

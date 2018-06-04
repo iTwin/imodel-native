@@ -161,6 +161,8 @@ struct IScalableMesh abstract:  IRefCounted
         
         virtual bool          _IsCesium3DTiles() = 0;
 
+        virtual bool           _IsStubFile() = 0;
+
         virtual Utf8String    _GetProjectWiseContextShareLink() = 0;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) = 0;
@@ -357,6 +359,8 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT bool          IsCesium3DTiles();
 
+        BENTLEY_SM_EXPORT bool          IsStubFile();
+
         BENTLEY_SM_EXPORT Utf8String    GetProjectWiseContextShareLink();
 
         BENTLEY_SM_EXPORT DTMStatusInt     GetRange(DRange3dR range);
@@ -461,7 +465,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                   SetInvertClip(bool invertClips);
 
-        BENTLEY_SM_EXPORT void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
+        void                   ModifyClipMetadata(uint64_t clipId,double importance, int nDimensions);
 
         BENTLEY_SM_EXPORT void                   GetAllClipIds(bvector<uint64_t>& ids);
 

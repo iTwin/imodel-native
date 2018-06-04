@@ -65,6 +65,9 @@ WString GetHeaderForTestType(TestType t)
         case TEST_STREAMING:
             return L"File Name Original, File Name Streaming, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time streaming load all node headers, points Node Pass\n";
             break;
+        case TEST_SM_SAVEAS:
+            return L"File Name Original, Directory Name Output, Triangle Count Input, Triangle Count Output, AllTestPass, time save as\n";
+            break;
         case TEST_SM_TO_CLOUD:
             return L"File Name Original, Directory Name Cloud, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time load all node headers, points Node Pass\n";
             break;
@@ -177,6 +180,8 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_SDK_MESH;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"streaming"))
             t = TEST_STREAMING;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"smSaveAs"))
+            t = TEST_SM_SAVEAS;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"smToCloud"))
             t = TEST_SM_TO_CLOUD;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"cloud"))
@@ -351,6 +356,9 @@ bool RunTestPlan(BeFileName& testPlanPath)
                 break;
             case TEST_STREAMING:
                 PerformStreaming(pTestNode, pResultFile);
+                break;
+            case TEST_SM_SAVEAS:
+                PerformSMSaveAs(pTestNode, pResultFile);
                 break;
             case TEST_SM_TO_CLOUD:
                 PerformSMToCloud(pTestNode, pResultFile);

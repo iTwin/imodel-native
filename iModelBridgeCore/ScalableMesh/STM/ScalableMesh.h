@@ -204,6 +204,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         bool                            m_isInvertingClips;
         bool                            m_needsNeighbors;
         bool                            m_isCesium3DTiles;
+        bool                            m_isFromStubFile;
         double                          m_minScreenPixelsPerPoint;
 
         HFCPtr<MeshIndexType>          m_scmIndexPtr;              
@@ -275,6 +276,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual StatusInt     _GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const override;
 
         virtual bool          _IsCesium3DTiles() override;
+
+        virtual bool          _IsStubFile() override;
 
         virtual Utf8String    _GetProjectWiseContextShareLink() override;
         
@@ -490,6 +493,8 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual StatusInt     _GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const override {return ERROR;}
 
         virtual bool           _IsCesium3DTiles() override { return false; }
+
+        virtual bool           _IsStubFile() override { return false; }
 
         virtual Utf8String    _GetProjectWiseContextShareLink() override { return Utf8String(); }
 
