@@ -66,82 +66,15 @@ BE_JSON_NAME(spacer)
 
 //=======================================================================================
 //
-// Class used to pass available values and their localized labels for use in UI.
-//
-// @bsistruct                                            Bill.Steinbock  11/2017
-//=======================================================================================
-struct UIListEntry
-{
-protected:
-    Json::Value m_json;
-
-public:
-    UIListEntry() : m_json(Json::objectValue) {}
-    UIListEntry(Json::Value const& j) : m_json(j) {}
-    UIListEntry& operator=(UIListEntry const& rhs) { m_json = rhs.m_json; return *this; }
-
-    void SetLabel(Utf8CP n) { m_json["label"] = n; }
-    Utf8CP GetLabel() const { return m_json["label"].asCString(); }
-
-    void SetStringValue(Utf8CP n) { m_json["stringValue"] = n; }
-    Utf8CP GetStringValue() const { return m_json["stringValue"].asCString(); }
-
-    void SetValue(int n) { m_json["value"] = n; }
-    int GetValue() const { return m_json["value"].asInt(); }
-
-    UIListEntry(int value, Utf8CP label, Utf8CP stringValue=nullptr) : m_json(Json::objectValue)
-        {
-        SetLabel(label);
-        SetValue(value);
-
-        // string value is optional
-        if (stringValue)
-            SetStringValue(stringValue);
-        }
-
-    Json::Value const& GetJson() const { return m_json; }
-};
-
-//=======================================================================================
-//
-// Class used to pass available values and their localized labels for use in UI.
-//
-// @bsistruct                                            Bill.Steinbock  11/2017
-//=======================================================================================
-struct UIList
-{
-protected:
-    Json::Value m_json;
-
-public:
-    UIList() : m_json(Json::arrayValue) {}
-    UIList(Json::Value const& j) : m_json(j) {}
-    UIList& operator=(UIList const& rhs) { m_json = rhs.m_json; return *this; }
-
-    Json::ArrayIndex GetSize() { return m_json.size(); }
-    void AddListEntry(UIListEntryCR n) { m_json.append(n.GetJson()); }
-    UIListEntry GetListEntry(Json::ArrayIndex i) { return UIListEntry(m_json[i]); }
-
-    bool IsNull() const { return m_json.isNull(); }
-    Json::Value const& GetJson() const { return m_json; }
-};
-
-//=======================================================================================
-//
 // Class containing static methods used to populate UI.
 //
 // @bsistruct                                            Bill.Steinbock  11/2017
 //=======================================================================================
 struct UIUtils
 {
-    UNITS_EXPORT static UIList GetAvailableDecimalPercisions(DecimalPrecision& defaultVal);
-    UNITS_EXPORT static UIList GetAvailableFractionalPercisions(FractionalPrecision& defaultVal);
-    UNITS_EXPORT static UIList GetAvailableSignOption(SignOption& defaultVal);
-    UNITS_EXPORT static UIList GetAvailablePresentationTypes(PresentationType& defaultVal);
-    UNITS_EXPORT static UIList GetAvailableDecimalSeparators(Utf8StringR defaultVal);
-    UNITS_EXPORT static UIList GetAvailableThousandSeparators(Utf8StringR defaultVal);
-    UNITS_EXPORT static UIList GetAvailableUnitLabelSeparators(Utf8StringR defaultVal);
-    UNITS_EXPORT static UIList GetAvailableTraits(FormatTraits& defaultVal);
+    UNITS_EXPORT static bmap<SignOption, Utf8CP> GetAvailableSignOption(SignOption& defaultVal);
+    UNITS_EXPORT static bmap<PresentationType, Utf8CP> GetAvailablePresentationTypes(PresentationType& defaultVal);
+    UNITS_EXPORT static bmap<FormatTraits, Utf8CP> GetAvailableTraits(FormatTraits& defaultVal);
 };
 
 //=======================================================================================

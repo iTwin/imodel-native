@@ -20,60 +20,13 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  11/2017
 //---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableDecimalPercisions(DecimalPrecision& defaultVal)
+bmap<SignOption, Utf8CP> UIUtils::GetAvailableSignOption(SignOption& defaultVal)
     {
-    UIList decPercisionList;
-
-    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision0, "DecimalPrecision_0"));
-    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision1, "DecimalPrecision_1"));
-    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision2, "DecimalPrecision_2"));
-    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision3, "DecimalPrecision_3"));
-    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision4, "DecimalPrecision_4"));
-    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision5, "DecimalPrecision_5"));
-    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision6, "DecimalPrecision_6"));
-    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision7, "DecimalPrecision_7"));
-    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision8, "DecimalPrecision_8"));
-    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision9, "DecimalPrecision_9"));
-    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision10, "DecimalPrecision_10"));
-    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision11, "DecimalPrecision_11"));
-    decPercisionList.AddListEntry(UIListEntry((int)DecimalPrecision::Precision12, "DecimalPrecision_12"));
-
-    defaultVal = FormatConstant::DefaultDecimalPrecision();
-
-    return decPercisionList;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bill.Steinbock                  11/2017
-//---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableFractionalPercisions(FractionalPrecision& defaultVal)
-    {
-    UIList fracPercisionList;
-
-    fracPercisionList.AddListEntry(UIListEntry(1,    "FractionalPrecision_Whole"));
-    fracPercisionList.AddListEntry(UIListEntry(2,    "FractionalPrecision_Half"));
-    fracPercisionList.AddListEntry(UIListEntry(4,    "FractionalPrecision_Quarter"));
-    fracPercisionList.AddListEntry(UIListEntry(8,    "FractionalPrecision_Eighth"));
-    fracPercisionList.AddListEntry(UIListEntry(16,   "FractionalPrecision_Sixteenth"));
-    fracPercisionList.AddListEntry(UIListEntry(32,   "FractionalPrecision_Over_32"));
-    fracPercisionList.AddListEntry(UIListEntry(64,   "FractionalPrecision_Over_64"));
-    fracPercisionList.AddListEntry(UIListEntry(128,  "FractionalPrecision_Over_128"));
-    fracPercisionList.AddListEntry(UIListEntry(256,  "FractionalPrecision_Over_256"));
-
-    defaultVal = FormatConstant::DefaultFractionalPrecision();
-    return fracPercisionList;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bill.Steinbock                  11/2017
-//---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableSignOption(SignOption& defaultVal)
-    {
-    UIList signOptions;
-    signOptions.AddListEntry(UIListEntry((int)SignOption::NoSign,              "ShowSignOption_NoSign", FormatConstant::FPN_NoSign().c_str()));
-    signOptions.AddListEntry(UIListEntry((int)SignOption::OnlyNegative,        "ShowSignOption_OnlyNegative", FormatConstant::FPN_OnlyNegative().c_str()));
-    signOptions.AddListEntry(UIListEntry((int)SignOption::SignAlways,          "ShowSignOption_SignAlways", FormatConstant::FPN_SignAlways().c_str()));
-    signOptions.AddListEntry(UIListEntry((int)SignOption::NegativeParentheses, "ShowSignOption_NegativeParentheses", FormatConstant::FPN_NegativeParenths().c_str()));
+    bmap<SignOption, Utf8CP> signOptions;
+    signOptions[SignOption::NoSign] = FormatConstant::FPN_NoSign().c_str();
+    signOptions[SignOption::OnlyNegative] = FormatConstant::FPN_OnlyNegative().c_str();
+    signOptions[SignOption::SignAlways] = FormatConstant::FPN_SignAlways().c_str();
+    signOptions[SignOption::NegativeParentheses] = FormatConstant::FPN_NegativeParenths().c_str();
 
     defaultVal = FormatConstant::DefaultSignOption();
     return signOptions;
@@ -82,14 +35,14 @@ UIList UIUtils::GetAvailableSignOption(SignOption& defaultVal)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailablePresentationTypes(PresentationType& defaultVal)
+bmap<PresentationType, Utf8CP> UIUtils::GetAvailablePresentationTypes(PresentationType& defaultVal)
     {
-    UIList presentationTypes;
+    bmap<PresentationType, Utf8CP> presentationTypes;
 
-    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Decimal, "PresentationType_Decimal", Utils::GetPresentationTypeString(PresentationType::Decimal).c_str()));
-    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Fractional, "PresentationType_Fractional", Utils::GetPresentationTypeString(PresentationType::Fractional).c_str()));
-    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Scientific, "PresentationType_Scientific", Utils::GetPresentationTypeString(PresentationType::Scientific).c_str()));
-    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Station, "PresentationType_Station", Utils::GetPresentationTypeString(PresentationType::Station).c_str()));
+    presentationTypes[PresentationType::Decimal] = Utils::GetPresentationTypeString(PresentationType::Decimal).c_str();
+    presentationTypes[PresentationType::Fractional] = Utils::GetPresentationTypeString(PresentationType::Fractional).c_str();
+    presentationTypes[PresentationType::Scientific] = Utils::GetPresentationTypeString(PresentationType::Scientific).c_str();
+    presentationTypes[PresentationType::Station] = Utils::GetPresentationTypeString(PresentationType::Station).c_str();
 
     defaultVal = FormatConstant::DefaultPresentaitonType();
     return presentationTypes;
@@ -98,66 +51,20 @@ UIList UIUtils::GetAvailablePresentationTypes(PresentationType& defaultVal)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableDecimalSeparators(Utf8StringR defaultVal)
+bmap<FormatTraits, Utf8CP> UIUtils::GetAvailableTraits(FormatTraits& defaultVal)
     {
-    UIList decimalSeparators;
+    bmap<FormatTraits, Utf8CP> traits;
 
-    decimalSeparators.AddListEntry(UIListEntry(0, "DecimalSeparator_Comma" ","));
-    decimalSeparators.AddListEntry(UIListEntry(1, "DecimalSeparator_Point" "."));
-
-    defaultVal = Utf8String(1, FormatConstant::DefaultDecimalSeparator());
-    return decimalSeparators;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bill.Steinbock                  01/2018
-//---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableThousandSeparators(Utf8StringR defaultVal)
-    {
-    UIList thousandSeparators;
-
-    thousandSeparators.AddListEntry(UIListEntry(0, "ThousandSeparator_Comma" ","));
-    thousandSeparators.AddListEntry(UIListEntry(1, "ThousandSeparator_Point" "."));
-
-    defaultVal = Utf8String(1, FormatConstant::DefaultThousandSeparator());
-    return thousandSeparators;
-    }
-
-//---------------------------------------------------------------------------------------
-// Define list of standard UOM label separators to be presented in UI
-// @bsimethod                                   Bill.Steinbock                  01/2018
-//---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableUnitLabelSeparators(Utf8StringR defaultVal)
-    {
-    UIList unitLabelSeparators;
-
-    unitLabelSeparators.AddListEntry(UIListEntry(0, "UnitLabelSeparator_None" ""));
-    unitLabelSeparators.AddListEntry(UIListEntry(1, "UnitLabelSeparator_Space" " "));
-    unitLabelSeparators.AddListEntry(UIListEntry(2, "UnitLabelSeparator_Dash" "-"));
-
-    defaultVal = FormatConstant::DefaultUomSeparator();
-    return unitLabelSeparators;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bill.Steinbock                  01/2018
-//---------------------------------------------------------------------------------------
-UIList UIUtils::GetAvailableTraits(FormatTraits& defaultVal)
-    {
-    UIList traits;
-
-    traits.AddListEntry(UIListEntry((int) FormatTraits::ShowUnitLabel, "FormatTraits_ShowUnitLabel", FormatConstant::FPN_ShowUnitLabel().c_str()));
-    traits.AddListEntry(UIListEntry((int)FormatTraits::Use1000Separator, "FormatTraits_Use1000Separator", FormatConstant::FPN_Use1000Separator().c_str()));
-    traits.AddListEntry(UIListEntry((int) FormatTraits::TrailingZeroes, "FormatTraits_TrailingZeroes", FormatConstant::FPN_TrailZeroes().c_str()));
-    traits.AddListEntry(UIListEntry((int) FormatTraits::PrependUnitLabel, "FormatTraits_PrependUnitLabel", FormatConstant::FPN_PrependUnitLabel().c_str()));
-    
-    // may not want to expose following
-    traits.AddListEntry(UIListEntry((int) FormatTraits::KeepSingleZero, "FormatTraits_KeepSingleZero", FormatConstant::FPN_KeepSingleZero().c_str()));
-    traits.AddListEntry(UIListEntry((int) FormatTraits::ZeroEmpty, "FormatTraits_ZeroEmpty", FormatConstant::FPN_ZeroEmpty().c_str()));
-    traits.AddListEntry(UIListEntry((int) FormatTraits::KeepDecimalPoint, "FormatTraits_KeepDecimalPoint", FormatConstant::FPN_KeepDecimalPoint().c_str()));
-    traits.AddListEntry(UIListEntry((int) FormatTraits::ApplyRounding, "FormatTraits_ApplyRounding", FormatConstant::FPN_ApplyRounding().c_str()));
-    traits.AddListEntry(UIListEntry((int) FormatTraits::FractionDash, "FormatTraits_FractionDash", FormatConstant::FPN_FractionDash().c_str()));
-    traits.AddListEntry(UIListEntry((int) FormatTraits::ExponenentOnlyNegative, "FormatTraits_ExponenentOnlyNegative", FormatConstant::FPN_ExponentOnlyNegative().c_str()));
+    traits[FormatTraits::ShowUnitLabel] = FormatConstant::FPN_ShowUnitLabel().c_str();
+    traits[FormatTraits::Use1000Separator] = FormatConstant::FPN_Use1000Separator().c_str();
+    traits[FormatTraits::TrailingZeroes] = FormatConstant::FPN_TrailZeroes().c_str();
+    traits[FormatTraits::PrependUnitLabel] = FormatConstant::FPN_PrependUnitLabel().c_str();
+    traits[FormatTraits::KeepSingleZero] = FormatConstant::FPN_KeepSingleZero().c_str();
+    traits[FormatTraits::ZeroEmpty] = FormatConstant::FPN_ZeroEmpty().c_str();
+    traits[FormatTraits::KeepDecimalPoint] = FormatConstant::FPN_KeepDecimalPoint().c_str();
+    traits[FormatTraits::ApplyRounding] = FormatConstant::FPN_ApplyRounding().c_str();
+    traits[FormatTraits::FractionDash] = FormatConstant::FPN_FractionDash().c_str();
+    traits[FormatTraits::ExponenentOnlyNegative] = FormatConstant::FPN_ExponentOnlyNegative().c_str();
 
     defaultVal = FormatConstant::DefaultFormatTraits();
     return traits;
