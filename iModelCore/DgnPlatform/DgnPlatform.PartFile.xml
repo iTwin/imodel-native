@@ -310,7 +310,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="RuniModelSchemaEvolutionTests">
+    <Part Name="RuniModelSchemaEvolutionTests" PrgOutputDir="iModelSchemaEvolutionTests">
         <SubPart PartName="iModelSchemaEvolutionRunGTestForwards"/>
         <SubNuGetProduct NuGetProductName="iModelSchemaEvolutionTestNuget"/>
         <SubNuGetProduct NuGetProductName="iModelSchemaEvolutionTestFilesNuget"/>

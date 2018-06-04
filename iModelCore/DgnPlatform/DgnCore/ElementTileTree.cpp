@@ -3306,6 +3306,7 @@ bool Tile::_ToJson(Json::Value& json) const
     {
     json["id"]["treeId"] = GetElementRoot().GetModelId().ToHexStr();
     json["id"]["tileId"] = GetIdString();
+    json["maximumSize"] = _GetMaximumSize();
 
     JsonUtils::DRange3dToJson(json["range"], GetRange());
     if (HasContentRange())
