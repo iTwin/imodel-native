@@ -269,7 +269,7 @@ static bool getRange(MSBsplineSurfaceCR geom, DRange3dR range, TransformCP trans
         if (nullptr != transform)
             transform->Multiply(tightRange, tightRange);
 
-        range = DRange3d::FromIntersection(range, tightRange); // Don't return a range that exceeds pole range in any direction...
+        range = DRange3d::FromIntersection(range, tightRange, true); // Don't return a range that exceeds pole range in any direction...
         }
 
     return true;
