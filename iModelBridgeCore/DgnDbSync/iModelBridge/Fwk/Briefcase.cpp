@@ -59,8 +59,8 @@ SERVER:\n\
     --server-user=          (required)  The username for the project.\n\
     --server-password=      (required)  The password for the project.\n\
     --server-retries=       (optional)  The number of times to retry a pull, merge, and/or push to iModelHub. Must be a value between 0 and 255.\n\
-    --server-credentials-isEncrypted (optional) The user name and password passed in is encrypted. \n\
-     ");
+    --server-credentials-isEncrypted (optional) The user name and password passed in is encrypted.\n\
+    \n");
     }
 
 /*---------------------------------------------------------------------------------**//**

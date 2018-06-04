@@ -145,19 +145,19 @@ BentleyStatus   iModelBridgeFwk::StageWorkspace()
 void iModelBridgeFwk::DmsServerArgs::PrintUsage()
     {
     fwprintf (stderr,
-        L"JOB ENVIRONMENT:\n\
-        --dms-inputFileUrn=     (optional)  The urn to fetch the input file. This and associated workspace will be downloaded and stored in the location specified by --fwk-input and --fwk-workspaceDir=\n"
-                                                  "eg.pw://server:datasource/Documents/D{c6cbe438-e200-4567-a98c-dfa55aba33be}\n\
-        --dms-workspaceDir=     (optional)  Directory to cache workspace files.\n\
-        --dms-library=          (optional)  The full path to the dms library. Use this for direct Dms support from the framework.\n\
-        --dms-retries=          (optional)  The number of times to retry\
-        --dms-user=             (optional)  The username for the dms source.\n\
-        --dms-password=         (optional)  The password for the dms source.\n\
-        --dms-datasource=       (optional)  The datasource to fetch the files from. \
-        --dms-folderId=         (optional)  FolderId if inputFileUrn is not specified \
-        --dms-documentId=       (optional)  DocumentId if inputFileUrn is not specified \
-        --dms-appWorkspace=     (optional)  Reference application workspace if the default fallback is not usable."
-        );
+    L"DMS :\n\
+    --dms-library=          (optional)  The full path to the dms library. eg. iModelDmsSupportB02.dll Use this for direct Dms support from the framework.\n\
+    --dms-workspaceDir=     (optional)  Directory to cache workspace files.\n\
+    --dms-user=             (optional)  The username for the dms source.\n\
+    --dms-password=         (optional)  The password for the dms source.\n\
+    --dms-inputFileUrn=     (optional)  The urn to fetch the input file. This and associated workspace will be downloaded and stored in the location specified by\
+--fwk-input and --dms-workspaceDir= eg.pw://server:datasource/Documents/D{c6cbe438-e200-4567-a98c-dfa55aba33be}\n\
+    --dms-datasource=       (optional)  The datasource to fetch the files from. Explicit usage instead of URN\n\
+    --dms-folderId=         (optional)  FolderId if inputFileUrn is not specified. Explicit usage instead of URN\n\
+    --dms-documentId=       (optional)  DocumentId if inputFileUrn is not specified. Explicit usage instead of URN\n\
+    --dms-appWorkspace=     (optional)  Reference application workspace if the default fallback is not usable.\n\
+    --dms-retries=          (optional)  The number of times to retry\n"
+    );
     }
 
 /*---------------------------------------------------------------------------------**//**
