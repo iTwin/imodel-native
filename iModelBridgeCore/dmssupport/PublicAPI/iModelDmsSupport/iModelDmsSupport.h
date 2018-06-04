@@ -31,10 +31,13 @@ struct DmsSession;
 struct IDmsSupport
     {
     virtual bool _InitializeSession(WStringCR pwMoniker) = 0;
+    virtual bool _InitializeSessionFromDataSource(WStringCR dataSource) = 0;
     virtual bool _UnInitializeSession() = 0;
     virtual bool _Initialize() = 0;
     virtual bool _UnInitialize() = 0;
-    virtual StatusInt _FetchWorkspace(WStringCR pWMoniker, BeFileNameCR workspaceDir) = 0;
+    virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i) = 0;
+    virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR workspaceDir, bool isv8i) = 0;
+    virtual void SetApplicationResourcePath(BeFileNameCR applicationResourcePath) = 0;
     };
 
 /*---------------------------------------------------------------------------------**//**

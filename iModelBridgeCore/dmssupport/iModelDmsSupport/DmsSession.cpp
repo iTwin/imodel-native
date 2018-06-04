@@ -8,7 +8,7 @@
 #include <iModelDmsSupport/DmsSession.h>
 #include <ProjectWise_InternalSDK/Include/aadmsapi.h>
 #include <ProjectWise_InternalSDK/Include/aaodsapi.h>
-
+#include <Bentley/Desktop/FileSystem.h>
 USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**
@@ -81,6 +81,18 @@ bool            DmsSession::UnInitialize()
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName      DmsSession::GetDefaultWorkspacePath(bool isv8i)
+    {
+    BeFileName applicationResourcePath = Desktop::FileSystem::GetExecutableDir();
+    if (isv8i)
+        applicationResourcePath.AppendToPath(L"Dgnv8\\v8iConfig");
+    else
+        applicationResourcePath.AppendToPath(L"Dgnv8\\CEconfig");
+    return applicationResourcePath;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
@@ -88,7 +100,7 @@ bool            DmsSession::UnInitialize()
 DmsSession::DmsSession(Utf8StringCR userName, Utf8StringCR password, iModelDmsSupport::SessionType sessionType)
     :m_userName(userName), m_activeDataSource(NULL), m_password(password),m_sessionType(sessionType)
     {
-
+    
     }
 
 
@@ -113,9 +125,12 @@ void            DmsSession::SetPWBinaryPath(BeFileNameCR pwBinaryPath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameCR    DmsSession::GetApplicationResourcePath() const
+BeFileName    DmsSession::GetApplicationResourcePath(bool isv8i) const
     {
-    return m_applicationResourcePath;
+    if (!m_applicationResourcePath.empty())
+        return m_applicationResourcePath;
+
+    return GetDefaultWorkspacePath(isv8i);
     }
 
 /*---------------------------------------------------------------------------------**//**

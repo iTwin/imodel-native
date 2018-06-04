@@ -42,9 +42,8 @@ bool   PWWorkspaceHelper::_UnInitialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PWWorkspaceHelper::FetchWorkspace( int folderId, int documentId, BeFileNameCR destination)
-    {   
-    
+StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR destination, bool isv8i)
+    {
     int statusCodeBefore = aaApi_GetLastErrorId();
     LOG.tracev("Generating workspace configuration file. %d", statusCodeBefore);
     StatusInt status = SUCCESS;
@@ -54,7 +53,7 @@ StatusInt   PWWorkspaceHelper::FetchWorkspace( int folderId, int documentId, BeF
                                                 documentId,
                                                 destination.c_str(),//workspaceDir,
                                                 NULL, // additionalCfg
-                                                m_session.GetApplicationResourcePath().c_str(), // path to MSTN
+                                                m_session.GetApplicationResourcePath(isv8i).c_str(), // path to MSTN
                                                 NULL, // defaultCfgFile
                                                 NULL, //commandLineArgs,
                                                 NULL, // fnCallback
@@ -70,6 +69,7 @@ StatusInt   PWWorkspaceHelper::FetchWorkspace( int folderId, int documentId, BeF
         }
 
     LOG.tracev("Finished workspace configuration file: %S", workspaceFilePath);
+    workspaceCfgFile = BeFileName(workspaceFilePath);
     return status;
     }
 
@@ -77,7 +77,7 @@ StatusInt   PWWorkspaceHelper::FetchWorkspace( int folderId, int documentId, BeF
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 PWWorkspaceHelper::PWWorkspaceHelper(DmsSession& session)
-    :m_initDone(false),m_session(session)
+    :m_initDone(false),m_session(session), m_initPwAppDone(false)
     {
 
     }
@@ -94,7 +94,7 @@ PWWorkspaceHelper::~PWWorkspaceHelper()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   PWWorkspaceHelper::_FetchWorkspace(WStringCR pwMoniker, BeFileNameCR workspaceDir)
+StatusInt   PWWorkspaceHelper::_FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pwMoniker, BeFileNameCR workspaceDir, bool isv8i)
     {
     _Initialize();
 
@@ -102,7 +102,7 @@ StatusInt   PWWorkspaceHelper::_FetchWorkspace(WStringCR pwMoniker, BeFileNameCR
     if (SUCCESS != GetFolderIdFromMoniker(folderId, documentId, pwMoniker))
         return ERROR;
 
-    return FetchWorkspace(folderId, documentId, workspaceDir);
+    return _FetchWorkspace(workspaceCfgFile, folderId, documentId, workspaceDir, isv8i);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,9 +133,21 @@ StatusInt       PWWorkspaceHelper::GetFolderIdFromMoniker(int& folderId, int& do
     folderId = docItem.lProjectId;
     documentId = docItem.lDocumentId;
     aaApi_Free(moniker);
-    aaApi_Free((void*)guid);
+    //aaApi_Free((void*)guid);
     //aaApi_GetDatasourceNameFromMoniker
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            PWWorkspaceHelper::InitPwApi()
+    {
+    if (m_initPwAppDone)
+        return true;
+
+    m_initPwAppDone = true;
+    return m_session.InitPwLibraries(BeFileName(L"C:\\Program Files\\Bentley\\ProjectWise\\bin"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -143,8 +155,9 @@ StatusInt       PWWorkspaceHelper::GetFolderIdFromMoniker(int& folderId, int& do
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            PWWorkspaceHelper::_InitializeSession(WStringCR pwMoniker)
     {
-    m_session.InitPwLibraries(BeFileName(L"C:\\Program Files\\Bentley\\ProjectWise\\bin"));
-
+    if (!InitPwApi())
+        return false;
+    
     HMONIKER moniker = NULL;
     LPCWSTR monikerArray = &pwMoniker[0];
     if (!aaApi_StringsToMonikers(1, &moniker, &monikerArray, AAMONIKERF_DONT_VALIDATE))
@@ -157,14 +170,10 @@ bool            PWWorkspaceHelper::_InitializeSession(WStringCR pwMoniker)
         return false;
         }
 
-    m_session.SetDataSource(Utf8String(datasourceName));
+    _InitializeSessionFromDataSource(datasourceName);
+
     aaApi_Free(moniker);
     aaApi_Free((void*)datasourceName);
-
-    //TODO: Lookup the projectwise binray or ship it.
-    if (!m_session.Initialize())
-        return false;
-
     return true;
     }
 
@@ -174,5 +183,29 @@ bool            PWWorkspaceHelper::_InitializeSession(WStringCR pwMoniker)
 bool            PWWorkspaceHelper::_UnInitializeSession()
     {
     m_session.UnInitialize();
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void            PWWorkspaceHelper::SetApplicationResourcePath(BeFileNameCR applicationResourcePath)
+    {
+    m_session.SetApplicationResourcePath(applicationResourcePath);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            PWWorkspaceHelper::_InitializeSessionFromDataSource(WStringCR dataSource)
+    {
+    if (!InitPwApi())
+        return false;
+
+    m_session.SetDataSource(Utf8String(dataSource));
+
+    if (!m_session.Initialize())
+        return false;
+
     return true;
     }

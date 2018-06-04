@@ -18,10 +18,11 @@ struct DmsSession
         Utf8String  m_dataSource;
         BeFileName  m_applicationResourcePath;
         BeFileName  m_pwBinaryPath;
+
         void*  m_activeDataSource;
-        
         //!Search path to find dependant application libraries and symbols
         void SetPWBinaryPath(BeFileNameCR pwBinaryPath);
+        static BeFileName  GetDefaultWorkspacePath(bool isv8i);
         iModelDmsSupport::SessionType m_sessionType;
     public:
     
@@ -41,7 +42,7 @@ struct DmsSession
         //!Search path to find dependant application libraries and symbols
         void SetApplicationResourcePath(BeFileNameCR applicationResourcePath);
 
-        BeFileNameCR GetApplicationResourcePath() const;
+        BeFileName GetApplicationResourcePath(bool isv8i) const;
 
         iModelDmsSupport::SessionType GetSessionType() const;
     };

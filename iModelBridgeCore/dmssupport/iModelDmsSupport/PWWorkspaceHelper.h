@@ -15,18 +15,22 @@ struct DmsSession;
 struct PWWorkspaceHelper : public IDmsSupport
     {
     private:
+        bool        m_initPwAppDone;
         bool        m_initDone;
         DmsSession  m_session;
+        bool        InitPwApi();
         virtual bool _Initialize() override;
         virtual bool _UnInitialize() override;
         virtual bool _InitializeSession(WStringCR pwMoniker) override;
         virtual bool _UnInitializeSession() override;
+        virtual bool _InitializeSessionFromDataSource(WStringCR dataSource) override;
     public:
         PWWorkspaceHelper(DmsSession& session);
         ~PWWorkspaceHelper();
-        StatusInt FetchWorkspace(int folderId, int documentId, BeFileNameCR destination);
+        virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, int folderId, int documentId, BeFileNameCR destination, bool isv8i) override;
         StatusInt GetFolderIdFromMoniker(int& folderId, int& documentId, WStringCR pwMoniker);
-        virtual StatusInt _FetchWorkspace(WStringCR pWMoniker, BeFileNameCR workspaceDir) override;
+        virtual StatusInt _FetchWorkspace(BeFileNameR workspaceCfgFile, WStringCR pWMoniker, BeFileNameCR workspaceDir, bool isv8i) override;
+        virtual  void SetApplicationResourcePath(BeFileNameCR applicationResourcePath) override;
     };
 
 END_BENTLEY_DGN_NAMESPACE
