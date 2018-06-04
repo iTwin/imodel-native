@@ -2,7 +2,7 @@
 |
 |     $Source: DgnHandlers/RegionUtil.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -705,6 +705,9 @@ StatusInt RegionGraphicsContext::_OutputGeometry(GeometrySourceCR source)
     {
     if (!hasValidCurveGeometry(source))
         return SUCCESS; // Avoid de-serializing BReps and other expensive geometry that will just be ignored...
+
+    if (m_regionFilter.IsValid() && m_regionFilter->_FilterSource(source))
+        return SUCCESS; // Source filtered
 
     m_currentGeomSource = &source;
     StatusInt status = T_Super::_OutputGeometry(source);
