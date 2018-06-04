@@ -239,7 +239,12 @@
         <SubPart PartName="DgnPlatformSqlang" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        <Directories DirectoryListName="iModelBridge-TestsDirs"/>
     </Product>
+
+    <ProductDirectoryList ListName="iModelBridge-TestsDirs">
+        <ProductDirectory Name="DgnV8Dlls" Deliver="false"/>
+    </ProductDirectoryList>
 
     <!-- ********************** -->
     <!-- **** Gtest **** -->
@@ -342,6 +347,7 @@
         BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=iModelBridge-UwpTest"
         OnlyPlatforms="WinRT*"
         >
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <SubProduct ProductName="iModelBridge-UwpTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/iModelBridge-UwpTest.log</Files>
