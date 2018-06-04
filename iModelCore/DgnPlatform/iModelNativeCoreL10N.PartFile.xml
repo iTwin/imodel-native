@@ -5,6 +5,8 @@
     >
 
     <Part Name="iModelNativeCoreSqlang">
+        <SubPart PartName="PushXliffs"/>
+
         <SubPart PartName="iModelNativeCoreSqlang-en"/>
         <SubPart PartName="iModelNativeCoreSqlang-cs"/>
         <SubPart PartName="iModelNativeCoreSqlang-de"/>
@@ -32,6 +34,13 @@
         Therefore, the 'en' (and 'pseudo') gatherers here pull in the parts that actually generate
         the 'en' xliff file, and the rest of the language gatherers are cookie-cutter.
     -->
+
+    <Part Name="PushXliffs">
+        <SubPart PartName="L10N-DgnPlatformXliffs-en" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="L10N-BeHttpXliffs-en" PartFile="BeHttp" Repository="BeHttp"/>
+        <SubPart PartName="L10N-ECPresentationXliffs-en" PartFile="ECPresentation" Repository="ECPresentation"/>
+        <SubPart PartName="L10N-UnitsXliffs-en" PartFile="Units" Repository="Units"/>
+    </Part>
 
     <Part Name="iModelNativeCoreSqlang-en"
         BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke"
