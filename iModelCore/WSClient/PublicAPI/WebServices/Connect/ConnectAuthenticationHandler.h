@@ -44,8 +44,6 @@ struct ConnectAuthenticationHandler : public AuthenticationHandler
         bool IsTokenAuthorization(Utf8StringCR auth) const;
         Utf8String GetTokenAuthorization(ISecurityTokenPtr token) const;
 
-        void EnableExpiredTokenRefresh();
-
     public:
         WSCLIENT_EXPORT static std::shared_ptr<ConnectAuthenticationHandler> Create
             (
@@ -62,6 +60,8 @@ struct ConnectAuthenticationHandler : public AuthenticationHandler
             IHttpHandlerPtr customHttpHandler = nullptr,
             bool shouldUseSAMLAuthorization = false
             );
+
+        WSCLIENT_EXPORT void EnableExpiredTokenRefresh();
 
         WSCLIENT_EXPORT virtual ~ConnectAuthenticationHandler();
 
