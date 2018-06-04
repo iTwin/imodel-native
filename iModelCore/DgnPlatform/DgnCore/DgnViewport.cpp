@@ -502,6 +502,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
             zMax = std::max(zMax, DgnUnits::OneMeter()); // make sure we have at least +-1m. Data may be purely planar
             delta.z  = 2.0 * zMax;
             origin.z = -zMax;
+            m_is3dView = true;
             }
         else
             {
