@@ -2352,7 +2352,10 @@ static bvector<Utf8CP> s_dgnV8DeliveredSchemas = {
     "ExtendedElementSchema",
     "MstnPropertyFormatter",
     "Ustn_ElementParams",
-    "DTMElement_TemplateExtender_Schema"
+    "DTMElement_TemplateExtender_Schema",
+    "dgn",
+    "ECDbSystem",
+    "ECDb_FileInfo"
     };
 
 //---------------------------------------------------------------------------------------
@@ -2644,7 +2647,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         return (found != s_dgnV8DeliveredSchemas.end());
         });
 
-    constSchemas.erase(removeAt, constSchemas.end());
+    constSchemas.erase(removeDgn, constSchemas.end());
 //#define EXPORT_BISIFIEDECSCHEMAS 1
 #ifdef EXPORT_BISIFIEDECSCHEMAS
     {
