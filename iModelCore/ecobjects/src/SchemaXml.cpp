@@ -780,7 +780,7 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut)
+SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, Utf8CP checksum)
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
     StopWatch overallTimer("Overall schema de-serialization timer", true);
@@ -815,6 +815,10 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut)
 
     schemaOut->m_originalECXmlVersionMajor = ecXmlMajorVersion;
     schemaOut->m_originalECXmlVersionMinor = ecXmlMinorVersion;
+
+    // If checksum comparison is enabled on context then use the original context 
+    if (m_schemaContext.GetCalculateChecksum() && nullptr != checksum)
+        schemaOut->m_key.m_checksum = checksum;
 
     // Handle conversion of encoded ECName to name + display label for legacy schemas
     if (schemaOut->OriginalECXmlVersionLessThan(ECVersion::V3_1))

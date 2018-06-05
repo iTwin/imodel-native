@@ -223,6 +223,10 @@ void ECValidatedName::SetDisplayLabel(Utf8CP label)
         }
     }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+// ECSchemaCache
+/////////////////////////////////////////////////////////////////////////////////////////
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -514,6 +518,15 @@ ECObjectsStatus ECSchema::SetVersionMinor (const uint32_t versionMinor)
 
     m_key.m_versionMinor = versionMinor;
     return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  10/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSchema::SetImmutable()
+    {
+    BeAssert(!m_immutable);
+    m_immutable = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2776,12 +2789,6 @@ void SearchPathSchemaFileLocater::FindEligibleSchemaFiles(bvector<CandidateSchem
         }
     }
 
-//Returns true if the first element goes before the second
-bool SearchPathSchemaFileLocater::SchemyKeyIsLessByVersion(CandidateSchema const& lhs, CandidateSchema const& rhs)
-    {
-    return lhs.Key.CompareByVersion(rhs.Key) < 0;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                   02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2846,60 +2853,61 @@ ECSchemaPtr SearchPathSchemaFileLocater::_LocateSchema(SchemaKeyR key, SchemaMat
     return schemaOut;
     }
 
-struct CheckSumHelper
-    {
-  
-    static const int BUFFER_SIZE = 1024;
-    public:
-        static Utf8String ComputeCheckSumForString (Utf8CP string, size_t bufferSize);
-        static Utf8String ComputeCheckSumForString (WCharCP string, size_t bufferSize);
-        static Utf8String ComputeCheckSumForFile (WCharCP schemaFile);
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Krischan.Eberle                  12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CheckSumHelper::ComputeCheckSumForString(Utf8CP string, size_t bufferSize)
-    {
-    SHA1 sha1;
-    return sha1 ((Byte*) string, bufferSize);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CheckSumHelper::ComputeCheckSumForString(WCharCP string, size_t bufferSize)
-    {
-    SHA1 sha1;
-    return sha1 ((Byte*) string, bufferSize);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String CheckSumHelper::ComputeCheckSumForFile(WCharCP schemaFile)
-    {
-    SHA1 sha1;
-    BeFile file;
-    if (BeFileStatus::Success != file.Open (schemaFile, BeFileAccess::Read))
+struct ChecksumHelper
+{
+    static Utf8String ComputeCheckSumForString(Utf8CP string, size_t len)
         {
-        BeAssert(false);
-        return EMPTY_STRING;
+        SHA1 sha1;
+        return sha1((Byte*)string, sizeof(Utf8Char) * len);
         }
-
-    Byte buffer [BUFFER_SIZE];
-    do
+    static Utf8String ComputeCheckSumForString(WCharCP string, size_t len)
         {
-        memset(buffer, 0, BUFFER_SIZE * sizeof(Byte));
-        uint32_t bytesRead = 0;
-        file.Read(buffer, &bytesRead, BUFFER_SIZE);
-        if (bytesRead == 0)
-            break;
+        SHA1 sha1;
+        return sha1((Byte*)string, sizeof(WChar) * len);
+        }
+    static Utf8String ComputeCheckSumForFile(WCharCP schemaFile)
+        {
+        Utf8String checkSum;
+        BeFile file;
+        if (BeFileStatus::Success != file.Open (schemaFile, BeFileAccess::Read))
+            {
+            BeAssert(false);
+            return checkSum;
+            }
 
-        sha1.Add (buffer, bytesRead);
-        } while(true);
+        ByteStream fileContents;
+        if (BeFileStatus::Success != file.ReadEntireFile(fileContents))
+            {
+            BeAssert(false);
+            return checkSum;
+            }
 
-    return sha1.GetHashString();
+        SHA1 sha1;
+        return sha1((Byte*)fileContents.GetData(), fileContents.GetSize());
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod                                    Abeesh.Basheer                  04/2012
+ +---------------+---------------+---------------+---------------+---------------+------*/
+// static
+Utf8String ECSchema::ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len)
+    {
+    return ChecksumHelper::ComputeCheckSumForString(str, len);
+    }
+
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Joseph.Urbano                   04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ECSchema::ComputeCheckSum()
+    {
+    Utf8String xmlStr;
+    if (SchemaWriteStatus::Success != WriteToXmlString (xmlStr, m_ecVersion))
+        return "";
+
+    SHA1 sha1;
+    m_key.m_checksum = sha1((Byte*)xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length());
+    return m_key.m_checksum;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2925,7 +2933,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
     AddFilePathToSchemaPaths(schemaContext, ecSchemaXmlFile);
 
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
-    status = reader.Deserialize(schemaOut);
+    status = reader.Deserialize(schemaOut, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForFile(ecSchemaXmlFile).c_str() : nullptr);
 
     if (SchemaReadStatus::Success != status)
         {
@@ -2968,9 +2976,9 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
         LogXmlLoadError (xmlDom.get());
         return SchemaReadStatus::FailedToParseXml;
         }
-
+    
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
-    status = reader.Deserialize(schemaOut);
+    status = reader.Deserialize(schemaOut, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForString(ecSchemaXml, stringByteCount).c_str() : nullptr);
 
     if (SchemaReadStatus::Success != status)
         {
@@ -3019,7 +3027,7 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, WCharCP ecS
         }
 
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
-    status = reader.Deserialize(schemaOut);
+    status = reader.Deserialize(schemaOut, schemaContext.GetCalculateChecksum() ? ChecksumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize / sizeof(WChar)).c_str() : nullptr);
 
     if (SchemaReadStatus::Success != status)
         {
@@ -3096,6 +3104,7 @@ SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion 
 //---------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------//
+// static
 SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSchemaP schemaToSerialize)
     {
     if (nullptr == schemaToSerialize)
@@ -3207,6 +3216,57 @@ ECSchemaCP ECSchema::FindSchema(SchemaKeyCR schemaKey, SchemaMatchType matchType
         }
 
     return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECGetChildFunctor
+    {
+    typedef bvector<ECSchemaCP> ChildCollection;
+    ChildCollection operator () (ECSchemaCP schema) const
+        {
+        bvector<ECSchemaCP> schemas;
+        ECSchemaReferenceListCR referencedSchemas = schema->GetReferencedSchemas();
+        for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
+            schemas.push_back(iter->second.get());
+
+        return schemas;
+        }
+    };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECSchema::AddingSchemaCausedCycles () const
+    {
+    ECGetChildFunctor fncTor;
+
+    typedef SCCGraph <ECSchemaCP, ECGetChildFunctor> SchemaGraph;
+    SchemaGraph graph (fncTor);
+
+    SchemaGraph::SCCContext context;
+    graph.StronglyConnect(this, context);
+
+    bool hasCycles = false;
+    for (SchemaGraph::SccNodes::const_iterator iter = context.m_components.begin(); iter != context.m_components.end(); ++iter)
+        {
+        if (1 != iter->size())
+            {
+            hasCycles = true;
+            Utf8String cycleString;
+            for (SchemaGraph::NodeVector::const_iterator cycleIter = iter->begin(); cycleIter != iter->end(); ++cycleIter)
+                {
+                cycleString.append((*cycleIter)->m_node->m_key.GetFullSchemaName());
+                cycleString.append("-->");
+                }
+            cycleString.append( (*iter->begin())->m_node->m_key.GetFullSchemaName());
+            LOG.errorv ("ECSchema '%s' contains cycles %s", m_key.GetFullSchemaName().c_str(), cycleString.c_str());
+
+            break;
+            }
+        }
+
+    return hasCycles;
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -3356,6 +3416,10 @@ void ECSchemaCache::GetSupplementalSchemasFor(Utf8CP schemaName, bvector<ECSchem
         }
     }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+// ECSchemaElementsOrder
+/////////////////////////////////////////////////////////////////////////////////////////
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3387,56 +3451,9 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECGetChildFunctor
-    {
-    typedef bvector<ECSchemaCP> ChildCollection;
-    ChildCollection operator () (ECSchemaCP schema) const
-        {
-        bvector<ECSchemaCP> schemas;
-        ECSchemaReferenceListCR referencedSchemas = schema->GetReferencedSchemas();
-        for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
-            schemas.push_back(iter->second.get());
-
-        return schemas;
-        }
-    };
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECSchema::AddingSchemaCausedCycles () const
-    {
-    ECGetChildFunctor fncTor;
-
-    typedef SCCGraph <ECSchemaCP, ECGetChildFunctor> SchemaGraph;
-    SchemaGraph graph (fncTor);
-
-    SchemaGraph::SCCContext context;
-    graph.StronglyConnect(this, context);
-
-    bool hasCycles = false;
-    for (SchemaGraph::SccNodes::const_iterator iter = context.m_components.begin(); iter != context.m_components.end(); ++iter)
-        {
-        if (1 != iter->size())
-            {
-            hasCycles = true;
-            Utf8String cycleString;
-            for (SchemaGraph::NodeVector::const_iterator cycleIter = iter->begin(); cycleIter != iter->end(); ++cycleIter)
-                {
-                cycleString.append((*cycleIter)->m_node->m_key.GetFullSchemaName());
-                cycleString.append("-->");
-                }
-            cycleString.append( (*iter->begin())->m_node->m_key.GetFullSchemaName());
-            LOG.errorv ("ECSchema '%s' contains cycles %s", m_key.GetFullSchemaName().c_str(), cycleString.c_str());
-
-            break;
-            }
-        }
-
-    return hasCycles;
-    }
+/////////////////////////////////////////////////////////////////////////////////////////
+// SchemaKey
+/////////////////////////////////////////////////////////////////////////////////////////
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  01/2016
@@ -3607,82 +3624,6 @@ ECObjectsStatus SchemaKey::ParseVersionStringStrict(uint32_t& versionRead, uint3
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  01/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECClassFinder
-    {
-    ECN::SchemaNameClassNamePair const& m_key;
-    ECClassP&                          m_class;
-    ECClassFinder (ECN::SchemaNameClassNamePair const& key, ECClassP& foundClass)
-        :m_key(key), m_class(foundClass)
-        {}
-
-    bool operator () (ECSchemaR val)
-        {
-        if (0 != val.GetName().CompareTo(m_key.m_schemaName))
-            return false;
-
-        m_class = val.GetClassP(m_key.m_className.c_str());
-        return nullptr != m_class;
-        }
-
-    bool operator () (ECSchemaPtr const& val)
-        {
-        if (val.IsNull())
-            return false;
-
-        return (*this)(*val);
-        }
-
-    bool operator () (bpair<SchemaKey,ECSchemaPtr> const& val)
-        {
-        return (*this)(val.second);
-        }
-
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  03/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP SchemaMapExact::FindClassP (ECN::SchemaNameClassNamePair const& classNamePair) const
-    {
-    ECClassP classInstance = nullptr;
-    ECClassFinder classFinder(classNamePair, classInstance);
-
-    SchemaMapExact::const_iterator iter = std::find_if (begin(), end(), classFinder);
-    return iter == end() ? nullptr : classInstance;
-    }
-
- /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Abeesh.Basheer                  04/2012
- +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECSchema::ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len)
-    {
-    return CheckSumHelper::ComputeCheckSumForString (str, len);
-    }
-
- /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Joseph.Urbano                   04/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECSchema::ComputeCheckSum ()
-    {
-    Utf8String xmlStr;
-    if (SchemaWriteStatus::Success != WriteToXmlString (xmlStr, m_ecVersion))
-        return "";
-
-    return CheckSumHelper::ComputeCheckSumForString (xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::SetImmutable()
-    {
-    BeAssert(!m_immutable);
-    m_immutable = true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 int SchemaKey::CompareByName (Utf8StringCR schemaName) const
@@ -3718,6 +3659,8 @@ bool SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
         {
         case SchemaMatchType::Identical:
             {
+            if (!m_checksum.empty() || !rhs.m_checksum.empty())
+                return 0 > strcmp(m_checksum.c_str(), rhs.m_checksum.c_str());
             //Fall through
             }
         case SchemaMatchType::Exact:
@@ -3778,6 +3721,8 @@ bool SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
         {
         case SchemaMatchType::Identical:
             {
+            if (!m_checksum.empty() && !rhs.m_checksum.empty())
+                return 0 == strcmp(m_checksum.c_str(), rhs.m_checksum.c_str());
             //fall through
             }
         case SchemaMatchType::Exact:
@@ -3804,6 +3749,60 @@ bool SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
         }
     }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+// SchemaMapExact
+/////////////////////////////////////////////////////////////////////////////////////////
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  01/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ECClassFinder
+    {
+    ECN::SchemaNameClassNamePair const& m_key;
+    ECClassP&                          m_class;
+    ECClassFinder (ECN::SchemaNameClassNamePair const& key, ECClassP& foundClass)
+        :m_key(key), m_class(foundClass)
+        {}
+
+    bool operator () (ECSchemaR val)
+        {
+        if (0 != val.GetName().CompareTo(m_key.m_schemaName))
+            return false;
+
+        m_class = val.GetClassP(m_key.m_className.c_str());
+        return nullptr != m_class;
+        }
+
+    bool operator () (ECSchemaPtr const& val)
+        {
+        if (val.IsNull())
+            return false;
+
+        return (*this)(*val);
+        }
+
+    bool operator () (bpair<SchemaKey,ECSchemaPtr> const& val)
+        {
+        return (*this)(val.second);
+        }
+
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  03/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassP SchemaMapExact::FindClassP (ECN::SchemaNameClassNamePair const& classNamePair) const
+    {
+    ECClassP classInstance = nullptr;
+    ECClassFinder classFinder(classNamePair, classInstance);
+
+    SchemaMapExact::const_iterator iter = std::find_if (begin(), end(), classFinder);
+    return iter == end() ? nullptr : classInstance;
+    }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// IECTypeAdapterContext
+/////////////////////////////////////////////////////////////////////////////////////////
 static IECTypeAdapterContext::FactoryFn s_typeAdapterContextFactory;
 
 /*---------------------------------------------------------------------------------**//**
@@ -3818,6 +3817,10 @@ IECTypeAdapterContextPtr IECTypeAdapterContext::Create(ECPropertyCR prop, IECIns
     {
     return nullptr != s_typeAdapterContextFactory ? s_typeAdapterContextFactory (prop, instance, componentIndex) : nullptr;
     }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// QualifiedECAccessor
+/////////////////////////////////////////////////////////////////////////////////////////
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/14
@@ -3890,6 +3893,10 @@ bool QualifiedECAccessor::Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemap
 
     return remapped;
     }
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// SchemaNameClassNamePair
+/////////////////////////////////////////////////////////////////////////////////////////
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15

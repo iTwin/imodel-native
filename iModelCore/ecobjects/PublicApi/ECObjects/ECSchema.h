@@ -2567,10 +2567,11 @@ enum class SchemaMatchType
 //=======================================================================================
 struct SchemaKey
 {
-    Utf8String    m_schemaName;
     uint32_t      m_versionRead;
     uint32_t      m_versionWrite;
     uint32_t      m_versionMinor;
+    Utf8String    m_schemaName;
+    Utf8String    m_checksum;
 
     //! Creates a new SchemaKey with the given name and version information
     //! @param[in]  name    The name of the ECSchema
@@ -2673,7 +2674,7 @@ struct SchemaKey
     //! @param[in]  rhs         The SchemaKey to compare to
     //! @param[in]  matchType   The type of match to compare for
     //! @returns The comparison is based on the SchemaMatchType, defined by:
-    //! @li SchemaMatchType::Identical - Falls through to the Exact match
+    //! @li SchemaMatchType::Identical - Returns whether the current schema's checksum is less than the target's checksum.  If the checksum is not set, it falls through to the Exact match
     //! @li SchemaMatchType::Exact - This will first test the names, then the read version, and lastly the minor version
     //! @li SchemaMatchType::LatestReadCompatible - This will first test the names and then the read versions.
     //! @li SchemaMatchType::LatestWriteCompatible - This will first test the names and then the read and write versions.
@@ -2684,7 +2685,7 @@ struct SchemaKey
     //! @param[in]  rhs         The SchemaKey to compare to
     //! @param[in]  matchType   The type of match to compare for
     //! @returns The comparison is based on the SchemaMatchType, defined by:
-    //! @li SchemaMatchType::Identical - Falls through to the Exact match
+    //! @li SchemaMatchType::Identical - Returns whether the current schema's checksum is less than the target's checksum.  If the checksum is not set, it falls through to the Exact match
     //! @li SchemaMatchType::Exact - Returns whether this schema's name, read version, and minor version are all equal to the target's.
     //! @li SchemaMatchType::LatestWriteCompatible - Returns whether this schema's name and read version are equal, and this schema's write version is greater than or equal to the target's.
     //! @li SchemaMatchType::LatestReadCompatible - Returns whether this schema's name and read version are equal, and this schema's write version is greater than or equal to the target's.
@@ -3182,7 +3183,8 @@ private:
     void AddCandidateSchemas(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, WStringCR fileFilter, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext);
     void AddCandidateNoExtensionSchema(bvector<CandidateSchema>& foundFiles, WStringCR schemaPath, Utf8CP schemaName, SchemaKeyR desiredSchemaKey, SchemaMatchType matchType, ECSchemaReadContextCR schemaContext);
 
-    static bool SchemyKeyIsLessByVersion(CandidateSchema const& lhs, CandidateSchema const& rhs);
+    //! Returns true if the first element goes before the second
+    static bool SchemyKeyIsLessByVersion(CandidateSchema const& lhs, CandidateSchema const& rhs) {return lhs.Key.CompareByVersion(rhs.Key) < 0;}
 
 protected:
     ECOBJECTS_EXPORT SearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt);
@@ -3464,6 +3466,8 @@ protected:
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::Schema;}
 
 public:
+    //! Computes the SHA1 checksum of this schema and sets the resulting checksum on the SchemaKey.
+    //! @returns The SHA1 checksum of this schema.
     ECOBJECTS_EXPORT Utf8String ComputeCheckSum ();
     //! Intended to be called by ECDb or a similar system
     void SetId(ECSchemaId id) {BeAssert(!m_ecSchemaId.IsValid()); m_ecSchemaId = id;}

@@ -558,8 +558,6 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWithEmptyCustomAttribute)
 TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithBaseClassInReferencedFile)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
-    schemaContext->AddSchemaPath(seedPath.c_str());
 
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"SchemaThatReferences.01.00.ecschema.xml").c_str(), *schemaContext);
@@ -1306,4 +1304,47 @@ TEST_F(SchemaDeserializationTest, SelfReferencingStructArray)
     ECPropertyP bad = foo->GetPropertyP("Luminaires");
     ASSERT_EQ(nullptr, bad);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    05/2018
+//--------------------------------------------------------------------------------------
+TEST_F(SchemaDeserializationTest, ChecksumIsCalculatedFromContext)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        </ECSchema>
+        )xml";
+
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    context->SetCalculateChecksum(true);
+    ASSERT_TRUE(context->GetCalculateChecksum()) << "The calculate checksum flag should be turned on.";
+
+    ECSchemaPtr testSchema;
+    DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
+
+    ASSERT_TRUE(testSchema.IsValid());
+    EXPECT_FALSE(testSchema->GetSchemaKey().m_checksum.empty()) << "Expect the checksum of the schema to be valid when the calculate checksum flag is set to true on the ECSchemaReadContext.";
+    }
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_FALSE(context->GetCalculateChecksum()) << "By default the calculate checksum flag should be off";
+    ECSchemaPtr testSchema;
+    DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
+    ASSERT_TRUE(testSchema.IsValid());
+    EXPECT_TRUE(testSchema->GetSchemaKey().m_checksum.empty()) << "Expect the checksum of the schema to be empty when the calculate checksum flag is false on the ECSchemaReadContext.";
+    }
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    context->SetSkipValidation(true);
+    context->SetCalculateChecksum(true);
+
+    ECSchemaPtr testSchema;
+    DeserializeSchema(testSchema, *context, SchemaItem(schemaXml));
+
+    ASSERT_TRUE(testSchema.IsValid());
+    EXPECT_FALSE(testSchema->GetSchemaKey().m_checksum.empty()) << "Expect the checksum of the schema to be valid when the calculate checksum and skip validation flags are set to true on the ECSchemaReadContext.";
+    }
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

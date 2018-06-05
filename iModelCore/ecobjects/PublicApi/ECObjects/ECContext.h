@@ -40,6 +40,7 @@ private:
     bool m_includeFilesWithNoVerExt = false;
     bool m_skipValidation = false;
     bool m_acceptLegacyImperfectLatestCompatibleMatch;
+    bool m_calculateChecksum = false;
 
     SearchPathList m_searchPaths;
     bvector<WString> m_cultureStrings;
@@ -105,10 +106,16 @@ public:
             m_preserveElementOrder = true;
         }
 
-    //! If true ECSchema::Validate will no be called on schemas deserialized with this context.  Default is false, so validation is run.
+    //! If true ECSchema::Validate will not be called on schemas deserialized with this context.  Default is false, so validation is run.
     bool GetSkipValidation() const {return m_skipValidation;}
     //! Sets skip validation parameter.  If set to true ECSchema::Validate will not be called on schemas deserialized with this context.  Default is false, so validation is run.
     void SetSkipValidation(bool skipValidation) {m_skipValidation = skipValidation;}
+
+    //! If true an ECSchema's checksum will be calculated on schemas deserialized with this context.  Default is false, where a returned schema may not always contain a checksum. 
+    bool GetCalculateChecksum() const {return m_calculateChecksum;}
+
+    //! Sets calculate checksum on every schema loaded into context
+    void SetCalculateChecksum(bool calculateChecksum) {m_calculateChecksum = calculateChecksum;}
 
     //! Host should call to establish search paths for standard ECSchemas.
     //! @param[in] hostAssetsDirectory Directory to where the application has deployed assets that come with the API,

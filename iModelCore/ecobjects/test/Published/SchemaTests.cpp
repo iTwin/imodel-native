@@ -22,7 +22,7 @@ struct SchemaNameParsingTest : ECTestFixture {};
 struct SchemaReferenceTest : ECTestFixture {};
 struct SchemaCreationTest : ECTestFixture {};
 struct SchemaLocateTest : ECTestFixture {};
-struct SchemaKeyComparisonTest : ECTestFixture {};
+struct SchemaKeyComparisonTest;
 struct SchemaKeyTest : ECTestFixture {};
 struct SchemaCacheTest : ECTestFixture {};
 struct SchemaChecksumTest : ECTestFixture {};
@@ -1772,36 +1772,138 @@ TEST_F(ECNameValidationTest, Validate)
 //! SchemaKeyComparisonTest
 //=======================================================================================
 
+struct SchemaKeyComparisonTest : ECTestFixture
+{
+    SchemaKey key1WithChecksum;
+    SchemaKey key1_0_0;
+    SchemaKey key1_0_1;
+    SchemaKey key1_1_0;
+    SchemaKey key2_0_0;
+    SchemaKey diffChecksumKey;
+    SchemaKey diffNameKey;
+
+    void SetUp() override {
+        key1WithChecksum = SchemaKey("SchemaTest", 1, 0, 0);
+        key1WithChecksum.m_checksum = "aBcD";
+
+        key1_0_0 = SchemaKey("SchemaTest", 1, 0, 0);
+        // key1_0_0.m_checksum = "aBcD";
+        key1_0_1 = SchemaKey("SchemaTest", 1, 0, 1);
+        // key1_0_1.m_checksum = "aBcD";
+        key1_1_0 = SchemaKey("SchemaTest", 1, 1, 0);
+        // key1_1_0.m_checksum = "aBcD";
+        key2_0_0 = SchemaKey("SchemaTest", 2, 0, 0);
+        // key2_0_0.m_checksum = "aBcD";
+
+        diffChecksumKey = SchemaKey("SchemaTest", 1, 0, 0);
+        diffChecksumKey.m_checksum = "aBc";
+        diffNameKey = SchemaKey("SchemaNotTest", 1, 0, 0);
+        // diffNameKey.m_checksum = "aB";
+    }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaKeyComparisonTest, VerifyMatchesOperator)
     {
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0) == SchemaKey("SchemaTest", 1, 0));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0) == SchemaKey("SchemaNotTest", 1, 0));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0) == SchemaKey("SchemaTest", 2, 0));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0) == SchemaKey("SchemaTest", 1, 1));
+    // Verifies an identical SchemaKey matches in all cases
+    EXPECT_TRUE(key1_0_0 == key1WithChecksum);
+    EXPECT_TRUE(key1_0_0.Matches(key1WithChecksum, SchemaMatchType::Identical));
+    EXPECT_TRUE(key1_0_0.Matches(key1WithChecksum, SchemaMatchType::Exact));
+    EXPECT_TRUE(key1_0_0.Matches(key1WithChecksum, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_TRUE(key1_0_0.Matches(key1WithChecksum, SchemaMatchType::LatestReadCompatible));
+    EXPECT_TRUE(key1_0_0.Matches(key1WithChecksum, SchemaMatchType::Latest));
 
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::Exact));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaNotTest", 1, 0), SchemaMatchType::Exact));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::Exact));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 1), SchemaMatchType::Exact));
+    //// Differs by name
 
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::Identical));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaNotTest", 1, 0), SchemaMatchType::Identical));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::Identical));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 1), SchemaMatchType::Identical));
+    // Verifies when the left-side differs by name
+    EXPECT_FALSE(diffNameKey == key1_0_0);
+    EXPECT_FALSE(diffNameKey.Matches(key1_0_0, SchemaMatchType::Identical));
+    EXPECT_FALSE(diffNameKey.Matches(key1_0_0, SchemaMatchType::Exact));
+    EXPECT_FALSE(diffNameKey.Matches(key1_0_0, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_FALSE(diffNameKey.Matches(key1_0_0, SchemaMatchType::LatestReadCompatible));
+    EXPECT_FALSE(diffNameKey.Matches(key1_0_0, SchemaMatchType::Latest));
 
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::Latest));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaNotTest", 1, 0), SchemaMatchType::Latest));
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::Latest));
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 1).Matches(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::Latest));
+    // Verifies when the right-side differs by name
+    EXPECT_FALSE(key1_0_0 == diffNameKey);
+    EXPECT_FALSE(key1_0_0.Matches(diffNameKey, SchemaMatchType::Identical));
+    EXPECT_FALSE(key1_0_0.Matches(diffNameKey, SchemaMatchType::Exact));
+    EXPECT_FALSE(key1_0_0.Matches(diffNameKey, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_FALSE(key1_0_0.Matches(diffNameKey, SchemaMatchType::LatestReadCompatible));
+    EXPECT_FALSE(key1_0_0.Matches(diffNameKey, SchemaMatchType::Latest));
 
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::LatestWriteCompatible));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaNotTest", 1, 0), SchemaMatchType::LatestWriteCompatible));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::LatestWriteCompatible));
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 1).Matches(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::LatestWriteCompatible));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).Matches(SchemaKey("SchemaTest", 1, 1), SchemaMatchType::LatestWriteCompatible));
+    //// Same version with different checksum
+
+    // Verifies when the left-side only differs by checksum
+    EXPECT_FALSE(diffChecksumKey == key1WithChecksum);
+    EXPECT_FALSE(diffChecksumKey.Matches(key1WithChecksum, SchemaMatchType::Identical));
+    EXPECT_TRUE(diffChecksumKey.Matches(key1WithChecksum, SchemaMatchType::Exact));
+    EXPECT_TRUE(diffChecksumKey.Matches(key1WithChecksum, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_TRUE(diffChecksumKey.Matches(key1WithChecksum, SchemaMatchType::LatestReadCompatible));
+    EXPECT_TRUE(diffChecksumKey.Matches(key1WithChecksum, SchemaMatchType::Latest));
+
+    // Verifies when the right-side only differs by checksum
+    EXPECT_FALSE(key1WithChecksum == diffChecksumKey);
+    EXPECT_FALSE(key1WithChecksum.Matches(diffChecksumKey, SchemaMatchType::Identical));
+    EXPECT_TRUE(key1WithChecksum.Matches(diffChecksumKey, SchemaMatchType::Exact));
+    EXPECT_TRUE(key1WithChecksum.Matches(diffChecksumKey, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_TRUE(key1WithChecksum.Matches(diffChecksumKey, SchemaMatchType::LatestReadCompatible));
+    EXPECT_TRUE(key1WithChecksum.Matches(diffChecksumKey, SchemaMatchType::Latest));
+
+    //// 1.0.1 vs 1.0.0
+
+    // Verifies when the left-side has higher minor version number
+    EXPECT_FALSE(key1_0_1 == key1_0_0);
+    EXPECT_FALSE(key1_0_1.Matches(key1_0_0, SchemaMatchType::Identical));
+    EXPECT_FALSE(key1_0_1.Matches(key1_0_0, SchemaMatchType::Exact));
+    EXPECT_TRUE(key1_0_1.Matches(key1_0_0, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_TRUE(key1_0_1.Matches(key1_0_0, SchemaMatchType::LatestReadCompatible));
+    EXPECT_TRUE(key1_0_1.Matches(key1_0_0, SchemaMatchType::Latest));
+
+    // Verifies when the right-side has higher minor version number
+    EXPECT_FALSE(key1_0_0 == key1_0_1);
+    EXPECT_FALSE(key1_0_0.Matches(key1_0_1, SchemaMatchType::Identical));
+    EXPECT_FALSE(key1_0_0.Matches(key1_0_1, SchemaMatchType::Exact));
+    EXPECT_FALSE(key1_0_0.Matches(key1_0_1, SchemaMatchType::LatestWriteCompatible)) << "The key that is matched against has a minor version greater than the current version so it is not read compatible with the current schema.";
+    EXPECT_FALSE(key1_0_0.Matches(key1_0_1, SchemaMatchType::LatestReadCompatible)) << "The key that is matched against has a minor version greater than the current version so it is not read compatible with the current schema.";
+    EXPECT_TRUE(key1_0_0.Matches(key1_0_1, SchemaMatchType::Latest));
+
+    //// 1.1.0 vs 1.0.0
+
+    // Verifies when the left-side has higher write version number
+    EXPECT_FALSE(key1_1_0 == key1_0_0);
+    EXPECT_FALSE(key1_1_0.Matches(key1_0_0, SchemaMatchType::Identical));
+    EXPECT_FALSE(key1_1_0.Matches(key1_0_0, SchemaMatchType::Exact));
+    EXPECT_FALSE(key1_1_0.Matches(key1_0_0, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_TRUE(key1_1_0.Matches(key1_0_0, SchemaMatchType::LatestReadCompatible));
+    EXPECT_TRUE(key1_1_0.Matches(key1_0_0, SchemaMatchType::Latest));
+
+    // Verifies when the right-side has higher write version number
+    EXPECT_FALSE(key1_0_0 == key1_1_0);
+    EXPECT_FALSE(key1_0_0.Matches(key1_1_0, SchemaMatchType::Identical));
+    EXPECT_FALSE(key1_0_0.Matches(key1_1_0, SchemaMatchType::Exact));
+    EXPECT_FALSE(key1_0_0.Matches(key1_1_0, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_FALSE(key1_0_0.Matches(key1_1_0, SchemaMatchType::LatestReadCompatible)) << "The key that is matched against has a write version greater than the current version so it is not read compatible with the current schema.";
+    EXPECT_TRUE(key1_0_0.Matches(key1_1_0, SchemaMatchType::Latest));
+
+    //// 2.0.0 vs 1.0.0
+
+    // Verifies when the left-side has higher major version number
+    EXPECT_FALSE(key2_0_0 == key1_0_0);
+    EXPECT_FALSE(key2_0_0.Matches(key1_0_0, SchemaMatchType::Identical));
+    EXPECT_FALSE(key2_0_0.Matches(key1_0_0, SchemaMatchType::Exact));
+    EXPECT_FALSE(key2_0_0.Matches(key1_0_0, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_FALSE(key2_0_0.Matches(key1_0_0, SchemaMatchType::LatestReadCompatible));
+    EXPECT_TRUE(key2_0_0.Matches(key1_0_0, SchemaMatchType::Latest));
+
+    // Verifies when the right-side has higher major version number
+    EXPECT_FALSE(key1_0_0 == key2_0_0);
+    EXPECT_FALSE(key1_0_0.Matches(key2_0_0, SchemaMatchType::Identical));
+    EXPECT_FALSE(key1_0_0.Matches(key2_0_0, SchemaMatchType::Exact));
+    EXPECT_FALSE(key1_0_0.Matches(key2_0_0, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_FALSE(key1_0_0.Matches(key2_0_0, SchemaMatchType::LatestReadCompatible));
+    EXPECT_TRUE(key1_0_0.Matches(key2_0_0, SchemaMatchType::Latest));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1809,30 +1911,59 @@ TEST_F(SchemaKeyComparisonTest, VerifyMatchesOperator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaKeyComparisonTest, VerifyLessThanOperator)
     {
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0) < SchemaKey("SchemaTest", 1, 0));
-    EXPECT_TRUE(SchemaKey("SchemaTesa", 1, 0) < SchemaKey("SchemaTest", 1, 0));
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0) < SchemaKey("SchemaTest", 2, 0));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 1) < SchemaKey("SchemaTest", 1, 0));
+    // Same key
+    EXPECT_FALSE(key1_0_0 < key1_0_0);
+    EXPECT_FALSE(key1_0_0.LessThan(key1_0_0, SchemaMatchType::Identical));
+    EXPECT_FALSE(key1_0_0.LessThan(key1_0_0, SchemaMatchType::Exact));
+    EXPECT_FALSE(key1_0_0.LessThan(key1_0_0, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_FALSE(key1_0_0.LessThan(key1_0_0, SchemaMatchType::LatestReadCompatible));
+    EXPECT_FALSE(key1_0_0.LessThan(key1_0_0, SchemaMatchType::Latest));
 
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::Exact));
-    EXPECT_TRUE(SchemaKey("SchemaTesa", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::Exact));
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::Exact));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 1).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::Exact));
+    // Only Name is different
+    SchemaKey diffName("SchemaTesa", 1, 0, 0);
 
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::Identical));
-    EXPECT_TRUE(SchemaKey("SchemaTesa", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::Identical));
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::Identical));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 1).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::Identical));
+    EXPECT_TRUE(diffName < key1_0_0);
+    EXPECT_TRUE(diffName.LessThan(key1_0_0, SchemaMatchType::Identical));
+    EXPECT_TRUE(diffName.LessThan(key1_0_0, SchemaMatchType::Exact));
+    EXPECT_TRUE(diffName.LessThan(key1_0_0, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_TRUE(diffName.LessThan(key1_0_0, SchemaMatchType::LatestReadCompatible));
+    EXPECT_TRUE(diffName.LessThan(key1_0_0, SchemaMatchType::Latest));
 
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::Latest));
-    EXPECT_TRUE(SchemaKey("SchemaTesa", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::Latest));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::Latest));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 9), SchemaMatchType::Latest));
+    // Checksum
+    EXPECT_TRUE(diffChecksumKey < key1WithChecksum);
+    EXPECT_TRUE(diffChecksumKey.LessThan(key1WithChecksum, SchemaMatchType::Identical));
+    EXPECT_FALSE(diffChecksumKey.LessThan(key1WithChecksum, SchemaMatchType::Exact)) << "Should not detect a difference since it does not look at the checksum";
+    EXPECT_FALSE(diffChecksumKey.LessThan(key1WithChecksum, SchemaMatchType::LatestWriteCompatible)) << "Should not detect a difference since it does not look at the checksum";
+    EXPECT_FALSE(diffChecksumKey.LessThan(key1WithChecksum, SchemaMatchType::LatestReadCompatible)) << "Should not detect a difference since it does not look at the checksum";
+    EXPECT_FALSE(diffChecksumKey.LessThan(key1WithChecksum, SchemaMatchType::Latest)) << "Should not detect a difference since it does not look at the checksum";
 
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::LatestWriteCompatible));
-    EXPECT_TRUE(SchemaKey("SchemaTesa", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 0), SchemaMatchType::LatestWriteCompatible));
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 2, 0), SchemaMatchType::LatestWriteCompatible));
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0).LessThan(SchemaKey("SchemaTest", 1, 9), SchemaMatchType::LatestWriteCompatible));
+    // Major version
+    EXPECT_TRUE(key1_0_0 < key2_0_0);
+    EXPECT_TRUE(key1_0_0.LessThan(key2_0_0, SchemaMatchType::Identical));
+    EXPECT_TRUE(key1_0_0.LessThan(key2_0_0, SchemaMatchType::Exact));
+    EXPECT_TRUE(key1_0_0.LessThan(key2_0_0, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_TRUE(key1_0_0.LessThan(key2_0_0, SchemaMatchType::LatestReadCompatible));
+    EXPECT_FALSE(key1_0_0.LessThan(key2_0_0, SchemaMatchType::Latest));
+
+    // Write version
+    EXPECT_FALSE(key1_1_0 < key1_0_0);
+    EXPECT_FALSE(key1_1_0.LessThan(key1_0_0, SchemaMatchType::Exact));
+    EXPECT_FALSE(key1_1_0.LessThan(key1_0_0, SchemaMatchType::Identical));
+
+    EXPECT_TRUE(key1_0_0 < key1_1_0);
+    EXPECT_TRUE(key1_0_0.LessThan(key1_1_0, SchemaMatchType::Identical));
+    EXPECT_TRUE(key1_0_0.LessThan(key1_1_0, SchemaMatchType::Exact));
+    EXPECT_FALSE(key1_0_0.LessThan(key1_1_0, SchemaMatchType::LatestReadCompatible));
+    EXPECT_TRUE(key1_0_0.LessThan(key1_1_0, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_FALSE(key1_0_0.LessThan(key1_1_0, SchemaMatchType::Latest));
+
+    // Minor version
+    EXPECT_TRUE(key1_0_0 < key1_0_1);
+    EXPECT_TRUE(key1_0_0.LessThan(key1_0_1, SchemaMatchType::Identical));
+    EXPECT_TRUE(key1_0_0.LessThan(key1_0_1, SchemaMatchType::Exact));
+    EXPECT_FALSE(key1_0_0.LessThan(key1_0_1, SchemaMatchType::LatestReadCompatible));
+    EXPECT_FALSE(key1_0_0.LessThan(key1_0_1, SchemaMatchType::LatestWriteCompatible));
+    EXPECT_FALSE(key1_0_0.LessThan(key1_0_1, SchemaMatchType::Latest));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1840,10 +1971,12 @@ TEST_F(SchemaKeyComparisonTest, VerifyLessThanOperator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaKeyComparisonTest, VerifyNotMatchesOperator)
     {
-    EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaTest", 1, 0));
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaNotTest", 1, 0));
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaTest", 2, 0));
-    EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaTest", 1, 1));
+    EXPECT_FALSE(key1_0_0 != key1WithChecksum);
+    EXPECT_TRUE(key1WithChecksum != diffChecksumKey);
+    EXPECT_TRUE(key1_0_0 != diffNameKey);
+    EXPECT_TRUE(key1_0_0 != key1_1_0);
+    EXPECT_TRUE(key1_0_0 != key1_0_1);
+    EXPECT_TRUE(key1_0_0 != key2_0_0);
     }
 
 //=======================================================================================
@@ -1855,16 +1988,20 @@ TEST_F(SchemaKeyComparisonTest, VerifyNotMatchesOperator)
 //---------------+---------------+---------------+---------------+---------------+-----
 TEST_F(SchemaKeyTest, TestParseSchemaVersionString)
     {
-    uint32_t r;
-    uint32_t w;
-    uint32_t m;
+    uint32_t r = 0;
+    uint32_t w = 0;
+    uint32_t m = 0;
 
     EXPECT_EQ(ECObjectsStatus::Success, SchemaKey::ParseVersionString(r, w, m, ""));
-    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionString(r, w, m, "0"));
-    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionString(r, w, m, "0."));
-    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionString(r, w, m, ".0"));
-    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionString(r, w, m, "."));
-    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionString(r, w, m, ".."));
+    EXPECT_EQ(0, r);
+    EXPECT_EQ(0, w);
+    EXPECT_EQ(0, m);
+
+    EXPECT_NE(ECObjectsStatus::InvalidECVersion, SchemaKey::ParseVersionString(r, w, m, "0"));
+    EXPECT_NE(ECObjectsStatus::InvalidECVersion, SchemaKey::ParseVersionString(r, w, m, "0."));
+    EXPECT_NE(ECObjectsStatus::InvalidECVersion, SchemaKey::ParseVersionString(r, w, m, ".0"));
+    EXPECT_NE(ECObjectsStatus::InvalidECVersion, SchemaKey::ParseVersionString(r, w, m, "."));
+    EXPECT_NE(ECObjectsStatus::InvalidECVersion, SchemaKey::ParseVersionString(r, w, m, ".."));
 
     EC_EXPECT_SUCCESS(SchemaKey::ParseVersionString(r, w, m, "0.0"));
     EXPECT_EQ(0, r);
@@ -1903,7 +2040,7 @@ TEST_F(SchemaKeyTest, TestParseSchemaVersionStringStrict)
     EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionStringStrict(r, w, m, "."));
     EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionStringStrict(r, w, m, ".."));
     EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionStringStrict(r, w, m, "0.0"));
-    EXPECT_NE(ECObjectsStatus::Success, SchemaKey::ParseVersionStringStrict(r, w, m, "1.2"));
+    EXPECT_EQ(ECObjectsStatus::InvalidECVersion, SchemaKey::ParseVersionStringStrict(r, w, m, "1.2"));
 
     EC_EXPECT_SUCCESS(SchemaKey::ParseVersionStringStrict(r, w, m, "0.0.0"));
     EXPECT_EQ(0, r);
