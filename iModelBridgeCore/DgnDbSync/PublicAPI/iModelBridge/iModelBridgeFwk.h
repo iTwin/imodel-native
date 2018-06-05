@@ -109,6 +109,9 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
     void SaveBriefcaseId();
     //void SaveParentRevisionId();
 
+    static void DecryptCredentials(Http::Credentials& credentials);
+    static WString getArgValueW(WCharCP arg);
+    static Utf8String getArgValue(WCharCP arg);
     //! The command-line arguments required by the iModelBridgeFwk itself that define the Job
     struct JobDefArgs
         {
@@ -122,13 +125,12 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         BeFileName m_loggingConfigFileName;
         BeFileName m_stagingDir;
         BeFileName m_inputFileName;
-        BeFileName m_workspaceDir;
-        BeFileName m_dmsLibraryName;
+        
         bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
         Json::Value m_argsJson; // additional arguments, in JSON format. Some of these may be intended for the bridge.
         bvector<WString> m_bargs;
-        WString     m_inputFileUrn;
+        
         IMODEL_BRIDGE_FWK_EXPORT JobDefArgs();
 
         //! Parse the command-line arguments required by the iModelBridgeFwk itself, and return a vector of pointers to the remaining
@@ -146,9 +148,6 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
 
         T_iModelBridge_releaseInstance* ReleaseBridge();
 
-
-        T_iModelDmsSupport_getInstance*   LoadDmsLibrary();
-        //void*   ReleaseDmsLibrary();
         };
 
     //! The command-line arguments required by the iModelBridgeFwk that pertain to the iModelHub
@@ -158,10 +157,10 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         Utf8String m_bcsProjectId;                  //!< iModelHub project 
         Utf8String m_repositoryName;                //!< A repository in the iModelHub project
         Http::Credentials m_credentials;            //!< User credentials
+        bool              m_isEncrypted;
         WebServices::UrlProvider::Environment m_environment; //!< Connect environment
         uint8_t m_maxRetryCount = 3;                //! The number of times to retry a failed pull, merge, and/or push. (0 means that the framework will try operations only once and will not re-try them in case of failure.)
         bvector<WString> m_bargs;
-        Http::Credentials m_dmsCredentials;            //!< DMS credentials
         //! Parse the command-line arguments required by the iModelBridgeFwk itself that pertain to the iModelHub, and return a vector of pointers to the remaining
         //! arguments (which are presumably the arguments to the bridge).
         BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[]);
@@ -173,6 +172,36 @@ struct iModelBridgeFwk : iModelBridge::IDocumentPropertiesAccessor
         static void PrintUsage();
         };
 
+    struct DmsServerArgs
+        {
+        WString             m_inputFileUrn;
+        BeFileName          m_workspaceDir;
+        BeFileName          m_dmsLibraryName;
+        Http::Credentials   m_dmsCredentials;            //!< DMS credentials
+        WString             m_dataSource;
+        int                 m_folderId;
+        int                 m_documentId;
+        int                 m_maxRetryCount;
+        bool                m_isv8i;
+        bvector<WString>    m_bargs;
+        BeFileName          m_applicationWorkspace;
+        static void PrintUsage();
+
+        DmsServerArgs();
+
+        T_iModelDmsSupport_getInstance*   LoadDmsLibrary();
+        //void*   ReleaseDmsLibrary();
+
+        //! Parse the command-line arguments required by the iModelBridgeFwk itself, and return a vector of pointers to the remaining
+        //! arguments (which are presumably the arguments to the bridge).
+        BentleyStatus ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[], bool isEncrypted);
+
+        //! Validate that all require arguments were supplied and are valid
+        BentleyStatus Validate(int argc, WCharCP argv[]);
+
+        void SetDgnArg(WString argName, WStringCR arg, bvector<WCharCP>& bargptrs);
+        };
+    
     //! Admin that supplies the live repository connection that the fwk has created, plus the bulk insert briefcasemgr that
     //! all bridges should use.
     struct FwkRepoAdmin : DgnPlatformLib::Host::RepositoryAdmin
@@ -196,6 +225,7 @@ protected:
     bvector<WCharCP> m_bargptrs;        // bridge command-line arguments
     JobDefArgs m_jobEnvArgs;                  // the framework's command-line arguments
     ServerArgs m_serverArgs;            // the framework's command-line arguments that pertain to the iModelHub
+    DmsServerArgs m_dmsServerArgs;
     FwkRepoAdmin* m_repoAdmin {};
     IDmsSupport*    m_dmsSupport;
     BeSQLite::DbResult OpenOrCreateStateDb();

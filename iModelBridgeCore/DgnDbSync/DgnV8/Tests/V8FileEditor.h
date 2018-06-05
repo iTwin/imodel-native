@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/V8FileEditor.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,6 +38,7 @@ struct V8FileEditor
         }
 
     // ECData 
+    Bentley::BentleyStatus CreateInstance(DgnV8Api::DgnElementECInstancePtr &createdDgnECInstance, DgnV8ModelP targetModel, WCharCP schemaName, WCharCP className);
     Bentley::BentleyStatus CreateInstanceOnElement(DgnV8Api::DgnElementECInstancePtr &createdDgnECInstance, Bentley::ElementHandleCR eh, DgnV8ModelP targetModel, WCharCP schemaName, WCharCP className, bool markInterinsic=false);
     DgnECInstancePtr QueryECInstance(ElementHandleCR eh, WCharCP schemaName, WCharCP className);
 
