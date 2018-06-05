@@ -199,13 +199,16 @@ std::shared_ptr<WSObjectsReader> WebApiV2::CreateJsonInstancesReader() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-Utf8String WebApiV2::GetNullableString(RapidJsonValueCR jsonValue)
+Utf8String WebApiV2::GetNullableString(RapidJsonValueCR object, Utf8CP member)
     {
-    if (jsonValue.IsString())
-        {
-        return jsonValue.GetString();
-        }
-    BeAssert(jsonValue.IsNull());
+    if (!object.HasMember(member))
+        return "";
+
+    auto& value = object[member];
+    if (value.IsString())
+        return value.GetString();
+
+    BeAssert(value.IsNull() && "Should be string or null");
     return "";
     }
 
@@ -242,10 +245,10 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(Http::Response& re
         WSRepository repository;
 
         repository.SetId(instance.GetObjectId().remoteId);
-        repository.SetLocation(GetNullableString(instance.GetProperties()["Location"]));
-        repository.SetPluginId(GetNullableString(instance.GetProperties()["ECPluginID"]));
-        repository.SetLabel(GetNullableString(instance.GetProperties()["DisplayLabel"]));
-        repository.SetDescription(GetNullableString(instance.GetProperties()["Description"]));
+        repository.SetLocation(GetNullableString(instance.GetProperties(), "Location"));
+        repository.SetPluginId(GetNullableString(instance.GetProperties(), "ECPluginID"));
+        repository.SetLabel(GetNullableString(instance.GetProperties(), "DisplayLabel"));
+        repository.SetDescription(GetNullableString(instance.GetProperties(), "Description"));
         repository.SetServerUrl(m_configuration->GetServerUrl().c_str());
 
         repositories.push_back(repository);
