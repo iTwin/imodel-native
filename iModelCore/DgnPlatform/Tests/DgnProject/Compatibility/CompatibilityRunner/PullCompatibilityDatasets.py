@@ -38,18 +38,15 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir):
  # bsimethod                         Kyle.Abramowitz             05/2018
  # Pull all test data nugets to path
  #------------------------------------------------------------------------
-def pullAllNugets(path, pathToNugetPuller):
+def pullAllNugets(path, pathToNugetPuller, name):
     import nugetpkg
     address = "http://nuget.bentley.com/nuget/default/"
-    name = "iModelSchemaEvolutionTestFilesNuget_bim0200dev_x64";
     versions = nugetpkg.SearchVersionsFromServer(address, name)
 
     for v in versions:
         # Dowload and save all versions
-        pkgAddress = "http://nuget.bentley.com/nuget/default/"
-        pkgName = "iModelSchemaEvolutionTestFilesNuget_bim0200dev_x64"
         localDir = path
-        DownloadPackage(pkgAddress, pkgName, v, localDir)
+        DownloadPackage(address, name, v, localDir)
 
  #------------------------------------------------------------------------
  # bsimethod                         Kyle.Abramowitz             05/2018
@@ -61,7 +58,9 @@ def main():
 
     nugetPath = sys.argv[1]
     sys.path.insert(0, sys.argv[2])
-    pullAllNugets(nugetPath, sys.argv[2])
+    pullAllNugets(nugetPath, sys.argv[2], "iModelSchemaEvolutionTestFilesNuget_bim0200dev_x64")
+    #TODO remove once we merge back
+    pullAllNugets(nugetPath, sys.argv[2], "iModelSchemaEvolutionTestFilesNuget_bim0200dev_ec32_x64")
     # Remove old extracted nugets to prevent issues with extraction overwrites
     for filename in os.listdir(nugetPath):
         path = os.path.join(nugetPath, filename)
