@@ -163,7 +163,7 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     auto fileScopeId = docLink.m_syncInfoRecord.GetROWID();
 
     // IMODELBRIDGE REQUIREMENT: Note job transform and react when it changes
-    ORDConverter::Params params(_GetParams(), jobSubject, *changeDetectorPtr, fileScopeId);
+    ORDConverter::Params params(_GetParams(), jobSubject, *changeDetectorPtr, fileScopeId, m_converter->GetRootModelUnitSystem());
     Transform _old, _new;
     params.spatialDataTransformHasChanged = DetectSpatialDataTransformChange(_new, _old, *changeDetectorPtr, fileScopeId, "JobTrans", "JobTrans");
     params.isCreatingNewDgnDb = IsCreatingNewDgnDb();

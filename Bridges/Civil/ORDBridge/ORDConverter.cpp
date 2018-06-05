@@ -772,14 +772,29 @@ BentleyStatus ORDCorridorsConverter::CreateNewCorridor(
         {
         auto roadwayStandardsModelPtr = RoadRailBim::RoadwayStandardsModel::Query(*params.subjectCPtr);
 
-        auto mphUnitCP = BENTLEY_NAMESPACE_NAME::Units::UnitRegistry::Instance().LookupUnit("MPH");
+        double msecSpeed = 0.0;
+        Utf8String speedLabel;
         auto msecUnitCP = BENTLEY_NAMESPACE_NAME::Units::UnitRegistry::Instance().LookupUnit("M/SEC");
-        BENTLEY_NAMESPACE_NAME::Units::Quantity speedQty(70.0, *mphUnitCP); // 70 MPH
+        if (params.rootModelUnitSystem == Dgn::UnitSystem::Metric)
+            {
+            auto kphUnitCP = BENTLEY_NAMESPACE_NAME::Units::UnitRegistry::Instance().LookupUnit("KM/HR");
+            BENTLEY_NAMESPACE_NAME::Units::Quantity speedQty(100.0, *kphUnitCP); // 100 Km/h
+            msecSpeed = speedQty.ConvertTo(msecUnitCP).GetMagnitude();
+            speedLabel = "100 Km/h";
+            }
+        else
+            { 
+            auto mphUnitCP = BENTLEY_NAMESPACE_NAME::Units::UnitRegistry::Instance().LookupUnit("MPH");
+            BENTLEY_NAMESPACE_NAME::Units::Quantity speedQty(70.0, *mphUnitCP); // 70 MPH
+            msecSpeed = speedQty.ConvertTo(msecUnitCP).GetMagnitude();
+            speedLabel = "70 MPH";
+            }        
 
-        auto designSpeedDefPtr = RoadRailBim::DesignSpeedDefinition::Create(*roadwayStandardsModelPtr, 
-            speedQty.ConvertTo(msecUnitCP).GetMagnitude()); // Hard-coded for now - while the CIF SDK exposes an API for it
-        designSpeedDefPtr->SetUserLabel("70 mph");
+        // Hard-coded for now - while the CIF SDK exposes an API for it
+        auto designSpeedDefPtr = RoadRailBim::DesignSpeedDefinition::Create(*roadwayStandardsModelPtr, msecSpeed); 
+        designSpeedDefPtr->SetUserLabel(speedLabel.c_str());
         m_defaultDesignSpeedDef = designSpeedDefPtr->Insert();
+
         if (m_defaultDesignSpeedDef.IsNull())
             return BentleyStatus::ERROR;
         }
@@ -1340,6 +1355,14 @@ static void setUpModelFormatter(Dgn::GeometricModelR geometricModel, DgnV8Api::M
     displayInfo.SetDirectionBaseDir(v8ModelInfo.GetDirectionBaseDir());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    diego.diaz                      05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::UnitSystem ORDConverter::GetRootModelUnitSystem()
+    {
+    DgnV8Api::ModelInfo const& v8ModelInfo = _GetModelInfo(*GetRootModelP());
+    return (Dgn::UnitSystem)v8ModelInfo.GetMasterUnit().GetSystem();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      02/2018

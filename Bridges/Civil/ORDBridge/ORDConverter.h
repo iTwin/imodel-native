@@ -27,8 +27,10 @@ protected:
 public:
     struct Params
         {
-        Params(Dgn::iModelBridge::Params const& iModelBridgeParams, Dgn::SubjectCR subject, Dgn::iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId) :
-            iModelBridgeParamsCP(&iModelBridgeParams), subjectCPtr(&subject), changeDetectorP(&changeDetector), fileScopeId(fileScopeId), spatialDataTransformHasChanged(false)
+        Params(Dgn::iModelBridge::Params const& iModelBridgeParams, Dgn::SubjectCR subject, Dgn::iModelBridgeSyncInfoFile::ChangeDetector& changeDetector, 
+            Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId, Dgn::UnitSystem rootModelUnitSystem) :
+            iModelBridgeParamsCP(&iModelBridgeParams), subjectCPtr(&subject), changeDetectorP(&changeDetector), fileScopeId(fileScopeId), 
+            spatialDataTransformHasChanged(false), rootModelUnitSystem(rootModelUnitSystem)
             {}
 
         Dgn::iModelBridge::Params const* iModelBridgeParamsCP;
@@ -37,6 +39,7 @@ public:
         Dgn::iModelBridgeSyncInfoFile::ROWID fileScopeId;
         bool spatialDataTransformHasChanged;
         bool isCreatingNewDgnDb;
+        Dgn::UnitSystem rootModelUnitSystem;
         };
 
 private:
@@ -65,6 +68,7 @@ public:
     void SetIsProcessing(bool newVal) { m_isProcessing = newVal; }
 
     void SetUpModelFormatters(Dgn::SubjectCR jobSubject);
+    Dgn::UnitSystem GetRootModelUnitSystem();
 }; // ORDConverter
 
 struct ConvertORDElementXDomain : Dgn::DgnDbSync::DgnV8::XDomain
