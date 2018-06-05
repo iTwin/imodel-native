@@ -20,202 +20,13 @@ struct SingleSheetCutFillContext;
 
 static int s_cutFillNoisy = 0;
 
-// objects:
-// SingleSheetCutFillFloodContext -- runs DFS in graph constructed elsewhere.
-// SingleSheetCutFillContext -- constructs graph, initiates cut SingleSheetCutFillFloodContext
 
-struct IScanProcessor
+struct ZPlaneDescriptor
 {
-GEOMAPI_VIRTUAL void ProcessFace (SingleSheetCutFillContext &context, VuSetP graph, VuP node, size_t dtmFace, size_t roadFace)
-    {
-    bool isCutFillFace = dtmFace != SIZE_MAX && roadFace != SIZE_MAX;
-    if (s_cutFillNoisy > 0)
-    printf (" ProcessFace (id %d %g) (dtm %d) (road %d)\n",
-            vu_getIndex (node), vu_area (node), (int)dtmFace, (int)roadFace);
-    if (s_cutFillNoisy > 4 || (s_cutFillNoisy > 2 && isCutFillFace))
-        vu_printFaceLabelsOneFace (graph, node);
-    }
-GEOMAPI_VIRTUAL bool ContinueSearch () { return true;}
-
-// Announce coordinates in paired dtm and road loops.
-// <ul>
-// <li>both loops are oriented CCW.
-//
-GEOMAPI_VIRTUAL void ProcessCutFillFacet (bvector<DPoint3d> &dtm, size_t dtmReadIndex, bvector<DPoint3d> &road, size_t roadReadIndex, bool isCut) {}
-
-};
-
-
-struct SingleSheetCutFillFloodContext
-{
-
-void PrintFace (VuP node, char const *name)
-    {
-    if (s_cutFillNoisy < 10)
-        return;
-    printf ("%s\n", name);
-    vu_printFaceLabelsOneFace (m_graph, node);
-    }
-bvector<VuP> m_stack;
-VuMask m_floodMask;        // grab/return for flood
-VuMask m_faceEnteredMask;  // grab/return for flood
-VuSetP m_graph;
-VuMask m_roadMask;  // supplied by caller
-VuMask m_dtmMask;   // supplied by caller
-VuMask m_roadExteriorMask;  // supplied by caller
-VuMask m_dtmExteriorMask; // supplied by caller
-IScanProcessor &m_faceProcessor;
-SingleSheetCutFillContext &m_cutFillContext;
-MeshAnnotationVector &m_messages;
-
-SingleSheetCutFillFloodContext (
-        SingleSheetCutFillContext &cutFillContext,
-        MeshAnnotationVector &messages,
-        IScanProcessor &faceProcessor,
-        VuSetP graph,
-        VuMask dtmMask,
-        VuMask dtmExteriorMask,
-        VuMask roadMask,
-        VuMask roadExteriorMask
-        )
-    : m_graph(graph),
-      m_messages(messages),
-      m_faceProcessor (faceProcessor),
-      m_cutFillContext (cutFillContext),
-      m_dtmMask (dtmMask),
-      m_roadMask (roadMask),
-      m_dtmExteriorMask (dtmExteriorMask),
-      m_roadExteriorMask (roadExteriorMask)
-    {
-    m_floodMask = vu_grabMask (graph);
-    m_faceEnteredMask = vu_grabMask (graph);
-
-    vu_clearMaskInSet (graph, m_floodMask | m_faceEnteredMask);
-    }
-
-~SingleSheetCutFillFloodContext ()
-    {
-    vu_returnMask (m_graph, m_floodMask);
-    vu_returnMask (m_graph, m_faceEnteredMask);
-    }
-
-// UNCONDITIONAL mark and push -- caller does all tests
-void MaskAndPush (VuP node)
-    {
-    vu_setMask (node, m_floodMask);
-    if (!vu_getMask (node, m_faceEnteredMask))
-        vu_setMaskAroundFace (node, m_faceEnteredMask);
-    m_stack.push_back (node);
-    }
-// Call when crossing into a face.
-// The entry edge is marked as (just one of) dtm or road.
-// If also marked exterior (of the dtm or road) set the respective index to SIZE_MAX
-// Otherwise set the index to the plane index from the 
-void MoveToFace (VuP node, size_t &dtmIndex, size_t &roadIndex)
-    {
-    // Are we changing face for either the road or the dtm?
-    if (vu_getMask (node, m_dtmMask))
-        {
-        dtmIndex = vu_getMask (node, m_dtmExteriorMask) ? SIZE_MAX : vu_getUserData1 (node);
-        }
-    else if (vu_getMask (node, m_roadMask))
-        {
-        roadIndex = vu_getMask (node, m_roadExteriorMask) ? SIZE_MAX : vu_getUserData1 (node);
-        }
-    }
-
-void ScanFromFloodCandidate (VuP seed)
-    {
-    // The search can only start from a node that is dtmExterior.
-    // Once a search runs from any given dtmExterior, the complete connected component will have m_floodMask.
-    // (and also m_faceEnteredMask, but we'll just test for m_floodMask)
-    if (vu_getMask (seed, m_floodMask) || !vu_getMask (seed, m_dtmExteriorMask))
-        return;
-    m_stack.clear ();
-    MaskAndPush (seed);
-    PrintFace (seed, "\n\nComponent Seed");
-
-    size_t dtmFace = SIZE_MAX;  // reset this on each advance and retreat
-    size_t roadFace = SIZE_MAX; // reset this on each advance and retreat
-    while (m_faceProcessor.ContinueSearch () && !m_stack.empty ())
-        {
-        if (s_cutFillNoisy)
-            {
-            printf ("stack:\n");
-            for (auto node : m_stack)
-                {
-                printf ("(%d)", node->id);
-                }
-            printf ("\n");
-            }
-        VuP faceSeed = m_stack.back ();
-        m_stack.pop_back ();
-        VuP candidate = vu_edgeMate (faceSeed);
-        PrintFace (faceSeed, "Pull from Stack");
-        if (s_cutFillNoisy && vu_countEdgesAroundFace (faceSeed) == 2)
-            printf ("!! at null face %d\n", faceSeed->id);
-            
-        if (!vu_getMask (candidate, m_faceEnteredMask))
-            {
-            PrintFace (candidate, "jump edge into candidate");
-            m_stack.push_back (faceSeed);
-            MaskAndPush (candidate);
-            MoveToFace (candidate, dtmFace, roadFace);
-            m_faceProcessor.ProcessFace (m_cutFillContext, m_graph, candidate, dtmFace, roadFace);
-            }
-        else
-            {
-            // cannot step out of this face from this edge.
-            // creep forward around this face.
-                if (s_cutFillNoisy > 0)
-                    printf (" fs creep from %d\n", faceSeed->id);
-            VuP fs = vu_fsucc (faceSeed);
-            while (!vu_getMask (fs, m_floodMask)
-                && vu_getMask (vu_edgeMate (fs), m_faceEnteredMask))
-                {
-                if (s_cutFillNoisy > 0)
-                    printf ("(%d)", fs->id);
-                vu_setMask (fs, m_floodMask);
-                fs = vu_fsucc (fs);
-                }
-
-            if (vu_getMask (fs, m_floodMask))
-                {
-                if (s_cutFillNoisy > 0)
-                    printf (" return to face entry\n");
-                // We have gone all the way around the face to where it was entered.
-                VuP mate = vu_edgeMate(fs);
-                if (!m_stack.empty ())
-                    {
-                    if (s_cutFillNoisy > 0)
-                        printf (" pop stack\n");
-//                    Check::True (mate == m_stack.back ());
-                    //m_stack.pop_back ();
-                    MoveToFace (mate, dtmFace, roadFace);
-                    }
-                }
-            else
-                {
-                if (s_cutFillNoisy > 0)
-                    printf (" setup for edge jump after fs sequence\n");
-                // fs is unvisited. But its edge mate might not be.
-                // whose neighbors might be unvisited.
-                // push back on the stack -- edge mate will be explored next.
-                MaskAndPush (fs);
-                }
-            }
-        }
-
-    }
-};
-
-
- struct ZPlaneDescriptor
- {
- size_t m_sourceId;
- size_t m_indexInSource;
+size_t m_sourceId;
+size_t m_indexInSource;
 DPoint3d m_xyz;
-DPoint3d m_normal;
+DVec3d m_normal;
 double   m_reciprocalZ;     // for z = f(x,y) = m_xyz.z + m_reciprocalZ * (...) see method
 DRange1d m_zRange;
  ZPlaneDescriptor (DPoint3dCR xyz, DVec3dCR normal, DRange1dCR zRange, size_t sourceId, size_t indexInSource, double divideByZTolerance = 0.0)
@@ -260,14 +71,54 @@ DPoint4d VerticalPlaneThroughIntersection (ZPlaneDescriptor const &other) const
     difference.DifferenceOf (planeA, planeB);
     return difference;
     }
-  };
+ClipPlane  GetClipPlane () const
+    {
+    return ClipPlane::ClipPlane (m_normal, m_xyz, false, false);
+    }
+};
 
-struct SingleSheetCutFillContext
+
+// objects:
+// SingleSheetCutFillFloodContext -- runs DFS in graph constructed elsewhere.
+// SingleSheetCutFillContext -- constructs graph, initiates cut SingleSheetCutFillFloodContext
+
+struct IScanProcessor
 {
+GEOMAPI_VIRTUAL void ProcessFace (SingleSheetCutFillContext &context, VuSetP graph, VuP node, size_t dtmFace, size_t roadFace)
+    {
+    bool isCutFillFace = dtmFace != SIZE_MAX && roadFace != SIZE_MAX;
+    if (s_cutFillNoisy > 0)
+    printf (" ProcessFace (id %d %g) (dtm %d) (road %d)\n",
+            vu_getIndex (node), vu_area (node), (int)dtmFace, (int)roadFace);
+    if (s_cutFillNoisy > 4 || (s_cutFillNoisy > 2 && isCutFillFace))
+        vu_printFaceLabelsOneFace (graph, node);
+    }
+GEOMAPI_VIRTUAL bool ContinueSearch () { return true;}
+
+// Announce coordinates in paired dtm and road loops.
+// <ul>
+// <li>both loops are oriented CCW.
+// </ul>
+GEOMAPI_VIRTUAL void ProcessCutFillFacet (bvector<DPoint3d> &dtm, size_t dtmReadIndex, bvector<DPoint3d> &road, size_t roadReadIndex, bool isCut) {}
+
+// Announce a vertical panel or a specific target mesh.
+// <ul>
+// <li>The loop is oriented CCW from outside in its destination
+// <li>Default action is to do nothing.
+// </ul>
+//
+GEOMAPI_VIRTUAL void ProcessSideFacet (bvector<DPoint3d> &points, bool isCut) {}
+
+};
+
 static const VuMask s_dtmMask = VU_KNOT_EDGE;
 static const VuMask s_dtmExteriorMask = VU_SEAM_EDGE;
 static const VuMask s_roadMask = VU_RULE_EDGE;
 static const VuMask s_roadExteriorMask = VU_GRID_EDGE;
+static const VuMask s_interiorSlitMask = VU_NULL_FACE;
+
+struct SingleSheetCutFillContext
+{
 bvector<ZPlaneDescriptor> m_facePlanes;
 MeshAnnotationVector &m_messages;
 VuSetP m_graph;
@@ -341,6 +192,19 @@ ValidatedSize PlaneIndexToReadIndex (size_t planeIndex) const
     return ValidatedSize (SIZE_MAX, false);
     }
 
+bool PlaneIndexToClipPlane(size_t planeIndex, ClipPlane &clipPlane) const
+    {
+    if (planeIndex < m_facePlanes.size ())
+        {
+        clipPlane = m_facePlanes[planeIndex].GetClipPlane ();
+        return true;
+        }
+    return false;
+    }
+
+bool IsDtmFace (VuP node) {return node != nullptr && vu_getMask (node, s_dtmMask);}
+bool IsRoadFace (VuP node) {return node != nullptr && vu_getMask (node, s_roadMask);}
+
 // Create a loop with given coordinates.
 // Mark both sides with edgeMask
 // mark negative area side with exteriorMask;
@@ -370,18 +234,19 @@ double LoadPolygon (bvector<DPoint3d> const &points, VuMask edgeMask, VuMask ext
     return area;
     }
 // return false if the merge found edge intersections.
-bool FinishLoadSequence (VuMask exteriorMask)
+bool FinishLoadSequence (VuMask exteriorMask, VuMask nullFaceMask)
     {
     int num0 = vu_countNodesInGraph (m_graph);
     vu_mergeOrUnionLoops (m_graph, VUUNION_UNION);
     int num1 = vu_countNodesInGraph (m_graph);
     // ?? do we need to regularize?
     vu_exchangeNullFacesToBringMaskInside (m_graph, exteriorMask);
+    ReMaskNullFacesWithCoordinateMismatch (exteriorMask, nullFaceMask);
     vu_exciseNullFaces (m_graph, exteriorMask);
     return num0 == num1;
     }
 
-ValidatedDouble LoadPolyface (PolyfaceQueryCR mesh, VuMask edgeMask, VuMask exteriorMask, size_t sourceId, IPolyfaceVisitorFilter *filter)
+ValidatedDouble LoadPolyface (PolyfaceQueryCR mesh, VuMask edgeMask, VuMask exteriorMask, VuMask nullFaceMask, size_t sourceId, IPolyfaceVisitorFilter *filter)
     {
     auto visitor = PolyfaceVisitor::Attach (mesh, false);
     int errors = 0;
@@ -428,7 +293,7 @@ ValidatedDouble LoadPolyface (PolyfaceQueryCR mesh, VuMask edgeMask, VuMask exte
         {
         m_messages.Assert (false, "Mixed area signs");
         }
-    if (!FinishLoadSequence (exteriorMask))
+    if (!FinishLoadSequence (exteriorMask, nullFaceMask))
         {
         errors++;
         m_messages.Assert (false, "FinishLoadSequence failure");
@@ -444,7 +309,7 @@ ValidatedDouble LoadPolyface (PolyfaceQueryCR mesh, VuMask edgeMask, VuMask exte
 ValidatedDouble LoadDTM (PolyfaceQueryCR mesh, IPolyfaceVisitorFilter *filter)
     {
     vu_stackPush (m_graph);
-    auto area = LoadPolyface (mesh, s_dtmMask, s_dtmExteriorMask, 0, filter);
+    auto area = LoadPolyface (mesh, s_dtmMask, s_dtmExteriorMask, s_interiorSlitMask, 0, filter);
 
     vu_stackPop (m_graph);
     return area;
@@ -453,7 +318,7 @@ ValidatedDouble LoadDTM (PolyfaceQueryCR mesh, IPolyfaceVisitorFilter *filter)
 ValidatedDouble LoadRoad (PolyfaceQueryCR mesh, IPolyfaceVisitorFilter *filter)
     {
     vu_stackPush (m_graph);
-    double area = LoadPolyface (mesh, s_roadMask, s_roadExteriorMask, 1, filter);
+    double area = LoadPolyface (mesh, s_roadMask, s_roadExteriorMask, s_interiorSlitMask, 1, filter);
     vu_stackPop (m_graph);
     return area;
     }
@@ -465,6 +330,10 @@ void Merge ()
     vu_mergeOrUnionLoops (m_graph, VUUNION_UNION);
     if (s_cutFillNoisy > 1000)
         vu_printFaceLabels (m_graph, "after merge");
+    // treat all slit masks the same .....
+    vu_sortMaskToFrontOfBundle (m_graph, s_interiorSlitMask);
+    if (s_cutFillNoisy > 1000)
+        vu_printFaceLabels (m_graph, "after after mask sort");
 
     int numVertices, numEdges, numFaces, eulerCharacteristic;
     vu_countLoops (m_graph, numVertices, numEdges, numFaces);
@@ -475,27 +344,273 @@ void Merge ()
                 );
     if (eulerCharacteristic != 2)
         vu_regularizeGraph (m_graph);    
+
+
     }
 
-void Scan (IScanProcessor &faceProcessor)
+
+
+//  This is a slit between visuually abutting facets at different altitudes
+// 
+//    | AMate                        |
+//    |/----------------------------\|
+//    +B                            A+
+//    |\----------------------------/|
+//    |                         Bmate|
+bool GetVerticalFaceCoordinates (VuP nodeA, VuP &nodeB, bvector<DPoint3d> *points)
     {
-
-    SingleSheetCutFillFloodContext floodState (
-                *this,
-                m_messages,
-                faceProcessor, m_graph,
-                s_dtmMask, s_dtmExteriorMask,
-                s_roadMask, s_roadExteriorMask
-                );
-
-    VU_SET_LOOP (seed, m_graph)
+    if (points)
+        points->clear ();
+    nodeB = vu_fsucc (nodeA);
+    if (vu_fsucc(nodeB) == nodeA)
         {
-        floodState.ScanFromFloodCandidate (seed);
+        auto nodeAMate = nodeB->VSucc (); // This is edgeMate (A)
+        auto nodeBMate = nodeA->VSucc (); // This is edgeMate (B)
+        // z coordinates in the node have been blasted by the merge.
+        // nodeBmate, nodeAMate are interior with well defined planes.
+        auto faceA = vu_getUserData1 (nodeAMate);
+        auto faceB = vu_getUserData1 (nodeBMate);
+
+        auto xyzA = EvaluateNodeOnPlane (nodeA, faceA);
+        auto xyzAMate = EvaluateNodeOnPlane (nodeAMate, faceA);
+
+        auto xyzB = EvaluateNodeOnPlane (nodeB, faceB);
+        auto xyzBMate = EvaluateNodeOnPlane (nodeBMate, faceB);
+
+        double dzA = fabs (xyzA.Value().z - xyzBMate.Value().z);
+        double dzB = fabs (xyzB.Value().z - xyzAMate.Value().z);
+        if (dzA > m_divideByZTolerance || dzB > m_divideByZTolerance)
+            {
+            if (points != nullptr)
+                {
+                points->push_back (xyzA);
+                points->push_back (xyzAMate);
+                points->push_back (xyzB);
+                points->push_back (xyzBMate);
+                }
+            return true;
+            }
         }
-    END_VU_SET_LOOP (seed, m_graph)
+    return false;
+    }
+// Find faces with (a) mask and (b) only 2 nodes.
+// Remove the mask if coorinates across the edge do not match.
+size_t ReMaskNullFacesWithCoordinateMismatch (VuMask maskToClearAroundEdges, VuMask replacementMask)
+    {
+    if (s_cutFillNoisy > 1000)
+        vu_printFaceLabels (m_graph, "before ReMask");
+
+    size_t numDetected = 0;
+    VU_SET_LOOP (nodeA, m_graph)
+        {
+        VuP nodeB;
+        if (GetVerticalFaceCoordinates (nodeA, nodeB, nullptr))
+            {
+            vu_clrMask (nodeA, maskToClearAroundEdges);
+            vu_clrMask (nodeB, maskToClearAroundEdges);
+            vu_clrMask (nodeA->EdgeMate (), maskToClearAroundEdges);
+            vu_clrMask (nodeB->EdgeMate (), maskToClearAroundEdges);
+            vu_setMask (nodeA, replacementMask);
+            vu_setMask (nodeB, replacementMask);
+            }
+        }
+    END_VU_SET_LOOP (nodeA, m_graph)
+    return numDetected;
     }
 
 };
+
+
+struct SingleSheetCutFillFloodContext
+{
+
+void PrintFace (VuP node, char const *name)
+    {
+    if (s_cutFillNoisy < 10)
+        return;
+    printf ("%s  (area %g)\n", name, vu_area (node));
+    vu_printFaceLabelsOneFace (m_graph, node);
+    }
+bvector<VuP> m_stack;
+VuMask m_floodMask;        // grab/return for flood
+VuMask m_faceEnteredMask;  // grab/return for flood
+VuSetP m_graph;
+VuMask m_roadExteriorMask;  // supplied by caller
+VuMask m_dtmExteriorMask; // supplied by caller
+VuMask m_interiorSlitMask;  // supplied by caller.
+IScanProcessor &m_faceProcessor;
+SingleSheetCutFillContext &m_cutFillContext;
+MeshAnnotationVector &m_messages;
+
+SingleSheetCutFillFloodContext (
+        SingleSheetCutFillContext &cutFillContext,
+        MeshAnnotationVector &messages,
+        IScanProcessor &faceProcessor,
+        VuSetP graph,
+        VuMask dtmMask,
+        VuMask dtmExteriorMask,
+        VuMask roadMask,
+        VuMask roadExteriorMask,
+        VuMask interiorSlitMask
+        )
+    : m_graph(graph),
+      m_messages(messages),
+      m_faceProcessor (faceProcessor),
+      m_cutFillContext (cutFillContext),
+      m_dtmExteriorMask (dtmExteriorMask),
+      m_roadExteriorMask (roadExteriorMask),
+      m_interiorSlitMask (interiorSlitMask)
+    {
+    m_floodMask = vu_grabMask (graph);
+    m_faceEnteredMask = vu_grabMask (graph);
+
+    vu_clearMaskInSet (graph, m_floodMask | m_faceEnteredMask);
+    }
+
+~SingleSheetCutFillFloodContext ()
+    {
+    vu_returnMask (m_graph, m_floodMask);
+    vu_returnMask (m_graph, m_faceEnteredMask);
+    }
+
+// UNCONDITIONAL mark and push -- caller does all tests
+void MaskAndPush (VuP node)
+    {
+    vu_setMask (node, m_floodMask);
+    if (!vu_getMask (node, m_faceEnteredMask))
+        vu_setMaskAroundFace (node, m_faceEnteredMask);
+    m_stack.push_back (node);
+    }
+
+
+// Call when crossing into a face.
+// The entry edge is marked as (just one of) dtm or road.
+// If also marked exterior (of the dtm or road) set the respective index to SIZE_MAX
+// Otherwise set the index to the plane index from the 
+void MoveToFace (VuP node, size_t &dtmIndex, size_t &roadIndex)
+    {
+    // Are we changing face for either the road or the dtm?
+    if (m_cutFillContext.IsDtmFace (node))
+        {
+        dtmIndex = vu_getMask (node, m_dtmExteriorMask) ? SIZE_MAX : vu_getUserData1 (node);
+        }
+    else if (m_cutFillContext.IsRoadFace (node))
+        {
+        roadIndex = vu_getMask (node, m_roadExteriorMask) ? SIZE_MAX : vu_getUserData1 (node);
+        }
+    }
+
+void ScanFromFloodCandidate (VuP seed)
+    {
+    // The search can only start from a node that is dtmExterior.
+    // Once a search runs from any given dtmExterior, the complete connected component will have m_floodMask.
+    // (and also m_faceEnteredMask, but we'll just test for m_floodMask)
+    if (vu_getMask (seed, m_floodMask) || !vu_getMask (seed, m_dtmExteriorMask))
+        return;
+    m_stack.clear ();
+    MaskAndPush (seed);
+    PrintFace (seed, "\n\nComponent Seed");
+
+    size_t dtmFace = SIZE_MAX;  // reset this on each advance and retreat
+    size_t roadFace = SIZE_MAX; // reset this on each advance and retreat
+    while (m_faceProcessor.ContinueSearch () && !m_stack.empty ())
+        {
+        if (s_cutFillNoisy)
+            {
+            printf ("stack:");
+            for (auto node : m_stack)
+                {
+                printf ("(%d)", node->id);
+                }
+            printf ("\n");
+            }
+        VuP faceSeed = m_stack.back ();
+        m_stack.pop_back ();
+        VuP candidate = vu_edgeMate (faceSeed);
+        PrintFace (faceSeed, "Pull from Stack");
+        PrintFace (candidate, "jump to mate candidate");
+
+        if (vu_countEdgesAroundFace (faceSeed) == 2
+            && vu_getMask (faceSeed, m_interiorSlitMask))
+            {
+            //printf ("!! at null face %d\n", faceSeed->id);
+            }
+            
+        if (!vu_getMask (candidate, m_faceEnteredMask))
+            {
+            PrintFace (candidate, "jump edge into candidate");
+            m_stack.push_back (faceSeed);
+            MaskAndPush (candidate);
+            MoveToFace (candidate, dtmFace, roadFace);
+            m_faceProcessor.ProcessFace (m_cutFillContext, m_graph, candidate, dtmFace, roadFace);
+            }
+        else
+            {
+            // cannot step out of this face from this edge.
+            // creep forward around this face.
+                if (s_cutFillNoisy > 0)
+                    printf (" fs creep from %d\n", faceSeed->id);
+            VuP fs = vu_fsucc (faceSeed);
+            while (!vu_getMask (fs, m_floodMask)
+                && vu_getMask (vu_edgeMate (fs), m_faceEnteredMask))
+                {
+                if (s_cutFillNoisy > 0)
+                    printf ("(%d)", fs->id);
+                vu_setMask (fs, m_floodMask);
+                fs = vu_fsucc (fs);
+                }
+
+            if (vu_getMask (fs, m_floodMask))
+                {
+                if (s_cutFillNoisy > 0)
+                    printf (" return to face entry\n");
+                // We have gone all the way around the face to where it was entered.
+                VuP mate = vu_edgeMate(fs);
+                if (!m_stack.empty ())
+                    {
+                    if (s_cutFillNoisy > 0)
+                        printf (" pop stack\n");
+//                    Check::True (mate == m_stack.back ());
+                    //m_stack.pop_back ();
+                    MoveToFace (mate, dtmFace, roadFace);
+                    }
+                }
+            else
+                {
+                if (s_cutFillNoisy > 0)
+                    printf (" setup for edge jump after fs sequence\n");
+                // fs is unvisited. But its edge mate might not be.
+                // whose neighbors might be unvisited.
+                // push back on the stack -- edge mate will be explored next.
+                MaskAndPush (fs);
+                }
+            }
+        }
+
+    }
+
+static void RunScan (SingleSheetCutFillContext &context, IScanProcessor &faceProcessor)
+    {
+
+    SingleSheetCutFillFloodContext floodState (
+                context,
+                context. m_messages,
+                faceProcessor, context.m_graph,
+                s_dtmMask, s_dtmExteriorMask,
+                s_roadMask, s_roadExteriorMask,
+                s_interiorSlitMask
+                );
+    if (s_cutFillNoisy)
+        vu_printFaceLabels (context.m_graph, "Before scan");
+    VU_SET_LOOP (seed, context.m_graph)
+        {
+        floodState.ScanFromFloodCandidate (seed);
+        }
+    END_VU_SET_LOOP (seed, context.m_graph)
+    }
+};
+
+
 
 
 void Print (UsageSums const &sums, char const *name, int printWhat = 1)
@@ -527,6 +642,7 @@ bvector<DPoint3d> m_roadBelow;
 bvector<DPoint3d> m_dtmAbove;
 bvector<DPoint3d> m_dtmBelow;
 bvector<bool> m_isCutBoundary, m_isFillBoundary;
+
 void ClearLoops ()
     {
     m_roadAbove.clear ();
@@ -541,7 +657,7 @@ void ClearLoops ()
 void AddSimpleLoopPoint (SingleSheetCutFillContext &context, VuP node, DPoint3d xyzDtm, DPoint3d xyzRoad)
     {
     VuP mate = vu_edgeMate (node);
-    auto isBoundary = vu_getMask (mate, context.s_roadExteriorMask) != 0;
+    auto isBoundary = vu_getMask (mate, s_roadExteriorMask) != 0;
     double dz = xyzRoad.z - xyzDtm.z;
     if (dz > 0.0)
         {
@@ -563,7 +679,7 @@ void AddMidEdgePoint (SingleSheetCutFillContext &context, VuP node, DPoint3d xyz
     if (dz0 * dz1 >= 0.0)
         return;     // SHOULD NOT HAPPEN ...
     VuP mate = vu_edgeMate (node);
-    auto isBoundary = vu_getMask (mate, context.s_roadExteriorMask) != 0;
+    auto isBoundary = vu_getMask (mate, s_roadExteriorMask) != 0;
     m_roadAbove.push_back (xyzRoad);
     m_dtmBelow.push_back (xyzDtm);
 
@@ -583,11 +699,63 @@ void AddMidEdgePoint (SingleSheetCutFillContext &context, VuP node, DPoint3d xyz
         }
     }
 
+bvector<DPoint3d> m_roadVerticalPanel;
+bvector<DPoint3d> m_dtmVerticalPanel;
+bvector<DPoint3d> m_xyzIn, m_xyzOut;
 
+bool ProcessNullFace
+(
+SingleSheetCutFillContext &context,
+VuSetP graph,
+VuP nodeA,
+size_t dtmFace,
+size_t roadFace
+)
+    {
+    auto nodeB = nodeA->FSucc ();
+    if (nodeB->FSucc () != nodeA)
+        return false;
+    DRange1d altitudeRange;
+    if (   context.IsRoadFace (nodeA)
+        && context.GetVerticalFaceCoordinates (nodeA, nodeB, &m_roadVerticalPanel))
+        {
+        // clip to dtm plane
+        // output above, below to respective meshes.
+        ClipPlane clipper;
+        if (context.PlaneIndexToClipPlane (dtmFace, clipper))
+            {
+            clipper.ConvexPolygonSplitInsideOutside (m_roadVerticalPanel, m_xyzIn, m_xyzOut, altitudeRange);
+            if (m_xyzIn.size () > 2)
+                m_handler.ProcessSideFacet (m_xyzIn, false);
+            if (m_xyzOut.size () > 2)
+                m_handler.ProcessSideFacet (m_xyzOut, true);
+            return true;
+            }
+        }
 
+    if (   context.IsDtmFace (nodeA)
+        && context.GetVerticalFaceCoordinates (nodeA, nodeB, &m_dtmVerticalPanel))
+        {
+        // clip to dtm plane
+        // output above, below to respective meshes.
+        ClipPlane clipper;
+        if (context.PlaneIndexToClipPlane (roadFace, clipper))
+            {
+            clipper.ConvexPolygonSplitInsideOutside (m_dtmVerticalPanel, m_xyzIn, m_xyzOut, altitudeRange);
+            if (m_xyzIn.size () > 2)
+                m_handler.ProcessSideFacet (m_xyzIn, true);
+            if (m_xyzOut.size () > 2)
+                m_handler.ProcessSideFacet (m_xyzOut, false);
+            }
+        return true;
+        }
+    return false;
+    }
 
 void ProcessFace (SingleSheetCutFillContext &context, VuSetP graph, VuP faceSeed, size_t dtmFace, size_t roadFace) override
     {
+    if (ProcessNullFace(context, graph, faceSeed, dtmFace, roadFace))
+        return;
     bool isCutFillFace = dtmFace != SIZE_MAX && roadFace != SIZE_MAX;
     double area = vu_area (faceSeed);
     if (dtmFace != SIZE_MAX && roadFace != SIZE_MAX)
@@ -685,6 +853,7 @@ void PrintAreaSummary ()
     Print (m_roadArea, "road   ", 1);
     Print (m_overlapArea, "overlap", 1);
     }
+
 };
 
 ValidatedDouble FacetCutFillHandler::ZVolumeBetweenFacets (bvector<DPoint3d> const &loopA, bvector<DPoint3d> const &loopB)
@@ -714,7 +883,7 @@ IPolyfaceVisitorFilter *roadFilter  //!< [in] optional filter for road  //!< [in
     auto roadArea = context.LoadRoad (road, roadFilter);
     context.Merge ();
     CutFillFacetSplitter faceProcessor (handler, messages);
-    context.Scan (faceProcessor);
+    SingleSheetCutFillFloodContext::RunScan (context, faceProcessor);
     if (s_cutFillNoisy > 0)
         {
         printf (" dtmArea %g\n", dtmArea.Value ());  // THESE PRINTS ARE "JUST" TO MAKE dtmArea, roadArea live
@@ -841,6 +1010,22 @@ bool isCut
         }
 
     }
+
+void ProcessSideFacet (
+bvector<DPoint3d> &facetPoints,
+bool isCut
+) override 
+    {
+    if (isCut)
+        {
+        AddFacet (m_cutBuilder, facetPoints);
+        }
+    else
+        {
+        AddFacet (m_fillBuilder, facetPoints);
+        }
+    }
+
 };
 
 void PolyfaceQuery::ComputeSingleSheetCutFillMeshes

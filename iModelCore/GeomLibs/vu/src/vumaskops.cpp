@@ -2,7 +2,7 @@
 |
 |     $Source: vu/src/vumaskops.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -624,5 +624,61 @@ void vu_exchangeNullFacesToBringMaskInside (VuSetP pGraph, VuMask mask)
         }
     END_VU_SET_LOOP (nodeA, pGraph)
     }
+
+bool IsSlitFace (VuP nodeA)
+    {
+    VuP nodeB = nodeA->FSucc ();
+    VuP nodeC = nodeB->FSucc ();
+    return nodeB != nodeA && nodeC == nodeA;
+    }
+void vu_sortMaskToFrontOfBundle (VuSetP pGraph, VuMask mask, bool targetMask)
+    {
+    // nodeA is a candidate as running along the to be OUTSIDE of a bundle, and at the "top"
+    // nodeB, at the other end of the nodeA, is also outside of the bundle.
+    // The forward vertex loop from nodeB is where the mask is tested.
+    VU_SET_LOOP (nodeA, pGraph)
+        {
+        if (!IsSlitFace (nodeA))
+            {
+            VuP nodeB = vu_fsucc (nodeA);
+            VuP nodeQ = nodeB;  // hot edges move to nodeQ and nodeQ mvoes to the (just moved) hot sector.
+            VuP nodeP0 = nodeQ;  // nodeP will walk to each edge at this end of the bundle.
+            VuP nodeP1 = nodeP0->VSucc ();
+            if (IsSlitFace (nodeP1))
+                {
+                // Always: nodeP1 is an edge in the bundle (possibly at the bottom of a null face, possibly (once) the non-null sector at the last bundle edge
+                do {
+                    // consider moving nodeP1 as successor of nodeQ (and if so make it nodeQ)
+                    if (!nodeP1->HasMask (mask) == targetMask)
+                        {
+                        // leave it in place .. advance P0 to P1
+                        nodeP0 = nodeP1;
+                        }
+                    else if (nodeQ == nodeP0)
+                        {
+                        // nodeP1 is masked but already at the leading edge of the maskees.
+                        nodeP0 = nodeP1;
+                        }
+                    else
+                        {
+                        // Yank each end of edge P1 from its sector ...
+                        auto nodeR1 = nodeP1->FSucc ();  // other end of the slit face.
+                        auto nodeR2 = nodeR1->VSucc (); // edge mate of P1. (P1, R2) is the edge being moved.
+                        auto nodeQ1 = nodeQ->FPred ();       // insertion point for the P2 end of the (P, P2) edge
+                        pGraph->VertexTwist (nodeP0, nodeP1);
+                        pGraph->VertexTwist (nodeR1, nodeR2);
+                        // insert back at Q
+                        pGraph->VertexTwist (nodeP1, nodeQ);
+                        pGraph->VertexTwist (nodeR2, nodeQ1);
+                        // nodeP0 stays where it is -- we have made progress by throwing the edge ahead to somewhere behind.
+                        }
+                    nodeP1 = nodeP0->VSucc ();
+                    } while (IsSlitFace (nodeP0));
+                }
+            }
+        }
+    END_VU_SET_LOOP (nodeA, pGraph)
+    }
+
 
 END_BENTLEY_GEOMETRY_NAMESPACE
