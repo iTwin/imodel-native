@@ -913,7 +913,11 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer500DataObject(DTM_DAT_OBJ
 #ifdef _WIN32_WCE
    long     creationTime,modifiedTime,userTime ;
 #else
+#if _WIN32
+   __time32_t   creationTime,modifiedTime,userTime ;
+#else
    time_t   creationTime,modifiedTime,userTime ;
+#endif
 #endif
    double   xMin,yMin,zMin,xMax,yMax,zMax ;
    double   ppTol,plTol ;
@@ -1119,7 +1123,11 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer501DataObject(DTM_DAT_OBJ
 #ifdef _WIN32_WCE
    long     creationTime,modifiedTime,userTime ;
 #else
+#if _WIN32 //NOTE: THIS IS STORED 32BIT. When time_t is 64-bit, on non win32 archs, it won't work!
+__time32_t   creationTime,modifiedTime,userTime ;
+#else
    time_t   creationTime,modifiedTime,userTime ;
+#endif
 #endif
    double   xMin,yMin,zMin,xMax,yMax,zMax ;
    double   ppTol,plTol ;
