@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientConfiguration.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -38,6 +38,7 @@ struct ClientConfiguration
         const IWSSchemaProviderPtr m_schemaProvider;
         const std::shared_ptr<HttpClient> m_httpClient;
         const IHttpHandlerPtr m_httpHandler;
+        Utf8String m_persistenceProviderId;
         size_t m_maxUrlLength = 2048;
 
     public:
@@ -58,6 +59,9 @@ struct ClientConfiguration
 
         void SetMaxUrlLength(size_t length) {m_maxUrlLength = length;}
         size_t GetMaxUrlLength() const {return m_maxUrlLength;}
+
+        void SetPersistenceProviderId(Utf8StringCR persistence) { m_persistenceProviderId = persistence; }
+        Utf8StringCR GetPersistenceProviderId() const { return m_persistenceProviderId; }
 
         HttpRequestHeadersR GetDefaultHeaders();
     };

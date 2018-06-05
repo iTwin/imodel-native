@@ -22,7 +22,7 @@
 
 #define WARNING_UrlLengthLimitations    "<Warning> Url length might be problematic as it is longer than expected"
 
-const BeVersion WebApiV2::s_maxTestedWebApi(2, 5);
+const BeVersion WebApiV2::s_maxTestedWebApi(2, 8);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -187,6 +187,16 @@ Utf8String WebApiV2::CreateSelectPropertiesQuery(const bset<Utf8String>& propert
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
+HttpRequest WebApiV2::CreateQueryRequest(WSQueryCR query) const
+    {
+    Utf8String classes = StringUtils::Join(query.GetClasses().begin(), query.GetClasses().end(), ",");
+    Utf8String url = GetUrl(CreateClassSubPath(query.GetSchemaName(), classes), query.ToQueryString());
+    return m_configuration->GetHttpClient().CreateGetJsonRequest(url);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 std::shared_ptr<WSObjectsReader> WebApiV2::CreateJsonInstancesReader() const
     {
     bool quoteInstanceETags =
@@ -288,7 +298,17 @@ BeVersion WebApiV2::GetRepositoryPluginVersion(Http::Response& response, Utf8Str
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse(Http::Response& response) const
+WSCreateObjectResult WebApiV2::ResolveCreateObjectResponse(HttpResponse& response) const
+    {
+    if (HttpStatus::Created == response.GetHttpStatus())
+        return WSCreateObjectResult::Success(ResolveUploadResponse(response));
+    return WSCreateObjectResult::Error(response);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse(HttpResponse& response) const
     {
     if (HttpStatus::OK == response.GetHttpStatus())
         return WSUpdateObjectResult::Success(ResolveUploadResponse(response));
@@ -331,28 +351,25 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(Http::Response& response, bool 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryRequest(ICancellationTokenPtr ct) const
+AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryInfoRequest(ICancellationTokenPtr ct) const
     {
-    Utf8String url = GetUrl("/");
-    Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
+    auto repository = WSRepositoryClient::ParseRepositoryUrl(GetUrl("/"));
+    if (!repository.IsValid())
+        return CreateCompletedAsyncTask(WSRepositoryResult::Error(WSError::CreateServerNotSupportedError()));
+
+    if (GetMaxWebApiVersion() < BeVersion(2, 7))
+        return CreateCompletedAsyncTask(WSRepositoryResult::Success(repository));
+
+    WSQuery query("Policies", "PolicyAssertion");
+    query.SetTop(1); //TODO:: add aditional options to add to repository info
+    HttpRequest request = CreateQueryRequest(query);
     request.SetCancellationToken(ct);
-
-    return request.PerformAsync()->Then<WSRepositoryResult>([this] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<WSRepositoryResult>([=] (HttpResponse& response) mutable
         {
-        auto resolvedRepositories = ResolveGetRepositoriesResponse(httpResponse);
+        if (!response.IsSuccess() && HttpStatus::InternalServerError != response.GetHttpStatus())
+            return WSRepositoryResult::Error(response);
 
-        if (!resolvedRepositories.IsSuccess())
-            return WSRepositoryResult::Error(resolvedRepositories.GetError());
-
-        if (1 != resolvedRepositories.GetValue().size())
-            return WSRepositoryResult::Error(WSError::CreateServerNotSupportedError());
-
-        auto repository = resolvedRepositories.GetValue().front();
-        repository.SetPluginVersion(GetRepositoryPluginVersion(httpResponse, repository.GetPluginId()));
-
-        if (!repository.IsValid())
-            return WSRepositoryResult::Error(WSError::CreateServerNotSupportedError());
-
+        repository.SetPluginVersion(GetRepositoryPluginVersion(response, m_configuration->GetPersistenceProviderId()));
         return WSRepositoryResult::Success(repository);
         });
     }

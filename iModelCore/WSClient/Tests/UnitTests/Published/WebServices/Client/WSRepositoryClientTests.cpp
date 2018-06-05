@@ -47,32 +47,6 @@ Json::Value StubWSObjectCreationJson()
             })");
     }
 
-Utf8String StubRepositoryInfoResponse
-(
-Utf8StringCR instanceId = "testInstanceId",
-Utf8StringCR pluginId = "testPluginId",
-Utf8StringCR location = "testLocation",
-Utf8StringCR label = "testlabel",
-Utf8StringCR description = "testDescription"
-)
-    {
-    return Utf8PrintfString(R"({
-            "instances":
-                [{
-                "instanceId": "%s",
-                "className": "RepositoryIdentifier",
-                "schemaName": "Repositories",
-                "properties":
-                    {
-                    "ECPluginID": "%s",
-                    "Location": "%s",
-                    "DisplayLabel": "%s",
-                    "Description": "%s"
-                    }
-                }]
-            })", instanceId.c_str(), pluginId.c_str(), location.c_str(), label.c_str(), description.c_str());
-    }
-
 void Expect4_jSrS(MockHttpHandler& handler, HttpStatus status)
     {
     handler.ExpectRequests(4);
@@ -167,24 +141,20 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi20ResponseDoesNotContainNotRequire
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, GetInfo_WebApi20ResponseIsOkNoPluginVersion_ReturnsRepositoryInfoWithNoPluginVersion)
     {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
 
     std::map<Utf8String, Utf8String> headers {{"Mas-Server", "Bentley-WebAPI/2.6,Bentley-WSG/2.6"}};
-    Utf8String repositoryResponse = StubRepositoryInfoResponse("testRepositoryId", "testPluginId", "testLocation", "testLabel", "testDescription");
 
-    GetHandler().ExpectRequests(2);
+    GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
-    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, repositoryResponse, headers));
 
     auto result = client->GetInfo()->GetResult();
     EXPECT_TRUE(result.IsSuccess());
 
     auto repository = result.GetValue();
     EXPECT_EQ("https://srv.com/ws", repository.GetServerUrl());
-    EXPECT_EQ("testRepositoryId", repository.GetId());
-    EXPECT_EQ("testLabel", repository.GetLabel());
-    EXPECT_EQ("testDescription", repository.GetDescription());
-    EXPECT_EQ("testLocation", repository.GetLocation());
+    EXPECT_EQ("testPluginId--locationId", repository.GetId());
+    EXPECT_EQ("locationId", repository.GetLocation());
     EXPECT_EQ("testPluginId", repository.GetPluginId());
     EXPECT_TRUE(repository.GetPluginVersion().IsEmpty());
     }
@@ -192,26 +162,28 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi20ResponseIsOkNoPluginVersion_Retu
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, GetInfo_WebApi20ResponseIsOkWithPluginVersionAndMassServerHeader_ReturnsRepositoryInfoWithPluginVersion)
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseIsOkWithPluginVersionAndMassServerHeader_ReturnsRepositoryInfoWithPluginVersion)
     {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
 
     std::map<Utf8String, Utf8String> headers {{"Mas-Server", "Bentley-WebAPI/2.6,Bentley-WSG/2.6,testPluginId/1.2"}};
-    Utf8String repositoryResponse = StubRepositoryInfoResponse("testRepositoryId", "testPluginId", "testLocation", "testLabel", "testDescription");
 
     GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
-    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, repositoryResponse, headers));
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi28());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STRCASEEQ("https://srv.com/ws/v2.8/Repositories/testPluginId--locationId/Policies/PolicyAssertion?$top=1", request.GetUrl().c_str());
+        EXPECT_STREQ("GET", request.GetMethod().c_str());
+        return StubHttpResponse(HttpStatus::OK, "", headers);
+        });
 
     auto result = client->GetInfo()->GetResult();
     EXPECT_TRUE(result.IsSuccess());
 
     auto repository = result.GetValue();
-    EXPECT_EQ("testRepositoryId", repository.GetId());
     EXPECT_EQ("https://srv.com/ws", repository.GetServerUrl());
-    EXPECT_EQ("testLabel", repository.GetLabel());
-    EXPECT_EQ("testDescription", repository.GetDescription());
-    EXPECT_EQ("testLocation", repository.GetLocation());
+    EXPECT_EQ("testPluginId--locationId", repository.GetId());
+    EXPECT_EQ("locationId", repository.GetLocation());
     EXPECT_EQ("testPluginId", repository.GetPluginId());
     EXPECT_EQ(BeVersion(1, 2), repository.GetPluginVersion());
     }
@@ -219,18 +191,33 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi20ResponseIsOkWithPluginVersionAnd
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, GetInfo_WebApi20ResponseServerError_Error)
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseServerError_Success)
     {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
 
     GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi28());
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::InternalServerError));
+
+    auto result = client->GetInfo()->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               julius.cepukenas    05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi28ResponseNotServerError_Error)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi28());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Unauthorized));
 
     auto result = client->GetInfo()->GetResult();
     EXPECT_FALSE(result.IsSuccess());
     auto error = result.GetError();
-    EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -238,11 +225,10 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi20ResponseServerError_Error)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, GetInfo_WebApi20CalledTwice_ReturnsCachedRepositoryInfo)
     {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo--plugin", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    GetHandler().ExpectRequests(2);
+    GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
-    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, StubRepositoryInfoResponse()));
 
     auto result = client->GetInfo()->GetResult();
     EXPECT_TRUE(result.IsSuccess());
@@ -256,15 +242,15 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi20CalledTwice_ReturnsCachedReposit
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, GetInfo_WebApi20CalledTwiceFirstCallFailed_RequestsRepositoryInfoSecondTime)
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi28CalledTwiceFirstCallFailed_RequestsRepositoryInfoSecondTime)
     {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
-    Utf8String repositoryResponse = StubRepositoryInfoResponse("testRepositoryId", "testPluginId", "testLocation", "testLabel", "testDescription");
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
+    std::map<Utf8String, Utf8String> headers {{"Mas-Server", "Bentley-WebAPI/2.6,Bentley-WSG/2.6,testPluginId/1.2"}};
 
     GetHandler().ExpectRequests(3);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi28());
     GetHandler().ForRequest(2, StubHttpResponse(ConnectionStatus::None));
-    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, repositoryResponse));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::OK, "", headers));
 
     auto result = client->GetInfo()->GetResult();
     EXPECT_FALSE(result.IsSuccess());
@@ -273,12 +259,11 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi20CalledTwiceFirstCallFailed_Reque
     EXPECT_TRUE(secondResult.IsSuccess());
 
     auto repository = secondResult.GetValue();
-    EXPECT_EQ("testRepositoryId", repository.GetId());
-    EXPECT_EQ("testLabel", repository.GetLabel());
-    EXPECT_EQ("testDescription", repository.GetDescription());
-    EXPECT_EQ("testLocation", repository.GetLocation());
-    EXPECT_EQ("testPluginId", repository.GetPluginId());
     EXPECT_EQ("https://srv.com/ws", repository.GetServerUrl());
+    EXPECT_EQ("testPluginId--locationId", repository.GetId());
+    EXPECT_EQ("locationId", repository.GetLocation());
+    EXPECT_EQ("testPluginId", repository.GetPluginId());
+    EXPECT_EQ(BeVersion(1, 2), repository.GetPluginVersion());
     }
 
 #ifdef USE_GTEST
@@ -287,18 +272,17 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi20CalledTwiceFirstCallFailed_Reque
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, RegisterInfoListener_AddedListener_ListenerNotifiedWithReceivedInfo)
     {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testPluginId--locationId", StubClientInfo(), nullptr, GetHandlerPtr());
     auto listener = std::make_shared<MockRepositoryInfoListener>();
 
-    GetHandler().ExpectRequests(2);
+    GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
-    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, StubRepositoryInfoResponse("testRepositoryId")));
 
     client->RegisterRepositoryInfoListener(listener);
 
     EXPECT_CALL(*listener, OnInfoReceived(_)).Times(1).WillOnce(Invoke([=] (WSRepositoryCR info)
         {
-        EXPECT_STREQ("testRepositoryId", info.GetId().c_str());
+        EXPECT_STREQ("testPluginId--locationId", info.GetId().c_str());
         }));
 
     client->GetInfo()->Wait();
@@ -309,7 +293,7 @@ TEST_F(WSRepositoryClientTests, RegisterInfoListener_AddedListener_ListenerNotif
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, RegisterInfoListener_AddedListenerDeleted_ListenerNotLeakedAndNotNotified)
     {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo--plugin", StubClientInfo(), nullptr, GetHandlerPtr());
 
     int listenerCallCount = 0;
     struct StubRepositoryInfoListener : public IWSRepositoryClient::IRepositoryInfoListener
@@ -322,9 +306,8 @@ TEST_F(WSRepositoryClientTests, RegisterInfoListener_AddedListenerDeleted_Listen
             }
         };
 
-    GetHandler().ExpectRequests(2);
+    GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
-    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, StubRepositoryInfoResponse("testRepositoryId")));
 
     auto listener = std::make_shared<StubRepositoryInfoListener>(listenerCallCount);
     client->RegisterRepositoryInfoListener(listener);
@@ -342,27 +325,15 @@ TEST_F(WSRepositoryClientTests, RegisterInfoListener_AddedListenerDeleted_Listen
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, RegisterInfoListener_InfoNotReceivedDueToNetworkError_ListenerNotNotified)
-    {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
-    auto listener = std::make_shared<MockRepositoryInfoListener>();
-
-    EXPECT_CALL(*listener, OnInfoReceived(_)).Times(0);
-
-    client->RegisterRepositoryInfoListener(listener);
-    client->GetInfo()->Wait();
-    }
-
 TEST_F(WSRepositoryClientTests, UnregisterInfoListener_ExistingListener_ListenerNotNotified)
     {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo--plugin", StubClientInfo(), nullptr, GetHandlerPtr());
     auto listener = std::make_shared<MockRepositoryInfoListener>();
 
     EXPECT_CALL(*listener, OnInfoReceived(_)).Times(0);
 
-    GetHandler().ExpectRequests(2);
+    GetHandler().ExpectRequests(1);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
-    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, StubRepositoryInfoResponse()));
 
     client->RegisterRepositoryInfoListener(listener);
     client->UnregisterRepositoryInfoListener(listener);
@@ -444,8 +415,25 @@ TEST_F(WSRepositoryClientTests, VerifyAccess_ResponseWithSchemaNotFound_ReturnsS
 
 #ifdef USE_GTEST
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
+* @bsimethod                                                 julius.cepukenas    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SetRepositoryid_RepositoryId_RepositoryIdSet)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    client->Config().SetPersistenceProviderId("id");
+    EXPECT_STREQ("id", client->Config().GetPersistenceProviderId().c_str());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetRepositoryid_RepositoryIdNotSet_RepositoryIdIsPluginId)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "testId--plugin", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    EXPECT_STREQ("testId", client->Config().GetPersistenceProviderId().c_str());
+    }
 TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_WebApiV2WithSchemaProviderAndQueryNavigationRoot_DoesNotCallSchemaProvider)
     {
     auto schemaProvider = std::make_shared<MockWSSchemaProvider>();
@@ -1157,16 +1145,13 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV26_CapsWebApiToV26)
     client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
     }
 
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    julius.cepukenas                    02/18
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV28_CapsWebApiToV27)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 8}));
-    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
         EXPECT_EQ("https://srv.com/ws/v2.7/Repositories/foo/TestSchema/TestClass", request.GetUrl());
         return StubHttpResponse();

@@ -164,11 +164,13 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApiV26_InfoSucceeds)
     auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(credentials);
 
+    client->Config().SetPersistenceProviderId("BentleyCONNECT.SampleAzureSqlDbPersistence");
+
     auto result = client->GetInfo()->GetResult();
     EXPECT_TRUE(result.IsSuccess());
     EXPECT_STREQ(repositoryId.c_str(), result.GetValue().GetId().c_str());
     EXPECT_STREQ(serverUrl.c_str(), result.GetValue().GetServerUrl().c_str());
-    //TODO: add plugin check
+    EXPECT_FALSE(result.GetValue().GetPluginVersion().IsEmpty());
     }
 
 /*--------------------------------------------------------------------------------------+
