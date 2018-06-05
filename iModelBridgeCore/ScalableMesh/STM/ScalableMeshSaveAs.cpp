@@ -10,6 +10,27 @@
 #include "Stores\SMStreamingDataStore.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+void PrepareClipsForSaveAs(ClipVectorPtr clips)
+    {
+    if (!clips.IsValid()) return;
+
+    auto predicate = [](ClipPrimitivePtr i, ClipPrimitivePtr j)
+        { // put boundary clips first
+        if (!i->IsMask() && j->IsMask()) return true;
+        return false;
+        };
+
+    // Ensure clip vector is sorted
+    if (!std::is_sorted(clips->begin(), clips->end(), predicate))
+        {
+        std::sort(clips->begin(), clips->end(), predicate);
+        }
+
+    // Compute clip planes here as primitives are not thread safe
+    for (auto& primitive : *clips) primitive->GetClipPlanes();
+    }
+
 StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress)
 {
     // Create Scalable Mesh at output path
@@ -21,6 +42,8 @@ StatusInt IScalableMeshSaveAs::DoSaveAs(const IScalableMeshPtr& source, const WS
     IScalableMeshTextureInfoPtr textureInfo = nullptr;
     if (SUCCESS != source->GetTextureInfo(textureInfo))
         return ERROR;
+
+    PrepareClipsForSaveAs(clips);
 
     // Set global parameters to the new 3sm (this will also create a new index)
     if (SUCCESS != scMeshDestination->SetGCS(source->GetGCS()))
@@ -350,6 +373,8 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
         ScalableMeshNode<DPoint3d>::CreateItem(nodePtr)
 #endif
     );
+
+    PrepareClipsForSaveAs(clips);
 
     Publish3DTile(nodeP, pDataStore, transform, clips, coverageID, isClipBoundary, sourceGCS, destinationGCS, progress, outputTexture);
 

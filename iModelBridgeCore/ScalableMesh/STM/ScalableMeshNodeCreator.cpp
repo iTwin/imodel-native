@@ -252,7 +252,7 @@ IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddNode(StatusInt&   st
         }
     if (m_pDataIndex->GetRootNode() != nullptr)
         {
-        status = BSIERROR;
+        //status = BSIERROR;
         auto rootNodeP = m_pDataIndex->GetRootNode();
         return IScalableMeshNodeEditPtr(new ScalableMeshNodeEdit<PointType>(rootNodeP));
         }
