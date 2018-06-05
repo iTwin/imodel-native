@@ -1165,6 +1165,11 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
     {
     BeFileName assetsDir = locations.GetDgnPlatformAssetsDirectory();
     BeFileName tempDir = locations.GetLocalTempDirectoryBaseName();
+    tempDir.AppendToPath(L"ecpresentation");
+    if (tempDir.DoesPathExist())
+        BeFileName::EmptyAndRemoveDirectory(tempDir.c_str());
+    BeFileName::CreateNewDirectory(tempDir.c_str());
+
     RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
     RulesDrivenECPresentationManager* manager = new RulesDrivenECPresentationManager(connections, paths);
     manager->SetLocalState(&s_localState);
