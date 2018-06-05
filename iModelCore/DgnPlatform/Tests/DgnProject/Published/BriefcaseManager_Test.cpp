@@ -422,6 +422,24 @@ TEST_F(SingleBriefcaseLocksTest, AcquireLocks)
     ExpectLevel(db, LockLevel::Shared);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SingleBriefcaseLocksTest, ElementSpecificLockTests)
+    {
+    SetupDb(L"AcquireLocksTest.bim", m_bcId);
+    DgnDbR db = *m_db;
+
+    // TFS#901239: Test category and its subcategory insertion inside the _OnInserted call, need locks for sub category
+    SpatialCategory cat(db.GetDictionaryModel(), "SpatialCategoryTestInsert", DgnCategory::Rank::Domain); 
+    DgnDbStatus catStat;
+    IBriefcaseManager::Request req;
+    EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementInsert(req, cat, IBriefcaseManager::PrepareAction::Acquire));
+    DgnSubCategory::Appearance appearance;
+    cat.Insert(appearance, &catStat);
+    EXPECT_EQ(catStat, DgnDbStatus::Success);
+    }
+
 //-------------------------------------------------------------------------------------------
 // @bsimethod                                                 Diego.Pinate     01/18
 //-------------------------------------------------------------------------------------------
