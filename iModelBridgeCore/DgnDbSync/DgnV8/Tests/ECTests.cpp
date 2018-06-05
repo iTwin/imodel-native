@@ -1469,7 +1469,7 @@ TEST_F(ECConversionTests, ImportInstanceWithCalculatedSpecUsingRelated)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECConversionTests, IGeometryValue)
     {
-    LineUpFiles(L"IGeometryValue.idgndb", L"Test3d.dgn", false);
+    LineUpFiles(L"IGeometryValue.ibim", L"Test3d.dgn", false);
 
     ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
     ECObjectsV8::ECSchemaPtr schema;
@@ -1516,6 +1516,38 @@ TEST_F(ECConversionTests, IGeometryValue)
         BentleyApi::IGeometryPtr dbGeom = v.GetIGeometry();
         ASSERT_TRUE(dbGeom.IsValid());
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            06/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECConversionTests, CreateOnType66)
+    {
+    LineUpFiles(L"Type66.ibim", L"Test3d.dgn", false);
+    DgnV8Api::DgnModelStatus modelStatus;
+    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+    ECObjectsV8::ECSchemaPtr schema;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, s_testSchemaXml, *schemaContext));
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    v8editor.CreateInstance(createdDgnECInstance, v8editor.m_defaultModel, schema->GetName().c_str(), L"TestClass");
+    v8editor.Save();
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+    EC::ECSqlStatement stmt;
+    EXPECT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "SELECT * FROM test.TestClass"));
+
+    EC::ECInstanceECSqlSelectAdapter adapter(stmt);
+    bool found = false;
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        found = true;
+        }
+    ASSERT_TRUE(found);
     }
 
 /*---------------------------------------------------------------------------------**//**
