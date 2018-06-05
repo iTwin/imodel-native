@@ -133,9 +133,8 @@ BentleyStatus RepositoryInfoStore::PrepareInfo(IDataSourceCache& cache)
         return ERROR;
 
     m_repositoryInfo = ReadRepositoryInfo(cache);
-    // TODO: cannot fail when opening cache that did not have repository info before
-    //if (!m_repositoryInfo.IsValid())
-    //    return ERROR;
+    if (!m_repositoryInfo.IsValid())
+        return ERROR;
 
     return SUCCESS;
     }
@@ -158,6 +157,7 @@ WSInfo RepositoryInfoStore::ReadServerInfo(IDataSourceCache& cache)
     PropertySpec prop(ECDbProperty_ServerInfo, ECDbProperty_NAMESPACE);
     Utf8String infoStr;
     cache.GetAdapter().GetECDb().QueryProperty(infoStr, prop);
+
     return WSInfo(infoStr);
     }
 
@@ -169,6 +169,7 @@ WSRepository RepositoryInfoStore::ReadRepositoryInfo(IDataSourceCache& cache)
     PropertySpec prop(ECDbProperty_RepositoryInfo, ECDbProperty_NAMESPACE);
     Utf8String infoStr;
     cache.GetAdapter().GetECDb().QueryProperty(infoStr, prop);
+
     return WSRepository(infoStr);
     }
 
@@ -188,6 +189,17 @@ BentleyStatus RepositoryInfoStore::SetCacheInitialized(IDataSourceCache& cache)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RepositoryInfoStore::IsCacheInitialized(IDataSourceCache& cache)
     {
-    PropertySpec prop(ECDbProperty_Initialized, ECDbProperty_NAMESPACE);
-    return cache.GetAdapter().GetECDb().HasProperty(prop);
+    PropertySpec propInitilised(ECDbProperty_Initialized, ECDbProperty_NAMESPACE);
+    if (!cache.GetAdapter().GetECDb().HasProperty(propInitilised))
+        return false;
+
+    PropertySpec propServerInfo(ECDbProperty_ServerInfo, ECDbProperty_NAMESPACE);
+    if (!cache.GetAdapter().GetECDb().HasProperty(propServerInfo))
+        return false;
+
+    PropertySpec propRepInfo(ECDbProperty_RepositoryInfo, ECDbProperty_NAMESPACE);
+    if (!cache.GetAdapter().GetECDb().HasProperty(propRepInfo))
+        return false;
+
+    return true;
     }
