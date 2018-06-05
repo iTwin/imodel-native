@@ -343,6 +343,7 @@
 
     <Part
         Name="RunUwpTest"
+        DeferType="RunUnitTests"
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke"
         BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=iModelBridge-UwpTest"
         OnlyPlatforms="WinRT*"

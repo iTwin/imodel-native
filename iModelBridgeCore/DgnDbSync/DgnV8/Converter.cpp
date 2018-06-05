@@ -1269,7 +1269,7 @@ StableIdPolicy Converter::_GetIdPolicy(DgnV8FileR dgnFile) const
     {
     // if they said to never use v8 ElementIds, return hash regardless of format
     if (StableIdPolicy::ByHash == _GetParams().GetStableIdPolicy())
-        StableIdPolicy::ByHash;
+        return StableIdPolicy::ByHash;
 
     // only V8 files have stable ids
     return IsV8Format(dgnFile) ? StableIdPolicy::ById : StableIdPolicy::ByHash; 

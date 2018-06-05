@@ -1305,11 +1305,11 @@ DgnCategoryId SyncInfo::GetCategory(DgnV8EhCR v8Eh, ResolvedModelMapping const& 
 bool SyncInfo::WasElementDiscarded(uint64_t vid, V8ModelSyncInfoId fm)
     {
     CachedStatementPtr stmt;
-    m_dgndb->GetCachedStatement(stmt, "SELECT COUNT(*) FROM " SYNCINFO_ATTACH(SYNC_TABLE_Discards) " WHERE V8ModelSyncInfoId=? AND V8Id=?");
+    m_dgndb->GetCachedStatement(stmt, "SELECT 1 FROM " SYNCINFO_ATTACH(SYNC_TABLE_Discards) " WHERE V8ModelSyncInfoId=? AND V8Id=?");
     stmt->Reset();
     stmt->ClearBindings();
     stmt->BindInt64(1, fm.GetValue());
-    stmt->BindInt64(3, vid);
+    stmt->BindInt64(2, vid);
     return stmt->Step() == BE_SQLITE_ROW;
     }
 
