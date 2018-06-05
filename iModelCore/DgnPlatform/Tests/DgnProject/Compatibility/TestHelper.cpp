@@ -133,7 +133,11 @@ void TestHelper::AssertKindOfQuantity(ECDb const& db, Utf8CP schemaName, Utf8CP 
         EXPECT_TRUE(koq->GetDescription().empty()) << assertMessage;
 
     EXPECT_STREQ(expectedPersistenceUnit, koq->GetPersistenceUnit().ToText(false).c_str()) << assertMessage;
-    EXPECT_EQ(expectedPresentationUnits, JsonValue(koq->GetPresentationsJson(false))) << assertMessage;
+    if (expectedPresentationUnits.m_value.isNull() || expectedPresentationUnits.m_value.empty())
+        EXPECT_TRUE(koq->GetPresentationUnitList().empty()) << assertMessage;
+    else
+        EXPECT_EQ(expectedPresentationUnits, JsonValue(koq->GetPresentationsJson(false))) << assertMessage;
+
     EXPECT_DOUBLE_EQ(expectedRelError, koq->GetRelativeError()) << assertMessage;
 
     // 2) Via ECSQL
@@ -156,7 +160,7 @@ void TestHelper::AssertKindOfQuantity(ECDb const& db, Utf8CP schemaName, Utf8CP 
 
     EXPECT_STREQ(expectedPersistenceUnit, stmt.GetValueText(3)) << stmt.GetECSql() << " | " << assertMessage;
 
-    if (expectedPresentationUnits.m_value.isNull())
+    if (expectedPresentationUnits.m_value.isNull() || expectedPresentationUnits.m_value.empty())
         EXPECT_TRUE(stmt.IsValueNull(4)) << stmt.GetECSql() << " | " << assertMessage;
     else
         {
