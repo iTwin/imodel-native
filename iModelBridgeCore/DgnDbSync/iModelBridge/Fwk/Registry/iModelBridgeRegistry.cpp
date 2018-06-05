@@ -459,7 +459,7 @@ BentleyStatus iModelBridgeRegistry::WriteBridgesFile()
     BeFileName bridgesFileName(m_stagingDir);
     bridgesFileName.AppendToPath(L"bridges.txt");
     BeFileStatus status;
-    BeTextFilePtr bridgesFile = BeTextFile::Open(status, bridgesFileName.c_str(), TextFileOpenType::Write, TextFileOptions::KeepNewLine);
+    BeTextFilePtr bridgesFile = BeTextFile::Open(status, bridgesFileName.c_str(), TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
     if (!bridgesFile.IsValid())
         {
         LOG.fatalv(L"%ls - error writing bridges file", bridgesFileName.c_str());
