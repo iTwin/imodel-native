@@ -94,28 +94,30 @@ Format::Format(NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec)
 // @bsimethod                                                   David Fox-Rabinovitz
 //----------------------------------------------------------------------------------------
 // static
-void Format::FromJson(FormatR out, Utf8CP jsonString, BEU::IUnitsContextCP context)
+bool Format::FromJson(FormatR out, Utf8CP jsonString, BEU::IUnitsContextCP context)
     {
     Json::Value jval (Json::objectValue);
-    Json::Reader::Parse(jsonString, jval);
-    FromJson(out, jval, context);
+    if (!Json::Reader::Parse(jsonString, jval))
+        return false;
+    return FromJson(out, jval, context);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
 // static
-void Format::FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP context)
+bool Format::FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP context)
     {
     Format f = Format();
     f.m_problem = FormatProblemCode::NoProblems;
     if (jval.empty())
         {
         f.m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidJsonObject);
-        return;
+        return false;
         }
 
-    NumericFormatSpec::FromJson(f.m_numericSpec, jval);
+    if (!NumericFormatSpec::FromJson(f.m_numericSpec, jval))
+        return false;
     Utf8CP paramName;
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
@@ -124,11 +126,13 @@ void Format::FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP contex
         if (BeStringUtilities::StricmpAscii(paramName, json_composite()) == 0)
             {
             CompositeValueSpec spec;
-            CompositeValueSpec::FromJson(spec, val, context);
+            if (!CompositeValueSpec::FromJson(spec, val, context))
+                return false;
             f.SetCompositeSpec(spec);
             }
         }
     out = f;
+    return true;
     }
 
 //----------------------------------------------------------------------------------------
@@ -150,33 +154,17 @@ bool Format::IsIdentical(FormatCR other) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space)
-    {
-    if (!qty.IsNullQuantity())
-        return Utf8String();
-    BEU::UnitCP unitQ = qty.GetUnit();
-    BEU::Quantity temp = qty.ConvertTo(unitQ);
-    Utf8String str = m_numericSpec.Format(temp.GetMagnitude());
-    if(nullptr == useUnit || !m_numericSpec.IsShowUnitLabel())
-        return str;
-    Utf8String txt = Utils::AppendUnitName(str.c_str(), useUnit->GetLabel().c_str(), space);
-    return txt;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                 03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-Utf8String Format::StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel)
+Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel) const
     {
     // there are two major options here: the format is a pure Numeric or it has a composite specification
-    NumericFormatSpecCP fmtP = nfs.GetNumericSpec();
+    NumericFormatSpecCP fmtP = GetNumericSpec();
     BEU::Quantity temp = qty.ConvertTo(useUnit);
     Utf8CP uomLabel = Utf8String::IsNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetLabel().c_str()) : useLabel;
     Utf8String majT, midT, minT, subT;
 
-    if (nfs.HasComposite())  // procesing composite parts
+    if (HasComposite())  // procesing composite parts
         {
-        CompositeValueSpecCP compS = nfs.GetCompositeSpec();
+        CompositeValueSpecCP compS = GetCompositeSpec();
         auto dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
         Utf8String pref = dval.GetSignPrefix();
         Utf8String suff = dval.GetSignSuffix();
@@ -185,7 +173,7 @@ Utf8String Format::StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::Uni
             uomSeparator = compS->GetSpacer();
 
         // if the composite was auto created just to provide an override label for the numeric format then use the specified UomSeparator.
-        if (!nfs.HasExplicitlyDefinedComposite())
+        if (!HasExplicitlyDefinedComposite())
             uomSeparator = fmtP->GetUomSeparator();
 
         // if caller explicity defines space parameter when calling this method use it, else use what is defined in format specification

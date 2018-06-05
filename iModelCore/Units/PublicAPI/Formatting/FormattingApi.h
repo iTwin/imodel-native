@@ -529,10 +529,6 @@ private:
     UNITS_EXPORT virtual bool _ToJson(Json::Value& out, bool verbose) const;
 
 public:
-    // TODO: Attempt to remove these methods from the public API================
-    UNITS_EXPORT static void FromJson(FormatR out, Utf8CP jsonString, BEU::IUnitsContextCP context = nullptr);
-    UNITS_EXPORT static void FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP context = nullptr);
-    // !TODO====================================================================
 
     Format() : m_specType(FormatSpecType::None), m_explicitlyDefinedComposite(false), m_problem(FormatProblemCode::NotInitialized) {};
     virtual ~Format(){}
@@ -547,7 +543,18 @@ public:
     //! Returns true if the name, NumericFormatSpec, CompositeValueSpec, and problem codes of *this
     //! and other are identical.
     UNITS_EXPORT bool IsIdentical(FormatCR other) const;
-
+    //! Creates a Format from a Json string
+    //! @param[out] out         Output Format
+    //! @param[in]  jsonString  Json string representing a format
+    //! @param[in]  context     Context to resolve units in the composite spec of the format if there is one
+    //! @return                 False if jsonString is empty or there are issues parsing/looking up units
+    UNITS_EXPORT static bool FromJson(FormatR out, Utf8CP jsonString, BEU::IUnitsContextCP context = nullptr);
+    //! Creates a Format from a Json object
+    //! @param[out] out         Output Format
+    //! @param[in]  jval        Json objects representing a format
+    //! @param[in]  context     Context to resolve units in the composite spec of the format if there is one
+    //! @return                 False if jval is empty or there are issues looking up units or the json is not valid.
+    UNITS_EXPORT static bool FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP context = nullptr);
     //! Creates a Json::Value representing this.
     virtual bool ToJson(Json::Value& out, bool verbose) const {return _ToJson(out, verbose);}
 
@@ -606,9 +613,8 @@ public:
     Utf8String GetProblemDescription() const {return m_problem.GetProblemDescription();}
     PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
 
-    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="");
-    Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const {return Format::StdFormatQuantity(*this, qty.ConvertTo(m_compositeSpec.GetMajorUnit()), nullptr, space);}
-    UNITS_EXPORT static Utf8String StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr);
+    Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8StringCR space) const {return FormatQuantity(qty.ConvertTo(m_compositeSpec.GetMajorUnit()), nullptr, space.c_str());}
+    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr) const;
 
     //! Parse a Format from the provided format string. A format string takes the form,
     //! <code>

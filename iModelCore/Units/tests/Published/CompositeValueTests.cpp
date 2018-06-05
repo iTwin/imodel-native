@@ -279,7 +279,7 @@ TEST_F(FormatCompositeStringTest, CompositeValueUsesThousandSeparatorForLastUnit
 
     // 1500.5 miles == 1,500 miles and 31,680 inches
     BEU::Quantity quantity(1500.5, *compositeValueSpec.GetMajorUnit());
-    EXPECT_STREQ("1500 31'680.0", Format::StdFormatQuantity(format, quantity).c_str());
+    EXPECT_STREQ("1500 31'680.0", format.FormatQuantity(quantity).c_str());
     }
 
 //===================================================
