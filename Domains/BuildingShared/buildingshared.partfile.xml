@@ -208,5 +208,12 @@
     </Part>
 	
     <Part Name="CodeGenerators" BentleyBuildMakeFile="CodeGenerators/CodeGenerators.mke" BentleyBuildMakeOptions="-dout=$(SrcRoot)DgnDomains\ClassificationSystems\Domain\GeneratedInserts\ -din=$(_MakeFilePath)Xmls\"/>
+
+    <Part Name="BuildSharedTestUtils" BentleyBuildMakeFile="TestUtils/TestUtils.mke" BentleyBuildMakeOptions="-dTestDir=SharedRepositoryManagerTest">
+        <SubPart PartName="DgnDbTestUtils" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"  ProductSubDirectory="BuildingShared/SharedRepositoryManagerTest" SourceName="Delivery/UnitTests/Objects/SharedRepositoryManagerTest"/>
+        </Bindings>
+    </Part>
     
 </BuildContext>
