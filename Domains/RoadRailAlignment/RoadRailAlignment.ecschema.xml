@@ -157,17 +157,8 @@
             <Class class="Alignment"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="GraphicalElement3dRepresentsSpatialElement" strength="referencing" modifier="Abstract">
-        <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
-            <Class class="bis:GraphicalElement3d"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is represented by" polymorphic="true">
-            <Class class="bis:SpatialElement"/>
-        </Target>
-    </ECRelationshipClass>
     <ECRelationshipClass typeName="GraphicalElement3dRepresentsAlignment" strength="referencing" modifier="Sealed">
-        <BaseClass>GraphicalElement3dRepresentsSpatialElement</BaseClass>
+        <BaseClass>bis:GraphicalElement3dRepresentsElement</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
             <Class class="bis:GraphicalElement3d"/>
         </Source>
