@@ -2875,11 +2875,21 @@ struct  InstanceXmlReader
                     Utf8String unitName;
                     ECClass::ParseClassName(alias, unitName, ecName);
 
-                    ECUnitCP oldUnit = StandardUnitsHelper::GetUnit(unitName.c_str());
+                    ECUnitCP oldUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldUnitName);
                     double convertedValue;
-                    oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit());
-
+                if (ecValue.GetPrimitiveType() == PrimitiveType::PRIMITIVETYPE_Double)
+                    {
+                    oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit().GetUnit());
                     ecValue.SetDouble(convertedValue);
+                    }
+                else if (ecValue.GetPrimitiveType() == PrimitiveType::PRIMITIVETYPE_String && !Utf8String::IsNullOrEmpty(ecValue.GetUtf8CP()))
+                    {
+                    double d;
+                    if (1 == BE_STRING_UTILITIES_UTF8_SSCANF(ecValue.GetUtf8CP(), "%lg", &d))
+                        {
+                        oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit().GetUnit());
+                        ecValue.SetDouble(convertedValue);
+                        }
                     }
                 }
 

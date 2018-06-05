@@ -2543,7 +2543,7 @@ BentleyStatus LogXmlLoadError(BeXmlDomP xmlDom)
         xmlDom->GetErrorLocation (line, linePos);
         }
 
-    LOG.errorv (errorString.c_str());
+    LOG.error(errorString.c_str());
     LOG.errorv (L"line %d, position %d", line, linePos);
 
     return SUCCESS;

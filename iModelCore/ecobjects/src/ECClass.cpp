@@ -3049,7 +3049,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateBaseConstraint(ECRelationshipC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-static void FindCommonBaseClass(ECEntityClassCP &commonClass, ECEntityClassCP startingClass, ECRelationshipConstraintClassList const& constraintClasses)
+void ECClass::FindCommonBaseClass(ECEntityClassCP &commonClass, ECEntityClassCP startingClass, bvector<ECClassCP> const& constraintClasses)
     {
     ECEntityClassCP tempCommonClass = startingClass;
     for (const auto &secondConstraint : constraintClasses)
@@ -3102,7 +3102,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
                 LOG.infov("Attempting to find a common base class between all constraint classes to use as the abstract constraint...");
 
                 ECEntityClassCP commonClass = nullptr;
-                FindCommonBaseClass(commonClass, m_constraintClasses[0]->GetEntityClassCP(), GetConstraintClasses());
+                ECClass::FindCommonBaseClass(commonClass, m_constraintClasses[0]->GetEntityClassCP(), GetConstraintClasses());
 
                 if (nullptr != commonClass && ECObjectsStatus::Success == ValidateAbstractConstraint(commonClass))
                     {
@@ -3133,7 +3133,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
             if (resolveIssues)
                 {
                 ECEntityClassCP commonClass = nullptr;
-                FindCommonBaseClass(commonClass, m_constraintClasses[0]->GetEntityClassCP(), baseConstraint.GetConstraintClasses());
+                ECClass::FindCommonBaseClass(commonClass, m_constraintClasses[0]->GetEntityClassCP(), baseConstraint.GetConstraintClasses());
                 if (nullptr != commonClass)
                     {
                     LOG.infov("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not supported by the base class constraint '%s'.  Replacing the constraint class with %s instead.",
@@ -3177,7 +3177,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
             if (!baseConstraint.SupportsClass(*constraint) && baseConstraint.GetAbstractConstraint() == abstractConstraint && resolveIssues)
                 {
                 ECEntityClassCP commonClass = nullptr;
-                FindCommonBaseClass(commonClass, abstractConstraint->GetEntityClassCP(), GetConstraintClasses());
+                ECClass::FindCommonBaseClass(commonClass, abstractConstraint->GetEntityClassCP(), GetConstraintClasses());
 
                 if (nullptr != commonClass && ECObjectsStatus::Success == baseConstraint.ValidateAbstractConstraint(commonClass))
                     {
