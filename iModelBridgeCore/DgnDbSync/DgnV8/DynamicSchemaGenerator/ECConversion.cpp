@@ -1073,9 +1073,8 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
                     leftSchema = merged;
                     Utf8String xml;
                     merged->WriteToXmlString(xml);
-                    // WIP_REMOVE_CheckSum
-                    // leftSchema->ReComputeCheckSum();
-                    // LOG.infov("Merged two versions of ECSchema '%s' successfully. Updated checksum: 0x%llx", leftSchema->GetFullSchemaName().c_str(), leftSchema->GetSchemaKey().m_checkSum);
+                    leftSchema->ComputeCheckSum();
+                    LOG.infov("Merged two versions of ECSchema '%s' successfully. Updated checksum: %s", leftSchema->GetFullSchemaName().c_str(), leftSchema->GetSchemaKey().m_checksum.c_str());
                     }
                 else
                     {
@@ -2550,7 +2549,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConvertToBisBasedECSchemas()
         if (context.ExcludeSchemaFromBisification(*schema))
             continue;
 
-        if (!schema->Validate(true) || !schema->IsECVersion(ECN::ECVersion::V3_1))
+        if (!schema->Validate(true) || !schema->IsECVersion(ECN::ECVersion::V3_2))
             {
 //#define EXPORT_FAILEDECSCHEMAS 1
 #ifdef EXPORT_FAILEDECSCHEMAS
@@ -2969,7 +2968,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessReferenceSchemasFromExternal(ECObje
 BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::SchemaKey& schemaKey, Utf8CP schemaXml, bool isDynamicSchema, DgnV8ModelR v8Model)
     {
     Utf8String schemaName(schemaKey.GetName().c_str());
-    BECN::SchemaKey existingSchemaKey;
+    ECObjectsV8::SchemaKey existingSchemaKey;
     SyncInfo::ECSchemaMappingType existingMappingType = SyncInfo::ECSchemaMappingType::Identity;
     if (GetSyncInfo().TryGetECSchema(existingSchemaKey, existingMappingType, schemaName.c_str()))
         {
@@ -2993,20 +2992,18 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                 {
                 Utf8String error;
                 error.Sprintf("Non-dynamic ECSchema %s already found in the V8 file. Copy in model %s is dynamic and therefore ignored.",
-                              Utf8String(existingSchemaKey.GetFullSchemaName()).c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
+                              existingSchemaKey.GetFullSchemaName().c_str(), Converter::IssueReporter::FmtModel(v8Model).c_str());
                 ReportIssue(Converter::IssueSeverity::Warning, Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());
                 return BSISUCCESS;
                 }
 
-            const int majorDiff = existingSchemaKey.GetVersionRead() - schemaKey.GetVersionMajor();
+            const int majorDiff = existingSchemaKey.GetVersionMajor() - schemaKey.GetVersionMajor();
             const int minorDiff = existingSchemaKey.GetVersionMinor() - schemaKey.GetVersionMinor();
             const int existingToNewVersionDiff = majorDiff != 0 ? majorDiff : minorDiff;
 
             if (existingToNewVersionDiff >= 0)
                 {
-                // WIP_REMOVE_CheckSum
-                /*
-                if (existingToNewVersionDiff == 0) //  && existingSchemaKey.m_checkSum != schemaKey.m_checkSum)
+                if (existingToNewVersionDiff == 0 && existingSchemaKey.m_checkSum != schemaKey.m_checkSum)
                     {
                     Utf8String error;
                     error.Sprintf("ECSchema %s already found in the V8 file with a different checksum (%u). Copy in model %s with checksum %u will be merged.  This may result in inconsistencies between the DgnDb version and the versions in the Dgn.",
@@ -3027,7 +3024,6 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                     else
                         return BSISUCCESS;
                     }
-					*/
                 }
             }
         }
@@ -3183,6 +3179,8 @@ void DynamicSchemaGenerator::InitializeECSchemaConversion()
         }
     m_syncReadContext->SetSkipValidation(true);
     m_schemaReadContext->SetSkipValidation(true);
+    m_syncReadContext->SetCalculateChecksum(true);
+    m_schemaReadContext->SetCalculateChecksum(true);
     }
 
 //---------------------------------------------------------------------------------------
