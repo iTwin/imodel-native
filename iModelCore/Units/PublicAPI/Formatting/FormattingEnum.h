@@ -288,12 +288,6 @@ struct Utils
 
     UNITS_EXPORT static Utf8String AppendUnitName(Utf8CP txtValue, Utf8CP unitName = nullptr, Utf8CP space = nullptr);
     UNITS_EXPORT static Utf8Char MatchingDivider(Utf8Char div);
-
-    //! Gets the thousand separator for the current locale.
-    UNITS_EXPORT static Utf8String GetCurrentThousandSeparator();
-    //! Gets the decimal separator for the current locale.
-    UNITS_EXPORT static Utf8String GetCurrentDecimalSeparator();
-    UNITS_EXPORT static Utf8String GetCurrentGrouping();
 };
 
 // A collection of important global constants that are used across the whole formatting domain.
