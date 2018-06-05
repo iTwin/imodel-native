@@ -74,6 +74,25 @@ bmap<FormatTraits, Utf8String> UIUtils::GetAvailableTraits(FormatTraits& default
 // FormatConstant
 //===================================================
 
+// Static user locale cache
+std::locale FormatConstant::s_userLocale = std::locale("");
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Kyle.Abramowitz     06/2018
+//---------------------------------------------------------------------------------------
+const Utf8Char FormatConstant::FPV_DecimalSeparator() 
+    {
+    return std::use_facet<std::numpunct<Utf8Char>>(s_userLocale).decimal_point();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Kyle.Abramowitz     06/2018
+//---------------------------------------------------------------------------------------
+const Utf8Char FormatConstant::FPV_ThousandSeparator() 
+    {
+    return std::use_facet<std::numpunct<Utf8Char>>(s_userLocale).thousands_sep();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
