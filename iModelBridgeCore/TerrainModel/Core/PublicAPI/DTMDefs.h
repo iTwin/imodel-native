@@ -30,7 +30,11 @@
 #include <float.h>
 #include <stdarg.h>
 #include <time.h>
+#if _WIN32
+typedef __time32_t DTMTime32;
+#else
 typedef time_t DTMTime32;
+#endif
 struct DTM_LAT_OBJ;
 /*__PUBLISH_SECTION_END__*/
 

@@ -101,7 +101,11 @@ BENTLEYDTM_Public int bcdtmObject_initialiseDataObject(DTM_DAT_OBJ *dataP)
 #ifdef _WIN32_WCE
  dataP->creationTime = 0 ;
 #else
+#if _WIN32
+ _time32(&dataP->creationTime) ;
+#else
  time(&dataP->creationTime) ;
+#endif
 #endif
  dataP->modifiedTime = 0 ;
  dataP->userTime     = 0 ;
@@ -294,7 +298,11 @@ BENTLEYDTM_Public int bcdtmObject_initialiseTinObject(DTM_TIN_OBJ *tinP )
  tinP->incMemFeatureList  = DTM_INC_MEM_FEATURES_LIST ;
  tinP->iniMemFeatureMap   = DTM_INI_MEM_FEATURES_TABLE ;
  tinP->incMemFeatureMap   = DTM_INC_MEM_FEATURES_TABLE ;
+#if _WIN32
+_time32(&tinP->creationTime) ;
+#else
  time(&tinP->creationTime) ;
+#endif
  tinP->modifiedTime = 0 ;
  tinP->userTime     = 0 ;
  tinP->refCount     = 0 ;
