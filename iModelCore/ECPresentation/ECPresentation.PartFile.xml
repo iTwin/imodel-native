@@ -371,7 +371,7 @@
         <SubPart PartName="UwpTest"/>
         <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
-    <Part Name="RunUwpTest" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke" BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=ECPresentation-UwpTest" OnlyPlatforms="WinRT*">
+    <Part Name="RunUwpTest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke" BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=ECPresentation-UwpTest" OnlyPlatforms="WinRT*">
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <SubProduct ProductName="ECPresentation-UwpTest"/>
         <Bindings>
