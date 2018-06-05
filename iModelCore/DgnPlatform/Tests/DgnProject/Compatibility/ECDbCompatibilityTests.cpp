@@ -6,54 +6,66 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "CompatibilityTestFixture.h"
+#include "ProfileManager.h"
+#include "TestECDbCreators.h"
+#include "TestHelper.h"
 
-struct ECDbCompatibilityTestFixture : CompatibilityTestFixture 
+USING_NAMESPACE_BENTLEY_EC
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct ECDbCompatibilityTestFixture : CompatibilityTestFixture
     {
     protected:
-        Profile& Profile() const { return ProfileManager().GetProfile(ProfileType::ECDb); }
+        Profile& Profile() const { return ProfileManager::Get().GetProfile(ProfileType::ECDb); }
         DbResult OpenTestFile(ECDb& ecdb, BeFileNameCR path) { return ecdb.OpenBeSQLiteDb(path, ECDb::OpenParams(ECDb::OpenMode::Readonly)); }
+
+        void SetUp() override { ASSERT_EQ(SUCCESS, TestECDbCreation::Run()); }
     };
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                  Krischan.Eberle                      06/18
+// @bsimethod                                  Krischan.Eberle                      06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-struct CreateTestECDbTestFixture : CompatibilityTestFixture
+TEST_F(ECDbCompatibilityTestFixture, PreEC32Enums)
     {
-    private:
-        Profile& Profile() const { return ProfileManager().GetProfile(ProfileType::ECDb); }
+    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_PREEC32ENUMS))
+        {
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
 
-    protected:
-        DbResult CreateNewTestFile(ECDbR ecdb, Utf8CP fileName)
-            {
-            BeFileName filePath = Profile().GetPathForNewTestFile(fileName);
-            BeFileName folder = filePath.GetDirectoryName();
-            if (!folder.DoesPathExist())
-                {
-                if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(folder))
-                    return BE_SQLITE_ERROR;
-                }
+        TestHelper::AssertEnum(ecdb, "CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
+                    {{ECValue("Unspecified"), nullptr},
+                    {ECValue("Utc"), nullptr},
+                    {ECValue("Local"), nullptr}});
 
-            return ecdb.CreateNewDb(filePath);
-            }
+        TestHelper::AssertEnum(ecdb, "ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
+                {{ECValue(0), "None"},
+                {ECValue(1), "Abstract"},
+                {ECValue(2), "Sealed"}});
+
+        TestHelper::AssertEnum(ecdb, "PreEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+                {{ECValue(0), nullptr},
+                {ECValue(1), nullptr},
+                {ECValue(2), nullptr}});
+
+        TestHelper::AssertEnum(ecdb, "PreEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
+                {{ECValue("On"), "Turned On"},
+                {ECValue("Off"), "Turned Off"}});
+        }
+    }
 
 
-        BentleyStatus ImportSchema(ECDbCR ecdb, SchemaItem const& schema) const { return ImportSchemas(ecdb, {schema}); }
-        BentleyStatus ImportSchemas(ECDbCR ecdb, std::vector<SchemaItem> const& schemas) const
-            {
-            ECN::ECSchemaReadContextPtr ctx = DeserializeSchemas(ecdb, schemas);
-            if (ctx == nullptr)
-                return ERROR;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
+    {
+    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_PREEC32KOQS))
+        {
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
 
-            Savepoint sp(const_cast<ECDb&>(ecdb), "Schema Import");
-            if (SUCCESS == ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas()))
-                {
-                sp.Commit();
-                return SUCCESS;
-                }
-
-            sp.Cancel();
-            return ERROR;
-            }
-
-    };
-
+        TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "ANGLE", "Angle", nullptr, "RAD(DefaultReal)", JsonValue(R"json(["ARC_DEG(Real2U)", "ARC_DEG(AngleDMS)"])json"), 0.0001);
+        }
+    }
