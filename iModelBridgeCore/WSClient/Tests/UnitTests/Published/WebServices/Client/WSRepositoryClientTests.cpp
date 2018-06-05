@@ -127,6 +127,44 @@ TEST_F(WSRepositoryClientTests, GetInfo_WebApi20_SendsGetRepositoryUrl)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                               julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, GetInfo_WebApi20ResponseDoesNotContainNotRequireFields_ReturnsRepositoryInfoWithEmptyFields)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    std::map<Utf8String, Utf8String> headers {{"Mas-Server", "Bentley-WebAPI/2.6,Bentley-WSG/2.6"}};
+    Utf8String repositoryResponse = R"({
+            "instances":
+                [{
+                "instanceId": "testRepositoryId",
+                "className": "RepositoryIdentifier",
+                "schemaName": "Repositories",
+                "properties":
+                    {
+                    "Description" : null
+                    }
+                }]
+            })";
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK, repositoryResponse, headers));
+
+    auto result = client->GetInfo()->GetResult();
+    EXPECT_TRUE(result.IsSuccess());
+
+    auto repository = result.GetValue();
+    EXPECT_EQ("https://srv.com/ws", repository.GetServerUrl());
+    EXPECT_EQ("testRepositoryId", repository.GetId());
+    EXPECT_EQ("", repository.GetLabel());
+    EXPECT_EQ("", repository.GetDescription());
+    EXPECT_EQ("", repository.GetLocation());
+    EXPECT_EQ("", repository.GetPluginId());
+    EXPECT_TRUE(repository.GetPluginVersion().IsEmpty());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               julius.cepukenas    05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, GetInfo_WebApi20ResponseIsOkNoPluginVersion_ReturnsRepositoryInfoWithNoPluginVersion)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());

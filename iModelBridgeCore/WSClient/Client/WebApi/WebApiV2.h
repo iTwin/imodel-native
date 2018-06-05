@@ -43,7 +43,7 @@ struct WebApiV2 : public WebApi
         Utf8String CreateSelectPropertiesQuery(const bset<Utf8String>& properties) const;
 
         std::shared_ptr<WSObjectsReader> CreateJsonInstancesReader() const;
-        static Utf8String GetNullableString(RapidJsonValueCR jsonValue);
+        static Utf8String GetNullableString(RapidJsonValueCR object, Utf8CP member);
 
         WSRepositoriesResult ResolveGetRepositoriesResponse(Http::Response& response) const;
         WSUpdateObjectResult ResolveUpdateObjectResponse(Http::Response& response) const;
