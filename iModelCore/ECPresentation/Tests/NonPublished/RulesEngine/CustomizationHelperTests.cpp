@@ -9,7 +9,7 @@
 #include "../../../Source/RulesDriven/RulesEngine/QueryContracts.h"
 #include "../../../Source/RulesDriven/RulesEngine/CustomizationHelper.h"
 #include "../../../Source/RulesDriven/RulesEngine/NavNodesCache.h"
-#include <UnitTests/BackDoor/ECPresentation/TestRulesetLocater.h>
+#include <UnitTests/BackDoor/ECPresentation/TestRuleSetLocater.h>
 #include "TestHelpers.h"
 #include "TestLocalizationProvider.h"
 #include "ECDbTestProject.h"
