@@ -3,13 +3,21 @@
   <ItemGroup>
     <ClCompile Include="CompatibilityTestFixture.cpp" />
     <ClCompile Include="BeDbCompatibilityTests.cpp" />
-    <ClCompile Include="DgnDbCompatibilityTests.cpp" />
     <ClCompile Include="ECDbCompatibilityTests.cpp" />
+    <ClCompile Include="TestECDbCreators.cpp" />
+    <ClCompile Include="TestIModelCreators.cpp" />
+    <ClCompile Include="IModelCompatibilityTests.cpp" />
+    <ClCompile Include="TestHelper.cpp" />
+    <ClCompile Include="ProfileManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\..\..\DgnPlatform.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompatibilityTestFixture.h" />
+    <ClInclude Include="TestECDbCreators.h" />
+    <ClInclude Include="TestIModelCreators.h" />
+    <ClInclude Include="TestHelper.h" />
+    <ClInclude Include="ProfileManager.h" />
   </ItemGroup>
 </Project>
