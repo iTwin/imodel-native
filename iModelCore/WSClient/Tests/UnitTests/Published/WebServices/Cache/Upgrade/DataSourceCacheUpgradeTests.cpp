@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Upgrade/DataSourceCacheUpgradeTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -869,4 +869,73 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V12CacheTemporaryResponsesWithFullAndPa
     EXPECT_TRUE(cache.IsResponseCached(fullResponseKey));
     }
 
+//// Left for referance
+//TEST_F(DataSourceCacheUpgradeTests, SetupV13-CachingDataSource)
+//    {
+//    auto paths = GetNewSeedPaths(13, "data");
+//
+//    auto client = MockWSRepositoryClient::Create();
+//
+//    StubInstances schemaDefs;
+//    schemaDefs.Add({"MetaSchema.ECSchemaDef", "TestSchema"}, {{"Name", "TestSchema"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
+//
+//    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+//        .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
+//
+//    EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
+//        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponse()))));
+//
+//    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "TestSchema"), _, _, _, _))
+//        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+//        {
+//        GetTestSchema()->WriteToXmlFile(filePath);
+//        return CreateCompletedAsyncTask(StubWSFileResult(filePath));
+//        }));
+//
+//    auto result = CachingDataSource::OpenOrCreate(client, paths.first, paths.second)->GetResult();
+//
+//    ASSERT_TRUE(result.IsSuccess());
+//
+//    // Setup test data
+//    auto txn = result.GetValue()->StartCacheTransaction();
+//    StubInstances instances;
+//    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
+//    instances.Add({"TestSchema.TestClass", "C"});
+//    CachedResponseKey key(txn.GetCache().FindOrCreateRoot(nullptr), "ResponseA");
+//    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse("ETagA")));
+//
+//    // Save
+//    txn.GetCache().GetECDb().SaveChanges();
+//    txn.GetCache().Close();
+//    }
+
+TEST_F(DataSourceCacheUpgradeTests, Open_V13RepositoryInfo_LoadsCorrectly)
+    {
+    // Arrange
+    auto paths = GetSeedPaths(13, "data");
+
+    auto client = MockWSRepositoryClient::Create();
+
+    StubInstances schemaDefs;
+    schemaDefs.Add({"MetaSchema.ECSchemaDef", "TestSchema"}, {{"Name", "TestSchema"}, {"VersionMajor", 1}, {"VersionMinor", 0}});
+
+    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
+
+    EXPECT_CALL(*client, GetInfo(_))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSRepositoryResult::Success(StubWSRepository()))));
+
+    EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponse()))));
+
+    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "TestSchema"), _, _, _, _))
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        GetTestSchema()->WriteToXmlFile(filePath);
+        return CreateCompletedAsyncTask(StubWSFileResult(filePath));
+        }));
+
+    auto result = CachingDataSource::OpenOrCreate(client, paths.first, paths.second)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    }
 #endif

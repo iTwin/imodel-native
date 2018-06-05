@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/UnitTests/TestAssetsDelivery.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -30,6 +30,9 @@ $(SeedsOutputPath)11 : $(SeedsSourcePath)11.zip
     @python $(UpgradePath)UnZip.py $< $@
     
 $(SeedsOutputPath)12 : $(SeedsSourcePath)12.zip
+    @python $(UpgradePath)UnZip.py $< $@
+
+$(SeedsOutputPath)13 : $(SeedsSourcePath)13.zip
     @python $(UpgradePath)UnZip.py $< $@
 
 $(BuildContext)WSClientTestAssets/Cache/UpgradeSeeds/ : $(SeedsOutputPath)
