@@ -146,7 +146,7 @@
 
 
     <Part Name="Grids-Tests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
-      <SubPart PartName="DgnDbTestUtils" PartFile="DgnPlatform" Repository="DgnPlatform" />
+      <SubPart PartName="BuildSharedTestUtils" PartFile="BuildingShared" Repository="BuildingShared" />
       <SubPart PartName="PrewireForUnitTests"/>
       <SubPart PartName="BackdoorForUnitTests" Repository="DgnClientFx" PartFile="DgnClientFx"/>
       <SubPart PartName="Grids"/>

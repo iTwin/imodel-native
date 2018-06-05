@@ -421,6 +421,26 @@ ElevationGridSurfaceCPtr ElevationGrid::GetSurface
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                05/2018
 //---------------+---------------+---------------+---------------+---------------+------
+ElevationGridSurfaceCPtr ElevationGrid::GetBottomSurface() const
+    {
+    ElevationGridSurfaceCPtr bottomSurface = nullptr;
+
+    for (Dgn::ElementIteratorEntry surfaceEntry : MakeIterator())
+        {
+        ElevationGridSurfaceCPtr surface = GetDgnDb().Elements().Get<ElevationGridSurface>(surfaceEntry.GetElementId());
+        if (surface.IsNull())
+            continue;
+
+        if (bottomSurface.IsNull() || bottomSurface->GetElevation() > surface->GetElevation())
+            bottomSurface = surface;
+        }
+
+    return bottomSurface;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                05/2018
+//---------------+---------------+---------------+---------------+---------------+------
 ElevationGridSurfaceCPtr ElevationGrid::GetTopSurface() const
     {
     ElevationGridSurfaceCPtr topMostSurface = nullptr;
