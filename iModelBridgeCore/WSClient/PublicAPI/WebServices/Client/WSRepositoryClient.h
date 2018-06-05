@@ -458,6 +458,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
         mutable LimitingTaskQueue<WSResult> m_fileDownloadQueue;
         std::shared_ptr<struct Configuration> m_config;
         std::shared_ptr<struct RepositoryInfoProvider> m_infoProvider;
+        std::shared_ptr<struct Configuration> m_config;
 
     private:
         WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection);
@@ -486,6 +487,8 @@ struct WSRepositoryClient : public IWSRepositoryClient
         //! @param[out] remainingPathOut - remaining URL path and/or query after repository identifier
         //! @return parsed WSRepository or invalid if there was an error
         WSCLIENT_EXPORT static WSRepository ParseRepositoryUrl(Utf8StringCR url, Utf8StringP remainingPathOut = nullptr);
+
+        WSCLIENT_EXPORT static Utf8String ParsePluginIdFromRepositoryId(Utf8StringCR repositoryId);
 
         //! Set limit for paralel file downloads. Default is 0 - no limit. Useful for older servers that could not cope with multiple
         //! file downloads at once.
@@ -699,6 +702,9 @@ struct WSRepositoryClient::Configuration
 
         WSCLIENT_EXPORT CompressionOptionsCR GetCompressionOptions() const;
         WSCLIENT_EXPORT size_t GetMaxUrlLength() const;
+
+        WSCLIENT_EXPORT void SetPersistenceProviderId(Utf8StringCR id);
+        WSCLIENT_EXPORT Utf8StringCR GetPersistenceProviderId() const;
 
         // TODO: Move WSRepositoryClient::SetCredentials WSRepositoryClient::SetFileDownloadLimit methods
         // to configuration struct

@@ -162,6 +162,10 @@ Http::Response StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId, 
 WSInfo StubWSInfoWebApi(BeVersion webApiVersion, WSInfo::Type type)
     {
     BeVersion serverVersion;
+    if (webApiVersion >= BeVersion(2, 8))
+        {
+        serverVersion = BeVersion(2, 8);
+        }
     if (webApiVersion >= BeVersion(2, 7))
         {
         serverVersion = BeVersion(2, 7);
@@ -217,7 +221,12 @@ Http::Response StubWSInfoHttpResponseWebApi27()
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 7));
     }
 
-Http::Response StubWSInfoHttpResponseWebApi(BeVersion webApiVersion)
+HttpResponse StubWSInfoHttpResponseWebApi28()
+    {
+    return StubWSInfoHttpResponseWebApi(BeVersion(2, 8));
+    }
+
+HttpResponse StubWSInfoHttpResponseWebApi(BeVersion webApiVersion)
     {
     auto info = StubWSInfoWebApi(webApiVersion);
     Utf8PrintfString serverHeader(

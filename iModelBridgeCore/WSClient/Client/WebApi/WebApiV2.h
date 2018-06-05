@@ -41,6 +41,7 @@ struct WebApiV2 : public WebApi
         Utf8String CreateNavigationSubPath(ObjectIdCR parentId) const;
 
         Utf8String CreateSelectPropertiesQuery(const bset<Utf8String>& properties) const;
+        HttpRequest CreateQueryRequest(WSQueryCR query) const;
 
         std::shared_ptr<WSObjectsReader> CreateJsonInstancesReader() const;
         static Utf8String GetNullableString(RapidJsonValueCR object, Utf8CP member);
@@ -76,7 +77,7 @@ struct WebApiV2 : public WebApi
 
         static bool IsSupported(WSInfoCR info);
 
-        virtual AsyncTaskPtr<WSRepositoryResult> SendGetRepositoryRequest(ICancellationTokenPtr ct = nullptr) const override;
+        virtual AsyncTaskPtr<WSRepositoryResult> SendGetRepositoryInfoRequest(ICancellationTokenPtr ct = nullptr) const override;
 
         virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (

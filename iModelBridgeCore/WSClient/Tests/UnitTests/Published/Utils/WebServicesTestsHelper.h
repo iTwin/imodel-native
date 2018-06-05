@@ -130,7 +130,11 @@ Response StubWSInfoHttpResponseWebApi25();
 //! Stub WebApi 2.7 and BWSG server
 Http::Response StubWSInfoHttpResponseWebApi27();
 //! Stub WebApi version and BWSG server
-Response StubWSInfoHttpResponseWebApi(BeVersion webApiVersion);
+HttpResponse StubWSInfoHttpResponseWebApi27();
+//! Stub WebApi 2.8 version and BWSG server
+HttpResponse StubWSInfoHttpResponseWebApi28();
+
+HttpResponse StubWSInfoHttpResponseWebApi(BeVersion webApiVersion);
 
 WSRepository StubWSRepository(Utf8StringCR url = "testUrl", Utf8StringCR id = "testId");
 
