@@ -9,7 +9,6 @@
 #include <map>
 #include <Formatting/FormattingApi.h>
 #include <iostream>
-#include <locale>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
 #include "../../PrivateAPI/Formatting/NumericFormatUtils.h"
 
@@ -372,66 +371,6 @@ Utf8Char Utils::MatchingDivider(Utf8Char div)
             return df[i];
         }
     return FormatConstant::EndOfLine();
-    }
-
-//===================================================
-// LocaleProperties
-//===================================================
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-LocaleProperties::LocaleProperties(Json::Value jval)
-    {
-    if (!jval.empty())
-        {
-        Utf8CP paramName;
-        Utf8String str;
-        Utf8String jStr = jval.ToString();
-        for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-            {
-            paramName = iter.memberName();
-            JsonValueCR val = *iter;
-            if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
-                {
-                str = val.asString();
-                m_decimalSeparator = str.c_str()[0];
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
-                {
-                str = val.asString();
-                m_thousandsSeparator = str.c_str()[0];
-                }
-            }
-        }
-    else
-        {
-        m_decimalSeparator = '.';
-        m_thousandsSeparator = '\0';
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-LocaleProperties::LocaleProperties(Utf8CP localeName)
-    {
-    std::locale loc = std::locale(localeName);
-    const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
-
-    m_decimalSeparator = myfacet.decimal_point();
-    m_thousandsSeparator = myfacet.thousands_sep();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-Json::Value LocaleProperties::ToJson()
-    {
-    Json::Value jval;
-    jval[json_decimalSeparator()] = &m_decimalSeparator;
-    jval[json_thousandSeparator()] = &m_thousandsSeparator;
-    return jval;
     }
 
 //===================================================

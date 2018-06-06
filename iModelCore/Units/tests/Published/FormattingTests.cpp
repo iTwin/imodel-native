@@ -968,7 +968,7 @@ TEST_F(FormattingTestFixture, Simple)
     EXPECT_STREQ ("2,828.450", fmtP.Format(2.0*testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-    fmtP.ImbueLocaleProperties(LocaleProperties::DefaultEuropean());
+    fmtP.ImbueLocale("de");
 
     EXPECT_STREQ("1.414,20000000", fmtP.Format(testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision7);
@@ -983,8 +983,8 @@ TEST_F(FormattingTestFixture, Simple)
     EXPECT_STREQ("2.828,450", fmtP.Format(2.0*testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-    fmtP.ImbueLocaleProperties(LocaleProperties::DefaultEuropean(true));
-
+    fmtP.ImbueLocale("fi");
+    fmtP.SetThousandSeparator(' '); // Setting european locales actually sets the thousands separator to \xA0 which is thin space which breaks non UTF8 comparison TODO
     EXPECT_STREQ("1 414,20000000", fmtP.Format(testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision7);
     EXPECT_STREQ("7 071,0500000", fmtP.Format(5.0*testV).c_str());
@@ -998,7 +998,7 @@ TEST_F(FormattingTestFixture, Simple)
     EXPECT_STREQ("2 828,450", fmtP.Format(2.0*testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision8);
 
-    fmtP.ImbueLocaleProperties(LocaleProperties::DefaultAmerican());
+    fmtP.ImbueLocale("");
     fmtP.SetKeepTrailingZeroes(false);
     fmtP.SetUse1000Separator(false);
 

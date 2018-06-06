@@ -28,16 +28,6 @@ bool NumericFormatSpec::ImbueLocale(Utf8CP name) // en-US en-UK   en-GB
     return true;
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-bool NumericFormatSpec::ImbueLocaleProperties(LocalePropertiesCR locProp)
-    {
-    m_decimalSeparator = locProp.GetDecimalSeparator();
-    m_thousandsSeparator = locProp.GetThousandSeparator();
-    return true;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------

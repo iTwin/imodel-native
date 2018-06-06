@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <Formatting/FormattingDefinitions.h>
+#include <locale>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 

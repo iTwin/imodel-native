@@ -21,9 +21,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValueSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Format)
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(UIListEntry)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(LocaleProperties)
-
 // Json presentation
 BE_JSON_NAME(type)
 BE_JSON_NAME(roundFactor)
@@ -75,29 +72,6 @@ struct UIUtils
     UNITS_EXPORT static bmap<SignOption, Utf8String> GetAvailableSignOption(SignOption& defaultVal);
     UNITS_EXPORT static bmap<PresentationType, Utf8String> GetAvailablePresentationTypes(PresentationType& defaultVal);
     UNITS_EXPORT static bmap<FormatTraits, Utf8String> GetAvailableTraits(FormatTraits& defaultVal);
-};
-
-//=======================================================================================
-// @bsiclass                                                    David.Fox-Rabinovitz  02/2018
-//=======================================================================================
-struct LocaleProperties
-{
-private:
-    Utf8Char m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
-    Utf8Char m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
-public:
-
-    UNITS_EXPORT LocaleProperties(Json::Value jval);
-    LocaleProperties(Utf8Char decimal, Utf8Char thousand) : m_decimalSeparator(decimal), m_thousandsSeparator(thousand) {}
-    UNITS_EXPORT LocaleProperties(Utf8CP localeName = nullptr);
-    static LocaleProperties DefaultAmerican() {return LocaleProperties('.',',');}
-    static LocaleProperties DefaultEuropean(bool useBlank = false) {return LocaleProperties(',', (useBlank? ' ' : '.'));}
-
-    Utf8Char SetDecimalSeparator(Utf8Char sep) {return m_decimalSeparator = sep;}
-    Utf8Char GetDecimalSeparator() const {return m_decimalSeparator;}
-    Utf8Char SetThousandSeparator(char sep) {return m_thousandsSeparator = sep;}
-    Utf8Char GetThousandSeparator() const {return m_thousandsSeparator; }
-    UNITS_EXPORT Json::Value ToJson();
 };
 
 //=======================================================================================
@@ -180,7 +154,6 @@ public:
     UNITS_EXPORT bool IsIdentical(NumericFormatSpecCR other) const;
 
     UNITS_EXPORT bool ImbueLocale(Utf8CP localeName);
-    UNITS_EXPORT bool ImbueLocaleProperties(LocalePropertiesCR locProp);
 
     //======================================
     // Data Member Setters/Getters

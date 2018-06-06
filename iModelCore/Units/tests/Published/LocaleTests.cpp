@@ -15,30 +15,6 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
 struct LocaleTests : public ::testing::Test {};
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            David.Fox-Rabinovitz                      02/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(LocaleTests, LocaleTest)
-    {    
-    LocaleProperties lop = LocaleProperties::DefaultAmerican();
-    Json::Value jval = lop.ToJson();
-    LocaleProperties lop1 = LocaleProperties(jval);
-    EXPECT_EQ(lop.GetDecimalSeparator(), lop1.GetDecimalSeparator());
-    EXPECT_EQ(lop.GetThousandSeparator(), lop1.GetThousandSeparator());
-
-    lop = LocaleProperties::DefaultEuropean();
-    jval = lop.ToJson();
-    lop1 = LocaleProperties(jval);
-    EXPECT_EQ(lop.GetDecimalSeparator(), lop1.GetDecimalSeparator());
-    EXPECT_EQ(lop.GetThousandSeparator(), lop1.GetThousandSeparator());
-
-    lop = LocaleProperties::DefaultEuropean(true);
-    jval = lop.ToJson();
-    lop1 = LocaleProperties(jval);
-    EXPECT_EQ(lop.GetDecimalSeparator(), lop1.GetDecimalSeparator());
-    EXPECT_EQ(lop.GetThousandSeparator(), lop1.GetThousandSeparator());
-    }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
@@ -51,6 +27,7 @@ TEST_F(LocaleTests, BasicTest)
     double testV = 1000.0 * sqrt(2.0);
 
     // Testing American
+    fmtP.ImbueLocale("en-US");
     fmtP.SetPrecision(DecimalPrecision::Precision8);
     fmtP.SetRoundingFactor(0.05);
     EXPECT_STREQ("1,414.20000000", fmtP.Format(testV).c_str());
@@ -67,7 +44,7 @@ TEST_F(LocaleTests, BasicTest)
 
     // Testing European
     fmtP.SetPrecision(DecimalPrecision::Precision8);
-    fmtP.ImbueLocaleProperties(LocaleProperties::DefaultEuropean());
+    fmtP.ImbueLocale("de");
     EXPECT_STREQ("1.414,20000000", fmtP.Format(testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision7);
     EXPECT_STREQ("7.071,0500000", fmtP.Format(5.0*testV).c_str());
@@ -81,7 +58,8 @@ TEST_F(LocaleTests, BasicTest)
     EXPECT_STREQ("2.828,450", fmtP.Format(2.0*testV).c_str());
 
     // Testing German
-    fmtP.ImbueLocaleProperties(LocaleProperties::DefaultEuropean(true));
+    fmtP.ImbueLocale("fi");
+    fmtP.SetThousandSeparator(' '); // Setting european locales actually sets the thousands separator to \xA0 which is thin space which breaks non UTF8 comparison TODO
     fmtP.SetPrecision(DecimalPrecision::Precision8);
     EXPECT_STREQ("1 414,20000000", fmtP.Format(testV).c_str());
     fmtP.SetPrecision(DecimalPrecision::Precision7);
