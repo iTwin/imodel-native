@@ -53,23 +53,29 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                 for (ECSchemaCP schema : bim->Schemas().GetSchemas(false))
                     {
                     EXPECT_EQ((int) ECVersion::V3_2, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
-                    EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor()) << schema->GetFullSchemaName();
-                    EXPECT_EQ(2, schema->GetOriginalECXmlVersionMinor()) << schema->GetFullSchemaName();
                     }
 
                 //DgnDb built-in schema versions
-                EXPECT_EQ(SchemaVersion(1, 0, 1), TestHelper::GetSchemaVersion(*bim, "BisCore"));
+                EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "BisCore"));
+                EXPECT_EQ(BeVersion(3, 1), TestHelper::GetOriginalECXmlVersion(*bim, "BisCore"));
                 EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "Generic"));
+                EXPECT_EQ(BeVersion(3, 1), TestHelper::GetOriginalECXmlVersion(*bim, "Generic"));
 
                 //ECDb built-in schema versions
                 EXPECT_EQ(SchemaVersion(2, 0, 1), TestHelper::GetSchemaVersion(*bim, "ECDbFileInfo"));
+                EXPECT_EQ(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(*bim, "ECDbFileInfo"));
                 EXPECT_EQ(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbMap"));
+                EXPECT_EQ(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(*bim, "ECDbMap"));
                 EXPECT_EQ(SchemaVersion(4, 0, 1), TestHelper::GetSchemaVersion(*bim, "ECDbMeta"));
+                EXPECT_EQ(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(*bim, "ECDbMeta"));
                 EXPECT_EQ(SchemaVersion(5, 0, 1), TestHelper::GetSchemaVersion(*bim, "ECDbSystem"));
+                EXPECT_EQ(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(*bim, "ECDbSystem"));
                 EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbSchemaPolicies"));
+                EXPECT_EQ(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(*bim, "ECDbSchemaPolicies"));
 
                 //standard schema versions
                 EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "CoreCustomAttributes"));
+                EXPECT_EQ(BeVersion(3, 1), TestHelper::GetOriginalECXmlVersion(*bim, "CoreCustomAttributes"));
                 break;
                 }
 

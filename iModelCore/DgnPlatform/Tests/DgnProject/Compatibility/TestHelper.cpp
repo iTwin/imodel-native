@@ -216,10 +216,10 @@ void TestHelper::AssertKindOfQuantity(ECDb const& db, Utf8CP schemaName, Utf8CP 
         size_t i = 0;
         for (NamedFormat const& presFormat : koq->GetPresentationFormats())
             {
-            EXPECT_STREQ(expectedPresentationUnits.m_value[(Json::ArrayIndex) i].asCString(), presFormat.GetQualifiedName(koq->GetSchema()).c_str()) << "Presentation Format #" << " i " << assertMessage;
+            EXPECT_STREQ(expectedPresentationUnits.m_value[(Json::ArrayIndex) i].asCString(), presFormat.GetQualifiedName(koq->GetSchema()).c_str()) << "Presentation Format #" << i << " | " << assertMessage;
+            i++;
             }
         }
-        EXPECT_EQ(expectedPresentationUnits, JsonValue(koq->GetPresentationsJson())) << assertMessage;
 
     EXPECT_DOUBLE_EQ(expectedRelError, koq->GetRelativeError()) << assertMessage;
 
@@ -241,7 +241,7 @@ void TestHelper::AssertKindOfQuantity(ECDb const& db, Utf8CP schemaName, Utf8CP 
     else
         EXPECT_TRUE(stmt.IsValueNull(2)) << stmt.GetECSql() << " | " << assertMessage;
 
-    EXPECT_STREQ(expectedPersistenceUnit, stmt.GetValueText(3)) << stmt.GetECSql() << " | " << assertMessage;
+    // persisted persistence unit may differ from expected if it was persisted pre EC3.2, so don't verify that via plain ECSQL
 
     if (expectedPresentationUnits.m_value.isNull() || expectedPresentationUnits.m_value.empty())
         EXPECT_TRUE(stmt.IsValueNull(4)) << stmt.GetECSql() << " | " << assertMessage;
@@ -249,12 +249,7 @@ void TestHelper::AssertKindOfQuantity(ECDb const& db, Utf8CP schemaName, Utf8CP 
         {
         IECSqlValue const& presUnitsVal = stmt.GetValue(4);
         EXPECT_EQ((int) expectedPresentationUnits.m_value.size(), presUnitsVal.GetArrayLength()) << stmt.GetECSql() << " | " << assertMessage;
-        size_t i = 0;
-        for (IECSqlValue const& presUnitVal : presUnitsVal.GetArrayIterable())
-            {
-            EXPECT_STREQ(expectedPresentationUnits.m_value[(Json::ArrayIndex) i].asCString(), presUnitVal.GetText()) << "Array index: " << i << " | " << stmt.GetECSql() << " | " << assertMessage;
-            i++;
-            }
+        // persisted presentation format may differ from expected if it was persisted pre EC3.2, so don't verify that via plain ECSQL
         }
 
     EXPECT_DOUBLE_EQ(expectedRelError, stmt.GetValueDouble(5)) << stmt.GetECSql() << " | " << assertMessage;

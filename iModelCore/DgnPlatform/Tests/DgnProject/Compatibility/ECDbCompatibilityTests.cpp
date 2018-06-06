@@ -46,18 +46,21 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                 for (ECSchemaCP schema : ecdb.Schemas().GetSchemas(false))
                     {
                     EXPECT_EQ((int) ECVersion::V3_2, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
-                    EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor()) << schema->GetFullSchemaName();
-                    EXPECT_EQ(2, schema->GetOriginalECXmlVersionMinor()) << schema->GetFullSchemaName();
                     }
 
                 //ECDb built-in schema versions
                 EXPECT_EQ(SchemaVersion(2, 0, 1), TestHelper::GetSchemaVersion(ecdb, "ECDbFileInfo"));
+                EXPECT_EQ(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(ecdb, "ECDbFileInfo"));
                 EXPECT_EQ(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbMap"));
+                EXPECT_EQ(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(ecdb, "ECDbMap"));
                 EXPECT_EQ(SchemaVersion(4, 0, 1), TestHelper::GetSchemaVersion(ecdb, "ECDbMeta"));
+                EXPECT_EQ(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(ecdb, "ECDbMeta"));
                 EXPECT_EQ(SchemaVersion(5, 0, 1), TestHelper::GetSchemaVersion(ecdb, "ECDbSystem"));
+                EXPECT_EQ(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(ecdb, "ECDbSystem"));
 
                 //Standard schema versions
                 EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(ecdb, "CoreCustomAttributes"));
+                EXPECT_EQ(BeVersion(3, 1), TestHelper::GetOriginalECXmlVersion(ecdb, "CoreCustomAttributes"));
                 break;
                 }
 
@@ -156,9 +159,9 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
 
-        TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "ANGLE", "Angle", nullptr, "RAD(DefaultReal)", JsonValue(R"json(["ARC_DEG(Real2U)", "ARC_DEG(AngleDMS)"])json"), 0.0001);
-        TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "POWER", "Power", nullptr, "W(DefaultReal)", JsonValue(R"json(["W(Real4U)", "KW(Real4U)", "MEGAW(Real4U)", "BTU/HR(Real4U)", "KILOBTU/HR(Real4U)", "HP(Real4U)"])json"), 0.001);
-        TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "LIQUID_VOLUME", "Liquid Volume", nullptr, "CUB.M(DefaultReal)", JsonValue(R"json(["LITRE(Real4U)", "GALLON(Real4U)"])json"), 0.0001);
-        TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "TestKoqWithoutPresUnits", nullptr, nullptr, "W/(M*K)(DefaultReal)", JsonValue(), 0.5);
+        TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "ANGLE", "Angle", nullptr, "u:RAD", JsonValue(R"json(["f:DefaultRealU(2)[u:ARC_DEG]", "f:AngleDMS"])json"), 0.0001);
+        TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "POWER", "Power", nullptr, "u:W", JsonValue(R"json(["f:DefaultRealU(4)[u:W]", "f:DefaultRealU(4)[u:KW]", "f:DefaultRealU(4)[u:MEGAW]", "f:DefaultRealU(4)[u:BTU_PER_HR]", "f:DefaultRealU(4)[u:KILOBTU_PER_HR]", "f:DefaultRealU(4)[u:HP]"])json"), 0.001);
+        TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "LIQUID_VOLUME", "Liquid Volume", nullptr, "u:CUB_M", JsonValue(R"json(["f:DefaultRealU(4)[u:LITRE]", "f:DefaultRealU(4)[u:GALLON]"])json"), 0.0001);
+        TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "TestKoqWithoutPresUnits", nullptr, nullptr, "u:W_PER_M_K", JsonValue(), 0.5);
         }
     }

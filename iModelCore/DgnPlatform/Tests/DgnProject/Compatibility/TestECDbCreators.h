@@ -114,8 +114,8 @@ struct EC32EnumsTestECDbCreator final : TestECDbCreator
                 return ERROR;
 
             // add types of enums which don't exist in the schemas already in the test file
-            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0.0" encoding="utf-8" ?>
-                                                    <ECSchema schemaName="EC32Enums" alias="ec32enums" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            return ImportSchema(ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                                    <ECSchema schemaName="EC32Enums" alias="ec32enums" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                                         <ECEnumeration typeName="IntEnum_EnumeratorsWithoutDisplayLabel" displayLabel="Int Enumeration with enumerators without display label" description="Int Enumeration with enumerators without display label" backingTypeName="int" isStrict="true">
                                                             <ECEnumerator name="Unknown" value="0"/>
                                                             <ECEnumerator name="On" value="1"/>
@@ -221,7 +221,7 @@ struct EC32KoqsTestECDbCreator final : TestECDbCreator
                     <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
                     <KindOfQuantity typeName="TestKoq" description="My KindOfQuantity" displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
                                     presentationUnits="f:DefaultRealU;f:DefaultReal" />
-                    <KindOfQuantity typeName="TestKoqWithoutPresUnits" persistenceUnit="u:W/(u:M*u:K)" relativeError="0.5"/>
+                    <KindOfQuantity typeName="TestKoqWithoutPresUnits" persistenceUnit="u:KG" relativeError="0.5"/>
                 </ECSchema>)xml"));
             }
     public:
