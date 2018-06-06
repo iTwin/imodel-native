@@ -1621,9 +1621,13 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
     size_t maxPerFace;
     if (geom.GetNumFacet(maxPerFace) > 0 && (int)maxPerFace > facetOptions.GetMaxPerFace())
         {
+        // Make sure we don't generate edge chains - decimation doesn't handle them correctly.
+        bool wantedEdgeChains = facetOptions.GetEdgeChainsRequired();
+        facetOptions.SetEdgeChainsRequired(false);
         IPolyfaceConstructionPtr builder = PolyfaceConstruction::New(facetOptions);
         builder->AddPolyface(geom);
         polyface = &builder->GetClientMeshR();
+        facetOptions.SetEdgeChainsRequired(wantedEdgeChains);
         }
     else
         {
@@ -1645,6 +1649,7 @@ PolyfaceHeaderPtr PrimitiveGeometry::FixPolyface(PolyfaceHeaderR geom, IFacetOpt
 
         // Not necessary to add edges chains -- edges will be generated from visibility flags later
         // and decimation will not handle edge chains correctly.
+        // Edge chains are never serialized to flat buffer so we know they won't exist.
         }
 
     return polyface;
