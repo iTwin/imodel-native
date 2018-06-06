@@ -145,7 +145,7 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
     packageTemplateFileName = 'package.json.template'
 
     # Copy some files into place without modifying them.
-    filesToCopy = [declFileName, 'README.md']
+    filesToCopy = [declFileName, 'install-imodeljs-native.js', 'compute-imodeljs-native-package-name.js', 'README.md']
 
     for fileToCopy in filesToCopy:
         shutil.copyfile(os.path.join(apiSourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
@@ -201,8 +201,6 @@ if __name__ == '__main__':
     os.makedirs(outdirParent)
 
     # Generate a platform-specific package fo each platform that was built
-    nodeversion = ''
-    electronversion = ''
     for versionsubdir in os.listdir(addonDir):
         # We are looking for the version-specific addon subdirectories. They tell us the names of the addons
         if (re.match(r'^([a-z])_(\d+)_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)$', versionsubdir) is None):
@@ -211,14 +209,7 @@ if __name__ == '__main__':
 
         publishPackage(generate_addon_for_platform(outdirParent, productdir, versionsubdir, nodeOS, nodeCPU, packageVersion, sourceDir), doPublish, tag);
 
-        if versionsubdir.startswith("n_"):
-            nodeversion = versionsubdir
-        if versionsubdir.startswith("e_"):
-            electronversion = versionsubdir
-
-    # Generate the other packages that describe or re-deliver the platform-specific addon packages.
-    # Note that we do this only in a Windows build (and for the win32 platform). That is the "master" build.
-    # Builds for all other platforms only publish their platform-specific addon packages.
+    # Generate the api package - PUBLISH ONLY ON WINDOWS - Builds for all other platforms only publish their platform-specific addon packages.
     if nodeOS != 'win32':
         doPublish = False;
 

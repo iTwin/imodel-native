@@ -6,9 +6,14 @@
     "Bentley",
     "iModel"
   ],
+  "repository": {},
   "author": {
     "name": "Bentley Systems, Inc.",
     "url": "www.bentley.com"
   },
-  "types": "./${DECL_FILE_NAME}"
+  "main": "compute-imodeljs-native-package-name.js",
+  "types": "./${DECL_FILE_NAME}",
+   "scripts": {
+    "postinstall": "node ./install-imodeljs-native.js"
+   }
 }

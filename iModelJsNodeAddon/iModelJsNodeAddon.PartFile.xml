@@ -77,6 +77,7 @@
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
+      <!-- KEEP THIS CONSISTENT WITH api_package\install-imodeljs-native.js -->
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8">
         Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
       </Files>
@@ -93,6 +94,7 @@
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
       <!-- The ProductSubDirectory name determines the name of subdirectory created by makeImodelJsAddonPackages.mke, and that must match the version of electron node that is running. -->
+      <!-- KEEP THIS CONSISTENT WITH api_package\install-imodeljs-native.js -->
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="e_2">
         Delivery/iModelJsNodeAddon/electron-addon-api/imodeljs.node
       </Files>
@@ -107,7 +109,7 @@
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
     <Bindings>
-      <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8">
+        <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="n_8">
         Delivery/iModelJsNodeAddon/node-addon-api/imodeljs.node
       </Files>
       <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
