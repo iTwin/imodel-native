@@ -1738,6 +1738,23 @@ static bool GetCentroid(DPoint3dR centroid, ICurvePrimitiveCR primitive)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static SnapHeat GetHeat(DPoint3dCR snapPoint, DPoint3dCR closePoint, DMatrix4dCR worldToView, double aperture, bool forceHot)
+    {
+    DPoint4d viewPts[2];
+    worldToView.Multiply(&viewPts[0], &snapPoint, nullptr, 1);
+    worldToView.Multiply(&viewPts[1], &closePoint, nullptr, 1);
+
+    double viewDist = 0.0;
+    if (!viewPts[0].RealDistanceXY(viewDist, viewPts[1]))
+        return SNAP_HEAT_None;
+
+    bool withinAperture = (viewDist <= aperture);
+    return (withinAperture ? SNAP_HEAT_InRange : (forceHot ? SNAP_HEAT_NotInRange : SNAP_HEAT_None));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ComputeSnapLocation()
@@ -1895,8 +1912,11 @@ Json::Value SnapContext::DoSnap(JsonValueCR input, DgnDbR db)
 
         if (SnapStatus::Success == status && helper.ComputeSnapLocation())
             {
+            DPoint3d snapPoint = helper.GetHitPointWorld();
+
             output["status"] = (uint32_t) status;
-            JsonUtils::DPoint3dToJson(output["snapPoint"], helper.GetHitPointWorld());
+            JsonUtils::DPoint3dToJson(output["snapPoint"], snapPoint);
+            output["heat"] = (uint32_t) SnapGeometryHelper::GetHeat(snapPoint, closePoint, worldToViewMap.M0, snapAperture, SnapMode::Center == snapMode);
 
             output["geomType"] = (uint32_t) helper.GetHitGeomType();
             output["parentGeomType"] = (uint32_t) helper.GetHitParentGeomType();
@@ -1926,10 +1946,11 @@ Json::Value SnapContext::DoSnap(JsonValueCR input, DgnDbR db)
             }
         }
 
-    DPoint3d origin;
-    source->GetPlacementTransform().GetTranslation(origin);
+    DPoint3d snapPoint;
+    source->GetPlacementTransform().GetTranslation(snapPoint);
     output["status"] = (uint32_t) SnapStatus::Success;
-    JsonUtils::DPoint3dToJson(output["snapPoint"], origin);
+    JsonUtils::DPoint3dToJson(output["snapPoint"], snapPoint);
+    output["heat"] = (uint32_t) SnapGeometryHelper::GetHeat(snapPoint, closePoint, worldToViewMap.M0, snapAperture, SnapMode::Center == snapMode);
 
     return output;
     }
