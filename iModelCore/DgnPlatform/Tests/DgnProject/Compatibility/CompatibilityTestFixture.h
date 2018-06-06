@@ -124,6 +124,7 @@ public:
     };
 
 void PrintTo(SchemaVersion const&, std::ostream*);
+void PrintTo(BeVersion const&, std::ostream*);
 
 //=======================================================================================
 //! Disables "Fail On Assertion" for the lifetime of this object.

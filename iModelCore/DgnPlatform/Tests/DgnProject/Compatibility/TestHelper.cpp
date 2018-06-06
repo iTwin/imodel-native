@@ -62,6 +62,26 @@ SchemaVersion TestHelper::GetSchemaVersion(ECDb const& db, Utf8CP schemaName)
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+BeVersion TestHelper::GetOriginalECXmlVersion(ECDbCR ecdb, Utf8CP schemaName)
+    {
+    JsonValue rows = ExecuteECSqlSelect(ecdb, Utf8PrintfString("SELECT OriginalECXmlVersionMajor major, OriginalECXmlVersionMinor minor FROM meta.ECSchemaDef WHERE Name='%s'", schemaName).c_str());
+    if (!rows.m_value.isArray() || rows.m_value.size() != 1)
+        return BeVersion();
+
+    JsonValueCR versionJson = rows.m_value[0];
+    if (!versionJson.isMember("major"))
+        return BeVersion();
+
+    if (versionJson.isMember("minor"))
+        return BeVersion(versionJson["major"].asInt(), versionJson["minor"].asInt());
+
+    return BeVersion(versionJson["major"].asInt(), 0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 void TestHelper::AssertEnum(ECDb const& db, Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::pair<ECN::ECValue, Utf8CP>> const& expectedEnumerators)
     {
     // 1) Via schema manager
