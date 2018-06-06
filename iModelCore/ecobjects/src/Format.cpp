@@ -201,7 +201,7 @@ SchemaReadStatus ECFormat::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContex
     Utf8String formatTraits;
     if (BeXmlStatus::BEXML_Success == unitFormatNode.GetAttributeStringValue(formatTraits, FORMAT_TRAITS_ATTRIBUTE))
         { 
-        if (!spec.SetFormatTraits(formatTraits))
+        if (!spec.SetFormatTraits(formatTraits.c_str()))
             {
             LOG.errorv("%s node '%s' contains an invalid %s %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_TRAITS_ATTRIBUTE, formatTraits.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
