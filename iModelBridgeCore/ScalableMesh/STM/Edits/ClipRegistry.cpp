@@ -49,6 +49,16 @@ void ClipRegistry::ModifyClip(uint64_t id, const DPoint3d* clip, size_t clipSize
     dataStore->StoreBlock(const_cast<DPoint3d*>(clip), clipSize, id);
     }
 
+void ClipRegistry::ModifyClip(uint64_t id, const ClipVectorPtr& clip,  SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+{
+    ISM3DPtDataStorePtr dataStore;
+    m_smDataStore->GetSisterNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition, true);
+
+    IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
+    dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
+    clipDefinitionExOpsPtr->StoreClipWithParameters(clip, id, geom, type, isActive);
+}
+
 void ClipRegistry::AddClipWithParameters(uint64_t clipID, const DPoint3d* pts, size_t ptsSize, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
     {
 		{
@@ -69,6 +79,16 @@ void ClipRegistry::AddClipWithParameters(uint64_t clipID, const DPoint3d* pts, s
     clipData.insert(clipData.end(), pts, pts + ptsSize);
     clipDefinitionExOpsPtr->StoreClipWithParameters(clipData, clipID, geom, type, isActive);
     }
+
+void ClipRegistry::AddClipWithParameters(uint64_t clipID, const ClipVectorPtr& clip, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+{
+    ISM3DPtDataStorePtr dataStore;
+    m_smDataStore->GetSisterNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition, true);
+
+    IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
+    dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
+    clipDefinitionExOpsPtr->StoreClipWithParameters(clip, clipID, geom, type, isActive);
+}
 
 void ClipRegistry::DeleteClip(uint64_t id)
     {       
@@ -163,6 +183,22 @@ void ClipRegistry::GetClipWithParameters(uint64_t id, bvector<DPoint3d>& clip, S
 		m_lastClipValue = clip;
 	}
     }
+
+void ClipRegistry::GetClipWithParameters(uint64_t id, ClipVectorPtr& clip, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive)
+{
+    /*if (m_lastClipSet && m_lastClipID == id)
+    {
+    clip = m_lastClipValue;
+    return;
+    }*/
+    ISM3DPtDataStorePtr dataStore;
+    if (!m_smDataStore->GetSisterNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition, false))
+        return;
+
+    IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
+    dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);
+    clipDefinitionExOpsPtr->LoadClipWithParameters(clip, id, geom, type, isActive);
+}
 
 uint64_t ClipRegistry::AddSkirts(const bvector<bvector<DPoint3d>>& skirts)
     {       

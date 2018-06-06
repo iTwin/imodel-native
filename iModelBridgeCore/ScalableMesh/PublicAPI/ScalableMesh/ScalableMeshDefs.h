@@ -163,6 +163,7 @@ enum class SMClipGeometryType
     {
     Polygon = 0,
     ComplexPolygon,
+    BoundedVolume,
     Qty
     };
 

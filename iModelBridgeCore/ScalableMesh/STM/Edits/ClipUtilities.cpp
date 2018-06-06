@@ -1726,7 +1726,7 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipV
         }
     }
 
-bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, ClipVectorCP clip, const PolyfaceQuery* meshP)
+bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, ClipVectorCP clip, const PolyfaceQuery* meshP, const bvector<bool>& isMask)
     {
     polyfaces.resize(2);
     bvector<DRange3d> triangleBoxes;
@@ -1742,9 +1742,10 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
         {
         DRange3d        thisRange;
 
-		if (!primitive->IsMask())
-			continue;
-        if (primitive->GetRange(thisRange, nullptr, primitive->IsMask()))
+        bool maskVal = (isMask.empty() && primitive->IsMask()) || (!isMask.empty() && isMask[&primitive - &clip->front()]);
+        if (!maskVal)
+            continue;
+        if (primitive->GetRange(thisRange, nullptr, maskVal))
             {
 			//if node and primitive are fully disjoint, do not count this primitive
 			if (!thisRange.IntersectsWith(meshRange) && !thisRange.IsContained(meshRange.low) && !meshRange.IsContained(thisRange.low))
@@ -1766,10 +1767,10 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
 		for (ClipPrimitivePtr const& primitive : *clip)
 		{
 			DRange3d        thisRange;
-
-			if (!primitive->IsMask())
+            bool maskVal = (isMask.empty() && primitive->IsMask()) || (!isMask.empty() && isMask[&primitive - &clip->front()]);
+			if (!maskVal)
 				continue;
-			if (primitive->GetRange(thisRange, nullptr, primitive->IsMask()))
+			if (primitive->GetRange(thisRange, nullptr, maskVal))
 			{
 				//if node and primitive are fully disjoint, do not count this primitive
 				if (!thisRange.IntersectsWith(meshRange) && !thisRange.IsContained(meshRange.low) && !meshRange.IsContained(thisRange.low))

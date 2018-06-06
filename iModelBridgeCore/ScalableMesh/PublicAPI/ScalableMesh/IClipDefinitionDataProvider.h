@@ -19,7 +19,9 @@ public:
 
 	virtual void GetClipPolygon(bvector<DPoint3d>& poly, uint64_t id) = 0;
 	virtual void GetClipPolygon(bvector<DPoint3d>& poly, uint64_t id, SMNonDestructiveClipType& type) = 0;
+    virtual void GetClipVector(ClipVectorPtr& poly, uint64_t id, SMNonDestructiveClipType& type) = 0;
 	virtual void SetClipPolygon(const bvector<DPoint3d>& poly, uint64_t id, SMNonDestructiveClipType type) = 0;
+    virtual void SetClipVector(const ClipVectorPtr& poly, uint64_t id, SMNonDestructiveClipType type) = 0;
 	virtual void SetClipPolygon(const bvector<DPoint3d>& poly, uint64_t id) = 0;
 	virtual void RemoveClipPolygon(uint64_t id) = 0;
 
