@@ -831,3 +831,28 @@ Utf8String      iModelBridge::ComputeJobSubjectName(DgnDbCR db, Params const& pa
     jobName = code.GetValueUtf8();
     return jobName;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Http::IHttpHeaderProviderPtr iModelBridge::Params::GetDefaultHeaderProvider() const
+    {
+    Http::HttpRequestHeaders headers;
+    headers.SetValue("X-Correlation-ID", m_jobRunCorrelationId.c_str());
+    return Http::HttpHeaderProvider::Create(headers);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+WebServices::ClientInfoPtr iModelBridge::Params::GetClientInfo() const
+    {
+    if (nullptr != m_clientInfo)
+        return m_clientInfo;
+    //Else provide a dummy default
+    static Utf8CP s_productId = "1654"; // Navigator Desktop
+    // MT Note: C++11 guarantees that the following line of code will be executed only once and in a thread-safe manner:
+    WebServices::ClientInfoPtr clientInfo = WebServices::ClientInfoPtr(
+        new WebServices::ClientInfo("Bentley-Test", BeVersion(1, 0), "{41FE7A91-A984-432D-ABCF-9B860A8D5360}", "TestDeviceId", "TestSystem", s_productId, GetDefaultHeaderProvider()));
+    return clientInfo;
+    }

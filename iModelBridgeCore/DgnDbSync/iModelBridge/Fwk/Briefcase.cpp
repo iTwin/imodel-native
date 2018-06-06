@@ -54,7 +54,7 @@ void iModelBridgeFwk::ServerArgs::PrintUsage()
     fwprintf(stderr, L"\n\
 SERVER:\n\
     --server-project=       (optional)  The name of a project in the iModel Hub Services. Optional if --server-project-guid is specified.\n\
-    --server-project-guiid= (optional)  The GUID of a project in the iModel Hub Services. Optional if --server-project is specified.\n\
+    --server-project-guid= (optional)  The GUID of a project in the iModel Hub Services. Optional if --server-project is specified.\n\
     --server-repository=    (required)  The name of a repository in the project.\n\
     --server-user=          (required)  The username for the project.\n\
     --server-password=      (required)  The password for the project.\n\

@@ -490,7 +490,7 @@ struct iModelBridge
         WString m_thisBridgeRegSubKey;
         Transform m_spatialDataTransform;
         DgnElementId m_jobSubjectId;
-
+        Utf8String   m_jobRunCorrelationId;
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
         void SetThumbnailTimeout(BeDuration timeout) {m_thumbnailTimeout = timeout;}
@@ -600,8 +600,10 @@ struct iModelBridge
 
         //!Get/Set the client info when talking to iModelHub or other services. 
         //!Individual bridges are supposed to set it up in its constructor so that when briefcase creation is called, appropriate ids are passed along.
-        WebServices::ClientInfoPtr GetClientInfo() const { return m_clientInfo; };
+        IMODEL_BRIDGE_EXPORT WebServices::ClientInfoPtr GetClientInfo() const;
         void        SetClientInfo(WebServices::ClientInfoPtr info) { m_clientInfo = info;}
+        
+        IMODEL_BRIDGE_EXPORT Http::IHttpHeaderProviderPtr GetDefaultHeaderProvider() const;
         };
 
     private:

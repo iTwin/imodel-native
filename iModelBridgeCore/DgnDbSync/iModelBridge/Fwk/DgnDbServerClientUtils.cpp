@@ -67,25 +67,11 @@ static ServiceLocalState* getLocalState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WebServices::ClientInfoPtr getDefaultClientInfo()
-    {
-    static Utf8CP s_productId = "1654"; // Navigator Desktop
-    // MT Note: C++11 guarantees that the following line of code will be executed only once and in a thread-safe manner:
-    static WebServices::ClientInfoPtr s_clientInfo = WebServices::ClientInfoPtr(
-        new WebServices::ClientInfo("Bentley-Test", BeVersion(1, 0), "{41FE7A91-A984-432D-ABCF-9B860A8D5360}", "TestDeviceId", "TestSystem", s_productId));
-    return s_clientInfo;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbServerClientUtils::DgnDbServerClientUtils(WebServices::UrlProvider::Environment environment, uint8_t nretries, WebServices::ClientInfoPtr info)
     :m_clientInfo(info)
     {
     m_maxRetryCount = nretries;
     UrlProvider::Initialize(environment, UrlProvider::DefaultTimeout, getLocalState());
-    if (nullptr == info)
-        m_clientInfo = getDefaultClientInfo();
     ClientHelper::Initialize(m_clientInfo, getLocalState());
     }
 

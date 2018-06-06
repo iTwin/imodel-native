@@ -20,6 +20,7 @@
 #include "Registry/iModelBridgeRegistry.h"
 #include "../iModelBridgeHelpers.h"
 #include "DgnDbServerClientUtils.h"
+#include <BentleyLog4cxx/log4cxx.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -198,7 +199,10 @@ void iModelBridgeFwk::JobDefArgs::PrintUsage()
         L"--fwk-revision-comment=     (optional)  The revision comment. Can be more than one.\n"
         L"--fwk-logging-config-file=  (optional)  The name of the logging configuration file.\n"
         L"--fwk-argsJson=             (optional)  Additional arguments in JSON format.\n"
-        L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish.\n"
+        L"--fwk-max-wait=milliseconds (optional)  The maximum amount of time to wait for other instances of this job to finish. Default value is 60000ms\n"
+        L"--fwk-jobrun-guid           (optional)  A unique GUID that identifies this job run for correlation. This will be passed along to all dependant services and logs.\n"
+        L"--fwk-assetsDir=            (optional)  Asset directory for the iModelBridgeFwk resources if default location is not suitable.\n"
+        L"--fwk-bridgeAssetsDir=      (optional)  Asset directory for the iModelBridge resources if default location is not suitable.\n"
         );
     }
 
@@ -210,7 +214,9 @@ void iModelBridgeFwk::InitLogging()
     if (!m_jobEnvArgs.m_loggingConfigFileName.empty() && m_jobEnvArgs.m_loggingConfigFileName.DoesPathExist())
         {
         NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, m_jobEnvArgs.m_loggingConfigFileName);
-        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+        if (NULL == m_logProvider)
+            m_logProvider = new NativeLogging::Provider::Log4cxxProvider();
+        NativeLogging::LoggingConfig::ActivateProvider(m_logProvider);
         return;
         }
 
@@ -403,6 +409,11 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
             BeFileName assetsDir(getArgValueW(argv[iArg]));
             if (assetsDir.DoesPathExist())
                 m_bridgeAssetsDir = assetsDir;
+            continue;
+            }
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-jobrun-guid="))
+            {
+            m_jobRunCorrelationId = getArgValue(argv[iArg]);
             continue;
             }
 
@@ -1004,6 +1015,7 @@ void iModelBridgeFwk::SetBridgeParams(iModelBridge::Params& params, FwkRepoAdmin
         params.SetDocumentPropertiesAccessor(*this);
     params.SetBridgeRegSubKey(m_jobEnvArgs.m_bridgeRegSubKey);
     params.ParseJsonArgs(m_jobEnvArgs.m_argsJson, true);
+    params.m_jobRunCorrelationId = m_jobEnvArgs.m_jobRunCorrelationId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1150,6 +1162,30 @@ struct HostTerminator
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct LoggingContext //This class allows to pass in a logging sequence id to rest of the callers for a bridge job run
+    {
+    private:
+    WString                                      m_jobRunCorrelationId;
+    NativeLogging::Provider::Log4cxxProvider*    m_provider;
+    public:
+    LoggingContext(Utf8StringCR jobRunCorrelationId, NativeLogging::Provider::Log4cxxProvider* provider)
+        :m_jobRunCorrelationId(jobRunCorrelationId.c_str(), true), m_provider(provider)
+        {
+        if (NULL == m_provider)
+            return;
+        m_provider->AddContext(L"CorrelationId", m_jobRunCorrelationId.c_str());
+        }
+    ~LoggingContext()
+        {
+        if (NULL == m_provider)
+            return;
+        m_provider->RemoveContext(L"CorrelationId");
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
@@ -1160,6 +1196,8 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 	// *** Talk to Sam Wilson if you need to make a change.
 	// ***
 	// ***
+    LoggingContext(m_jobEnvArgs.m_jobRunCorrelationId, m_logProvider);
+
     DbResult dbres;
 
     iModelBridgeSacAdapter::InitCrt(false);
@@ -1590,6 +1628,7 @@ void iModelBridgeFwk::LogStderr()
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridgeFwk::iModelBridgeFwk()
+:m_logProvider(NULL)
     {
     m_clientUtils = nullptr;
     }
@@ -1601,6 +1640,8 @@ iModelBridgeFwk::~iModelBridgeFwk()
     {
     Briefcase_Shutdown();
     LogStderr();
+    if (NULL != m_logProvider)
+        delete m_logProvider;
     }
 
 /*---------------------------------------------------------------------------------**//**
