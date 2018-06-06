@@ -56,7 +56,7 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     }
 
                 //DgnDb built-in schema versions
-                EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "BisCore"));
+                EXPECT_EQ(SchemaVersion(1, 0, 1), TestHelper::GetSchemaVersion(*bim, "BisCore"));
                 EXPECT_EQ(BeVersion(3, 1), TestHelper::GetOriginalECXmlVersion(*bim, "BisCore"));
                 EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "Generic"));
                 EXPECT_EQ(BeVersion(3, 1), TestHelper::GetOriginalECXmlVersion(*bim, "Generic"));
