@@ -180,7 +180,7 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnArrayPr
     ECSchemaPtr originalSchema;
     ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema, schemaContext.get())) << "Failed to convert schema";
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
@@ -217,7 +217,7 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnlyOnPro
     ECSchemaPtr originalSchema;
     ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema, schemaContext.get())) << "Failed to convert schema";
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
@@ -253,7 +253,7 @@ TEST_F(UnitSpecificationConversionTest, UnitSpecificationWithUnknownUnitName)
     ECSchemaPtr originalSchema;
     ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema, schemaContext.get())) << "Failed to convert schema";
     
     ASSERT_EQ(0, schema->GetKindOfQuantityCount()) << "No KOQ should have been created when unit is unknown";
     ASSERT_EQ(nullptr, schema->GetClassCP("TestClass")->GetPropertyP("Length")->GetKindOfQuantity()) << "No KOQ should have been added to the property when the unit is unknown";
@@ -274,7 +274,7 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecifications)
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, testSchemaPath.c_str(), *schemaContext);
     ASSERT_EQ(SchemaReadStatus::Success, status);
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), schemaContext.get())) << "Failed to convert schema";
     
     ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
     ECSchemaPtr originalSchema;
@@ -318,7 +318,7 @@ TEST_F(UnitSpecificationConversionTest, PersistenceAndPresentationUnitsNotCompat
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Failed to convert schema";
 
     auto koq = schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity();
     EXPECT_STREQ("KG_PER_CUB_M", koq->GetPersistenceUnit()->GetName().c_str());
@@ -371,7 +371,7 @@ TEST_F(UnitSpecificationConversionTest, BaseAndDerivedUnitsNotCompatibleFailsCon
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
 
-    ASSERT_FALSE(ECSchemaConverter::Convert(*schema.get())) << "Converted a schema with incompatible units";
+    ASSERT_FALSE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Converted a schema with incompatible units";
     }
 
 //---------------------------------------------------------------------------------------
@@ -416,7 +416,7 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Failed to convert schema";
 
     ECClassCP pipe;
     ECClassCP specialPipe;
@@ -517,7 +517,7 @@ TEST_F(UnitSpecificationConversionTest, SameKOQMultiplePersistenceUnits)
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Failed to convert schema";
     EXPECT_STREQ("M", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetPersistenceUnit()->GetName().c_str());
     EXPECT_STREQ("DefaultRealU[u:DM]", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_STREQ("LENGTH", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetName().c_str());
@@ -585,7 +585,7 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUn
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Failed to convert schema";
 
     ECClassCP pipe;
     ECClassCP specialPipe;
@@ -679,7 +679,7 @@ TEST_F(UnitSpecificationConversionTest, PercentUnitsPassThroughWithoutChangeToSI
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Failed to convert schema";
 
     EXPECT_STREQ("PERCENTAGES", schema->GetClassCP("Ratios")->GetPropertyP("Percent")->GetKindOfQuantity()->GetName().c_str());
     EXPECT_STREQ("PERCENT", schema->GetClassCP("Ratios")->GetPropertyP("Percent")->GetKindOfQuantity()->GetPersistenceUnit()->GetName().c_str());
@@ -868,7 +868,7 @@ TEST_F(UnitsCustomAttributesConversionTests, OldUnitsWithKoqNameConflicts)
     ECSchemaPtr originalSchema;
     ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema, schemaContext.get())) << "Failed to convert schema";
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
@@ -909,7 +909,7 @@ TEST_F(UnitsCustomAttributesConversionTests, SchemaWithIsUnitSystemSchema_Attrib
     ECSchemaPtr originalSchema;
     ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
 
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema, schemaContext.get())) << "Failed to convert schema";
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
@@ -1116,7 +1116,7 @@ TEST_F(UnitInstanceConversionTest, BasicTest)
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
     ASSERT_EQ(SchemaReadStatus::Success, status);
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get(), context.get())) << "Failed to convert schema";
 
     {
     Utf8CP instanceXml = R"xml(

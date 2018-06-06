@@ -3322,7 +3322,8 @@ void validateClassMapConvertedCorrectly(Utf8CP schemaXml, bool expectSuccess, Ut
     context->AddSchemaPath(ecdbSchemaDir);
 
     CustomECSchemaConverterPtr schemaConverter = CustomECSchemaConverter::Create();
-    IECCustomAttributeConverterPtr classMapConverter = new ECDbClassMapConverter(*context);
+    schemaConverter->AddSchemaReadContext(*context);
+    IECCustomAttributeConverterPtr classMapConverter = new ECDbClassMapConverter();
     schemaConverter->AddConverter(ECDbClassMapConverter::GetSchemaName(), ECDbClassMapConverter::GetClassName(), classMapConverter);
 
     schemaConverter->Convert(*schema); // Converter doesn't return an error when it hits a mapping strategy it doesn't understand

@@ -22,16 +22,14 @@ struct IECCustomAttributeConverter : RefCountedBase, NonCopyableClass
     //! @param[in] schema   The schema that holds the container
     //! @param[in] container   The custom attribute container that holds the instance
     //! @param[in] instance    The custom attribute instance
-    virtual ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance) = 0;
+    //! @param[in] context     A context to deserialize and additional ECSchemas that are not already referenced by the schema.
+    virtual ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context) = 0;
 
     //! destructor
     virtual ~IECCustomAttributeConverter() {};
     };
 
-typedef std::function<ECObjectsStatus(ECClassP)> ECClassProcessor;
-typedef std::function<ECObjectsStatus(ECPropertyP)> ECPropertyProcessor;
 typedef RefCountedPtr<IECCustomAttributeConverter> IECCustomAttributeConverterPtr;
-
 typedef RefCountedPtr<CustomECSchemaConverter> CustomECSchemaConverterPtr;
 
 //+===============+===============+===============+===============+===============+======
@@ -41,7 +39,7 @@ typedef RefCountedPtr<CustomECSchemaConverter> CustomECSchemaConverterPtr;
 struct CustomECSchemaConverter : RefCountedBase, NonCopyableClass
     {
 private:
-
+    ECSchemaReadContextPtr m_schemaContext;
     bool m_convertedOK = true;
     bool m_removeLegacyStandardCustomAttributes = false;
     bmap<Utf8String, IECCustomAttributeConverterPtr> m_converterMap;
@@ -102,6 +100,13 @@ public:
     //! @param[in] customAttributeQualifiedName Key used to retrieve converter
     ECOBJECTS_EXPORT ECObjectsStatus RemoveConverter(Utf8StringCR customAttributeQualifiedName);
 
+    //! Adds an ECSchemaReadContext that will be used during conversion to locate schemas which may not be an original reference schema.
+    //! @param[in] context A
+    ECObjectsStatus AddSchemaReadContext(ECSchemaReadContextR context) {m_schemaContext = &context; return ECObjectsStatus::Success;}
+
+    //! Removes an ECSchemaReadContext, if one exists.
+    void RemoveSchemaReadContext() {m_schemaContext = nullptr;}
+
     //! Adds the name of a schema to remove at the end of schema conversion.
     //! @param[in] schemaName   The name of the schema to remove.  Name only, do not include version.
     void AddSchemaReferenceToRemove(Utf8CP schemaName) { m_schemaReferencesToRemove.push_back(schemaName); };
@@ -128,6 +133,9 @@ public:
     static Utf8String GetQualifiedClassName(Utf8StringCR schemaName, Utf8StringCR className) { return schemaName + ":" + className; }
     };
 
+//+===============+===============+===============+===============+===============+======
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
 struct ECSchemaConverter
     {
 private:
@@ -140,8 +148,16 @@ private:
 public:
     //! Traverses the schema supplied and calls converters based on schemaName:customAttributeName
     //! @param[in] schema   The schema to traverse
+    //! @param[in] context  A context to use if a particular converter needs to locate a schema which is not currently a schema reference.
     //! @param[in] doValidate Flag saying whether to validate the schema or not.  This is used by the DgnV8Converter to disable validation until it has had a chance to fix the schemas
-    static bool Convert(ECSchemaR schema, bool doValidate = true) { return GetSingleton()->Convert(schema, doValidate); }
+    static bool Convert(ECSchemaR schema, ECSchemaReadContextP context = nullptr, bool doValidate = true)
+        {
+        if (nullptr != context)
+            GetSingleton()->AddSchemaReadContext(*context);
+        bool returnVal = GetSingleton()->Convert(schema, doValidate);
+        GetSingleton()->RemoveSchemaReadContext();
+        return returnVal;
+        }
 
     //! Adds the supplied IECCustomAttributeConverterP which will be later called when ECSchemaConverter::Convert is run
     //! @param[in] schemaName   The schemaName that the customattribute belongs to
@@ -196,22 +212,19 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ECDbClassMapConverter : IECCustomAttributeConverter
     {
-    private:
-        ECSchemaReadContextPtr m_schemaContext;
-        ECDbClassMapConverter() = delete;
-
     public:
         ECOBJECTS_EXPORT static Utf8CP GetSchemaName();
         ECOBJECTS_EXPORT static Utf8CP GetClassName();
 
         //! Constructs an instance of the converter.
-        //! @param[in] schemaContext                A schema context object which can locate the ECDbMap.02.00.00 or greater schema.
-        ECDbClassMapConverter(ECSchemaReadContextR schemaContext) : m_schemaContext(&schemaContext) {}
+        ECDbClassMapConverter() {}
+
         //! Fulfills the IECCustomAttributeConverter interface
         //! @param[in] schema                   The schema being converted.
         //! @param[in] container                The schema element which holds the custom attribute instance being converted
         //! @param[in] instance                 The custom attribute being converted
-        ECOBJECTS_EXPORT ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+        //! @param[in] context                  The context to locate the ECDbMap schema from.
+        ECOBJECTS_EXPORT ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context);
     };
 
 //+===============+===============+===============+===============+===============+======
@@ -247,8 +260,8 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct StandardValuesConverter : IECCustomAttributeConverter
     {
-    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
-    
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context = nullptr);
+
 private:
     //! Gives name to enumeration, based on className and propertyName 
     //! Usually is (baseClassName+propertyName)
@@ -288,7 +301,7 @@ private:
 //+===============+===============+===============+===============+===============+======
 struct UnitSpecificationConverter : IECCustomAttributeConverter
     {
-    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context);
     };
 
 //+===============+===============+===============+===============+===============+======
@@ -297,7 +310,7 @@ struct UnitSpecificationConverter : IECCustomAttributeConverter
 //+===============+===============+===============+===============+===============+======
 struct UnitSpecificationsConverter : IECCustomAttributeConverter
     {
-    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context);
     };
 
 //---------------------------------------------------------------------------------------
@@ -306,7 +319,7 @@ struct UnitSpecificationsConverter : IECCustomAttributeConverter
 //---------------+---------------+---------------+---------------+---------------+-------
 struct UnitSystemConverter : IECCustomAttributeConverter
     {
-    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context);
     };
 
 //---------------------------------------------------------------------------------------
@@ -315,7 +328,7 @@ struct UnitSystemConverter : IECCustomAttributeConverter
 //---------------+---------------+---------------+---------------+---------------+-------
 struct PropertyPriorityConverter : IECCustomAttributeConverter
     {
-    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context);
     };
 
 //---------------------------------------------------------------------------------------
@@ -324,7 +337,7 @@ struct PropertyPriorityConverter : IECCustomAttributeConverter
 //---------------+---------------+---------------+---------------+---------------+-------
 struct CategoryConverter : IECCustomAttributeConverter
     {
-    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+    ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context);
     };
 
 //+===============+===============+===============+===============+===============+======
@@ -358,12 +371,18 @@ public:
     Utf8String GetPropertyMapping(Utf8CP oldPropertyName);
     };
 
+//+===============+===============+===============+===============+===============+======
+//@bsistruct
+//+===============+===============+===============+===============+===============+======
 struct HidePropertyConverter : IECCustomAttributeConverter
     {
     public:
-        ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+        ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context);
     };
 
+//+===============+===============+===============+===============+===============+======
+//@bsistruct
+//+===============+===============+===============+===============+===============+======
 struct DisplayOptionsConverter : IECCustomAttributeConverter
     {
     private:
@@ -371,7 +390,7 @@ struct DisplayOptionsConverter : IECCustomAttributeConverter
         static ECObjectsStatus ConvertClassDisplayOptions(ECSchemaR schema, ECClassR ecClass, IECInstanceR instance);
 
     public:
-        ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+        ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context);
     };
 
 //+===============+===============+===============+===============+===============+======
@@ -390,7 +409,7 @@ struct StandardCustomAttributeReferencesConverter : IECCustomAttributeConverter
         static ECObjectsStatus AddPropertyMapping(Utf8CP oldName, Utf8CP propertyName, Utf8CP newPropertyName);
 
     public:
-        ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance);
+        ECObjectsStatus Convert(ECSchemaR schema, IECCustomAttributeContainerR container, IECInstanceR instance, ECSchemaReadContextP context);
         static bmap<Utf8String, CustomAttributeReplacement> const& GetCustomAttributesMapping();
         ECObjectsStatus ConvertPropertyValue(Utf8CP sourcePropAccessor, CustomAttributeReplacement mapping, IECInstanceR sourceCustomAttribute, IECInstanceR targetCustomAttribute);
         ECObjectsStatus ConvertPropertyToEnum(Utf8StringCR propertyName, ECEnumerationCR enumeration, IECInstanceR targetCustomAttribute, ECValueR targetValue, ECValueR sourceValue);
