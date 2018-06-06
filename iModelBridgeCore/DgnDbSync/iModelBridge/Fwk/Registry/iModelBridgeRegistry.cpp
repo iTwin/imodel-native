@@ -459,7 +459,7 @@ BentleyStatus iModelBridgeRegistry::WriteBridgesFile()
     BeFileName bridgesFileName(m_stagingDir);
     bridgesFileName.AppendToPath(L"bridges.txt");
     BeFileStatus status;
-    BeTextFilePtr bridgesFile = BeTextFile::Open(status, bridgesFileName.c_str(), TextFileOpenType::Write, TextFileOptions::KeepNewLine);
+    BeTextFilePtr bridgesFile = BeTextFile::Open(status, bridgesFileName.c_str(), TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
     if (!bridgesFile.IsValid())
         {
         LOG.fatalv(L"%ls - error writing bridges file", bridgesFileName.c_str());
@@ -906,12 +906,13 @@ RefCountedPtr<iModelBridgeRegistry> iModelBridgeRegistry::OpenForFwk(BeSQLite::D
     if (!dbname.DoesPathExist())
         {
         LOG.errorv(L"%ls - cannot find fwk registry db in this directory or any of its parents. Creating an empty db.", stagingDir.c_str());
+        dbname = MakeDbName(stagingDir, iModelName);
         }
-    
-    dbname = MakeDbName(stagingDir, iModelName);
+
     RefCountedPtr<iModelBridgeRegistry> reg = new iModelBridgeRegistry(stagingDir, dbname);
     if (BE_SQLITE_OK != (res = reg->OpenOrCreateStateDb()))
         return nullptr;
+
     return reg;
     }
 
