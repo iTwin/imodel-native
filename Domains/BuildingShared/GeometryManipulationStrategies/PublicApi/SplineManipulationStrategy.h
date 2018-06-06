@@ -80,8 +80,8 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
     DEFINE_T_SUPER(SplineManipulationStrategy)
 
     private:
-        DVec3d m_startTangent = DVec3d::From(1, 0, 0);
-        DVec3d m_endTangent = DVec3d::From(1, 0, 0);
+        DVec3d m_startTangent = DVec3d::From(0, 0, 0);
+        DVec3d m_endTangent = DVec3d::From(0, 0, 0);
 
         SplineThroughPointsManipulationStrategy() : T_Super() {}
 

@@ -127,7 +127,13 @@ ICurvePrimitivePtr SplineThroughPointsManipulationStrategy::_FinishPrimitive() c
     if (poles.size() < 2)
         return nullptr;
 
-    DVec3d tangents[2] = { m_startTangent, m_endTangent };
+    DVec3d tangents[2] = {m_startTangent, m_endTangent};
+
+    for (DVec3d & tangent : tangents)
+        {
+        if (!tangent.IsZero())
+            tangent.Normalize();
+        }
 
     if (SUCCESS != curve->InitFromPointsAndEndTangents(poles, false, 0.0, tangents, false, false, false, false))
         return nullptr;
