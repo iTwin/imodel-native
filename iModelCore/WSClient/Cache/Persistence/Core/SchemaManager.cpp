@@ -209,7 +209,8 @@ BentleyStatus SchemaManager::FixLegacySchema(ECSchema& schema, ECSchemaReadConte
     {
     // Convert ECDbMap.01.00 to ECDbMap.02.00 attributes
     CustomECSchemaConverterPtr schemaConverter = CustomECSchemaConverter::Create();
-    IECCustomAttributeConverterPtr classMapConverter = new ECDbClassMapConverter(context);
+    schemaConverter->AddSchemaReadContext(context);
+    IECCustomAttributeConverterPtr classMapConverter = new ECDbClassMapConverter();
     schemaConverter->AddConverter(ECDbClassMapConverter::GetSchemaName(), ECDbClassMapConverter::GetClassName(), classMapConverter);
     if (!schemaConverter->Convert(schema))
         {
