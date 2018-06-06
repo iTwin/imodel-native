@@ -75,14 +75,13 @@ struct Profile : NonCopyableClass
     protected:
         Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name);
 
-        static BentleyStatus ReadProfileVersion(BeSQLite::ProfileVersion&, BeSQLite::Db const&, BeSQLite::PropertySpec const&);
-
     public:
         virtual ~Profile() {}
 
         BentleyStatus Init() const;
 
         BeSQLite::ProfileVersion const& GetExpectedVersion() const { return m_expectedVersion; }
+        BeSQLite::ProfileVersion ReadProfileVersion(BeSQLite::Db const&) const;
 
         std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName) const;
 

@@ -81,18 +81,13 @@ BeFileName Profile::GetPathForNewTestFile(Utf8CP testFileName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus Profile::ReadProfileVersion(ProfileVersion& schemaVersion, Db const& db, PropertySpec const& spec)
+ProfileVersion Profile::ReadProfileVersion(Db const& db) const
     {
     Utf8String profileVersionJson;
-    if (BE_SQLITE_ROW != db.QueryProperty(profileVersionJson, spec))
-        return ERROR;
+    if (BE_SQLITE_ROW != db.QueryProperty(profileVersionJson, m_versionPropertySpec) || profileVersionJson.empty())
+        return ProfileVersion(0, 0, 0, 0);
 
-    if (profileVersionJson.empty())
-        return ERROR;
-
-    schemaVersion.FromJson(profileVersionJson.c_str());
-    return SUCCESS;
+    return ProfileVersion(profileVersionJson.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -135,7 +130,8 @@ BentleyStatus ECDbProfile::_Init() const
     if (BE_SQLITE_OK != db.CreateNewDb(BEDB_MemoryDb))
         return ERROR;
 
-    return ReadProfileVersion(m_expectedVersion, db, m_versionPropertySpec);
+    m_expectedVersion = ReadProfileVersion(db);
+    return !m_expectedVersion.IsEmpty() ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -151,7 +147,8 @@ BentleyStatus BeDbProfile::_Init() const
     if (BE_SQLITE_OK != db.CreateNewDb(BEDB_MemoryDb))
         return ERROR;
 
-    return ReadProfileVersion(m_expectedVersion, db, m_versionPropertySpec);
+    m_expectedVersion = ReadProfileVersion(db);
+    return !m_expectedVersion.IsEmpty() ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -175,12 +172,13 @@ BentleyStatus DgnDbProfile::_Init() const
     BeTest::GetHost().GetTempDir(temporaryDir);
     temporaryDir.AppendUtf8("temp");
 
-    CreateDgnDbParams temp("SchemaVersion");
+    CreateDgnDbParams temp("ProfileVersion");
     DgnDbPtr db = DgnDb::CreateDgnDb(nullptr, temporaryDir, temp);
     if (db == nullptr)
         return ERROR;
 
-    return ReadProfileVersion(m_expectedVersion, *db, m_versionPropertySpec);
+    m_expectedVersion = ReadProfileVersion(*db);
+    return !m_expectedVersion.IsEmpty() ? SUCCESS : ERROR;
     }
 
 //=====================================ProfileManager====================================
