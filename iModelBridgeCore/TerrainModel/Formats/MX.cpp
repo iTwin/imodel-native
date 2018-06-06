@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/MX.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/TerrainModel.h>
@@ -451,11 +451,11 @@ MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inM
     if (hasTransform)
         {
         DPoint3d fixedPoint;
-        DVec3d directionVector;
         double scale;
         double aspectFix;
+        RotMatrix axes;
 
-        if (!transform.IsUniformScaleAndRotateAroundLine(fixedPoint, directionVector, aspectFix, scale))
+        if (!transform.IsTranslateScaleRotateAroundZ(fixedPoint, axes, scale, aspectFix))
             {
             return MXExportError::Error;
             }
