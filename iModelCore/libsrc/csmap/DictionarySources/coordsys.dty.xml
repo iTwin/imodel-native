@@ -5829,10 +5829,7 @@
                 <Name>Grenada</Name>
                 <Members>
                   <Member>
-                    <KeyName>EPSG:2003</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Grenada53.BWIgrid</KeyName>
+                    <KeyName>Grenada1953.BWIgrid</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -10704,46 +10701,46 @@
                         <KeyName>EPSG:3162</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2017</KeyName>
+                        <KeyName>NAD27/1976.MTM-8</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2018</KeyName>
+                        <KeyName>NAD27/1976.MTM-9</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2019</KeyName>
+                        <KeyName>NAD27/1976.MTM-10</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2020</KeyName>
+                        <KeyName>NAD27/1976.MTM-11</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2021</KeyName>
+                        <KeyName>NAD27/1976.MTM-12</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2022</KeyName>
+                        <KeyName>NAD27/1976.MTM-13</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2023</KeyName>
+                        <KeyName>NAD27/1976.MTM-14</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2024</KeyName>
+                        <KeyName>NAD27/1976.MTM-15</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2025</KeyName>
+                        <KeyName>NAD27/1976.MTM-16</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2026</KeyName>
+                        <KeyName>NAD27/1976.MTM-17</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2027</KeyName>
+                        <KeyName>NAD27/1976.UTM-15N</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2028</KeyName>
+                        <KeyName>NAD27/1976.UTM-16N</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2029</KeyName>
+                        <KeyName>NAD27/1976.UTM-17N</KeyName>
                       </Member>
                       <Member>
-                        <KeyName>EPSG:2030</KeyName>
+                        <KeyName>NAD27/1976.UTM-18N</KeyName>
                       </Member>
                       <Member>
                         <KeyName>EPSG:26891</KeyName>
@@ -10928,52 +10925,52 @@
                     <Name>Quebec</Name>
                     <Groups>
                       <Group>
-                        <Name>NAD 27(CGQ77)</Name>
+                        <Name>NAD 27(CGQ77-98)</Name>
                         <Members>
                           <Member>
-                            <KeyName>EPSG:2031</KeyName>
+                            <KeyName>NAD27/CGQ77-98.UTM-17N</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2032</KeyName>
+                            <KeyName>NAD27/CGQ77-98.UTM-18N</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2033</KeyName>
+                            <KeyName>NAD27/CGQ77-98.UTM-19N</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2034</KeyName>
+                            <KeyName>NAD27/CGQ77-98.UTM-20N</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2035</KeyName>
+                            <KeyName>NAD27/CGQ77-98.UTM-21N</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2138</KeyName>
+                            <KeyName>NAD27/CGQ77-98.QcLamb</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2008</KeyName>
+                            <KeyName>NAD27/CGQ77-98.SCoPQ2</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2009</KeyName>
+                            <KeyName>NAD27/CGQ77-98.SCoPQ3</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2010</KeyName>
+                            <KeyName>NAD27/CGQ77-98.SCoPQ4</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2011</KeyName>
+                            <KeyName>NAD27/CGQ77-98.SCoPQ5</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2012</KeyName>
+                            <KeyName>NAD27/CGQ77-98.SCoPQ6</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2013</KeyName>
+                            <KeyName>NAD27/CGQ77-98.SCoPQ7</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2014</KeyName>
+                            <KeyName>NAD27/CGQ77-98.SCoPQ8</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2015</KeyName>
+                            <KeyName>NAD27/CGQ77-98.SCoPQ9</KeyName>
                           </Member>
                           <Member>
-                            <KeyName>EPSG:2016</KeyName>
+                            <KeyName>NAD27/CGQ77-98.SCoPQ10</KeyName>
                           </Member>
                         </Members>
                       </Group>
@@ -30217,6 +30214,95 @@
               </Group>
               <Group>
                   <Name>Canada</Name>
+                    <Members>
+                      <Member>
+                        <KeyName>EPSG:2031</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2032</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2033</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2034</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2035</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2138</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2008</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2009</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2010</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2011</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2012</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2013</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2014</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2015</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2016</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2017</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2018</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2019</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2020</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2021</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2022</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2023</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2024</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2025</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2026</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2027</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2028</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2029</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EPSG:2030</KeyName>
+                      </Member>
+                    </Members>
                   <Groups>
                     <Group>
                         <Name>NAD83-CSRS98</Name>
@@ -30430,6 +30516,17 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:25000</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
+                <Name>Grenada</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:2003</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Grenada53.BWIgrid</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -33700,10 +33797,7 @@
                 <KeyName>Dominica1945.LL</KeyName>
               </Member>
               <Member>
-                <KeyName>Grenada53.LL</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:4603</KeyName>
+                <KeyName>Grenada1953.LL</KeyName>
               </Member>
               <Member>
                 <KeyName>Montserrat58.LL</KeyName>
@@ -34868,10 +34962,10 @@
                     <KeyName>EPSG:4140</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4608</KeyName>
+                    <KeyName>NAD27/1976.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4609</KeyName>
+                    <KeyName>NAD27/CGQ77-98.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4617</KeyName>
@@ -36667,6 +36761,18 @@
               </Member>
               <Member>
                 <KeyName>MADEIRA.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Grenada53.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4603</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4608</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4609</KeyName>
               </Member>
             </Members>
           </Group>
