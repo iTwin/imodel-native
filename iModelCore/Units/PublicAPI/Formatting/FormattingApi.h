@@ -40,7 +40,7 @@ BE_JSON_NAME(trailZeroes)
 BE_JSON_NAME(leadZeroes)
 BE_JSON_NAME(keepSingleZero)
 BE_JSON_NAME(zeroEmpty)
-BE_JSON_NAME(keepDecimalPrecision)
+BE_JSON_NAME(keepDecimalPoint)
 BE_JSON_NAME(applyRounding)
 BE_JSON_NAME(fractionDash)
 BE_JSON_NAME(showUnitLabel)
@@ -180,7 +180,7 @@ public:
     void SetFormatTraits(FormatTraits traits) { m_formatTraits = traits; }
     UNITS_EXPORT bool SetFormatTraits(Utf8CP input);
     UNITS_EXPORT bool SetFormatTraits(JsonValueCR jval);
-    UNITS_EXPORT Json::Value FormatTraitsToJson(bool verbose) const;
+    UNITS_EXPORT Json::Value FormatTraitsToJson() const;
 
     FormatTraits GetFormatTraits() const { return m_formatTraits; }
     bool HasFormatTraits() const {return m_formatTraits != FormatTraits::None;}
@@ -508,8 +508,6 @@ public:
     UNITS_EXPORT Format(FormatCR other);
     UNITS_EXPORT Format(NumericFormatSpecCR numSpec);
     UNITS_EXPORT Format(NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec);
-
-    UNITS_EXPORT static FormatCR DefaultFormat();
 
     FormatR operator=(FormatCR other) = default;
 

@@ -150,7 +150,7 @@ bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
             spec.SetMinWidth(width);
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
-            spec.SetFormatTraits(val); // handled both an Object and String
+            spec.SetFormatTraits(val); //Handles both string and array
         }
     out = spec;
     return true;
@@ -197,7 +197,7 @@ bool NumericFormatSpec::ToJson(Json::Value& out, bool verbose) const
     if (verbose || HasRoundingFactor())
         out[json_roundFactor()] = GetRoundingFactor();
     if (verbose || HasFormatTraits())
-        out[json_formatTraits()] = FormatTraitsToJson(verbose);
+        out[json_formatTraits()] = FormatTraitsToJson();
     if (verbose || HasDecimalSeparator())
         out[json_decimalSeparator()] = Utf8String(1, GetDecimalSeparator());
     if (verbose || HasThousandsSeparator())
@@ -206,8 +206,6 @@ bool NumericFormatSpec::ToJson(Json::Value& out, bool verbose) const
         out[json_uomSeparator()] = GetUomSeparator();
     if (verbose || HasMinWidth())
         out[json_minWidth()] = GetMinWidth();
-    if (verbose || HasFormatTraits())
-        out[json_formatTraits()] = GetFormatTraitsString();
 
     return true;
     }
@@ -302,7 +300,7 @@ bool NumericFormatSpec::SetFormatTraits(Utf8CP input)
     if (Utf8String::IsNullOrEmpty(input))
         return true;
     bvector<Utf8String> splitStrings;
-    BeStringUtilities::Split(input,",;|", splitStrings);
+    BeStringUtilities::Split(input, ",;|", splitStrings);
     this->m_formatTraits = FormatTraits::None;
     int numProcessed = 0;
     for (auto const& s : splitStrings)
@@ -345,36 +343,36 @@ bool NumericFormatSpec::SetFormatTraits(JsonValueCR jval)
     if (jval.empty())
         return true;
 
-    if (Json::stringValue == jval.type())
+    if (jval.isString())
         return SetFormatTraits(jval.asCString());
-    else if (Json::objectValue != jval.type())
+
+    if (!jval.isArray())
         return false;
 
     Utf8CP paramName;
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+    for (Json::ValueIterator iter = jval.begin(); iter != jval.end(); iter++)
         {
-        paramName = iter.memberName();
-        JsonValueCR val = *iter;
+        paramName = (*iter).asCString();
         if (BeStringUtilities::StricmpAscii(paramName, json_trailZeroes()) == 0)
-            SetKeepTrailingZeroes(val.asBool());
+            SetKeepTrailingZeroes(true);
         else if (BeStringUtilities::StricmpAscii(paramName, json_keepSingleZero()) == 0)
-            SetKeepSingleZero(val.asBool());
+            SetKeepSingleZero(true);
         else if (BeStringUtilities::StricmpAscii(paramName, json_zeroEmpty()) == 0)
-            SetZeroEmpty(val.asBool());
-        else if (BeStringUtilities::StricmpAscii(paramName, json_keepDecimalPrecision()) == 0)
-            SetKeepDecimalPoint(val.asBool());
-        else if (BeStringUtilities::StricmpAscii(paramName, json_applyRounding()) ==0)
-            SetApplyRounding(val.asBool());
+            SetZeroEmpty(true);
+        else if (BeStringUtilities::StricmpAscii(paramName, json_keepDecimalPoint()) == 0)
+            SetKeepDecimalPoint(true);
+        else if (BeStringUtilities::StricmpAscii(paramName, json_applyRounding()) == 0)
+            SetApplyRounding(true);
         else if (BeStringUtilities::StricmpAscii(paramName, json_fractionDash()) == 0)
-            SetFractionDash(val.asBool());
+            SetFractionDash(true);
         else if (BeStringUtilities::StricmpAscii(paramName, json_showUnitLabel()) == 0)
-            SetShowUnitLabel(val.asBool());
+            SetShowUnitLabel(true);
         else if (BeStringUtilities::StricmpAscii(paramName, json_prependUnitLabel()) == 0)
-            SetPrependUnitLabel(val.asBool());
+            SetPrependUnitLabel(true);
         else if (BeStringUtilities::StricmpAscii(paramName, json_use1000Separator()) == 0)
-            SetUse1000Separator(val.asBool());
+            SetUse1000Separator(true);
         else if (BeStringUtilities::StricmpAscii(paramName, json_exponentOnlyNegative()) == 0)
-            SetExponentOnlyNegative(val.asBool());
+            SetExponentOnlyNegative(true);
         }
 
     return true;
@@ -383,20 +381,29 @@ bool NumericFormatSpec::SetFormatTraits(JsonValueCR jval)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    David Fox-Rabinovitz
 //---------------+---------------+---------------+---------------+---------------+-------
-Json::Value NumericFormatSpec::FormatTraitsToJson(bool verbose) const
+Json::Value NumericFormatSpec::FormatTraitsToJson() const
     {
-    Json::Value jTraits;
-    //FormatTraits ref = FormatConstant::DefaultFormatTraits();
-    /*TraitsBitToJson(jTraits, json_trailZeroes(), FormatTraits::TrailingZeroes, &ref, verbose);
-    TraitsBitToJson(jTraits, json_keepSingleZero(), FormatTraits::KeepSingleZero, &ref, verbose);
-    TraitsBitToJson(jTraits, json_zeroEmpty(), FormatTraits::ZeroEmpty, &ref, verbose);
-    TraitsBitToJson(jTraits, json_keepDecimalPrecision(), FormatTraits::KeepDecimalPoint, &ref, verbose);
-    TraitsBitToJson(jTraits, json_applyRounding(), FormatTraits::ApplyRounding, &ref, verbose);
-    TraitsBitToJson(jTraits, json_fractionDash(), FormatTraits::FractionDash, &ref, verbose);
-    TraitsBitToJson(jTraits, json_showUnitLabel(), FormatTraits::ShowUnitLabel, &ref, verbose);
-    TraitsBitToJson(jTraits, json_prependUnitLabel(), FormatTraits::PrependUnitLabel, &ref, verbose);
-    TraitsBitToJson(jTraits, json_use1000Separator(), FormatTraits::Use1000Separator, &ref, verbose);
-    TraitsBitToJson(jTraits, json_exponentOnlyNegative(), FormatTraits::ExponenentOnlyNegative, &ref, verbose);*/
+    Json::Value jTraits = Json::arrayValue;
+    if (IsKeepTrailingZeroes())
+        jTraits.append(json_trailZeroes());
+    if (IsKeepSingleZero())
+        jTraits.append(json_keepSingleZero());
+    if (IsZeroEmpty())
+        jTraits.append(json_zeroEmpty());
+    if (IsKeepDecimalPoint())
+        jTraits.append(json_keepDecimalPoint());
+    if (IsApplyRounding())
+        jTraits.append(json_applyRounding());
+    if (IsFractionDash())
+        jTraits.append(json_fractionDash());
+    if (IsShowUnitLabel())
+        jTraits.append(json_showUnitLabel());
+    if (IsPrependUnitLabel())
+        jTraits.append(json_prependUnitLabel());
+    if (IsUse1000Separator())
+        jTraits.append(json_use1000Separator());
+    if (IsExponenentOnlyNegative())
+        jTraits.append(json_exponentOnlyNegative());
 
     return jTraits;
     }

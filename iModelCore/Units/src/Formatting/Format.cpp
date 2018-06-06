@@ -507,15 +507,6 @@ void Format::ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatS
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Kyle.Abramowitz    04/2018
-//----------------------------------------------------------------------------------------
-FormatCR Format::DefaultFormat()
-    {
-    static Format format(NumericFormatSpec::DefaultFormat());
-    return format;
-    }
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
 bool Format::_ToJson(Json::Value& out, bool verbose) const

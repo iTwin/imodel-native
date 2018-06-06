@@ -449,7 +449,7 @@ TEST_F(FormatJsonTest, FormatDecimal)
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
                              "decimalSeparator" : ".",
-                             "formatTraits" : "",
+                             "formatTraits" : [],
                              "minWidth" : 0,
                              "precision" : 6,
                              "roundFactor" : 0.0,
@@ -513,7 +513,7 @@ TEST_F(FormatJsonTest, FormatFractional)
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
                              "decimalSeparator" : ".",
-                             "formatTraits" : "",
+                             "formatTraits" : [],
                              "minWidth" : 0,
                              "precision" : 256,
                              "roundFactor" : 0.0,
@@ -577,7 +577,7 @@ TEST_F(FormatJsonTest, FormatScientific)
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
                              "decimalSeparator" : ".",
-                             "formatTraits" : "",
+                             "formatTraits" : [],
                              "minWidth" : 0,
                              "precision" : 6,
                              "roundFactor" : 0.0,
@@ -643,7 +643,7 @@ TEST_F(FormatJsonTest, FormatStation)
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
                              "decimalSeparator" : ".",
-                             "formatTraits" : "",
+                             "formatTraits" : [],
                              "minWidth" : 0,
                              "precision" : 6,
                              "roundFactor" : 0.0,
