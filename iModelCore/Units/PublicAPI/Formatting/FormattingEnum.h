@@ -288,12 +288,6 @@ struct Utils
 
     UNITS_EXPORT static Utf8String AppendUnitName(Utf8CP txtValue, Utf8CP unitName = nullptr, Utf8CP space = nullptr);
     UNITS_EXPORT static Utf8Char MatchingDivider(Utf8Char div);
-
-    //! Gets the thousand separator for the current locale.
-    UNITS_EXPORT static Utf8String GetCurrentThousandSeparator();
-    //! Gets the decimal separator for the current locale.
-    UNITS_EXPORT static Utf8String GetCurrentDecimalSeparator();
-    UNITS_EXPORT static Utf8String GetCurrentGrouping();
 };
 
 // A collection of important global constants that are used across the whole formatting domain.
@@ -302,6 +296,10 @@ struct Utils
 //=======================================================================================
 struct FormatConstant
 {
+private:
+    // Set up user locale data
+    static std::locale s_userLocale;
+
 public:
     static const double DefaultRoundingFactor() { return 0.0; }
     static PresentationType const DefaultPresentaitonType() { return PresentationType::Decimal; }
@@ -343,8 +341,8 @@ public:
     static Utf8String FPN_ExponentOnlyNegative() {return "ExponentOnlyNegative";}
     static const double FPV_MinTreshold() { return 1.0e-14; }  // format parameter default values
     static const double FPV_RoundFactor() { return 0.50000000001; }  // rounding additive
-    static const Utf8Char FPV_DecimalSeparator() { return '.'; }
-    static const Utf8Char FPV_ThousandSeparator() { return ','; }
+    UNITS_EXPORT static const Utf8Char FPV_DecimalSeparator();
+    UNITS_EXPORT static const Utf8Char FPV_ThousandSeparator();
     static const Utf8CP EmptyString() { return ""; }
     static const Utf8CP BlankString() { return " "; }
     static const Utf8Char EndOfLine() { return '\0'; }

@@ -74,6 +74,25 @@ bmap<FormatTraits, Utf8String> UIUtils::GetAvailableTraits(FormatTraits& default
 // FormatConstant
 //===================================================
 
+// Static user locale cache
+std::locale FormatConstant::s_userLocale = std::locale("");
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Kyle.Abramowitz     06/2018
+//---------------------------------------------------------------------------------------
+const Utf8Char FormatConstant::FPV_DecimalSeparator() 
+    {
+    return std::use_facet<std::numpunct<Utf8Char>>(s_userLocale).decimal_point();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Kyle.Abramowitz     06/2018
+//---------------------------------------------------------------------------------------
+const Utf8Char FormatConstant::FPV_ThousandSeparator() 
+    {
+    return std::use_facet<std::numpunct<Utf8Char>>(s_userLocale).thousands_sep();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
@@ -215,59 +234,6 @@ bool Utils::ParseSignOption(SignOption& out, Utf8CP name)
     else
         return false;
     return true;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-// static
-Utf8String Utils::GetCurrentDecimalSeparator()
-    {
-    struct lconv *lc = localeconv();
-    Utf8String sep;
-    if (*(lc->decimal_point) != '\0')
-        sep.assign(lc->decimal_point);
-    return sep;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-// static
-Utf8String Utils::GetCurrentGrouping()
-    {
-#define UGCG_BUFLEN 10
-    struct lconv *lc = localeconv();
-    Utf8Char buf[UGCG_BUFLEN + 2];
-    memset(buf, 0, sizeof(buf));
-    Utf8CP p = (lc->grouping);
-    for (int i = 0; i < UGCG_BUFLEN && *p != '\0'; i++, p++)
-        {
-        if ((*p & 0x40) != 0)
-            {
-            buf[i] = '0';
-            break;
-            }
-        else
-            buf[i] = '0' + *p;
-        }
-    Utf8String sep;
-    if (buf[0] != '\0')
-        sep.assign(buf);
-    return sep;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-// static
-Utf8String Utils::GetCurrentThousandSeparator()
-    {
-    struct lconv *lc = localeconv();
-    Utf8String sep;
-    if (*(lc->thousands_sep) != '\0')
-        sep.assign(lc->thousands_sep);
-    return sep;
     }
 
 //----------------------------------------------------------------------------------------
