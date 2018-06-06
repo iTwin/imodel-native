@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "TestHelpers.h"
 #include "TestRulesDrivenPresentationManagerImpl.h"
-#include <UnitTests/BackDoor/ECPresentation/TestRulesetLocater.h>
+#include <UnitTests/BackDoor/ECPresentation/TestRuleSetLocater.h>
 #include <UnitTests/BackDoor/ECPresentation/TestSelectionProvider.h>
 
 USING_NAMESPACE_BENTLEY_EC
