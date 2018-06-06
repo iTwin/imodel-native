@@ -62,6 +62,41 @@ BentleyStatus IScalableMeshLocationProvider::GetExtraFileDirectory(BeFileNameR e
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  12/2017
+//----------------------------------------------------------------------------------------
+bool IsUrl(WCharCP filename)
+    {
+    return NULL != filename && (0 == wcsncmp(L"http:", filename, 5) || 0 == wcsncmp(L"https:", filename, 6));
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Mathieu.St-Pierre    06/2018
+//----------------------------------------------------------------------------------------
+BentleyStatus ResolveFileName(BeFileNameR fileName, Utf8StringCR fileId, DgnDbCR db)
+    {       
+    BeFileName fileIdWStr(fileId.c_str(), true);
+
+    if (BeFileName::DoesPathExist(fileIdWStr.c_str()) || IsUrl(fileIdWStr.c_str()))
+        {               
+        fileName = fileIdWStr;
+        return SUCCESS;        
+        }
+    
+    BeFileName dbFileName(db.GetDbFileName());
+    BeFileName relativeFileName = dbFileName.GetDirectoryName();            
+    relativeFileName.AppendString(fileIdWStr.GetFileNameAndExtension().c_str());
+
+    if (BeFileName::DoesPathExist(relativeFileName.c_str()))
+        {
+        fileName = relativeFileName;            
+        return SUCCESS;                
+        }
+
+    return ERROR;
+    }
+
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
 AxisAlignedBox3d ScalableMeshModel::_GetRange() const
@@ -1816,12 +1851,12 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         auto pwcsLink = BeFileName(m_smPtr->GetProjectWiseContextShareLink().c_str());
         if (!pwcsLink.empty()) m_path = pwcsLink;
         }
-
-    // NEEDS_WORK_SM
+        
     BeFileName dbFileName(dgnProject.GetDbFileName());
     BeFileName basePath = dbFileName.GetDirectoryName();
-    //T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, m_path, basePath);
-    m_properties.m_fileId = Utf8String(m_path);
+    
+    if (Utf8String::IsNullOrEmpty(m_properties.m_fileId.c_str()))
+        m_properties.m_fileId = Utf8String(m_path);
   
     StatusInt result = m_smPtr->GetTextureInfo(m_textureInfo);
 
@@ -1887,10 +1922,7 @@ BentleyStatus ScalableMeshModel::UpdateFilename (BeFileNameCR newFilename)
     {    
     if (!BeFileName::DoesPathExist(newFilename))
         return ERROR;
-    
-    BeFileName dbFileName(m_dgndb.GetDbFileName());
-    BeFileName basePath = dbFileName.GetDirectoryName();
-    //T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, newFilename, basePath);
+            
     m_properties.m_fileId = Utf8String(newFilename);
     OpenFile(newFilename, GetDgnDb());
     m_tryOpen = true;
@@ -2730,14 +2762,6 @@ void ScalableMeshModel::_OnSaveJsonProperties()
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.St-Pierre  12/2017
-//----------------------------------------------------------------------------------------
-bool IsUrl(WCharCP filename)
-    {
-    return NULL != filename && (0 == wcsncmp(L"http:", filename, 5) || 0 == wcsncmp(L"https:", filename, 6));
-    }
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  01/2018
 //----------------------------------------------------------------------------------------
 void SMModelClipInfo::FromBlob(size_t& currentBlobInd, const uint8_t* pClipData)
@@ -2928,12 +2952,8 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
         m_classifiers.FromJson(val[json_classifiers()]);
 
     if (m_smPtr == 0 && !m_tryOpen)
-        {
-        WString fileNameW(((this)->m_properties).m_fileId.c_str(), true);
-        m_path = BeFileName(fileNameW);
-                
-        //NEEDS_WORK_SM : Doesn't work with URL
-        if (BeFileName::DoesPathExist(m_path.c_str()) || IsUrl(m_path.c_str()))
+        {                
+        if (SUCCESS == ResolveFileName(m_path, ((this)->m_properties).m_fileId, GetDgnDb()))
             {
             OpenFile(m_path, GetDgnDb());
             }
