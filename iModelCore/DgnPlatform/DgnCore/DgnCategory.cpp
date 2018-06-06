@@ -108,13 +108,16 @@ void DgnCategory::_OnInserted(DgnElementP copiedFrom) const
     BeAssert(!GetDgnDb().Elements().GetElement(defaultSubCatId).IsValid());
 
     DgnSubCategory defaultSubCat(DgnSubCategory::CreateParams(GetDgnDb(), GetCategoryId(), GetCategoryName(), DgnSubCategory::Appearance()));
-
+    IBriefcaseManager::Request req;
+    RepositoryStatus status = GetDgnDb().BriefcaseManager().PrepareForElementInsert(req, defaultSubCat, IBriefcaseManager::PrepareAction::Acquire);
+    BeAssert(status == RepositoryStatus::Success);
     DgnSubCategoryCPtr persistentSubCat = defaultSubCat.Insert();
     BeAssert(persistentSubCat.IsValid());
     BeAssert(persistentSubCat->GetSubCategoryId() == defaultSubCatId);
     BeAssert(persistentSubCat->GetCategoryId() == GetCategoryId());
 
     UNUSED_VARIABLE(persistentSubCat);
+    UNUSED_VARIABLE(status);
     }
 
 /*---------------------------------------------------------------------------------**//**
