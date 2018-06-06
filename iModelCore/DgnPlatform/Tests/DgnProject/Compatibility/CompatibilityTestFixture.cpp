@@ -26,7 +26,10 @@ ECN::ECSchemaReadContextPtr CompatibilityTestHelper::DeserializeSchemas(ECDbCR e
         ScopedDisableFailOnAssertion disableFailOnAssert;
         ECSchemaPtr schema = nullptr;
         if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, schemaItem.GetXml().c_str(), *context))
+            {
+            LOG.errorv("Failed to deserialize schema '%s'", schemaItem.GetXml().c_str());
             return nullptr;
+            }
         }
 
     return context;
