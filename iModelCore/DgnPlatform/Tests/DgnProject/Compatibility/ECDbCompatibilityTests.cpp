@@ -41,26 +41,48 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
         switch (testFile.GetProfileState())
             {
                 case ProfileState::Current:
-                case ProfileState::Older:
                 {
                 EXPECT_EQ(5, schemaCount) << testFile.GetPath().GetNameUtf8();
                 for (ECSchemaCP schema : ecdb.Schemas().GetSchemas(false))
                     {
-                    //ECVersion not persisted by ECDb, so ECObjects defaults to 3.1
-                    EXPECT_EQ((int) ECVersion::V3_1, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
-                    //OriginalECXML version not persisted in ECDb pre 4.0.0.2, so ECObjects defaults to 3.1
+                    EXPECT_EQ((int) ECVersion::V3_2, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
                     EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor()) << schema->GetFullSchemaName();
-                    EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor()) << schema->GetFullSchemaName();
+                    EXPECT_EQ(2, schema->GetOriginalECXmlVersionMinor()) << schema->GetFullSchemaName();
                     }
 
                 //ECDb built-in schema versions
-                EXPECT_EQ(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbFileInfo"));
+                EXPECT_EQ(SchemaVersion(2, 0, 1), TestHelper::GetSchemaVersion(ecdb, "ECDbFileInfo"));
                 EXPECT_EQ(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbMap"));
-                EXPECT_EQ(SchemaVersion(4, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbMeta"));
-                EXPECT_EQ(SchemaVersion(5, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbSystem"));
+                EXPECT_EQ(SchemaVersion(4, 0, 1), TestHelper::GetSchemaVersion(ecdb, "ECDbMeta"));
+                EXPECT_EQ(SchemaVersion(5, 0, 1), TestHelper::GetSchemaVersion(ecdb, "ECDbSystem"));
 
                 //Standard schema versions
                 EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(ecdb, "CoreCustomAttributes"));
+                break;
+                }
+
+                case ProfileState::Older:
+                {
+                EXPECT_EQ(Profile().GetExpectedVersion(), Profile().ReadProfileVersion(ecdb)) << "File is expected to be auto-upgraded";
+                EXPECT_EQ(5, schemaCount) << testFile.GetPath().GetNameUtf8();
+                for (ECSchemaCP schema : ecdb.Schemas().GetSchemas(false))
+                    {
+                    EXPECT_EQ((int) ECVersion::V3_2, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
+                    }
+
+                //ECDb built-in schema versions
+                EXPECT_EQ(SchemaVersion(2, 0, 1), TestHelper::GetSchemaVersion(ecdb, "ECDbFileInfo"));
+                EXPECT_EQ(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(ecdb, "ECDbFileInfo")) << "Schema has enums which were upgraded to EC32 format, therefore original XML version was set to 3.2";
+                EXPECT_EQ(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbMap"));
+                EXPECT_EQ(BeVersion(), TestHelper::GetOriginalECXmlVersion(ecdb, "ECDbMap")) << "Schema has no enums, so was not upgraded to EC32, so no original ECXML persisted yet";
+                EXPECT_EQ(SchemaVersion(4, 0, 1), TestHelper::GetSchemaVersion(ecdb, "ECDbMeta"));
+                EXPECT_EQ(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(ecdb, "ECDbMeta")) << "Schema has enums which were upgraded to EC32 format, therefore original XML version was set to 3.2";
+                EXPECT_EQ(SchemaVersion(5, 0, 1), TestHelper::GetSchemaVersion(ecdb, "ECDbSystem"));
+                EXPECT_EQ(BeVersion(), TestHelper::GetOriginalECXmlVersion(ecdb, "ECDbSystem")) << "Schema has no enums, so was not upgraded to EC32, so no original ECXML persisted yet";
+
+                //Standard schema versions
+                EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(ecdb, "CoreCustomAttributes"));
+                EXPECT_EQ(BeVersion(), TestHelper::GetOriginalECXmlVersion(ecdb, "CoreCustomAttributes")) << "Schema has no enums, so was not upgraded to EC32, so no original ECXML persisted yet";
                 break;
                 }
 
@@ -70,23 +92,20 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
 
                 for (ECSchemaCP schema : ecdb.Schemas().GetSchemas(false))
                     {
-                    //ECVersion not read by ECDb, so ECObjects defaults to 3.1
-                    EXPECT_EQ((int) ECVersion::V3_1, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
-                    //OriginalECXML version not read by ECDb, so ECObjects defaults to 3.1
-                    EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor()) << schema->GetFullSchemaName();
-                    EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor()) << schema->GetFullSchemaName();
+                    EXPECT_LE((int) ECVersion::V3_2, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
                     }
 
-                //ECDb built-in schema versions
-                //ECDbFileInfo version was incremented in next profile, so must be higher in newer file
-                EXPECT_LT(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbFileInfo"));
+                EXPECT_LE(SchemaVersion(2, 0, 1), TestHelper::GetSchemaVersion(ecdb, "ECDbFileInfo"));
+                EXPECT_LE(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(ecdb, "ECDbFileInfo"));
                 EXPECT_LE(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbMap"));
-                //ECDbMeta version was incremented in next profile, so must be higher in newer file
-                EXPECT_LT(SchemaVersion(4, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbMeta"));
-                //ECDbSystem version was incremented in next profile, so must be higher in newer file
-                EXPECT_LT(SchemaVersion(5, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbSystem"));
+                EXPECT_LE(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(ecdb, "ECDbMap"));
+                EXPECT_LE(SchemaVersion(4, 0, 1), TestHelper::GetSchemaVersion(ecdb, "ECDbMeta"));
+                EXPECT_LE(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(ecdb, "ECDbMeta"));
+                EXPECT_LE(SchemaVersion(5, 0, 1), TestHelper::GetSchemaVersion(ecdb, "ECDbSystem"));
+                EXPECT_LE(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(ecdb, "ECDbSystem"));
                 //Standard schema versions
                 EXPECT_LE(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(ecdb, "CoreCustomAttributes"));
+                EXPECT_LE(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(ecdb, "CoreCustomAttributes"));
 
                 break;
                 }

@@ -54,7 +54,9 @@ BentleyStatus TestECDbCreator::ImportSchemas(ECDbCR ecdb, std::vector<SchemaItem
     {
     ECN::ECSchemaReadContextPtr ctx = CompatibilityTestHelper::DeserializeSchemas(ecdb, schemas);
     if (ctx == nullptr)
+        {
         return ERROR;
+        }
 
     Savepoint sp(const_cast<ECDb&>(ecdb), "Schema Import");
     if (SUCCESS == ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas()))
