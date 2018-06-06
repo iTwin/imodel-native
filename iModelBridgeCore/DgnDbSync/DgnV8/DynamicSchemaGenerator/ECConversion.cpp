@@ -33,6 +33,8 @@ static bool anyTxnsInFile(DgnDbR db)
     }
 
 static Utf8CP const EXTEND_TYPE = "ExtendType";
+static Utf8CP const Units_SchemaName = "Units";
+static Utf8CP const Formats_SchemaName = "Formats";
 
 //****************************************************************************************
 // ExtendTypeConverter
@@ -40,21 +42,21 @@ static Utf8CP const EXTEND_TYPE = "ExtendType";
 struct ExtendTypeConverter : ECN::IECCustomAttributeConverter
     {
     private:
-        ECN::ECSchemaPtr m_unitsStandardSchema;
-        ECN::ECSchemaPtr m_formatsStandardSchema;
+        ECN::ECSchemaPtr m_unitsStandardSchema; // cache of the units schema
+        ECN::ECSchemaPtr m_formatsStandardSchema; // cache of the units schema
         DgnV8Api::StandardUnit m_standardUnit;
         DgnV8Api::AngleMode m_angle;
 
-        ECN::ECObjectsStatus ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName);
+        ECN::ECObjectsStatus ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName, ECN::ECSchemaReadContextR context);
     public:
-        ECN::ECObjectsStatus Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance);
+        ECN::ECObjectsStatus Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance, ECN::ECSchemaReadContextP context);
         ExtendTypeConverter(DgnV8Api::StandardUnit standard, DgnV8Api::AngleMode angle) : m_standardUnit(standard), m_angle(angle) {}
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-ECN::ECObjectsStatus ExtendTypeConverter::ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName)
+ECN::ECObjectsStatus ExtendTypeConverter::ReplaceWithKOQ(ECN::ECSchemaR schema, ECN::ECPropertyP prop, Utf8String koqName, Utf8CP persistenceUnitName, Utf8CP presentationUnitName, ECN::ECSchemaReadContextR context)
     {
     ECN::KindOfQuantityP koq = schema.GetKindOfQuantityP(koqName.c_str());
     if (nullptr == koq)
@@ -63,9 +65,8 @@ ECN::ECObjectsStatus ExtendTypeConverter::ReplaceWithKOQ(ECN::ECSchemaR schema, 
 
         if (!m_unitsStandardSchema.IsValid())
             {
-            ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
-            ECN::SchemaKey key("Units", 1, 0, 0);
-            m_unitsStandardSchema = ECN::ECSchema::LocateSchema(key, *context);
+            static ECN::SchemaKey key("Units", 1, 0, 0);
+            m_unitsStandardSchema = ECN::ECSchema::LocateSchema(key, context);
             if (!m_unitsStandardSchema.IsValid())
                 {
                 BeAssert(false);
@@ -75,9 +76,8 @@ ECN::ECObjectsStatus ExtendTypeConverter::ReplaceWithKOQ(ECN::ECSchemaR schema, 
 
         if (!m_formatsStandardSchema.IsValid())
             {
-            ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
-            ECN::SchemaKey key("Formats", 1, 0, 0);
-            m_formatsStandardSchema = ECN::ECSchema::LocateSchema(key, *context);
+            static ECN::SchemaKey key("Formats", 1, 0, 0);
+            m_formatsStandardSchema = ECN::ECSchema::LocateSchema(key, context);
             if (!m_formatsStandardSchema.IsValid())
                 {
                 BeAssert(false);
@@ -107,18 +107,18 @@ ECN::ECObjectsStatus ExtendTypeConverter::ReplaceWithKOQ(ECN::ECSchemaR schema, 
             return ECN::ECObjectsStatus::Error;
             }
 
-        ECN::ECFormatCP format = m_formatsStandardSchema->GetFormatCP("DefaultRealU");
-        if (nullptr == format)
-            {
-            BeAssert(false);
-            return ECN::ECObjectsStatus::Error;
-            }
-
         // Check if Units Schema is referenced
         if (!ECN::ECSchema::IsSchemaReferenced(schema, *m_formatsStandardSchema) && ECN::ECObjectsStatus::Success != schema.AddReferencedSchema(*m_formatsStandardSchema))
             {
             LOG.errorv("Unable to add the %s schema as a reference to %s.", m_formatsStandardSchema->GetFullSchemaName().c_str(), schema.GetName().c_str());
             return ECN::ECObjectsStatus::SchemaNotFound;
+            }
+
+        ECN::ECFormatCP format = schema.LookupFormat("f:DefaultRealU");
+        if (nullptr == format)
+            {
+            BeAssert(false);
+            return ECN::ECObjectsStatus::Error;
             }
 
         // No need to check if the Units schema is referenced, checked for persistence Unit
@@ -275,7 +275,7 @@ Utf8CP getAngleUnitName(DgnV8Api::AngleMode angle)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance)
+ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IECCustomAttributeContainerR container, ECN::IECInstanceR instance, BECN::ECSchemaReadContextP context)
     {
     ECN::ECPropertyP prop = dynamic_cast<ECN::ECPropertyP> (&container);
     if (prop == nullptr)
@@ -297,6 +297,13 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
         return ECN::ECObjectsStatus::Success;
         }
 
+    if (nullptr == context)
+        {
+        BeAssert(true);
+        LOG.error("Missing ECSchemaReadContext, it is necessary to perform conversion on a ExtendType custom attribute.");
+        return ECN::ECObjectsStatus::Error;
+        }
+
     int standard = standardValue.GetInteger();
     switch (standard)
         {
@@ -306,25 +313,30 @@ ECN::ECObjectsStatus ExtendTypeConverter::Convert(ECN::ECSchemaR schema, ECN::IE
         //    break;
         // Distance
         case 8:
-            ReplaceWithKOQ(schema, prop, "DISTANCE", "M", getLinearUnitName(m_standardUnit));
+            ReplaceWithKOQ(schema, prop, "DISTANCE", "M", getLinearUnitName(m_standardUnit), *context);
             break;
             // Area
         case 9:
-            ReplaceWithKOQ(schema, prop, "AREA", "SQ_M", getAreaUnitName(m_standardUnit));
+            ReplaceWithKOQ(schema, prop, "AREA", "SQ_M", getAreaUnitName(m_standardUnit), *context);
             break;
             // Volume
         case 10:
-            ReplaceWithKOQ(schema, prop, "VOLUME", "CUB_M", getVolumeUnitName(m_standardUnit));
+            ReplaceWithKOQ(schema, prop, "VOLUME", "CUB_M", getVolumeUnitName(m_standardUnit), *context);
             break;
             // Angle
         case 11:
-            ReplaceWithKOQ(schema, prop, "ANGLE", "RAD", getAngleUnitName(m_angle));
+            ReplaceWithKOQ(schema, prop, "ANGLE", "RAD", getAngleUnitName(m_angle), *context);
             break;
         default:
             LOG.warningv("Found an ExtendType custom attribute on an ECProperty, '%s.%s', with an unknown standard value %d.  Only values 7-11 are supported.",
                          prop->GetClass().GetFullName(), prop->GetName().c_str());
             break;
         }
+
+    // Need to clear the cache of the units and formats schema.
+    m_unitsStandardSchema = nullptr;
+    m_formatsStandardSchema = nullptr;
+
     return ECN::ECObjectsStatus::Success;
     }
 
@@ -1470,7 +1482,7 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ConsolidateV8ECSchemas()
              continue;
          if (BisClassConverter::SchemaConversionContext::ExcludeSchemaFromBisification(*schema))
              continue;
-         if (!ECN::ECSchemaConverter::Convert(*schema, false))
+         if (!ECN::ECSchemaConverter::Convert(*schema, m_schemaReadContext.get(), false))
              {
              Utf8PrintfString error("Failed to run the schema converter on v8 ECSchema '%s'", schema->GetFullSchemaName().c_str());
              ReportError(Converter::IssueCategory::Sync(), Converter::Issue::Message(), error.c_str());

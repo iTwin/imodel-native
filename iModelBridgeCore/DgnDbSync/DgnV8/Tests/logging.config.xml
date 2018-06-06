@@ -63,7 +63,7 @@
 -->
 
     <root>                            
-        <priority value="fatal" />
+        <priority value="warn" />
         <appender-ref ref="Console"/>
         <!--appender-ref ref="OutputDebugStringAppender" /-->
         <!-- appender-ref ref="RollingFileAppender" /-->
