@@ -122,3 +122,8 @@ bool JsonValue::operator==(JsonValue const& rhs) const
 // @bsimethod                                    Krischan.Eberle                  10/17
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(JsonValue const& json, std::ostream* os) { *os << json.ToString(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(SchemaVersion const& ver, std::ostream* os) { *os << ver.ToString(); }

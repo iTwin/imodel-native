@@ -57,6 +57,7 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName) con
     std::vector<TestFile> testFiles;
     for (BeFileNameCR match : matches)
         {
+        printf("Test file %s\r\n", match.GetNameUtf8().c_str());
         Utf8String testFileName(match.GetFileNameAndExtension().c_str());
         BeFileName profileVersionFolderName = match.GetDirectoryName().GetBaseName();
         ProfileVersion profileVersion(0, 0, 0, 0);

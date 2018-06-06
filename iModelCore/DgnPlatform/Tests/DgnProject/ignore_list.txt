@@ -595,3 +595,35 @@ MeshBuilderTest.RoundTripMeshBuilders
     # [2] wcstombs_s_l (0x7ffd03aa0490)
     # [1] BaseThreadInitThunk (0x7ffd040b2770)
     # [0] RtlUserThreadStart (0x7ffd06690d30)
+
+CompatibilityTests.ModifyBaseline
+
+    # TFS#901725
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 06/05/2018
+    # c:\build\src\mds06t\DgnPlatform\Tests\DgnProject\Published\Compatibility_Test.cpp(894): error:       Expected: BE_SQLITE_OK
+    # Which is: 0
+    # To be equal to: openStatus
+    # Which is: 251658250
+    # unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+    # *********************** STACK TRACE ************************
+    # [20] _C_specific_handler (0x7ffcf9acbff0)
+    # [19] _chkstk (0x7ffd066c9f60)
+    # [18] RtlLookupFunctionEntry (0x7ffd066391a0)
+    # [17] KiUserExceptionDispatcher (0x7ffd066c90d0)
+    # [16] BentleyB0200::Dgn::DgnElements::MakeIterator (0x7ffcf0d65980)
+    # [15] CompatibilityTests_ModifyBaseline_Test::TestBody (0x7ff6bf3d6740)
+    # [14] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff6bf55ab60)
+    # [13] testing::internal::HandleExceptionsInMethodIfSupported<testing::TestCase,void> (0x7ff6bf55a9f0)
+    # [12] testing::Test::Run (0x7ff6bf56b0c0)
+    # [11] testing::TestInfo::Run (0x7ff6bf56b3d0)
+    # [10] testing::TestCase::Run (0x7ff6bf56b1e0)
+    # [9] testing::internal::UnitTestImpl::RunAllTests (0x7ff6bf56b690)
+    # [8] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff6bf55ac00)
+    # [7] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff6bf55aae0)
+    # [6] testing::UnitTest::Run (0x7ff6bf56b570)
+    # [5] <lambda_7a9a7085d3df21961d5208ec67fe5359>::operator() (0x7ff6bf248f00)
+    # [4] std::_LaunchPad<std::unique_ptr<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> >,std::default_delete<std::tuple<<lambda_7a9a7085d3df21961d5208ec67fe5359> > > > >::_Run (0x7ff6bf24a770)
+    # [3] std::_Pad::_Call_func (0x7ff6bf249fe0)
+    # [2] wcstombs_s_l (0x7ffd03aa0490)
+    # [1] BaseThreadInitThunk (0x7ffd040b2770)
+    # [0] RtlUserThreadStart (0x7ffd06690d30)

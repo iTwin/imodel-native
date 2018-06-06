@@ -11,6 +11,53 @@
 
 USING_NAMESPACE_BENTLEY_EC
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+JsonValue TestHelper::ExecuteECSqlSelect(ECDb const& db, Utf8CP ecsql)
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(db, ecsql))
+        return JsonValue();
+
+    JsonValue val(Json::arrayValue);
+    JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::KeepOriginal, ECJsonInt64Format::AsNumber));
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        Json::Value row;
+        if (SUCCESS != adapter.GetRow(row))
+            return JsonValue();
+
+        val.m_value.append(row);
+        }
+
+    return val;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                    06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+SchemaVersion TestHelper::GetSchemaVersion(ECDb const& db, Utf8CP schemaName)
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(db, "SELECT VersionMajor,VersionWrite,VersionMinor FROM meta.ECSchemaDef WHERE Name=?") ||
+        ECSqlStatus::Success != stmt.BindText(1, schemaName, IECSqlBinder::MakeCopy::No) || stmt.Step() != BE_SQLITE_ROW)
+        {
+        return SchemaVersion();
+        }
+
+    SchemaVersion version((uint16_t) stmt.GetValueInt(0), (uint16_t) stmt.GetValueInt(1), (uint16_t) stmt.GetValueInt(2));
+
+    //verify that version is the same if fetched via ECObjects
+    ECSchemaCP schema = db.Schemas().GetSchema(schemaName, false);
+    EXPECT_TRUE(schema != nullptr) << schemaName;
+    EXPECT_EQ(version, SchemaVersion(*schema)) << "Version of " << schemaName << " retrieved from ECObjects differs from when retrieved with ECSQL";
+    return version;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
