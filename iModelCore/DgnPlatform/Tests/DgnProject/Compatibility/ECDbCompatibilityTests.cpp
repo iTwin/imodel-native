@@ -35,23 +35,23 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32Enums)
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
 
         TestHelper::AssertEnum(ecdb, "CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
-                    {{ECValue("Unspecified"), nullptr},
-                    {ECValue("Utc"), nullptr},
-                    {ECValue("Local"), nullptr}});
+                    {{"Unspecified", ECValue("Unspecified"), nullptr},
+                    {"Utc", ECValue("Utc"), nullptr},
+                    {"Local", ECValue("Local"), nullptr}});
 
         TestHelper::AssertEnum(ecdb, "ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
-                {{ECValue(0), "None"},
-                {ECValue(1), "Abstract"},
-                {ECValue(2), "Sealed"}});
+                {{"None", ECValue(0), "None"},
+                {"Abstract", ECValue(1), "Abstract"},
+                {"Sealed", ECValue(2), "Sealed"}});
 
         TestHelper::AssertEnum(ecdb, "PreEC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-                {{ECValue(0), nullptr},
-                {ECValue(1), nullptr},
-                {ECValue(2), nullptr}});
+                {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
+                {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
 
         TestHelper::AssertEnum(ecdb, "PreEC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
-                {{ECValue("On"), "Turned On"},
-                {ECValue("Off"), "Turned Off"}});
+                {{"On", ECValue("On"), "Turned On"},
+                {"Off", ECValue("Off"), "Turned Off"}});
         }
     }
 

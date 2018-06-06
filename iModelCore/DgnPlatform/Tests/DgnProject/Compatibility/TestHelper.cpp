@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_EC
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-void TestHelper::AssertEnum(ECDb const& db, Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::pair<ECN::ECValue, Utf8CP>> const& expectedEnumerators)
+void TestHelper::AssertEnum(ECDb const& db, Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::tuple<Utf8CP, ECValue, Utf8CP>> const& expectedEnumerators)
     {
     // 1) Via schema manager
     ECEnumerationCP ecEnum = db.Schemas().GetEnumeration(schemaName, enumName);
@@ -39,14 +39,18 @@ void TestHelper::AssertEnum(ECDb const& db, Utf8CP schemaName, Utf8CP enumName, 
     size_t i = 0;
     for (ECEnumeratorCP enumerator : ecEnum->GetEnumerators())
         {
-        std::pair<ECValue, Utf8CP> const& expectedEnumValue = expectedEnumerators[i];
-        Utf8CP expectedDisplayLabel = expectedEnumValue.second;
+        std::tuple<Utf8CP, ECValue, Utf8CP> const& expectedEnumValue = expectedEnumerators[i];
+        Utf8CP expectedName = std::get<0>(expectedEnumValue);
+        ECValueCR expectedValue = std::get<1>(expectedEnumValue);
+        Utf8CP expectedDisplayLabel = std::get<2>(expectedEnumValue);
+
+        EXPECT_STREQ(expectedName, enumerator->GetName().c_str()) << assertMessage << " Enumerator: " << i;
+
         if (expectedDisplayLabel == nullptr)
             EXPECT_FALSE(enumerator->GetIsDisplayLabelDefined()) << assertMessage << " Enumerator: " << i;
         else
-            EXPECT_STRCASEEQ(expectedDisplayLabel, enumerator->GetInvariantDisplayLabel().c_str());
+            EXPECT_STREQ(expectedDisplayLabel, enumerator->GetInvariantDisplayLabel().c_str()) << assertMessage << " Enumerator: " << i;
 
-        ECValueCR expectedValue = expectedEnumValue.first;
         if (expectedType == ECN::PRIMITIVETYPE_Integer)
             {
             ASSERT_TRUE(expectedValue.IsInteger()) << assertMessage << " Enumerator: " << i;
@@ -87,9 +91,13 @@ void TestHelper::AssertEnum(ECDb const& db, Utf8CP schemaName, Utf8CP enumName, 
     i = 0;
     for (IECSqlValue const& enumValue : enumValues.GetArrayIterable())
         {
-        std::pair<ECValue, Utf8CP> const& expectedEnumValue = expectedEnumerators[i];
-        ECValueCR expectedValue = expectedEnumValue.first;
-        Utf8CP expectedDisplayLabel = expectedEnumValue.second;
+        std::tuple<Utf8CP, ECValue, Utf8CP> const& expectedEnumValue = expectedEnumerators[i];
+        Utf8CP expectedName = std::get<0>(expectedEnumValue);
+        ECValueCR expectedValue = std::get<1>(expectedEnumValue);
+        Utf8CP expectedDisplayLabel = std::get<2>(expectedEnumValue);
+
+        EXPECT_STREQ(expectedName, enumValue["Name"].GetText()) << assertMessage << " Enumerator: " << i;
+
         if (expectedDisplayLabel == nullptr)
             EXPECT_TRUE(enumValue["DisplayLabel"].IsNull()) << assertMessage << " Enumerator: " << i;
         else
@@ -132,11 +140,19 @@ void TestHelper::AssertKindOfQuantity(ECDb const& db, Utf8CP schemaName, Utf8CP 
     else
         EXPECT_TRUE(koq->GetDescription().empty()) << assertMessage;
 
-    EXPECT_STREQ(expectedPersistenceUnit, koq->GetPersistenceUnit().ToText(false).c_str()) << assertMessage;
+    EXPECT_STREQ(expectedPersistenceUnit, koq->GetPersistenceUnit()->GetQualifiedName(koq->GetSchema()).c_str()) << assertMessage;
     if (expectedPresentationUnits.m_value.isNull() || expectedPresentationUnits.m_value.empty())
-        EXPECT_TRUE(koq->GetPresentationUnitList().empty()) << assertMessage;
+        EXPECT_TRUE(koq->GetPresentationFormats().empty()) << assertMessage;
     else
-        EXPECT_EQ(expectedPresentationUnits, JsonValue(koq->GetPresentationsJson(false))) << assertMessage;
+        {
+        ASSERT_EQ((int) koq->GetPresentationFormats().size(), (int) expectedPresentationUnits.m_value.size()) << assertMessage;
+        size_t i = 0;
+        for (NamedFormat const& presFormat : koq->GetPresentationFormats())
+            {
+            EXPECT_STREQ(expectedPresentationUnits.m_value[(Json::ArrayIndex) i].asCString(), presFormat.GetQualifiedName(koq->GetSchema()).c_str()) << "Presentation Format #" << " i " << assertMessage;
+            }
+        }
+        EXPECT_EQ(expectedPresentationUnits, JsonValue(koq->GetPresentationsJson())) << assertMessage;
 
     EXPECT_DOUBLE_EQ(expectedRelError, koq->GetRelativeError()) << assertMessage;
 
