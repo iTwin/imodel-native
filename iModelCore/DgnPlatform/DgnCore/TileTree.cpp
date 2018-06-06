@@ -92,12 +92,17 @@ folly::Future<BentleyStatus> TileLoader::Perform()
                     tile.SetNotFound();
                 return ERROR;
                 }
-            
+
             T_HOST.GetTileAdmin()._OnNewTileReady(tile.GetRoot().GetDgnDb());
             tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
             
             // On a successful load, potentially store the tile in the cache.   
-            me->_SaveToDb();    // don't wait on the save.
+            auto saveToDb = me->_SaveToDb();
+
+            // don't wait on the save unless caller wants to immediately extract data from cache.
+            if (T_HOST.GetTileAdmin()._WantWaitOnSave(tile.GetRoot().GetDgnDb()))
+                saveToDb.get();
+
             return SUCCESS;
             });
     }
@@ -293,6 +298,59 @@ BentleyStatus TileLoader::DoReadFromDb()
     // ###TODO: Why?     m_loads = nullptr;
 
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ByteStream Root::GetTileDataFromCache(Utf8StringCR cacheKey) const
+    {
+    ByteStream bytes;
+    auto cache = GetCache();
+    if (cache.IsNull())
+        return bytes;
+
+    if (true)
+        {
+        RealityData::Cache::AccessLock lock(*cache);
+
+        enum Column : int {Data,DataSize,ContentType,Expires,Created,Rowid};
+
+        CachedStatementPtr stmt;
+        constexpr Utf8CP selectSql = "SELECT Data,DataSize,ContentType,Expires,Created," TABLE_NAME_TileTree ".ROWID as TileRowId"
+            " FROM " JOIN_TileTreeTables " WHERE " COLUMN_TileTree_FileName "=?";
+
+        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, selectSql))
+            {
+            BeAssert(false);
+            return bytes;
+            }
+
+        stmt->ClearBindings();
+        stmt->BindText(1, cacheKey, Statement::MakeCopy::No);
+        if (BE_SQLITE_ROW != stmt->Step())
+            return bytes;
+
+        uint64_t rowId = stmt->GetValueInt64(Column::Rowid);
+        if (0 == stmt->GetValueInt64(Column::DataSize))
+            return bytes;
+
+        BeSQLite::SnappyFromBlob snappyFrom;
+        if (ZIP_SUCCESS != snappyFrom.Init(cache->GetDb(), TABLE_NAME_TileTree, "Data", rowId))
+            return bytes;
+
+        CacheBlobHeader header(snappyFrom);
+        uint32_t sizeRead;
+        if ((CacheBlobHeader::DB_Signature06 != header.m_signature) || 0 == header.m_size)
+            return bytes;
+
+        bytes.Resize(header.m_size);
+        snappyFrom.ReadAndFinish(bytes.GetDataP(), header.m_size, sizeRead);
+        if (sizeRead != header.m_size)
+            bytes.Clear();
+
+        return bytes;
+        }
     }
 
 //----------------------------------------------------------------------------------------

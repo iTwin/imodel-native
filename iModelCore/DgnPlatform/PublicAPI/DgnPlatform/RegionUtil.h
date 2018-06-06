@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RegionUtil.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -107,6 +107,19 @@ struct RegionGraphicsContext : RefCountedBase, NullContext, IGeometryProcessor
     DEFINE_T_SUPER(NullContext)
     friend struct RegionData;
 
+    //=======================================================================================
+    //! Helps filter out geometry to be used for the region
+    // @bsistruct                                                   Diego.Pinate    06/18
+    //=======================================================================================
+    struct IRegionFilter : RefCountedBase
+        {
+        //! Provides a way to filter flood regions based on elements for push-pull tool
+        //! @param source [in] GeometrySource passed by the context
+        //! @return true if the element needs to be filtered out and not used as a boundary, false otherwise
+        virtual bool _FilterSource(GeometrySourceCR source) = 0;
+        };
+    typedef RefCountedPtr<IRegionFilter> IRegionFilterPtr;
+
 protected:
 
 IRegionDataPtr      m_regionData;
@@ -131,6 +144,7 @@ bool                m_cullRedundantLoop = false;
 bvector<FloodSeed>  m_floodSeeds;
 FloodSeed           m_dynamicFaceSeed;
 GeometrySourceCP    m_currentGeomSource = nullptr;
+IRegionFilterPtr    m_regionFilter = nullptr;
 
 bool ComputePostFlattenTransform(CurveVectorCR region);
 void ResetPostFlattenTransform();
@@ -166,6 +180,8 @@ DGNPLATFORM_EXPORT bool GetAdjustedSeedPoints(bvector<DPoint3d>* seedPoints); //
 DGNPLATFORM_EXPORT void SetPerspectiveFlatten(bool apply); //!< @private Used by DgnRegionElementTool
 DGNPLATFORM_EXPORT bool IsPerspectiveRegion(); //!< @private Used by DgnRegionElementTool
 DGNPLATFORM_EXPORT CurveVectorPtr GetFromPerspectiveRegion(CurveVectorCR region, bool isDynamic = false); //!< @private Used by DgnRegionElementTool
+
+DGNPLATFORM_EXPORT void SetRegionFilter(IRegionFilterPtr filter) { m_regionFilter = filter; }
 
 DGNPLATFORM_EXPORT BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots); //!< @private Used by DgnRegionElementTool. Returns unique roots for all active faces...
 DGNPLATFORM_EXPORT BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots, CurveVectorCR region); //!< @private Used by DgnRegionElementTool. May contain duplicates...

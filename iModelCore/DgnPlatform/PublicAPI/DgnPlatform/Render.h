@@ -3023,6 +3023,7 @@ struct Plan
     ColorDef            m_bgColor;
     ColorDef            m_monoColor;
     HiliteSettings      m_hiliteSettings;
+    bool                m_fadeOutActive;
     AntiAliasPref       m_aaLines;
     AntiAliasPref       m_aaText;
     HiddenLineParams    m_hline;
@@ -3115,8 +3116,8 @@ public:
     bool FindIndex(uint32_t& index, FeatureCR feature) const
         {
         auto iter = m_map.find(feature);
-        bool found;
-        if (found = (m_map.end() != iter))
+        bool found = (m_map.end() != iter);
+        if (found)
             index = iter->second;
 
         return found;

@@ -1101,6 +1101,107 @@ ISubEntityPtr BRepUtil::ClosestSubEntity(IBRepEntityCR entity, DPoint3dCR testPt
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ISubEntityPtr BRepUtil::ClosestFace(IBRepEntityCR entity, DPoint3dCR testPt, DVec3dCP preferredDir)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (IBRepEntity::EntityType::Wire == entity.GetEntityType())
+        return nullptr;
+
+    ISubEntityPtr closeEntity = BRepUtil::ClosestSubEntity(entity, testPt);
+
+    if (!closeEntity.IsValid())
+        return nullptr;
+
+    switch (closeEntity->GetSubEntityType())
+        {
+        case ISubEntity::SubEntityType::Edge:
+            {
+            bvector<ISubEntityPtr> subEntities;
+
+            if (SUCCESS != BRepUtil::GetEdgeFaces(subEntities, *closeEntity))
+                return nullptr;
+
+            if (nullptr == preferredDir)
+                {
+                closeEntity = subEntities.front();
+                break;
+                }
+
+            DVec3d      normal, uDir, vDir, closeNormal;
+            DPoint2d    param;
+            DPoint3d    point, testPt;
+
+            closeEntity->GetEdgeLocation(testPt, param.x);
+            closeEntity = nullptr;
+
+            for (ISubEntityPtr& subEntity : subEntities)
+                {
+                if (!BRepUtil::ClosestPointToFace(*subEntity, testPt, point, param))
+                    continue;
+
+                PSolidSubEntity::SetLocation(*subEntity, point, param);
+
+                if (SUCCESS != BRepUtil::EvaluateFace(*subEntity, point, normal, uDir, vDir, param))
+                    continue;
+
+                if (!closeEntity.IsValid() || (normal.DotProduct(*preferredDir) > closeNormal.DotProduct(*preferredDir)))
+                    {
+                    closeEntity = subEntity;
+                    closeNormal = normal;
+                    }
+                }
+            break;
+            }
+
+        case ISubEntity::SubEntityType::Vertex:
+            {
+            bvector<ISubEntityPtr> subEntities;
+
+            if (SUCCESS != BRepUtil::GetVertexFaces(subEntities, *closeEntity))
+                return nullptr;
+
+            if (nullptr == preferredDir)
+                {
+                closeEntity = subEntities.front();
+                break;
+                }
+
+            DVec3d      normal, uDir, vDir, closeNormal;
+            DPoint2d    param;
+            DPoint3d    point, testPt;
+
+            closeEntity->GetVertexLocation(testPt);
+            closeEntity = nullptr;
+
+            for (ISubEntityPtr& subEntity : subEntities)
+                {
+                if (!BRepUtil::ClosestPointToFace(*subEntity, testPt, point, param))
+                    continue;
+
+                PSolidSubEntity::SetLocation(*subEntity, point, param);
+
+                if (SUCCESS != BRepUtil::EvaluateFace(*subEntity, point, normal, uDir, vDir, param))
+                    continue;
+
+                if (!closeEntity.IsValid() || (normal.DotProduct(*preferredDir) > closeNormal.DotProduct(*preferredDir)))
+                    {
+                    closeEntity = subEntity;
+                    closeNormal = normal;
+                    }
+                }
+            break;
+            }
+        }
+
+    return closeEntity;
+#else
+    return nullptr;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::IsPointInsideBody(IBRepEntityCR entity, DPoint3dCR testPoint)

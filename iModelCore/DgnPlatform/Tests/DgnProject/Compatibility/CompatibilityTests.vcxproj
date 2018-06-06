@@ -11,13 +11,21 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CompatibilityBeDb.cpp" />
-    <ClCompile Include="CompatibilityDgnDb.cpp" />
-    <ClCompile Include="CompatibilityECDb.cpp" />
+    <ClCompile Include="BeDbCompatibilityTests.cpp" />
     <ClCompile Include="CompatibilityTestFixture.cpp" />
+    <ClCompile Include="IModelCompatibilityTests.cpp" />
+    <ClCompile Include="ProfileManager.cpp" />
+    <ClCompile Include="TestHelper.cpp" />
+    <ClCompile Include="TestIModelCreators.cpp" />
+    <ClCompile Include="ECDbCompatibilityTests.cpp" />
+    <ClCompile Include="TestECDbCreators.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompatibilityTestFixture.h" />
+    <ClInclude Include="ProfileManager.h" />
+    <ClInclude Include="TestHelper.h" />
+    <ClInclude Include="TestIModelCreators.h" />
+    <ClInclude Include="TestECDbCreators.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\..\..\DgnPlatform.PartFile.xml" />
@@ -51,7 +59,7 @@
     <IntDir>$(OutRoot)Winx64\Build\DgnCompatibility\</IntDir>
     <IntermediateOutputPath>$(OutRoot)Winx64\Build\DgnPlatformTest\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\DgnPlatformTest\</BaseIntermediateOutputPath>
-    <NMakeOutput>$(OutRoot)Winx64\Product\GTest-DgnPlatform-Compatibility\DgnCompatibility.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\iModelSchemaEvolution\BackwardsCompatibility\iModelSchemaEvolution.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(OutRoot)Winx64\BuildContexts\DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\VendorAPI\;$(SrcRoot)DgnPlatform\PublicAPI\;$(OutRoot)Winx64\BuildContexts\DgnPlatform\Delivery\</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

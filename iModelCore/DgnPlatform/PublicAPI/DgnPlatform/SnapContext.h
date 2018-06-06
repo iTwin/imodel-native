@@ -20,18 +20,18 @@ struct SnapContext : NullContext
 {
 protected:
     SnapDetailP m_snapPath; // result of the snap
-    double m_snapAperture;
-    SnapMode m_snapMode;
-    int m_snapDivisor;
+    double      m_snapAperture;
+    SnapMode    m_snapMode;
+    int         m_snapDivisor;
 
 public:
     virtual ~SnapContext() {}
 
 public:
-    void SetAdjustedSnapPoint(DPoint3dCR adjustedPt);
     DGNVIEW_EXPORT SnapStatus IntersectDetails(SnapDetailP* snappedPath, HitDetailCP first, HitDetailCP second, DPoint3dCP testPoint, bool allowSelfIntersections);
     DGNVIEW_EXPORT SnapStatus SnapToPath(SnapDetailP* snappedPath, HitDetailCP thisPath, SnapMode snapMode, int snapDivisor, double hotAperture);
 
+    //! Get the KeypointType for a SnapMode.
     DGNPLATFORM_EXPORT static KeypointType GetSnapKeypointType(SnapMode);
 
     //! Get the snap path created by calling element's draw method, and
@@ -55,9 +55,14 @@ public:
     //! @return ISpriteP default sprite.
     DGNPLATFORM_EXPORT static Render::ISpriteP GetSnapSprite(SnapMode mode);
 
+    //! Compute the closest keypoint location on a line segment to the supplied fraction parameter and given keypoint divisor.
     DGNPLATFORM_EXPORT static void GetSegmentKeypoint(DPoint3dR hitPoint, double& keyParam, int divisor, DSegment3dCR segment);
 
+    //! Compute the closest keypoint location on a non-linear curve primitive (arc/bspline curve) to the supplied fraction parameter and given keypoint divisor.
     DGNPLATFORM_EXPORT static bool GetParameterKeypoint(ICurvePrimitiveCR curve, DPoint3dR hitPoint, double& keyParam, int divisor);
+
+    //! Define the current snap information as a json value given a close point in world and snap settings supplied as a json value.
+    DGNPLATFORM_EXPORT Json::Value DoSnap(JsonValueCR input, DgnDbR db);
 
     //! Define the current snap information for text using default processing.
     DGNPLATFORM_EXPORT SnapStatus DoTextSnap();
@@ -69,17 +74,20 @@ public:
     //! @param[in] mode Snap mode to use.
     DGNPLATFORM_EXPORT SnapStatus DoSnapUsingCurve(SnapMode mode);
 
+    //! Specify a location for this snap that is different from the point that actually generated the snap.
+    DGNPLATFORM_EXPORT void SetAdjustedSnapPoint(DPoint3dCR adjustedPt);
+
     //! Define the current snap information for this hit.
     //! @param[in] snap SnapDetail to update.
     //! @param[in] mode Snap mode used for this snap.
     //! @param[in] sprite Sprite to use to decorate snap.
     //! @param[in] snapPoint Location for snap in world coordinates.
     //! @param[in] forceHot true to make snap active even if cursor is not within locate tolerance of snap location.
-    //! @param[in] aperature Hot distance to use when forceHot is false.
+    //! @param[in] aperture Hot distance to use when forceHot is false.
     //! @param[in] isAdjusted true if snap is not suitable for creating assoc points (pass false if customKeypointData is supplied or snap not overriden).
     //! @param[in] nBytes Size in bytes of customKeypointData, or 0 if none.
     //! @param[in] customKeypointData Pointer to customKeypointData to save for this snap or NULL.
-    DGNPLATFORM_EXPORT static void SetSnapInfo(SnapDetailR snap, SnapMode mode, Render::ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, double aperature, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = nullptr);
+    DGNPLATFORM_EXPORT static void SetSnapInfo(SnapDetailR snap, SnapMode mode, Render::ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, double aperture, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = nullptr);
 };
 
 END_BENTLEY_DGN_NAMESPACE

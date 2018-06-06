@@ -328,6 +328,24 @@ static void TransformToJson(JsonValueR outValue, TransformCR trans)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Brien.Bastring  06/18
+//---------------------------------------------------------------------------------------
+static void DMatrix4dFromJson(DMatrix4dR matrix, JsonValueCR inValue)
+    {
+    for (int x = 0; x < 4; ++x)
+        TransformRowFromJson(matrix.coff[x], inValue[x]);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Brien.Bastring  06/18
+//---------------------------------------------------------------------------------------
+static void DMatrix4dToJson(JsonValueR outValue, DMatrix4dCR matrix)
+    {
+    for (int x = 0; x < 4; ++x)
+        TransformRowToJson(outValue[x], matrix.coff[x]);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson     02/14
 //---------------------------------------------------------------------------------------
 static void DPoint3dVectorToJson(JsonValueR outValue, bvector<DPoint3d> const& points)
