@@ -127,3 +127,8 @@ void PrintTo(JsonValue const& json, std::ostream* os) { *os << json.ToString(); 
 // @bsimethod                                    Krischan.Eberle                  06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(SchemaVersion const& ver, std::ostream* os) { *os << ver.ToString(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(BeVersion const& ver, std::ostream* os) { *os << ver.ToString(); }
