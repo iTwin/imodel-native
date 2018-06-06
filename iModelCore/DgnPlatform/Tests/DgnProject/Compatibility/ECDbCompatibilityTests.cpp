@@ -46,7 +46,8 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                 EXPECT_EQ(5, schemaCount) << testFile.GetPath().GetNameUtf8();
                 for (ECSchemaCP schema : ecdb.Schemas().GetSchemas(false))
                     {
-                    EXPECT_EQ((int) ECVersion::Latest, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
+                    //ECVersion not persisted by ECDb, so ECObjects defaults to 3.1
+                    EXPECT_EQ((int) ECVersion::V3_1, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
                     //OriginalECXML version not persisted in ECDb pre 4.0.0.2, so ECObjects defaults to 3.1
                     EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor()) << schema->GetFullSchemaName();
                     EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor()) << schema->GetFullSchemaName();
@@ -69,17 +70,21 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
 
                 for (ECSchemaCP schema : ecdb.Schemas().GetSchemas(false))
                     {
-                    EXPECT_EQ((int) ECVersion::Latest, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
+                    //ECVersion not read by ECDb, so ECObjects defaults to 3.1
+                    EXPECT_EQ((int) ECVersion::V3_1, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
                     //OriginalECXML version not read by ECDb, so ECObjects defaults to 3.1
                     EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor()) << schema->GetFullSchemaName();
                     EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor()) << schema->GetFullSchemaName();
                     }
 
                 //ECDb built-in schema versions
-                EXPECT_LE(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbFileInfo"));
+                //ECDbFileInfo version was incremented in next profile, so must be higher in newer file
+                EXPECT_LT(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbFileInfo"));
                 EXPECT_LE(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbMap"));
-                EXPECT_LE(SchemaVersion(4, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbMeta"));
-                EXPECT_LE(SchemaVersion(5, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbSystem"));
+                //ECDbMeta version was incremented in next profile, so must be higher in newer file
+                EXPECT_LT(SchemaVersion(4, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbMeta"));
+                //ECDbSystem version was incremented in next profile, so must be higher in newer file
+                EXPECT_LT(SchemaVersion(5, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbSystem"));
                 //Standard schema versions
                 EXPECT_LE(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(ecdb, "CoreCustomAttributes"));
 

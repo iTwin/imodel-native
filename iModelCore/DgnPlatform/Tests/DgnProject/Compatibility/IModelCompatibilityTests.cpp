@@ -53,7 +53,8 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
 
                 for (ECSchemaCP schema : bim->Schemas().GetSchemas(false))
                     {
-                    EXPECT_EQ((int) ECVersion::Latest, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
+                    //ECVersion not read by ECDb, so ECObjects defaults to 3.1
+                    EXPECT_EQ((int) ECVersion::V3_1, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
                     //OriginalECXML version not persisted in ECDb pre 4.0.0.2, so ECObjects defaults to 3.1
                     EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor()) << schema->GetFullSchemaName();
                     EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor()) << schema->GetFullSchemaName();
@@ -81,7 +82,8 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
 
                 for (ECSchemaCP schema : bim->Schemas().GetSchemas(false))
                     {
-                    EXPECT_EQ((int) ECVersion::Latest, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
+                    //ECVersion not read by ECDb, so ECObjects defaults to 3.1
+                    EXPECT_EQ((int) ECVersion::V3_1, (int) schema->GetECVersion()) << schema->GetFullSchemaName();
                     //OriginalECXML version not read by ECDb, so ECObjects defaults to 3.1
                     EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor()) << schema->GetFullSchemaName();
                     EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor()) << schema->GetFullSchemaName();
