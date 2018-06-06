@@ -124,7 +124,12 @@ public:
     };
 
 void PrintTo(SchemaVersion const&, std::ostream*);
+
+BEGIN_BENTLEY_NAMESPACE
+
 void PrintTo(BeVersion const&, std::ostream*);
+
+END_BENTLEY_NAMESPACE
 
 //=======================================================================================
 //! Disables "Fail On Assertion" for the lifetime of this object.

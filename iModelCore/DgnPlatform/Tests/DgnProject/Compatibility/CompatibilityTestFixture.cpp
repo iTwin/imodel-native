@@ -26,7 +26,10 @@ ECN::ECSchemaReadContextPtr CompatibilityTestHelper::DeserializeSchemas(ECDbCR e
         ScopedDisableFailOnAssertion disableFailOnAssert;
         ECSchemaPtr schema = nullptr;
         if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, schemaItem.GetXml().c_str(), *context))
+            {
+            LOG.errorv("Failed to deserialize schema '%s'", schemaItem.GetXml().c_str());
             return nullptr;
+            }
         }
 
     return context;
@@ -128,7 +131,10 @@ void PrintTo(JsonValue const& json, std::ostream* os) { *os << json.ToString(); 
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(SchemaVersion const& ver, std::ostream* os) { *os << ver.ToString(); }
 
+BEGIN_BENTLEY_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(BeVersion const& ver, std::ostream* os) { *os << ver.ToString(); }
+
+END_BENTLEY_NAMESPACE

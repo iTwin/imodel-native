@@ -111,7 +111,7 @@ void TestHelper::AssertEnum(ECDb const& db, Utf8CP schemaName, Utf8CP enumName, 
         if (expectedDisplayLabel == nullptr)
             EXPECT_FALSE(enumerator->GetIsDisplayLabelDefined()) << assertMessage << " Enumerator: " << i;
         else
-            EXPECT_STRCASEEQ(expectedDisplayLabel, enumerator->GetInvariantDisplayLabel().c_str());
+            EXPECT_STREQ(expectedDisplayLabel, enumerator->GetInvariantDisplayLabel().c_str()) << assertMessage << " Enumerator: " << i;
 
         ECValueCR expectedValue = expectedEnumValue.first;
         if (expectedType == ECN::PRIMITIVETYPE_Integer)
