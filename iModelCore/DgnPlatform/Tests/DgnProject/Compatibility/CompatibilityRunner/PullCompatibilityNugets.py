@@ -35,18 +35,15 @@ def DownloadPackage(pkgAddress, pkgName, version, localDir):
  #------------------------------------------------------------------------
  # bsimethod                         Kyle.Abramowitz             05/2018
  #------------------------------------------------------------------------
-def pullAllNugets(path, pathToNugetPuller):
+def pullAllNugets(path, pathToNugetPuller, name):
     import nugetpkg
     address = "http://nuget.bentley.com/nuget/default/"
-    name = "iModelSchemaEvolutionTestNuget_bim0200dev_x64";
     versions = nugetpkg.SearchVersionsFromServer(address, name)
 
     for v in versions:
         # Dowload and save all versions
-        pkgAddress = "http://nuget.bentley.com/nuget/default/"
-        pkgName = "iModelSchemaEvolutionTestNuget_bim0200dev_x64"
         localDir = path
-        DownloadPackage(pkgAddress, pkgName, v, localDir)
+        DownloadPackage(address, name, v, localDir)
 
  #------------------------------------------------------------------------
  # bsimethod                         Kyle.Abramowitz             05/2018
@@ -58,7 +55,8 @@ def main():
 
     nugetPath = sys.argv[1]
     sys.path.insert(0, sys.argv[2])
-    pullAllNugets(nugetPath, sys.argv[2])
+    pullAllNugets(nugetPath, sys.argv[2], "iModelSchemaEvolutionTestNuget_bim0200dev_x64")
+    pullAllNugets(nugetPath, sys.argv[2], "iModelSchemaEvolutionTestNuget_bim0200dev_ec32_x64")
     dataPath = sys.argv[3]
     # Remove extracted nugets to prevent unzipping overwrite issues
     for filename in os.listdir(nugetPath):
