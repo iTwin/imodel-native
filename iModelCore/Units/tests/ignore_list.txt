@@ -9,7 +9,3 @@
 FormatParsingSetTest.IdentityIncorrectLeadingPlusAndMinus
 FormatParsingSetTest.FractionCanUseUnderscoreBetweenIntegerAndFractionalComponent
 FormatParsingSetTest.CompositeFormats_IGNORED
-# Ignored because synonyms are not supported yet and units no longer have labels other than their name because
-# localization was removed
-# TFS# 900412
-FormatParsingSetTest.TestParseToStd_IGNORED

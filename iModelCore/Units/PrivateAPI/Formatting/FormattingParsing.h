@@ -106,7 +106,7 @@ private:
 public:
     FormatParsingSegment() { Init(0); }
     UNITS_EXPORT FormatParsingSegment(NumberGrabberCR ng);
-    UNITS_EXPORT FormatParsingSegment(bvector<CursorScanPoint> vect, size_t s, BEU::UnitCP refUnit = nullptr, FormatCP format=nullptr);
+    UNITS_EXPORT FormatParsingSegment(bvector<CursorScanPoint> vect, size_t s, BEU::UnitCP refUnit = nullptr, FormatCP format=nullptr, QuantityFormatting::UnitResolver* resolver = nullptr);
     ParsingSegmentType GetType() { return m_type; }
     double GetReal() { return m_dval; }
     double GetAbsReal() { return fabs(m_dval); }
@@ -133,14 +133,14 @@ private:
     FormatProblemDetail m_problem;
     FormatCP m_format;
 
-    void Init(Utf8CP input, size_t start, BEU::UnitCP unit, FormatCP format);
+    void Init(Utf8CP input, size_t start, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver = nullptr);
     //! Process's "colonized" expression using a Composite FUS
     //! Returns error codes when FUS does not match the expression.
     //! The input expression signature code mus be provided by the caller
     BEU::Quantity ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatCP fusP = nullptr);
 
 public:
-    UNITS_EXPORT FormatParsingSet(Utf8CP input, BEU::UnitCP unit = nullptr, FormatCP format = nullptr);
+    UNITS_EXPORT FormatParsingSet(Utf8CP input, BEU::UnitCP unit = nullptr, FormatCP format = nullptr, QuantityFormatting::UnitResolver* resolver = nullptr);
     bool HasProblem() const {return m_problem.IsProblem();}
     FormatProblemCode GetProblemCode() {return m_problem.GetProblemCode();}
     Utf8String GetProblemDescription() {return m_problem.GetProblemDescription();}

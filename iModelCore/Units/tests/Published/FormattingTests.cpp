@@ -814,11 +814,41 @@ TEST_F(FormatParsingSetTest, TestParseToStd)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatParsingSetTest, TestParseToStd_IGNORED)
-{
- auto formats = GetStdFormats();
+TEST_F(FormatParsingSetTest, TestParseToStdSynonyms)
+    {
+    auto length = s_unitsContext->LookupPhenomenon("Length")->GetName();
+    auto angle = s_unitsContext->LookupPhenomenon("Angle")->GetName();
+    auto foot = s_unitsContext->LookupUnit("FT");
+    auto in = s_unitsContext->LookupUnit("IN");
+    auto meter = s_unitsContext->LookupUnit("M");
+    auto arcDeg = s_unitsContext->LookupUnit("ARC_DEG");
+    auto arcMin = s_unitsContext->LookupUnit("ARC_MINUTE");
+    auto arcSec = s_unitsContext->LookupUnit("ARC_SECOND");
+    bmap<Utf8String, bmap<Utf8String, BEU::UnitCP>> resolverMap = bmap<Utf8String, bmap<Utf8String, BEU::UnitCP>>();
+     
+    auto lengthMap = bmap<Utf8String, BEU::UnitCP>();
+    auto angleMap = bmap<Utf8String, BEU::UnitCP>();
+    lengthMap["Feet"] = foot;
+    lengthMap[u8"фута"] = foot;
+    lengthMap[u8"фут"] = foot;
+    lengthMap["'"] = foot;
+    lengthMap["\""] = in;
+    lengthMap[u8"дюйма"] = in;
+    lengthMap[u8"дюйм"] = in;
+    lengthMap["ft"] = foot;
+    lengthMap["m"] = meter;
+    lengthMap["meters"] = meter;
+
+    angleMap[Utf8String(u8"°")] = arcDeg;
+    angleMap["'"] = arcMin;
+    angleMap["''"] = arcSec;
+
+    resolverMap[length] = lengthMap;
+    resolverMap[angle] = angleMap;
+    auto formats = GetStdFormats();
     auto mapper = [&](Utf8StringCR formatString)
         {
+
         return &formats[formatString];
         };
 
@@ -833,20 +863,28 @@ TEST_F(FormatParsingSetTest, TestParseToStd_IGNORED)
         {
         Format fus = getOverride(formatName);
         FormatProblemCode probCode;
-        FormatParsingSet fps = FormatParsingSet(input, s_unitsContext->LookupUnit(unitName));
+        QuantityFormatting::UnitResolver resolver = [&](Utf8CP i, BEU::PhenomenonCP p) 
+        {
+            auto map = resolverMap[p->GetName()];
+            auto unit = map[i];
+            return unit;
+        };
+        FormatParsingSet fps = FormatParsingSet(input, s_unitsContext->LookupUnit(unitName), nullptr, &resolver);
         BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
         BEU::UnitCP unit = s_unitsContext->LookupUnit(qtyUnitName);
         BEU::Quantity temp = BEU::Quantity(magnitude, *unit);
         bool eq = qty.IsClose(temp, 0.0001);
         EXPECT_TRUE(eq);
         };
-    // TODO synonyms don't work. Only can use Unit name or label. 
+
+    VerifyQuantity("4'", "FT", "DefaultReal", 4.0, "FT");
+    VerifyQuantity("4'6\"", "FT", "DefaultReal", 4.5, "FT");
     VerifyQuantity(u8"135°11'30 1/4''", "ARC_DEG", "DefaultReal", 135.191736, "ARC_DEG");
     VerifyQuantity(u8"135°11'30 1/4''", "ARC_DEG", "real", 2.359541, "RAD");
     VerifyQuantity(u8"1 3/13 дюйма", "IN", "real", 1.2307692, "IN");
     VerifyQuantity(u8"3 фута 4 дюйма", "IN", "real", 40.0, "IN");
     VerifyQuantity(u8"1 фут 1 дюйм", "IN", "real", 13.0, "IN");
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      08/17
