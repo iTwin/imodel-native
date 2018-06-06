@@ -13,11 +13,13 @@
 // 2) Add a new subclass of ECDbTestFileCreator
 // 3) Add a unique_ptr to the ECDBTESTFILECREATOR_LIST macro
 
+#define TESTECDB_EMPTY "empty.ecdb"
 #define TESTECDB_PREEC32ENUMS "preec32enums.ecdb"
 #define TESTECDB_PREEC32KOQS "preec32koqs.ecdb"
 
-#define TESTECDBCREATOR_LIST {std::make_shared<PreEC32EnumsTestECDbCreator>(), \
-                                   std::make_shared<PreEC32KoqsTestECDbCreator>()}
+#define TESTECDBCREATOR_LIST {std::make_shared<EmptyTestECDbCreator>(), \
+                              std::make_shared<PreEC32EnumsTestECDbCreator>(), \
+                               std::make_shared<PreEC32KoqsTestECDbCreator>()}
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
@@ -48,6 +50,21 @@ struct TestECDbCreator : TestFileCreator
         static DbResult CreateNewTestFile(ECDbR, Utf8CP fileName);
         static BentleyStatus ImportSchema(ECDbCR ecdb, SchemaItem const& schema) { return ImportSchemas(ecdb, {schema}); }
         static BentleyStatus ImportSchemas(ECDbCR, std::vector<SchemaItem> const&);
+    };
+
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct EmptyTestECDbCreator final : TestECDbCreator
+    {
+    private:
+        BentleyStatus _Create() override
+            {
+            ECDb ecdb;
+            return BE_SQLITE_OK == CreateNewTestFile(ecdb, TESTECDB_EMPTY) ? SUCCESS : ERROR;
+            }
+    public:
+        ~EmptyTestECDbCreator() {}
     };
 
 //======================================================================================

@@ -10,6 +10,7 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include <ECObjects/ECObjectsAPI.h>
+#include <Bentley/BeVersion.h>
 #include <Logging/bentleylogging.h>
 #include <json/json.h>
 #include <ostream>
@@ -108,6 +109,21 @@ struct JsonValue final
     };
 
 void PrintTo(JsonValue const&, std::ostream*);
+
+//=======================================================================================
+// Represents an ECSchema version
+// @bsiclass                                                 Krischan.Eberle     06/18
+//=======================================================================================    
+struct SchemaVersion final : BeVersion
+    {
+public:
+    SchemaVersion() : BeVersion() {}
+    SchemaVersion(uint16_t versionRead, uint16_t versionWrite, uint16_t versionMinor) : BeVersion(versionRead, versionWrite, versionMinor, 0) {}
+    explicit SchemaVersion(ECN::ECSchemaCR schema) : SchemaVersion((uint16_t) schema.GetVersionRead(), (uint16_t) schema.GetVersionWrite(), (uint16_t) schema.GetVersionMinor()) {}
+    Utf8String ToString() const { return Utf8PrintfString("%" PRIu16 ".%" PRIu16 ".%" PRIu16, GetMajor(), GetMinor(), GetSub1()); }
+    };
+
+void PrintTo(SchemaVersion const&, std::ostream*);
 
 //=======================================================================================
 //! Disables "Fail On Assertion" for the lifetime of this object.

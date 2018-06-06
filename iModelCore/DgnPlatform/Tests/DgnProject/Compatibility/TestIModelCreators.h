@@ -13,8 +13,8 @@
 // 2) Add a new subclass of TestIModelCreator
 // 3) Add a unique_ptr to the TESTIMODELCREATOR_LIST macro
 
-
-#define TESTIMODELCREATOR_LIST {}
+#define TESTIMODEL_EMPTY "empty.bim"
+#define TESTIMODELCREATOR_LIST {std::make_shared<EmptyTestIModelCreator>()}
 
 //======================================================================================
 // @bsiclass                                               Krischan.Eberle      06/2018
@@ -47,3 +47,14 @@ public:
     static BentleyStatus ImportSchemas(DgnDbR dgndb, std::vector<SchemaItem> const& schemas);
     };
 
+//======================================================================================
+// @bsiclass                                               Krischan.Eberle      06/2018
+//======================================================================================
+struct EmptyTestIModelCreator final : TestIModelCreator
+    {
+    private:
+        BentleyStatus _Create() override { return CreateNewTestFile(TESTIMODEL_EMPTY) != nullptr ? SUCCESS : ERROR;  }
+
+    public:
+        ~EmptyTestIModelCreator() {}
+    };
