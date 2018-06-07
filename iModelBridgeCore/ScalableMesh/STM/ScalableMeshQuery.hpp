@@ -1587,8 +1587,12 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
            
             if (clips != nullptr /*&& range3D2.XLength() < 150 && range3D2.YLength() < 150*/)
                 {
-               // static std::mutex mtx;
-              //  std::lock_guard<std::mutex> lock(mtx);
+                BeAssert(std::is_sorted(clips->begin(), clips->end(), [](ClipPrimitivePtr i, ClipPrimitivePtr j)
+                    { // boundary clips should be first
+                    if (!i->IsMask() && j->IsMask()) return true;
+                    return false;
+                    }));
+
                 bvector<DPoint3d> clearedPts;
                 bvector<int32_t> clearedIndices;
                 bvector<int32_t> newUvsIndices;
@@ -1606,17 +1610,36 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                 meshPtr = ScalableMeshMesh::Create();
 
                 // Reconstruct mesh with new polyface
-                auto polyface = polyfaces[0].empty() ? nullptr : polyfaces[0][0];
-                if (polyface != nullptr)
+                auto appendToMesh = [](ScalableMeshMeshPtr meshPtr, PolyfaceHeaderPtr polyface) -> int
                     {
-                    status = meshPtr->AppendMesh(polyface->Point().size(), polyface->Point().data(),
-                                                 polyface->PointIndex().size(), polyface->PointIndex().data(),
-                                                 0, 0, 0,
-                                                 polyface->Param().size(), polyface->Param().data(),
-                                                 polyface->ParamIndex().data());
+                    if (polyface != nullptr)
+                        {
+                        return meshPtr->AppendMesh(polyface->Point().size(), polyface->Point().data(),
+                                                   polyface->PointIndex().size(), polyface->PointIndex().data(),
+                                                   0, 0, 0,
+                                                   polyface->Param().size(), polyface->Param().data(),
+                                                   polyface->ParamIndex().data());
+                        }
+                    return ERROR;
+                    };
+                PolyfaceHeaderPtr polyface = nullptr;
+                if ((*clips)[0]->IsMask())
+                    {
+                    polyface = polyfaces[0].empty() ? nullptr : polyfaces[0][0];
+                    status = appendToMesh(meshPtr, polyface);
                     BeAssert(status == SUCCESS);
                     }
+                else
+                    {
+                    for (int i = 0; i < clips->size(); i++)
+                        {
+                        if ((*clips)[i]->IsMask()) break;
 
+                        polyface = polyfaces[i].empty() ? nullptr : polyfaces[i][0];
+                        status = appendToMesh(meshPtr, polyface);
+                        BeAssert(status == SUCCESS);
+                        }
+                    }
                 }
 
             if ((meshPtr->GetNbFaces() == 0) && flags->ShouldLoadIndices())

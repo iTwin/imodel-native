@@ -23,6 +23,7 @@ uint32_t s_max_group_depth = 4;
 uint32_t s_max_group_common_ancestor = 2;
 
 mutex SMNodeGroup::s_mutex;
+SMGroupingStrategy<DRange3d>* s_groupingStrategy = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     04/2018
@@ -658,15 +659,38 @@ bool SMNodeGroup::DownloadCesiumTileset(const DataSourceURL & url, Json::Value &
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize & readSize, const DataSourceURL & url)
     {
-    DataSource*                           dataSource;
-    DataSourceBuffer::BufferSize          destSize = 5 * 1024 * 1024;
+    DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
+    DataSourceStatus                status;
+    bool                            isFromCache;
 
-    bool readOK = (dataSource = this->InitializeDataSource(dest, destSize)) != nullptr &&
-                   dataSource->open(url, DataSourceMode_Read).isOK() &&
-                   dataSource->read(dest.get(), destSize, readSize, 0).isOK() &&
-                   dataSource->close().isOK();
-    if (!readOK) return false;
-    if (m_isRoot && dataSource->isFromCache())
+    DataSource *dataSource = this->InitializeDataSource(dest, destSize);
+    if (dataSource == nullptr)
+        return false;
+
+    try
+        {
+        if ((status = dataSource->open(url, DataSourceMode_Read)).isFailed())
+            throw status;
+
+        if ((status = dataSource->read(dest.get(), destSize, readSize, 0)).isFailed())
+            throw status;
+
+        isFromCache = dataSource->isFromCache();
+
+        if ((status = dataSource->close()).isFailed())
+            throw status;
+        }
+    catch (DataSourceStatus)
+        {
+        assert(false);
+        }
+
+    DataSourceManager::Get()->destroyDataSource(dataSource);
+
+    if (status.isFailed())
+        return false;
+
+    if (m_isRoot && isFromCache)
         { // Must download so that we can check timestamp and clear cache if necessary
         Json::Value cachedTileset;
         if (ConvertToJsonFromBytes(cachedTileset, dest, readSize) &&
@@ -674,16 +698,32 @@ bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, Data
             cachedTileset["root"].isMember("SMMasterHeader") &&
             cachedTileset["root"]["SMMasterHeader"].isMember("LastModifiedDateTime"))
             {
-            bool cacheEnabled = dataSource->getCachingEnabled();
-            dataSource->setCachingEnabled(false);
+//          bool cacheEnabled = dataSource->getCachingEnabled();
             std::unique_ptr<DataSource::Buffer[]> newDest;
             DataSourceBuffer::BufferSize newSize;
-            if ((dataSource = this->InitializeDataSource(newDest, destSize)) != nullptr &&
-                dataSource->open(url, DataSourceMode_Read).isOK() &&
-                dataSource->read(newDest.get(), destSize, newSize, 0).isOK())
+
+            if ((dataSource = this->InitializeDataSource(newDest, destSize)) != nullptr)
                 {
-                // Compare timestamps
+                dataSource->setCachingEnabled(false);
+
+                try
+                    {
+                    if ((status = dataSource->open(url, DataSourceMode_Read)).isFailed())
+                        throw status;
+
+                    if((status = dataSource->read(newDest.get(), destSize, newSize, 0)).isFailed())
+                        throw status;
+                    }
+                catch (DataSourceStatus)
+                    {
+                    DataSourceManager::Get()->destroyDataSource(dataSource);
+                    assert(false);
+                    return false;
+                    }
+
+                    // Compare timestamps
                 Json::Value networkTileset;
+
                 if (ConvertToJsonFromBytes(networkTileset, newDest, newSize) &&
                     !networkTileset.isNull() &&
                     networkTileset["root"].isMember("SMMasterHeader") &&
@@ -721,13 +761,17 @@ bool SMNodeGroup::DownloadBlob(std::unique_ptr<DataSource::Buffer[]>& dest, Data
                         }
                     }
                 }
-            dataSource->setCachingEnabled(cacheEnabled);
+
+            dataSource->setCachingEnabled(isFromCache);
 
             // Closing the DataSource will write to cache if need be
             dataSource->close();
+
+            DataSourceManager::Get()->destroyDataSource(dataSource);
             }
         }
-    return readOK;
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

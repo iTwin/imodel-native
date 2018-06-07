@@ -105,7 +105,7 @@ SM3SMPublisher::SMPublishThreadPoolPtr SM3SMPublisher::GetPublishThreadPool()
 
                 // Create new destination node
                 IScalableMeshNodeEditPtr newDestNode = nullptr;
-                auto ret = info.m_publisher->ProcessNode(info.m_source, parentDestNode, newDestNode);
+                auto ret = info.m_publisher->ProcessNode(info.m_source, parentDestNode, newDestNode, info.m_transform);
                 BeAssert(SUCCESS == ret);
 
                 // Fulfill the promise with the newly created node
@@ -176,9 +176,11 @@ StatusInt SM3SMPublisher::_Publish(IScalableMeshPublishParamsPtr params)
     nullPromise->first.set_value(nullptr);
     nullPromise->second = nullPromise->first.get_future().share();
     
-    SMNodeEditPromisePtr rootPromise = AddWorkItem(source->GetRootNode(), nullPromise);
+    auto transform = m_params->GetTransform();
 
-    if (SUCCESS != PublishRecursive(source->GetRootNode(), rootPromise))
+    SMNodeEditPromisePtr rootPromise = AddWorkItem(source->GetRootNode(), nullPromise, transform);
+
+    if (SUCCESS != PublishRecursive(source->GetRootNode(), rootPromise, transform))
         return ERROR;
 
     if (progress != nullptr)
@@ -212,13 +214,31 @@ StatusInt SM3SMPublisher::_Publish(IScalableMeshPublishParamsPtr params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SM3SMPublisher::SetNodeMeshData(IScalableMeshNodePtr sourceNode, IScalableMeshMeshPtr mesh, IScalableMeshNodeEditPtr& destNode)
+StatusInt SM3SMPublisher::SetNodeMeshData(IScalableMeshNodePtr sourceNode, IScalableMeshMeshPtr mesh, IScalableMeshNodeEditPtr& destNode, const Transform& transform)
     {
     auto extent = sourceNode->GetNodeExtent();
+    if (!transform.IsIdentity())
+        {
+        DPoint3d box[8];
+        extent.Get8Corners(box);
+        for (size_t i = 0; i < 8; ++i)
+            transform.Multiply(box[i]);
+        extent = DRange3d::From(box, 8);
+        }
+
     if (SUCCESS != destNode->SetNodeExtent(extent))
         return ERROR;
 
     auto contentExtent = sourceNode->GetContentExtent();
+    if (!transform.IsIdentity())
+        {
+        DPoint3d box[8];
+        contentExtent.Get8Corners(box);
+        for (size_t i = 0; i < 8; ++i)
+            transform.Multiply(box[i]);
+        contentExtent = DRange3d::From(box, 8);
+        }
+
     if (SUCCESS != destNode->SetContentExtent(contentExtent))
         return ERROR;
 
@@ -243,10 +263,15 @@ StatusInt SM3SMPublisher::SetNodeMeshData(IScalableMeshNodePtr sourceNode, IScal
         if (!points.empty()) memcpy(points.data(), polyfaceQuery->GetPointCP(), points.size() * sizeof(DPoint3d));
         if (!indices.empty()) memcpy(indices.data(), polyfaceQuery->GetPointIndexCP(), indices.size() * sizeof(int32_t));
         if (!uv.empty()) memcpy(uv.data(), polyfaceQuery->GetParamCP(), uv.size() * sizeof(DPoint2d));
-        if (!uvIndices.empty()) memcpy(uvIndices.data(), polyfaceQuery->GetParamIndexCP(), uvIndices.size() * sizeof(int32_t));
+        if (!uvIndices.empty() && nullptr != polyfaceQuery->GetParamIndexCP()) memcpy(uvIndices.data(), polyfaceQuery->GetParamIndexCP(), uvIndices.size() * sizeof(int32_t));
 
-        if (!points.empty())
+        if (!points.empty() && !indices.empty())
             {
+
+            if (!transform.IsIdentity())
+                {
+                contentExtent = DRange3d::From(points);
+                }
             auto texture = sourceNode->GetTexture();
             if (texture.IsValid() && texture->GetSize() > 0)
                 {
@@ -266,13 +291,17 @@ StatusInt SM3SMPublisher::SetNodeMeshData(IScalableMeshNodePtr sourceNode, IScal
                 }
             }
         }
+
+    if (SUCCESS != destNode->SetContentExtent(contentExtent))
+        return ERROR;
+
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SM3SMPublisher::ProcessNode(IScalableMeshNodePtr sourceNode, IScalableMeshNodeEditPtr parentDestNode, IScalableMeshNodeEditPtr& destNode)
+StatusInt SM3SMPublisher::ProcessNode(IScalableMeshNodePtr sourceNode, IScalableMeshNodeEditPtr parentDestNode, IScalableMeshNodeEditPtr& destNode, const Transform& transform)
     {
     // Update progress info to indicate a node has been processed from the queue
     ++m_numPublishedNodes;
@@ -293,7 +322,10 @@ StatusInt SM3SMPublisher::ProcessNode(IScalableMeshNodePtr sourceNode, IScalable
             if (SUCCESS != CreateAndAddNewNode(sourceNode, parentDestNode, destNode))
                 return ERROR;
 
-            if (SUCCESS != SetNodeMeshData(sourceNode, mesh, destNode))
+            if (!transform.IsIdentity())
+                mesh->SetTransform(transform);
+
+            if (SUCCESS != SetNodeMeshData(sourceNode, mesh, destNode, transform))
                 return ERROR;
             }
         }
@@ -303,7 +335,7 @@ StatusInt SM3SMPublisher::ProcessNode(IScalableMeshNodePtr sourceNode, IScalable
         if (SUCCESS != CreateAndAddNewNode(sourceNode, nullptr, destNode))
             return ERROR;
 
-        if (SUCCESS != SetNodeMeshData(sourceNode, nullptr, destNode))
+        if (SUCCESS != SetNodeMeshData(sourceNode, nullptr, destNode, transform))
             return ERROR;
         }
     else
@@ -312,7 +344,7 @@ StatusInt SM3SMPublisher::ProcessNode(IScalableMeshNodePtr sourceNode, IScalable
         if (SUCCESS != CreateAndAddNewNode(sourceNode, parentDestNode, destNode))
             return ERROR;
 
-        if (SUCCESS != SetNodeMeshData(sourceNode, nullptr, destNode))
+        if (SUCCESS != SetNodeMeshData(sourceNode, nullptr, destNode, transform))
             return ERROR;
         }
 
@@ -322,7 +354,7 @@ StatusInt SM3SMPublisher::ProcessNode(IScalableMeshNodePtr sourceNode, IScalable
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SM3SMPublisher::PublishRecursive(IScalableMeshNodePtr sourceNode, SMNodeEditPromisePtr currentDestNodePromise)
+StatusInt SM3SMPublisher::PublishRecursive(IScalableMeshNodePtr sourceNode, SMNodeEditPromisePtr currentDestNodePromise, const Transform& transform)
     {
     auto progress = m_params->GetProgress();
     if (progress != nullptr && progress->IsCanceled()) return SUCCESS;
@@ -333,13 +365,13 @@ StatusInt SM3SMPublisher::PublishRecursive(IScalableMeshNodePtr sourceNode, SMNo
     // Traverse using breadth first to prevent threads from being blocked as much as when traversing depth first (because we are using a FIFO queue)
     for (auto childNode : sourceNode->GetChildrenNodes())
         {
-        meshNodePromises[childID++] = AddWorkItem(childNode, currentDestNodePromise);
+        meshNodePromises[childID++] = AddWorkItem(childNode, currentDestNodePromise, transform);
         }
 
     childID = 0;
     for (auto childNode : sourceNode->GetChildrenNodes())
         {
-        if (SUCCESS != PublishRecursive(childNode, meshNodePromises[childID++]))
+        if (SUCCESS != PublishRecursive(childNode, meshNodePromises[childID++], transform))
             return ERROR;
         }
 
@@ -374,7 +406,7 @@ StatusInt SM3SMPublisher::CreateAndAddNewNode(IScalableMeshNodePtr sourceNode, I
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois   11/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-SM3SMPublisher::SMNodeEditPromisePtr SM3SMPublisher::AddWorkItem(IScalableMeshNodePtr source, SMNodeEditPromisePtr currentPromise)
+SM3SMPublisher::SMNodeEditPromisePtr SM3SMPublisher::AddWorkItem(IScalableMeshNodePtr source, SMNodeEditPromisePtr currentPromise, const Transform& transform)
     {
     SMNodeEditPromisePtr newNodePromise = std::make_shared<SMNodeEditPromise>(SMNodeEditPromise());
     newNodePromise->second = newNodePromise->first.get_future().share();
@@ -390,7 +422,7 @@ SM3SMPublisher::SMNodeEditPromisePtr SM3SMPublisher::AddWorkItem(IScalableMeshNo
         return newNodePromise;
         }
 
-    m_publishThreadPool->AddWorkItem(LocalThreadPublishInfo{ this, source, currentPromise, newNodePromise });
+    m_publishThreadPool->AddWorkItem(LocalThreadPublishInfo{ this, source, currentPromise, newNodePromise, transform });
 
     return newNodePromise;
     }

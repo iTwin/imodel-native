@@ -725,7 +725,6 @@ TEST_P(ScalableMeshTestWithParams, MeshQuery)
     EXPECT_TRUE(useAllRes != meshQueryParamPtr->GetUseAllResolutions());        
 
 
-#if 0
     IScalableMeshMeshQueryParamsPtr meshQueryParamLowResPtr(IScalableMeshMeshQueryParams::CreateParams());
 
     meshQueryParamLowResPtr->SetLevel(0);
@@ -754,20 +753,15 @@ TEST_P(ScalableMeshTestWithParams, MeshQuery)
 
     status = meshQueryPtr->Query(meshNodes, queryExtent, 5, meshQueryParamLowResPtr);
     EXPECT_TRUE(status == SUCCESS && meshNodes.size() > 0 || status != SUCCESS && meshNodes.size() == 0);
-#endif
-    //EXPECT_TRUE(meshNodes.size() > 0);    
-        
-
-    //int meshQueryPtr->Query(bvector<IScalableMeshNodePtr>& meshNodesPtr, ClipVectorCP queryExtent3d, const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
 
 
+    bvector<IScalableMeshNodePtr> meshNodesPtr;
+    
+    ClipPrimitivePtr clipPrimitive(ClipPrimitive::CreateFromBlock(smRange.low, smRange.high, false, ClipMask::All, nullptr));
+    ClipVectorPtr queryExtent3dClipPtr(ClipVector::CreateFromPrimitive(clipPrimitive));
 
-
-/*
-    BENTLEY_SM_EXPORT int Query(IScalableMeshMeshPtr& meshPtr, const DPoint3d* pQueryExtentPts, int nbQueryExtentPts, const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
-    BENTLEY_SM_EXPORT int Query(bvector<IScalableMeshNodePtr>& meshNodesPtr, const DPoint3d* pQueryExtentPts, int nbQueryExtentPts, const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
-    BENTLEY_SM_EXPORT int Query(bvector<IScalableMeshNodePtr>& meshNodesPtr, ClipVectorCP queryExtent3d, const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
-*/
+    status = meshQueryPtr->Query(meshNodesPtr, queryExtent3dClipPtr.get(), meshQueryParamLowResPtr);
+    EXPECT_TRUE(status == SUCCESS && meshNodesPtr.size() > 0 || status != SUCCESS && meshNodesPtr.size() == 0);
     }
 
 /*---------------------------------------------------------------------------------**//**

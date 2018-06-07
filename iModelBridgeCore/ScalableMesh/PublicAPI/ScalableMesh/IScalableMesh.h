@@ -161,6 +161,8 @@ struct IScalableMesh abstract:  IRefCounted
         
         virtual bool          _IsCesium3DTiles() = 0;
 
+        virtual bool           _IsStubFile() = 0;
+
         virtual Utf8String    _GetProjectWiseContextShareLink() = 0;
 
         virtual DTMStatusInt     _GetRange(DRange3dR range) = 0;
@@ -362,6 +364,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT StatusInt     GetTextureInfo(IScalableMeshTextureInfoPtr& textureInfo) const;        
 
         BENTLEY_SM_EXPORT bool          IsCesium3DTiles();
+
+        BENTLEY_SM_EXPORT bool          IsStubFile();
 
         BENTLEY_SM_EXPORT Utf8String    GetProjectWiseContextShareLink();
 
