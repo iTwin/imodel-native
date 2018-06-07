@@ -131,6 +131,9 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32Enums)
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
 
+        if (testFile.GetProfileState() == ProfileState::Older)
+            EXPECT_EQ(Profile().GetExpectedVersion(), Profile().ReadProfileVersion(ecdb)) << "File is expected to be auto-upgraded";
+
         TestHelper::AssertLoadSchemas(ecdb);
 
         TestHelper::AssertEnum(ecdb, "CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
@@ -164,6 +167,9 @@ TEST_F(ECDbCompatibilityTestFixture, EC32Enums)
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
 
+        if (testFile.GetProfileState() == ProfileState::Older)
+            EXPECT_EQ(Profile().GetExpectedVersion(), Profile().ReadProfileVersion(ecdb)) << "File is expected to be auto-upgraded";
+
         TestHelper::AssertLoadSchemas(ecdb);
 
         TestHelper::AssertEnum(ecdb, "CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
@@ -177,9 +183,9 @@ TEST_F(ECDbCompatibilityTestFixture, EC32Enums)
         {"Sealed", ECValue(2), "Sealed"}});
 
         TestHelper::AssertEnum(ecdb, "EC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
-        {{"IntEnum_EnumeratorsWithoutDisplayLabel0", ECValue(0), nullptr},
-        {"IntEnum_EnumeratorsWithoutDisplayLabel1", ECValue(1), nullptr},
-        {"IntEnum_EnumeratorsWithoutDisplayLabel2", ECValue(2), nullptr}});
+        {{"Unknown", ECValue(0), nullptr},
+        {"On", ECValue(1), nullptr},
+        {"Off", ECValue(2), nullptr}});
 
         TestHelper::AssertEnum(ecdb, "EC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
         {{"On", ECValue("On"), "Turned On"},
@@ -196,6 +202,9 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
         {
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
+
+        if (testFile.GetProfileState() == ProfileState::Older)
+            EXPECT_EQ(Profile().GetExpectedVersion(), Profile().ReadProfileVersion(ecdb)) << "File is expected to be auto-upgraded";
 
         TestHelper::AssertLoadSchemas(ecdb);
 
@@ -215,6 +224,9 @@ TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
         {
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
+
+        if (testFile.GetProfileState() == ProfileState::Older)
+            EXPECT_EQ(Profile().GetExpectedVersion(), Profile().ReadProfileVersion(ecdb)) << "File is expected to be auto-upgraded";
 
         TestHelper::AssertLoadSchemas(ecdb);
 
