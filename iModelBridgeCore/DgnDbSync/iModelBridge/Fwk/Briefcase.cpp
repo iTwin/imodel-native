@@ -478,7 +478,10 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
     BeAssert(nullptr == m_clientUtils);
     WebServices::ClientInfoPtr clientInfo = nullptr;
     if (NULL != m_bridge)
+        {
+        m_bridge->_GetParams().m_jobRunCorrelationId = m_jobEnvArgs.m_jobRunCorrelationId;
         clientInfo = m_bridge->GetParamsCR().GetClientInfo();
+        }
 
     m_clientUtils = s_iModelHubFXForTesting? s_iModelHubFXForTesting: new DgnDbServerClientUtils(m_serverArgs.m_environment, m_serverArgs.m_maxRetryCount, clientInfo);
     Tasks::AsyncError serror;

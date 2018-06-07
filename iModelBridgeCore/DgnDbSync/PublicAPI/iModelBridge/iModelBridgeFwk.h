@@ -274,6 +274,7 @@ protected:
 
     WString GetMutexName();
     int RunExclusive(int argc, WCharCP argv[]);
+    BentleyStatus  TryOpenBimWithBisSchemaUpgrade();
     int UpdateExistingBim();
     Utf8String GetRevisionComment();
     void SetBridgeParams(iModelBridge::Params&, FwkRepoAdmin*);

@@ -186,7 +186,7 @@ DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP root
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges)
+DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName)
     {
     // Try to open the BIM without permitting schema changes. That's the common case, and that's the only way we have
     // of detecting the case where we do have domain schema changes (by looking for an error result).
@@ -194,7 +194,7 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
     // (Note that OpenDgnDb will also merge in any pending schema changes that were recently pulled from iModelHub.)
 
     madeSchemaChanges = false;
-    auto db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    auto db = DgnDb::OpenDgnDb(&dbres, dbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     if (!db.IsValid())
         {
         if (BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRequired != dbres)
@@ -204,7 +204,7 @@ DgnDbPtr iModelBridge::OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, b
         // Probably, the bridge registered some required domains, and they must be imported
         DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
         oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains();
-        db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), oparams);
+        db = DgnDb::OpenDgnDb(&dbres, dbName, oparams);
         if (!db.IsValid())
             return nullptr;
 
@@ -837,6 +837,9 @@ Utf8String      iModelBridge::ComputeJobSubjectName(DgnDbCR db, Params const& pa
 +---------------+---------------+---------------+---------------+---------------+------*/
 Http::IHttpHeaderProviderPtr iModelBridge::Params::GetDefaultHeaderProvider() const
     {
+    if (m_jobRunCorrelationId.empty())
+        return nullptr;
+
     Http::HttpRequestHeaders headers;
     headers.SetValue("X-Correlation-ID", m_jobRunCorrelationId.c_str());
     return Http::HttpHeaderProvider::Create(headers);
