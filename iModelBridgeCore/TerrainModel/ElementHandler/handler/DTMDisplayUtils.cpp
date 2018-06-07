@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDisplayUtils.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
@@ -274,6 +274,8 @@ bool IsWireframeRendering(ViewContextCR viewContext)
         case MSRenderMode::Radiosity:
         case MSRenderMode::ParticleTrace:
         case MSRenderMode::RenderLuxology:
+        case MSRenderMode::RenderVue:
+        case MSRenderMode::GPUPathTrace:
             return false;
                        
         case MSRenderMode::Wireframe:
