@@ -187,7 +187,7 @@ Utf8String WebApiV2::CreateSelectPropertiesQuery(const bset<Utf8String>& propert
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-HttpRequest WebApiV2::CreateQueryRequest(WSQueryCR query) const
+Http::Request WebApiV2::CreateQueryRequest(WSQueryCR query) const
     {
     Utf8String classes = StringUtils::Join(query.GetClasses().begin(), query.GetClasses().end(), ",");
     Utf8String url = GetUrl(CreateClassSubPath(query.GetSchemaName(), classes), query.ToQueryString());
@@ -298,17 +298,7 @@ BeVersion WebApiV2::GetRepositoryPluginVersion(Http::Response& response, Utf8Str
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSCreateObjectResult WebApiV2::ResolveCreateObjectResponse(HttpResponse& response) const
-    {
-    if (HttpStatus::Created == response.GetHttpStatus())
-        return WSCreateObjectResult::Success(ResolveUploadResponse(response));
-    return WSCreateObjectResult::Error(response);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+--------------------------------------------------------------------------------------*/
-WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse(HttpResponse& response) const
+WSUpdateObjectResult WebApiV2::ResolveUpdateObjectResponse(Http::Response& response) const
     {
     if (HttpStatus::OK == response.GetHttpStatus())
         return WSUpdateObjectResult::Success(ResolveUploadResponse(response));
@@ -362,9 +352,9 @@ AsyncTaskPtr<WSRepositoryResult> WebApiV2::SendGetRepositoryInfoRequest(ICancell
 
     WSQuery query("Policies", "PolicyAssertion");
     query.SetTop(1); //TODO:: add aditional options to add to repository info
-    HttpRequest request = CreateQueryRequest(query);
+    Http::Request request = CreateQueryRequest(query);
     request.SetCancellationToken(ct);
-    return request.PerformAsync()->Then<WSRepositoryResult>([=] (HttpResponse& response) mutable
+    return request.PerformAsync()->Then<WSRepositoryResult>([=] (Http::Response& response) mutable
         {
         if (!response.IsSuccess() && HttpStatus::InternalServerError != response.GetHttpStatus())
             return WSRepositoryResult::Error(response);

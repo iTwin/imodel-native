@@ -944,11 +944,11 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V12CacheTemporaryResponsesWithFullAndPa
     EXPECT_TRUE(cache.IsResponseCached(fullResponseKey));
     }
 
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
+///*--------------------------------------------------------------------------------------+
+//* @bsitest                                    Vincas.Razma                     10/15
+//+---------------+---------------+---------------+---------------+---------------+------*/
 //// Left for referance
-//TEST_F(DataSourceCacheUpgradeTests, SetupV13-CachingDataSource)
+//TEST_F(DataSourceCacheUpgradeTests, SetupV13_CachingDataSource)
 //    {
 //    auto paths = GetNewSeedPaths(13, "data");
 //
@@ -963,8 +963,8 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V12CacheTemporaryResponsesWithFullAndPa
 //    EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
 //        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponse()))));
 //
-//    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "TestSchema"), _, _, _, _))
-//        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+//    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "TestSchema"), An<BeFileNameCR>(), _, _, _))
+//        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
 //        {
 //        GetTestSchema()->WriteToXmlFile(filePath);
 //        return CreateCompletedAsyncTask(StubWSFileResult(filePath));
@@ -1009,8 +1009,8 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V13RepositoryInfo_LoadsCorrectly)
     EXPECT_CALL(*client, SendGetSchemasRequest(_, _))
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemaDefs.ToWSObjectsResponse()))));
 
-    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "TestSchema"), _, _, _, _))
-        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "TestSchema"), An<BeFileNameCR>(), _, _, _))
+        .WillOnce(Invoke([&] (ObjectIdCR, BeFileNameCR filePath, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
         GetTestSchema()->WriteToXmlFile(filePath);
         return CreateCompletedAsyncTask(StubWSFileResult(filePath));

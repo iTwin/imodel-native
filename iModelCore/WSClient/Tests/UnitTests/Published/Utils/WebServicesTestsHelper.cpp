@@ -221,12 +221,12 @@ Http::Response StubWSInfoHttpResponseWebApi27()
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 7));
     }
 
-HttpResponse StubWSInfoHttpResponseWebApi28()
+Http::Response StubWSInfoHttpResponseWebApi28()
     {
     return StubWSInfoHttpResponseWebApi(BeVersion(2, 8));
     }
 
-HttpResponse StubWSInfoHttpResponseWebApi(BeVersion webApiVersion)
+Http::Response StubWSInfoHttpResponseWebApi(BeVersion webApiVersion)
     {
     auto info = StubWSInfoWebApi(webApiVersion);
     Utf8PrintfString serverHeader(

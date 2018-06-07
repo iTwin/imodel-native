@@ -458,7 +458,6 @@ struct WSRepositoryClient : public IWSRepositoryClient
         mutable LimitingTaskQueue<WSResult> m_fileDownloadQueue;
         std::shared_ptr<struct Configuration> m_config;
         std::shared_ptr<struct RepositoryInfoProvider> m_infoProvider;
-        std::shared_ptr<struct Configuration> m_config;
 
     private:
         WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection);
