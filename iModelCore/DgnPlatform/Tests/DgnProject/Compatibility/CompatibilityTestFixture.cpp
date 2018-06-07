@@ -12,12 +12,11 @@
 
 USING_NAMESPACE_BENTLEY_EC
 
-//================================CompatibilityTestHelper================================
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECN::ECSchemaReadContextPtr CompatibilityTestHelper::DeserializeSchemas(ECDbCR ecdb, std::vector<SchemaItem> const& schemas)
+ECN::ECSchemaReadContextPtr TestFileCreator::DeserializeSchemas(ECDbCR ecdb, std::vector<SchemaItem> const& schemas)
     {
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
@@ -34,7 +33,6 @@ ECN::ECSchemaReadContextPtr CompatibilityTestHelper::DeserializeSchemas(ECDbCR e
 
     return context;
     }
-
 
 //**************************************************************************************
 // JsonValue

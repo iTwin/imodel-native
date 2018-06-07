@@ -53,6 +53,8 @@ struct TestFile final
         BeFileNameCR GetPath() const { return m_path; }
         ProfileState GetProfileState() const { return m_profileState; }
         BeSQLite::ProfileVersion const& GetVersion() const { return m_profileVersion; }
+
+        Utf8String ToString() const { return Utf8PrintfString("%s | %s | %s", m_name.c_str(), m_profileVersion.ToString().c_str(), m_path.GetNameUtf8().c_str()); }
     };
 
 //======================================================================================

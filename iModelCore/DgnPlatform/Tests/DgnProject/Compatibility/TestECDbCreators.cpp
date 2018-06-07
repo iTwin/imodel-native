@@ -52,7 +52,7 @@ DbResult TestECDbCreator::CreateNewTestFile(ECDbR ecdb, Utf8CP fileName)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus TestECDbCreator::ImportSchemas(ECDbCR ecdb, std::vector<SchemaItem> const& schemas)
     {
-    ECN::ECSchemaReadContextPtr ctx = CompatibilityTestHelper::DeserializeSchemas(ecdb, schemas);
+    ECN::ECSchemaReadContextPtr ctx = DeserializeSchemas(ecdb, schemas);
     if (ctx == nullptr)
         return ERROR;
 

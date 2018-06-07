@@ -31,19 +31,6 @@ struct SchemaItem final
         Utf8StringCR GetXml() const { return m_xmlString; }
     };
 
-//=======================================================================================    
-// @bsiclass                                   Krischan.Eberle                  06/18
-//=======================================================================================    
-struct CompatibilityTestHelper final
-    {
-    private:
-        CompatibilityTestHelper() = delete;
-        ~CompatibilityTestHelper() = delete;
-    public:
-        static ECN::ECSchemaReadContextPtr DeserializeSchemas(ECDbCR, std::vector<SchemaItem> const&);
-        static ECN::ECSchemaReadContextPtr DeserializeSchema(ECDbCR ecdb, SchemaItem const& schema) { return DeserializeSchemas(ecdb, {schema}); }
-    };
-
 //=======================================================================================
 //! Base class for implementing the creation of new test files
 // @bsiclass                                   Krischan.Eberle                  06/18
@@ -54,6 +41,10 @@ struct TestFileCreator
         virtual BentleyStatus _Create() = 0;
     protected:
         TestFileCreator() {}
+
+        static ECN::ECSchemaReadContextPtr DeserializeSchemas(ECDbCR, std::vector<SchemaItem> const&);
+        static ECN::ECSchemaReadContextPtr DeserializeSchema(ECDbCR ecdb, SchemaItem const& schema) { return DeserializeSchemas(ecdb, {schema}); }
+
     public:
         virtual ~TestFileCreator() {}
         BentleyStatus Create() { return _Create(); }

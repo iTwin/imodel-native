@@ -83,7 +83,7 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName, boo
             Utf8String msg("Found test files:\r\n");
             for (TestFile const& testFile : testFiles)
                 {
-                msg.append(Utf8PrintfString("%s | %s | %s\r\n", testFile.GetName().c_str(), testFile.GetVersion().ToString().c_str(), testFile.GetPath().GetNameUtf8().c_str()));
+                msg.append(testFile.ToString()).append("\r\n");
                 }
             LOG.info(msg.c_str());
             }
