@@ -250,330 +250,6 @@ DgnElementIdSet GraphicDerivedFromElement::QueryGraphics(GeometricElement const&
 
     return elementIdSet;
     }
-#ifdef UNUSED
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     02/2013
-+===============+===============+===============+===============+===============+======*/
-namespace {
-struct CreateCveMeter : DgnV8Api::VisEdgesProgressMeter
-{
-    Converter&              m_converter;
-    DgnProgressMeter::Abort m_aborted;
-
-    CreateCveMeter(Converter& c) : m_converter(c), m_aborted(DgnProgressMeter::ABORT_No) {}
-
-    virtual void            _SetTaskName (WCharCP taskName)  override       { m_aborted = m_converter.GetProgressMeter().ShowProgress(); }
-    virtual void            _IndicateProgress (double fraction) override    { m_aborted = m_converter.GetProgressMeter().ShowProgress(); }
-    virtual void            _Terminate () override                          {}
-    virtual bool            _WasAborted () override                         { return DgnProgressMeter::ABORT_Yes == m_aborted; }
-    virtual void            _DisplayMessageCenter (DgnV8Api::OutputMessagePriority priority, DgnV8Api::OutputMessageAlert openAlert, Bentley::WStringCR brief, Bentley::WStringCR detailed) override
-        {
-        Utf8String msg(brief.c_str());
-        msg.append(" - ");
-        msg.append(Utf8String(detailed.c_str()));
-
-        Converter::IssueSeverity sev = (DgnV8Api::OutputMessagePriority::Error == priority || DgnV8Api::OutputMessagePriority::Fatal == priority)?
-                                        Converter::IssueSeverity::Error: 
-                                        (DgnV8Api::OutputMessagePriority::Warning == priority)?
-                                        Converter::IssueSeverity::Warning:
-                                        Converter::IssueSeverity::Info;
-
-        m_converter.ReportIssue(sev, Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), msg.c_str());
-        }
-};  
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      07/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt   createProxyCache (VisibleEdgeCacheR proxyCache, VisibleEdgeCalculationCacheCP calculationCache, DgnModelRefP modelRef, ViewportP viewport, CreateCveMeter* progressIndicator)
-    {
-    DynamicViewSettingsCP                         dvSettings;
-    DgnV8Api::EditElementHandle                             clipElement;
-    DgnV8Api::IUnfoldableProfileExtension*                  unfoldExtension;
-    DgnV8Api::IUnfoldableProfileExtension::UnfoldedProfile  unfoldedProfile;
-
-
-    if (NULL != viewport &&
-        viewport->UseClipVolume (modelRef) &&
-        NULL != modelRef->AsDgnAttachmentP() &&
-        NULL != (dvSettings = viewport->GetDynamicViewSettings (modelRef)) &&
-        SUCCESS == dvSettings->GetClipBoundElemHandle (clipElement, modelRef) &&
-        NULL != (unfoldExtension = DgnV8Api::IUnfoldableProfileExtension::Cast (clipElement.GetHandler())) &&
-        SUCCESS == unfoldExtension->_GetUnfoldedProfile (unfoldedProfile, clipElement))
-        {
-        return DgnV8Api::VisibleEdgesLib::CreateUnfoldedProfileProxyCache (proxyCache, *modelRef->AsDgnAttachmentP(), unfoldedProfile, *viewport, *dvSettings, progressIndicator);
-        }
-    
-    return DgnV8Api::VisibleEdgesLib::CreateProxyCache (proxyCache, calculationCache, modelRef, viewport, progressIndicator);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      07/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt generateCve (DgnAttachmentP refP, ViewportP viewport, CachedVisibleEdgeOptionsCP pInputOptions, CreateCveMeter* meter, bool setAlwaysValid)
-    {
-    DgnV8Api::VisibleEdgeCache*           currentCache;
-
-    if (NULL == refP ||
-        NULL == viewport)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-    DgnModelRefP modelRef = refP;
-
-    if (NULL != (currentCache = dynamic_cast <DgnV8Api::VisibleEdgeCache*> (refP->GetProxyCache())) && (NULL != viewport && currentCache->IsValidForViewport (*viewport)))
-        return SUCCESS;
-
-    //UstnViewport*   mstnVP = dynamic_cast <UstnViewport*> (viewport);
-    //bool            doPreview = (NULL != mstnVP) && (NULL != mstnVP->GetWindow());
-
-    BeAssert (refP->IsDisplayedInViewport (*viewport, true));
-
-    DgnV8Api::CachedVisibleEdgeOptions    options;
-
-    // if we got options passed in, we use those.
-    DgnV8Api::Tcb const* tcb = modelRef->GetDgnFileP()->GetPersistentTcb();
-    if (NULL == pInputOptions)
-        {
-        if (NULL == currentCache)
-            options = DgnV8Api::CachedVisibleEdgeOptions (*tcb, modelRef);
-        else
-            options = currentCache->GetOptions();
-        }
-    else
-        {
-        options = *pInputOptions;
-        }
-
-    DgnV8Api::VisibleEdgeCache*           proxyCache = DgnV8Api::VisibleEdgeCache::Create (modelRef, options);
-    //CacheLoadPreviewContext*    previewContext = NULL;
-
-    // when setAlwaysValid is true, neither the originating view nor the CurrentViewGroup is not useful.
-    //if (!setAlwaysValid)
-    //    {
-    //    proxyCache->SetOriginatingView (viewport->GetViewNumber());
-    //    proxyCache->SetOriginatingViewGroup (getCurrentViewGroup());
-    //    }
-
-
-    //if (doPreview)
-    //    {
-    //    updateExceptReference (modelRef, viewport);
-    //    proxyCache->SetLoadPreviewer (previewContext = new CacheLoadPreviewContext (*viewport, *proxyCache, NULL));
-    //    }
-    //
-    //ustnmdl_callRefProxyHooks (refP, REFPROXYEVENT_BeforeProxyCacheCalculation, ProxyCachingOption::Cached);
-
-    //CompletionBarVisibleEdgesProgressMeter       progressMeter;
-
-    StatusInt   status = createProxyCache (*proxyCache, NULL, modelRef, viewport, meter);
-
-    //ustnmdl_callRefProxyHooks (refP, REFPROXYEVENT_AfterProxyCacheCalculation, ProxyCachingOption::Cached);
-
-    //DELETE_AND_CLEAR (previewContext);
-
-    //if ((SUCCESS != status) && doPreview)
-    //    {
-    //    reference_updateReferenceInView (modelRef, DRAW_MODE_Normal, viewport->GetViewNumber());
-    //    delete proxyCache;
-    //    return status;
-    //    }
-    proxyCache->Resolve ();
-
-    // Calculate the hash and find the newest element for the proxyCache we just created. Originally, we tried to do this while calculating hidden lines, but it
-    //  wasn't reliable to do it that way because of the complexity of tiling, etc., that hidden line requires.
-    // The "setAlwaysValid" flag is used when creating iModels. In that case, we create the cache from the actual elements, but later the elements are turned into XGraphics.
-    //  The process of creating XGraphics sometimes invalidates the hash, and we would thus conclude that the cache wasn't valid. We want it to be considered always valid.
-    if (!setAlwaysValid)
-        proxyCache->ComputeHash (modelRef, viewport);
-    else
-        proxyCache->ClearElementModifiedTimes (false);
-
-
-    // it's valid for the view we created it for. It might be valid for other views, depending on what levels, etc., they are displaying. We have to run the test.
-    //UInt32  thisView = viewport->GetViewNumber();
-    UInt32  thisView = 0; // *** we always use a fake view
-    proxyCache->SetValidForView (thisView, true);
-
-    refP->SetProxyCache (proxyCache, DgnV8Api::ProxyDgnAttachmentHandlerManager::GetManager().GetHandler (DgnV8Api::CachedVisibleEdgeHandlerId()));
-
-    // write the proxy cache as XAttributes to the reference element.
-    return proxyCache->Save (modelRef);
-
-    // Note: It is up to the caller to make sure that the reference element itself is saved.
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnAttachmentP Converter::GetFirstNeedingCve(ResolvedModelMapping const& parentModel, ProxyGraphicsDetector& proxyDetector, ViewportP vp, bset<DgnV8Api::ElementId> const& ignoreList)
-    {
-    for (DgnAttachmentP attachment : *parentModel.GetV8Model().GetDgnAttachmentsP())
-        {
-        if (ignoreList.find(attachment->GetElementId()) != ignoreList.end())
-            continue;
-
-        DgnV8Api::EditElementHandle v8eh(attachment->GetElementId(), &parentModel.GetV8Model());
-        if (!v8eh.IsValid())
-            continue;
-        ChangeDetector::SearchResults searchRes;
-        if (!GetChangeDetector()._IsElementChanged(searchRes, *this, v8eh, parentModel))
-            continue;
-        if (!proxyDetector._UseProxyGraphicsFor(*attachment, *this))
-            continue;
-
-        if (IsSimpleWireframeAttachment(*attachment))
-            continue;
-
-        if (!attachment->Is3d() || attachment->IsTemporary())
-            {
-            // DgnPlatform will only generate proxy graphics for attached 3d models.
-            BeAssert(false && "the proxyDetector is confused if it thinks that it will get proxy graphics for an attached drawing or sheet.");
-            continue;
-            }
-        if (HasProxyGraphicsCache(*attachment, vp))
-            continue;
-        if (nullptr == attachment->GetDgnModelP())  // We can't generate proxy graphics unless we get to the original model's elements
-            continue;
-        return attachment;
-        }
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::_GenerateProxyGraphics(ResolvedModelMapping const& v8ModelMapping, DgnV8Api::Viewport& vp, ProxyGraphicsDetector& proxyDetector)
-    {
-    auto& v8Model = v8ModelMapping.GetV8Model();
-    auto attachments = GetAttachments(v8Model);
-
-    if (nullptr == attachments)
-        return;
-
-    BeAssert(v8Model.IsFilled(DgnV8Api::DgnModelSections::ControlElements));
-
-    // NB: Don't iterate v8Model.GetDgnAttachmentsP. LOOK BELOW! We call v8Model.ReloadNestedDgnAttachments.
-    //      After generating CVE for an attachment, you must re-start the search for attachments that need CVE.
-    bset<DgnV8Api::ElementId> seen;
-    bset<DgnV8Api::ElementId> failed;
-    while (true)
-        {
-        GetAttachments(v8Model); // make sure attachments are loaded and caches are filled
-
-        DgnAttachmentP attachment = GetFirstNeedingCve(v8ModelMapping, proxyDetector, &vp, failed);
-        if (nullptr == attachment)
-            break;
-
-        if (!seen.insert(attachment->GetElementId()).second)
-            {
-            BeAssert(false && " generateCVE didn't seem to create CVE for an attachment, but it also didn't return error");
-            break;
-            }
-
-        CreateCveMeter meter(*this);
-
-        v8Model.SetReadOnly(false);
-        if (SUCCESS != generateCve(attachment, &vp, nullptr, &meter, true))
-            {
-            failed.insert(attachment->GetElementId());
-            continue;
-            }
-
-        attachment->SetProxyCachingOption(DgnV8Api::ProxyCachingOption::Cached);
-        //mdlRefFile_writeAttachmentExtended(&dgnAttachment, true, true, true);
-        attachment->Rewrite(true, true);
-        attachment->FixSelfReferenceAttachments(false);
-
-        // TFS#735518 - once we have the proxygraphics, we don't care about nested attachments any more.
-        //v8Model.ReloadNestedDgnAttachments(true);
-        }
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Converter::_UseProxyGraphicsFor(DgnAttachmentCR ref)
-    {
-    if (!ref.Is3d() || ref.IsTemporary())
-        return false;
-
-    // If we haven't mapped the V8 3D model into a BIM spatial model (because it wasn't found via the root spatial model), then
-    // we should capture a picture of it as proxy graphics. ***NEEDS WORK: If this model was converted using a spatial reference transform, we won't find that.
-    if ((nullptr != ref.GetDgnModelP()) && !FindFirstModelMappedTo(*ref.GetDgnModelP()).IsValid())
-        return true;
-
-    // In the general case, we only use proxy graphics on attachments that are based on saved views, which might 
-    // represent section cuts or might have 3d clips.
-
-    DgnV8Api::EditElementHandle viewEEH;
-    if (!ref.GetNamedViewElement(viewEEH))
-        return false;
-
-    // *** WIP_SHEETS - how to detect the kinds of named views that result in generated/cut geometry?
-    switch(GetV8NamedViewType(viewEEH))
-        {
-        case V8NamedViewType::Section:  
-        case V8NamedViewType::Plan:     
-        case V8NamedViewType::Elevation:
-            return true;
-        }
-
-    auto nv = DgnV8Api::NamedView::Create(viewEEH);
-    if (nv.IsValid())
-        {
-        // If the view is 3D and is clipped, then we have to use proxy graphics, as BIM 3D view clipping does not support
-        // all of the dynamic-views-related features of Vancouver view clipping.
-        ViewInfoCR viewInfo = nv->GetViewInfo();
-        return (nullptr != viewInfo.GetDynamicViewSettings().GetClipBoundElementRef(ref.GetDgnModelP()))
-            || (nullptr != viewInfo.GetDynamicViewSettings().GetClipMaskElementRef(ref.GetDgnModelP()));
-        }
-
-    return false;
-    }
-
-/*
-bim                         v8
-DefnModel(1)                DgnModel(drawing)(1)
-    Drawing(5)                  DgnAttachment(1)    -----------> DgnModel(design)(2)
-    ^                                 ProxyGraphicsCache                               
-    |(breaksdown)
-DrawingModel(2)
-    DrawingGraphic(1)                     PG1 ----------------->  DgnElement(21)
-                                          PG2 ----------------->
-                                          ...
-    DrawingGraphic(2)                     PGn ----------------->   DgnElement(22)
-                                          ...
-                                DgnAttachment(2)    -----------> DgnModel(design)(3)
-                                          ...                       ...
-SpatialModel(3)
-    SpatialElement(3)
-    SpatialElement(4)
-
-
-            syncinfo
-
-            Model
-            DrawingModel(1) <- DgnModel(drawing)(1)
-
-            Element
-            SpatialElement(3) <- DgnElement(21)
-            SpatialElement(4) <- DgnElement(22)
-            ...
-            Drawing(5) <- DgnAttachment(1)
-            Drawing(5) <- DgnAttachment(2)
-
-            ExtractedGraphic
-            DrawingGraphic(1) <- DgnModel(drawing)(1),SpatialElement(3)
-            DrawingGraphic(2) <- DgnModel(drawing)(1),SpatialElement(4)
-
-
-*/
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
@@ -698,11 +374,11 @@ void Converter::_DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8D
     // NOT in v8OriginalElementsSeen, then we know that the caller did not see its and we can conclude that source of the graphic
     // in V8 has disappeared. We should therefore delete the drawing graphic.
 
-    bset<DgnElementId> drawingGraphicsToDelete;
-    SyncInfo::T_V8ElementSourceSet attachmentsToDelete;
-    SyncInfo::T_V8ElementMapOfV8ElementSourceSet recordsToDelete;
+    bset<DgnElementId>                              drawingGraphicsToDelete;
+    SyncInfo::T_V8ElementSourceSet                  attachmentsToDelete;
+    SyncInfo::T_V8ElementMapOfV8ElementSourceSet    recordsToDelete;
+    SyncInfo::V8ElementSource                       attachmentSource;
 
-    SyncInfo::V8ElementSource attachmentSource;
     attachmentSource.m_v8ModelSyncInfoId = v8DrawingModel.GetV8ModelSyncInfoId();
 
     CachedStatementPtr stmt = nullptr;
@@ -722,6 +398,7 @@ void Converter::_DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8D
         if (unchangedV8attachments.find(attachmentSource) != unchangedV8attachments.end())
             continue;
 
+        // For changed attachments only....
         auto attachmentSeen = v8OriginalElementsSeen.find(attachmentSource);
         if (attachmentSeen == v8OriginalElementsSeen.end())
             {
@@ -732,11 +409,11 @@ void Converter::_DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8D
 
         SyncInfo::T_V8ElementSourceSet const& originalsSeen = attachmentSeen->second;
 
-        SyncInfo::V8ElementSource originalsSeenource(originalV8ElementId, SyncInfo::V8ModelSyncInfoId(originalV8ModelSyncInfoId));
-        if (originalsSeen.find(originalsSeenource) == originalsSeen.end())
+        SyncInfo::V8ElementSource originalsSeenSource(originalV8ElementId, SyncInfo::V8ModelSyncInfoId(originalV8ModelSyncInfoId));
+        if (originalsSeen.find(originalsSeenSource) == originalsSeen.end())
             {
             drawingGraphicsToDelete.insert(graphic);
-            recordsToDelete[attachmentSource].insert(originalsSeenource);
+            recordsToDelete[attachmentSource].insert(originalsSeenSource);
             }
         }
 

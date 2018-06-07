@@ -8,6 +8,8 @@
 #include "ConverterInternal.h"
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 #include <DgnPlatform/AutoRestore.h>
+#include <GeomSerialization/GeomSerializationApi.h>
+
 
 DGNV8_BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 /*=================================================================================**//**
@@ -255,6 +257,10 @@ void Converter::ConvertCurveVector(BentleyApi::CurveVectorPtr& clone, Bentley::C
                 }
             }
         }
+#ifndef NDEBUG
+    for (auto curve : *clone)
+        BeAssert (curve.IsValid());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -384,9 +390,12 @@ void Converter::ConvertMSBsplineSurface(BentleyApi::MSBsplineSurfacePtr& clone, 
 //#define TEST_AUXDATA_RADIAL_WAVES
 //#define TEST_AUXDATA_WAVES
 //#define TEST_AUXDATA_FILE
+//#define TEST_AUXDATA_TO_JSON
 //#define TEST_AUXDATA_CANTILEVER
 
+
 #ifdef TEST_AUXDATA
+
 PolyfaceAuxDataPtr              s_testAuxData;
 ThematicGradientSettingsPtr     s_testAuxDataSettings;
 static void getTestAuxData(Bentley::PolyfaceQueryCR polyface);
@@ -1240,6 +1249,18 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, double
 
                 Converter::ConvertPolyface(clone, *m_mesh);
                 m_geometry = GeometricPrimitive::Create(clone);
+#ifdef TEST_AUXDATA_TO_JSON
+                Utf8String      jsonString;
+                auto            jsonClone = IGeometry::Create(clone);
+
+                jsonClone->TryTransformInPlace(m_v8ToDgnDbTrans);
+                if (BentleyApi::IModelJson::TryGeometryToIModelJsonString (jsonString, *jsonClone))
+                    {
+                    FILE*       file = std::fopen("d:\\tmp\\Cantilever.json", "w");
+                    fwrite (jsonString.c_str(), 1, jsonString.size(), file);
+                    fclose(file);
+                    }
+#endif
                 }
             }
         else if (m_brep.IsValid())
