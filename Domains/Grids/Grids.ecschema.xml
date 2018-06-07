@@ -18,6 +18,39 @@
       </ECCustomAttributes>
     </ECEntityClass>
 
+    <ECEntityClass typeName="GridCurveBundle" displayLabel="GridCurve bundle">
+      <BaseClass>bis:DriverBundleElement</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00.00" />
+      </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="GridSurfaceDrivesGridCurveBundle" modifier="None" strength="referencing" description="a driving relationship which tells that gridsurface influences the creation of GridCurve">
+      <BaseClass>bis:ElementDrivesElement</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00.00"/>
+      </ECCustomAttributes>
+      <Source multiplicity="(0..*)" roleLabel="influences" polymorphic="true">
+        <Class class="GridSurface"/>
+      </Source>
+      <Target multiplicity="(0..*)" roleLabel="is influenced by" polymorphic="true">
+        <Class class="GridCurveBundle"/>
+      </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="GridCurveBundleCreatesGridCurve" modifier="None" strength="referencing" description="a driving relationship which tells that gridcurve was created by the mapped GridCurveBundle">
+      <BaseClass>bis:ElementDrivesElement</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00.00"/>
+      </ECCustomAttributes>
+      <Source multiplicity="(1..1)" roleLabel="creates" polymorphic="true">
+        <Class class="GridCurveBundle"/>
+      </Source>
+      <Target multiplicity="(0..1)" roleLabel="is created by" polymorphic="true">
+        <Class class="GridCurve"/>
+      </Target>
+    </ECRelationshipClass>
+
     <ECRelationshipClass typeName="GridDrivesGridSurface" modifier="None" strength="referencing" description="a driving relationship which tells that a grid is driving a gridsurface.">
       <BaseClass>bis:ElementDrivesElement</BaseClass>
       <ECCustomAttributes>
@@ -44,7 +77,7 @@
       </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="GridHasAxes" strength="referencing" modifier="None" description="maps grid to its axes">
+    <ECRelationshipClass typeName="GridHasAxes" strength="embedding" modifier="None" description="maps grid to its axes">
       <Source multiplicity="(1..1)" roleLabel="Has Axis" polymorphic="true">
         <Class class="Grid"/>
       </Source>
@@ -165,7 +198,7 @@
       <BaseClass>GridSurface</BaseClass>
     </ECEntityClass>
 
-    <ECEntityClass typeName="GridSplineSurface" modifier="Abstract" description="A grid surface that is an extruded spline.">
+    <ECEntityClass typeName="GridSplineSurface" modifier="Abstract" description="A grid surface that is parallel to an extruded spline.">
       <BaseClass>GridSurface</BaseClass>
     </ECEntityClass>
 
@@ -229,7 +262,7 @@
       </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="IPlanGridSurface" modifier="Abstract" displayLabel="PlanGrid Surface" description="An interface that indicates that this Surface is suitable to be placed in PlanGrid" >
+    <ECEntityClass typeName="IPlanGridSurface" modifier="Abstract" displayLabel="PlanGrid Surface" description="An interface that indicates that this Surface is suitable to be placed in a PlanGrid" >
       <ECCustomAttributes>
         <IsMixin xmlns="CoreCustomAttributes.01.00.00">
           <!-- Only subclasses of grids:GridSurface can implement the IPlanGridSurface interface -->
@@ -296,7 +329,7 @@
       <ECProperty propertyName="Arc2d" displayLabel="Arc2d" typeName="Bentley.Geometry.Common.IGeometry"/>
     </ECEntityClass>
   
-    <ECEntityClass typeName="PlanGridSplineSurface" modifier="Abstract" description="An arc plangrid surface element.">
+    <ECEntityClass typeName="PlanGridSplineSurface" modifier="Abstract" description="A spline plangrid surface element.">
       <BaseClass>GridSplineSurface</BaseClass>
       <BaseClass>IPlanGridSurface</BaseClass>
     </ECEntityClass>
