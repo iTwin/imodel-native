@@ -38,6 +38,7 @@ protected:
     void _EnableCamera() override final {}
     bool _SupportsCamera() const override final { return false; }
     Dgn::ViewControllerPtr _SupplyController() const override final;
+    bool _ViewsModel(Dgn::DgnModelId modelId) override final;
 
     //! @private
     explicit AlignmentXSViewDefinition(CreateParams const& params) : T_Super(params) {}

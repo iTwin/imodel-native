@@ -55,3 +55,16 @@ DgnViewId AlignmentXSViewDefinition::QuerySystemViewId(SubjectCR subject)
     const DgnElementId eid = subject.GetDgnDb().Elements().QueryElementIdByCode(CreateCode(*configurationModelPtr, SYSTEM_VIEW_NAME));
     return DgnViewId(eid.GetValueUnchecked());
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Alexandre.Gagnon                        10/2017
+//---------------------------------------------------------------------------------------
+bool AlignmentXSViewDefinition::_ViewsModel(DgnModelId modelId)
+    {
+    // Manipulator code checks if the model is viewed. Since we're using a model that's not persisted, its Id is '0'
+    // return true when that happens
+    if (!modelId.IsValid())
+        return true;
+
+    return T_Super::_ViewsModel(modelId);
+    }
