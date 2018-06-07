@@ -185,6 +185,7 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnArrayPr
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
     expectedRefSchemas.push_back("Units.01.00.00");
+    expectedRefSchemas.push_back("Formats.01.00.00");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -222,6 +223,7 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnlyOnPro
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
     expectedRefSchemas.push_back("Units.01.00.00");
+    expectedRefSchemas.push_back("Formats.01.00.00");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -283,6 +285,7 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecifications)
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
     expectedRefSchemas.push_back("Units.01.00.00");
+    expectedRefSchemas.push_back("Formats.01.00.00");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -873,6 +876,7 @@ TEST_F(UnitsCustomAttributesConversionTests, OldUnitsWithKoqNameConflicts)
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
     expectedRefSchemas.push_back("Units.01.00.00");
+    expectedRefSchemas.push_back("Formats.01.00.00");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -914,6 +918,7 @@ TEST_F(UnitsCustomAttributesConversionTests, SchemaWithIsUnitSystemSchema_Attrib
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
     expectedRefSchemas.push_back("Units.01.00.00");
+    expectedRefSchemas.push_back("Formats.01.00.00");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
