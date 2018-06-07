@@ -13,7 +13,7 @@
 void TestUtils::CompareCurves(ICurvePrimitivePtr lhs, ICurvePrimitivePtr rhs)
     {
     ASSERT_TRUE(lhs.IsValid() && rhs.IsValid()) << "Both curves should be valid";
-    ASSERT_TRUE(lhs->IsSameStructureAndGeometry(*rhs, 0.1)) << "Curves should have same geometry";
+    ASSERT_TRUE(lhs->IsSameStructureAndGeometry(*rhs)) << "Curves should have same geometry";
     }
 
 //--------------------------------------------------------------------------------------
@@ -56,10 +56,13 @@ ICurvePrimitivePtr TestUtils::CreateInterpolationCurve(bvector<DPoint3d> poles, 
     if (curve.IsNull())
         return nullptr;
 
-    DVec3d tangents[2] = { startTangent, endTangent };
+    DVec3d tangents[2] = {startTangent, endTangent};
 
     for (DVec3d & tangent : tangents)
-        tangent.Normalize();
+        {
+        if (!tangent.IsZero())
+            tangent.Normalize();
+        }
 
     if (SUCCESS != curve->InitFromPointsAndEndTangents(poles, false, 0.0, tangents, false, false, false, false))
         return nullptr;
