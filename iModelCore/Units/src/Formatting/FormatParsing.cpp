@@ -245,24 +245,18 @@ ScannerCursorStatus CursorScanPoint::AppendTrailingByte(Utf8CP txt)
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 // the caller is responsible for keeping the index inside the allowable range
 //----------------------------------------------------------------------------------------
-CursorScanPoint::CursorScanPoint(Utf8CP input, size_t indx, bool reverse)
+CursorScanPoint::CursorScanPoint(Utf8CP input, size_t indx)
     {
     m_indx = indx;
-    if (reverse)
-      ProcessPrevious(input);
-    else
-      ProcessNext(input);
+    ProcessNext(input);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void CursorScanPoint::Iterate(Utf8CP input, bool reverse)
+void CursorScanPoint::Iterate(Utf8CP input)
     {
-    if (reverse)
-        ProcessPrevious(input);
-    else
-        ProcessNext(input);
+    ProcessNext(input);
     }
 
 //----------------------------------------------------------------------------------------
@@ -350,86 +344,6 @@ void CursorScanPoint::ProcessNext(Utf8CP input)
         }
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
-void CursorScanPoint::ProcessPrevious(Utf8CP input)
-    {
-    if (nullptr == input)
-        {
-        input = FormatConstant::EmptyString();
-        m_indx = 0;
-        }
-    m_uniCode = 0;
-    m_len = 0;
-    memset(m_bytes, '\0', sizeof(m_bytes));
-    m_patt = FormatConstant::EndOfLine();
-    m_status = ScannerCursorStatus::Success;
-    unsigned char c = GetPrecedingByte(input);
-    while (ScannerCursorStatus::Success == m_status)
-        {
-        if (FormatConstant::EndOfLine() == c)    // detected end of line
-            break;
-        if (FormatConstant::IsASCIIChar(c))  // it's the simplest case - we done
-            {
-            ProcessASCII(c);
-            break;
-            }
-        // need to find the head byte by moving backward
-        int n = 0;
-        while (FormatConstant::IsTrailingByteValid(c) && m_indx > 0 && n < 3)
-            {
-            c = GetPrecedingByte(input);
-            ++n;
-            }
-        size_t seqLen = FormatConstant::GetSequenceLength(c); // it must be 2, 3 or 4
-
-        if (seqLen == 2)
-            {
-            m_bytes[m_len++] = c;
-            m_uniCode = (size_t)(c &  FormatConstant::UTF_2ByteSelector());
-            m_bytes[m_len] = input[m_indx + 1];
-            m_uniCode <<= FormatConstant::UTF_UpperBitShift();
-            m_uniCode |= (size_t)(m_bytes[m_len++] & FormatConstant::UTF_TrailingBitsMask());
-            m_patt = 'b';
-            break;
-            }
-        if (seqLen == 3)
-            {
-            m_bytes[m_len] = c;
-            m_uniCode = (size_t)(m_bytes[m_len++] & FormatConstant::UTF_3ByteSelector());
-
-            m_bytes[m_len] = input[m_indx + 1];
-            m_uniCode <<= FormatConstant::UTF_UpperBitShift();
-            m_uniCode |= (size_t)(m_bytes[m_len++] & FormatConstant::UTF_TrailingBitsMask());
-            m_bytes[m_len] = input[m_indx + 2];
-            m_uniCode <<= FormatConstant::UTF_UpperBitShift();
-            m_uniCode |= (size_t)(m_bytes[m_len++] & FormatConstant::UTF_TrailingBitsMask());
-            m_patt = 'c';
-            break;
-            }
-        if (seqLen == 4)
-            {
-            m_bytes[m_len] = c;
-            m_uniCode = (size_t)(m_bytes[m_len++] & FormatConstant::UTF_4ByteSelector());
-            m_bytes[m_len] = input[m_indx + 1];
-            m_uniCode <<= FormatConstant::UTF_UpperBitShift();
-            m_uniCode |= (size_t)(m_bytes[m_len++] & FormatConstant::UTF_TrailingBitsMask());
-            m_bytes[m_len] = input[m_indx + 2];
-            m_uniCode <<= FormatConstant::UTF_UpperBitShift();
-            m_uniCode |= (size_t)(m_bytes[m_len++] & FormatConstant::UTF_TrailingBitsMask());
-            m_bytes[m_len] = input[m_indx + 3];
-            m_uniCode <<= FormatConstant::UTF_UpperBitShift();
-            m_uniCode |= (size_t)(m_bytes[m_len++] & FormatConstant::UTF_TrailingBitsMask());
-            m_patt = 'd';
-            break;
-            }
-
-        m_status = ScannerCursorStatus::InvalidSymbol;
-        break;
-        } // end of While
-    }
-
 //===================================================
 // NumberGrabber
 //===================================================
@@ -447,8 +361,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
     m_next = m_start;
     m_ival = 0;
     m_dval = 0;  
-    bool revs = false;
-    CursorScanPoint csp = CursorScanPoint(m_input, m_next, revs);
+    CursorScanPoint csp = CursorScanPoint(m_input, m_next);
     if (csp.IsEndOfLine())
         {
         m_type = ParsingSegmentType::EndOfLine;
@@ -474,13 +387,13 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
 
     Utf8Char c;
 
-    while (csp.IsSpace()) { m_next++; csp.Iterate(m_input, revs); }
+    while (csp.IsSpace()) { m_next++; csp.Iterate(m_input); }
     if (csp.IsSign())  // the sign character can be expected at the start
         {
         c = csp.GetAscii();
         sign = (c == '-') ? -1 : 1;
         ++m_next;
-        csp.Iterate(m_input, revs);
+        csp.Iterate(m_input);
         }
     while (csp.IsDigit())    // if there any digits - they will be accumulated in the int part
         {
@@ -488,7 +401,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
         ival = ival * 10 + d;
         iCount++;
         ++m_next;
-        csp.Iterate(m_input, revs);
+        csp.Iterate(m_input);
         }
 
     if (csp.IsBar())  // a very special case of a fraction 
@@ -496,14 +409,14 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
         if (iCount > 0)
             {
             ++m_next;
-            csp.Iterate(m_input, revs);
+            csp.Iterate(m_input);
             while (csp.IsDigit())    // if there any digits - they will be accumulated in the int part
                 {
                 int d = (int)(csp.GetAscii() - '0');
                 denom = denom * 10 + d;
                 dCount++;
                 ++m_next;
-                csp.Iterate(m_input, revs);
+                csp.Iterate(m_input);
                 }
             if (dCount > 0 && denom > 0)
                 {
@@ -525,27 +438,27 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
         {              // or can be followed by more digits
         point = true;
         ++m_next;
-        csp.Iterate(m_input, revs);
+        csp.Iterate(m_input);
         while (csp.IsDigit())    // if there any digits - they will be accumulated in the fraction
             {
             int d = (int)(csp.GetAscii() - '0');
             fval = fval * 10 + d;
             fCount++;
             ++m_next;
-            csp.Iterate(m_input, revs);
+            csp.Iterate(m_input);
             }
         }
     if (csp.IsExponent())
         {
         expMark = true;
         ++m_next;
-        csp.Iterate(m_input, revs);
+        csp.Iterate(m_input);
         if (csp.IsSign())  // the sign character can be expected at the start
             {
             c = csp.GetAscii();
             expSign = (c == '-') ? -1 : 1;
             ++m_next;
-            csp.Iterate(m_input, revs);
+            csp.Iterate(m_input);
             }
         while (csp.IsDigit())    // if there any digits - they will be accumulated in the fraction
             {
@@ -553,7 +466,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
             eval = eval * 10 + d;
             eCount++;
             ++m_next;
-            csp.Iterate(m_input, revs);
+            csp.Iterate(m_input);
             }
         }
 
@@ -731,7 +644,6 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
     FormatParsingSegment fps;
     NumberGrabber ng;
     bvector<CursorScanPoint> m_symbs;
-    bool revs = false;
     CursorScanPoint csp = CursorScanPoint();
     size_t ind = start;
     size_t ind0 = start;
@@ -761,7 +673,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
             {
             if (initVect) ind0 = ind;
             initVect = false;
-            csp = CursorScanPoint(m_input, ind, revs);
+            csp = CursorScanPoint(m_input, ind);
             if (csp.IsSpace())
                 {
                 if (m_symbs.size() > 0)
@@ -772,7 +684,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
                     ind = csp.GetIndex();
                     ind0 = ind;
                     }
-                while (csp.IsSpace()) { csp.Iterate(m_input, revs); }
+                while (csp.IsSpace()) { csp.Iterate(m_input); }
                 ind = csp.GetIndex();
                 ind0 = ind;
                 }

@@ -40,10 +40,9 @@ private:
 public:
     CursorScanPoint() : m_uniCode(0), m_indx(0), m_len(0), m_patt('\0'), m_status(ScannerCursorStatus::Success)
         {memset(m_bytes, 0, sizeof(m_bytes));}
-    UNITS_EXPORT CursorScanPoint(Utf8CP input, size_t indx, bool revers);
+    UNITS_EXPORT CursorScanPoint(Utf8CP input, size_t indx);
     UNITS_EXPORT void ProcessNext(Utf8CP input);
-    UNITS_EXPORT void ProcessPrevious(Utf8CP input);
-    UNITS_EXPORT void Iterate(Utf8CP input, bool revers);
+    UNITS_EXPORT void Iterate(Utf8CP input);
     bool IsDigit() { return (m_len == 1) && (m_patt == FormatConstant::NumberSymbol()); }
     bool IsSign() { return (m_len == 1) && (m_patt == FormatConstant::SignSymbol()); }
     bool IsSpace() { return (m_len == 1) && (m_patt == FormatConstant::SpaceSymbol()); }
