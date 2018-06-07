@@ -2352,7 +2352,10 @@ static bvector<Utf8CP> s_dgnV8DeliveredSchemas = {
     "ExtendedElementSchema",
     "MstnPropertyFormatter",
     "Ustn_ElementParams",
-    "DTMElement_TemplateExtender_Schema"
+    "DTMElement_TemplateExtender_Schema",
+    "dgn",
+    "ECDbSystem",
+    "ECDb_FileInfo"
     };
 
 //---------------------------------------------------------------------------------------
@@ -2634,10 +2637,17 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::ImportTargetECSchemas()
         }
 
     bvector<BECN::ECSchemaCP> constSchemas = m_schemaReadContext->GetCache().GetSchemas();
-    // Once we've constructed the handler info, we need only retain those property names which are used in SELECT statements.
     auto removeAt = std::remove_if(constSchemas.begin(), constSchemas.end(), [&] (BECN::ECSchemaCP const& arg) { return arg->IsStandardSchema() || arg->IsSystemSchema(); });
     constSchemas.erase(removeAt, constSchemas.end());
 
+    auto removeDgn = std::remove_if(constSchemas.begin(), constSchemas.end(), [&] (BECN::ECSchemaCP const& arg)
+        {
+        Utf8String v8SchemaName = arg->GetName();
+        auto found = std::find_if(s_dgnV8DeliveredSchemas.begin(), s_dgnV8DeliveredSchemas.end(), [v8SchemaName] (Utf8CP dgnv8) ->bool { return BeStringUtilities::StricmpAscii(v8SchemaName.c_str(), dgnv8) == 0; });
+        return (found != s_dgnV8DeliveredSchemas.end());
+        });
+
+    constSchemas.erase(removeDgn, constSchemas.end());
 //#define EXPORT_BISIFIEDECSCHEMAS 1
 #ifdef EXPORT_BISIFIEDECSCHEMAS
     {

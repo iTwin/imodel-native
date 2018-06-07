@@ -490,7 +490,7 @@ struct iModelBridge
         WString m_thisBridgeRegSubKey;
         Transform m_spatialDataTransform;
         DgnElementId m_jobSubjectId;
-
+        Utf8String   m_jobRunCorrelationId;
         void SetIsCreatingNewDgnDb(bool b) {m_isCreatingNewDb=b;}
         IMODEL_BRIDGE_EXPORT void SetReportFileName();
         void SetThumbnailTimeout(BeDuration timeout) {m_thumbnailTimeout = timeout;}
@@ -600,8 +600,10 @@ struct iModelBridge
 
         //!Get/Set the client info when talking to iModelHub or other services. 
         //!Individual bridges are supposed to set it up in its constructor so that when briefcase creation is called, appropriate ids are passed along.
-        WebServices::ClientInfoPtr GetClientInfo() const { return m_clientInfo; };
+        IMODEL_BRIDGE_EXPORT WebServices::ClientInfoPtr GetClientInfo() const;
         void        SetClientInfo(WebServices::ClientInfoPtr info) { m_clientInfo = info;}
+        
+        IMODEL_BRIDGE_EXPORT Http::IHttpHeaderProviderPtr GetDefaultHeaderProvider() const;
         };
 
     private:
@@ -623,8 +625,7 @@ struct iModelBridge
     //! Open an existing BIM for read-write, possibly doing a schema upgrade on it.
     //! @param[out] dbres  If the BIM cannot be opened or upgraded, return the error status here.
     //! @return Opened BIM or an invalid ptr if the BIM could not be opened.
-    IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges);
-
+    static IMODEL_BRIDGE_EXPORT DgnDbPtr OpenBimAndMergeSchemaChanges(BeSQLite::DbResult& dbres, bool& madeSchemaChanges, BeFileNameCR dbName);
     //! @private
     //! Convert source data to an existing BIM. This is called by the framework as part of a normal conversion.
     //! @param[in] db The BIM to be updated

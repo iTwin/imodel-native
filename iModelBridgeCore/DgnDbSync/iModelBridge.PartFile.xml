@@ -8,7 +8,7 @@
 
     <Part Name="iModelBridgeLibrary" BentleyBuildMakeFile="iModelBridge/iModelBridge.mke" ApiNumber="B02">
         <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
-        <SubPart PartName="WebServicesClient-PublicAPI" PartFile="WSClient" Repository="WSClient" />
+        <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient" />
         <SubPart PartName="PublicAPI" />
       
       <Bindings>
@@ -343,6 +343,7 @@
 
     <Part
         Name="RunUwpTest"
+        DeferType="RunUnitTests"
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke"
         BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=iModelBridge-UwpTest"
         OnlyPlatforms="WinRT*"
