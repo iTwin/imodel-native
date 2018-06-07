@@ -2,14 +2,14 @@
 |
 |     $Source: Dwg/Samples/XData/ImportXData.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #ifdef DWGTOOLKIT_RealDwg
 // RealDWG uses MFC which requires afx headers to be included first!
-#ifndef UNITCODE
+#ifndef UNICODE
     #define     UNICODE
 #endif
 #ifndef _AFXDLL
