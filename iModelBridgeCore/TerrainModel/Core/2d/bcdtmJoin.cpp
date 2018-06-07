@@ -319,7 +319,13 @@ BENTLEYDTM_EXPORT int bcdtmJoin_dtmFeatureTypeWithRollbackDtmObject
 **  Update Modified Time
  */
  if (*numBeforeJoinP != *numAfterJoinP)
-   time_t(&dataP->modifiedTime) ;
+    { 
+#if _WIN32
+     _time32(&dataP->modifiedTime);     
+#else     
+     time(&dataP->modifiedTime);
+#endif    
+    }
 /*
 ** Clean Up
 */

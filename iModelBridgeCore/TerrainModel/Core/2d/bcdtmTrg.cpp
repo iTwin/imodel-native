@@ -25,7 +25,11 @@ BENTLEYDTM_Public void bcdtmObject_updateLastModifiedTime
 )
 {
 #if WINDOWS
-  time_t(&dtmP->modifiedTime);
+    #if _WIN32
+        _time32(&dtmP->modifiedTime);
+    #else     
+        time(&dtmP->modifiedTime);
+    #endif        
   uint64_t now = BeTimeUtilities::GetCurrentTimeAsUnixMillis ();
 #ifdef BUILDTMFORDGNDB
   BeTimeUtilities::ConvertUnixTimeToFiletime (*(_FILETIME*)&dtmP->lastModifiedTime, now / 1000LL);

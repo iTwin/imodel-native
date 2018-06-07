@@ -350,7 +350,11 @@ BENTLEYDTM_EXPORT int bcdtmObject_createDtmObject(BC_DTM_OBJ **dtmPP )
  (*dtmPP)->modifiedTime         =  0 ;
  (*dtmPP)->userTime             =  0 ;
 #ifndef _WIN32_WCE
- time_t(&(*dtmPP)->creationTime) ;
+    #if _WIN32
+     _time32(&(*dtmPP)->creationTime);
+    #else     
+     time(&(*dtmPP)->creationTime);
+    #endif     
 #endif
  (*dtmPP)->ppTol                = DTM_PPTOL ;
  (*dtmPP)->plTol                = DTM_PLTOL ;
@@ -1347,7 +1351,11 @@ BENTLEYDTM_EXPORT int bcdtmObject_initialiseDtmObject( BC_DTM_OBJ *dtmP )
  dtmP->modifiedTime         =  0 ;
  dtmP->userTime             =  0 ;
 #ifndef _WIN32_WCE
- time_t(&dtmP->creationTime) ;
+    #if _WIN32
+     _time32(&dtmP->creationTime);
+    #else     
+     time(&dtmP->creationTime);
+    #endif      
 #endif
  dtmP->ppTol                = DTM_PPTOL ;
  dtmP->plTol                = DTM_PLTOL ;
