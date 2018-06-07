@@ -95,7 +95,7 @@ int             sense
     if (numPoint < 3)
         return  false;
     if (sense == 0)
-        areaFactor = bsiDPoint2d_getPolygonArea (pPointArray, numPoint);
+        areaFactor = PolygonOps::Area (pPointArray, numPoint);
 
     for (i0 = numPoint - 1, i1 = 0; i1 < numPoint; i0 = i1++)
         {
