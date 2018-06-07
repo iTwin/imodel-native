@@ -2148,22 +2148,22 @@ TEST_F(SchemaManagerTests, Formats)
     ASSERT_TRUE(schema != nullptr);
 
     assertFormat(*schema, "Format1", "Format 1", "",
-                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": "TrailZeroes|KeepSingleZero", "precision": 4, "decimalSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": ["trailZeroes", "keepSingleZero"], "precision": 4, "decimalSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
                  JsonValue());
 
     assertFormat(*schema, "Format2", "Format 2", "Nice format 2",
-                 JsonValue(R"json({"roundFactor":0.3, "type": "Scientific", "scientificType": "ZeroNormalized", "showSignOption": "NegativeParentheses", "formatTraits": "KeepSingleZero|ShowUnitLabel|PrependUnitLabel", "precision": 4, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "*"})json"),
+                 JsonValue(R"json({"roundFactor":0.3, "type": "Scientific", "scientificType": "ZeroNormalized", "showSignOption": "NegativeParentheses", "formatTraits": ["keepSingleZero", "showUnitLabel", "prependUnitLabel"], "precision": 4, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "*"})json"),
                  JsonValue(R"json({"spacer":" ", "includeZero": true, "units": [
                               { "name": "MyMeter", "label": "m" },
                               { "name": "MM", "label": "mm" }]})json"));
 
     assertFormat(*schema, "Format3", "Format 3", "",
-                 JsonValue(R"json({"roundFactor":2.3, "type": "Station", "stationOffsetSize":12, "showSignOption": "SignAlways", "formatTraits":"ApplyRounding|ShowUnitLabel|Use1000Separator", "precision": 5, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "("})json"),
+                 JsonValue(R"json({"roundFactor":2.3, "type": "Station", "stationOffsetSize":12, "showSignOption": "SignAlways", "formatTraits":["applyRounding", "showUnitLabel", "use1000Separator"], "precision": 5, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "("})json"),
                  JsonValue(R"json({"spacer": "/", "includeZero": false, "units": [
                               { "name": "KG", "label": "kilogram" }]})json"));
 
     assertFormat(*schema, "Format4", "Format 4", "Nice format 4",
-                 JsonValue(R"json({"roundFactor":12.0, "type": "Station", "stationOffsetSize":12, "stationSeparator":"$", "showSignOption": "SignAlways", "formatTraits":"ZeroEmpty|ApplyRounding|ShowUnitLabel", "precision": 2, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "#"})json"),
+                 JsonValue(R"json({"roundFactor":12.0, "type": "Station", "stationOffsetSize":12, "stationSeparator":"$", "showSignOption": "SignAlways", "formatTraits":["zeroEmpty", "applyRounding", "showUnitLabel"], "precision": 2, "decimalSeparator": ",", "thousandSeparator": ".", "uomSeparator": "#"})json"),
                  JsonValue(R"json({"spacer": "?", "includeZero": true, "units": [
                               { "name": "N", "label": "Newton"}]})json"));
 
