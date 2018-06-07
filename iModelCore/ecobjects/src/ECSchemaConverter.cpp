@@ -1195,14 +1195,14 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     ECSchemaPtr unitSchema = context->LocateSchema(unitsKey, SchemaMatchType::Latest);
     if (!unitSchema.IsValid())
         {
-        LOG.errorv("Unable to locate the %s necessary for converting a UnitSpecification custom attribute", unitsKey.GetFullSchemaName());
+        LOG.errorv("Unable to locate the %s necessary for converting a UnitSpecification custom attribute", unitsKey.GetFullSchemaName().c_str());
         return ECObjectsStatus::SchemaNotFound;
         }
 
     ECSchemaPtr formatSchema = context->LocateSchema(formatsKey, SchemaMatchType::Latest);
     if (!formatSchema.IsValid())
         {
-        LOG.errorv("Unable to locate the %s necessary for converting a UnitSpecification custom attribute", formatsKey.GetFullSchemaName());
+        LOG.errorv("Unable to locate the %s necessary for converting a UnitSpecification custom attribute", formatsKey.GetFullSchemaName().c_str());
         return ECObjectsStatus::SchemaNotFound;
         }
 
