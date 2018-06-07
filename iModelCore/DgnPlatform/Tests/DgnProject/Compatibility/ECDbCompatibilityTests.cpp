@@ -34,9 +34,8 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
 
-        JsonValue schemaCountJson = TestHelper::ExecuteECSqlSelect(ecdb, "SELECT count(*) schemaCount FROM meta.ECSchemaDef");
-        ASSERT_TRUE(schemaCountJson.m_value.isArray() && schemaCountJson.m_value.size() == 1 && schemaCountJson.m_value[0].isMember("schemaCount")) << schemaCountJson.ToString();
-        const int schemaCount = schemaCountJson.m_value[0]["schemaCount"].asInt();
+        TestHelper::AssertLoadSchemas(ecdb);
+        const int schemaCount = TestHelper::GetSchemaCount(ecdb);
 
         switch (testFile.GetProfileState())
             {
@@ -55,12 +54,17 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
 
                 //ECDb built-in schema versions
                 EXPECT_EQ(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbFileInfo"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), TestHelper::GetSchemaItemCounts(ecdb, "ECDbFileInfo"));
                 EXPECT_EQ(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbMap"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":9})js"), TestHelper::GetSchemaItemCounts(ecdb, "ECDbMap"));
                 EXPECT_EQ(SchemaVersion(4, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbMeta"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":24, "enumcount": 8})js"), TestHelper::GetSchemaItemCounts(ecdb, "ECDbMeta"));
                 EXPECT_EQ(SchemaVersion(5, 0, 0), TestHelper::GetSchemaVersion(ecdb, "ECDbSystem"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), TestHelper::GetSchemaItemCounts(ecdb, "ECDbSystem"));
 
                 //Standard schema versions
                 EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(ecdb, "CoreCustomAttributes"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":14, "enumcount": 2})js"), TestHelper::GetSchemaItemCounts(ecdb, "CoreCustomAttributes"));
                 break;
                 }
 
@@ -105,6 +109,8 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32Enums)
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
 
+        TestHelper::AssertLoadSchemas(ecdb);
+
         TestHelper::AssertEnum(ecdb, "CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
                     {{ECValue("Unspecified"), nullptr},
                     {ECValue("Utc"), nullptr},
@@ -126,7 +132,39 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32Enums)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, EC32Enums)
+    {
+    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_EC32ENUMS))
+        {
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
 
+        TestHelper::AssertLoadSchemas(ecdb);
+
+        TestHelper::AssertEnum(ecdb, "CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
+        {{ECValue("Unspecified"), nullptr},
+        {ECValue("Utc"), nullptr},
+        {ECValue("Local"), nullptr}});
+
+        TestHelper::AssertEnum(ecdb, "ECDbMeta", "ECClassModifier", nullptr, nullptr, PRIMITIVETYPE_Integer, true,
+        {{ECValue(0), "None"},
+        {ECValue(1), "Abstract"},
+        {ECValue(2), "Sealed"}});
+
+        TestHelper::AssertEnum(ecdb, "EC32Enums", "IntEnum_EnumeratorsWithoutDisplayLabel", "Int Enumeration with enumerators without display label", "Int Enumeration with enumerators without display label", PRIMITIVETYPE_Integer, true,
+        {{ECValue(0), nullptr},
+        {ECValue(1), nullptr},
+        {ECValue(2), nullptr}});
+
+        TestHelper::AssertEnum(ecdb, "EC32Enums", "StringEnum_EnumeratorsWithDisplayLabel", "String Enumeration with enumerators with display label", nullptr, PRIMITIVETYPE_String, false,
+        {{ECValue("On"), "Turned On"},
+        {ECValue("Off"), "Turned Off"}});
+        }
+
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      06/18
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -137,9 +175,28 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
 
+        TestHelper::AssertLoadSchemas(ecdb);
+
         TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "ANGLE", "Angle", nullptr, "RAD(DefaultReal)", JsonValue(R"json(["ARC_DEG(Real2U)", "ARC_DEG(AngleDMS)"])json"), 0.0001);
         TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "POWER", "Power", nullptr, "W(DefaultReal)", JsonValue(R"json(["W(Real4U)", "KW(Real4U)", "MEGAW(Real4U)", "BTU/HR(Real4U)", "KILOBTU/HR(Real4U)", "HP(Real4U)"])json"), 0.001);
         TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "LIQUID_VOLUME", "Liquid Volume", nullptr, "CUB.M(DefaultReal)", JsonValue(R"json(["LITRE(Real4U)", "GALLON(Real4U)"])json"), 0.0001);
         TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "TestKoqWithoutPresUnits", nullptr, nullptr, "W/(M*K)(DefaultReal)", JsonValue(), 0.5);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
+    {
+    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_EC32KOQS))
+        {
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
+
+        TestHelper::AssertLoadSchemas(ecdb);
+
+        TestHelper::AssertKindOfQuantity(ecdb, "EC32Koqs", "TestKoq", "My KindOfQuantity", "My KindOfQuantity", "u:CM", JsonValue(R"json(["f:DefaultRealU", "f:DefaultReal"])json"), 0.5);
+        TestHelper::AssertKindOfQuantity(ecdb, "EC32Koqs", "TestKoqWithoutPresUnits", nullptr, nullptr, "u:KG", JsonValue(), 0.5);
         }
     }
