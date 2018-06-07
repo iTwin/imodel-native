@@ -245,7 +245,7 @@ void TestHelper::AssertEnum(ECDb const& db, Utf8CP schemaName, Utf8CP enumName, 
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-void TestHelper::AssertKindOfQuantity(ECDb const& db, Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationUnits, double expectedRelError)
+void TestHelper::AssertKindOfQuantity(ECDb const& db, Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationFormats, double expectedRelError)
     {
     // 1) Via schema manager
     KindOfQuantityCP koq = db.Schemas().GetKindOfQuantity(schemaName, koqName);
@@ -263,15 +263,15 @@ void TestHelper::AssertKindOfQuantity(ECDb const& db, Utf8CP schemaName, Utf8CP 
         EXPECT_TRUE(koq->GetDescription().empty()) << assertMessage;
 
     EXPECT_STREQ(expectedPersistenceUnit, koq->GetPersistenceUnit()->GetQualifiedName(koq->GetSchema()).c_str()) << assertMessage;
-    if (expectedPresentationUnits.m_value.isNull() || expectedPresentationUnits.m_value.empty())
+    if (expectedPresentationFormats.m_value.isNull() || expectedPresentationFormats.m_value.empty())
         EXPECT_TRUE(koq->GetPresentationFormats().empty()) << assertMessage;
     else
         {
-        ASSERT_EQ((int) koq->GetPresentationFormats().size(), (int) expectedPresentationUnits.m_value.size()) << assertMessage;
+        ASSERT_EQ((int) koq->GetPresentationFormats().size(), (int) expectedPresentationFormats.m_value.size()) << assertMessage;
         size_t i = 0;
         for (NamedFormat const& presFormat : koq->GetPresentationFormats())
             {
-            EXPECT_STREQ(expectedPresentationUnits.m_value[(Json::ArrayIndex) i].asCString(), presFormat.GetQualifiedName(koq->GetSchema()).c_str()) << "Presentation Format #" << i << " | " << assertMessage;
+            EXPECT_STREQ(expectedPresentationFormats.m_value[(Json::ArrayIndex) i].asCString(), presFormat.GetQualifiedName(koq->GetSchema()).c_str()) << "Presentation Format #" << i << " | " << assertMessage;
             i++;
             }
         }
@@ -298,12 +298,12 @@ void TestHelper::AssertKindOfQuantity(ECDb const& db, Utf8CP schemaName, Utf8CP 
 
     // persisted persistence unit may differ from expected if it was persisted pre EC3.2, so don't verify that via plain ECSQL
 
-    if (expectedPresentationUnits.m_value.isNull() || expectedPresentationUnits.m_value.empty())
+    if (expectedPresentationFormats.m_value.isNull() || expectedPresentationFormats.m_value.empty())
         EXPECT_TRUE(stmt.IsValueNull(4)) << stmt.GetECSql() << " | " << assertMessage;
     else
         {
         IECSqlValue const& presUnitsVal = stmt.GetValue(4);
-        EXPECT_EQ((int) expectedPresentationUnits.m_value.size(), presUnitsVal.GetArrayLength()) << stmt.GetECSql() << " | " << assertMessage;
+        EXPECT_EQ((int) expectedPresentationFormats.m_value.size(), presUnitsVal.GetArrayLength()) << stmt.GetECSql() << " | " << assertMessage;
         // persisted presentation format may differ from expected if it was persisted pre EC3.2, so don't verify that via plain ECSQL
         }
 

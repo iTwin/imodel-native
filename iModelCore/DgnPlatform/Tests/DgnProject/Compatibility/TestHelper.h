@@ -21,7 +21,7 @@ struct TestHelper final
     static JsonValue GetSchemaItemCounts(ECDb const&, Utf8CP schemaName);
 
     static void AssertEnum(ECDb const&, Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::tuple<Utf8CP, ECN::ECValue, Utf8CP>> const& expectedEnumerators);
-    static void AssertKindOfQuantity(ECDb const&, Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationUnits, double expectedRelError);
+    static void AssertKindOfQuantity(ECDb const&, Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationFormats, double expectedRelError);
 
     static void AssertLoadSchemas(ECDb const&);
     };
