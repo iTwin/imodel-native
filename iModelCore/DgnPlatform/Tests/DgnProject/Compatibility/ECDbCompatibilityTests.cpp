@@ -184,8 +184,8 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
         helper.AssertKindOfQuantity("PreEC32Koqs", "ANGLE", "Angle", nullptr, "RAD(DefaultReal)", JsonValue(R"json(["ARC_DEG(Real2U)", "ARC_DEG(AngleDMS)"])json"), 0.0001);
         helper.AssertKindOfQuantity("PreEC32Koqs", "POWER", "Power", nullptr, "W(DefaultReal)", JsonValue(R"json(["W(Real4U)", "KW(Real4U)", "MEGAW(Real4U)", "BTU/HR(Real4U)", "KILOBTU/HR(Real4U)", "HP(Real4U)"])json"), 0.001);
         helper.AssertKindOfQuantity("PreEC32Koqs", "LIQUID_VOLUME", "Liquid Volume", nullptr, "CUB.M(DefaultReal)", JsonValue(R"json(["LITRE(Real4U)", "GALLON(Real4U)"])json"), 0.0001);
+        helper.AssertKindOfQuantity("PreEC32Koqs", "TestKoqWithoutPresUnits", nullptr, nullptr, "W/(M*K)", JsonValue(), 0.4);
         helper.AssertKindOfQuantity("PreEC32Koqs", "TestKoqWithoutPresUnitButPersUnitFormat", nullptr, nullptr, "W/(M*K)(DefaultReal)", JsonValue(), 0.5);
-        helper.AssertKindOfQuantity("PreEC32Koqs", "TestKoqWithoutPresUnits", nullptr, nullptr, "W/(M*K)", JsonValue(), 0.5);
         }
     }
 
