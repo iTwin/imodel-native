@@ -40,9 +40,8 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
         ASSERT_EQ(BE_SQLITE_OK, stat) << testFile.GetPath().GetNameUtf8();
         ASSERT_TRUE(bim != nullptr) << testFile.GetPath().GetNameUtf8();
 
-        JsonValue schemaCountJson = TestHelper::ExecuteECSqlSelect(*bim, "SELECT count(*) schemaCount FROM meta.ECSchemaDef");
-        ASSERT_TRUE(schemaCountJson.m_value.isArray() && schemaCountJson.m_value.size() == 1 && schemaCountJson.m_value[0].isMember("schemaCount")) << schemaCountJson.ToString();
-        const int schemaCount = schemaCountJson.m_value[0]["schemaCount"].asInt();
+        TestHelper::AssertLoadSchemas(*bim);
+        const int schemaCount = TestHelper::GetSchemaCount(*bim);
 
         switch (testFile.GetProfileState())
             {
@@ -89,24 +88,33 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     }
 
                 //DgnDb built-in schema versions
-                EXPECT_EQ(SchemaVersion(1, 0, 1), TestHelper::GetSchemaVersion(*bim, "BisCore"));
+                EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "BisCore"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":163, "enumcount": 2})js"), TestHelper::GetSchemaItemCounts(*bim, "BisCore"));
+
                 EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "Generic"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":17})js"), TestHelper::GetSchemaItemCounts(*bim, "Generic"));
 
                 //ECDb built-in schema versions
                 EXPECT_EQ(SchemaVersion(2, 0, 1), TestHelper::GetSchemaVersion(*bim, "ECDbFileInfo"));
                 EXPECT_EQ(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(*bim, "ECDbFileInfo")) << "Schema has enums which were upgraded to EC32 format, therefore original XML version was set to 3.2";
+                EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), TestHelper::GetSchemaItemCounts(*bim, "ECDbFileInfo"));
                 EXPECT_EQ(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbMap"));
                 EXPECT_EQ(BeVersion(), TestHelper::GetOriginalECXmlVersion(*bim, "ECDbMap")) << "Schema has no enums, so was not upgraded to EC32, so no original ECXML persisted yet";
+                EXPECT_EQ(JsonValue(R"js({"classcount":9})js"), TestHelper::GetSchemaItemCounts(*bim, "ECDbMap"));
                 EXPECT_EQ(SchemaVersion(4, 0, 1), TestHelper::GetSchemaVersion(*bim, "ECDbMeta"));
                 EXPECT_EQ(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(*bim, "ECDbMeta")) << "Schema has enums which were upgraded to EC32 format, therefore original XML version was set to 3.2";
+                EXPECT_EQ(JsonValue(R"js({"classcount":24, "enumcount": 8})js"), TestHelper::GetSchemaItemCounts(*bim, "ECDbMeta"));
                 EXPECT_EQ(SchemaVersion(5, 0, 1), TestHelper::GetSchemaVersion(*bim, "ECDbSystem"));
                 EXPECT_EQ(BeVersion(), TestHelper::GetOriginalECXmlVersion(*bim, "ECDbSystem")) << "Schema has no enums, so was not upgraded to EC32, so no original ECXML persisted yet";
+                EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), TestHelper::GetSchemaItemCounts(*bim, "ECDbSystem"));
                 EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbSchemaPolicies"));
                 EXPECT_EQ(BeVersion(), TestHelper::GetOriginalECXmlVersion(*bim, "ECDbSchemaPolicies")) << "Schema has no enums, so was not upgraded to EC32, so no original ECXML persisted yet";
+                EXPECT_EQ(JsonValue(R"js({"classcount":3})js"), TestHelper::GetSchemaItemCounts(*bim, "ECDbSchemaPolicies"));
 
                 //standard schema versions
                 EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "CoreCustomAttributes"));
                 EXPECT_EQ(BeVersion(), TestHelper::GetOriginalECXmlVersion(*bim, "CoreCustomAttributes")) << "Schema has no enums, so was not upgraded to EC32, so no original ECXML persisted yet";
+                EXPECT_EQ(JsonValue(R"js({"classcount":14, "enumcount": 2})js"), TestHelper::GetSchemaItemCounts(*bim, "CoreCustomAttributes"));
                 break;
                 }
 
@@ -120,7 +128,7 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     }
 
                 //DgnDb built-in schema versions
-                EXPECT_LE(SchemaVersion(1, 0, 1), TestHelper::GetSchemaVersion(*bim, "BisCore"));
+                EXPECT_LE(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "BisCore"));
                 EXPECT_LE(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(*bim, "BisCore"));
                 EXPECT_LE(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "Generic"));
                 EXPECT_LE(BeVersion(3, 2), TestHelper::GetOriginalECXmlVersion(*bim, "Generic"));

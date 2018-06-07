@@ -7,15 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "../TestFixture/DgnDbTestFixtures.h"
-#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
+#include "CompatibilityTests.h"
 #include <ECObjects/ECObjectsAPI.h>
 #include <Bentley/BeVersion.h>
-#include <Logging/bentleylogging.h>
 #include <json/json.h>
 #include <ostream>
-
-#define LOG (*NativeLogging::LoggingManager::GetLogger (L"Compatibility"))
 
 //=======================================================================================
 // @bsiclass                                                 Affan.Khan          03/2018

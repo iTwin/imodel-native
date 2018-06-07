@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
 #include <BeSQLite/BeSQLite.h>
 #include <Bentley/BeVersion.h>
 #include <vector>
@@ -83,7 +82,7 @@ struct Profile : NonCopyableClass
         BeSQLite::ProfileVersion const& GetExpectedVersion() const { return m_expectedVersion; }
         BeSQLite::ProfileVersion ReadProfileVersion(BeSQLite::Db const&) const;
 
-        std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName) const;
+        std::vector<TestFile> GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles = true) const;
 
         ProfileState GetFileProfileState(BeSQLite::ProfileVersion const& fileProfileVersion) const
             {
