@@ -364,7 +364,7 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::_DetectedDeletedExtractionGraphicsCategories(SyncInfo::V8ElementSource const& attachmentMapping,
+bool Converter::_DetectedDeletedExtractionGraphicsCategories(SyncInfo::V8ElementSource const& attachmentMapping,
                                                              SyncInfo::V8ElementMapping const& originalElementMapping,
                                                              bset<DgnCategoryId>& seenCategories)
     {
@@ -403,12 +403,14 @@ void Converter::_DetectedDeletedExtractionGraphicsCategories(SyncInfo::V8Element
         }
     for (auto unseenCategory : unseenCategories)
         GetSyncInfo().DeleteExtractedGraphicsCategory(attachmentMapping, originalElementMapping, unseenCategory);
+
+    return !unseenCategories.empty();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::_DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel, 
+bool Converter::_DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel, 
                                                  SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
                                                  SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments)
     {
@@ -475,6 +477,8 @@ void Converter::_DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8D
             GetSyncInfo().DeleteExtractedGraphics(attachment, original);
             }
         }
+
+    return !drawingGraphicsToDelete.empty() || !recordsToDelete.empty();
     }
 
 /*---------------------------------------------------------------------------------**//**

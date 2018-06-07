@@ -1349,10 +1349,10 @@ public:
                                                                            SyncInfo::V8ElementSource const& attachmentMapping,
                                                                            SyncInfo::V8ElementMapping const& originalElementMapping,
                                                                            DgnCategoryId categoryId, GeometryBuilder& builder);
-    DGNDBSYNC_EXPORT virtual void _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
+    DGNDBSYNC_EXPORT virtual bool _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
                                                                    SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
                                                                    SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments);
-    DGNDBSYNC_EXPORT virtual void _DetectedDeletedExtractionGraphicsCategories(SyncInfo::V8ElementSource const& attachmentMapping,
+    DGNDBSYNC_EXPORT virtual bool _DetectedDeletedExtractionGraphicsCategories(SyncInfo::V8ElementSource const& attachmentMapping,
                                                                                SyncInfo::V8ElementMapping const& originalElementMapping,
                                                                                bset<DgnCategoryId>& seenCategories);
 

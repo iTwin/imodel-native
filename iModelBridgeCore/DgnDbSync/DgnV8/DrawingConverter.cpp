@@ -767,7 +767,7 @@ struct MergeProxyGraphicsDrawGeom : public DgnV8Api::SimplifyViewDrawGeom
         DgnCategoryId                           m_categoryId;
         bool                                    m_attachmentChanged = false;
         bool                                    m_modelContentsChanged = false;
-        bool                                    m_useMap = true;
+        bool                                    m_useMap = false;
         DMatrix4d                               m_map;
         SyncInfo::V8ElementMapping              m_attachElementMapping;
         ResolvedModelMapping                    m_modelMapping;
@@ -1076,7 +1076,7 @@ void InitCurrentModel(DgnModelRefP modelRef)
     if (nullptr != attachment->GetDgnModelP())
         {
         info.m_modelMapping = m_converter._FindFirstModelMappedTo(*attachment->GetDgnModelP());
-        info.m_modelContentsChanged = !m_converter.GetChangeDetector()._AreContentsOfModelUnChanged(m_converter, info.m_modelMapping);
+        info.m_modelContentsChanged = info.m_modelMapping.IsValid() ? !m_converter.GetChangeDetector()._AreContentsOfModelUnChanged(m_converter, info.m_modelMapping) : true;        // If no model mapping can't tell whether unchanged...
         }
 
 
@@ -1126,8 +1126,9 @@ void InitCurrentModel(DgnModelRefP modelRef)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CreateDrawingElements()
+bool CreateOrUpdateDrawingGraphics()
     {
+    bool        modified = false;
     SyncInfo::T_V8ElementMapOfV8ElementSourceSet v8OriginalsSeen;
 
     for (auto& byModelRef : m_builders)
@@ -1162,6 +1163,7 @@ void CreateDrawingElements()
             bset<DgnCategoryId>     seenCategories;
             for (auto& bycategory : byElement.second)
                 {
+                modified = true;
                 seenCategories.insert(bycategory.first);
                 DgnDbStatus status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, v8AttachmentSource, originalElementMapping, bycategory.first, *bycategory.second);
                 if (DgnDbStatus::Success != status)
@@ -1170,12 +1172,17 @@ void CreateDrawingElements()
                     m_converter.ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), "drawing extraction");
                     }
                 }
-            m_converter._DetectedDeletedExtractionGraphicsCategories(v8AttachmentSource, originalElementMapping, seenCategories);
+            if (m_converter.IsUpdating() &&
+                m_converter._DetectedDeletedExtractionGraphicsCategories(v8AttachmentSource, originalElementMapping, seenCategories))
+                modified = true;
             }
         }
 
-    if (m_converter.IsUpdating())
-        m_converter._DetectDeletedExtractionGraphics(m_parentModelMapping, v8OriginalsSeen, m_attachmentsUnchanged);
+    if (m_converter.IsUpdating() &&
+        m_converter._DetectDeletedExtractionGraphics(m_parentModelMapping, v8OriginalsSeen, m_attachmentsUnchanged))
+        modified = true;
+
+    return !m_converter.IsUpdating() || modified;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1538,14 +1545,14 @@ static void  createProxyGraphics (Converter& converter, DgnModelRefR modelRef, V
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void mergeDrawingGraphics(Converter& converter, Bentley::DgnModelRefR baseModelRef, ResolvedModelMapping const& v8mm, ViewportR viewport, bool mergeGraphicsForRenderedViews)
+static bool createOrUpdateDrawingGraphics(Converter& converter, Bentley::DgnModelRefR baseModelRef, ResolvedModelMapping const& v8mm, ViewportR viewport, bool mergeGraphicsForRenderedViews)
     {
     MergeProxyGraphicsDrawGeom      drawGeom(converter, v8mm);
     MergeDrawingContext             mergeDrawingContext(drawGeom, converter, mergeGraphicsForRenderedViews);
 
     drawGeom.SetViewContext(&mergeDrawingContext);
     mergeDrawingContext.Process(viewport, &baseModelRef);
-    drawGeom.CreateDrawingElements();
+    return drawGeom.CreateOrUpdateDrawingGraphics();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1616,7 +1623,7 @@ void Converter::DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm)
     bool isThisIndependentDrawing = !ConverterMadeCopyMarker::IsFoundOn(v8ParentModel);
 
     createProxyGraphics(*this, v8ParentModel, fakeVp, isThisIndependentDrawing /* If independent generate proxy for rendered views */);
-    mergeDrawingGraphics(*this, v8ParentModel, v8mm, fakeVp, isThisIndependentDrawing /* If independent merge proxy for rendered views */);
+    createOrUpdateDrawingGraphics(*this, v8ParentModel, v8mm, fakeVp, isThisIndependentDrawing /* If independent merge proxy for rendered views */);
 
     //  Convert all views of this model
     for (DgnV8Api::ViewGroupPtr const& vg : v8ParentModel.GetDgnFileP()->GetViewGroups())
@@ -1645,7 +1652,7 @@ void Converter::CreateSheetExtractionAttachments(ResolvedModelMapping const& v8S
 
                 createdDrawing.SetTransform(v8SheetModelMapping.GetTransform());
                 createProxyGraphics(*this, *attachment, fakeVp, false);
-                mergeDrawingGraphics(*this, *attachment, createdDrawing, fakeVp, false);
+                createOrUpdateDrawingGraphics(*this, *attachment, createdDrawing, fakeVp, false);
                 }
             }
     }
@@ -1669,15 +1676,9 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 //
 //  Root model = drawing. 
 //      We do not use attachments found in a V8 drawing model to map any other models in to the BIM. That is because we will copy the
-//      *content* of the attached models into the root drawing model later, during the element conversion phase, as follows:
-//      2d attachment: 
-//          We will copy the elements from all 2D attachments (recursively) into the root drawing model. 
-//          While it's true that we will convert the same models in their own right, but the converted models will be unrelated to the 
-//          graphics copied from the attachments to them.
-//      3d attachment:
-//          We will capture V8's view of the 3D attachment and all nested attachments as 2D proxy graphics and copy them into the root drawing model.
-//
-//  Root model = sheet. 
+//      *content* of the attached models into the root drawing model later by visiting the drawing with a V8 view context and 
+//      recording the graphics as it would be displayed.
+////  Root model = sheet. 
 //      2d attachment: 
 //          We map the *directly* attached drawings into BIM. See the comment "DgnModel objects and Sheet attachments" below for why we *must* map in 2d models found by 
 //          direct attachments to sheets. 
@@ -1752,13 +1753,6 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 // When a drawing is displayed in its own right in its own view, then its nested attachments must be merged into it.
 // So, obviously, the bridge cannot apply those two different transformations to the same model. (Note that these transformations are done on the V8 models (in memory) before the conversion really starts.)
 //
-// There's another issue. Sheets always assert ownership over the drawings that are attached to them. By default such drawings are not considered to have
-// an independent existence. So, the converter will not convert views of such drawings. If that is not what we want for a given drawing (or for all drawings),
-// then we have to tell sheets to make their own private copies and assert ownership over them, so that the original drawings and their will be converted independently of the sheets.
-//
-// Finally, one more issue: If the root model is a drawing, then we must not fail to convert views of it. We cannot allow a sheet to assert private ownership over it.
-// Therefore, sheets that attach a drawing that is the root model must attach a copy of it.
-// 
 
 // "MergeProxyGraphicsDrawGeom handles both the drawing and attachments to the drawing"
 // MergeProxyGraphicsDrawGeom captures all graphics that appear in a V8 drawing, including
@@ -1782,5 +1776,5 @@ END_DGNDBSYNC_DGNV8_NAMESPACE
 // where the proxy graphics are generated from elements in the drawing model itself. In that case,
 // the attachment-specific columns will be 0 and OriginalV8ModelSyncInfoId will be the same as DrawingV8ModelSyncInfoId.
 //
-// MergeProxyGraphicsDrawGeom::CreateDrawingElements handles the non-attachment case by generating a dummy object to represent
+// MergeProxyGraphicsDrawGeom::CreateOrUpdateDrawingGraphics handles the non-attachment case by generating a dummy object to represent
 // missing attachment.
