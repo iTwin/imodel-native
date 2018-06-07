@@ -131,7 +131,7 @@ JsonValue TestHelper::GetSchemaItemCounts(Utf8CP schemaName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-void TestHelper::AssertEnum(ECDb const& db, Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::tuple<Utf8CP, ECValue, Utf8CP>> const& expectedEnumerators) const
+void TestHelper::AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::tuple<Utf8CP, ECValue, Utf8CP>> const& expectedEnumerators) const
     {
     // 1) Via schema manager
     ECEnumerationCP ecEnum = m_db.Schemas().GetEnumeration(schemaName, enumName);
@@ -238,7 +238,7 @@ void TestHelper::AssertEnum(ECDb const& db, Utf8CP schemaName, Utf8CP enumName, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-void TestHelper::AssertKindOfQuantity(ECDb const& db, Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationFormats, double expectedRelError) const
+void TestHelper::AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationFormats, double expectedRelError) const
     {
     // 1) Via schema manager
     KindOfQuantityCP koq = m_db.Schemas().GetKindOfQuantity(schemaName, koqName);
