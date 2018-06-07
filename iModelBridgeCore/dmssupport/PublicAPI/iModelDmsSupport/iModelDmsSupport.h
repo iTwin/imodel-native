@@ -58,7 +58,7 @@ END_BENTLEY_DGN_NAMESPACE
 
 extern "C"
     {
-    typedef BentleyApi::Dgn::IDmsSupport* T_iModelDmsSupport_getInstance(int sessionType, Utf8StringCR userName, Utf8StringCR password);
+    typedef BentleyApi::Dgn::IDmsSupport* T_iModelDmsSupport_getInstance(int sessionType, BentleyApi::Utf8StringCR userName, BentleyApi::Utf8StringCR password);
     }
 
 
