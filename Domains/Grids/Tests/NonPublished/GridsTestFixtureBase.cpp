@@ -48,6 +48,3 @@ void GridsTestFixtureBase::SetUpTestCase()
     seedPath.BeDeleteFile();
     CreateSeedDb(PROJECT_SEED_NAME, &StaticRegisterDomains);
     }
-
-
-
