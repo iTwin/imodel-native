@@ -165,3 +165,18 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
         TestHelper::AssertKindOfQuantity(ecdb, "PreEC32Koqs", "TestKoqWithoutPresUnits", nullptr, nullptr, "u:W_PER_M_K", JsonValue(), 0.5);
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                      06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
+    {
+    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_EC32KOQS))
+        {
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile.GetPath())) << testFile.GetPath().GetNameUtf8();
+
+        TestHelper::AssertKindOfQuantity(ecdb, "EC32Koqs", "TestKoq", "My KindOfQuantity", "My KindOfQuantity", "u:CM", JsonValue(R"json(["f:DefaultRealU", "f:DefaultReal"])json"), 0.5);
+        TestHelper::AssertKindOfQuantity(ecdb, "EC32Koqs", "TestKoqWithoutPresUnits", nullptr, nullptr, "u:KG", JsonValue(), 0.5);
+        }
+    }
