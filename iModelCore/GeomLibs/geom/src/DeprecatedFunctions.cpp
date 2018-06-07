@@ -89,7 +89,7 @@ double      *pD
     *pA = pPlane->normal.x;
     *pB = pPlane->normal.y;
     *pC = pPlane->normal.z;
-    *pD = bsiDPoint3d_dotProduct (&pPlane->origin, &pPlane->normal);
+    *pD = pPlane->origin.DotProduct (pPlane->normal);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -209,6 +209,217 @@ DPoint4dCP pEyePoint
 
     return numOut;
     }
+/*-----------------------------------------------------------------*//**
+* Multiply an array of points by a matrix, using all components of both the matrix
+* and the points.
+*
+* @instance pA => matrix term of product.
+* @param pOutPoint <= Array of products A*pPoint[i] renormalized
+* @param pInPoint => Array of points points
+* @param n => number of points
+* @see
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDMatrix4d_multiplyAndRenormalizeDPoint3dArray
+
+(
+DMatrix4dCP pA,
+DPoint3dP pOutPoint,
+DPoint3dCP pInPoint,
+int n
+)
+    {
+    int i;
+    const DPoint3d *sourceP;
+    DPoint3d *pDest;
+    double x,y,z;
+    double rX, rY, rZ, rW;
+
+    for ( i = 0 , sourceP = pInPoint , pDest = pOutPoint ;
+          i < n ;
+          i++, sourceP++, pDest++ )
+        {
+        x = sourceP->x;
+        y = sourceP->y;
+        z = sourceP->z;
+        rX =
+            pA->coff[0][0] * x +
+            pA->coff[0][1] * y +
+            pA->coff[0][2] * z +
+            pA->coff[0][3];
+        rY =
+            pA->coff[1][0] * x +
+            pA->coff[1][1] * y +
+            pA->coff[1][2] * z +
+            pA->coff[1][3];
+        rZ =
+            pA->coff[2][0] * x +
+            pA->coff[2][1] * y +
+            pA->coff[2][2] * z +
+            pA->coff[2][3];
+        rW =
+            pA->coff[3][0] * x +
+            pA->coff[3][1] * y +
+            pA->coff[3][2] * z +
+            pA->coff[3][3];
+
+        if (rW == 1.0 || rW == 0.0)
+            {
+            pDest->x = rX;
+            pDest->y = rY;
+            pDest->z = rZ;
+            }
+        else
+            {
+            double a = 1.0 / rW;
+            pDest->x = rX * a;
+            pDest->y = rY * a;
+            pDest->z = rZ * a;
+            }
+        }
+    }
+
+
+/*-----------------------------------------------------------------*//**
+*
+* Matrix multiplication, using all components of both the matrix
+* and the points.
+*
+* @instance pA => Matrix term of multiplication.
+* @param pOutPoint <= Array of homogeneous products A*pInPoint[i]
+* @param pInPoint => Array of homogeneous points
+* @param n => number of points
+* @see bsiDMatrix4d_multiplyAndRenormalize
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDMatrix4d_multiply4dPoints
+
+(
+DMatrix4dCP pA,
+DPoint4dP pOutPoint,
+DPoint4dCP pInPoint,
+int n
+)
+    {
+    int i;
+    const DPoint4d *pCurrPoint;
+    DPoint4d *pDest;
+    double x,y,z,w;
+
+    for ( i = 0 , pCurrPoint = pInPoint , pDest = pOutPoint ;
+          i < n ;
+          i++, pCurrPoint++, pDest++ )
+        {
+        x = pCurrPoint->x;
+        y = pCurrPoint->y;
+        z = pCurrPoint->z;
+        w = pCurrPoint->w;
+        pDest->x =
+            pA->coff[0][0] * x +
+            pA->coff[0][1] * y +
+            pA->coff[0][2] * z +
+            pA->coff[0][3] * w ;
+        pDest->y =
+            pA->coff[1][0] * x +
+            pA->coff[1][1] * y +
+            pA->coff[1][2] * z +
+            pA->coff[1][3] * w ;
+        pDest->z =
+            pA->coff[2][0] * x +
+            pA->coff[2][1] * y +
+            pA->coff[2][2] * z +
+            pA->coff[2][3] * w ;
+        pDest->w =
+            pA->coff[3][0] * x +
+            pA->coff[3][1] * y +
+            pA->coff[3][2] * z +
+            pA->coff[3][3] * w ;
+        }
+
+    }
+
+/*-----------------------------------------------------------------*//**
+* Matrix*point multiplication, with input points represented by
+* separate DPoint3d and weight arrays.
+
+* @instance pA => matrix
+* @param pHPoint <= Array of homogeneous products A*pPoint[i]
+* @param pPoint => Array of xyz coordinates
+* @param pWeight => weight array. If NULL, unit weight is used
+* @param n => number of points
+* @see
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDMatrix4d_multiplyWeightedDPoint3dArray
+
+(
+DMatrix4dCP pA,
+DPoint4dP pHPoint,
+DPoint3dCP pPoint,
+const double *pWeight,
+int n
+)
+    {
+    int i;
+    const DPoint3d *pCurrPoint;
+    double w;
+    if ( !pWeight )
+        {
+        for ( i = 0 , pCurrPoint = pPoint ; i < n; i++, pCurrPoint++ )
+            {
+            pHPoint[i].x =
+                pA->coff[0][0] * pCurrPoint->x +
+                pA->coff[0][1] * pCurrPoint->y +
+                pA->coff[0][2] * pCurrPoint->z +
+                pA->coff[0][3];
+            pHPoint[i].y =
+                pA->coff[1][0] * pCurrPoint->x +
+                pA->coff[1][1] * pCurrPoint->y +
+                pA->coff[1][2] * pCurrPoint->z +
+                pA->coff[1][3];
+            pHPoint[i].z =
+                pA->coff[2][0] * pCurrPoint->x +
+                pA->coff[2][1] * pCurrPoint->y +
+                pA->coff[2][2] * pCurrPoint->z +
+                pA->coff[2][3];
+            pHPoint[i].w =
+                pA->coff[3][0] * pCurrPoint->x +
+                pA->coff[3][1] * pCurrPoint->y +
+                pA->coff[3][2] * pCurrPoint->z +
+                pA->coff[3][3];
+            }
+        }
+    else
+        {
+        for ( i = 0 , pCurrPoint = pPoint ; i < n; i++, pCurrPoint++ )
+            {
+            w = pWeight[i];
+            pHPoint[i].x =
+                pA->coff[0][0] * pCurrPoint->x +
+                pA->coff[0][1] * pCurrPoint->y +
+                pA->coff[0][2] * pCurrPoint->z +
+                pA->coff[0][3] * w;
+            pHPoint[i].y =
+                pA->coff[1][0] * pCurrPoint->x +
+                pA->coff[1][1] * pCurrPoint->y +
+                pA->coff[1][2] * pCurrPoint->z +
+                pA->coff[1][3] * w;
+            pHPoint[i].z =
+                pA->coff[2][0] * pCurrPoint->x +
+                pA->coff[2][1] * pCurrPoint->y +
+                pA->coff[2][2] * pCurrPoint->z +
+                pA->coff[2][3] * w;
+            pHPoint[i].w =
+                pA->coff[3][0] * pCurrPoint->x +
+                pA->coff[3][1] * pCurrPoint->y +
+                pA->coff[3][2] * pCurrPoint->z +
+                pA->coff[3][3] * w;
+            }
+        }
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -241,7 +452,7 @@ double          theta
     pCone->frame.Multiply (*(&pSegment->point[0]), cosTheta, sinTheta, z0);
     pCone->frame.Multiply (*(&pSegment->point[1]), r1 * cosTheta, r1 * sinTheta, z1);
 
-    return bsiTrig_angleInSweep (theta, theta0, sweep);
+    return Angle::InSweepAllowPeriodShift (theta, theta0, sweep);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -487,10 +698,10 @@ DPoint2dCP pVector2
     denom  = pVector1->x * pVector2->y - pVector2->x * pVector1->y;
 
     /* Return false and barycoords (1,0,0) if denom relatively close to zero */
-    if (! bsiTrig_safeDivide (&pInstance->y, numer1, denom, 0.0))
+    if (! DoubleOps::SafeDivide (pInstance->y, numer1, denom, 0.0))
         status = false;
 
-    if (! bsiTrig_safeDivide (&pInstance->z, numer2, denom, 0.0))
+    if (! DoubleOps::SafeDivide (pInstance->z, numer2, denom, 0.0))
         status = false;
 
     pInstance->x = 1.0 - pInstance->y - pInstance->z;
@@ -623,15 +834,15 @@ DPoint3dCP pSpacePoint
     bool            result = true;
     DPoint3d        vectorU, vectorV, vectorQ;
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorU, &pPlanePoint[1], &pPlanePoint[0]);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorV, &pPlanePoint[2], &pPlanePoint[0]);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vectorQ, pSpacePoint, &pPlanePoint[0]);
+    vectorU.DifferenceOf (pPlanePoint[1], pPlanePoint[0]);
+    vectorV.DifferenceOf (pPlanePoint[2], pPlanePoint[0]);
+    vectorQ.DifferenceOf (*pSpacePoint, pPlanePoint[0]);
 
-    dotUU = bsiDPoint3d_dotProduct (&vectorU, &vectorU);
-    dotVV = bsiDPoint3d_dotProduct (&vectorV, &vectorV);
-    dotUV = bsiDPoint3d_dotProduct (&vectorU, &vectorV);
-    dotUQ = bsiDPoint3d_dotProduct (&vectorU, &vectorQ);
-    dotVQ = bsiDPoint3d_dotProduct (&vectorV, &vectorQ);
+    dotUU = vectorU.DotProduct (vectorU);
+    dotVV = vectorV.DotProduct (vectorV);
+    dotUV = vectorU.DotProduct (vectorV);
+    dotUQ = vectorU.DotProduct (vectorQ);
+    dotVQ = vectorV.DotProduct (vectorQ);
 
     if (!bsiSVD_solve2x2 (&s, &t, dotUU, dotUV, dotUV, dotVV, dotUQ, dotVQ))
         {
@@ -647,10 +858,7 @@ DPoint3dCP pSpacePoint
             *tP = t;
 
         if (pClosePoint)
-            bsiDPoint3d_add2ScaledDPoint3d (pClosePoint, &pPlanePoint[0],
-                                                &vectorU, s,
-                                                &vectorV, t
-                                        );
+            pClosePoint->SumOf(pPlanePoint[0], vectorU, s, vectorV, t);
         }
 
     return  result;
@@ -706,16 +914,16 @@ DPoint3dP pUnboundedUVW
     if (    bsiGeom_closestPointOnSkewedPlane (&planePoint, &s, &t, xyz, pSpacePoint))
         {
         if (pUnboundedUVW)
-            bsiDPoint3d_setXYZ (pUnboundedUVW, 1.0 - s - t, s, t);
+            pUnboundedUVW->Init ( 1.0 - s - t, s, t);
         if (s >= 0.0
         &&  t >= 0.0
         &&  s + t <= 1.0)
             {
             if (pBoundedUVW)
-                bsiDPoint3d_setXYZ (pBoundedUVW, 1.0 - s - t, s, t);
+                pBoundedUVW->Init ( 1.0 - s - t, s, t);
             if (pClosePoint)
                 *pClosePoint = planePoint;
-            return bsiDPoint3d_distance (&planePoint, pSpacePoint);
+            return planePoint.Distance (*pSpacePoint);
             }
         }
 
@@ -726,7 +934,7 @@ DPoint3dP pUnboundedUVW
     for (i = 0; i < 3; i++)
         {
         bsiDSegment3d_projectPointBounded (&testSeg[i], &testPoint[i], &testParam[i], pSpacePoint);
-        testDistanceSquared[i] = bsiDPoint3d_distanceSquared (&testPoint[i], pSpacePoint);
+        testDistanceSquared[i] = testPoint[i].DistanceSquared (*pSpacePoint);
         }
     iMin = 0;
     if (testDistanceSquared[1] < testDistanceSquared[0])
@@ -741,7 +949,7 @@ DPoint3dP pUnboundedUVW
     if (pClosePoint)
         *pClosePoint = testPoint[iMin];
     if (pBoundedUVW)
-        bsiDPoint3d_interpolate (pBoundedUVW, &uvwCorner[iMin], testParam[iMin], &uvwCorner[jMin]);
+        pBoundedUVW->Interpolate (uvwCorner[iMin], testParam[iMin], uvwCorner[jMin]);
     return sqrt (testDistanceSquared[iMin]);
     }
 
@@ -941,7 +1149,7 @@ DPlane3dCP pPlane,
 DPoint3dCP pPoint
 )
     {
-    return bsiDPoint3d_dotDifference (pPoint, &pPlane->origin, &pPlane->normal);
+    return pPoint->DotDifference(pPlane->origin, pPlane->normal);
     }
 /*---------------------------------------------------------------------------------**//**
 *
@@ -1051,18 +1259,18 @@ double          wCenter
     if ( mu <= relTol * wc2)
         {
         /* It's a hyperbola or parabola*/
-        bsiRotMatrix_initIdentity (pMatrix);
+        pMatrix->InitIdentity ();
         if (pInverse)
-            bsiRotMatrix_initIdentity (pInverse);
+            pInverse->InitIdentity ();
         return false;
         }
     else if (mu == wc2)     /* Yes, exact equality test -- if wc2 is small the squaring will */
                             /* wipe force its bits so far to the right they have no effect on the subtraction*/
         {
         /* It's already practically a circle.*/
-        bsiRotMatrix_initIdentity (pMatrix);
+        pMatrix->InitIdentity ();
         if (pInverse)
-            bsiRotMatrix_initIdentity (pInverse);
+            pInverse->InitIdentity ();
         }
     else
         {
@@ -1156,7 +1364,7 @@ double          beta
         {
         theta0 = sectors.interval[i].minValue;
         theta1 = sectors.interval[i].maxValue;
-        if (bsiTrig_isAngleFullCircle (theta1 - theta0))
+        if (Angle::IsFullCircle (theta1 - theta0))
             {
             bsiRange1d_setArcSweep (&pDest->sectors, 0.0, msGeomConst_2pi);
             return true;
@@ -1338,13 +1546,13 @@ DPoint4dCP pEyePoint
             double sineThetaHat   = - localEye.w / mag;
             double cosineThetaHat = sqrt (1.0 - sineThetaHat * sineThetaHat);
 
-            bsiDMatrix4d_transpose (&QT, &Q);
-            bsiDMatrix4d_multiply (&BQT, &BMap.M0, &QT);
+            QT.TransposeOf (Q);
+            BQT.InitProduct (BMap.M0, QT);
 
-            bsiDMatrix4d_getColumnDPoint4d (&BQT, &pHEllipse->vector0 , 0);
-            bsiDMatrix4d_getColumnDPoint4d (&BQT, &pHEllipse->vector90, 1);
-            bsiDMatrix4d_getColumnDPoint4d (&BQT, &vectorW , 2);
-            bsiDMatrix4d_getColumnDPoint4d (&BQT, &pHEllipse->center  , 3);
+            BQT.GetColumn (pHEllipse->vector0, 0);
+            BQT.GetColumn (pHEllipse->vector90, 1);
+            BQT.GetColumn (vectorW, 2);
+            BQT.GetColumn (pHEllipse->center, 3);
             bsiDPoint4d_scale (&pHEllipse->vector0 , &pHEllipse->vector0 , cosineThetaHat);
             bsiDPoint4d_scale (&pHEllipse->vector90, &pHEllipse->vector90, cosineThetaHat);
             bsiDPoint4d_addScaledDPoint4d (&pHEllipse->center, &pHEllipse->center,
@@ -1814,19 +2022,19 @@ DPoint3dCP pOrigin
     DPoint3d    diff;
     DPoint3d    unitNorm;
 
-    mag = bsiDPoint3d_normalize (&unitNorm, pNormal);
+    mag = unitNorm.Normalize (*pNormal);
     if (mag == 0.0)
         {
         if (pOutPoint)
             *pOutPoint = *pOrigin;
-        return bsiDPoint3d_distance (pInPoint, pOrigin);
+        return pInPoint->Distance (*pOrigin);
         }
 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, pOrigin, pInPoint);
-    dist = bsiDPoint3d_dotProduct (&diff, &unitNorm);
+    diff.DifferenceOf (*pOrigin, *pInPoint);
+    dist = diff.DotProduct (unitNorm);
 
     if (pOutPoint)
-        bsiDPoint3d_addScaledDPoint3d (pOutPoint, pInPoint, &unitNorm, dist);
+        pOutPoint->SumOf (*pInPoint, unitNorm, dist);
 
     return  dist;
     }
@@ -1857,8 +2065,8 @@ DPoint3dCP pNormal
     double dot1, dot2, param;
     static double maxFactor = 1.0e14;
 
-    dot2 = bsiDPoint3d_dotDifference (pLineEnd, pLineStart, (DVec3d const*) pNormal);
-    dot1 = bsiDPoint3d_dotDifference (pOrigin,  pLineStart, (DVec3d const*) pNormal);
+    dot2 = pLineEnd->DotDifference(*pLineStart, *((DVec3d const*) pNormal));
+    dot1 = pOrigin->DotDifference(*pLineStart, *((DVec3d const*) pNormal));
 
     if (fabs(dot1) < maxFactor * fabs(dot2))
         {
@@ -1875,7 +2083,7 @@ DPoint3dCP pNormal
     if (pParam)
         *pParam = param;
     if (pPoint)
-        bsiDPoint3d_interpolate (pPoint, pLineStart, param, pLineEnd);
+        pPoint->Interpolate (*pLineStart, param, *pLineEnd);
     return  result;
     }
 
@@ -2133,7 +2341,7 @@ PointComparisonFunction cb_pointsClose
         relTol = 0.0;
 
     epsilon = absTol + relTol * LargestCoordinate;
-    bsiDPoint3d_normalize (&normalizedSortVector, pSortVector);
+    normalizedSortVector.Normalize (*pSortVector);
 
     sortArray.reserve (numXYZ);
     /* Force data into the sort area.. */
@@ -2153,7 +2361,7 @@ PointComparisonFunction cb_pointsClose
     /* Search for non-disconnect reference point */
     for (k0 = 0; k0 < numXYZ; k0++)
         {
-        if (!bsiDPoint3d_isDisconnect (pXYZBuffer + k0))
+        if (!pXYZBuffer[ k0].IsDisconnect ())
             break;
         }
 
@@ -2162,9 +2370,9 @@ PointComparisonFunction cb_pointsClose
         skewed dimension as sort quantity. */
     for (;k0 < numXYZ; k0++)
         {
-        if (!bsiDPoint3d_isDisconnect (pXYZBuffer + k0))
+        if (!pXYZBuffer[ k0].IsDisconnect ())
             {
-            pSortBuffer[k0].x = bsiDPoint3d_dotDifference (pXYZBuffer + k0, &point0, (DVec3d *) &normalizedSortVector);
+            pSortBuffer[k0].x = pXYZBuffer[ k0].DotDifference(point0, *((DVec3d *) &normalizedSortVector));
             pSortBuffer[k0].y = (double)k0;
             }
         }
@@ -2355,7 +2563,7 @@ int         numPoint
         DRange3d tmpRange;
         DPoint3d diagonal;
         tmpRange.InitFrom(pPointArray, numPoint);
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&diagonal, &tmpRange.high, &tmpRange.low);
+        diagonal.DifferenceOf (tmpRange.high, tmpRange.low);
         return bsiDPoint3d_maxAbs (&diagonal);
         }
     else
@@ -2398,10 +2606,10 @@ int         numPoint
 
         tmpRange.Init ();
         for (i = 0; i < numPoint; i++)
-            if (bsiTrig_safeDivide (&wRecip, 1.0, pWeightArray[i], 0.0))
+            if (DoubleOps::SafeDivide (wRecip, 1.0, pWeightArray[i], 0.0))
                 tmpRange.Extend (pPointArray[i].x * wRecip, pPointArray[i].y * wRecip, pPointArray[i].z * wRecip);
 
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&diagonal, &tmpRange.high, &tmpRange.low);
+        diagonal.DifferenceOf (tmpRange.high, tmpRange.low);
         return bsiDPoint3d_maxAbs (&diagonal);
         }
     else
@@ -2581,20 +2789,16 @@ double          tolerance
         bsiGeom_findWidelySeparatedPoints
             (&point0, &i0, &point1, &i1, pPoint, numPoint);
 
-        bsiDPoint3d_computeNormal (&vector, &point1, &point0);
+        vector.NormalizedDifference (point1, point0);
 
         deltaMax = 0.0;
         for (i = 0; i < numPoint; i++)
             {
             if ( i != i0 && i != i1)
                 {
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&currVector, pPoint + i, &point0);
-                bsiDPoint3d_addScaledDPoint3d (
-                                            &currNormal,
-                                            &currVector,
-                                            &vector,
-                                            -bsiDPoint3d_dotProduct (&currVector, &vector));
-                delta = bsiDPoint3d_dotProduct (&currNormal, &currNormal);
+                currVector.DifferenceOf (pPoint[ i], point0);
+                currNormal.SumOf (currVector, vector, -currVector.DotProduct (vector));
+                delta = currNormal.DotProduct (currNormal);
                 if (delta > deltaMax)
                     {
                     maxNormal = currNormal;
@@ -2607,7 +2811,7 @@ double          tolerance
         if (deltaMax > myTol2)
             {
             *pOrigin = point1;
-            bsiDPoint3d_crossProduct (pNormal, &vector, &maxNormal);
+            pNormal->CrossProduct (vector, maxNormal);
             result = true;
             }
         }
@@ -2906,7 +3110,7 @@ int         numIn
             dx = sortXYZA[numSort].x = pInBuffer[i].x - x0;
             dy = sortXYZA[numSort].y = pInBuffer[i].y - y0;
             sortXYZA[numSort].z = (double)i;
-            sortXYZA[numSort].w = bsiTrig_atan2 (dy, dx);
+            sortXYZA[numSort].w = Angle::Atan2 (dy, dx);
             rr = dx * dx + dy * dy;
             if (rr > 0.0)
                 {
@@ -3067,9 +3271,9 @@ int numPoint
        )
         {
         if (pWorldToPlane)
-            bsiTransform_initIdentity (pWorldToPlane);
+            pWorldToPlane->InitIdentity ();
         if (pPlaneToWorld)
-            bsiTransform_initIdentity (pPlaneToWorld);
+            pPlaneToWorld->InitIdentity ();
         if (pRange)
             pRange->Init ();
         if (pTransformedPoints)
@@ -3087,7 +3291,7 @@ int numPoint
 
         if (pTransformedPoints)
             {
-            bsiTransform_multiplyDPoint3dArray (&worldToPlane, pTransformedPoints, pPoints, numPoint);
+            worldToPlane.Multiply (pTransformedPoints, pPoints, numPoint);
             if (pRange)
                 pRange->InitFrom(pTransformedPoints, numPoint);
             }
@@ -3141,11 +3345,11 @@ DPoint3dCP pTestPoint
     else
 
         {
-        minDist2 = bsiDPoint3d_distanceSquared (pTestPoint, pPointArray);
+        minDist2 = pTestPoint->DistanceSquared (*pPointArray);
         minIndex = 0;
         for (i = 1; i < n; i++)
             {
-            dist2 = bsiDPoint3d_distanceSquared (pTestPoint, pPointArray + i);
+            dist2 = pTestPoint->DistanceSquared (pPointArray[ i]);
             if (dist2 < minDist2)
                 {
                 minDist2 = dist2;
@@ -3222,17 +3426,17 @@ double      tolerance
 
     p0 = pPointArray[0];
     p1 = pPointArray[numPoint - 1];
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&vector, &p1, &p0);
-    d01 = bsiDPoint3d_normalizeInPlace (&vector);
+    vector.DifferenceOf (p1, p0);
+    d01 = vector.Normalize ();
 
     if (d01 <= myTol)
         return *pOnLine;
 
     for (i = 1; i < numPoint - 1; i++)
         {
-        s = bsiDPoint3d_dotDifference (&pPointArray[i], &p0, (DVec3d*) &vector);
-        bsiDPoint3d_addScaledDPoint3d (&proj, &p0, &vector, s);
-        if (bsiDPoint3d_distanceSquared (&proj, &pPointArray[i]) > myTol2)
+        s = pPointArray[i].DotDifference(p0, *((DVec3d*) &vector));
+        proj.SumOf (p0, vector, s);
+        if (proj.DistanceSquared (pPointArray[i]) > myTol2)
             return *pOnLine;
         if (s < 0.0)
             {
@@ -3273,4 +3477,62 @@ double      tolerance
     return bsiGeom_pointArrayColinearTest (&onLine, pPointArray, numPoint, tolerance);
     }
 
+/*-----------------------------------------------------------------*//**
+* Fill the affine part using xyz vectors for each row of the basis
+* part and an xyz vector for the translation
+*
+* @instance pA <= matrix initialized as an identity
+* @param pRow0 => data for row 0 of leading 3x3 submatrix
+* @param pRow1 => data for row 1 of leading 3x3 submatrix
+* @param pRow2 => data for row 2 of leading 3x3 submatrix
+* @param pTranslation => data for translation part of matrix
+* @see
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDMatrix4d_initAffineRows
+
+(
+DMatrix4dP pA,
+DPoint3dCP pRow0,
+DPoint3dCP pRow1,
+DPoint3dCP pRow2,
+DPoint3dCP pTranslation
+)
+    {
+    pA->SetRow ( 0, pRow0->x, pRow0->y, pRow0->z, pTranslation->x );
+    pA->SetRow ( 1, pRow1->x, pRow1->y, pRow1->z, pTranslation->y );
+    pA->SetRow ( 2, pRow2->x, pRow2->y, pRow2->z, pTranslation->z );
+    pA->SetRow ( 3, 0.0, 0.0, 0.0, 1.0 );
+    }
+
+/*-----------------------------------------------------------------*//**
+* Fill the affine part using xyz vectors for each column of the basis
+* part and an xyz vector for the translation
+
+* @instance pA <= matrix initialized as an identity
+* @param pCol0 => data for column 0 of leading 3x3 submatrix
+* @param pCol1 => data for column 1 of leading 3x3 submatrix
+* @param pCol2 => data for column 2 of leading 3x3 submatrix
+* @param pTranslation => data for translation part of matrix
+* @see
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDMatrix4d_initAffineColumns
+
+(
+DMatrix4dP pA,
+DPoint3dCP pCol0,
+DPoint3dCP pCol1,
+DPoint3dCP pCol2,
+DPoint3dCP pTranslation
+)
+
+    {
+    pA->SetRow ( 0, pCol0->x, pCol1->x, pCol2->x, pTranslation->x );
+    pA->SetRow ( 1, pCol0->y, pCol1->y, pCol2->y, pTranslation->y );
+    pA->SetRow ( 2, pCol0->z, pCol1->z, pCol2->z, pTranslation->z );
+    pA->SetRow ( 3, 0.0, 0.0, 0.0, 1.0 );
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE

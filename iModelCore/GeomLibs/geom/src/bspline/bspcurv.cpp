@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
+#include "../deprecatedFunctions.h"
 #include "msbsplinemaster.h"
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
@@ -2529,7 +2530,7 @@ Transform const         *transformP         /* => transform */
         if (SUCCESS != (status = bspcurv_copyCurve (outCurveP, inCurveP)))
             return status;
 
-    if (transformP && ! bsiTransform_isIdentity (transformP))
+    if (transformP && ! transformP->IsIdentity ())
         {
         if (outCurveP->rational)
             {
@@ -2574,7 +2575,7 @@ DMatrix4dCP             transform4dP         /* => transform */
     int i;
     DPoint4d xyzw;
 
-    if (outCurveP == inCurveP && (NULL == transform4dP || bsiDMatrix4d_isIdentity (transform4dP)))
+    if (outCurveP == inCurveP && (NULL == transform4dP || transform4dP->IsIdentity ()))
         return SUCCESS;
 
     // If the DMatrix4d has no perspective effects, just apply as a
@@ -3015,4 +3016,64 @@ MSBsplineCurve  *curve1
     return curve0->AlmostEqual (*curve1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Four ways to use this function: 1). numPts != 0 && data != NULL -> evaluate at given parametrs #). numPts != 0 && data == NULL -> evaluate
+* at numPts evenly 2). rulesByLength == true ... spaced along arc length 3). rulesByLength == false ... spaced from 0.0 to 1.0 4). numPts == 0
+* && -> stroke curve according to data[0] = chord tol chord tolerance, set numPts to number of points returned
+* @bsimethod                                                    BFP             09/90
++---------------+---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP int      bspcurv_evaluateCurve
+(
+DPoint3d        **pts,         /* <= evaluated points */
+double          *data,         /* => params to evaluate at */
+int             *numPts,       /* <=> number evaluated points */
+MSBsplineCurve  *curve         /* => curve structure */
+)
+    {
+    int         i, status;
+    double      *dPtr, x, delta, tol, *endP;
+    DPoint3d    *pPtr;
+
+    if (*numPts)
+        {
+        if (NULL == (*pts = static_cast<DPoint3d *>(BSIBaseGeom::Malloc (*numPts * sizeof (DPoint3d)))))
+            return ERROR;
+        pPtr = *pts;
+        if (data)                               /* case 1 */
+            {
+            for (dPtr=endP=data, endP += *numPts; dPtr < endP; dPtr++, pPtr++)
+                bspcurv_evaluateCurvePoint (pPtr, NULL, curve, *dPtr);
+
+            status = SUCCESS;
+            }
+/*      else if (curve->display.rulesByLength)   case 2
+            {
+            Not currently supported
+            }*/
+        else                                    /* case 3 */
+            {
+            delta = (double) (curve->params.closed ? *numPts : *numPts - 1);
+            if (delta > 0.0)
+                delta = 1.0 / delta;
+            for (i=0, x=0.0; i < *numPts; i++, pPtr++, x += delta)
+                bspcurv_evaluateCurvePoint (pPtr, NULL, curve, x);
+
+            status = SUCCESS;
+            }
+        }
+    else if (data)                              /* case 4 */
+        {
+        tol = *data;
+        bvector <DPoint3d> points;
+        // TFS1226
+        curve->AddStrokes (points, tol, 0.0 /* no angle tol */);
+        *numPts = (int)points.size ();
+        *pts = DPoint3dOps::MallocAndCopy (points);
+        return *numPts > 0 ? SUCCESS : ERROR;
+        }
+    else
+        status = ERROR;
+
+    return status;
+    }
 END_BENTLEY_GEOMETRY_NAMESPACE

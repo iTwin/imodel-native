@@ -2,13 +2,190 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refdmatrix4d.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
+#include "../deprecatedFunctions.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 #define HDIM 4
 
+/*-----------------------------------------------------------------*//**
+* Evaluate pA*X for m*n points X arranged in a grid.
+* The homogeneous coordinates of the i,j point in the grid is
+*               (x0 + i, y0 + j, 0, 1)
+* The returned point pGrid[i * m + j] is the xy components of the image
+* of grid poitn ij AFTER normalization.
+*
+* @instance pA => Viewing transformation
+* @param pGrid <= Array of mXn mapped, normalized points
+* @param x00 => grid origin x
+* @param y00 => grid origin y
+* @param m => number of grid points in x direction
+* @param n => number of grid points in y direction
+* @param tol => relative tolerance for 0-weight tests.
+                                        If 0, 1.0e-10 is used *
+* @see
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP bool    bsiDMatrix4d_evaluateImageGrid
+
+(
+DMatrix4dCP pA,
+DPoint2dP pGrid,
+double x00,
+double y00,
+int m,
+int n,
+double tol
+)
+
+    {
+#define DEFAULT_PERSPECTIVE_TOL 1.0e-10
+    /* For efficiency:
+        1 -- we never care about z in the output.
+        2 -- once the origin is transformed, subsequent points are
+            obtained by adding (x,y,w) from a single column of the matrix
+    */
+    int i,j,k;
+
+    double  x0,  y0,  w0;
+    double  xi,  yi,  wi;
+    double  x,   y,   w;
+    double dxi, dyi, dwi;
+    double dxj, dyj, dwj;
+    double wTol;
+
+    if (tol <= 0.0)
+        tol = DEFAULT_PERSPECTIVE_TOL;
+
+    x0 =
+        pA->coff[0][0] * x00 +
+        pA->coff[0][1] * y00 +
+        pA->coff[0][3];
+    y0 =
+        pA->coff[1][0] * x00 +
+        pA->coff[1][1] * y00 +
+        pA->coff[1][3];
+    w0 =
+        pA->coff[3][0] * x00 +
+        pA->coff[3][1] * y00 +
+        pA->coff[3][3];
+
+    dxi = pA->coff[0][0];
+    dyi = pA->coff[1][0];
+    dwi = pA->coff[3][0];
+
+    dxj = pA->coff[0][1];
+    dyj = pA->coff[1][1];
+    dwj = pA->coff[3][1];
+
+    if ( fabs(dwi) + fabs(dwj) < tol * fabs (w0))
+        {
+
+        /* w0 is strictly nonzero -- we can divide */
+        if (fabs(w0 - 1.0) > tol)
+            {
+            /* Scale all coordinates and steps back to w0=1 */
+            x0 /= w0;
+            y0 /= w0;
+            dxi /= w0;
+            dyi /= w0;
+            dxj /= w0;
+            dyj /= w0;
+            }
+
+        k = 0;
+        xi = x0;
+        yi = y0;
+
+        for (j = 0; j < n; j++)
+            {
+            x = pGrid[k].x = xi;
+            y = pGrid[k].y = yi;
+            k++;
+            for (i = 1; i < m; i++)
+                {
+                pGrid[k].x = (x += dxi);
+                pGrid[k].y = (y += dyi);
+                k++;
+                }
+            xi += dxj;
+            yi += dyj;
+            }
+        }
+    else
+        {
+        /* w0 varies -- we have to increment it and do the *&^*&^ division */
+        k = 0;
+        /* Use the overall variation of w to estimate a near-zero tolerance */
+        wTol = tol * (fabs (w0) + m * fabs (dwi) + n * fabs (dwj) );
+        xi = x0;
+        yi = y0;
+        wi = w0;
+        for (j = 0; j < n; j++)
+            {
+            x = xi;
+            y = yi;
+            w = wi;
+            if (w < wTol)
+                    return false;
+
+            pGrid[k].x = x / w;
+            pGrid[k].y = y / w;
+            k++;
+            for (i = 1; i < m; i++)
+                {
+                x += dxi;
+                y += dyi;
+                w += dwi;
+                if (w < wTol)
+                    return false;
+                pGrid[k].x = x / w;
+                pGrid[k].y = y / w;
+                k++;
+                }
+            xi += dxj;
+            yi += dyj;
+            wi += dwj;
+            }
+        }
+    return true;
+    }
+
+/*-----------------------------------------------------------------*//**
+* Compute eigenvectors, assuming A is symmetric.
+* @param pQ <= orthogonal, unit eigenvectors.
+* @param pD <= corresponding eigenvalues.
+* @indexVerb
+* @bsihdr                                                       EarlinLutz      12/97
++---------------+---------------+---------------+---------------+------*/
+Public GEOMDLLIMPEXP void bsiDMatrix4d_symmetricEigenvectors
+
+(
+DMatrix4dCP pA,
+DMatrix4dP pQ,
+DPoint4dP pD
+)
+    {
+    DMatrix4d A = *pA;
+    DMatrix4d Q;
+    DPoint4d D, B, Z;
+    bsiLinAlg_symmetricJacobiEigensystem
+                    (
+                    (double*)&A,
+                    (double*)&Q,
+                    (double*)&D,
+                    (double*)&B,
+                    (double*)&Z,
+                    4
+                    );
+    if (pQ)
+        *pQ = Q;
+    if (pD)
+        *pD = D;
+    }
 /*-----------------------------------------------------------------*//**
 * @param pMatrixA => matrix containing first column
 * @param columnA => column index within matrix A

@@ -119,6 +119,36 @@ TrimCurve               **trimLoopPP
     return status;
     }
 
+
+MSBsplineSurfacePtr MSBsplineSurface::CreateTrimmedDisk (DEllipse3dCR ellipse)
+    {
+    TrimCurve           *trimLoopP = NULL;    
+    double c = 0.5;
+    double r = 0.5;
+    DEllipse3d unitCircle = DEllipse3d::From (
+            c, c, 0,
+            r, 0, 0,
+            0, r, 0,
+            0.0, Angle::TwoPi ());
+
+    MSBsplineCurve bcurve;
+    bcurve.InitFromDEllipse3d (unitCircle);
+    bspTrimCurve_allocateAndInsertCyclic (&trimLoopP, &bcurve);
+    
+    DPoint3d poles[4];
+    poles[0].SumOf (ellipse.center, ellipse.vector0, -1.0, ellipse.vector90, -1.0);
+    poles[1].SumOf (ellipse.center, ellipse.vector0,  1.0, ellipse.vector90, -1.0);
+    poles[2].SumOf (ellipse.center, ellipse.vector0, -1.0, ellipse.vector90,  1.0);
+    poles[3].SumOf (ellipse.center, ellipse.vector0,  1.0, ellipse.vector90,  1.0);
+    MSBsplineSurfacePtr surface = MSBsplineSurface::CreatePtr ();
+    surface->InitFromPointsAndOrder (2, 2, 2, 2, poles);
+    bspsurf_transferTrimToSurface (surface.get (), &trimLoopP);
+    bspsurf_restrokeTrimLoops (surface.get (), -1.0, -1.0);
+    surface->holeOrigin = true;
+    return surface;
+    }
+    
+#ifdef Support_bsprsurf_blendSurface
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Peter.Yu                        10/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -156,35 +186,6 @@ MSBsplineSurface    *pSurf
     bspsurf_restrokeTrimLoops (pSurf, -1.0, -1.0);
     pSurf->holeOrigin = true;
     }
-
-MSBsplineSurfacePtr MSBsplineSurface::CreateTrimmedDisk (DEllipse3dCR ellipse)
-    {
-    TrimCurve           *trimLoopP = NULL;    
-    double c = 0.5;
-    double r = 0.5;
-    DEllipse3d unitCircle = DEllipse3d::From (
-            c, c, 0,
-            r, 0, 0,
-            0, r, 0,
-            0.0, Angle::TwoPi ());
-
-    MSBsplineCurve bcurve;
-    bcurve.InitFromDEllipse3d (unitCircle);
-    bspTrimCurve_allocateAndInsertCyclic (&trimLoopP, &bcurve);
-    
-    DPoint3d poles[4];
-    poles[0].SumOf (ellipse.center, ellipse.vector0, -1.0, ellipse.vector90, -1.0);
-    poles[1].SumOf (ellipse.center, ellipse.vector0,  1.0, ellipse.vector90, -1.0);
-    poles[2].SumOf (ellipse.center, ellipse.vector0, -1.0, ellipse.vector90,  1.0);
-    poles[3].SumOf (ellipse.center, ellipse.vector0,  1.0, ellipse.vector90,  1.0);
-    MSBsplineSurfacePtr surface = MSBsplineSurface::CreatePtr ();
-    surface->InitFromPointsAndOrder (2, 2, 2, 2, poles);
-    bspsurf_transferTrimToSurface (surface.get (), &trimLoopP);
-    bspsurf_restrokeTrimLoops (surface.get (), -1.0, -1.0);
-    surface->holeOrigin = true;
-    return surface;
-    }
-    
 
 /*----------------------------------------------------------------------+
 |                                                                       |
@@ -362,6 +363,7 @@ int                 edge
     return SUCCESS;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brian.Peters    01/92
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -525,7 +527,6 @@ wrapup:
 
     return status;
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BFP             09/91
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -598,7 +599,7 @@ wrapup:
         bspsurf_freeSurface (&surf0);
     return status;
     }
-
+#endif
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   Recursive Processing On Single Surface Routines                     |

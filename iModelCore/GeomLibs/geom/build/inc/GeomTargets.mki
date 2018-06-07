@@ -22,8 +22,6 @@ $(OUT_DIR)embeddeddpoint3darray$(OUT_EXT)      : $(geomSrcMemory)embeddeddpoint3
 
 $(OUT_DIR)dmap4d$(OUT_EXT)          : $(geomSrcStructs)dmap4d.cpp           $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
-$(OUT_DIR)dmatrix4d$(OUT_EXT)       : $(geomSrcStructs)dmatrix4d.cpp        $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
-
 $(OUT_DIR)dpoint3d$(OUT_EXT)        : $(geomSrcStructs)dpoint3d.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends} 
 
 $(OUT_DIR)XYZRangeTree$(OUT_EXT)    :$(geomSrcFuncs)XYZRangeTree.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
@@ -295,7 +293,7 @@ $(OUT_DIR)bspconv$(OUT_EXT)    : $(geomSrcBspline)bspconv.cpp $(OTHER_DEPENDENCI
 
 $(OUT_DIR)bspsurfacetrim$(OUT_EXT)    : $(geomSrcBspline)bspsurfacetrim.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
-$(OUT_DIR)bspproc$(OUT_EXT)    : $(geomSrcBspline)bspproc.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
+$(OUT_DIR)bspprocForMesh$(OUT_EXT)    : $(geomSrcBspline)bspprocForMesh.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
 $(OUT_DIR)bspfit$(OUT_EXT)    : $(geomSrcBspline)bspfit.cpp $(OTHER_DEPENDENCIES) ${MultiCompileDepends} $(MSBsplineDependencies) 
 
