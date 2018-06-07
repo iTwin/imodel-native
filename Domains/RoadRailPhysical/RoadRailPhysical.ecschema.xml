@@ -175,7 +175,7 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="GraphicalElement3dRepresentsCorridor" strength="referencing" modifier="Sealed">
-        <BaseClass>bis:GraphicalElement3dRepresentsElement</BaseClass>
+        <BaseClass>rralign:GraphicalElement3dRepresentsSpatialElement</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
             <Class class="bis:GraphicalElement3d"/>
         </Source>
