@@ -362,6 +362,50 @@ DgnDbStatus Converter::_CreateAndInsertExtractionGraphic(ResolvedModelMapping co
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::_DetectedDeletedExtractionGraphicsCategories(SyncInfo::V8ElementSource const& attachmentMapping,
+                                                             SyncInfo::V8ElementMapping const& originalElementMapping,
+                                                             bset<DgnCategoryId>& seenCategories)
+    {
+    CachedStatementPtr stmt = nullptr;
+    //                                          0      1                     2                         3
+    m_dgndb->GetCachedStatement(stmt, "SELECT Category,Graphic FROM " 
+                                SYNCINFO_ATTACH(SYNC_TABLE_ExtractedGraphic) 
+                                " WHERE (DrawingV8ModelSyncInfoId=? AND AttachmentV8ElementId=?"
+                                "    AND OriginalV8ModelSyncInfoId=? AND OriginalV8ElementId=?)");
+
+    
+    int col = 1;
+    stmt->BindInt64(col++, attachmentMapping.m_v8ModelSyncInfoId.GetValue());
+    stmt->BindInt64(col++, attachmentMapping.m_v8ElementId);
+    stmt->BindInt64(col++, originalElementMapping.m_v8ModelSyncInfoId.GetValue());
+    stmt->BindInt64(col++, originalElementMapping.m_v8ElementId);
+
+
+    bset<DgnCategoryId>     unseenCategories;
+    bset<DgnElementId>      graphicsToDelete;
+    while (BeSQLite::BE_SQLITE_ROW == stmt->Step())
+        {
+        DgnCategoryId   category    = stmt->GetValueId<DgnCategoryId>(0);
+
+        if (seenCategories.find(category) == seenCategories.end())
+            {
+            unseenCategories.insert(category);
+            graphicsToDelete.insert(stmt->GetValueId<DgnElementId>(1));
+            }
+        }
+    for (auto graphicId : graphicsToDelete)
+        {
+        auto graphic = GetDgnDb().Elements().GetElement(graphicId);
+        if (graphic.IsValid())
+            graphic->Delete();
+        }
+    for (auto unseenCategory : unseenCategories)
+        GetSyncInfo().DeleteExtractedGraphicsCategory(attachmentMapping, originalElementMapping, unseenCategory);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::_DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel, 

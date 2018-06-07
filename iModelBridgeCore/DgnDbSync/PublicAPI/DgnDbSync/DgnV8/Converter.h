@@ -1352,6 +1352,9 @@ public:
     DGNDBSYNC_EXPORT virtual void _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
                                                                    SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
                                                                    SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments);
+    DGNDBSYNC_EXPORT virtual void _DetectedDeletedExtractionGraphicsCategories(SyncInfo::V8ElementSource const& attachmentMapping,
+                                                                               SyncInfo::V8ElementMapping const& originalElementMapping,
+                                                                               bset<DgnCategoryId>& seenCategories);
 
     // WIP - Simplified drawing conversion.
     void CreateProxyGraphics (DgnModelRefR modelRef, ViewportR viewport);

@@ -602,33 +602,6 @@ void Converter::MakeAttachmentsMatchRootAnnotationScale(DgnModelRefR parent)
         }
     }
 
- #ifdef UNUSED
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::TransformSheetAttachmentsToDrawings(DgnV8ModelR parentModel)
-    {
-    auto attachments = GetAttachments(parentModel);
-    if (nullptr == attachments)
-        return;
-
-    for (auto attachment : *attachments)
-        {
-        if ((nullptr == attachment->GetDgnModelP()) || !attachment->IsSheet())
-            continue;
-
-        auto attachedModelAsDrawing = CopyAndChangeSheetToDrawing(attachment->GetDgnModelP());
-        if (!attachedModelAsDrawing.IsValid())
-            continue;
-
-        parentModel.SetReadOnly(false);
-
-        attachment->SetDgnModel(attachedModelAsDrawing.get()); // attachment will add a reference to the new model, keeping it alive.
-        GetAttachments(*attachment); // SetDgnModel deleted the nested attachment array. Rebuild it.
-        }
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1150,7 +1123,6 @@ void InitCurrentModel(DgnModelRefP modelRef)
     m_currentModelInfo = info;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1187,8 +1159,10 @@ void CreateDrawingElements()
             if (m_converter.IsUpdating())
                 v8ElementsByAttachment.insert(originalElementMapping);
             
+            bset<DgnCategoryId>     seenCategories;
             for (auto& bycategory : byElement.second)
                 {
+                seenCategories.insert(bycategory.first);
                 DgnDbStatus status = m_converter._CreateAndInsertExtractionGraphic(m_parentModelMapping, v8AttachmentSource, originalElementMapping, bycategory.first, *bycategory.second);
                 if (DgnDbStatus::Success != status)
                     {
@@ -1196,6 +1170,7 @@ void CreateDrawingElements()
                     m_converter.ReportError(Converter::IssueCategory::Unknown(), Converter::Issue::ConvertFailure(), "drawing extraction");
                     }
                 }
+            m_converter._DetectedDeletedExtractionGraphicsCategories(v8AttachmentSource, originalElementMapping, seenCategories);
             }
         }
 
