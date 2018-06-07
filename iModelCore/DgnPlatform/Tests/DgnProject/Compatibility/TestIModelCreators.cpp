@@ -55,7 +55,7 @@ DgnDbPtr TestIModelCreator::CreateNewTestFile(Utf8CP fileName)
 BentleyStatus TestIModelCreator::ImportSchemas(DgnDbR dgndb, std::vector<SchemaItem> const& schemas)
     {
     dgndb.SaveChanges();
-    ECSchemaReadContextPtr ctx = CompatibilityTestHelper::DeserializeSchemas(dgndb, schemas);
+    ECSchemaReadContextPtr ctx = DeserializeSchemas(dgndb, schemas);
     if (ctx == nullptr)
         return ERROR;
 

@@ -40,8 +40,9 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
         ASSERT_EQ(BE_SQLITE_OK, stat) << testFile.GetPath().GetNameUtf8();
         ASSERT_TRUE(bim != nullptr) << testFile.GetPath().GetNameUtf8();
 
-        TestHelper::AssertLoadSchemas(*bim);
-        const int schemaCount = TestHelper::GetSchemaCount(*bim);
+        TestHelper helper(testFile, *bim);
+        helper.AssertLoadSchemas();
+        const int schemaCount = helper.GetSchemaCount();
 
         switch (testFile.GetProfileState())
             {
@@ -60,27 +61,27 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     }
 
                 //DgnDb built-in schema versions
-                EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "BisCore"));
-                EXPECT_EQ(JsonValue(R"js({"classcount":163, "enumcount": 2})js"), TestHelper::GetSchemaItemCounts(*bim, "BisCore"));
+                EXPECT_EQ(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("BisCore"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":163, "enumcount": 2})js"), helper.GetSchemaItemCounts("BisCore"));
 
-                EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "Generic"));
-                EXPECT_EQ(JsonValue(R"js({"classcount":17})js"), TestHelper::GetSchemaItemCounts(*bim, "Generic"));
+                EXPECT_EQ(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("Generic"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":17})js"), helper.GetSchemaItemCounts("Generic"));
 
                 //ECDb built-in schema versions
-                EXPECT_EQ(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbFileInfo"));
-                EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), TestHelper::GetSchemaItemCounts(*bim, "ECDbFileInfo"));
-                EXPECT_EQ(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbMap"));
-                EXPECT_EQ(JsonValue(R"js({"classcount":9})js"), TestHelper::GetSchemaItemCounts(*bim, "ECDbMap"));
-                EXPECT_EQ(SchemaVersion(4, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbMeta"));
-                EXPECT_EQ(JsonValue(R"js({"classcount":24, "enumcount": 8})js"), TestHelper::GetSchemaItemCounts(*bim, "ECDbMeta"));
-                EXPECT_EQ(SchemaVersion(5, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbSystem"));
-                EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), TestHelper::GetSchemaItemCounts(*bim, "ECDbSystem"));
-                EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbSchemaPolicies"));
-                EXPECT_EQ(JsonValue(R"js({"classcount":3})js"), TestHelper::GetSchemaItemCounts(*bim, "ECDbSchemaPolicies"));
+                EXPECT_EQ(SchemaVersion(2, 0, 0), helper.GetSchemaVersion("ECDbFileInfo"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), helper.GetSchemaItemCounts("ECDbFileInfo"));
+                EXPECT_EQ(SchemaVersion(2, 0, 0), helper.GetSchemaVersion("ECDbMap"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":9})js"), helper.GetSchemaItemCounts("ECDbMap"));
+                EXPECT_EQ(SchemaVersion(4, 0, 0), helper.GetSchemaVersion("ECDbMeta"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":24, "enumcount": 8})js"), helper.GetSchemaItemCounts("ECDbMeta"));
+                EXPECT_EQ(SchemaVersion(5, 0, 0), helper.GetSchemaVersion("ECDbSystem"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), helper.GetSchemaItemCounts("ECDbSystem"));
+                EXPECT_EQ(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("ECDbSchemaPolicies"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":3})js"), helper.GetSchemaItemCounts("ECDbSchemaPolicies"));
 
                 //standard schema versions
-                EXPECT_EQ(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "CoreCustomAttributes"));
-                EXPECT_EQ(JsonValue(R"js({"classcount":14, "enumcount": 2})js"), TestHelper::GetSchemaItemCounts(*bim, "CoreCustomAttributes"));
+                EXPECT_EQ(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("CoreCustomAttributes"));
+                EXPECT_EQ(JsonValue(R"js({"classcount":14, "enumcount": 2})js"), helper.GetSchemaItemCounts("CoreCustomAttributes"));
                 break;
                 }
 
@@ -98,21 +99,21 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                     }
 
                 //DgnDb built-in schema versions
-                EXPECT_LE(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "BisCore"));
-                EXPECT_LE(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "Generic"));
+                EXPECT_LE(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("BisCore"));
+                EXPECT_LE(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("Generic"));
 
                 //ECDb built-in schema versions
                 //ECDbFileInfo version was incremented in next profile, so must be higher in newer file
-                EXPECT_LT(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbFileInfo"));
-                EXPECT_LE(SchemaVersion(2, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbMap"));
+                EXPECT_LT(SchemaVersion(2, 0, 0), helper.GetSchemaVersion("ECDbFileInfo"));
+                EXPECT_LE(SchemaVersion(2, 0, 0), helper.GetSchemaVersion("ECDbMap"));
                 //ECDbMeta version was incremented in next profile, so must be higher in newer file
-                EXPECT_LT(SchemaVersion(4, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbMeta"));
+                EXPECT_LT(SchemaVersion(4, 0, 0), helper.GetSchemaVersion("ECDbMeta"));
                 //ECDbSystem version was incremented in next profile, so must be higher in newer file
-                EXPECT_LT(SchemaVersion(5, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbSystem"));
-                EXPECT_LE(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "ECDbSchemaPolicies"));
+                EXPECT_LT(SchemaVersion(5, 0, 0), helper.GetSchemaVersion("ECDbSystem"));
+                EXPECT_LE(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("ECDbSchemaPolicies"));
 
                 //standard schema versions
-                EXPECT_LE(SchemaVersion(1, 0, 0), TestHelper::GetSchemaVersion(*bim, "CoreCustomAttributes"));
+                EXPECT_LE(SchemaVersion(1, 0, 0), helper.GetSchemaVersion("CoreCustomAttributes"));
 
                 break;
                 }

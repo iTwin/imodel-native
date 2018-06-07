@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "CompatibilityTestFixture.h"
+#include "ProfileManager.h"
 
 //=======================================================================================
 //! Provides helper methods for testing certain areas of a DgnDb or ECDb file in the compatibility tests
@@ -14,14 +15,20 @@
 //=======================================================================================    
 struct TestHelper final
     {
-    static JsonValue ExecuteECSqlSelect(ECDb const&, Utf8CP ecsql);
-    static SchemaVersion GetSchemaVersion(ECDb const&, Utf8CP schemaName);
-    static BeVersion GetOriginalECXmlVersion(ECDb const&, Utf8CP schemaName);
-    static int GetSchemaCount(ECDb const&);
-    static JsonValue GetSchemaItemCounts(ECDb const&, Utf8CP schemaName);
+private:
+    TestFile const& m_testFile;
+    ECDbCR m_db;
 
-    static void AssertEnum(ECDb const&, Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::pair<ECN::ECValue, Utf8CP>> const& expectedEnumerators);
-    static void AssertKindOfQuantity(ECDb const&, Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationUnits, double expectedRelError);
+public:
+    TestHelper(TestFile const& testFile, ECDbCR bimOrECDb) : m_testFile(testFile), m_db(bimOrECDb) {}
 
-    static void AssertLoadSchemas(ECDb const&);
+    JsonValue ExecuteECSqlSelect(Utf8CP ecsql) const;
+    SchemaVersion GetSchemaVersion(Utf8CP schemaName) const;
+    BeVersion GetOriginalECXmlVersion(Utf8CP schemaName) const;
+    int GetSchemaCount() const;
+    JsonValue GetSchemaItemCounts(Utf8CP schemaName) const;
+    
+    void AssertEnum(Utf8CP schemaName, Utf8CP enumName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, ECN::PrimitiveType expectedType, bool expectedIsStrict, std::vector<std::pair<ECN::ECValue, Utf8CP>> const& expectedEnumerators) const;
+    void AssertKindOfQuantity(Utf8CP schemaName, Utf8CP koqName, Utf8CP expectedDisplayLabel, Utf8CP expectedDescription, Utf8CP expectedPersistenceUnit, JsonValue const& expectedPresentationUnits, double expectedRelError) const;
+    void AssertLoadSchemas() const;
     };
