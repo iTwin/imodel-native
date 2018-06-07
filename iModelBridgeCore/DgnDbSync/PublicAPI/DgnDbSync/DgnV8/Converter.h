@@ -1352,6 +1352,9 @@ public:
     DGNDBSYNC_EXPORT virtual void _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
                                                                    SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
                                                                    SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments);
+    DGNDBSYNC_EXPORT virtual void _DetectedDeletedExtractionGraphicsCategories(SyncInfo::V8ElementSource const& attachmentMapping,
+                                                                               SyncInfo::V8ElementMapping const& originalElementMapping,
+                                                                               bset<DgnCategoryId>& seenCategories);
 
     // WIP - Simplified drawing conversion.
     void CreateProxyGraphics (DgnModelRefR modelRef, ViewportR viewport);
@@ -1484,8 +1487,8 @@ public:
     //! Convert the contents of a drawing model, populating a BIM drawing model, and convert views of this model. The conversion also pulls in proxy graphics from attachments.
     void DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm);
 
-    //! Convert the elements in a drawing or sheet model. This includes only the elements actually in the V8 drawing model.
-    DGNDBSYNC_EXPORT void DoConvertDrawingElementsInModel(ResolvedModelMapping const&);
+    //! Convert the elements in a sheet model. This includes only the elements actually in the V8 drawing model.
+    DGNDBSYNC_EXPORT void DoConvertDrawingElementsInSheetModel(ResolvedModelMapping const&);
 
     //! Convert levels in v8 element (used to preconvert drawing element levels).
     void ConvertLevels(DgnV8EhCR v8eh);
