@@ -11,7 +11,6 @@ struct ClassificationSystemsTestsBase : BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::
     {
         virtual void RegisterDomains() override;
         static void SetUpTestCase();
-
     };
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
