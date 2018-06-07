@@ -306,7 +306,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     //===================================================================================
     struct Property
     {
-        static int const DEFAULT_PRIORITY = 0;
+        ECPRESENTATION_EXPORT static int const DEFAULT_PRIORITY;
     private:
         Utf8String m_prefix;
         ECClassCP m_propertyClass;
@@ -1404,7 +1404,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE DefaultCategorySupplier : IPropertyCategorySupplier
 {
 public:
-    static const int NESTED_CONTENT_CATEGORY_PRIORITY = 400000; // matches Standard::General
+    ECPRESENTATION_EXPORT static const int NESTED_CONTENT_CATEGORY_PRIORITY;
 protected:
     ECPRESENTATION_EXPORT virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECPropertyCR, RelationshipMeaning) override;
     ECPRESENTATION_EXPORT virtual ContentDescriptor::Category _GetCategory(ECClassCR, RelatedClassPathCR, ECClassCR) override;
