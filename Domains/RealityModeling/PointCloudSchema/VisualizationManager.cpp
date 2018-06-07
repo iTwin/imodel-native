@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/VisualizationManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
@@ -123,7 +123,7 @@ void VisualizationManager::SetViewportOrtho(ViewContextR context, Transform cons
     PointCloudVortex::SetViewportSize ((int)(viewRange_view.low.x + 0.5), (int)(viewRange_view.low.y + 0.5), horizontalPixels, verticalPixels);
 
     DMatrix4d sceneToUorMat, localToView = context.GetWorldToView().M0;
-    bsiDMatrix4d_initFromTransform (&sceneToUorMat, &sceneToUor);
+    sceneToUorMat.InitFrom (sceneToUor);
 
     // TR# 296246. - On viewlets (and the sheet/drawing parents) the "View" Z coordinates are somewhat 
     // arbitrary and sending very large values seems to confuse the vortex stuff.
@@ -212,7 +212,7 @@ void VisualizationManager::GetUstnViewToOpenGLViewTransform(DMatrix4dR result, d
 
     //  This equivalent to translating by -yOffset, scaling by -1,
     //  and then translating by yOffset.
-    bsiDMatrix4d_initScaleAndTranslate(&result, &scale, &offset);
+    result.InitFromScaleAndTranslation (scale, offset);
     }
 
 /*---------------------------------------------------------------------------------**//**
