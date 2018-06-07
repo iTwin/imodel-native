@@ -406,7 +406,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
                 throw status;                                                    // error writing to master header data source!
 
             if ((status = dataSource->close()).isFailed())
-                throw false;                                                    // error closing master header data source!
+                throw status;                                                    // error closing master header data source!
             }
         catch (DataSourceStatus)
             {
@@ -415,6 +415,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
 
         DataSourceManager::Get()->destroyDataSource(dataSource);
 
+        return status.isOK();
         }
 
     return true;
@@ -555,6 +556,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
         catch (DataSourceStatus)
             {
             assert(false);
+            DataSourceManager::Get()->destroyDataSource(dataSource);
+			return 0;
             }
 
         DataSourceManager::Get()->destroyDataSource(dataSource);
@@ -1123,6 +1126,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
     catch (DataSourceStatus)
         {
         assert(false);
+        DataSourceManager::Get()->destroyDataSource(dataSource);
+		return 0;
         }
 
     DataSourceManager::Get()->destroyDataSource(dataSource);
@@ -1826,6 +1831,8 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
         catch (DataSourceStatus)
             {
             assert(false);
+            DataSourceManager::Get()->destroyDataSource(dataSource);
+		    return;
             }
 
     DataSourceManager::Get()->destroyDataSource(dataSource);
@@ -2581,6 +2588,8 @@ inline DataSource::DataSize StreamingDataBlock::LoadDataBlock(DataSourceAccount 
     catch (DataSourceStatus)
         {
         assert(false);
+        DataSourceManager::Get()->destroyDataSource(dataSource);
+		return 0;
         }
 
     DataSourceManager::Get()->destroyDataSource(dataSource);
