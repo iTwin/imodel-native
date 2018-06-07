@@ -292,3 +292,22 @@ TEST_F(ExtrusionManipulationStrategyTestFixture, CanAcceptMorePointsFixedHeightA
     ASSERT_TRUE(sut->IsBaseComplete());
     ASSERT_FALSE(sut->CanAcceptMorePoints());
     }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                06/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ExtrusionManipulationStrategyTestFixture, SetProperty_ToBaseSplinePrimitive)
+    {
+    CurveVectorManipulationStrategyPtr baseStrategy = CurveVectorManipulationStrategy::Create();
+    baseStrategy->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Spline);
+    ExtrusionManipulationStrategyPtr sut = ExtrusionManipulationStrategy::Create(*baseStrategy);
+
+    int initialOrder;
+    ASSERT_EQ(BentleyStatus::ERROR, baseStrategy->TryGetProperty(SplineControlPointsPlacementStrategy::prop_Order(), initialOrder)); // there are no primitive strategies, to this returns error
+    int expectedOrder = 10;
+    baseStrategy->SetProperty(SplineControlPointsPlacementStrategy::prop_Order(), expectedOrder);
+
+    int actualOrder = 0;
+    ASSERT_EQ(BentleyStatus::SUCCESS, baseStrategy->TryGetProperty(SplineControlPointsPlacementStrategy::prop_Order(), actualOrder));
+    ASSERT_EQ(actualOrder, expectedOrder);
+    }

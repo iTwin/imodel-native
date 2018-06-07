@@ -346,7 +346,7 @@ TEST_F(CurveStrategyTests, SplineThroughPointsStrategyTests)
     ASSERT_TRUE(strategy.IsValid()) << "strategy creation should not fail";
 
     // Check initial strategy state
-    DVec3d startTangent = DVec3d::From(1, 0, 0), endTangent = DVec3d::From(1, 0, 0);
+    DVec3d startTangent = DVec3d::From(0, 0, 0), endTangent = DVec3d::From(0, 0, 0);
     ASSERT_TRUE(startTangent.AlmostEqual(strategy->GetStartTangent())) << "Start tangent is incorrect";
     ASSERT_TRUE(endTangent.AlmostEqual(strategy->GetEndTangent())) << "End tangent is incorrect";
 
