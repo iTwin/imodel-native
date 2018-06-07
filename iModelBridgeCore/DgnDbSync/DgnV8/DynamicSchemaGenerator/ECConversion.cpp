@@ -100,7 +100,7 @@ ECN::ECObjectsStatus ExtendTypeConverter::ReplaceWithKOQ(ECN::ECSchemaR schema, 
         koq->SetPersistenceUnit(*persistenceUnit);
 
         // Locate presentation Unit within Format Schema
-        ECN::ECUnitCP presUnit = m_unitsStandardSchema->GetUnitCP(persistenceUnitName);
+        ECN::ECUnitCP presUnit = m_unitsStandardSchema->GetUnitCP(presentationUnitName);
         if (nullptr == presUnit)
             {
             BeAssert(false);
