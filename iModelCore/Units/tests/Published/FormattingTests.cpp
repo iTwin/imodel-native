@@ -12,6 +12,7 @@
 USING_BENTLEY_FORMATTING
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
+struct FormatUtilsTest : FormattingTestFixture {};
 struct FormatIntegerTest : FormattingTestFixture
     {
     int32_t const testValPos = 100501;
@@ -87,6 +88,26 @@ public:
         ASSERT_TRUE(fps.HasProblem()) << GetFmtStringErrMsg(fmtStr);
         }
     };
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Kyle.Abramowitz                06/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatUtilsTest, GetAvailableStrings)
+    {
+    SignOption signOption;
+    auto options = UIUtils::GetAvailableSignOption(signOption);
+    EXPECT_EQ(SignOption::OnlyNegative, signOption);
+    EXPECT_EQ(4, options.size());
+
+    PresentationType type;
+    auto types = UIUtils::GetAvailablePresentationTypes(type);
+    EXPECT_EQ(PresentationType::Decimal, type);
+    EXPECT_EQ(4, types.size());
+
+    FormatTraits trait;
+    auto traits = UIUtils::GetAvailableTraits(trait);
+    EXPECT_EQ(FormatTraits::None, trait);
+    EXPECT_EQ(10, traits.size());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
