@@ -69,6 +69,9 @@ GeoCoordinates::BaseGCSCR DstGcs
 
 bool GCSSpecificTransformTester::s_initialized = false;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Alain Robert  08/2007
++---------------+---------------+---------------+---------------+---------------+------*/
 GCSSpecificTransformTester::GCSSpecificTransformTester() 
     {
     if (!s_initialized)
@@ -207,9 +210,10 @@ static bvector<conversionTest> s_listOfConversionTests =
     };
 
 
-//==================================================================================
-// Parametrized conversion tests.
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Parametrized conversion tests.
+* @bsimethod                                                    StephanePoulin  08/2007
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(GCSSpecificTransformTester, SpecificCoordConversionTest)
 {
     conversionTest theConversionTestParam = GetParam(); 
@@ -250,9 +254,10 @@ INSTANTIATE_TEST_CASE_P(GCSSpecificTransformTester_Combined,
                         ValuesIn(s_listOfConversionTests));
 
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Domain tests
+* @bsimethod                                                    StephanePoulin  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, LatLongToFromXYZ)
     {
     GeoCoordinates::BaseGCSPtr currentGCSEllipsoid;
@@ -369,9 +374,9 @@ TEST_F (GCSSpecificTransformTester, LatLongToFromXYZ)
     EXPECT_NEAR(xyz.z - xyz2.z, -29.5350, 0.001); // The Z value should represent the geoid separation
     }
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, KuwaitUtilityInstanciationFailureTest)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -383,9 +388,9 @@ TEST_F (GCSSpecificTransformTester, KuwaitUtilityInstanciationFailureTest)
     }
 
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, InitFromEPSGFailureTest)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -399,9 +404,10 @@ TEST_F (GCSSpecificTransformTester, InitFromEPSGFailureTest)
     EXPECT_TRUE(currentGCS.IsValid());
     }
     
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Specific WKT test (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, SpecificWKT1)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -418,9 +424,10 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT1)
     EXPECT_TRUE(currentGCS->GetVerticalDatumCode() == GeoCoordinates::vdcGeoid);
     }
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Specific WKT test (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, SpecificWKT2)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -436,9 +443,10 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT2)
 
     }
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Specific WKT test (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, SpecificWKT3)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -454,9 +462,10 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT3)
 
     }
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Specific WKT test (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, SpecificWKT4)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -472,9 +481,10 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT4)
 
     }
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Specific WKT test (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, SpecificWKT5)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -491,9 +501,10 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT5)
     }
 
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Specific WKT test (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, SpecificWKT6)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -508,9 +519,11 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT6)
     EXPECT_TRUE(currentGCS->IsValid());
 
     }
-//==================================================================================
-// Domain
-//==================================================================================
+
+/*---------------------------------------------------------------------------------**//**
+* Specific WKT test (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, SpecificWKT7)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -527,9 +540,10 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT7)
 
     }
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Specific WKT test (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, SpecificWKT8)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -546,9 +560,10 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT8)
 
     }
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Specific WKT test (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, SpecificWKT9)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -566,9 +581,10 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT9)
     }
 
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Specific WKT test (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, SpecificWKT10)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -585,9 +601,10 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT10)
 
     }
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Specific WKT test (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, SpecificWKT11)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -605,9 +622,10 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT11)
     }
 
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Specific WKT test (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, ElevationTransfo1)
     {
     GeoCoordinates::BaseGCSPtr fromGCS;
@@ -649,9 +667,10 @@ TEST_F (GCSSpecificTransformTester, ElevationTransfo1)
 
     }
 
-//==================================================================================
-// Test generation WKT for london grid
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Specific LondonGrid WKT generation
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, SpecificWKTGenerationLondonGrid)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -668,9 +687,10 @@ TEST_F (GCSSpecificTransformTester, SpecificWKTGenerationLondonGrid)
     }
 
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Indiana DOT Coordinate Tests (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, IndianaDOT_InGCSTests)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;
@@ -1237,9 +1257,10 @@ TEST_F (GCSSpecificTransformTester, IndianaDOT_InGCSTests)
     }
    
 
-//==================================================================================
-// Domain
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Specific Virginia DOT Tests (to be removed)
+* @bsimethod                                                    Alain.Robert  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (GCSSpecificTransformTester, VirginiaDOT_Tests)
     {
     GeoCoordinates::BaseGCSPtr currentGCS;

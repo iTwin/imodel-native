@@ -1508,9 +1508,10 @@ static bvector<WString> s_listNotSupported =
 
    
 
-//==================================================================================
-// Basic instantiation tests
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Alain.Robert  02/2018
+* Basic instantiation tests.
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(GCSSpecificBadWKTTester, ParseBAD_WKT_Test)
 {
     GeoCoordinates::BaseGCSPtr currentGCS;

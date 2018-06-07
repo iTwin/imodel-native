@@ -16,7 +16,9 @@ using namespace ::testing;
 
 bool GCSUnaryTester::s_initialized = false;
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Alain.Robert  02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 GCSUnaryTester::GCSUnaryTester() 
     {
 
@@ -74,6 +76,9 @@ static bool s_AngleInDegreesEqual (double angle1, double angle2, double toleranc
     return false;
     }    
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Alain.Robert  02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 bool    bsiDPoint2d_isPointInConvexPolygonFixed
 (
 DPoint2dCP pPoint,
@@ -134,10 +139,10 @@ static bvector<WString> const& s_GetListOfCoordinateSystems ()
     }
 
 
-    
-//==================================================================================
-// Basic instanciation tests
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* Basic instanciation tests
+* @bsimethod                                                   Alain.Robert  02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P (GCSUnaryTester, InstantiationTest)
     {
     GeoCoordinates::BaseGCSPtr toto = GeoCoordinates::BaseGCS::CreateGCS(GetParam().c_str());
@@ -152,10 +157,10 @@ TEST_P (GCSUnaryTester, InstantiationTest)
     EXPECT_TRUE(toto->IsValid());
     }
    
-
-//==================================================================================
-// GCS/Datum deprecation consistency tests
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* GCS/Datum deprecation consistency tests
+* @bsimethod                                                   Alain.Robert  02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P (GCSUnaryTester, GCSDatumDeprecationConsistency)
     {
     WString deprecated = L"LEGACY";
@@ -183,10 +188,10 @@ TEST_P (GCSUnaryTester, GCSDatumDeprecationConsistency)
         }
 
     }
-
-//==================================================================================
-// UserDomainTest
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* UserDomainTest
+* @bsimethod                                                   Alain.Robert  02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P (GCSUnaryTester, UserDomainTest)
     {
 
@@ -237,17 +242,17 @@ TEST_P (GCSUnaryTester, UserDomainTest)
 
     }
 #if (0)
-
-//==================================================================================
-// UserDomainCartesianConversionTest
-// This test makes sure that no error is reported when converting from a lat/long
-// pair reported in the user domain to a cartesian coordinate.
-// The only exception to this rule is the Danish coordinate system
-// that have highly complex mathematical domain that are fully inscribed in the
-// use domain extent still not convering the corners.
-// Notice that conversion from lat/long in the GCS datum to cartesian only is performed
-// so we do not test as a side line the conversion of the datums.
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* UserDomainCartesianConversionTest
+* This test makes sure that no error is reported when converting from a lat/long
+* pair reported in the user domain to a cartesian coordinate.
+* The only exception to this rule is the Danish coordinate system
+* that have highly complex mathematical domain that are fully inscribed in the
+* use domain extent still not convering the corners.
+* Notice that conversion from lat/long in the GCS datum to cartesian only is performed
+* so we do not test as a side line the conversion of the datums.
+* @bsimethod                                                   Alain.Robert  02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P (GCSUnaryTester, UserDomainConvertionTest)
     {
 
@@ -308,14 +313,14 @@ TEST_P (GCSUnaryTester, UserDomainConvertionTest)
         }
 
     }
-    
-//==================================================================================
-// MathematicalDomainCartesianConversionTest
-// This test makes sure that no error is reported when converting from a lat/long
-// pair reported in the mathematical domain to a cartesian coordinate.
-// Notice that conversion from lat/long in the GCS datum to cartesian only is performed
-// so we do not test as a side line the conversion of the datums.
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* MathematicalDomainCartesianConversionTest
+* This test makes sure that no error is reported when converting from a lat/long
+* pair reported in the mathematical domain to a cartesian coordinate.
+* Notice that conversion from lat/long in the GCS datum to cartesian only is performed
+* so we do not test as a side line the conversion of the datums.
+* @bsimethod                                                   Alain.Robert  02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P (GCSUnaryTester, MathematicalDomainConvertionTest)
     {
 
@@ -426,16 +431,16 @@ TEST_P (GCSUnaryTester, MathematicalDomainConvertionTest)
     }    
 
 
-
-//==================================================================================
-// WKT Testing
-// The purpose of this test is to create a WKT from every dictionary entry both
-// as a plain WKT and as a compound WKT and try to recreate an equivalent 
-// geographical coordinate system and this for every flavor supported.
-// Also we will use the original flavor once then the unknown flavor that is supposed to
-// attempt to determine the flavor upon analysis of the WKT string
-// NOTE: Not all entries will pass this test.
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* WKT Testing
+* The purpose of this test is to create a WKT from every dictionary entry both
+* as a plain WKT and as a compound WKT and try to recreate an equivalent 
+* geographical coordinate system and this for every flavor supported.
+* Also we will use the original flavor once then the unknown flavor that is supposed to
+* attempt to determine the flavor upon analysis of the WKT string
+* NOTE: Not all entries will pass this test.
+* @bsimethod                                                   Alain.Robert  02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P (GCSUnaryTester, WKTGenerationTest)
     {
 
@@ -457,14 +462,14 @@ TEST_P (GCSUnaryTester, WKTGenerationTest)
 
     // The following set cannot be converted to any WKT flavor
     if (projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorAffinePostProcess ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicAffinePostProcess ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvAzimuthalEquidistantElevatedEllipsoid   ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvModifiedStereographic   ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvBipolarObliqueConformalConic   ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvHotineObliqueMercator1UV  ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvHotineObliqueMercator2UV ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicAffinePostProcess ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvAzimuthalEquidistantElevatedEllipsoid   ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvModifiedStereographic   ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvBipolarObliqueConformalConic   ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvHotineObliqueMercator1UV  ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvHotineObliqueMercator2UV ||
         projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys3401 ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvObliqueMercatorMinnesota)
+        projectionCode == GeoCoordinates::BaseGCS::pcvObliqueMercatorMinnesota)
         return;
 
         // These should work in one flavor but they do not (CSMAP issue)
@@ -492,34 +497,34 @@ TEST_P (GCSUnaryTester, WKTGenerationTest)
             
         // Some flavors are incompatible with projection methods
 
-		if ((currentFlavor == GeoCoordinates::BaseGCS::wktFlavorOracle) && 
+        if ((currentFlavor == GeoCoordinates::BaseGCS::wktFlavorOracle) && 
             (projectionCode == GeoCoordinates::BaseGCS::pcvSouthOrientedTransverseMercator  ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicCentered ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicOrigin ||
-    		 projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicWisconsin  ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorWisconsin  ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicMinnesota ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorMinnesota ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn97 ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn02 ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvObliqueCylindricalHungary))
+             projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicCentered ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicOrigin ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicWisconsin  ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorWisconsin  ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicMinnesota ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorMinnesota ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn97 ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn02 ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvObliqueCylindricalHungary))
             continue;
 
-		if ((currentFlavor == GeoCoordinates::BaseGCS::wktFlavorESRI) && 
+        if ((currentFlavor == GeoCoordinates::BaseGCS::wktFlavorESRI) && 
             (projectionCode == GeoCoordinates::BaseGCS::pcvSouthOrientedTransverseMercator    ||
-    		 projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicWisconsin    ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicOrigin   ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorWisconsin    ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicMinnesota   ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicCentered   ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorMinnesota   ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvObliqueCylindricalHungary   ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys34    ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys3499 ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn97   ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn02   ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvSnyderTransverseMercator    ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorKruger))
+             projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicWisconsin    ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicOrigin   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorWisconsin    ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicMinnesota   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicCentered   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorMinnesota   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvObliqueCylindricalHungary   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys34    ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys3499 ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn97   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn02   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvSnyderTransverseMercator    ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorKruger))
             continue;
 
 
@@ -546,16 +551,16 @@ TEST_P (GCSUnaryTester, WKTGenerationTest)
 #endif
 
         
-
-//==================================================================================
-// WKT Testing
-// The purpose of this test is to create a WKT from every dictionary entry both
-// as a plain WKT and as a compound WKT and try to recreate an equivalent 
-// geographical coordinate system and this for every flavor supported.
-// Also we will use the original flavor once then the unknown flavor that is supposed to
-// attempt to determine the flavor upon analysis of the WKT string
-// NOTE: Not all entries will pass this test.
-//==================================================================================
+/*---------------------------------------------------------------------------------**//**
+* WKT Testing
+* The purpose of this test is to create a WKT from every dictionary entry both
+* as a plain WKT and as a compound WKT and try to recreate an equivalent 
+* geographical coordinate system and this for every flavor supported.
+* Also we will use the original flavor once then the unknown flavor that is supposed to
+* attempt to determine the flavor upon analysis of the WKT string
+* NOTE: Not all entries will pass this test.
+* @bsimethod                                                   Alain.Robert  02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P (GCSUnaryTester, WKTGenerateThenParseTest)
     {
     WString deprecated = L"LEGACY";
@@ -578,16 +583,16 @@ TEST_P (GCSUnaryTester, WKTGenerateThenParseTest)
 
     // The following set cannot be converted to any WKT flavor
     if (projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorAffinePostProcess ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicAffinePostProcess ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvAzimuthalEquidistantElevatedEllipsoid   ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvModifiedStereographic   ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvBipolarObliqueConformalConic   ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvHotineObliqueMercator1UV  ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvHotineObliqueMercator2UV ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicAffinePostProcess ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvAzimuthalEquidistantElevatedEllipsoid   ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvModifiedStereographic   ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvBipolarObliqueConformalConic   ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvHotineObliqueMercator1UV  ||
+        projectionCode == GeoCoordinates::BaseGCS::pcvHotineObliqueMercator2UV ||
         projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys3401 ||
         projectionCode == GeoCoordinates::BaseGCS::pcvTotalUniversalTransverseMercator ||  
         projectionCode == GeoCoordinates::BaseGCS::pcvTotalTransverseMercatorBF ||
-	    projectionCode == GeoCoordinates::BaseGCS::pcvObliqueMercatorMinnesota)
+        projectionCode == GeoCoordinates::BaseGCS::pcvObliqueMercatorMinnesota)
         return;
 
         // These should work in one flavor but they do not (CSMAP issue)
@@ -615,34 +620,34 @@ TEST_P (GCSUnaryTester, WKTGenerateThenParseTest)
             
         // Some flavors are incompatible with projection methods
 
-		if ((currentFlavor == GeoCoordinates::BaseGCS::wktFlavorOracle) && 
+        if ((currentFlavor == GeoCoordinates::BaseGCS::wktFlavorOracle) && 
             (projectionCode == GeoCoordinates::BaseGCS::pcvSouthOrientedTransverseMercator  ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicCentered ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicOrigin ||
-    		 projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicWisconsin  ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorWisconsin  ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicMinnesota ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorMinnesota ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn97 ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn02 ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvObliqueCylindricalHungary))
+             projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicCentered ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicOrigin ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicWisconsin  ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorWisconsin  ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicMinnesota ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorMinnesota ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn97 ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn02 ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvObliqueCylindricalHungary))
             continue;
 
-		if ((currentFlavor == GeoCoordinates::BaseGCS::wktFlavorESRI) && 
+        if ((currentFlavor == GeoCoordinates::BaseGCS::wktFlavorESRI) && 
             (projectionCode == GeoCoordinates::BaseGCS::pcvSouthOrientedTransverseMercator    ||
-    		 projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicWisconsin    ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicOrigin   ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorWisconsin    ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicMinnesota   ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicCentered   ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorMinnesota   ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvObliqueCylindricalHungary   ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys34    ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys3499 ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn97   ||
-			 projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn02   ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvSnyderTransverseMercator    ||
-		     projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorKruger))
+             projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicWisconsin    ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicOrigin   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorWisconsin    ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvLambertConformalConicMinnesota   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvRectifiedSkewOrthomorphicCentered   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorMinnesota   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvObliqueCylindricalHungary   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys34    ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys3499 ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn97   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorOstn02   ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvSnyderTransverseMercator    ||
+             projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorKruger))
             continue;
 
 
