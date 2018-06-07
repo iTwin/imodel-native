@@ -311,8 +311,10 @@ static void AppendPath(bvector<NodesPathElement>& lhsList, NodesPathElement cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool TryAppendPath(NodesPathElement& lhs, NodesPathElement const& rhs)
     {
-    if (lhs.GetNode() == rhs.GetNode())
+    if (lhs.GetNode()->GetKey()->Compare(*rhs.GetNode()->GetKey()) == 0)
         {
+        if (rhs.IsMarked())
+            lhs.SetIsMarked(true);
         for (NodesPathElement const& rhsChild : rhs.GetChildren())
             AppendPath(lhs.GetChildren(), rhsChild);
         return true;

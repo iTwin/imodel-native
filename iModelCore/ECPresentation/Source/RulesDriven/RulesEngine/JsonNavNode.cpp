@@ -274,6 +274,17 @@ void JsonNavNode::_SetIsSelectable(bool value) {AddMember(NAVNODE_IsSelectable, 
 void JsonNavNode::_SetIsEditable(bool value) {AddMember(NAVNODE_IsEditable, rapidjson::Value(value).Move());}
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodePtr JsonNavNode::_Clone() const
+    {
+    JsonNavNode* node = new JsonNavNode();
+    node->m_json.CopyFrom(m_json, node->m_allocator);
+    node->m_nodeKey = m_nodeKey;
+    return node;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsonNavNodePtr JsonNavNodesFactory::CreateECInstanceNode(IConnectionCR connection, ECClassId classId, ECInstanceId instanceId, Utf8CP label) const

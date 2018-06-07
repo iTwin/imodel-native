@@ -57,7 +57,6 @@ TestNavNodePtr TestNodesHelper::CreateInstanceNode(IConnectionCR connection, IEC
     {
     TestNavNodePtr node = TestNavNode::Create(connection);
     s_testNodesFactory.InitECInstanceNode(*node, connection.GetId(), instance, "label");
-    node->m_classId = instance.GetClass().GetId();
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(connection, *node, bvector<Utf8String>()));
     return node;
     }
@@ -69,7 +68,6 @@ TestNavNodePtr TestNodesHelper::CreateClassGroupingNode(IConnectionCR connection
     {
     TestNavNodePtr node = TestNavNode::Create(connection);
     s_testNodesFactory.InitECClassGroupingNode(*node, connection.GetId(), ecClass, label, GroupedInstanceKeysList());
-    node->m_classId = ecClass.GetId();
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(connection, *node, bvector<Utf8String>()));
     return node;
     }
@@ -81,7 +79,6 @@ TestNavNodePtr TestNodesHelper::CreateRelationshipGroupingNode(IConnectionCR con
     {
     TestNavNodePtr node = TestNavNode::Create(connection);
     s_testNodesFactory.InitECRelationshipGroupingNode(*node, connection.GetId(), rel, label, GroupedInstanceKeysList());
-    node->m_classId = rel.GetId();
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(connection, *node, bvector<Utf8String>()));
     return node;
     }
@@ -93,7 +90,6 @@ TestNavNodePtr TestNodesHelper::CreatePropertyGroupingNode(IConnectionCR connect
     {
     TestNavNodePtr node = TestNavNode::Create(connection);
     s_testNodesFactory.InitECPropertyGroupingNode(*node, connection.GetId(), ecClass, ecProperty, label, "", groupingValue, isRangeGrouping, GroupedInstanceKeysList());
-    node->m_classId = ecClass.GetId();
     node->SetNodeKey(*NavNodesHelper::CreateNodeKey(connection, *node, bvector<Utf8String>()));
     return node;
     }
