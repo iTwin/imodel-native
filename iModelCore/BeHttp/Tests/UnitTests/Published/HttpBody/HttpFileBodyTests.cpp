@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/HttpBody/HttpFileBodyTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -181,6 +181,8 @@ TEST_F(HttpFileBodyTests, Write_FileWithContent_OverridesContentAtPosition)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+// N.B. Some builds, such as those in Linux containers, run as root, and as such, it is difficult to create a path you cannot access... I feel it is not worth hacking around that fact.
+#if !defined(BENTLEYCONFIG_OS_LINUX)
 TEST_F(HttpFileBodyTests, Write_FileLockedForWrite_WritesNothing)
     {
     auto path = FSTest::StubFile("ABC");
@@ -194,6 +196,7 @@ TEST_F(HttpFileBodyTests, Write_FileLockedForWrite_WritesNothing)
 
     EXPECT_EQ("ABC", FSTest::ReadFile(path));
     }
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                       11/16
