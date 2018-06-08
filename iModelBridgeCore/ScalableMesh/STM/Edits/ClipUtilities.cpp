@@ -1648,14 +1648,14 @@ PrimitiveResult ShouldConsiderPrimitive(ClipPrimitivePtr const& primitive, DRang
     return PrimitiveResult(primitiveRange.IntersectsWith(range), primitiveRange);
     }
 
-void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipVectorPtr& clipSegments, bvector<DRange3d>& faceRanges, const DRange3d& polyRange)
+void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipVectorPtr& clipSegments, bvector<DRange3d>& faceRanges, const DRange3d& polyRange, const bvector<bool>& isMask)
     {
     bvector<DPlane3d> planesFromSegments;
     bool meshHasTexture = inOutMesh->Param().size() > 0 && inOutMesh->ParamIndex().size() > 0;
 	DRange3d meshRange = DRange3d::From(inOutMesh->GetPointCP(), (int)inOutMesh->GetPointCount());
     for (auto& primitive : *clipSegments)
         {
-        if (ShouldConsiderPrimitive(primitive, meshRange).first)
+      //  if (ShouldConsiderPrimitive(primitive, meshRange,!isMask.empty(), isMask.empty()? false : isMask[&primitive - &clipSegments->front()]).first)
             {
             for (auto& planes : *(primitive->GetClipPlanes()))
                 for (auto& plane : planes)
@@ -1779,7 +1779,7 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
             }
         }
     ClipVectorPtr currentClip(const_cast<ClipVector*>(clip));
-    InsertMeshCuts(clippedMesh, vis, currentClip, triangleBoxes, polyBox);
+    InsertMeshCuts(clippedMesh, vis, currentClip, triangleBoxes, polyBox, isMask);
     bvector<ClipVectorPtr> clipPolys;
     bool shouldUseClipPrimitives = true;
     if (!shouldUseClipPrimitives)
@@ -1788,7 +1788,7 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
         {
         for (ClipPrimitivePtr const& primitive : *clip)
             {
-            if (ShouldConsiderPrimitive(primitive, meshRange).first)
+            if (ShouldConsiderPrimitive(primitive, meshRange,!isMask.empty(), isMask.empty()? false : isMask[&primitive - &clip->front()]).first)
                 {
 #ifndef VANCOUVER_API
                 ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive.get());
