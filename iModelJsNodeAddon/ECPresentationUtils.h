@@ -79,6 +79,9 @@ struct ECPresentationUtils
     static folly::Future<ECPresentationResult> GetContent(IECPresentationManagerR, ECDbR, JsonValueCR params);
     static folly::Future<ECPresentationResult> GetContentSetSize(IECPresentationManagerR, ECDbR, JsonValueCR params);
 
+    static folly::Future<ECPresentationResult> GetNodesPaths(IECPresentationManagerR, ECDbR, JsonValueCR params);
+    static folly::Future<ECPresentationResult> GetFilteredNodesPaths(IECPresentationManagerR, ECDbR, JsonValueCR params);
+
     static ECPresentationResult SetUserSetting(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR settingId, Utf8StringCR value);
     static ECPresentationResult GetUserSetting(RulesDrivenECPresentationManager& manager, Utf8StringCR rulesetId, Utf8StringCR settingId, Utf8StringCR settingType);
 

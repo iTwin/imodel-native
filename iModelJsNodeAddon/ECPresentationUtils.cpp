@@ -1561,3 +1561,76 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(IECPr
                     });
             });
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kilinskas                 06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<ECPresentationResult>  ECPresentationUtils::GetNodesPaths(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+    {
+    if (!params.isMember("markedIndex"))
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "markedIndex");
+
+    if (!params.isMember("options"))
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "options");
+
+    bvector<bvector<ECInstanceKey>> keys;
+    JsonValueCR keyArraysJson = params["paths"];
+    if (!keyArraysJson.isArray())
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "paths");
+    
+    IConnectionCPtr connection = manager.Connections().GetConnection(db);
+    for (Json::ArrayIndex x = 0; x < keyArraysJson.size(); x++)
+        {
+        JsonValueCR keysJson = keyArraysJson[x];
+
+        if (!keysJson.isArray())
+            return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString("paths[%" PRIu64 "]", (uint64_t)x));
+
+        keys.push_back(bvector<ECInstanceKey>());
+        for (Json::ArrayIndex i = 0; i < keysJson.size(); i++)
+            {
+            ECInstanceId id;
+            ECInstanceId::FromString(id, keysJson[i]["id"].asCString());
+            if (!id.IsValid())
+                return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString("paths[%" PRIu64 "][%" PRIu64 "].id", (uint64_t)x, (uint64_t)i));
+
+            ECClassCP ecClass = IModelJsECPresentationSerializer::GetClassFromFullName(*connection, keysJson[i]["className"].asCString());
+            if (ecClass == nullptr)
+                return ECPresentationResult(ECPresentationStatus::InvalidArgument, Utf8PrintfString("paths[%" PRIu64 "][%" PRIu64 "].className", (uint64_t)x, (uint64_t)i));
+
+            keys[x].push_back(ECInstanceKey(ecClass->GetId(), id));
+            }
+        }
+
+    return manager.GetNodesPath(db, keys, params["markedIndex"].asInt64(), params["options"])
+        .then([](bvector<NodesPathElement> result)
+            {
+            rapidjson::Document response;
+            response.SetArray();
+            for (size_t i = 0; i < result.size(); i++)
+                response.PushBack(result[i].AsJson(&response.GetAllocator()), response.GetAllocator());
+            return ECPresentationResult(std::move(response));
+            });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Aidas.Kililnskas                06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<ECPresentationResult>  ECPresentationUtils::GetFilteredNodesPaths(IECPresentationManagerR manager, ECDbR db, JsonValueCR params)
+    {
+    if (!params.isMember("filterText"))
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "filterText");
+
+    if (!params.isMember("options"))
+        return ECPresentationResult(ECPresentationStatus::InvalidArgument, "options");
+
+    return manager.GetFilteredNodesPaths(db, params["filterText"].asCString(), params["options"])
+        .then([](bvector<NodesPathElement> result)
+            {
+            rapidjson::Document response;
+            response.SetArray();
+            for (size_t i = 0; i < result.size(); i++)
+                response.PushBack(result[i].AsJson(&response.GetAllocator()), response.GetAllocator());
+            return ECPresentationResult(std::move(response));
+            });
+    }
