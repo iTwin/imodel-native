@@ -54,16 +54,16 @@ bmap<FormatTraits, Utf8String> UIUtils::GetAvailableTraits(FormatTraits& default
     {
     bmap<FormatTraits, Utf8String> traits;
 
-    traits[FormatTraits::ShowUnitLabel] = FormatConstant::FPN_ShowUnitLabel().c_str();
-    traits[FormatTraits::Use1000Separator] = FormatConstant::FPN_Use1000Separator().c_str();
-    traits[FormatTraits::TrailingZeroes] = FormatConstant::FPN_TrailZeroes().c_str();
-    traits[FormatTraits::PrependUnitLabel] = FormatConstant::FPN_PrependUnitLabel().c_str();
-    traits[FormatTraits::KeepSingleZero] = FormatConstant::FPN_KeepSingleZero().c_str();
-    traits[FormatTraits::ZeroEmpty] = FormatConstant::FPN_ZeroEmpty().c_str();
-    traits[FormatTraits::KeepDecimalPoint] = FormatConstant::FPN_KeepDecimalPoint().c_str();
-    traits[FormatTraits::ApplyRounding] = FormatConstant::FPN_ApplyRounding().c_str();
-    traits[FormatTraits::FractionDash] = FormatConstant::FPN_FractionDash().c_str();
-    traits[FormatTraits::ExponenentOnlyNegative] = FormatConstant::FPN_ExponentOnlyNegative().c_str();
+    traits[FormatTraits::ShowUnitLabel] = json_showUnitLabel().c_str();
+    traits[FormatTraits::Use1000Separator] = json_use1000Separator().c_str();
+    traits[FormatTraits::TrailingZeroes] = json_trailZeroes().c_str();
+    traits[FormatTraits::PrependUnitLabel] = json_prependUnitLabel().c_str();
+    traits[FormatTraits::KeepSingleZero] = json_keepSingleZero().c_str();
+    traits[FormatTraits::ZeroEmpty] = json_zeroEmpty().c_str();
+    traits[FormatTraits::KeepDecimalPoint] = json_keepDecimalPoint().c_str();
+    traits[FormatTraits::ApplyRounding] = json_applyRounding().c_str();
+    traits[FormatTraits::FractionDash] = json_fractionDash().c_str();
+    traits[FormatTraits::ExponenentOnlyNegative] = json_exponentOnlyNegative().c_str();
 
     defaultVal = FormatConstant::DefaultFormatTraits();
     return traits;
