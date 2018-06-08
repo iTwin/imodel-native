@@ -83,31 +83,31 @@ void TestVerticalOrder(CurveVectorCR verticalAlignment)
 void TestAlignments(CurveVectorCR horizontalAlignment, CurveVectorCP pVerticalAlignment)
     {
 #if !defined(NDEBUG)
-    TestHorizontalOrder(horizontalAlignment);
-
-    if (nullptr != pVerticalAlignment && !pVerticalAlignment->empty())
-        {
-        TestVerticalOrder(*pVerticalAlignment);
-
-        CurveVectorWithDistanceIndexPtr idx = CurveVectorWithDistanceIndex::Create();
-        CurveVectorPtr hzCurve = horizontalAlignment.Clone();
-        idx->SetPath(*hzCurve);
-        double hzLen = idx->TotalPathLength();
-
-        DPoint3d start, end;
-        pVerticalAlignment->GetStartEnd(start, end);
-
-        if (!TestLength(hzLen, fabs(end.x)) || !TestLength(0.0, start.x))
-            {
-#if 0 //&&AG needswork
-            GeometryDebug::Announce(*hzCurve, "Horizontal");
-            GeometryDebug::Announce(*pVerticalAlignment, "Vertical");
-#endif
-            double hGap = hzCurve->MaxGapWithinPath();
-            double vGap = pVerticalAlignment->MaxGapWithinPath();
-            printf(" maxGap (%g,%g)\n", hGap, vGap);
-            }
-        }
+//    TestHorizontalOrder(horizontalAlignment);
+//
+//    if (nullptr != pVerticalAlignment && !pVerticalAlignment->empty())
+//        {
+//        TestVerticalOrder(*pVerticalAlignment);
+//
+//        CurveVectorWithDistanceIndexPtr idx = CurveVectorWithDistanceIndex::Create();
+//        CurveVectorPtr hzCurve = horizontalAlignment.Clone();
+//        idx->SetPath(*hzCurve);
+//        double hzLen = idx->TotalPathLength();
+//
+//        DPoint3d start, end;
+//        pVerticalAlignment->GetStartEnd(start, end);
+//
+//        if (!TestLength(hzLen, fabs(end.x)) || !TestLength(0.0, start.x))
+//            {
+//#if 0 //&&AG needswork
+//            GeometryDebug::Announce(*hzCurve, "Horizontal");
+//            GeometryDebug::Announce(*pVerticalAlignment, "Vertical");
+//#endif
+//            double hGap = hzCurve->MaxGapWithinPath();
+//            double vGap = pVerticalAlignment->MaxGapWithinPath();
+//            printf(" maxGap (%g,%g)\n", hGap, vGap);
+//            }
+//        }
 #endif
     }
 
