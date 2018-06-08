@@ -340,6 +340,8 @@ protected:
     virtual void _SetIsCheckboxEnabled(bool value) = 0;
     virtual void _SetIsExpanded(bool value) = 0;
 
+    virtual NavNodePtr _Clone() const = 0;
+
 public:
     //! Set the @ref NavNodeKey for this node.
     void SetNodeKey(NavNodeKeyCR nodeKey) {_SetNodeKey(nodeKey);}
@@ -429,6 +431,9 @@ public:
     void SetIsExpanded(bool value) {_SetIsExpanded(value);}
     //! Is this node expanded.
     bool IsExpanded() const {return _IsExpanded();}
+    //! Returns a cloned copy of this object.
+    NavNodePtr Clone() const { return _Clone(); };
+
 
     //! Serialize the node to JSON
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;

@@ -26,8 +26,6 @@ struct TestNavNode : JsonNavNode
 friend struct TestNodesHelper;
 
 private:
-    ECClassId m_classId;
-private:
     TestNavNode(IConnectionCR connection, Utf8CP type) {InitNode(connection, type);}
     void InitNode(IConnectionCR, Utf8CP);
 public:

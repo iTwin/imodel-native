@@ -93,6 +93,8 @@ protected:
     ECPRESENTATION_EXPORT void _SetIsEditable(bool value) override;
     ECPRESENTATION_EXPORT void _SetNodeKey(NavNodeKeyCR nodeKey) override {m_nodeKey = &nodeKey;}
 
+    ECPRESENTATION_EXPORT NavNodePtr _Clone() const override;
+
     ECPRESENTATION_EXPORT RapidJsonValueR _GetExtendedData() const override;
     ECPRESENTATION_EXPORT rapidjson::MemoryPoolAllocator<>& _GetExtendedDataAllocator() const override;
 

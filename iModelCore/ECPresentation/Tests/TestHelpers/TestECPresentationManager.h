@@ -43,13 +43,13 @@ public:
 struct NodesVectorDataSource : IDataSource<NavNodeCPtr>
 {
 private:
-    bvector<NavNodeCPtr> const& m_vec;
-    NodesVectorDataSource(bvector<NavNodeCPtr> const& vec) : m_vec(vec) {}
+    bvector<NavNodeCPtr> m_vec;
+    NodesVectorDataSource(bvector<NavNodeCPtr> vec) : m_vec(vec) {}
 protected:
     NavNodeCPtr _Get(size_t index) const override {return m_vec[index];}
     size_t _GetSize() const override {return m_vec.size();}
 public:
-    static RefCountedPtr<NodesVectorDataSource> Create(bvector<NavNodeCPtr> const& vec) {return new NodesVectorDataSource(vec);}
+    static RefCountedPtr<NodesVectorDataSource> Create(bvector<NavNodeCPtr> vec) {return new NodesVectorDataSource(vec);}
 };
 
 /*=================================================================================**//**
@@ -86,15 +86,36 @@ private:
 private:
     DataContainer<NavNodeCPtr> GetNodes(NavNodeCP parent)
         {
-        auto iter = m_hierarchy.find(parent);
-        if (m_hierarchy.end() == iter)
+        bpair<NavNodeCPtr, bvector<NavNodeCPtr>> pair;
+        if (!FindPair(parent, pair))
             return DataContainer<NavNodeCPtr>(*EmptyDataSource<NavNodeCPtr>::Create());
-        return DataContainer<NavNodeCPtr>(*NodesVectorDataSource::Create(iter->second));
+
+        bvector<NavNodeCPtr> nodes;
+        for (NavNodeCPtr node : pair.second)
+            nodes.push_back(node.get()->Clone());
+
+        return DataContainer<NavNodeCPtr>(*NodesVectorDataSource::Create(nodes));
         }
     size_t GetNodesCount(NavNodeCP parent)
         {
-        auto iter = m_hierarchy.find(parent);
-        return (m_hierarchy.end() == iter) ? 0 : iter->second.size();
+        bpair<NavNodeCPtr, bvector<NavNodeCPtr>> pair;
+        if (!FindPair(parent, pair))
+            return 0;
+        return pair.second.size();
+        }
+
+    bool FindPair(NavNodeCP parent, bpair<NavNodeCPtr, bvector<NavNodeCPtr>>& p)
+        {
+        for (auto& pair : m_hierarchy)
+            {
+            if (pair.first == nullptr && parent == nullptr ||
+                pair.first != nullptr && parent != nullptr && pair.first.get()->GetKey()->Compare(*parent->GetKey()) == 0)
+                {
+                p = pair;
+                return true;
+                }
+            }
+        return false;
         }
     
 protected:

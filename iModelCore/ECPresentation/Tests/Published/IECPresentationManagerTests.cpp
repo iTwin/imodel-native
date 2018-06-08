@@ -563,6 +563,115 @@ TEST_F(IECPresentationManagerTests, GetNodesPath_Multiple_MarksTheSpecifiedPath)
     ASSERT_EQ(0, curr->GetChildren().size());
     }
 
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Aidas.Kilinskas                06/2018
+//---------------------------------------------------------------------------------------
+TEST_F(IECPresentationManagerTests, GetNodesPath_Multiple_MarksTheSpecifiedPathWhenItIsFoundFirst)
+    {
+    // create the hierarchy
+    Hierarchy hierarchy;
+    hierarchy[nullptr].push_back(CreateInstanceNode(m_widgetClassId, ECInstanceId((uint64_t) 1), "B"));
+    NavNodeCPtr node = hierarchy[nullptr].back();
+    hierarchy[node].push_back(CreateInstanceNode(m_gadgetClassId, ECInstanceId((uint64_t) 2), "B_1"));
+    NavNodeCPtr node1 = hierarchy[node].front();
+    hierarchy[node1].push_back(CreateInstanceNode(m_widgetClassId, ECInstanceId((uint64_t) 3), "B_1_1"));
+    NavNodeCPtr node1_1 = hierarchy[node1].front();
+
+    m_manager->SetHierarchy(hierarchy);
+
+    // create the key paths
+    bvector<ECInstanceKey> keysPath1 =
+        {
+        node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
+        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
+    bvector<ECInstanceKey> keysPath2 =
+        {
+        node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
+        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
+        node1_1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
+
+    bvector<bvector<ECInstanceKey>> keysPaths = {keysPath1, keysPath2};
+
+    // test
+    bvector<NodesPathElement> paths = m_manager->GetNodesPath(s_project->GetECDb(), keysPaths, 0).get();
+    ASSERT_EQ(1, paths.size());
+
+    NodesPathElement const* curr = &paths[0];
+    ASSERT_TRUE(curr->GetNode().IsValid());
+    EXPECT_STREQ("B", curr->GetNode()->GetLabel().c_str());
+    EXPECT_FALSE(curr->IsMarked());
+    ASSERT_EQ(1, curr->GetChildren().size());
+
+    curr = &curr->GetChildren().front();
+    ASSERT_TRUE(curr->GetNode().IsValid());
+    EXPECT_STREQ("B_1", curr->GetNode()->GetLabel().c_str());
+    EXPECT_TRUE(curr->IsMarked());
+    ASSERT_EQ(1, curr->GetChildren().size());
+
+    curr = &curr->GetChildren().front();
+    ASSERT_TRUE(curr->GetNode().IsValid());
+    EXPECT_STREQ("B_1_1", curr->GetNode()->GetLabel().c_str());
+    EXPECT_FALSE(curr->IsMarked());
+    ASSERT_EQ(0, curr->GetChildren().size());
+    }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Aidas.Kilinskas                06/2018
+//---------------------------------------------------------------------------------------
+TEST_F(IECPresentationManagerTests, GetNodesPath_Multiple_MarksTheSpecifiedPathWhenItIsFoundNotFirst)
+    {
+    // create the hierarchy
+    Hierarchy hierarchy;
+    hierarchy[nullptr].push_back(CreateInstanceNode(m_widgetClassId, ECInstanceId((uint64_t) 1), "B"));
+    NavNodeCPtr node = hierarchy[nullptr].back();
+    hierarchy[node].push_back(CreateInstanceNode(m_gadgetClassId, ECInstanceId((uint64_t) 2), "B_1"));
+    NavNodeCPtr node1 = hierarchy[node].front();
+    hierarchy[node1].push_back(CreateInstanceNode(m_widgetClassId, ECInstanceId((uint64_t) 3), "B_1_1"));
+    NavNodeCPtr node1_1 = hierarchy[node1].front();
+
+    m_manager->SetHierarchy(hierarchy);
+
+    // create the key paths
+    bvector<ECInstanceKey> keysPath1 =
+        {
+        node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
+        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
+        node1_1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey()
+        };
+    bvector<ECInstanceKey> keysPath2 =
+        {
+        node->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
+        node1->GetKey()->AsECInstanceNodeKey()->GetInstanceKey(),
+        };
+
+    bvector<bvector<ECInstanceKey>> keysPaths = {keysPath1, keysPath2};
+
+    // test
+    bvector<NodesPathElement> paths = m_manager->GetNodesPath(s_project->GetECDb(), keysPaths, 1).get();
+    ASSERT_EQ(1, paths.size());
+
+    NodesPathElement const* curr = &paths[0];
+    ASSERT_TRUE(curr->GetNode().IsValid());
+    EXPECT_STREQ("B", curr->GetNode()->GetLabel().c_str());
+    EXPECT_FALSE(curr->IsMarked());
+    ASSERT_EQ(1, curr->GetChildren().size());
+
+    curr = &curr->GetChildren().front();
+    ASSERT_TRUE(curr->GetNode().IsValid());
+    EXPECT_STREQ("B_1", curr->GetNode()->GetLabel().c_str());
+    EXPECT_TRUE(curr->IsMarked());
+    ASSERT_EQ(1, curr->GetChildren().size());
+
+    curr = &curr->GetChildren().front();
+    ASSERT_TRUE(curr->GetNode().IsValid());
+    EXPECT_STREQ("B_1_1", curr->GetNode()->GetLabel().c_str());
+    EXPECT_FALSE(curr->IsMarked());
+    ASSERT_EQ(0, curr->GetChildren().size());
+    }
+
 //---------------------------------------------------------------------------------------
 // @betest                                      Aidas.Vaiksnoras                10/2017
 //---------------------------------------------------------------------------------------
