@@ -2,22 +2,16 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/ConnectSignInManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <WebServices/WebServices.h>
 #include <WebServices/Client/ClientInfo.h>
-#include <WebServices/Connect/IConnectAuthenticationPersistence.h>
-#include <WebServices/Connect/IConnectAuthenticationProvider.h>
-#include <WebServices/Connect/IConnectTokenProvider.h>
+#include <WebServices/Connect/IConnectSignInManager.h>
 #include <WebServices/Connect/IImsClient.h>
 #include <WebServices/Connect/SamlToken.h>
-#include <WebServices/Connect/IConnectionClientInterface.h>
-#include <BeHttp/AuthenticationHandler.h>
-#include <BeSecurity/SecureStore.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -30,37 +24,9 @@ typedef AsyncResult<SamlTokenPtr, AsyncError> ConnectionClientTokenResult;
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef std::shared_ptr<struct ConnectSignInManager> ConnectSignInManagerPtr;
-struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared_from_this<ConnectSignInManager>
+struct ConnectSignInManager : IConnectSignInManager, std::enable_shared_from_this<ConnectSignInManager>
     {
     public:
-        struct IListener
-            {
-            virtual ~IListener() {};
-            //! Will be called when token expiration is detected
-            virtual void _OnUserTokenExpired() {};
-            //! Will be called when user change is detected
-            virtual void _OnUserChanged() {};
-            //! Will be called after finalizing user sign-in
-            virtual void _OnUserSignedIn() {};
-            //! Will be called after user sign-out
-            virtual void _OnUserSignedOut() {};
-            //! Will be called after user signs in to Connection Client
-            virtual void _OnUserSignedInViaConnectionClient() {};
-            };
-
-        struct UserInfo
-            {
-            Utf8String username;
-            Utf8String firstName;
-            Utf8String lastName;
-            Utf8String userId;
-            Utf8String organizationId;
-            bool IsComplete() const
-                {
-                return !(username.Equals("") || firstName.Equals("") || lastName.Equals("") || userId.Equals("") || organizationId.Equals(""));
-                };
-            };
-
         struct Configuration
             {
             //! Identity token lifetime to be requested in minutes. Defaults to 1 week.
@@ -104,8 +70,6 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
             };
 
     private:
-        mutable BeMutex m_mutex;
-
         IImsClientPtr m_client;
         IJsonLocalState& m_localState;
         ISecureStorePtr m_secureStore;
@@ -117,21 +81,27 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         IConnectTokenProviderPtr m_publicIdentityTokenProvider;
         mutable bmap<Utf8String, std::shared_ptr<struct DelegationTokenProvider>> m_publicDelegationTokenProviders;
 
-        bset<IListener*> m_listeners;
-        std::function<void()> m_tokenExpiredHandler;
-        std::function<void()> m_userChangeHandler;
-        std::function<void()> m_userSignInHandler;
-        std::function<void()> m_userSignOutHandler;
-        std::function<void()> m_connectionClientSignInHandler;
 
         mutable IConnectionClientInterfacePtr m_connectionClient;
         std::shared_ptr<ConnectionClientListener> m_connectionClientListener;
 
     private:
-        ConnectSignInManager(IImsClientPtr client, IJsonLocalState* localState, ISecureStorePtr secureStore, IConnectionClientInterfacePtr connectionClient);
+        void _CheckAndUpdateToken() override;
+        void _SignOut() override;
+        bool _IsSignedIn() const override;
+        UserInfo _GetUserInfo() const override;
+        Utf8String _GetLastUsername() const override;
+        IConnectTokenProviderPtr _GetTokenProvider(Utf8StringCR rpUri) const override;
+        AuthenticationHandlerPtr _GetAuthenticationHandler
+            (
+            Utf8StringCR serverUrl,
+            IHttpHandlerPtr httpHandler = nullptr,
+            HeaderPrefix prefix = HeaderPrefix::Token
+            ) const override;
+        void _StoreSignedInUser() override;
 
-        void CheckUserChange();
-        void StoreSignedInUser();
+    private:
+        ConnectSignInManager(IImsClientPtr client, IJsonLocalState* localState, ISecureStorePtr secureStore, IConnectionClientInterfacePtr connectionClient);
 
         AuthenticationType ReadAuthenticationType() const;
         void StoreAuthenticationType(AuthenticationType type);
@@ -140,19 +110,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         void Configure(Authentication& auth) const;
         void Configure(struct DelegationTokenProvider& provider) const;
 
-        IConnectTokenProviderPtr GetCachedTokenProvider(Utf8StringCR rpUri) const;
-        void ClearSignInData();
-
-        void CheckAndUpdateTokenNoLock();
-        bool IsSignedInNoLock()  const;
-
         void InitializeConnectionClientInterface() const;
-              
-        void _OnUserTokenExpired() const;
-        void _OnUserChanged() const;
-        void _OnUserSignedIn() const;
-        void _OnUserSignedOut() const;
-        void _OnUserSignedInViaConnectionClient() const;
 
     public:
         //! Create manager. Call CheckAndUpdateToken() to update sign-in information seperately.
@@ -183,13 +141,9 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
             IConnectionClientInterfacePtr connectionClient = nullptr
             );
 
-        WSCLIENT_EXPORT virtual ~ConnectSignInManager();
 
         //! Change default configuration with new one. Best called before any other calls are done.
         WSCLIENT_EXPORT void Configure(Configuration config);
-
-        //! Check if token expired and renew/handle expiration
-        WSCLIENT_EXPORT void CheckAndUpdateToken();
 
         //! Sign in using identity token.
         //! Note: Token can be retrieved from IMS sign-in page from browser, in-app web view, or other means.
@@ -200,52 +154,8 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         //! Store sign-in information on disk so user would stay signed-in. Call after successful sign-in.
         WSCLIENT_EXPORT void FinalizeSignIn();
 
-        //! Sign-out user and remove all user information from disk
-        WSCLIENT_EXPORT void SignOut();
-        //! Check if user is signed-in
-        WSCLIENT_EXPORT bool IsSignedIn() const;
-        //! Get user information stored in identity token
-        WSCLIENT_EXPORT UserInfo GetUserInfo() const;
         //! Get user information stored in token
-        WSCLIENT_EXPORT static UserInfo GetUserInfo(SamlTokenCR token);
-        //! Get last or current user that was signed in. Returns empty if no user was signed in
-        WSCLIENT_EXPORT Utf8String GetLastUsername() const;
-
-        //! Register listener to get user state change events
-        WSCLIENT_EXPORT void RegisterListener(IListener* listener);
-        //! Unregister listener registered with RegisterListener()
-        WSCLIENT_EXPORT void UnregisterListener(IListener* listener);
-
-        //! DEPRECATED, Use RegisterListener()! Will be called when token expiration is detected
-        WSCLIENT_EXPORT void SetTokenExpiredHandler(std::function<void()> handler);
-        //! DEPRECATED, Use RegisterListener()! Will be called when user change is detected. Should be set when starting application.
-        WSCLIENT_EXPORT void SetUserChangeHandler(std::function<void()> handler);
-        //! DEPRECATED, Use RegisterListener()! Will be called after finalizing user sign-in
-        WSCLIENT_EXPORT void SetUserSignInHandler(std::function<void()> handler);
-        //! DEPRECATED, Use RegisterListener()! Will be called after user sign-out
-        WSCLIENT_EXPORT void SetUserSignOutHandler(std::function<void()> handler);
-        //! DEPRECATED, Use RegisterListener()! Will be called after user signs in to Connection Client
-        WSCLIENT_EXPORT void SetConnectionClientSignInHandler(std::function<void()> handler);
-
-        //! Get authentication handler for specific server.
-        //! Will automatically authenticate all HttpRequests that is used with. 
-        //! Will always represent user that is signed-in when authenticating.
-        //! Will configure each request to validate TLS certificate depending on UrlProvider environment.
-        //! @param serverUrl should contain server URL without any directories
-        //! @param httpHandler optional custom HTTP handler to send all given server authenticated requests trough. It will not be used for secure/sensitive token retrieval service.
-        //! @param prefix optional custom header prefix to use. Some services require different header format
-        WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler
-            (
-            Utf8StringCR serverUrl, 
-            IHttpHandlerPtr httpHandler = nullptr,
-            HeaderPrefix prefix = HeaderPrefix::Token
-            ) const override;
-
-        //! Get delegation token provider when signed in. Delegation tokens are short lived.
-        //! Only use this if AuthenticationHandlerPtr cannot be used.
-        //! Will always represent user that is signed-in when prividing token.
-        //! @param rpUri relying party URI to use token for
-        WSCLIENT_EXPORT IConnectTokenProviderPtr GetTokenProvider(Utf8StringCR rpUri) const;
+        WSCLIENT_EXPORT static UserInfo ReadUserInfo(SamlTokenCR token);
 
         //! Check if Connection Client is installed
         //! Should be called first to make sure the API will work correctly

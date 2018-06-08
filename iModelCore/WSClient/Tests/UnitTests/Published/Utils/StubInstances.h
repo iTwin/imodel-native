@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/StubInstances.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -45,8 +45,6 @@ struct StubInstances
         WSObjectsResult ToWSObjectsResult(Utf8StringCR eTag = "", Utf8StringCR skipToken = "") const;
         //! Create success WSChangesetResult
         WSChangesetResult ToWSChangesetResult() const;
-        //! Create WSG 1.3 server response body JSON string
-        Utf8String ToJsonWebApiV1() const;
         //! Create WSG 2.0 server response body JSON string
         Utf8String ToJsonWebApiV2() const;
         //! Create server changeset response body JSON string

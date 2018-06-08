@@ -6,8 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include "WebApi/WebApiV1.h"
-#include "WebApi/WebApiV1BentleyConnect.h"
 #include "WebApi/WebApiV2.h"
 
 /*--------------------------------------------------------------------------------------+
@@ -103,24 +101,6 @@ ICancellationTokenPtr ct
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<WebApi> ClientConnection::GetWebApi(WSInfoCR info) const
     {
-    if (WebApiV1::IsSupported(info))
-        {
-        if (nullptr != std::dynamic_pointer_cast<WebApiV1> (m_webApi))
-            {
-            return m_webApi;
-            }
-        return std::make_shared<WebApiV1>(m_configuration, info);
-        }
-
-    if (WebApiV1BentleyConect::IsSupported(info))
-        {
-        if (nullptr != std::dynamic_pointer_cast<WebApiV1BentleyConect> (m_webApi))
-            {
-            return m_webApi;
-            }
-        return std::make_shared<WebApiV1BentleyConect>(m_configuration, info);
-        }
-
     if (WebApiV2::IsSupported(info))
         {
         if (nullptr != std::dynamic_pointer_cast<WebApiV2> (m_webApi))

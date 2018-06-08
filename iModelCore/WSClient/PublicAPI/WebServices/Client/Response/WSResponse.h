@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/WebServices/Client/Response/WSFileResponse.h $
+|     $Source: PublicAPI/WebServices/Client/Response/WSResponse.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
-#include <WebServices/Client/Response/WSResponse.h>
 #include <BeHttp/HttpClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
@@ -17,21 +16,24 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 USING_NAMESPACE_BENTLEY_HTTP
 
 /*--------------------------------------------------------------------------------------+
-* @bsiclass                                                     Vincas.Razma    05/2014
+* @bsiclass                                                julius.cepukenas    05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct WSFileResponse : public WSResponse
+struct WSResponse
     {
     private:
-        BeFileName  m_filePath;
+        bool        m_isModified;
+        Utf8String  m_eTag;
 
     public:
-        WSCLIENT_EXPORT WSFileResponse();
-        WSCLIENT_EXPORT WSFileResponse(BeFileName filePath, HttpStatus status, Utf8String eTag);
+        WSResponse(bool isModified = false) : m_isModified(isModified), m_eTag() {};
+        WSResponse(HttpStatus status, Utf8String eTag) : m_isModified(HttpStatus::OK == status), m_eTag(eTag) {};
+        WSResponse(bool isModified, Utf8String eTag) : m_isModified(isModified), m_eTag(eTag) {};
 
-        WSCLIENT_EXPORT BeFileNameCR GetFilePath() const;
+        bool IsModified() const { return m_isModified; };
+        Utf8StringCR GetETag() const { return m_eTag; };
     };
 
-typedef const WSFileResponse& WSFileResponseCR;
-typedef WSFileResponse& WSFileResponseR;
+typedef const WSResponse& WSResponseCR;
+typedef WSResponse& WSResponseR;
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

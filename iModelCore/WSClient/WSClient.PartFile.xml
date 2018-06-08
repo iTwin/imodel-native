@@ -113,14 +113,14 @@
         <SubPart PartName="WSClient-Xliffs" />
     </Part>
 
-    <Part Name="FakeServer-PublicAPI" DeferType="BuildUnitTests" BentleyBuildMakeFile="FakeServerPrewire.mke">
+    <Part Name="FakeServer-PublicAPI" BentleyBuildMakeFile="FakeServerPrewire.mke">
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <Bindings>
             <PublicAPI Domain="FakeServer" />
         </Bindings>
     </Part>
 
-    <Part Name="FakeServer-Library" DeferType="BuildUnitTests" BentleyBuildMakeFile="FakeServerLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
+    <Part Name="FakeServer-Library"  BentleyBuildMakeFile="FakeServerLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
         <SubPart PartName="WebServicesClient" />
 		<SubPart PartName="DgnPlatformDLL"              PartFile="DgnPlatform"    	Repository="DgnPlatform"/>
         <Bindings>
@@ -346,6 +346,7 @@
     <ProductDirectoryList ListName="iModelHubNativeTests">
         <ProductDirectory Name="Gtest-NativeAssemblies"    Path=""/>
         <ProductDirectory Name="Assemblies"                Path=""/>
+        <ProductDirectory Name="Assemblies"                Path="" LibType="Static" Deliver="false"/>
         <ProductDirectory Name="Assets"                    Path="Assets"/>
         <ProductDirectory Name="Assets"                    Path="Assets" LibType="static"/>
         <ProductDirectory Name="sqlang"                    Path="sqlang" RelativeTo="Assets"/>
@@ -355,6 +356,8 @@
         <ProductDirectory Name="VendorNotices"             Deliver="false" LibType="static" />
         <ProductDirectory Name="LoggingManagedAssemblies"  Deliver="false"/>
         <ProductDirectory Name="LoggingNativeAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="UnitTests-Objects"         Deliver="false"/>
+        <ProductDirectory Name="UnitTests-Objects"         Deliver="false" LibType="Static"/>
         
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="false" />
         <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="false"/>
@@ -763,10 +766,12 @@
 
     <Part
         Name="RunUwpTest"
+        DeferType="RunUnitTests"
         BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/uwp//RunUwpTestProject.mke"
         BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=WSClient-UwpTest"
         OnlyPlatforms="WinRT*"
         >
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <SubProduct ProductName="WSClient-UwpTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="UwpTest/Logs">Delivery/UwpTest/Logs/WSClient-UwpTest.log</Files>

@@ -610,17 +610,6 @@ TEST_F(WSErrorTests, Ctor_HttpStatusBadRequestWithErrorId_SetsIdFromError)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSErrorTests, Ctor_WebApi1ErrorIdObjectNotFound_SetsIdInstanceNotFound)
-    {
-    auto body = R"({"errorId":"ObjectNotFound", "errorMessage":null, "errorDescription":null})";
-    WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}}));
-
-    EXPECT_EQ(WSError::Id::InstanceNotFound, error.GetId());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_WebApi2ErrorInstanceNotFound_SetsIdInstanceNotFound)
     {
     auto body = R"({"errorId":"InstanceNotFound", "errorMessage":null, "errorDescription":null})";
@@ -632,34 +621,12 @@ TEST_F(WSErrorTests, Ctor_WebApi2ErrorInstanceNotFound_SetsIdInstanceNotFound)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSErrorTests, Ctor_WebApi1ErrorDatasourceNotFound_SetsIdRepositoryNotFound)
-    {
-    auto body = R"({"errorId":"DatasourceNotFound", "errorMessage":null, "errorDescription":null})";
-    WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}}));
-
-    EXPECT_EQ(WSError::Id::RepositoryNotFound, error.GetId());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSErrorTests, Ctor_WebApi2ErrorRepositoryNotFound_SetsIdRepositoryNotFound)
     {
     auto body = R"({"errorId":"RepositoryNotFound", "errorMessage":null, "errorDescription":null})";
     WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}}));
 
     EXPECT_EQ(WSError::Id::RepositoryNotFound, error.GetId());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSErrorTests, Ctor_WebApi1ErrorLinkTypeNotFound_SetsIdClassNotFound)
-    {
-    auto body = R"({"errorId":"LinkTypeNotFound", "errorMessage":null, "errorDescription":null})";
-    WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", REQUESTHEADER_ContentType_ApplicationJson}}));
-
-    EXPECT_EQ(WSError::Id::ClassNotFound, error.GetId());
     }
 
 /*--------------------------------------------------------------------------------------+

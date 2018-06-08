@@ -221,7 +221,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInPara
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_RequestFailsWithAuthenticationError_NewDelegationTokenWasNotRequested)
+TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_RequestFailsWithAuthenticationError_NewDelegationTokenWasRequested1Time)
     {
     // This test guards of too many Forbidden requests being done
     auto imsClient = std::make_shared<MockImsClient>();
@@ -232,14 +232,14 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_RequestFailsWithAuthe
 
     EXPECT_CALL(*imsClient, RequestToken(creds, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(identityToken))));
     ASSERT_TRUE(manager->SignInWithCredentials(creds)->GetResult().IsSuccess());
-    EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken()))));
+    EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).Times(2).WillRepeatedly(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken()))));
     GetHandler().ForAnyRequest(StubHttpResponse(HttpStatus::Forbidden));
 
     auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
     EXPECT_EQ(0, GetHandler().GetRequestsPerformed());
     Http::Response response = Http::Request("https://foo.com/a", "GET", authHandler).PerformAsync()->GetResult();
-    EXPECT_EQ(1, GetHandler().GetRequestsPerformed());
+    EXPECT_EQ(2, GetHandler().GetRequestsPerformed());
 
     EXPECT_EQ(HttpStatus::Forbidden, response.GetHttpStatus());
     }
@@ -427,7 +427,7 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_InvalidToken_ReturnsEmpty)
     auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
 
     SamlToken token(Utf8String("InvalidToken"));
-    auto info = manager->GetUserInfo(token);
+    auto info = manager->ReadUserInfo(token);
 
     EXPECT_EQ("", info.firstName);
     EXPECT_EQ("", info.lastName);
@@ -536,7 +536,7 @@ TEST_F(ConnectSignInManagerTests, GetUserInfo_ValidToken_ReturnsValuesFromToken)
     SamlTokenPtr tokenPtr = std::make_shared<SamlToken>(tokenStr);
     auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
 
-    auto info = manager->GetUserInfo(*tokenPtr);
+    auto info = manager->ReadUserInfo(*tokenPtr);
 
     EXPECT_EQ("ValueA", info.firstName);
     EXPECT_EQ("ValueB", info.lastName);
