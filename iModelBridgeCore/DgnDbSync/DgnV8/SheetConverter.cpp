@@ -74,6 +74,40 @@ ViewDefinitionPtr SheetViewFactory::_MakeView(Converter& converter, ViewDefiniti
     return view;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::DoConvertDrawingElementsInSheetModel(ResolvedModelMapping const& v8mm)
+    {
+    if (GetChangeDetector()._AreContentsOfModelUnChanged(*this, v8mm))
+        return;
+
+    v8mm.GetV8Model().FillSections(DgnV8Api::DgnModelSections::Model);
+
+    DgnV8Api::PersistentElementRefList* controlElements = v8mm.GetV8Model().GetControlElementsP();
+    if (nullptr != controlElements)
+        {
+        for (DgnV8Api::PersistentElementRef* v8Element : *controlElements)
+            {
+            DgnV8Api::EditElementHandle v8eh(v8Element);
+            ElementConversionResults results;
+            _ConvertControlElement(results, v8eh, v8mm);
+            }
+        }
+
+    DgnV8Api::PersistentElementRefList* graphicElements = v8mm.GetV8Model().GetGraphicElementsP();
+    if (nullptr != graphicElements)
+        {
+        for (DgnV8Api::PersistentElementRef* v8Element : *graphicElements)
+            {
+            DgnV8Api::EditElementHandle v8eh(v8Element);
+            _ConvertDrawingElement(v8eh, v8mm);
+            }
+        }
+    }
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -86,9 +120,13 @@ void Converter::SheetsConvertModelAndViews(ResolvedModelMapping const& v8mm, Vie
 
     v8model.FillSections(DgnV8Api::DgnModelSections::Model);
 
-    DoConvertDrawingElementsInModel(v8mm);
+    uint32_t        preElementsConverted = m_elementsConverted;
+    DoConvertDrawingElementsInSheetModel(v8mm);
     if (WasAborted())
         return;
+    
+    if (preElementsConverted == m_elementsConverted)
+        m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
 
     //  Now that we know levels and styles ...
 

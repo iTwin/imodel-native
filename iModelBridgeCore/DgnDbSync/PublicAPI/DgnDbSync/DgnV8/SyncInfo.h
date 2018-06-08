@@ -800,6 +800,10 @@ public:
     //! Delete mappings for all extracted graphics associated with the specified V8 element.
     DGNDBSYNC_EXPORT BentleyStatus DeleteExtractedGraphics(V8ElementSource const& attachment,
                                                            V8ElementSource const& originalElement);
+    //! Delete mappings for all extracted graphics associated with the specified V8 element and category.
+    DGNDBSYNC_EXPORT BentleyStatus DeleteExtractedGraphicsCategory(V8ElementSource const& attachment,
+                                                                   V8ElementSource const& originalElement,
+                                                                   DgnCategoryId category);
     //! Return the DrawingGraphic that was derived from the specified V8 element. 
     DGNDBSYNC_EXPORT DgnElementId FindExtractedGraphic(V8ElementSource const& attachment,
                                                        V8ElementSource const& originalElement,

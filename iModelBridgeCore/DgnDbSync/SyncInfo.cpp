@@ -1116,6 +1116,28 @@ BentleyStatus SyncInfo::DeleteExtractedGraphics(V8ElementSource const& attachmen
     return (stmt->Step() == BE_SQLITE_DONE) ? BSISUCCESS : BSIERROR;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SyncInfo::DeleteExtractedGraphicsCategory(V8ElementSource const& attachment, 
+                                                        V8ElementSource const& originalElement,
+                                                        DgnCategoryId categoryId)
+    {
+    CachedStatementPtr stmt;
+    m_dgndb->GetCachedStatement(stmt, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_ExtractedGraphic) 
+                                " WHERE (DrawingV8ModelSyncInfoId=? AND AttachmentV8ElementId=?"
+                                "    AND OriginalV8ModelSyncInfoId=?   AND OriginalV8ElementId=?"
+                                "    AND Category=?)");
+    int col = 1;
+    stmt->BindInt64(col++, attachment.m_v8ModelSyncInfoId.GetValue());
+    stmt->BindInt64(col++, attachment.m_v8ElementId);
+    stmt->BindInt64(col++, originalElement.m_v8ModelSyncInfoId.GetValue());
+    stmt->BindInt64(col++, originalElement.m_v8ElementId);
+    stmt->BindId(col++, categoryId);
+    return (stmt->Step() == BE_SQLITE_DONE) ? BSISUCCESS : BSIERROR;
+    }
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Sam.Wilson      09/16
 //+---------------+---------------+---------------+---------------+---------------+------

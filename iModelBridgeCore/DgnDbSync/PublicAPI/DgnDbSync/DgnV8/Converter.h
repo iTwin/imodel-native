@@ -979,6 +979,7 @@ protected:
     bmap<DgnClassId, bvector<ECN::ECClassId>> m_classToAspectMappings;
     DgnModelId          m_jobDefinitionModelId;
     DgnElementId         m_textStyleNoneId;
+    bset<DgnModelId>    m_unchangedModels;
 
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();
@@ -1158,6 +1159,8 @@ public:
     //! @name DgnDb properties
     //! @{
     BentleyStatus GenerateThumbnails();
+    bool ThumbnailUpdateRequired(ViewDefinition const& view);
+
     void CopyExpirationDate(DgnV8FileR);
     //! @}
 
@@ -1349,9 +1352,12 @@ public:
                                                                            SyncInfo::V8ElementSource const& attachmentMapping,
                                                                            SyncInfo::V8ElementMapping const& originalElementMapping,
                                                                            DgnCategoryId categoryId, GeometryBuilder& builder);
-    DGNDBSYNC_EXPORT virtual void _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
+    DGNDBSYNC_EXPORT virtual bool _DetectDeletedExtractionGraphics(ResolvedModelMapping const& v8DrawingModel,
                                                                    SyncInfo::T_V8ElementMapOfV8ElementSourceSet const& v8OriginalElementsSeen,
                                                                    SyncInfo::T_V8ElementSourceSet const& unchangedV8attachments);
+    DGNDBSYNC_EXPORT virtual bool _DetectedDeletedExtractionGraphicsCategories(SyncInfo::V8ElementSource const& attachmentMapping,
+                                                                               SyncInfo::V8ElementMapping const& originalElementMapping,
+                                                                               bset<DgnCategoryId>& seenCategories);
 
     // WIP - Simplified drawing conversion.
     void CreateProxyGraphics (DgnModelRefR modelRef, ViewportR viewport);
@@ -1378,9 +1384,6 @@ public:
     //! @param isRootModelSpatial pass true if the root model for the output BIM is a spatial model.
     //! @note ImportSheetModel will terminate with a fatal error if isRootModelSpatial is @a false and if it encounters a reference from a sheet to a 3D model.
     void ImportSheetModel(DgnV8ModelR v8model, bool isRootModelSpatial);
-
-    //! Convert an element in a sheet model. @see DoConvertDrawingElement
-    void _ConvertSheetElement(DgnV8EhCR v8eh, ResolvedModelMapping const& v8mm);
 
     //! Convert the contents of a sheet model. This includes the sheet border, the elements in the sheet, and views of the sheet. Importantly, this also converts
     //! all reference attachments into BIM views and ViewAttachments.
@@ -1484,8 +1487,8 @@ public:
     //! Convert the contents of a drawing model, populating a BIM drawing model, and convert views of this model. The conversion also pulls in proxy graphics from attachments.
     void DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm);
 
-    //! Convert the elements in a drawing or sheet model. This includes only the elements actually in the V8 drawing model.
-    DGNDBSYNC_EXPORT void DoConvertDrawingElementsInModel(ResolvedModelMapping const&);
+    //! Convert the elements in a sheet model. This includes only the elements actually in the V8 drawing model.
+    DGNDBSYNC_EXPORT void DoConvertDrawingElementsInSheetModel(ResolvedModelMapping const&);
 
     //! Convert levels in v8 element (used to preconvert drawing element levels).
     void ConvertLevels(DgnV8EhCR v8eh);
