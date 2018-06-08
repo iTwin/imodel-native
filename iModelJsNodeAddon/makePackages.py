@@ -145,7 +145,7 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
     packageTemplateFileName = 'package.json.template'
 
     # Copy some files into place without modifying them.
-    filesToCopy = [declFileName, 'install-imodeljs-native.js', 'compute-imodeljs-native-package-name.js', 'README.md']
+    filesToCopy = [declFileName, 'installImodelJsNative.js', 'formatPackageName.js', 'loadNativePlatform.js', 'README.md']
 
     for fileToCopy in filesToCopy:
         shutil.copyfile(os.path.join(apiSourceDir, fileToCopy), os.path.join(outputpackagedir, fileToCopy))
