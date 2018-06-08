@@ -1655,12 +1655,12 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipV
 	DRange3d meshRange = DRange3d::From(inOutMesh->GetPointCP(), (int)inOutMesh->GetPointCount());
     for (auto& primitive : *clipSegments)
         {
-        if (ShouldConsiderPrimitive(primitive, meshRange).first)
-            {
+        // if (ShouldConsiderPrimitive(primitive, meshRange).first)
+            // {
             for (auto& planes : *(primitive->GetClipPlanes()))
                 for (auto& plane : planes)
                     planesFromSegments.push_back(plane.GetDPlane3d());
-            }
+            // }
         }
 
 	bool doNotOptimizeDistanceChecks = false;
@@ -1788,15 +1788,15 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
         {
         for (ClipPrimitivePtr const& primitive : *clip)
             {
-            if (ShouldConsiderPrimitive(primitive, meshRange).first)
-                {
+            // if (ShouldConsiderPrimitive(primitive, meshRange).first)
+                // {
 #ifndef VANCOUVER_API
                 ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive.get());
 #else
                 ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive);
 #endif
                 clipPolys.push_back(newClip);
-                }
+                // }
             }
         polyfaces.resize(clipPolys.size() + 1);
         }
