@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeFileName_test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -934,12 +934,9 @@ TEST (BeFileNameTests, CreateNewDirectory)
 
     // make sure we get correct result when we can't create a directory;
     // Windows systems (up to WinRT) don't have protected directories
-#ifndef BENTLEY_WIN32
+    // N.B. Some builds, such as those in Linux containers, run as root, and as such, it is difficult to create a path you cannot access... I feel it is not worth hacking around that fact.
 #ifdef BENTLEY_WINRT
     path.SetName (L"C:\\somenonexistent\\protected\\directory");
-#else
-    path.SetName (L"\\bin\\somenonexistent\\protected\\directory");
-#endif
     status = BeFileName::CreateNewDirectory (path);
     ASSERT_TRUE (BeFileNameStatus::CantCreate == status);
 #endif
@@ -1774,12 +1771,9 @@ TEST (BeFileNameTests, BeFileNameCheckAccessWrite)
 
     // make sure we get correct result when we can't create a directory;
     // Windows systems (up to WinRT) don't have protected directories
-#ifndef BENTLEY_WIN32
+    // N.B. Some builds, such as those in Linux containers, run as root, and as such, it is difficult to create a path you cannot access... I feel it is not worth hacking around that fact.
 #ifdef BENTLEY_WINRT
     path.SetName (L"C:\\somenonexistent\\protected\\directory");
-#else
-    path.SetName (L"\\bin\\somenonexistent\\protected\\directory");
-#endif
     status = BeFileName::CreateNewDirectory (path);
     ASSERT_TRUE (BeFileNameStatus::CantCreate == status);
 #endif
@@ -1836,12 +1830,9 @@ TEST (BeFileNameTests, BeFileNameCheckAccessReadWrite)
 
     // make sure we get correct result when we can't create a directory;
     // Windows systems (up to WinRT) don't have protected directories
-#ifndef BENTLEY_WIN32
+    // N.B. Some builds, such as those in Linux containers, run as root, and as such, it is difficult to create a path you cannot access... I feel it is not worth hacking around that fact.
 #ifdef BENTLEY_WINRT
     path.SetName (L"C:\\somenonexistent\\protected\\directory");
-#else
-    path.SetName (L"\\bin\\somenonexistent\\protected\\directory");
-#endif
     status = BeFileName::CreateNewDirectory (path);
     ASSERT_TRUE (BeFileNameStatus::CantCreate == status);
 #endif
