@@ -170,41 +170,17 @@ WSInfo StubWSInfoWebApi(BeVersion webApiVersion, WSInfo::Type type)
         {
         serverVersion = BeVersion(2, 0);
         }
-    else if (webApiVersion >= BeVersion(1, 3))
-        {
-        serverVersion = BeVersion(1, 2);
-        }
-    else if (webApiVersion >= BeVersion(1, 2))
-        {
-        serverVersion = BeVersion(1, 1);
-        }
-    else if (webApiVersion >= BeVersion(1, 1))
-        {
-        serverVersion = BeVersion(1, 0);
-        }
     return WSInfo(serverVersion, webApiVersion, type);
     }
 
-Http::Response StubWSInfoHttpResponseBentleyConnectV1()
+WSRepository StubWSRepository(Utf8StringCR url, Utf8StringCR id)
     {
-    auto bodyStub = R"(..stub.. Web Service Gateway for BentleyCONNECT ..stub.. <span id="versionLabel">1.1.0.0</span> ..stub..)";
-    return StubHttpResponse(HttpStatus::OK, bodyStub, {{"Content-Type", REQUESTHEADER_ContentType_TextHtml}});
+    WSRepository repository;
+    repository.SetServerUrl(url);
+    repository.SetId(id);
+    return repository;
     }
 
-Http::Response StubWSInfoHttpResponseWebApi11()
-    {
-    return StubWSInfoHttpResponseWebApi(BeVersion(1, 1));
-    }
-
-Http::Response StubWSInfoHttpResponseWebApi12()
-    {
-    return StubWSInfoHttpResponseWebApi(BeVersion(1, 2));
-    }
-
-Http::Response StubWSInfoHttpResponseWebApi13()
-    {
-    return StubWSInfoHttpResponseWebApi(BeVersion(1, 3));
-    }
 
 Http::Response StubWSInfoHttpResponseWebApi20()
     {
@@ -434,6 +410,16 @@ Utf8String SimpleReadFile(BeFileNameCR filePath)
 
     Utf8String stringContents;
     stringContents.append(fileContents.begin(), fileContents.end());
+    return stringContents;
+    }
+
+Utf8String SimpleReadByteStream(ByteStream stream)
+    {
+    Utf8String stringContents = "";
+
+    for (auto& byte : stream)
+        stringContents += byte;
+
     return stringContents;
     }
 

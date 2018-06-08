@@ -43,22 +43,23 @@ struct WebApiV2 : public WebApi
         Utf8String CreateSelectPropertiesQuery(const bset<Utf8String>& properties) const;
 
         std::shared_ptr<WSObjectsReader> CreateJsonInstancesReader() const;
-        static Utf8String GetNullableString(RapidJsonValueCR jsonValue);
+        static Utf8String GetNullableString(RapidJsonValueCR object, Utf8CP member);
 
         WSRepositoriesResult ResolveGetRepositoriesResponse(Http::Response& response) const;
         WSUpdateObjectResult ResolveUpdateObjectResponse(Http::Response& response) const;
         WSUploadResponse ResolveUploadResponse(Http::Response& response) const;
         WSObjectsResult ResolveObjectsResponse(Http::Response& response, bool requestHadSkipToken = false, const ObjectId* objectId = nullptr) const;
+        BeVersion GetRepositoryPluginVersion(Http::Response& response, Utf8StringCR pluginId) const;
 
         Http::Request CreateFileDownloadRequest
             (
             Utf8StringCR url,
-            BeFileNameCR filePath,
+            HttpBodyPtr responseBody,
             Utf8StringCR eTag,
             Http::Request::ProgressCallbackCR onProgress,
             ICancellationTokenPtr ct
             ) const;
-        WSFileResult ResolveFileDownloadResponse(Http::Response& response, BeFileName filePath) const;
+        WSResult ResolveFileDownloadResponse(Http::Response& response) const;
 
         AsyncTaskPtr<WSUpdateFileResult> ResolveUpdateFileResponse
             (
@@ -74,6 +75,8 @@ struct WebApiV2 : public WebApi
         virtual ~WebApiV2();
 
         static bool IsSupported(WSInfoCR info);
+
+        virtual AsyncTaskPtr<WSRepositoryResult> SendGetRepositoryRequest(ICancellationTokenPtr ct = nullptr) const override;
 
         virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
@@ -97,10 +100,10 @@ struct WebApiV2 : public WebApi
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
-        virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
+        virtual AsyncTaskPtr<WSResult> SendGetFileRequest
             (
             ObjectIdCR objectId,
-            BeFileNameCR filePath,
+            HttpBodyPtr bodyResponseOut,
             Utf8StringCR eTag = nullptr,
             Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr

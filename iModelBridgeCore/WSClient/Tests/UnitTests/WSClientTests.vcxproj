@@ -25,6 +25,7 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnClientFx\DgnClientFxViewportHelpers.h" />
     <ClInclude Include="NotPublished\ConnectC\ConnectWebServicesClientCTests.h" />
     <ClInclude Include="Published\WebServices\Azure\EventServiceClientTests.h" />
+    <ClInclude Include="Published\WebServices\Client\MockRepositoryInfoListener.h" />
     <ClInclude Include="Published\WebServices\ConnectC\ConnectWebServicesClientCTests.h" />
     <ClInclude Include="Published\Utils\AsyncTestCheckpoint.h" />
     <ClInclude Include="Published\Utils\BaseMockHttpHandlerTest.h" />
@@ -158,7 +159,6 @@
     <ClInclude Include="Published\WebServices\Client\MockWSSchemaProvider.h" />
     <ClInclude Include="Published\WebServices\Client\ObjectIdTests.h" />
     <ClInclude Include="Published\WebServices\Connect\PassportTests.h" />
-    <ClInclude Include="Published\WebServices\Client\Response\WSObjectsReaderV1Tests.h" />
     <ClInclude Include="Published\WebServices\Client\Response\WSObjectsReaderV2Tests.h" />
     <ClInclude Include="Published\WebServices\Client\Response\WSObjectsResponseTests.h" />
     <ClInclude Include="Published\WebServices\Licensing\UsageTrackingTests.h" />
@@ -294,7 +294,6 @@
     <ClCompile Include="Published\WebServices\Licensing\UsageTrackingDataTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ObjectIdTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\PassportTests.cpp" />
-    <ClCompile Include="Published\WebServices\Client\Response\WSObjectsReaderV1Tests.cpp" />
     <ClCompile Include="Published\WebServices\Client\Response\WSObjectsReaderV2Tests.cpp" />
     <ClCompile Include="Published\WebServices\Client\Response\WSObjectsResponseTests.cpp" />
     <ClCompile Include="Published\WebServices\Licensing\UsageTrackingTests.cpp" />

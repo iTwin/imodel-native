@@ -36,24 +36,24 @@ USING_NAMESPACE_BENTLEY_DGN
 //=======================================================================================
 namespace GlobalEvent
     {
-    static Utf8CP EventTopic = EVENT_PROPERTY_EVENT_TOPIC;
-    static Utf8CP FromEventSubscriptionId = EVENT_PROPERTY_FROM_EVENT_SUBSCRIPTION_ID;
-    static Utf8CP ToEventSubscriptionId = EVENT_PROPERTY_TO_EVENT_SUBSCRIPTION_ID;
-    static Utf8CP ProjectId = EVENT_PROPERTY_PROJECT_ID;
-    static Utf8CP iModelId = EVENT_PROPERTY_IMODEL_ID;
+    static Utf8CP Property_EventTopic = EVENT_PROPERTY_EVENT_TOPIC;
+    static Utf8CP Property_FromEventSubscriptionId = EVENT_PROPERTY_FROM_EVENT_SUBSCRIPTION_ID;
+    static Utf8CP Property_ToEventSubscriptionId = EVENT_PROPERTY_TO_EVENT_SUBSCRIPTION_ID;
+    static Utf8CP Property_ProjectId = EVENT_PROPERTY_PROJECT_ID;
+    static Utf8CP Property_iModelId = EVENT_PROPERTY_IMODEL_ID;
 
     namespace ChangeSetCreatedEventProperties
         {
-        static Utf8CP ChangeSetId = EVENT_PROPERTY_CHANGE_SET_ID;
-        static Utf8CP ChangeSetIndex = EVENT_PROPERTY_CHANGE_SET_INDEX;
-        static Utf8CP BriefcaseId = EVENT_PROPERTY_BRIEFCASE_ID;
+        static Utf8CP Property_ChangeSetId = EVENT_PROPERTY_CHANGE_SET_ID;
+        static Utf8CP Property_ChangeSetIndex = EVENT_PROPERTY_CHANGE_SET_INDEX;
+        static Utf8CP Property_BriefcaseId = EVENT_PROPERTY_BRIEFCASE_ID;
         }
 
     namespace NamedVersionCreatedEventProperties
         {
-        static Utf8CP VersionId = EVENT_PROPERTY_VERSION_ID;
-        static Utf8CP VersionName = EVENT_PROPERTY_VERSION_NAME;
-        static Utf8CP ChangeSetId = EVENT_PROPERTY_CHANGE_SET_ID;
+        static Utf8CP Property_VersionId = EVENT_PROPERTY_VERSION_ID;
+        static Utf8CP Property_VersionName = EVENT_PROPERTY_VERSION_NAME;
+        static Utf8CP Property_ChangeSetId = EVENT_PROPERTY_CHANGE_SET_ID;
         }
 
     enum GlobalEventType

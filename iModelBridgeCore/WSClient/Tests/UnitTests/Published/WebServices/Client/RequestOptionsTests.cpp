@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/RequestOptionsTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -95,4 +95,28 @@ TEST_F(RequestOptionsTests, ToJson_ShouldRefreshInstancesValues_CorrectJson)
     options.SetShouldRefreshInstances(false);
     options.ToJson(json);
     EXPECT_EQ(false, json["RefreshInstances"].asBool());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Julius.Senkus       04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RequestOptionsTests, ToJson_CustomRequestOptionValues_CorrectJson)
+    {
+    Json::Value json;
+    RequestOptions options;
+
+    options.SetCustomRequestOption("Option", true);
+    options.ToJson(json);
+    ASSERT_FALSE(json["CustomOptions"].empty());
+    EXPECT_TRUE(json["CustomOptions"]["Option"].asBool());
+
+    options.SetCustomRequestOption("Option", false);
+    options.ToJson(json);
+    ASSERT_FALSE(json["CustomOptions"].empty());
+    EXPECT_FALSE(json["CustomOptions"]["Option"].asBool());
+
+    options.SetCustomRequestOption("Option", "{json:{}}");
+    options.ToJson(json);
+    ASSERT_FALSE(json["CustomOptions"].empty());
+    EXPECT_EQ("{json:{}}", json["CustomOptions"]["Option"].asString());
     }

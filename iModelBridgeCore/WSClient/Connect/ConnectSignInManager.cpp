@@ -49,12 +49,6 @@ m_connectionClient(connectionClient)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                           Vytautas.Barkauskas    12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManager::~ConnectSignInManager()
-    {}
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSignInManagerPtr ConnectSignInManager::Create
@@ -83,20 +77,11 @@ IConnectionClientInterfacePtr connectionClient)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::CheckAndUpdateToken()
-    {
-    BeMutexHolder lock(m_mutex);
-    CheckAndUpdateTokenNoLock();
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::CheckAndUpdateTokenNoLock()
+void ConnectSignInManager::_CheckAndUpdateToken()
     {
-    if (!IsSignedInNoLock())
+    if (!_IsSignedIn())
         return;
 
     m_auth.tokenProvider->GetToken(); // Will renew identity token if needed
@@ -114,7 +99,7 @@ void ConnectSignInManager::Configure(Configuration config)
         Configure(*provider.second);
     
     Configure(m_auth);
-    CheckAndUpdateTokenNoLock();
+    _CheckAndUpdateToken();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -138,7 +123,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
 
         BeMutexHolder lock(m_mutex);
 
-        ClearSignInData();
+        _SignOut();
 
         SamlTokenPtr token = result.GetValue();
 
@@ -146,7 +131,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithToken(SamlTokenPtr to
         m_auth.persistence->SetToken(token);
 
         CheckUserChange();
-        StoreSignedInUser();
+        _StoreSignedInUser();
 
         LOG.infov("ConnectSignIn: renewed token lifetime %d minutes", token->GetLifetime());
         return SignInResult::Success();
@@ -169,7 +154,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
 
         BeMutexHolder lock(m_mutex);
 
-        ClearSignInData();
+        _SignOut();
 
         SamlTokenPtr token = result.GetValue();
 
@@ -178,7 +163,7 @@ AsyncTaskPtr<SignInResult> ConnectSignInManager::SignInWithCredentials(Credentia
         m_auth.persistence->SetCredentials(credentials);
 
         CheckUserChange();
-        StoreSignedInUser();
+        _StoreSignedInUser();
 
         LOG.infov("ConnectSignIn: token lifetime %d minutes", token->GetLifetime());
         return SignInResult::Success();
@@ -200,44 +185,21 @@ void ConnectSignInManager::FinalizeSignIn()
     StoreAuthenticationType(m_auth.type);
     m_mutex.Leave();
 
-    _OnUserSignedIn();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                           Vytautas.Barkauskas    12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ConnectSignInManager::IsSignedIn() const
-    {
-    BeMutexHolder lock(m_mutex);
-    return IsSignedInNoLock();
+    OnUserSignedIn();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConnectSignInManager::IsSignedInNoLock() const
+bool ConnectSignInManager::_IsSignedIn() const
     {
     return AuthenticationType::None != m_auth.type;
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                           Vytautas.Barkauskas    12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::SignOut()
-    {
-    m_mutex.Enter();
-    ClearSignInData();
-
-    LOG.infov("ConnectSignOut");
-    m_mutex.Leave();
-
-    _OnUserSignedOut();
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::ClearSignInData()
+void ConnectSignInManager::_SignOut()
     {
     for (auto provider : m_publicDelegationTokenProviders)
         provider.second->ClearCache();
@@ -252,27 +214,22 @@ void ConnectSignInManager::ClearSignInData()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo() const
+ConnectSignInManager::UserInfo ConnectSignInManager::_GetUserInfo() const
     {
-    BeMutexHolder lock(m_mutex);
-
     UserInfo info;
-
-    if (!IsSignedInNoLock())
-        return info;
 
     SamlTokenPtr token = m_auth.persistence->GetToken();
     if (nullptr == token)
         return info;
 
-    info = GetUserInfo(*token);
+    info = ReadUserInfo(*token);
     return info;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                           Andrius.Paulauskas     06/2016
 //--------------------------------------------------------------------------------------
-ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo(SamlTokenCR token)
+ConnectSignInManager::UserInfo ConnectSignInManager::ReadUserInfo(SamlTokenCR token)
     {
     UserInfo info;
 
@@ -292,183 +249,42 @@ ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo(SamlTokenCR tok
 //--------------------------------------------------------------------------------------
 // @bsimethod                                           Andrius.Paulauskas     06/2016
 //--------------------------------------------------------------------------------------
-Utf8String ConnectSignInManager::GetLastUsername() const
+Utf8String ConnectSignInManager::_GetLastUsername() const
     {
     return m_secureStore->Decrypt(m_localState.GetJsonValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser).asString().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::RegisterListener(IListener* listener)
-    {
-    BeMutexHolder lock(m_mutex);
-    if (listener == nullptr)
-        return;
-    m_listeners.insert(listener);
-    CheckUserChange();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::UnregisterListener(IListener* listener)
-    {
-    BeMutexHolder lock(m_mutex);
-    m_listeners.erase(listener);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::_OnUserTokenExpired() const
-    {
-    auto listeners = m_listeners;
-    for (auto listener : listeners)
-        listener->_OnUserTokenExpired();
-
-    if (m_tokenExpiredHandler)
-        m_tokenExpiredHandler();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::_OnUserChanged() const
-    {
-    auto listeners = m_listeners;
-    for (auto listener : listeners)
-        listener->_OnUserChanged();
-
-    if (m_userChangeHandler)
-        m_userChangeHandler();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::_OnUserSignedIn() const
-    {
-    auto listeners = m_listeners;
-    for (auto listener : listeners)
-        listener->_OnUserSignedIn();
-
-    if (m_userSignInHandler)
-        m_userSignInHandler();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::_OnUserSignedOut() const
-    {
-    auto listeners = m_listeners;
-    for (auto listener : listeners)
-        listener->_OnUserSignedOut();
-
-    if (m_userSignOutHandler)
-        m_userSignOutHandler();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::_OnUserSignedInViaConnectionClient() const
-    {
-    auto listeners = m_listeners;
-    for (auto listener : listeners)
-        listener->_OnUserSignedInViaConnectionClient();
-
-    if (m_connectionClientSignInHandler)
-        m_connectionClientSignInHandler();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                           Vytautas.Barkauskas    02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::SetTokenExpiredHandler(std::function<void()> handler)
-    {
-    BeMutexHolder lock(m_mutex);
-    m_tokenExpiredHandler = handler;
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::SetUserChangeHandler(std::function<void()> handler)
-    {
-    BeMutexHolder lock(m_mutex);
-    m_userChangeHandler = handler;
-    CheckUserChange();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::SetUserSignInHandler(std::function<void()> handler)
-    {
-    BeMutexHolder lock(m_mutex);
-    m_userSignInHandler = handler;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::SetUserSignOutHandler(std::function<void()> handler)
-    {
-    BeMutexHolder lock(m_mutex);
-    m_userSignOutHandler = handler;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::SetConnectionClientSignInHandler(std::function<void()> handler)
-    {
-    BeMutexHolder lock(m_mutex);
-    m_connectionClientSignInHandler = handler;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler
+AuthenticationHandlerPtr ConnectSignInManager::_GetAuthenticationHandler
 (
 Utf8StringCR serverUrl,
 IHttpHandlerPtr httpHandler,
 HeaderPrefix prefix
 ) const
     {
-    BeMutexHolder lock(m_mutex);
-
     // Harcoded URI for first G0505 release (2016 Q1). May need to match service server URL in future.
     // Update: This seems to be good enough for IMS as most of services use generic AppliesTo anyway as of 2017-04 
     Utf8String rpUri = "https://connect-wsg20.bentley.com";
 
-    auto handler = UrlProvider::GetSecurityConfigurator(httpHandler);
+    auto configurationHandler = UrlProvider::GetSecurityConfigurator(httpHandler);
 
-    return ConnectAuthenticationHandler::Create
+    auto connectHandler = ConnectAuthenticationHandler::Create
         (
         serverUrl,
         GetTokenProvider(rpUri),
-        handler,
+        configurationHandler,
         HeaderPrefix::Saml == prefix ? TOKENPREFIX_SAML : TOKENPREFIX_Token
         );
+    connectHandler->EnableExpiredTokenRefresh();
+    return connectHandler;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IConnectTokenProviderPtr ConnectSignInManager::GetTokenProvider(Utf8StringCR rpUri) const
-    {
-    BeMutexHolder lock(m_mutex);
-    return GetCachedTokenProvider(rpUri);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-IConnectTokenProviderPtr ConnectSignInManager::GetCachedTokenProvider(Utf8StringCR rpUri) const
+IConnectTokenProviderPtr ConnectSignInManager::_GetTokenProvider(Utf8StringCR rpUri) const
     {
     auto it = m_publicDelegationTokenProviders.find(rpUri);
     if (it != m_publicDelegationTokenProviders.end())
@@ -517,7 +333,7 @@ IConnectAuthenticationPersistencePtr persistence
 
         auth.tokenProvider = IdentityTokenProvider::Create(m_client, auth.persistence, [=] ()
             {
-            _OnUserTokenExpired();
+            OnUserTokenExpired();
             });
         }
     else if (AuthenticationType::Credentials == type)
@@ -570,30 +386,9 @@ void ConnectSignInManager::Configure(DelegationTokenProvider& provider) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::CheckUserChange()
+void ConnectSignInManager::_StoreSignedInUser()
     {
-    if (!IsSignedInNoLock())
-        return;
-
-    Utf8String storedUsername = GetLastUsername();
-    if (storedUsername.empty())
-        return;
-
-    UserInfo info = GetUserInfo();
-    BeAssert(!info.username.empty());
-    if (info.username == storedUsername)
-        return;
-
-    _OnUserChanged();
-    StoreSignedInUser();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSignInManager::StoreSignedInUser()
-    {
-    UserInfo info = GetUserInfo();
+    UserInfo info = _GetUserInfo();
     BeAssert(!info.username.empty());
     m_localState.SaveJsonValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser, m_secureStore->Encrypt(info.username.c_str()));
     }
@@ -671,15 +466,15 @@ void ConnectSignInManager::StartConnectionClientListener()
         }
 
     //If current user does not match Connection Client user, sign out
-    if (IsSignedInNoLock())
+    if (_IsSignedIn())
         {
         if (m_connectionClient->IsLoggedIn())
             {
             Utf8String ccUserId = m_connectionClient->GetUserId();
-            Utf8String loggedInId = GetUserInfo().userId;
+            Utf8String loggedInId = _GetUserInfo().userId;
             bool equals = loggedInId.EqualsI(ccUserId.c_str());
             if (!equals)
-                SignOut();                
+                SignOut();
             }
         else
             {
@@ -715,7 +510,7 @@ void ConnectSignInManager::ConnectionClientListener::ConnectionClientCallback(in
     if (IConnectionClientInterface::EVENT_TYPE::LOGIN == eventId)
         {
         LOG.infov("Connection Client: Login event");
-        m_manager->_OnUserSignedInViaConnectionClient();
+        m_manager->OnUserSignedInViaConnectionClient();
         }
     else if (IConnectionClientInterface::EVENT_TYPE::LOGOUT == eventId)
         {

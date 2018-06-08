@@ -43,14 +43,11 @@ struct ThumbnailsManager : RefCountedBase
 {
 private:
     friend struct iModelConnection;
-#ifdef WIP_THUMBNAILS_API
-    friend struct Client;
-#endif
+
     WebServices::IWSRepositoryClientPtr m_wsRepositoryClient;
     ThumbnailsManager(WebServices::IWSRepositoryClientPtr wsRepositoryClient) : m_wsRepositoryClient(wsRepositoryClient) {};
     ThumbnailsManager() {};
 
-    static BeFileName BuildThumbnailPathname(Utf8StringCR thumbnailId);
     ThumbnailImageTaskPtr GetThumbnailByIdInternal(ObjectIdCR thumbnail, ICancellationTokenPtr cancellationToken = nullptr) const;
 
 public:

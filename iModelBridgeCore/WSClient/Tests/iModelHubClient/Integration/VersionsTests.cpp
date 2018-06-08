@@ -412,7 +412,7 @@ TEST_F(VersionsTests, GetVersionsWithThumbnails)
         if (versionsWithoutThumbnails.empty())
             break;
                 
-        BeThreadUtilities::BeSleep(10000);
+        BeThreadUtilities::BeSleep(15000);
         }
 
     EXPECT_TRUE(versionsWithoutThumbnails.empty());

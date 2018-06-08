@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/FileInfo.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/FileInfo.h>
@@ -74,7 +74,6 @@ void FileInfo::ToPropertiesJson(JsonValueR json) const
     {
     if (0 <= GetIndex())
         json[ServerSchema::Property::Index] = GetIndex();
-    json[ServerSchema::Property::FileId] = GetFileId().ToString();
     json[ServerSchema::Property::MergedChangeSetId] = GetMergedChangeSetId();
     if (m_description.size() > 0)
         json[ServerSchema::Property::FileDescription] = m_description;

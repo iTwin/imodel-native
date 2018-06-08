@@ -137,7 +137,6 @@ public:
     IMODELHUBCLIENT_EXPORT iModelTaskPtr GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelId, 
                                                        ICancellationTokenPtr cancellationToken = nullptr) const;
 
-#ifdef WIP_THUMBNAILS_API
     //! Gets the most latest Thumbnail image of an iModel.
     //! @param[in] projectId Project Id to connect to.
     //! @param[in] imodelId
@@ -146,7 +145,6 @@ public:
     //! @return Asynchronous task that has ByteStream of Thumbnail image as the result.
     IMODELHUBCLIENT_EXPORT ThumbnailImageTaskPtr GetiModelThumbnail(Utf8StringCR projectId, Utf8StringCR imodelId, Thumbnail::Size size,
                                                                     ICancellationTokenPtr cancellationToken = nullptr) const;
-#endif
 
     //! Create a new iModel on the server.
     //! @param[in] projectId Project Id to connect to.
