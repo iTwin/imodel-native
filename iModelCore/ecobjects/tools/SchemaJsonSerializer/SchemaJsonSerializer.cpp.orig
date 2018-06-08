@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: tools/SchemaJsonSerializer/SchemaJsonSerializer.cpp $
+|     $Source: tools/SchemaJsonSerializer/SchemaJsonSerializer.cpp.orig $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -245,9 +245,8 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
             }
         else if (0 == strcmp(argv[i], "-a") || 0 == strcmp(argv[i], "--all"))
             options.IncludeAll = true;
-
-        else if (0 == strcmp(argv[i], "-u") || 0 == strcmp(argv[i], "--include"))
-            options.IncludeStandards = true;
+		else if (0 == strcmp(argv[i], "-u") || 0 == strcmp(argv[i], "--include"))
+			options.IncludeStandards = true;
         }
 
     return inputDefined && outputDefined;
