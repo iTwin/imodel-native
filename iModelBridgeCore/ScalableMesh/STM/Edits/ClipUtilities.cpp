@@ -1656,11 +1656,11 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipV
     for (auto& primitive : *clipSegments)
         {
       //  if (ShouldConsiderPrimitive(primitive, meshRange,!isMask.empty(), isMask.empty()? false : isMask[&primitive - &clipSegments->front()]).first)
-            {
+      //      {
             for (auto& planes : *(primitive->GetClipPlanes()))
                 for (auto& plane : planes)
                     planesFromSegments.push_back(plane.GetDPlane3d());
-            }
+      //      }
         }
 
 	bool doNotOptimizeDistanceChecks = false;
