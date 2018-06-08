@@ -245,6 +245,9 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
             }
         else if (0 == strcmp(argv[i], "-a") || 0 == strcmp(argv[i], "--all"))
             options.IncludeAll = true;
+
+        else if (0 == strcmp(argv[i], "-u") || 0 == strcmp(argv[i], "--include"))
+            options.IncludeStandards = true;
         }
 
     return inputDefined && outputDefined;

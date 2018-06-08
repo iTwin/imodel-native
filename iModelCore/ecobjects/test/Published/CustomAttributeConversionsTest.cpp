@@ -2068,6 +2068,31 @@ TEST_F(StandardCustomAttributeConversionTests, TestDateTimeAndClassHasCurrentTim
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                          06/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, TestDynamicSchemaCAConversion)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='ICanHaveAnyStuffAndThings' namespacePrefix='ichasat' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='1.13' prefix='bsca'/>"
+        "   <ECCustomAttributes>"
+        "       <DynamicSchema xmlns='Bentley_Standard_CustomAttributes.01.13' />"
+        "   </ECCustomAttributes>"
+        "</ECSchema>";
+
+    ECSchemaPtr dynamicSchema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(dynamicSchema, schemaXml, *context);
+    ASSERT_TRUE(dynamicSchema.IsValid());
+    ASSERT_TRUE(ECSchemaConverter::Convert(*dynamicSchema));
+
+    EXPECT_TRUE(dynamicSchema->IsDefined("CoreCustomAttributes", "DynamicSchema"));
+    EXPECT_FALSE(dynamicSchema->IsDefined("Bentley_Standard_CustomAttributes", "DynamicSchema"));
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*dynamicSchema, *m_coreCASchema));
+    EXPECT_FALSE(ECSchema::IsSchemaReferenced(*dynamicSchema, *m_bscaSchema));
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                    Caleb.Shafer                 02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(StandardCustomAttributeConversionTests, TestSupplementalSchemaMetaDataConversion)
