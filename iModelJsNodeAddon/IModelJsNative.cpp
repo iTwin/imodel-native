@@ -2883,6 +2883,10 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
             result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params);
         else if (0 == strcmp("GetContentSetSize", requestId))
             result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params);
+        else if (0 == strcmp("GetNodePaths", requestId))
+            result = ECPresentationUtils::GetNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
+        else if (0 == strcmp("GetFilteredNodePaths", requestId))
+            result = ECPresentationUtils::GetFilteredNodesPaths(*m_presentationManager, db->GetDgnDb(), params);
 
         result.then([responseSender](ECPresentationResult result)
             {
