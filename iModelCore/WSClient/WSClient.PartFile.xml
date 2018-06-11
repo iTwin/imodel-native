@@ -103,11 +103,11 @@
         </Bindings>
     </Part>
 
-	<!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // FakeServer lib                                          	           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-	<Part Name="FakeServer" DeferType="BuildUnitTests">
+    <Part Name="FakeServer" DeferType="BuildUnitTests">
         <SubPart PartName="FakeServer-PublicAPI" />
         <SubPart PartName="FakeServer-Library" />
         <SubPart PartName="WSClient-Xliffs" />
@@ -122,13 +122,13 @@
 
     <Part Name="FakeServer-Library"  BentleyBuildMakeFile="FakeServerLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
         <SubPart PartName="WebServicesClient" />
-		<SubPart PartName="DgnPlatformDLL"              PartFile="DgnPlatform"    	Repository="DgnPlatform"/>
+        <SubPart PartName="DgnPlatformDLL"              PartFile="DgnPlatform"    	Repository="DgnPlatform"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)FakeServer$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)FakeServer$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-	
+    
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // WebServicesCache lib                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -272,7 +272,7 @@
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="iModelHubNativeTests" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/ignore_list.txt</Files>
         </Bindings>
-		
+        
     </Part>
 
     <Part Name="iModelHubBackdoorForIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
@@ -329,9 +329,7 @@
         <SubPart PartName="iModelHubGtest"/>
         <Directories DirectoryListName="iModelHubNativeTests"/>
     </Product>
-	
-	
-	
+
     <Part Name="IMHSClientExe" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/iModelHubClient/IMHSClientExe/IMHSClient.mke" OnlyPlatforms="x64">
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="iModelHubClient-Library"/>
