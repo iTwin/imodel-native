@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/ConnectSignInManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -93,11 +93,11 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
 
         class ConnectionClientListener
             {
-            ConnectSignInManagerPtr m_manager;
+            ConnectSignInManager& m_manager;
             static ConnectionClientListener* s_instance;
 
             public:
-                ConnectionClientListener(ConnectSignInManagerPtr manager);
+                ConnectionClientListener(ConnectSignInManager& manager);
                 static void callback(int eventId, WCharCP data);
                 void ConnectionClientCallback(int eventId, WCharCP data);
             };
