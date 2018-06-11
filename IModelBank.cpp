@@ -221,6 +221,14 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
         return Napi::Number::New(Env(), (int)status);
     }
 
+    Napi::Value CreateTable(const Napi::CallbackInfo &info)
+    {
+        REQUIRE_ARGUMENT_STRING(0, tableName);
+        REQUIRE_ARGUMENT_STRING(1, ddl);
+        DbResult status = GetDb().CreateTable(tableName.c_str(), ddl.c_str());
+        return Napi::Number::New(Env(), (int)status);
+    }
+
     Napi::Value IsOpen(const Napi::CallbackInfo &info) { return Napi::Boolean::New(Env(), GetDb().IsDbOpen()); }
 
     static void Init(Napi::Env env, Napi::Object exports)
@@ -229,7 +237,7 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "NativeSQLiteDb", {InstanceMethod("createDb", &NativeSQLiteDb::CreateDb), InstanceMethod("openDb", &NativeSQLiteDb::OpenDb), InstanceMethod("closeDb", &NativeSQLiteDb::CloseDb), InstanceMethod("saveChanges", &NativeSQLiteDb::SaveChanges), InstanceMethod("abandonChanges", &NativeSQLiteDb::AbandonChanges), InstanceMethod("isOpen", &NativeSQLiteDb::IsOpen)});
+        Napi::Function t = DefineClass(env, "NativeSQLiteDb", {InstanceMethod("createTable", &NativeSQLiteDb::CreateTable), InstanceMethod("createDb", &NativeSQLiteDb::CreateDb), InstanceMethod("openDb", &NativeSQLiteDb::OpenDb), InstanceMethod("closeDb", &NativeSQLiteDb::CloseDb), InstanceMethod("saveChanges", &NativeSQLiteDb::SaveChanges), InstanceMethod("abandonChanges", &NativeSQLiteDb::AbandonChanges), InstanceMethod("isOpen", &NativeSQLiteDb::IsOpen)});
 
         exports.Set("NativeSQLiteDb", t);
 

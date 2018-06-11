@@ -30,6 +30,8 @@ declare class NativeSQLiteDb {
   */
   closeDb(): void;
 
+  createTable(tableName: string, ddl: string): DbResult;
+
   /** Save changes to SQLiteDb
   * @param changesetName The name of the operation that generated these changes. If transaction tracking is enabled.
   * @return non-zero error status if operation failed.
