@@ -1,0 +1,18 @@
+#----------------------------------------------------------------------
+#
+#     $Source: IModelJsNative_input_libs.mki $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+%ifdef __unix
+
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentley.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSQLite.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libsnappy.a
+
+%else
+
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+
+%endif
