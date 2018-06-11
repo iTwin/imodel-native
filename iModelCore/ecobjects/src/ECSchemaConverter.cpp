@@ -1446,6 +1446,8 @@ bmap<Utf8String, CustomAttributeReplacement> const& StandardCustomAttributeRefer
         AddPropertyMapping(oldSupplementalSchemaQualifiedName.c_str(), "PrimarySchemaMajorVersion", "PrimarySchemaReference.MajorVersion");
         AddPropertyMapping(oldSupplementalSchemaQualifiedName.c_str(), "PrimarySchemaMinorVersion", "PrimarySchemaReference.MinorVersion");
 
+        AddMapping("Bentley_Standard_CustomAttributes", "DynamicSchema", "CoreCustomAttributes", "DynamicSchema");
+
         // Add More...
             
         s_isInitialized = true;
