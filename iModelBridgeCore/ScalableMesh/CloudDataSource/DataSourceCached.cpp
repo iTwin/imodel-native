@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "DataSourceCached.h"
 #include "DataSourceAccount.h"
+#include <Bentley/BeFileName.h>
 
 
 DataSourceCached::DataSourceCached(DataSourceAccount * account, const SessionName &session) : Super(account, session)
@@ -139,8 +140,17 @@ DataSourceStatus DataSourceCached::open(const DataSourceURL & sourceURL, DataSou
                                                             // Get this DataSource's account
         if (getAccount())
         {
-            DataSourceURL url = getSessionName().getSessionKey();
-            url += L"/" + sourceURL;
+            DataSourceURL url = sourceURL;
+            if (BeFileName::IsUrl(url.c_str()))
+                {
+                auto directoryPath = DataSourceURL(BeFileName::GetDirectoryName(url.c_str()).c_str());
+                directoryPath.findAndReplace(std::wstring(DATA_SOURCE_URL_SEPARATOR_STR), std::wstring(L"-"));
+                directoryPath.findAndReplace(std::wstring(DATA_SOURCE_URL_WINDOWS_DEVICE_SEPARATOR_STR), std::wstring(L"-"));
+
+                auto filename = BeFileName::GetFileNameAndExtension(url.c_str());
+                url = directoryPath + L"/" + DataSourceURL(filename.c_str());
+                }
+            url = getSessionName().getSessionKey() + L"/" + url;
                                                             // Generate the full URL of the cache file
             if ((status = getAccount()->getFormattedCacheURL(url, fullCacheURL)).isFailed())
                 return status;

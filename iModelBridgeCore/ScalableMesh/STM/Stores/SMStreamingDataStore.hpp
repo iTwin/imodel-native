@@ -138,6 +138,12 @@ template<class EXTENT> void SMStreamingStore<EXTENT>::SMStreamingSettings::Parse
 
         this->m_projectID = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProjectID();
         }
+    else if (url.ContainsI(L"http://"))
+        {
+        this->m_location = ServerLocation::HTTP_SERVER;
+        this->m_commMethod = CommMethod::CURL;
+        this->m_url = Utf8String(url.c_str());
+        }
     else
         {
         // NEEDS_WORK_SM_STREAMING : handle other network 3dtiles
@@ -297,6 +303,13 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         {
         // NEEDS_WORK_SM_STREAMING: Use WAStorage library here...
         assert(!"Not implemented...");
+        }
+    else if (settings->IsDataFromHTTPServerAddress())
+        {
+        service_name = L"DataSourceServiceCURL";
+        account_name = L"HTTP-Servers";
+        
+        m_masterFileName = settings->GetURL();
         }
     else
         {
