@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelBridge/Fwk/Registry/iModelBridgeRegistry.h $
+|     $Source: PrivateAPI/iModelBridge/iModelBridgeRegistry.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -33,10 +33,11 @@ extern "C" int main(int argc, char** argv)                                      
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson   02/15
 //=======================================================================================
-struct iModelBridgeRegistry : RefCounted<IModelBridgeRegistry>
+struct iModelBridgeRegistryBase : RefCounted<IModelBridgeRegistry>
 {
     struct AssignCmdLineArgs
         {
@@ -47,47 +48,74 @@ struct iModelBridgeRegistry : RefCounted<IModelBridgeRegistry>
         int ParseCommandLine(int argc, WCharCP argv[]);
         };
 
-private:
+protected:
     BeSQLite::Db m_stateDb;
+    IMODEL_BRIDGE_FWK_EXPORT BeSQLite::DbResult OpenOrCreateStateDb();
+private:
     BeFileName m_stateFileName;
     BeFileName m_stagingDir;
 
-    BeSQLite::DbResult OpenOrCreateStateDb();
-
-    void DiscoverInstalledBridges();
+    
     bool QueryAnyInstalledBridges();
-    BentleyStatus SearchForBridgeToAssignToDocument(BeFileNameCR);
+  
+    
     void SearchForBridgesToAssignToDocumentsInDir(BeFileNameCR);
-    void SearchForBridgesToAssignToDocuments();
+    
     BentleyStatus QueryBridgeAssignedToDocument(BeFileNameR libPath, WStringR name, BeFileNameCR docName);
     BeFileName QueryBridgeLibraryPathByName(uint64_t* rowid, WStringCR bridgeName);
-    BentleyStatus ComputeBridgeAffinityToDocument(iModelBridgeWithAffinity& affinity, BeFileNameCR affinityPath, BeFileNameCR filePath);
+    
     BentleyStatus WriteBridgesFile();
     //bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
     static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
     void EnsureDocumentPropertiesFor(BeFileNameCR);
-
-    bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
-    void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) override;
-    BentleyStatus _FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName) override;
-    BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
-    BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) override;
-    BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
+    
     static void InitCrt(bool quietAsserts);
 
-    iModelBridgeRegistry(BeFileNameCR stagingDir, BeFileNameCR dbName);
-    ~iModelBridgeRegistry();
+protected:
+    //Exported for testing
+    
+    IMODEL_BRIDGE_FWK_EXPORT virtual BentleyStatus ComputeBridgeAffinityToDocument(iModelBridgeWithAffinity& affinity, BeFileNameCR affinityPath, BeFileNameCR filePath);
+    IMODEL_BRIDGE_FWK_EXPORT void SearchForBridgesToAssignToDocuments();
+    
+    IMODEL_BRIDGE_FWK_EXPORT bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
+    IMODEL_BRIDGE_FWK_EXPORT void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) override;
+    
+    
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) override;
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override;
+    
+
+    IMODEL_BRIDGE_FWK_EXPORT iModelBridgeRegistryBase(BeFileNameCR stagingDir, BeFileNameCR dbName);
+    IMODEL_BRIDGE_FWK_EXPORT ~iModelBridgeRegistryBase();
 
 public:
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus SearchForBridgeToAssignToDocument(BeFileNameCR);
+
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus RemoveFileAssignment(BeFileNameCR fn);
+    IMODEL_BRIDGE_FWK_EXPORT void SetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn);
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) override;
     //! @private
     static BeFileName MakeDbName(BeFileNameCR stagingDir, Utf8StringCR iModelName);
     //! @private
     static int ComputeAffinityMain(int argc, WCharCP argv[]);
     //! @private
     static int AssignMain(int argc, WCharCP argv[]);
-    //! @private
-    static RefCountedPtr<iModelBridgeRegistry> OpenForFwk(BeSQLite::DbResult&, BeFileNameCR stagingDir, Utf8StringCR iModelName);
-
 };
 
-END_BENTLEY_SQLITE_NAMESPACE
+/*---------------------------------------------------------------------------------**//**
+// @bsiclass                                      Abeesh.Basheer                  06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct iModelBridgeRegistry : iModelBridgeRegistryBase
+    {
+    private:
+    virtual BentleyStatus _FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName) override;
+    
+    public:
+
+    virtual void _DiscoverInstalledBridges() override;
+    //! @private
+    static RefCountedPtr<iModelBridgeRegistry> OpenForFwk(BeSQLite::DbResult&, BeFileNameCR stagingDir, Utf8StringCR iModelName);
+    iModelBridgeRegistry(BeFileNameCR stagingDir, BeFileNameCR dbName);
+    };
+
+END_BENTLEY_DGN_NAMESPACE

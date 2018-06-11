@@ -33,14 +33,17 @@ struct iModelBridgeDocumentProperties
     iModelBridgeDocumentProperties(Utf8CP g, Utf8CP w, Utf8CP d, Utf8CP a, Utf8CP o) : m_docGuid(g), m_webURN(w), m_desktopURN(d), m_attributesJSON(o), m_spatialRootTransformJSON(o) {}
     };
 
+
 struct IModelBridgeRegistry : IRefCounted
     {
     virtual bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
     virtual void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey) = 0;
-    virtual BentleyStatus _FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName) = 0;
     virtual BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties&, BeFileNameCR fn) = 0;
     virtual BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) = 0;
     virtual BentleyStatus _AssignFileToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) = 0;
+    virtual void          _DiscoverInstalledBridges() = 0;
+    virtual BentleyStatus _FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName) = 0;
+    virtual ~IModelBridgeRegistry() {}
     };
 
 //! The bridge's affinity to some source file.
@@ -74,3 +77,9 @@ extern "C"
                                              BentleyApi::WCharCP affinityLibraryPath,
                                              BentleyApi::WCharCP sourceFileName);
     };
+
+#ifdef __IMODEL_BRIDGE_FWK_BUILD__
+#define IMODEL_BRIDGE_FWK_EXPORT EXPORT_ATTRIBUTE
+#else
+#define IMODEL_BRIDGE_FWK_EXPORT IMPORT_ATTRIBUTE
+#endif

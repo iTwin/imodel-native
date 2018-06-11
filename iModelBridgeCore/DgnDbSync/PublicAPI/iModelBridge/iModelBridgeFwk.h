@@ -8,13 +8,6 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#ifdef __IMODEL_BRIDGE_FWK_BUILD__
-    #define IMODEL_BRIDGE_FWK_EXPORT EXPORT_ATTRIBUTE
-#else
-    #define IMODEL_BRIDGE_FWK_EXPORT IMPORT_ATTRIBUTE
-#endif
-
-
 #include <iModelBridge/iModelBridge.h>
 #include <iModelBridge/iModelBridgeFwkTypes.h>
 #include <DgnPlatform/DgnPlatformLib.h>

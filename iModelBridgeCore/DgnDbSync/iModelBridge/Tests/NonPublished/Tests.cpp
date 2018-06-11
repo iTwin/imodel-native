@@ -16,6 +16,7 @@
 #include <DgnPlatform/GenericDomain.h>
 #include "../../Fwk/DgnDbServerClientUtils.h"
 #include <Bentley/BeFileName.h>
+#include "FakeRegistry.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -710,81 +711,29 @@ struct iModelBridgeTests_Test1_Bridge : iModelBridgeWithSyncInfoBase
         {}
 };
 
-//=======================================================================================
-// @bsistruct                                                   Sam.Wilson   04/17
-//=======================================================================================
-struct TestRegistry : RefCounted<IModelBridgeRegistry>
-    {
-    WString m_bridgeRegSubKey;
-    bmap<BeFileName, iModelBridgeDocumentProperties> m_docPropsByFilename;
-#ifdef WIP_GUID_BINARY
-#endif
-    bmap<Utf8String, iModelBridgeDocumentProperties> m_docPropsByGuid;
-
-    bool _IsFileAssignedToBridge(BeFileNameCR fn, wchar_t const* bridgeRegSubKey) override
-        {
-        return m_bridgeRegSubKey == bridgeRegSubKey;
-        }
-
-    void _QueryAllFilesAssignedToBridge(bvector<BeFileName>& fns, wchar_t const* bridgeRegSubKey)
-        {
-        if (m_bridgeRegSubKey != bridgeRegSubKey)
-            return;
-        for (auto const& r : m_docPropsByFilename)
-            fns.push_back(r.first);
-        }
-
-    BentleyStatus _FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName) override
-        {
-        if (m_docPropsByFilename.find(bridgeLibraryPath) == m_docPropsByFilename.end())
-            return BSIERROR;
-        bridgeLibraryPath = BeFileName(bridgeName.c_str());
-        BeTest::GetHost().GetDgnPlatformAssetsDirectory(bridgeAssetsDir);
-        return BSISUCCESS;
-        }
-    BentleyStatus _GetDocumentProperties(iModelBridgeDocumentProperties& props, BeFileNameCR fn) override
-        {
-        auto i = m_docPropsByFilename.find(fn);
-        if (i == m_docPropsByFilename.end())
-            return BSIERROR;
-        props = i->second;
-        return BSISUCCESS;
-        }
-    BentleyStatus _GetDocumentPropertiesByGuid(iModelBridgeDocumentProperties& props, BeFileNameR localFilePath, BeSQLite::BeGuid const& docGuid) override
-        {
-        if (!docGuid.IsValid())
-            return _GetDocumentProperties(props, localFilePath);
-
-        auto guidStr = docGuid.ToString();
-        auto i = m_docPropsByGuid.find(docGuid.ToString());
-        if (i == m_docPropsByGuid.end())
-            return BSIERROR;
-        props = i->second;
-        return BSISUCCESS;
-        }
-
-    BentleyStatus _AssignFileToBridge(BeFileNameCR sourceFilePath, wchar_t const* bridgeRegSubKey)
-        {
-        if (m_bridgeRegSubKey != bridgeRegSubKey)
-            return ERROR;
-
-        m_docPropsByFilename[sourceFilePath] = iModelBridgeDocumentProperties();
-        return SUCCESS;
-        }
-    };
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void populateRegistryWithFooBar(TestRegistry& testRegistry, WCharCP bridgeRegSubKey)
+static void populateRegistryWithFooBar(FakeRegistry& testRegistry, WString bridgeRegSubKey)
     {
-    testRegistry.m_bridgeRegSubKey = bridgeRegSubKey;
+    std::function<T_iModelBridge_getAffinity> lambda = [=](BentleyApi::WCharP buffer,
+                                                          const size_t bufferSize,
+                                                          BentleyApi::Dgn::iModelBridgeAffinityLevel& affinityLevel,
+                                                          BentleyApi::WCharCP affinityLibraryPath,
+                                                          BentleyApi::WCharCP sourceFileName)
+        {
+        affinityLevel = iModelBridgeAffinityLevel::Medium;
+        wcsncpy(buffer, bridgeRegSubKey.c_str(), bridgeRegSubKey.length());
+        };
+
+    testRegistry.AddBridge(bridgeRegSubKey, lambda);
+
     iModelBridgeDocumentProperties fooDocProps(s_fooGuid, "wurn1", "durn1", "other1", "");
     iModelBridgeDocumentProperties barDocProps(s_barGuid, "wurn2", "durn2", "other2", "");
-    testRegistry.m_docPropsByFilename[BeFileName(L"Foo")] = fooDocProps;
-    testRegistry.m_docPropsByFilename[BeFileName(L"Bar")] = barDocProps;
-    testRegistry.m_docPropsByGuid[s_fooGuid] = fooDocProps;
-    testRegistry.m_docPropsByGuid[s_barGuid] = barDocProps;
+    testRegistry.SetDocumentProperties(fooDocProps, BeFileName(L"Foo"));
+    testRegistry.SetDocumentProperties(barDocProps, BeFileName(L"Bar"));
+    testRegistry.SearchForBridgeToAssignToDocument(BeFileName(L"Foo"));
+    testRegistry.SearchForBridgeToAssignToDocument(BeFileName(L"Bar"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -935,8 +884,12 @@ TEST_F(iModelBridgeTests, Test1)
     iModelBridgeTests_Test1_Bridge testBridge(testiModelHubFX);
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
 
-    TestRegistry testRegistry;
+    BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"test1Assignments.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
     populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
+    
     testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
 
@@ -1029,7 +982,10 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     iModelBridgeTests_Test1_Bridge testBridge(testiModelHubFX);
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
 
-    TestRegistry testRegistry;
+    BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"DelDocTest1.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
     populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
     testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
@@ -1087,9 +1043,8 @@ TEST_F(iModelBridgeTests, DelDocTest1)
     if (true)
         {
         // now pretend that the document called "bar" was deleted.
-        testRegistry.m_docPropsByFilename.erase(BeFileName(L"Bar"));
-        testRegistry.m_docPropsByGuid.erase(s_barGuid);
-
+        testRegistry.RemoveFileAssignment(BeFileName(L"Bar"));
+        
         testiModelHubFX.m_expect.haveTxns = false; // Clear this flag at the outset. It is set by the test bridge as it runs.
         testBridge.m_expect.findJobSubject = true;
         testBridge.m_expect.anyChanges = false;
@@ -1164,10 +1119,17 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
     iModelBridgeTests_Test1_Bridge testBridge(testiModelHubFX);
     iModelBridgeFwk::SetBridgeForTesting(testBridge);
 
-    TestRegistry testRegistry;
+    
+    BeFileName assignDbName(testDir);
+    assignDbName.AppendToPath(L"SpatialDataTransformTest.db");
+    FakeRegistry testRegistry(testDir, assignDbName);
+    testRegistry.WriteAssignments();
     populateRegistryWithFooBar(testRegistry, bridgeRegSubKey);
     testRegistry.AddRef(); // prevent ~iModelBridgeFwk from deleting this object.
     iModelBridgeFwk::SetRegistryForTesting(testRegistry);   // (takes ownership of pointer)
+    
+    
+    
 
     testBridge.m_expect.assignmentCheck = true;
 
@@ -1269,8 +1231,13 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");
-        auto& fooDocProps = testRegistry.m_docPropsByFilename[BeFileName(L"Foo")];
+
+        iModelBridgeDocumentProperties fooDocProps;
+        testRegistry._GetDocumentProperties(fooDocProps, BeFileName(L"Foo"));
         fooDocProps.m_spatialRootTransformJSON = transform_offset1.ToString();
+        testRegistry.SetDocumentProperties(fooDocProps, BeFileName(L"Foo"));
+        testRegistry.Save();
+        
         //args.push_back(transform_offset1_str.c_str());
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
@@ -1291,8 +1258,11 @@ TEST_F(iModelBridgeTests, SpatialDataTransformTest)
         iModelBridgeFwk fwk;
         bvector<WCharCP> argptrs;
         args.push_back(L"--fwk-input=Foo");
-        auto& fooDocProps = testRegistry.m_docPropsByFilename[BeFileName(L"Foo")];
+        iModelBridgeDocumentProperties fooDocProps;
+        testRegistry._GetDocumentProperties(fooDocProps, BeFileName(L"Foo"));
         fooDocProps.m_spatialRootTransformJSON = transform_offset1_45.ToString();
+        testRegistry.SetDocumentProperties(fooDocProps, BeFileName(L"Foo"));
+        testRegistry.Save();
         //args.push_back(transform_offset1_str.c_str());
         MAKE_ARGC_ARGV(argptrs, args);
         ASSERT_EQ(BentleyApi::BSISUCCESS, fwk.ParseCommandLine(argc, argv));
