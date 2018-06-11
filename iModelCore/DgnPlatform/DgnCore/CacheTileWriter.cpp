@@ -200,7 +200,7 @@ BentleyStatus AddMaterialJson(Render::Material material)
 
 		RenderMaterialCPtr matElem = RenderMaterial::Get(m_model.GetDgnDb(), material.GetKey().GetId());
 		RenderingAssetCP asset = matElem.IsValid() ? &matElem->GetRenderingAsset() : nullptr;
-		assert(asset != nullptr);
+		BeAssert(asset != nullptr);
 		if (asset != nullptr)
 			{
 			if (asset->GetBool(RENDER_MATERIAL_FlagHasBaseColor, false))
