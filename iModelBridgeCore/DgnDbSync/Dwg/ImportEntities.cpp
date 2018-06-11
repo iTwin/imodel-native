@@ -1330,6 +1330,62 @@ BentleyStatus   SetText (Dgn::TextStringPtr& dgnText, DPoint3dCR position, DVec3
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DropText (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgStringCR string, bool raw, DwgGiTextStyleCR giStyle)
+    {
+    // only drop a multibyte text using an effective bigfont.
+    auto bigfont = giStyle.GetBigFontFileName ();
+    if (string.GetLength() < 1 || string.IsAscii() || bigfont.empty())
+        return  false;
+
+    // if bigfont is used, but cannot be found by the toolkit, don't bother dropping it.
+    WString found;
+    if (DwgImportHost::GetHost()._FindFile(found, bigfont.c_str(), m_drawParams.GetDatabase(), AcadFileType::CompiledShapeFile) != DwgDbStatus::Success)
+        return  false;
+
+    // get the text size
+    DPoint2d    size;
+    ShapeTextProcessor  processor(const_cast<DwgGiTextStyleR>(giStyle), string);
+    processor.SetIsRaw (raw);
+    if (DwgDbStatus::Success != processor.GetExtents(size))
+        return  false;
+
+    // calc tolerance
+    auto    deviation = size.y != 0.0 ? size.y : size.x;
+    deviation *= 0.01;
+
+    // drop text to a collection of line strings, in font unit size:
+    bvector<DPoint3dArray>  linestrings;
+    if (DwgDbStatus::Success != processor.Drop(linestrings, deviation))
+        return  false;
+
+    // transform dropped geometry from ECS to WCS.
+    RotMatrix   rotation;
+    DwgHelper::ComputeMatrixFromXZ (rotation, xdir, normal);
+
+    // scale font size to world size:
+    if (size.y > 1.0e-5)
+        rotation.ScaleColumns (size.y, size.y, size.y);
+
+    Transform   ecs = Transform::From (rotation);
+    ecs.SetTranslation (position);
+
+    // save geometry primitives
+    for (auto linestring : linestrings)
+        {
+        ICurvePrimitivePtr  primitive = ICurvePrimitive::CreateLineString (linestring);
+        if (!primitive.IsValid())
+            return false;
+
+        primitive->TransformInPlace (ecs);
+        this->AppendGeometry (*primitive.get());
+        }
+    
+    return  true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, double h, double w, double oblique, DwgStringCR string) override
@@ -1354,7 +1410,7 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, doub
     GeometricPrimitivePtr   primitive = GeometricPrimitive::Create (dgnText);
     if (primitive.IsValid())
         this->AppendGeometry (*primitive.get());
-    // NEEDSWORK - extrude text grlyphs
+    // NEEDSWORK - extrude text glyphs
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1362,6 +1418,10 @@ virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, doub
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void    _Text (DPoint3dCR position, DVec3dCR normal, DVec3dCR xdir, DwgStringCR string, bool raw, DwgGiTextStyleCR giStyle) override
     {
+    // try dropping multibyte text string using a bigfont:
+    if (this->DropText(position, normal, xdir, string, raw, giStyle))
+        return;
+
     Dgn::TextStringPtr  dgnText = TextString::Create ();
     if (BSISUCCESS != this->SetText(dgnText, position, normal, xdir, string))
         {
@@ -2680,17 +2740,18 @@ Utf8String      DwgImporter::_GetElementLabel (DwgDbEntityCR entity)
     if (label.empty())
         label.Assign (entity.GetDwgClassName().c_str());
     
-    // for a block reference, use block name:
+    // for a named block reference, use block name:
     DwgDbBlockReferenceCP   insert = DwgDbBlockReference::Cast(&entity);
     if (nullptr != insert)
         {
         DwgDbBlockTableRecordPtr block (insert->GetBlockTableRecordId(), DwgDbOpenMode::ForRead);
-        if (!block.IsNull())
+        if (!block.IsNull() && !block->IsAnonymous())
             {
+            // display block name as element label:
             DwgString   blockName = block->GetName ();
             if (!blockName.IsEmpty())
                 {
-                Utf8PrintfString    insertName("%ls", blockName.c_str());
+                Utf8String  insertName(blockName.c_str());
                 label.assign (insertName.c_str());
                 }
             }
