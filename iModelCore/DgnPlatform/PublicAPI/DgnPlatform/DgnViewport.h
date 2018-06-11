@@ -279,7 +279,7 @@ public:
     DGNVIEW_EXPORT void ApplyPrevious(BeDuration animationTime);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
 
-    void SetFadeOutActive(bool val);
+    DGNPLATFORM_EXPORT void SetFadeOutActive(bool val);
     bool IsFadeOutActive() const { return m_fadeOutActive; }
 
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera

@@ -12,12 +12,11 @@
 
 USING_NAMESPACE_BENTLEY_EC
 
-//================================CompatibilityTestHelper================================
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECN::ECSchemaReadContextPtr CompatibilityTestHelper::DeserializeSchemas(ECDbCR ecdb, std::vector<SchemaItem> const& schemas)
+ECN::ECSchemaReadContextPtr TestFileCreator::DeserializeSchemas(ECDbCR ecdb, std::vector<SchemaItem> const& schemas)
     {
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
@@ -26,12 +25,14 @@ ECN::ECSchemaReadContextPtr CompatibilityTestHelper::DeserializeSchemas(ECDbCR e
         ScopedDisableFailOnAssertion disableFailOnAssert;
         ECSchemaPtr schema = nullptr;
         if (SchemaReadStatus::Success != ECSchema::ReadFromXmlString(schema, schemaItem.GetXml().c_str(), *context))
+            {
+            LOG.errorv("Failed to deserialize schema '%s'", schemaItem.GetXml().c_str());
             return nullptr;
+            }
         }
 
     return context;
     }
-
 
 //**************************************************************************************
 // JsonValue
@@ -128,7 +129,10 @@ void PrintTo(JsonValue const& json, std::ostream* os) { *os << json.ToString(); 
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(SchemaVersion const& ver, std::ostream* os) { *os << ver.ToString(); }
 
+BEGIN_BENTLEY_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  06/18
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(BeVersion const& ver, std::ostream* os) { *os << ver.ToString(); }
+
+END_BENTLEY_NAMESPACE

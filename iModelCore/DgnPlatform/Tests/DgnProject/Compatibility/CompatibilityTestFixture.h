@@ -7,15 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "../TestFixture/DgnDbTestFixtures.h"
-#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
+#include "CompatibilityTests.h"
 #include <ECObjects/ECObjectsAPI.h>
 #include <Bentley/BeVersion.h>
-#include <Logging/bentleylogging.h>
 #include <json/json.h>
 #include <ostream>
-
-#define LOG (*NativeLogging::LoggingManager::GetLogger (L"Compatibility"))
 
 //=======================================================================================
 // @bsiclass                                                 Affan.Khan          03/2018
@@ -35,19 +31,6 @@ struct SchemaItem final
         Utf8StringCR GetXml() const { return m_xmlString; }
     };
 
-//=======================================================================================    
-// @bsiclass                                   Krischan.Eberle                  06/18
-//=======================================================================================    
-struct CompatibilityTestHelper final
-    {
-    private:
-        CompatibilityTestHelper() = delete;
-        ~CompatibilityTestHelper() = delete;
-    public:
-        static ECN::ECSchemaReadContextPtr DeserializeSchemas(ECDbCR, std::vector<SchemaItem> const&);
-        static ECN::ECSchemaReadContextPtr DeserializeSchema(ECDbCR ecdb, SchemaItem const& schema) { return DeserializeSchemas(ecdb, {schema}); }
-    };
-
 //=======================================================================================
 //! Base class for implementing the creation of new test files
 // @bsiclass                                   Krischan.Eberle                  06/18
@@ -58,6 +41,10 @@ struct TestFileCreator
         virtual BentleyStatus _Create() = 0;
     protected:
         TestFileCreator() {}
+
+        static ECN::ECSchemaReadContextPtr DeserializeSchemas(ECDbCR, std::vector<SchemaItem> const&);
+        static ECN::ECSchemaReadContextPtr DeserializeSchema(ECDbCR ecdb, SchemaItem const& schema) { return DeserializeSchemas(ecdb, {schema}); }
+
     public:
         virtual ~TestFileCreator() {}
         BentleyStatus Create() { return _Create(); }
@@ -124,7 +111,12 @@ public:
     };
 
 void PrintTo(SchemaVersion const&, std::ostream*);
+
+BEGIN_BENTLEY_NAMESPACE
+
 void PrintTo(BeVersion const&, std::ostream*);
+
+END_BENTLEY_NAMESPACE
 
 //=======================================================================================
 //! Disables "Fail On Assertion" for the lifetime of this object.

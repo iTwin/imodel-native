@@ -8,14 +8,21 @@
 #pragma once
 #include "CompatibilityTestFixture.h"
 
-// *** Instructions for adding new test file creators ***
-// 1) Define the test file name with a TESTECDB_ macro
-// 2) Add a new subclass of ECDbTestFileCreator
-// 3) Add a unique_ptr to the ECDBTESTFILECREATOR_LIST macro
-
+// List of Test Files against which tests are written.
+// Note, they might also be from future versions of ECDb in which case there is no TestECDbCreator, as only
+// the newer versions of ECDb can create them. But tests have to be written with the old code against those files
+// to make sure that the old software can work with the newer files.
 #define TESTECDB_EMPTY "empty.ecdb"
 #define TESTECDB_PREEC32ENUMS "preec32enums.ecdb"
+#define TESTECDB_EC32ENUMS "ec32enums.ecdb"
 #define TESTECDB_PREEC32KOQS "preec32koqs.ecdb"
+#define TESTECDB_EC32KOQS "ec32koqs.ecdb"
+
+
+// *** Instructions for adding new test file creators ***
+// 1) Define the test file name with a TESTECDB_ macro
+// 2) Add a new subclass of TestECDbCreator
+// 3) Add a unique_ptr to the TESTECDBCREATOR_LIST macro
 
 #define TESTECDBCREATOR_LIST {std::make_shared<EmptyTestECDbCreator>(), \
                               std::make_shared<PreEC32EnumsTestECDbCreator>(), \
@@ -161,7 +168,8 @@ struct PreEC32KoqsTestECDbCreator final : TestECDbCreator
  <KindOfQuantity typeName="ANGULAR_VELOCITY"                     displayLabel="Angular Velocity"                     persistenceUnit="RAD/SEC(DefaultReal)"                  presentationUnits="RAD/SEC(real4u);DEG/SEC(real4u);RPM(real4u)" relativeError="0.001"/>
  <KindOfQuantity typeName="THERMAL_CONDUCTIVITY"                 displayLabel="Thermal Conductivity"                 persistenceUnit="W/(M*K)(DefaultReal)"                  presentationUnits="W/(M*K)(real4u);W/(M*C)(real4u);(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)(real4u)" relativeError="0.001"/>
 
- <KindOfQuantity typeName="TestKoqWithoutPresUnits"  persistenceUnit="W/(M*K)(DefaultReal)" relativeError="0.5"/>
+ <KindOfQuantity typeName="TestKoq_NoPresUnit"  persistenceUnit="W/(M*K)" relativeError="0.4"/>
+ <KindOfQuantity typeName="TestKoq_PersUnitWithFormat_NoPresUnit"  persistenceUnit="W/(M*K)(DefaultReal)" relativeError="0.5"/>
 
 </ECSchema>)xml"));
             }

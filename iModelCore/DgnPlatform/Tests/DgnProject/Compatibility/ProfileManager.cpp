@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include "CompatibilityTests.h"
 #include "ProfileManager.h"
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeDirectoryIterator.h>
@@ -49,7 +50,7 @@ BentleyStatus Profile::Init() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  06/18
 //+---------------+---------------+---------------+---------------+---------------+------
-std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName) const
+std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName, bool logFoundFiles) const
     {
     BeFileName profileSeedFolder(GetSeedFolder());
     bvector<BeFileName> matches;
@@ -57,12 +58,35 @@ std::vector<TestFile> Profile::GetAllVersionsOfTestFile(Utf8CP testFileName) con
     std::vector<TestFile> testFiles;
     for (BeFileNameCR match : matches)
         {
-        printf("Test file %s\r\n", match.GetNameUtf8().c_str());
         Utf8String testFileName(match.GetFileNameAndExtension().c_str());
-        BeFileName profileVersionFolderName = match.GetDirectoryName().GetBaseName();
+        BeFileName profileVersionFolderName = match.GetDirectoryName();
+        //just get folder name without path
+        if (profileVersionFolderName.EndsWith(L"/") || profileVersionFolderName.EndsWith(L"\\"))
+            profileVersionFolderName.erase(profileVersionFolderName.size() - 1, 1);
+
+        const size_t separatorPos = profileVersionFolderName.find_last_of(L"/\\");
+        if (separatorPos != BeFileName::npos)
+            profileVersionFolderName.erase(0, separatorPos + 1);
+
         ProfileVersion profileVersion(0, 0, 0, 0);
-        profileVersion.FromString(profileVersionFolderName.GetNameUtf8().c_str());
+        profileVersion.FromString(Utf8String(profileVersionFolderName).c_str());
+        BeAssert(!profileVersion.IsEmpty());
         testFiles.push_back(TestFile(testFileName, match, GetFileProfileState(profileVersion), profileVersion));
+        }
+
+    if (logFoundFiles && LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
+        {
+        if (testFiles.empty())
+            LOG.info("Found test files: none.");
+        else
+            {
+            Utf8String msg("Found test files:\r\n");
+            for (TestFile const& testFile : testFiles)
+                {
+                msg.append(testFile.ToString()).append("\r\n");
+                }
+            LOG.info(msg.c_str());
+            }
         }
 
     return testFiles;
