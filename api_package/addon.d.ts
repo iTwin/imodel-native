@@ -1,10 +1,10 @@
 /*---------------------------------------------------------------------------------------------
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  *--------------------------------------------------------------------------------------------*/
-import { BentleyStatus, IDisposable, DbResult, OpenMode } from "@bentley/bentleyjs-core";
+import { BentleyStatus, DbResult, OpenMode, StatusCodeWithMessage } from "@bentley/bentleyjs-core";
 
 /* The NativeSQLiteDb class that is projected by the addon. */
-declare class NativeSQLiteDb implements IDisposable {
+declare class NativeSQLiteDb {
   constructor();
   /**
   * Create a new SQLiteDb.
@@ -30,9 +30,6 @@ declare class NativeSQLiteDb implements IDisposable {
   */
   closeDb(): void;
 
-  /** Dispose of the native SQLiteDb object. */
-  dispose(): void;
-
   /** Save changes to SQLiteDb
   * @param changesetName The name of the operation that generated these changes. If transaction tracking is enabled.
   * @return non-zero error status if operation failed.
@@ -43,4 +40,13 @@ declare class NativeSQLiteDb implements IDisposable {
   * @return non-zero error status if operation failed.
   */
   abandonChanges(): DbResult;
+}
+
+declare class NativeSQLiteStatement {
+  constructor();
+  prepare(db: NativeSQLiteDb, sql: string): StatusCodeWithMessage<DbResult>;
+  reset(): void;
+  dispose(): void;
+  step(): DbResult;
+  getRow(): any;
 }

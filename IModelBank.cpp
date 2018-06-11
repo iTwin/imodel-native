@@ -41,6 +41,21 @@
     }                                                                                                   \
     int32_t var = info[i].As<Napi::Number>().Int32Value();
 
+#define REQUIRE_ARGUMENT_OBJ(i, T, var, retval)                                                  \
+    if (info.Length() <= (i) || !T::InstanceOf(info[i]))                                         \
+    {                                                                                            \
+        THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an object of type " #T, retval) \
+    }                                                                                            \
+    T *var = T::Unwrap(info[i].As<Napi::Object>());
+
+#define THROW_JS_TYPE_ERROR(str) Napi::TypeError::New(Env(), str).ThrowAsJavaScriptException();
+
+#define THROW_TYPE_EXCEPTION_AND_RETURN(str, retval) \
+    {                                                \
+        THROW_JS_TYPE_ERROR(str)                     \
+        return retval;                               \
+    }
+
 #define RETURN_IF_HAD_EXCEPTION     \
     if (Env().IsExceptionPending()) \
         return Env().Undefined();
@@ -81,6 +96,19 @@ static void setLogger(Napi::CallbackInfo const &info)
     s_logger.SuppressDestruct();
 }
 
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod                                    Sam.Wilson                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename STATUSTYPE>
+static Napi::Object createErrorObject0(STATUSTYPE errCode, Utf8CP msg, Napi::Env env)
+{
+    Napi::Object error = Napi::Object::New(env);
+    error.Set(Napi::String::New(env, "status"), Napi::Number::New(env, (int)errCode));
+    if (nullptr != msg)
+        error.Set(Napi::String::New(env, "message"), Napi::String::New(env, msg));
+    return error;
+}
+
 } // namespace IModelBank
 
 using namespace IModelBank;
@@ -118,12 +146,13 @@ void IModelBank::JsInterop::ThrowJsException(Utf8CP msg)
     Napi::Error::New(*s_env, msg).ThrowAsJavaScriptException();
 }
 
+namespace IModelBank
+{
+
 //=======================================================================================
 // Projects the Db class into JS
 //! @bsiclass
 //=======================================================================================
-namespace IModelBank
-{
 struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
 {
   private:
@@ -211,6 +240,78 @@ struct NativeSQLiteDb : Napi::ObjectWrap<NativeSQLiteDb>
         s_constructor.SuppressDestruct();
     }
 };
+
+//=======================================================================================
+// Projects SQLite::Statement into JS
+//! @bsiclass
+//=======================================================================================
+struct NativeSQLiteStatement : Napi::ObjectWrap<NativeSQLiteStatement>
+{
+  private:
+    static Napi::FunctionReference s_constructor;
+    std::unique_ptr<Statement> m_stmt;
+
+  public:
+    NativeSQLiteStatement(const Napi::CallbackInfo &info) : Napi::ObjectWrap<NativeSQLiteStatement>(info), m_stmt(new Statement()) {}
+    ~NativeSQLiteStatement() {}
+
+    // Check if val is really a NativeSQLiteDb peer object
+    static bool InstanceOf(Napi::Value val)
+    {
+        if (!val.IsObject())
+            return false;
+
+        Napi::HandleScope scope(val.Env());
+        return val.As<Napi::Object>().InstanceOf(s_constructor.Value());
+    }
+
+    Napi::Value Prepare(const Napi::CallbackInfo &info)
+    {
+        REQUIRE_ARGUMENT_OBJ(0, NativeSQLiteDb, db, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(1, sql);
+        auto rc = m_stmt->Prepare(db->GetDb(), sql.c_str());
+        return createErrorObject0(rc, (BE_SQLITE_OK != rc) ? db->GetDb().GetLastError().c_str() : nullptr, Env());
+    }
+
+    void Reset(const Napi::CallbackInfo &info)
+    {
+        m_stmt->Reset();
+    }
+
+    void Dispose(const Napi::CallbackInfo &info)
+    {
+        m_stmt = nullptr;
+    }
+
+    Napi::Value Step(const Napi::CallbackInfo &info)
+    {
+        auto rc = m_stmt->Step();
+        return Napi::Number::New(Env(), (int)rc);
+    }
+
+    Napi::Value GetRow(const Napi::CallbackInfo &info)
+    {
+        return Env().Undefined(); // TODO
+    }
+
+    static void Init(Napi::Env env, Napi::Object exports)
+    {
+        // ***
+        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
+        // ***
+        Napi::HandleScope scope(env);
+        Napi::Function t = DefineClass(env, "NativeSQLiteStatement", {InstanceMethod("prepare", &NativeSQLiteStatement::Prepare), InstanceMethod("reset", &NativeSQLiteStatement::Reset), InstanceMethod("dispose", &NativeSQLiteStatement::Dispose), InstanceMethod("step", &NativeSQLiteStatement::Step), InstanceMethod("getRow", &NativeSQLiteStatement::GetRow)});
+
+        exports.Set("NativeSQLiteStatement", t);
+
+        s_constructor = Napi::Persistent(t);
+        // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
+        // from running at program shutdown time, which would attempt to reset the reference when
+        // the environment is no longer valid.
+        s_constructor.SuppressDestruct();
+    }
+};
+
 } // namespace IModelBank
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -229,6 +330,7 @@ static Napi::Object iModelBankRegisterModule(Napi::Env env, Napi::Object exports
     IModelBank::JsInterop::Initialize(addondir, IModelBank::throwJsExceptionOnAssert);
 
     IModelBank::NativeSQLiteDb::Init(env, exports);
+    IModelBank::NativeSQLiteStatement::Init(env, exports);
 
     exports.DefineProperties(
         {
@@ -240,5 +342,6 @@ static Napi::Object iModelBankRegisterModule(Napi::Env env, Napi::Object exports
 }
 
 Napi::FunctionReference IModelBank::NativeSQLiteDb::s_constructor;
+Napi::FunctionReference IModelBank::NativeSQLiteStatement::s_constructor;
 
 NODE_API_MODULE(at_bentley_imodel_bank_nodeaddon, iModelBankRegisterModule)
