@@ -291,7 +291,44 @@ struct NativeSQLiteStatement : Napi::ObjectWrap<NativeSQLiteStatement>
 
     Napi::Value GetRow(const Napi::CallbackInfo &info)
     {
-        return Env().Undefined(); // TODO
+        auto row = Napi::Object::New(Env());
+
+        for (int i = 0, n = m_stmt->GetColumnCount(); i < n; ++i)
+        {
+            auto propName = m_stmt->GetColumnName(i);
+
+            switch (m_stmt->GetColumnType(i))
+            {
+            case DbValueType::IntegerVal:
+                row[propName] = Napi::Number::New(Env(), m_stmt->GetValueInt(i));
+                break;
+
+            case DbValueType::FloatVal:
+                row[propName] = Napi::Number::New(Env(), m_stmt->GetValueDouble(i));
+                break;
+
+            case DbValueType::TextVal:
+                row[propName] = Napi::String::New(Env(), m_stmt->GetValueText(i));
+                break;
+
+            case DbValueType::NullVal:
+                row[propName] = Env().Null();
+                break;
+
+            case DbValueType::BlobVal:
+            {
+                auto abuf = Napi::ArrayBuffer::New(Env(), m_stmt->GetColumnBytes(i));
+                memcpy(abuf.Data(), m_stmt->GetValueBlob(i), m_stmt->GetColumnBytes(i));
+                row[propName] = abuf;
+                break;
+            }
+
+            default:
+                BeAssert(false);
+            }
+        }
+
+        return row;
     }
 
     static void Init(Napi::Env env, Napi::Object exports)
