@@ -1632,14 +1632,14 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, bvect
     }
 
 typedef std::pair<bool, DRange3d> PrimitiveResult;
-PrimitiveResult ShouldConsiderPrimitive(ClipPrimitivePtr const& primitive, DRange3dCR range)
+PrimitiveResult ShouldConsiderPrimitive(ClipPrimitivePtr const& primitive, DRange3dCR range, bool hasMaskInfoOutsidePrimitive, bool isPrimitiveAMask)
     {
     DRange3d        primitiveRange;
     if (!primitive->GetRange(primitiveRange, nullptr, primitive->IsMask()))
         {
         return PrimitiveResult(false, DRange3d());
         }
-    if (primitive->IsMask())
+    if ((!hasMaskInfoOutsidePrimitive && primitive->IsMask()) || (hasMaskInfoOutsidePrimitive && isPrimitiveAMask))
         {
         //if node and primitive are fully disjoint, do not count this primitive
         bool isFullyDisjoint = !primitiveRange.IntersectsWith(range) && !primitiveRange.IsContained(range.low) && !range.IsContained(primitiveRange.low);
@@ -1648,19 +1648,19 @@ PrimitiveResult ShouldConsiderPrimitive(ClipPrimitivePtr const& primitive, DRang
     return PrimitiveResult(primitiveRange.IntersectsWith(range), primitiveRange);
     }
 
-void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipVectorPtr& clipSegments, bvector<DRange3d>& faceRanges, const DRange3d& polyRange)
+void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipVectorPtr& clipSegments, bvector<DRange3d>& faceRanges, const DRange3d& polyRange, const bvector<bool>& isMask)
     {
     bvector<DPlane3d> planesFromSegments;
     bool meshHasTexture = inOutMesh->Param().size() > 0 && inOutMesh->ParamIndex().size() > 0;
 	DRange3d meshRange = DRange3d::From(inOutMesh->GetPointCP(), (int)inOutMesh->GetPointCount());
     for (auto& primitive : *clipSegments)
         {
-        if (ShouldConsiderPrimitive(primitive, meshRange).first)
-            {
+      //  if (ShouldConsiderPrimitive(primitive, meshRange,!isMask.empty(), isMask.empty()? false : isMask[&primitive - &clipSegments->front()]).first)
+      //      {
             for (auto& planes : *(primitive->GetClipPlanes()))
                 for (auto& plane : planes)
                     planesFromSegments.push_back(plane.GetDPlane3d());
-            }
+      //      }
         }
 
 	bool doNotOptimizeDistanceChecks = false;
@@ -1754,7 +1754,7 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipV
         }
     }
 
-bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, ClipVectorCP clip, const PolyfaceQuery* meshP)
+bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, ClipVectorCP clip, const PolyfaceQuery* meshP, const bvector<bool>& isMask)
     {
     polyfaces.resize(2);
     bvector<DRange3d> triangleBoxes;
@@ -1769,7 +1769,7 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
 
     for (ClipPrimitivePtr const& primitive : *clip)
         {
-        auto result = ShouldConsiderPrimitive(primitive, meshRange);
+        auto result = ShouldConsiderPrimitive(primitive, meshRange, !isMask.empty(), isMask.empty()? false : isMask[&primitive - &clip->front()]);
         if (result.first)
             {
             if (polyBox.IsEmpty())
@@ -1779,7 +1779,7 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
             }
         }
     ClipVectorPtr currentClip(const_cast<ClipVector*>(clip));
-    InsertMeshCuts(clippedMesh, vis, currentClip, triangleBoxes, polyBox);
+    InsertMeshCuts(clippedMesh, vis, currentClip, triangleBoxes, polyBox, isMask);
     bvector<ClipVectorPtr> clipPolys;
     bool shouldUseClipPrimitives = true;
     if (!shouldUseClipPrimitives)
@@ -1788,7 +1788,7 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
         {
         for (ClipPrimitivePtr const& primitive : *clip)
             {
-            if (ShouldConsiderPrimitive(primitive, meshRange).first)
+            if (ShouldConsiderPrimitive(primitive, meshRange,!isMask.empty(), isMask.empty()? false : isMask[&primitive - &clip->front()]).first)
                 {
 #ifndef VANCOUVER_API
                 ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive.get());

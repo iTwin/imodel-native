@@ -344,6 +344,10 @@ bool IScalableMesh::AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID
     return _AddClip(pts, ptsSize, clipID, geom, type, isActive);
     }
 
+bool IScalableMesh::AddClip(const ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+{
+    return _AddClip(clip, clipID, geom, type, isActive);
+}
 
 bool IScalableMesh::ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
     {
@@ -355,6 +359,11 @@ bool IScalableMesh::ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t cli
     {
     return _ModifyClip(pts, ptsSize, clipID, geom, type, isActive);
     }
+
+bool IScalableMesh::ModifyClip(const ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+{
+    return _ModifyClip(clip, clipID, geom, type, isActive);
+}
 
 void IScalableMesh::SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts)
     {
@@ -2394,6 +2403,48 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
     return true;
     }
 
+template <class POINT> bool ScalableMesh<POINT>::_AddClip(const ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+{
+    ClipVectorPtr clipP = ClipVector::CreateCopy(*clip);
+    if (!m_reprojectionTransform.IsIdentity())
+    {
+        Transform trans;
+        trans.InverseOf(m_reprojectionTransform);
+        clipP->TransformInPlace(trans);
+    }
+
+    DRange3d extent;
+    clipP->GetRange(extent, nullptr);
+    if (extent.Volume() == 0)
+    {
+        if (extent.XLength() == 0)
+        {
+            extent.low.x -= 1.e-5;
+            extent.high.x += 1.e-5;
+        }
+        if (extent.YLength() == 0)
+        {
+            extent.low.y -= 1.e-5;
+            extent.high.y += 1.e-5;
+        }
+        if (extent.ZLength() == 0)
+        {
+            extent.low.z -= 1.e-5;
+            extent.high.z += 1.e-5;
+        }
+    }
+
+    if (m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
+    m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, clipP, geom, type, isActive);
+
+    Transform t = Transform::FromIdentity();
+    if (IsCesium3DTiles()) t = GetReprojectionTransform();
+
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent, true, t);
+    SaveEditFiles();
+    return true;
+}
+
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_ModifyClip
 +----------------------------------------------------------------------------*/
@@ -2446,6 +2497,58 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
 
     return true;
     }
+
+template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+{
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
+    ClipVectorPtr clipData;
+    SMClipGeometryType geom2;
+    SMNonDestructiveClipType type2;
+    bool isActive2;
+    m_scmIndexPtr->GetClipRegistry()->GetClipWithParameters(clipID, clipData,geom2,type2,isActive2);
+    DRange3d extent;
+    clipData->GetRange(extent, nullptr);
+    if (extent.Volume() == 0)
+    {
+        if (extent.XLength() == 0)
+        {
+            extent.low.x -= 1.e-5;
+            extent.high.x += 1.e-5;
+        }
+        if (extent.YLength() == 0)
+        {
+            extent.low.y -= 1.e-5;
+            extent.high.y += 1.e-5;
+        }
+        if (extent.ZLength() == 0)
+        {
+            extent.low.z -= 1.e-5;
+            extent.high.z += 1.e-5;
+        }
+    }
+
+    ClipVectorPtr clipP = ClipVector::CreateCopy(*clip);
+    if (!m_reprojectionTransform.IsIdentity())
+    {
+        Transform trans;
+        trans.InverseOf(m_reprojectionTransform);
+        clipP->TransformInPlace(trans);
+    }
+    DRange3d extentNew;
+    clipP->GetRange(extentNew, nullptr);
+    extent.Extend(extentNew);
+
+    m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, clipP, geom, type, isActive);
+
+    Transform t = Transform::FromIdentity();
+    if (IsCesium3DTiles()) t = GetReprojectionTransform();
+
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent, true, t);
+
+    SaveEditFiles();
+
+    return true;
+}
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_ModifyClip

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMExternalProviderDataStore.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -30,7 +30,46 @@ void SMExternalClipDefinitionExtOps::LoadClipWithParameters(bvector<DPoint3d>& c
 {
 	int64_t clipId = id;
 	isActive = true;
-	m_clipProvider->GetClipPolygon(clipData, clipId, type);
+    bvector<DPoint3d> poly;
+	m_clipProvider->GetClipPolygon(poly, clipId, type);
+    if (!poly.empty())
+    {
+        clipData = poly;
+        geom = SMClipGeometryType::Polygon;
+    }
+    else
+    {
+        ClipVectorPtr cp = nullptr;
+        m_clipProvider->GetClipVector(cp, clipId, type);
+        if (cp != nullptr)
+        {
+            auto polyCP = cp->front()->GetPolygon();
+            clipData.clear();
+            if (polyCP != nullptr)
+                for (auto&pt : *polyCP)
+                    clipData.push_back(DPoint3d::From(pt.x, pt.y, cp->front()->GetZHigh()));
+            geom = SMClipGeometryType::BoundedVolume;
+        }
+    }
+}
+
+void SMExternalClipDefinitionExtOps::StoreClipWithParameters(const ClipVectorPtr& clipData, uint64_t id, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+{
+    int64_t clipId = id;
+    m_clipProvider->SetClipVector(clipData, clipId, type);
+}
+
+void SMExternalClipDefinitionExtOps::LoadClipWithParameters(ClipVectorPtr& clipData, uint64_t id, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive)
+{
+    int64_t clipId = id;
+    isActive = true;
+    ClipVectorPtr cp = nullptr;
+    m_clipProvider->GetClipVector(cp, clipId, type);
+    if (cp != nullptr)
+    {
+        clipData = cp;
+        geom = SMClipGeometryType::BoundedVolume;
+    }
 }
 
 void SMExternalClipDefinitionExtOps::GetAllIDs(bvector<uint64_t>& allIds)

@@ -91,7 +91,12 @@ class IClipDefinitionExtOps : public RefCountedBase
         virtual void StoreClipWithParameters(const bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) = 0;
 
         virtual void LoadClipWithParameters(bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive) = 0;
-        
+
+        virtual void StoreClipWithParameters(const ClipVectorPtr& clipData, uint64_t id, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) = 0;
+
+        virtual void LoadClipWithParameters(ClipVectorPtr& clipData, uint64_t id, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive) = 0;
+
+
     };
 
 typedef RefCountedPtr<IClipDefinitionExtOps> IClipDefinitionExtOpsPtr;
