@@ -46,9 +46,9 @@ CCompPDBName    =% $(appName)
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)JsInterop$(oext) : $(baseDir)JsInterop.cpp $(baseDir)IModelBank.h ${MultiCompileDepends}
+$(o)IModelBank$(oext) : $(baseDir)IModelBank.cpp $(baseDir)IModelBank.h ${MultiCompileDepends}
 
-$(o)JsInteropLogging$(oext) : $(baseDir)JsInteropLogging.cpp $(baseDir)IModelBank.h ${MultiCompileDepends}
+$(o)IModelBankLoggingInterop$(oext) : $(baseDir)IModelBankLoggingInterop.cpp $(baseDir)IModelBank.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
