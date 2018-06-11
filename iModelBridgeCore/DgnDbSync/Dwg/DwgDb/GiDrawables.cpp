@@ -2208,11 +2208,12 @@ static void     CollectLinestrings (int nPlines, int const* nPoints, AcGePoint3d
     if (nullptr == linestringArray || nPlines < 1 || nullptr == nPoints || nullptr == points)
         return;
 
+    int count = 0;
     for (int i = 0; i < nPlines; i++)
         {
         DPoint3dArray   newLinestring;
         for (int j = 0; j < nPoints[i]; j++)
-            newLinestring.push_back (Util::DPoint3dFrom(points[j]));
+            newLinestring.push_back (Util::DPoint3dFrom(points[count++]));
 
         if (!newLinestring.empty())
             linestringArray->push_back (newLinestring);
@@ -2237,7 +2238,7 @@ DwgDbStatus     ShapeTextProcessor::Drop (bvector<DPoint3dArray>& linestringsOut
 
     linestringsOut.clear ();
 
-    textEngine->tessellate (m_textstyle, m_textstring.c_str(), m_textstring.length(), true, deviation, (void*)&linestringsOut, (PolylineCallback)CollectLinestrings);
+    textEngine->tessellate (m_textstyle, m_textstring.c_str(), m_textstring.length(), m_raw, deviation, (void*)&linestringsOut, (PolylineCallback)CollectLinestrings);
     
     delete textEngine;
 #endif
@@ -2248,7 +2249,7 @@ DwgDbStatus     ShapeTextProcessor::Drop (bvector<DPoint3dArray>& linestringsOut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbStatus     ShapeTextProcessor::GetExtents (DRange2dR extentsOut, bool bearings, bool raw)
+DwgDbStatus     ShapeTextProcessor::GetExtents (DPoint2dR extentsOut, bool bearings)
     {
 #ifdef DWGTOOLKIT_OpenDwg
     DRange3d    extents3d = DRange3d::NullRange ();
@@ -2256,7 +2257,8 @@ DwgDbStatus     ShapeTextProcessor::GetExtents (DRange2dR extentsOut, bool beari
     TextContourCollector    extentsFinder (extents3d);
     extentsFinder.Tessellate (m_textstring, m_textstyle);
 
-    extentsOut = DRange2d::From (extents3d);
+    extentsOut.x = extents3d.XLength ();
+    extentsOut.y = extents3d.YLength ();
 
 #elif DWGTOOLKIT_RealDwg
 
@@ -2265,14 +2267,14 @@ DwgDbStatus     ShapeTextProcessor::GetExtents (DRange2dR extentsOut, bool beari
         return  DwgDbStatus::MemoryError;
 
     AcGePoint2d     extents;
-    textEngine->getExtents (m_textstyle, m_textstring.c_str(), m_textstring.length(), bearings, raw, extents);
+    textEngine->getExtents (m_textstyle, m_textstring.c_str(), m_textstring.length(), bearings, m_raw, extents);
 
-    extentsOut = Util::DRange2dFrom (extents);
+    extentsOut = Util::DPoint2dFrom (extents);
     
     delete textEngine;
 #endif
 
-    return  extentsOut.IsNull() ? DwgDbStatus::UnknownError : DwgDbStatus::Success;
+    return  extentsOut.MaxAbs() == 0.0 ? DwgDbStatus::UnknownError : DwgDbStatus::Success;
     }
 
 
