@@ -558,3 +558,13 @@ TEST_F(WSErrorTests, Ctor_HttpErrorNotFound_IdUnknown)
     EXPECT_EQ(httpError.GetMessage(), error.GetMessage());
     EXPECT_EQ("", error.GetDescription());
     }
+
+TEST_F(WSErrorTests, Ctor_InvalidtHttpError_NoneStatus)
+    {
+    HttpError httpError;
+    WSError error(httpError);
+    EXPECT_EQ(WSError::Status::None, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    EXPECT_EQ("", error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
+    }
