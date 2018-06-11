@@ -817,7 +817,7 @@ TEST_F(InvertedUnitsTests, StandaloneSchemaChild)
     schema->CreateInvertedUnit(invUnit, *unit, "ExampleInvertedUnit", *system, "ExampleUnitLabel", "ExampleUnitDescription");
 
     Json::Value schemaJson;
-    EXPECT_TRUE(invUnit->InvertedUnitToJson(schemaJson, true));
+    EXPECT_TRUE(invUnit->ToJson(schemaJson, true));
     Json::Value testDataJson;
 
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneInvertedUnit.ecschema.json"));
@@ -1060,7 +1060,6 @@ TEST_F(InvertedUnitsDeserializationTests, ShouldFailWithBadSchemaAliases)
 //! ConstantTests
 //=======================================================================================
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1109,7 +1108,7 @@ TEST_F(ConstantTests, StandaloneSchemaChild)
     schema->CreateConstant(unit, "ExampleConstant", "M", *phenom, 10.0, 1.0, "ExampleConstantLabel", "ExampleConstantDescription");
 
     Json::Value schemaJson;
-    EXPECT_TRUE(unit->ConstantToJson(schemaJson, true));
+    EXPECT_TRUE(unit->ToJson(schemaJson, true));
 
     Json::Value testDataJson;
 

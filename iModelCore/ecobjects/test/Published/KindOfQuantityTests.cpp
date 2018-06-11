@@ -528,8 +528,18 @@ TEST_F(KindOfQuantityTest, SerializeStandaloneItemKindOfQuantity)
     schema->CreateKindOfQuantity(koq, "ExampleKoQ");
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
     koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
-    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"));
-    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
+    koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), 3, ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    const std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> unitMapper = [&](Utf8StringCR alias, Utf8StringCR name)
+        {
+        return schema->LookupUnit((alias + ":" + name).c_str());
+        };
+    const std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> formatMapper = [&](Utf8StringCR alias, Utf8StringCR name)
+        {
+        return schema->LookupFormat((alias + ":" + name).c_str());
+        };
+    koq->AddPresentationFormatByString("f:DefaultRealU[u:MM|]", formatMapper, unitMapper);
+    koq->AddPresentationFormatByString("f:DefaultReal[u:M|meters]", formatMapper, unitMapper);
+    koq->AddPresentationFormatByString("f:AmerFI[u:FT|feets][u:IN|inches]", formatMapper, unitMapper);
     koq->SetRelativeError(3);
 
     Json::Value schemaJson;

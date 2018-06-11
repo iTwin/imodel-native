@@ -130,32 +130,6 @@ bool SchemaJsonWriter::WriteUnit(ECUnitCR unit)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz             02/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-bool SchemaJsonWriter::WriteInvertedUnit(ECUnitCR invertedUnit)
-    {
-    // Don't write any elements that aren't in the schema we're writing.
-    if (&(invertedUnit.GetSchema()) != &m_ecSchema)
-        return true;
-
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][invertedUnit.GetName()];
-    return invertedUnit.InvertedUnitToJson(childObj, false, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz             02/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-bool SchemaJsonWriter::WriteConstant(ECUnitCR constant)
-    {
-    // Don't write any elements that aren't in the schema we're writing.
-    if (&(constant.GetSchema()) != &m_ecSchema)
-        return true;
-
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][constant.GetName()];
-    return constant.ConstantToJson(childObj, false, false);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 bool SchemaJsonWriter::WriteSchemaItems()
@@ -200,15 +174,8 @@ bool SchemaJsonWriter::WriteSchemaItems()
 
     for (auto const ecu : m_ecSchema.GetUnits())
         {
-        bool status = true;
-        if (ecu->IsInvertedUnit())
-            status = WriteInvertedUnit(*ecu);
-        else if (ecu->IsConstant())
-            status = WriteConstant(*ecu);
-        else
-            status = WriteUnit(*ecu);
-        if (!status)
-            return status;
+        if (!WriteUnit(*ecu))
+            return false;
         }
 
     if (0 == m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE].size())

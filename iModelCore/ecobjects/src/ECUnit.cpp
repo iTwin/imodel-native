@@ -482,23 +482,12 @@ SchemaWriteStatus ECUnit::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersio
 //--------------------------------------------------------------------------------------
 bool ECUnit::ToJson(Json::Value& outValue, bool includeSchemaVersion) const
     {
-    return ToJson(outValue, true, includeSchemaVersion);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
-bool ECUnit::InvertedUnitToJson(Json::Value& outValue, bool includeSchemaVersion) const
-    {
-    return InvertedUnitToJson(outValue, true, includeSchemaVersion);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
-bool ECUnit::ConstantToJson(Json::Value& outValue, bool includeSchemaVersion) const
-    {
-    return ConstantToJson(outValue, true, includeSchemaVersion);
+    if (IsConstant())
+        return ConstantToJson(outValue, true, includeSchemaVersion);
+    else if (IsInvertedUnit())
+        return InvertedUnitToJson(outValue, true, includeSchemaVersion);
+    else
+        return ToJson(outValue, true, includeSchemaVersion);
     }
 
 //--------------------------------------------------------------------------------------

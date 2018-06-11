@@ -610,4 +610,39 @@ Utf8String SchemaParseUtils::MultiplicityToLegacyString(RelationshipMultiplicity
     return legacyString;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                   06/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String SchemaParseUtils::GetJsonFormatString(NamedFormatCR format, ECSchemaCR primarySchema)
+    {
+    Utf8String name;
+    Nullable<int32_t> precision;
+    bvector<Utf8String> unitNames;
+    bvector<Nullable<Utf8String>> unitLabels;
+    Formatting::Format::ParseFormatString(name, precision, unitNames, unitLabels, format.GetName());
+    auto& parentSchema = format.GetParentFormat()->GetSchema();
+    Utf8String qualifiedFormatName = parentSchema.GetName() + "." + name;
+
+    if (precision.IsValid())
+        {
+        qualifiedFormatName += "(";
+        qualifiedFormatName += std::to_string(precision.Value()).c_str();
+        qualifiedFormatName += ")";
+        }
+
+    for(int i = 0; i < unitNames.size(); i++)
+        { 
+        qualifiedFormatName += "[";
+        qualifiedFormatName += ECJsonUtilities::ECNameToJsonName(*primarySchema.LookupUnit(unitNames[i].c_str()));
+
+        if (unitLabels[i].IsValid()) // We want to override a label
+            {
+            qualifiedFormatName += "|";
+            qualifiedFormatName += unitLabels[i].Value();
+            }
+        qualifiedFormatName += "]";
+        }
+    return qualifiedFormatName;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

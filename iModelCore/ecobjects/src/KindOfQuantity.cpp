@@ -358,7 +358,7 @@ bool KindOfQuantity::ToJson(Json::Value& outValue, bool standalone, bool include
         return false;
         }
 
-    outValue[PERSISTENCE_UNIT_ATTRIBUTE] = GetPersistenceUnit()->GetQualifiedName(GetSchema());
+    outValue[PERSISTENCE_UNIT_ATTRIBUTE] =  ECJsonUtilities::ECNameToJsonName(*GetPersistenceUnit());
 
     outValue[ECJSON_RELATIVE_ERROR_ATTRIBUTE] = GetRelativeError();
 
@@ -373,7 +373,7 @@ bool KindOfQuantity::ToJson(Json::Value& outValue, bool standalone, bool include
                 LOG.errorv("Failed to write schema because persistance format for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), format.GetProblemDescription().c_str());
                 return false;
                 }
-            presentationUnitArr.append(format.GetQualifiedName(GetSchema()));
+            presentationUnitArr.append(SchemaParseUtils::GetJsonFormatString(format, GetSchema()));
             }
         outValue[PRESENTATION_UNITS_ATTRIBUTE] = presentationUnitArr;
         }

@@ -27,8 +27,6 @@ struct SchemaJsonWriter
         bool WriteUnitSystem(UnitSystemCR unitSystem);
         bool WritePhenomenon(PhenomenonCR phenomenon);
         bool WriteUnit(ECUnitCR unit);
-        bool WriteInvertedUnit(ECUnitCR invertedUnit);
-        bool WriteConstant(ECUnitCR constant);
 
         bool WriteSchemaItems();
 

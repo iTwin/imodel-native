@@ -634,15 +634,6 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     customAttrClass->SetClassModifier(ECClassModifier::Sealed);
     customAttrClass->SetContainerType(ECN::CustomAttributeContainerType::Schema | ECN::CustomAttributeContainerType::AnyProperty);
 
-    // Kind of Quantity
-    KindOfQuantityP koq;
-    schema->CreateKindOfQuantity(koq, "ExampleKoQ");
-    koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
-    koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
-    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"));
-    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
-    koq->SetRelativeError(3);
-
     UnitSystemP unitSystem;
     schema->CreateUnitSystem(unitSystem, "ExampleUnitSystem", "ExampleUnitSystemLabel", "ExampleUnitSystemDescription");
     
@@ -651,6 +642,14 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
 
     ECUnitP unit;
     schema->CreateUnit(unit, "ExampleUnit", "[MILLI]M", *phenom, *unitSystem, 10.0, 1.0, 1.0, "ExampleUnitLabel", "ExampleUnitDescription");
+
+    // Kind of Quantity
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "ExampleKoQ");
+    koq->SetPersistenceUnit(*unit);
+    koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), nullptr, unit, "example");
+    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"));
+    koq->SetRelativeError(3);
 
     // Enumeration
     ECEnumerationP enumeration;

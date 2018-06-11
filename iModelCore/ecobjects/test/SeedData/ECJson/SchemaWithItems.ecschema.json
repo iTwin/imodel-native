@@ -110,12 +110,11 @@
     },
     "ExampleKoQ": {
       "schemaItemType": "KindOfQuantity",
-      "persistenceUnit": "u:MM",
+      "persistenceUnit": "ExampleSchema.ExampleUnit",
       "precision": 3.0,
       "presentationUnits": [
-        "f:DefaultRealU", 
-        "f:DefaultReal",
-        "f:AmerFI"
+        "Formats.DefaultRealU[ExampleSchema.ExampleUnit|example]", 
+        "Formats.DefaultReal"
       ]
     },
     "ExamplePhenomenon" : {

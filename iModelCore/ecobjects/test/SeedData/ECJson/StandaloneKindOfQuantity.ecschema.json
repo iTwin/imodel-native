@@ -5,10 +5,12 @@
   "schema": "ExampleSchema",
   "name": "ExampleKoQ",
   "precision": 3.0,
-  "persistenceUnit": "u:MM",
+  "persistenceUnit": "Units.MM",
   "presentationUnits": [
-       "f:DefaultRealU",
-       "f:DefaultReal",
-       "f:AmerFI"
+      "Formats.DefaultRealU",
+      "Formats.DefaultRealU(3)[Units.MM]",
+      "Formats.DefaultRealU[Units.MM|]",
+      "Formats.DefaultReal[Units.M|meters]",
+      "Formats.AmerFI[Units.FT|feets][Units.IN|inches]"
   ]
 }

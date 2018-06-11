@@ -284,6 +284,7 @@ public:
     ECOBJECTS_EXPORT static Utf8CP SchemaElementTypeToString(ECSchemaElementType elementType);
     ECOBJECTS_EXPORT static Utf8String ContainerTypeToString(CustomAttributeContainerType containerType);
     ECOBJECTS_EXPORT static Utf8String MultiplicityToLegacyString(RelationshipMultiplicity multiplicity);
+    ECOBJECTS_EXPORT static Utf8String GetJsonFormatString(NamedFormatCR format, ECSchemaCR primarySchema);
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
