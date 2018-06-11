@@ -355,7 +355,7 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
 BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<int32_t>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString)
     {
     static size_t const precisionOverrideIndx = 0;
-    static std::regex const rgx(R"REGEX(([\w,:]+)(\(([^\)]+)\))?(\[([^\|]+)([\|])?([^\]]+)?\])?(\[([^\|]+)([\|])?([^\]]+)?\])?(\[([^\|]+)([\|])?([^\]]+)?\])?(\[([^\|]+)([\|])?([^\]]+)?\])?)REGEX", std::regex::optimize);
+    static std::regex const rgx(R"REGEX(([\w,:]+)(\(([^\)]+)\))?(\[([^\|\]]+)([\|])?([^\]]+)?\])?(\[([^\|\]]+)([\|])?([^\]]+)?\])?(\[([^\|\]]+)([\|])?([^\]]+)?\])?(\[([^\|\]]+)([\|])?([^\]]+)?\])?)REGEX", std::regex::optimize);
     std::cmatch match;
 
     
