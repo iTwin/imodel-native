@@ -47,16 +47,25 @@ struct FormatStringTest : FormatTest
     Utf8String const fmtStrFutureAdditionTrailingComma = Utf8String("ExampleFmt(9,banana,)");
     Utf8String const fmtStrFutureAdditionNoFirstOverride = Utf8String("ExampleFmt(,banana)");
 
+    //Evil format strings that should work
+    Utf8String const fmtStrDoubleBar = Utf8String("ExampleFmt[M||]");
+    Utf8String const fmtStrLeftBracket = Utf8String("ExampleFmt[M|[]");
+    Utf8String const fmtStrParens = Utf8String("ExampleFmt[M|()]");
+    Utf8String const fmtStrSemicolon = Utf8String("ExampleFmt[M|;]");
+
     // Invalid format strings.
     Utf8String const fmtStrBasicNoOverridesButStillHasBrackets = Utf8String("ExampleFmt()");
-    Utf8String const fmtStringBasicHasBananaForPrecision = Utf8String("ExampleFmt(banana)");
+    Utf8String const fmtStrBasicHasBananaForPrecision = Utf8String("ExampleFmt(banana)");
     Utf8String const fmtStrBasicNoOverridesButStillHasBracketsWithCommas = Utf8String("ExampleFmt(,,,,)");
     Utf8String const fmtStrWithEmptySqBrackets = Utf8String("ExampleFmt[]");
     Utf8String const fmtStrWithOnlyEmptySqBrackets = Utf8String("ExampleFmt[|]");
     Utf8String const fmtStrUnit5Overrides = Utf8String("ExampleFmt[M|label][DM|label2][CM|label3][MM|label4][UM|label5]");
     Utf8String const fmtStrInvalidUnit = Utf8String("ExampleFmt[banana|label]");
-    Utf8String const fmtStringWrongOrderOfUnits = Utf8String("ExampleFmt[FT][Mile]");
-    Utf8String const fmtStringEmptyUnit = Utf8String("ExampleFmt[|banana]");
+    Utf8String const fmtStrWrongOrderOfUnits = Utf8String("ExampleFmt[FT][Mile]");
+    Utf8String const fmtStrEmptyUnit = Utf8String("ExampleFmt[|banana]");
+
+    // Invalid and evil strings
+    Utf8String const fmtStrRightBracket = Utf8String("ExampleFmt[u:M|]]");
 };
 
 //---------------------------------------------------------------------------------------
@@ -260,13 +269,15 @@ TEST_F(FormatStringTest, FailWithInvalidOverride)
     EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
     EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrInvalidUnit, mapper, s_unitsContext));
     EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStringWrongOrderOfUnits, mapper, s_unitsContext));
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrWrongOrderOfUnits, mapper, s_unitsContext));
     EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStringBasicHasBananaForPrecision, mapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicHasBananaForPrecision, mapper));
     EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
     EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "", mapper));
     EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStringEmptyUnit, mapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrEmptyUnit, mapper));
+    EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrRightBracket, mapper));
     EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
     }
 
@@ -430,6 +441,38 @@ TEST_F(FormatStringTest, UnitAndLabelOverride)
     EXPECT_STRCASEEQ(spec->GetSubUnit()->GetName().c_str(), "MM");
     EXPECT_TRUE(spec->HasSubLabel());
     EXPECT_STRCASEEQ("label4", spec->GetSubLabel().c_str());
+
+    parsedNfs = Format();
+    EXPECT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrDoubleBar, mapper, s_unitsContext));
+    spec = parsedNfs.GetCompositeSpecP();
+    ASSERT_NE(nullptr, spec);
+    EXPECT_STRCASEEQ(spec->GetMajorUnit()->GetName().c_str(), "M");
+    EXPECT_TRUE(spec->HasMajorLabel());
+    EXPECT_STRCASEEQ(spec->GetMajorLabel().c_str(), "|");
+
+    parsedNfs = Format();
+    EXPECT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrLeftBracket, mapper, s_unitsContext));
+    spec = parsedNfs.GetCompositeSpecP();
+    ASSERT_NE(nullptr, spec);
+    EXPECT_STRCASEEQ(spec->GetMajorUnit()->GetName().c_str(), "M");
+    EXPECT_TRUE(spec->HasMajorLabel());
+    EXPECT_STRCASEEQ(spec->GetMajorLabel().c_str(), "[");
+
+    parsedNfs = Format();
+    EXPECT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrParens, mapper, s_unitsContext));
+    spec = parsedNfs.GetCompositeSpecP();
+    ASSERT_NE(nullptr, spec);
+    EXPECT_STRCASEEQ(spec->GetMajorUnit()->GetName().c_str(), "M");
+    EXPECT_TRUE(spec->HasMajorLabel());
+    EXPECT_STRCASEEQ(spec->GetMajorLabel().c_str(), "()");
+
+    parsedNfs = Format();
+    EXPECT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrSemicolon, mapper, s_unitsContext));
+    spec = parsedNfs.GetCompositeSpecP();
+    ASSERT_NE(nullptr, spec);
+    EXPECT_STRCASEEQ(spec->GetMajorUnit()->GetName().c_str(), "M");
+    EXPECT_TRUE(spec->HasMajorLabel());
+    EXPECT_STRCASEEQ(spec->GetMajorLabel().c_str(), ";");
     }
 
 //--------------------------------------------------------------------------------------
