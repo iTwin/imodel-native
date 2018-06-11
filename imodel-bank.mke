@@ -20,7 +20,7 @@ cDefs + -DBUILDING_NODE_EXTENSION
   cDefs + -D_DARWIN_USE_64_BIT_INODE=1
 %endif
 
-o = $(OutputRootDir)Build/imodeljs-bank/
+o = $(OutputRootDir)Build/imodel-bank/
 always:
     !~@mkdir $(o)
 

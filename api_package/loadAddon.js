@@ -12,6 +12,6 @@ function getCurrentPlatformPrefix() {
 
 // Load the right node addon for this platform (node|electron, OS, cpu)
 // @param dir - optional directory from which addon should be loaded
-exports.loadNativePlatform = function (dir) {
+exports.loadAddon = function (dir) {
     return require(path.join(dir || "", formatPackageName(getCurrentPlatformPrefix()), "addon", "imodel-bank.node"));
 }
