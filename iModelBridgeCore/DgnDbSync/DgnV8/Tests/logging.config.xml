@@ -62,8 +62,8 @@
      explicitly specifed in a category node.
 -->
 
-    <root>                            
-        <priority value="warn" />
+    <root>
+        <priority value="fatal" />
         <appender-ref ref="Console"/>
         <!--appender-ref ref="OutputDebugStringAppender" /-->
         <!-- appender-ref ref="RollingFileAppender" /-->
