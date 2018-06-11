@@ -104,25 +104,25 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
 
     // Station formatting
     auto koqCP = projectPtr->Schemas().GetKindOfQuantity(BRRA_SCHEMA_NAME, "STATION");
-    auto presentationUnitList = koqCP->GetPresentationUnitList();
+    auto presentationFormats = koqCP->GetPresentationFormats();
 
-    auto mUnitP = UnitRegistry::Instance().LookupUnit("M");
+    auto mUnitP = projectPtr->Schemas().GetUnit(BRRA_SCHEMA_NAME, "M");
     Quantity qty(stationTranslatorPtr->ToStation(71).Value(), *mUnitP);
-    auto fusP = std::find_if(presentationUnitList.begin(), presentationUnitList.end(), 
-        [](FormatUnitSet& fus) { return 0 == fus.GetUnitName().CompareTo("M"); });
-    ASSERT_TRUE(fusP != presentationUnitList.end());
-    ASSERT_TRUE(fusP->GetUnit() != nullptr);
+    auto formatP = std::find_if(presentationFormats.begin(), presentationFormats.end(), 
+        [](NamedFormat& format) { return format.HasCompositeMajorUnit() && 0 == format.GetCompositeMajorUnit()->GetName().CompareTo("M"); });
+    ASSERT_TRUE(formatP != presentationFormats.end());
+    ASSERT_TRUE(formatP->GetCompositeMajorUnit() != nullptr);
 
-    Utf8String str = fusP->FormatQuantity(qty, nullptr);
+    Utf8String str = formatP->FormatQuantity(qty, nullptr);
     ASSERT_STRCASEEQ("10+001.00", str.c_str());
     
     qty = Quantity(stationTranslatorPtr->ToStation(71).Value(), *mUnitP);
-    fusP = std::find_if(presentationUnitList.begin(), presentationUnitList.end(),
-        [](FormatUnitSet& fus) { return 0 == fus.GetUnitName().CompareTo("FT"); });
-    ASSERT_TRUE(fusP != presentationUnitList.end());
-    ASSERT_TRUE(fusP->GetUnit() != nullptr);
+    formatP = std::find_if(presentationFormats.begin(), presentationFormats.end(), 
+        [](NamedFormat& format) { return format.HasCompositeMajorUnit() && 0 == format.GetCompositeMajorUnit()->GetName().CompareTo("FT"); });
+    ASSERT_TRUE(formatP != presentationFormats.end());
+    ASSERT_TRUE(formatP->GetCompositeMajorUnit() != nullptr);
 
-    str = fusP->FormatQuantity(qty, nullptr);
+    str = formatP->FormatQuantity(qty, nullptr);
     ASSERT_STRCASEEQ("328+11.68", str.c_str());
 
     // Delete-cascade
