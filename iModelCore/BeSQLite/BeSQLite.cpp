@@ -1678,11 +1678,6 @@ BeGuid Db::QueryProjectGuid() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-Db::OpenParams::OpenParams(OpenMode openMode, DefaultTxn defaultTxn, BusyRetry* retry) : m_openMode(openMode), m_startDefaultTxn(defaultTxn), m_busyRetry(retry) {}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::CreateNewDb(Utf8CP dbName, BeGuid dbGuid, CreateParams const& params)
@@ -2525,14 +2520,6 @@ static void printLog(void *pArg, int iErrCode, Utf8CP zMsg)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Affan.Khan                     12/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::_VerifyProfileVersion(OpenParams const& params) 
-    { 
-    return BeSQLiteProfileManager::UpgradeProfile(*this, params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
@@ -2591,63 +2578,104 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Called before the profile upgrade process starts. Make sure the Db is writeable.
-* @bsimethod                                    Keith.Bentley                   05/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Db::OpenParams::_ReopenForProfileUpgrade(Db& db) const
-    {
-    if (!IsReadonly())
-        return true;
-
-    Utf8String filename(db.GetDbFileName());
-    db.CloseDb();
-
-    m_openMode = OpenMode::ReadWrite;
-    m_forProfileUpgrade = true;
-
-    const bool succeeded = db.OpenBeSQLiteDb(filename.c_str(), *this) == BE_SQLITE_OK;
-
-    // Caller may attempt to reopen Bim using same params...do not leave this flag modified
-    // (See e.g. sample navigator, which will re-open for read-only if we upgrade the schema)
-    m_forProfileUpgrade = false;
-
-    return succeeded;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
     {
-    DbResult rc = DoOpenDb(dbName, params);
-
-    if (rc == BE_SQLITE_OK && !params.m_forProfileUpgrade && !params.m_rawSQLite)
+    if (params.GetProfileUpgradeOptions() == ProfileUpgradeOptions::Upgrade && params.IsReadonly())
         {
-        //ensure that profile upgraders have an active transaction even if DefaultTxn::No was passed
-        if (params.m_startDefaultTxn == DefaultTxn::No && !m_dbFile->m_defaultTxn.IsActive())
-            m_dbFile->m_defaultTxn.Begin();
+        LOG.error("Cannot perform profile upgrade when file is opened readonly.");
+        return BE_SQLITE_READONLY;
+        }
 
-        rc = _OnBeforeVerifyProfileVersion();
-        if (rc == BE_SQLITE_OK)
+    DbResult rc = DoOpenDb(dbName, params);
+    if (rc != BE_SQLITE_OK || params.m_rawSQLite)
+        {
+        if (rc != BE_SQLITE_OK)
+            CloseDb();
+
+        return rc;
+        }
+
+
+    //ensure that profile upgraders have an active transaction even if DefaultTxn::No was passed
+    if (params.m_startDefaultTxn == DefaultTxn::No && !m_dbFile->m_defaultTxn.IsActive())
+        m_dbFile->m_defaultTxn.Begin();
+
+    const ProfileState profileState = _CheckProfileVersion();
+    const bool doUpgrade = profileState.IsUpgradable() && params.GetProfileUpgradeOptions() == ProfileUpgradeOptions::Upgrade;
+
+    if (profileState.IsError() || 
+        (!doUpgrade && (profileState.GetCanOpen() == ProfileState::CanOpen::No || 
+                        (profileState.GetCanOpen() == ProfileState::CanOpen::Readonly && !params.IsReadonly()))))
+        {
+        CloseDb();
+        return profileState.ToDbResult();
+        }
+
+    if (doUpgrade)
+        {
+        DbResult rc = _OnBeforeProfileUpgrade();
+        if (BE_SQLITE_OK != rc)
             {
-            rc = _VerifyProfileVersion(params);
-            if (rc == BE_SQLITE_OK)
-                rc = _OnAfterVerifyProfileVersion();
+            AbandonChanges();
+            CloseDb();
+            return rc;
+            }
 
-            if (rc == BE_SQLITE_OK)
-                rc = _OnDbOpened(params);
+        rc = _UpgradeProfile();
+        if (BE_SQLITE_OK != rc)
+            {
+            AbandonChanges();
+            CloseDb();
+            return rc;
+            }
 
-            //if DefaultTxn::No was passed, commit the txn as it was started by BeSQlite
-            if (params.m_startDefaultTxn == DefaultTxn::No && m_dbFile->m_defaultTxn.IsActive())
-                m_dbFile->m_defaultTxn.Commit(nullptr);
+        rc = _OnAfterProfileUpgrade();
+        if (BE_SQLITE_OK != rc)
+            {
+            AbandonChanges();
+            CloseDb();
+            return rc;
+            }
+
+        //re-check profile version. Should be up-to-date now, but in case a profile upgrader is missing something
+        //we want to make sure we now know the new profile state
+        ProfileState newProfileState = _CheckProfileVersion();
+        rc = newProfileState.ToDbResult();
+        if (BE_SQLITE_OK != rc)
+            {
+            AbandonChanges();
+            CloseDb();
+            return rc;
             }
         }
 
-    if (rc != BE_SQLITE_OK)
+
+    rc = _OnDbOpened(params);
+    if (BE_SQLITE_OK != rc)
+        {
+        AbandonChanges();
         CloseDb();
+        return rc;
+        }
+
+    //if DefaultTxn::No was passed, commit the txn as it was started by BeSQlite
+    if (params.m_startDefaultTxn == DefaultTxn::No && m_dbFile->m_defaultTxn.IsActive())
+        m_dbFile->m_defaultTxn.Commit(nullptr);
 
     return rc;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+ProfileState Db::_CheckProfileVersion() const { return BeSQLiteProfileManager::CheckProfileVersion(*this); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult Db::_UpgradeProfile() { return BeSQLiteProfileManager::UpgradeProfile(*this); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/14
@@ -2735,99 +2763,135 @@ void Db::_OnDbChangedByOtherConnection()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Krischan.Eberle                   11/13
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion const& expectedProfileVersion, ProfileVersion const& actualProfileVersion,
-                                  ProfileVersion const& minimumUpgradableProfileVersion, bool openModeIsReadonly,
-                                  Utf8CP profileName)
+//static
+ProfileState Db::CheckProfileVersion(ProfileVersion const& expectedProfileVersion, ProfileVersion const& fileProfileVersion, ProfileVersion const& minimumUpgradableProfileVersion, Utf8CP profileName)
     {
-    fileIsAutoUpgradable = false;
+    BeAssert(!Utf8String::IsNullOrEmpty(profileName));
+    BeAssert(minimumUpgradableProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_MajorMinor) == 0 &&
+             minimumUpgradableProfileVersion.GetSub1() == 0 && minimumUpgradableProfileVersion.GetSub2() == 0 && "Minimum upgradable version must have same major/minor as expected version and sub1 and sub2 must be 0.");
 
-    if (Utf8String::IsNullOrEmpty(profileName))
+    const int fileVersionComp = fileProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_All);
+
+    if (fileVersionComp == 0)
+        return ProfileState::UpToDate();
+
+    const int fileVersionMajorMinorComp = fileProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_MajorMinor);
+
+    //File is newer than software
+    if (fileVersionComp > 0)
         {
-        BeAssert(!Utf8String::IsNullOrEmpty(profileName) && "Db::CheckProfileVersion expects profileName to neither be null or empty.");
-        return BE_SQLITE_INTERNAL;
-        }
-
-    if (minimumUpgradableProfileVersion.GetSub1() != 0 || minimumUpgradableProfileVersion.GetSub2() != 0)
-        {
-        BeAssert(false && "Db::CheckProfileVersion expects minimumUpgradableProfileVersion's Sub1 and Sub2 digits to be 0.");
-        return BE_SQLITE_INTERNAL;
-        }
-
-    //If major/minor of file version is older than minimum version to which auto-upgrades can be done, file is too old
-    if (actualProfileVersion.CompareTo(minimumUpgradableProfileVersion, ProfileVersion::VERSION_MajorMinor) < 0)
-        {
-        BeAssert(minimumUpgradableProfileVersion.CompareTo(expectedProfileVersion) <= 0 && "Minimum auto-upgradable profile version must be less or equal expected profile version.");
-
-        LOG.errorv("Cannot open file: The file's %s profile (%s) is too old to be auto-upgraded. Minimum upgradable profile version: %s", 
-                   profileName, actualProfileVersion.ToString().c_str(), minimumUpgradableProfileVersion.ToMajorMinorString().c_str());
-        return BE_SQLITE_ERROR_ProfileTooOld;
-        }
-
-    //If major and minor of actual profile version is newer than expected, file cannot be opened.
-    if (actualProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_MajorMinor) > 0)
-        {
-        LOG.errorv("Cannot open file: The file's %s profile (%s) is too new. Expected version: %s. Please upgrade your product to the latest version.", 
-                   profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
-        return BE_SQLITE_ERROR_ProfileTooNew;
-        }
-
-    //at this point, actual major / minor is between or equal minimum and expected version.
-    BeAssert(actualProfileVersion.CompareTo(minimumUpgradableProfileVersion, ProfileVersion::VERSION_MajorMinor) >= 0 &&
-            actualProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_MajorMinor) <= 0 && "Logical error in Db::CheckProfileVersion");
-
-    //If file is older than expected version (but newer or equal than minimum auto-upgrade version), file is auto-upgradable
-    if (actualProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_All) < 0)
-        {
-        fileIsAutoUpgradable = true;
-
-        if (actualProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_MajorMinor) < 0)
+        if (fileVersionMajorMinorComp > 0)
             {
-            LOG.debugv("File's %s profile (%s) is too old, but auto-upgradable.", profileName, actualProfileVersion.ToString().c_str());
-            return BE_SQLITE_ERROR_ProfileTooOld;
-            }
-        else
-            {
-            LOG.debugv("File's %s profile (%s) is older than expected, but is compatible with the version of this software (%s). It also is auto-upgradable.", 
-                       profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
-            return BE_SQLITE_OK;
-            }
-        }
-
-    //at this point actual version's major and minor are equal to expected, and sub1 and sub2 are equal or greater than expected
-    BeAssert(actualProfileVersion.CompareTo(expectedProfileVersion, ProfileVersion::VERSION_MajorMinor) == 0 &&
-             (actualProfileVersion.GetSub1() >= expectedProfileVersion.GetSub1() || actualProfileVersion.GetSub2() >= expectedProfileVersion.GetSub2()) &&
-             "Logical error in Db::CheckProfileVersion");
-
-    //If sub1 of actual profile version is greater than expected file can be opened readonly
-    if (actualProfileVersion.GetSub1() > expectedProfileVersion.GetSub1())
-        {
-        if (openModeIsReadonly)
-            {
-            LOG.warningv("File's %s profile (%s) is newer than expected (%s), but the file can be opened read-only. Please consider to upgrade your Bentley product to the latest version.", 
-                         profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
-            return BE_SQLITE_OK;
+            LOG.errorv("Cannot open file: The file's %s profile (%s) is too new. Expected version: %s.",
+                       profileName, fileProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
+            return ProfileState::Newer(ProfileState::CanOpen::No);
             }
 
-        LOG.errorv("File's %s profile (%s) is newer than expected (%s). The file can only be opened read-only. Re-open the file in read-only mode. Please consider to upgrade your Bentley product to the latest version.", 
-                   profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
-        return BE_SQLITE_ERROR_ProfileTooNewForReadWrite;
+        BeAssert(fileVersionMajorMinorComp == 0);
+
+        if (fileProfileVersion.GetSub1() > expectedProfileVersion.GetSub1())
+            return ProfileState::Newer(ProfileState::CanOpen::Readonly);
+
+        return ProfileState::Newer(ProfileState::CanOpen::Readwrite);
         }
 
-    BeAssert(actualProfileVersion.GetSub1() == expectedProfileVersion.GetSub1() && "Logical error in Db::CheckProfileVersion");
+    BeAssert(fileVersionComp < 0 && "At this point file version must be older than expected");
 
-    if (actualProfileVersion.GetSub2() > expectedProfileVersion.GetSub2())
+    if (fileVersionMajorMinorComp < 0)
         {
-        LOG.warningv("File's %s profile (%s) is newer than expected (%s), but the file is backwards compatible with the version of this software. Please consider to upgrade your Bentley product to the latest version.",
-                     profileName, actualProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
+        LOG.errorv("Cannot open file: The file's %s profile (%s) is too old. Expected version: %s.",
+                   profileName, fileProfileVersion.ToString().c_str(), expectedProfileVersion.ToString().c_str());
+        return ProfileState::Older(ProfileState::CanOpen::No, false);;
+        }
+
+    const bool isUpgradable = fileProfileVersion.CompareTo(minimumUpgradableProfileVersion, ProfileVersion::VERSION_MajorMinor) >= 0;
+
+    BeAssert(fileVersionMajorMinorComp == 0);
+
+    if (fileProfileVersion.GetSub1() < expectedProfileVersion.GetSub1())
+        return ProfileState::Older(ProfileState::CanOpen::Readonly, isUpgradable);
+
+    return ProfileState::Older(ProfileState::CanOpen::Readwrite, isUpgradable);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Krischan.Eberle                   06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+ProfileState ProfileState::Merge(ProfileState const& rhs) const
+    {
+    if (*this == rhs)
+        return *this;
+
+    if (IsError() || rhs.IsError())
+        return *this;
+
+    if (m_state == State::UpToDate)
+        return rhs;
+
+    if (rhs.m_state == State::UpToDate)
+        return *this;
+
+    if (m_state != rhs.m_state)
+        {
+        BeAssert(false && "One profile cannot be older when the other is newer");
+        return Error();
+        }
+
+    const int thisCanOpenInt = (int) m_canOpen;
+    const int rhsCanOpenInt = (int) rhs.m_canOpen;
+    const CanOpen finalCanOpen = (CanOpen) std::max(thisCanOpenInt, rhsCanOpenInt);
+
+    if (m_state == State::Newer)
+        return ProfileState::Newer(finalCanOpen);
+
+    bool finalIsUpgradable = m_isUpgradable || rhs.m_isUpgradable;
+    if ((m_canOpen == CanOpen::No && !m_isUpgradable) || (rhs.m_canOpen == CanOpen::No && !rhs.m_isUpgradable))
+        finalIsUpgradable = false;
+
+    return ProfileState::Older(finalCanOpen, finalIsUpgradable);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Krischan.Eberle                   06/18
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ProfileState::ToDbResult() const
+    {
+    if (IsError())
+        return BE_SQLITE_ERROR_InvalidProfileVersion;
+
+    if (m_state == State::UpToDate)
         return BE_SQLITE_OK;
+
+    if (m_state == State::Newer)
+        {
+        switch (m_canOpen)
+            {
+                case CanOpen::Readwrite:
+                    return BE_SQLITE_OK;
+                case CanOpen::Readonly:
+                    return BE_SQLITE_ERROR_ProfileTooNewForReadWrite;
+                case CanOpen::No:
+                    return BE_SQLITE_ERROR_ProfileTooNew;
+
+                default:
+                    BeAssert(false && "Unhandled enum value");
+                    return BE_SQLITE_ERROR_InvalidProfileVersion;
+            }
         }
 
-    BeAssert(actualProfileVersion.CompareTo(expectedProfileVersion) == 0 && "Logical error in Db::CheckProfileVersion");
+    switch (m_canOpen)
+        {
+            case CanOpen::Readwrite:
+                return BE_SQLITE_OK;
+            case CanOpen::Readonly:
+                return BE_SQLITE_ERROR_ProfileTooOldForReadWrite;
+            case CanOpen::No:
+                return BE_SQLITE_ERROR_ProfileTooOld;
 
-    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
-        LOG.debugv("File's %s profile (%s) is up-to-date.", profileName, actualProfileVersion.ToString().c_str());
-
-    return BE_SQLITE_OK;
+            default:
+                BeAssert(false && "Unhandled enum value");
+                return BE_SQLITE_ERROR_InvalidProfileVersion;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3056,7 +3120,6 @@ Utf8CP Db::InterpretDbResult(DbResult result)
         case BE_SQLITE_ERROR_BadDbProfile:                           return "BE_SQLITE_ERROR_BadDbProfile";
         case BE_SQLITE_ERROR_InvalidProfileVersion:                  return "BE_SQLITE_ERROR_InvalidProfileVersion";
         case BE_SQLITE_ERROR_ProfileUpgradeFailed:                   return "BE_SQLITE_ERROR_ProfileUpgradeFailed";
-        case BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite: return "BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite";
         case BE_SQLITE_ERROR_ProfileTooOld:                          return "BE_SQLITE_ERROR_ProfileTooOld";
         case BE_SQLITE_ERROR_ProfileTooNewForReadWrite:              return "BE_SQLITE_ERROR_ProfileTooNewForReadWrite";
         case BE_SQLITE_ERROR_ProfileTooNew:                          return "BE_SQLITE_ERROR_ProfileTooNew";
@@ -3093,6 +3156,7 @@ Utf8CP Db::InterpretDbResult(DbResult result)
 
     return "<unkown result code>";
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11

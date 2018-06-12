@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/BeSQLiteDb_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLiteNonPublishedTests.h"
@@ -54,105 +54,43 @@ TEST(BeSQLiteDb, BeBriefcaseBasedIdTest)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     11/13
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(BeSQLiteDb, CheckProfileVersionWithEmptyProfileName)
-    {
-    ProfileVersion dummy(2, 4, 5, 3);
-
-    bool fileIsAutoUpgradable = false;
-
-    BeTest::SetFailOnAssert(false);
-    DbResult actualStat = Db::CheckProfileVersion(fileIsAutoUpgradable, dummy, dummy,
-                                                  dummy, true, nullptr);
-    BeTest::SetFailOnAssert(true);
-
-    ASSERT_FALSE(fileIsAutoUpgradable);
-    ASSERT_EQ(BE_SQLITE_INTERNAL, actualStat);
-
-    BeTest::SetFailOnAssert(false);
-    actualStat = Db::CheckProfileVersion(fileIsAutoUpgradable, dummy, dummy,
-                                         dummy, true, "");
-    BeTest::SetFailOnAssert(true);
-
-    ASSERT_FALSE(fileIsAutoUpgradable);
-    ASSERT_EQ(BE_SQLITE_INTERNAL, actualStat);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     11/13
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST(BeSQLiteDb, CheckProfileVersion)
     {
-    struct ExpectedResult
-        {
-        DbResult m_statInReadWriteMode;
-        DbResult m_statInReadOnlyMode;
-        bool m_fileIsAutoUpgradable;
-
-        ExpectedResult()
-            : m_statInReadWriteMode(BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite), m_statInReadOnlyMode(BE_SQLITE_ERROR_ProfileUpgradeFailed), m_fileIsAutoUpgradable(false) {}
-
-        ExpectedResult(DbResult stat, bool fileIsAutoUpgradable)
-            : m_statInReadWriteMode(stat), m_statInReadOnlyMode(stat), m_fileIsAutoUpgradable(fileIsAutoUpgradable) {}
-
-        ExpectedResult(DbResult statInReadWriteMode, DbResult statInReadOnlyMode, bool fileIsAutoUpgradable)
-            : m_statInReadWriteMode(statInReadWriteMode), m_statInReadOnlyMode(statInReadOnlyMode), m_fileIsAutoUpgradable(fileIsAutoUpgradable) {}
-        };
-
     ProfileVersion expectedProfileVersion(2, 4, 5, 3);
-    ProfileVersion minimumAutoUpgradeProfileVersion(1, 9, 0, 0);
+    ProfileVersion minimumUpgradeProfileVersion(2, 4, 0, 0);
 
-    std::map<ProfileVersion, ExpectedResult> testDataset;
-    testDataset[ProfileVersion(0, 0, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, false);
-    testDataset[ProfileVersion(1, 0, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, false);
-    testDataset[ProfileVersion(1, 8, 99, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, false);
-    testDataset[ProfileVersion(1, 9, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[ProfileVersion(1, 9, 2, 3)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
+    std::map<ProfileVersion, ProfileState> testDataset {{ProfileVersion(0, 0, 0, 0), ProfileState::Older(ProfileState::CanOpen::No, false)},
+    {ProfileVersion(1, 0, 0, 0), ProfileState::Older(ProfileState::CanOpen::No, false)},
+    {ProfileVersion(1, 9, 0, 0), ProfileState::Older(ProfileState::CanOpen::No, false)},
+    {ProfileVersion(2, 4, 0, 0), ProfileState::Older(ProfileState::CanOpen::Readonly, true)},
+    {ProfileVersion(2, 4, 2, 3), ProfileState::Older(ProfileState::CanOpen::Readonly, true)},
+    {ProfileVersion(2, 4, 5, 0), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
+    {ProfileVersion(2, 4, 5, 2), ProfileState::Older(ProfileState::CanOpen::Readwrite, true)},
 
-    testDataset[ProfileVersion(1, 9, 2, 4)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[ProfileVersion(1, 9, 2, 5)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[ProfileVersion(1, 9, 3, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[ProfileVersion(1, 9, 9, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[ProfileVersion(2, 0, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[ProfileVersion(2, 1, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooOld, true);
-    testDataset[ProfileVersion(2, 4, 0, 0)] = ExpectedResult(BE_SQLITE_OK, true);
-    testDataset[ProfileVersion(2, 4, 5, 0)] = ExpectedResult(BE_SQLITE_OK, true);
-    testDataset[ProfileVersion(2, 4, 5, 2)] = ExpectedResult(BE_SQLITE_OK, true);
+    {ProfileVersion(2, 4, 5, 3), ProfileState::UpToDate()},
 
-    testDataset[ProfileVersion(2, 4, 5, 3)] = ExpectedResult(BE_SQLITE_OK, false);
+    {ProfileVersion(2, 4, 5, 4), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
+    {ProfileVersion(2, 4, 5, 33), ProfileState::Newer(ProfileState::CanOpen::Readwrite)},
 
-    testDataset[ProfileVersion(2, 4, 5, 4)] = ExpectedResult(BE_SQLITE_OK, false);
-    testDataset[ProfileVersion(2, 4, 5, 33)] = ExpectedResult(BE_SQLITE_OK, false);
+    {ProfileVersion(2, 4, 6, 0), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
+    {ProfileVersion(2, 4, 6, 99), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
+    {ProfileVersion(2, 4, 99, 0), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
+    {ProfileVersion(2, 4, 99, 99), ProfileState::Newer(ProfileState::CanOpen::Readonly)},
 
-    testDataset[ProfileVersion(2, 4, 6, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, BE_SQLITE_OK, false);
-    testDataset[ProfileVersion(2, 4, 6, 99)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, BE_SQLITE_OK, false);
-    testDataset[ProfileVersion(2, 4, 99, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, BE_SQLITE_OK, false);
-    testDataset[ProfileVersion(2, 4, 99, 99)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNewForReadWrite, BE_SQLITE_OK, false);
+    {ProfileVersion(2, 5, 0, 0), ProfileState::Newer(ProfileState::CanOpen::No)},
+    {ProfileVersion(2, 5, 0, 1), ProfileState::Newer(ProfileState::CanOpen::No)},
+    {ProfileVersion(2, 99, 0, 1), ProfileState::Newer(ProfileState::CanOpen::No)},
+    {ProfileVersion(3, 0, 0, 0), ProfileState::Newer(ProfileState::CanOpen::No)},
+    {ProfileVersion(99, 99, 99, 99), ProfileState::Newer(ProfileState::CanOpen::No)}};
 
-    testDataset[ProfileVersion(2, 5, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
-    testDataset[ProfileVersion(2, 5, 0, 1)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
-    testDataset[ProfileVersion(2, 99, 0, 1)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
-    testDataset[ProfileVersion(3, 0, 0, 0)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
-    testDataset[ProfileVersion(99, 99, 99, 99)] = ExpectedResult(BE_SQLITE_ERROR_ProfileTooNew, false);
-
-    for (auto const& testItem : testDataset)
+    for (std::pair<ProfileVersion, ProfileState> const& testItem : testDataset)
         {
         ProfileVersion const& actualProfileVersion = testItem.first;
-        ExpectedResult const& expectedResult = testItem.second;
+        ProfileState const& expectedState = testItem.second;
 
-        bool actualfileIsAutoUpgradable = false;
-        DbResult actualStat = Db::CheckProfileVersion(actualfileIsAutoUpgradable, expectedProfileVersion, actualProfileVersion,
-                                                      minimumAutoUpgradeProfileVersion, true, "Test");
+        ProfileState actualState = Db::CheckProfileVersion(expectedProfileVersion, actualProfileVersion, minimumUpgradeProfileVersion, "Test");
 
-        EXPECT_EQ(expectedResult.m_fileIsAutoUpgradable, actualfileIsAutoUpgradable) << "OpenMode: read-only - Expected version: " << expectedProfileVersion.ToJson().c_str() << " - Actual version: " << actualProfileVersion.ToJson().c_str();
-        EXPECT_EQ(expectedResult.m_statInReadOnlyMode, actualStat) << "OpenMode: read-only - Expected version: " << expectedProfileVersion.ToJson().c_str() << " - Actual version: " << actualProfileVersion.ToJson().c_str();
-
-        //now re-run check with read-write open mode
-        actualfileIsAutoUpgradable = false;
-        actualStat = Db::CheckProfileVersion(actualfileIsAutoUpgradable, expectedProfileVersion, actualProfileVersion,
-                                             minimumAutoUpgradeProfileVersion, false, "Test");
-
-        EXPECT_EQ(expectedResult.m_fileIsAutoUpgradable, actualfileIsAutoUpgradable) << "OpenMode: read-write - Expected version: " << expectedProfileVersion.ToJson().c_str() << " - Actual version: " << actualProfileVersion.ToJson().c_str();
-        EXPECT_EQ(expectedResult.m_statInReadWriteMode, actualStat) << "OpenMode: read-write - Expected version: " << expectedProfileVersion.ToJson().c_str() << " - Actual version: " << actualProfileVersion.ToJson().c_str();
+        EXPECT_EQ(expectedState, actualState) <<  "Expected version: " << expectedProfileVersion.ToJson().c_str() << " - Actual version: " << actualProfileVersion.ToJson().c_str();
         }
     }
 

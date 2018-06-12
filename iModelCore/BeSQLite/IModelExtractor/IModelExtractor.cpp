@@ -2,7 +2,7 @@
 |
 |     $Source: IModelExtractor/IModelExtractor.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Logging/bentleylogging.h>
@@ -286,27 +286,28 @@ static DbResult checkPackageVersion (BeSQLite::Db& db, Db::OpenParams const& ope
     ProfileVersion actualPackageProfileVersion (0,0,0,0);
     actualPackageProfileVersion.FromJson (versionString.c_str ());
     ProfileVersion expectedPackageVersion (PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
-    ProfileVersion minimumAutoUpgradablePackageVersion (PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
+    ProfileVersion minimumUpgradablePackageVersion (PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
 
     EXTRACTOR_V ("Expected package schema version: %s", expectedPackageVersion.ToJson ().c_str ());
-    EXTRACTOR_V ("Minimum auto-upgradable package schema version: %s", minimumAutoUpgradablePackageVersion.ToJson ().c_str ());
+    EXTRACTOR_V ("Minimum upgradable package schema version: %s", minimumUpgradablePackageVersion.ToJson ().c_str ());
 
-    bool needsUpgrade = false; //unused as this app does not implement any auto-upgrade
-    const auto stat = BeSQLite::Db::CheckProfileVersion (needsUpgrade, expectedPackageVersion, actualPackageProfileVersion, minimumAutoUpgradablePackageVersion, openParams.IsReadonly(), "Package");
-    switch (stat) 
+    ProfileState profileState = Db::CheckProfileVersion(expectedPackageVersion, actualPackageProfileVersion, minimumUpgradablePackageVersion, "Package");
+    if (profileState.IsError())
+        return BE_SQLITE_ERROR_InvalidProfileVersion;
+
+    if (profileState.GetCanOpen() == ProfileState::CanOpen::No || (profileState.GetCanOpen() == ProfileState::CanOpen::Readonly && !db.IsReadonly()))
         {
-        case BE_SQLITE_ERROR_ProfileTooOld:
-            EXTRACTOR_E ("Package schema is too old");
-            break;
-        case BE_SQLITE_ERROR_ProfileTooNew:
-            EXTRACTOR_E ("Package schema is too new");
-            break;
-        default:
-            EXTRACTOR_V ("Package schema version is compatible.");
-            break;
+        if (profileState.GetState() == ProfileState::State::Newer)
+            {
+            EXTRACTOR_E("Package schema is too new");
+            return BE_SQLITE_ERROR_ProfileTooNew;
+            }
+
+        EXTRACTOR_E("Package schema is too old");
+        return BE_SQLITE_ERROR_ProfileTooOld;
         }
 
-    return stat;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------

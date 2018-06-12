@@ -18,56 +18,44 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 //************************************************************************
 // BeSQLiteProfileManager
 //************************************************************************
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                10/2014
+//---------------+---------------+---------------+---------------+---------------+------
+//static
+ProfileState BeSQLiteProfileManager::CheckProfileVersion(DbCR db)
+    {
+    ProfileVersion fileProfileVersion(0, 0, 0, 0);
+    if (BE_SQLITE_OK != ReadProfileVersion(fileProfileVersion, db))
+        return ProfileState::Error();
+
+    return Db::CheckProfileVersion(GetExpectedVersion(), fileProfileVersion, GetMinimumSupportedVersion(), PROFILENAME);
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2014
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult BeSQLiteProfileManager::UpgradeProfile(DbR db, Db::OpenParams const& openParams)
+DbResult BeSQLiteProfileManager::UpgradeProfile(DbR db)
     {
+    BeAssert(!db.IsReadonly());
     if (!db.GetDefaultTransaction()->IsActive())
         {
-        BeAssert(false && "Programmer Error. ECDb expects that BeSqlite::OpenBeSQliteDb keeps the default transaction active when it is called to upgrade its profile.");
+        BeAssert(false && "Programmer Error. BeSqlite::OpenBeSQliteDb must keep the default transaction active when it is called to upgrade its profile.");
         return BE_SQLITE_ERROR_NoTxnActive;
         }
 
-    ProfileVersion actualProfileVersion(0, 0, 0, 0);
-    auto stat = ReadProfileVersion(actualProfileVersion, db);
+    ProfileVersion fileProfileVersion(0, 0, 0, 0);
+    DbResult stat = ReadProfileVersion(fileProfileVersion, db);
     if (stat != BE_SQLITE_OK)
         {
-        LOG.errorv("Upgrade of " PROFILENAME " profile of file '%s' failed. File is no BeSQLite file.", db.GetDbFileName());
+        LOG.errorv("Upgrade of " PROFILENAME " profile of file '%s' failed. File is not a BeSQLite file.", db.GetDbFileName());
         return stat;
         }
 
-    const ProfileVersion expectedVersion = GetExpectedVersion();
-
-    bool profileNeedsUpgrade = false;
-    stat = Db::CheckProfileVersion(profileNeedsUpgrade, expectedVersion, actualProfileVersion, GetMinimumSupportedVersion(), false, PROFILENAME);
-    if (!profileNeedsUpgrade)
-        return stat;
-
-    //! Note we have no major change os it sfine to skip upgrade if file was open as readonly
-    if (db.IsReadonly())
-        {
-        LOG.infov("Version of file's " PROFILENAME " profile is too old. Upgrading '%s' needed but skipping upgrade as file has been open as readonly.", db.GetDbFileName());
-        return BE_SQLITE_OK;
-        }
-
-    LOG.infov("Version of file's " PROFILENAME " profile is too old. Upgrading '%s' now...", db.GetDbFileName());
-
-    //We have no major change so no need to reopen file and try to upgrade it.
-    ////if ECDb file is readonly, reopen it in read-write mode
-    //if (!openParams._ReopenForProfileUpgrade(db))
-    //    {
-    //    LOG.error("Upgrade of file's " PROFILENAME " profile failed because file could not be re-opened in read-write mode.");
-    //    return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
-    //    }
-
-    BeAssert(!db.IsReadonly());
     //Call upgrader sequence and let upgraders incrementally upgrade the profile
     //to the latest state
     std::vector<std::unique_ptr<BeSQLiteProfileUpgrader>> upgraders;
-    GetUpgraderSequence(upgraders, actualProfileVersion);
+    GetUpgraderSequence(upgraders, fileProfileVersion);
     for (std::unique_ptr<BeSQLiteProfileUpgrader> const& upgrader : upgraders)
         {
         stat = upgrader->Upgrade(db);
@@ -90,7 +78,7 @@ DbResult BeSQLiteProfileManager::UpgradeProfile(DbR db, Db::OpenParams const& op
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("Upgraded " PROFILENAME " profile of file '%s' from version %s to version %s.",
-                  db.GetDbFileName(), actualProfileVersion.ToString().c_str(), expectedVersion.ToString().c_str());
+                  db.GetDbFileName(), fileProfileVersion.ToString().c_str(), GetExpectedVersion().ToString().c_str());
         }
 
     return BE_SQLITE_OK;
@@ -111,7 +99,7 @@ DbResult BeSQLiteProfileManager::AssignProfileVersion(DbR db)
 // @bsimethod                                Krischan.Eberle                10/2014
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult BeSQLiteProfileManager::ReadProfileVersion(ProfileVersion& profileVersion, DbR db)
+DbResult BeSQLiteProfileManager::ReadProfileVersion(ProfileVersion& profileVersion, DbCR db)
     {
     Utf8String currentVersionString;
     auto stat = db.QueryProperty(currentVersionString, Properties::ProfileVersion());

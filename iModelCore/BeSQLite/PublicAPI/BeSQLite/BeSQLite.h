@@ -356,7 +356,7 @@ enum DbProfileValues
     BEDB_CURRENT_VERSION_Sub2  = 2,
 
     BEDB_SUPPORTED_VERSION_Major = BEDB_CURRENT_VERSION_Major,  // oldest version of the db schema supported by current api
-    BEDB_SUPPORTED_VERSION_Minor = 0,
+    BEDB_SUPPORTED_VERSION_Minor = 1,
     BEDB_SUPPORTED_VERSION_Sub1  = 0,
     BEDB_SUPPORTED_VERSION_Sub2  = 0,
     };
@@ -439,12 +439,12 @@ enum DbResult
     BE_SQLITE_ERROR_FileNotFound      = (BE_SQLITE_IOERR | (4<<24)),  //!< the database name is not a file.
     BE_SQLITE_ERROR_NoTxnActive       = (BE_SQLITE_IOERR | (5<<24)),  //!< there is no transaction active and the database was opened with AllowImplicitTransactions=false
     BE_SQLITE_ERROR_BadDbProfile      = (BE_SQLITE_IOERR | (6 << 24)), //!< wrong BeSQLite profile version
-    BE_SQLITE_ERROR_InvalidProfileVersion = (BE_SQLITE_IOERR | (7<<24)),  //!< Profile (aka application level BeSQLite schema) of file could not be determined.
-    BE_SQLITE_ERROR_ProfileUpgradeFailed = (BE_SQLITE_IOERR | (8<<24)),  //!< Upgrade of profile (aka application level BeSQLite schema) of file failed.
-    BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite = (BE_SQLITE_IOERR | (9<<24)),  //!< Upgrade of profile (aka application level SQLite schema) of file failed because the file could not be reopened in read-write mode.
-    BE_SQLITE_ERROR_ProfileTooOld     = (BE_SQLITE_IOERR | (10<<24)),  //!< Profile (aka application level BeSQLite schema) of file is too old. Therefore file cannot be opened.
-    BE_SQLITE_ERROR_ProfileTooNewForReadWrite = (BE_SQLITE_IOERR | (11<<24)),  //!< Profile (aka application level schema) of file is too new for read-write access. Therefore file can only be opened read-only.
-    BE_SQLITE_ERROR_ProfileTooNew     = (BE_SQLITE_IOERR | (12<<24)),  //!< Profile (aka application level SQLite schema) of file is too new. Therefore file cannot be opened.
+    BE_SQLITE_ERROR_InvalidProfileVersion = (BE_SQLITE_IOERR | (7<<24)),  //!< Profile of file could not be determined.
+    BE_SQLITE_ERROR_ProfileUpgradeFailed = (BE_SQLITE_IOERR | (8<<24)),  //!< Upgrade of profile of file failed.
+    BE_SQLITE_ERROR_ProfileTooOldForReadWrite = (BE_SQLITE_IOERR | (9 << 24)),  //!< Profile of file is too old for read-write access. Therefore file can only be opened read-only.
+    BE_SQLITE_ERROR_ProfileTooOld     = (BE_SQLITE_IOERR | (10<<24)),  //!< Profile of file is too old. Therefore file cannot be opened.
+    BE_SQLITE_ERROR_ProfileTooNewForReadWrite = (BE_SQLITE_IOERR | (11<<24)),  //!< Profile of file is too new for read-write access. Therefore file can only be opened read-only.
+    BE_SQLITE_ERROR_ProfileTooNew     = (BE_SQLITE_IOERR | (12<<24)),  //!< Profile of file is too new. Therefore file cannot be opened.
     BE_SQLITE_ERROR_ChangeTrackError  = (BE_SQLITE_IOERR | (13<<24)),  //!< attempt to commit with active changetrack
     BE_SQLITE_ERROR_InvalidRevisionVersion = (BE_SQLITE_IOERR | (14 << 24)), //!< invalid version of the revision file is being imported
     
@@ -2044,6 +2044,62 @@ public:
 };
 
 //=======================================================================================
+//! 
+// @bsienum                                                   
+//=======================================================================================
+enum class ProfileState2
+    {
+    Error = -99,
+    Older_CannotOpen = -3,
+    Older_UpgradeRequired = -2,
+    Older_UpgradeOptional = -1,
+    UpToDate = 0,
+    Newer_Readwrite = 1,
+    Newer_Readonly = 2,
+    Newer_CannotOpen = 3
+    };
+
+struct ProfileState final
+    {
+    enum class State
+        {
+        Newer,
+        UpToDate,
+        Older
+        };
+
+    enum class CanOpen
+        {
+        Readwrite,
+        Readonly,
+        No
+        };
+
+    private:
+        State m_state = State::UpToDate;
+        CanOpen m_canOpen = CanOpen::Readwrite;
+        bool m_isUpgradable = false;
+
+        ProfileState(State state, CanOpen canOpen, bool isUpgradable) : m_state(state), m_canOpen(canOpen), m_isUpgradable(isUpgradable) {}
+    public:
+        static ProfileState UpToDate() { return ProfileState(State::UpToDate, CanOpen::Readwrite, false); }
+        static ProfileState Newer(CanOpen canOpen) { return ProfileState(State::Newer, canOpen, false); }
+        static ProfileState Older(CanOpen canOpen, bool isUpgradable) { return ProfileState(State::Older, canOpen, isUpgradable); }
+        static ProfileState Error() { return ProfileState(State::UpToDate, CanOpen::No, false); }
+
+        bool operator==(ProfileState const& rhs) const { return m_state == rhs.m_state && m_canOpen == rhs.m_canOpen && m_isUpgradable == rhs.m_isUpgradable; }
+        bool operator!=(ProfileState const& rhs) const { return !(*this == rhs); }
+
+        bool IsError() const { return m_state == State::UpToDate && m_canOpen == CanOpen::No; }
+        State GetState() const { return m_state; }
+        CanOpen GetCanOpen() const { return m_canOpen; }
+        bool IsUpgradable() const { return m_isUpgradable; }
+
+        BE_SQLITE_EXPORT DbResult ToDbResult() const;
+        BE_SQLITE_EXPORT ProfileState Merge(ProfileState const& rhs) const;
+    };
+
+//=======================================================================================
 //! A physical Db file.
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
@@ -2143,6 +2199,18 @@ public:
     //! Whether to open an BeSQLite::Db readonly or readwrite.
     enum class OpenMode {Readonly = 1<<0, ReadWrite = 1<<1, Create = ReadWrite|(1<<2), SharedCache = 1<<17, };
 
+
+
+    //=======================================================================================
+    //! Options that control whether a profile upgrade should be performed when opening a file
+    // @bsienum                                                     06/18
+    //=======================================================================================
+    enum class ProfileUpgradeOptions
+        {
+        None, //<! No profile upgrade will be performed. If a profile upgrade was required, opening the file will fail
+        Upgrade, //<! Profile upgrade will be performed if necessary.
+        };
+
     //=======================================================================================
     //! Parameters for encrypting a Db.
     // @bsiclass                                                    Shaun.Sewall    01/18
@@ -2178,20 +2246,28 @@ public:
     struct EXPORT_VTABLE_ATTRIBUTE OpenParams
     {
         mutable OpenMode m_openMode;
-        DefaultTxn     m_startDefaultTxn;
-        mutable bool  m_forProfileUpgrade = false;
-        bool          m_rawSQLite = false;
-        BusyRetry*    m_busyRetry = nullptr;
+        DefaultTxn m_startDefaultTxn = DefaultTxn::Yes;
+        ProfileUpgradeOptions m_profileUpgradeOptions = ProfileUpgradeOptions::None;
+        bool m_rawSQLite = false;
+        BusyRetry* m_busyRetry = nullptr;
         EncryptionParams m_encryption;
-
-        BE_SQLITE_EXPORT virtual bool _ReopenForProfileUpgrade(Db&) const;
 
         //! @param[in] openMode The mode for opening the database
         //! @param[in] startDefaultTxn Whether to start a default transaction on the database.
         //! @param[in] retry Supply a BusyRetry handler for the database connection. The BeSQLite::Db will hold a ref-counted-ptr to the retry object.
         //!                  The default is to not attempt retries Note, many BeSQLite applications (e.g. Bim) rely on a single non-shared connection
         //!                  to the database and do not permit sharing.
-        BE_SQLITE_EXPORT explicit OpenParams(OpenMode openMode, DefaultTxn startDefaultTxn=DefaultTxn::Yes, BusyRetry* retry=nullptr);
+        OpenParams(OpenMode openMode, DefaultTxn startDefaultTxn=DefaultTxn::Yes, BusyRetry* retry=nullptr) : m_openMode(openMode), m_startDefaultTxn(startDefaultTxn), m_busyRetry(retry) {}
+        //! @param[in] openMode The mode for opening the database
+        //! @param[in] profileUpgradeOptions Options for a profile upgrade. If an upgrade is to be performed, the Db must be opened readwrite.
+        OpenParams(OpenMode openMode, ProfileUpgradeOptions profileUpgradeOptions) : m_openMode(openMode), m_profileUpgradeOptions(profileUpgradeOptions) { BeAssert(!IsReadonly() || m_profileUpgradeOptions != ProfileUpgradeOptions::Upgrade && "ProfileUpgrade requires readwrite"); }
+
+        //! Sets the Profile Upgrade options.
+        //! @note If ProfileUpgradeOptions::Upgrade is specified, the Db must be opened readwrite.
+        //! @param[in] options Profile Upgrade options.
+        OpenParams& SetProfileUpgradeOptions(ProfileUpgradeOptions options) { m_profileUpgradeOptions = options; return *this; }
+        //! Gets the Profile Upgrade options
+        ProfileUpgradeOptions GetProfileUpgradeOptions() const { return m_profileUpgradeOptions; }
 
         //! Use the BeSQLite::Db api on a "raw" SQLite file. This allows use of the BeSQLite api on SQLite databases it did not create.
         //! When BeSQLite::Db creates a database, it adds the BEDB_TABLE_Property and BEDB_TABLE_Local tables
@@ -2201,6 +2277,7 @@ public:
         //! create those tables.
         //! @note When this flag is on, all of the Property and RepositoryLocalValue methods of BeSQLite::Db will fail.
         void SetRawSQLite() {m_rawSQLite=true;}
+
 
         //! Determine whether the "raw sqlite" flag is on or not
         bool IsRawSQLite() const {return m_rawSQLite;}
@@ -2227,6 +2304,7 @@ public:
         //! Get a writable reference to the encryption parameters
         EncryptionParams& GetEncryptionParamsR() {return m_encryption;}
     };
+
 
     //=======================================================================================
     //! Parameters for controlling aspects of creating and then opening a Db.
@@ -2335,13 +2413,13 @@ protected:
 
     //! override to perform additional processing when Db is opened
     //! @note implementers should always forward this call to their superclass.
-    //! @note this function is invoked before _VerifyProfileVersion() and therefore should not attempt to access data which depends on the schema version
+    //! @note this function is invoked before _CheckProfileVersion() and _UpgradeProfile() and therefore should not attempt to access data which depends on the schema version
     virtual DbResult _OnDbOpening() {return QueryDbIds();}
 
     //! override to perform additional processing when Db is opened
     //! @param[in] params Open parameters
     //! @note implementers should always forward this call to their superclass.
-    //! @note this function is invoked after _VerifyProfileVersion() and can therefore access data which depends on the schema version
+    //! @note this function is invoked after _CheckProfileVersion() and _UpgradeProfile() and can therefore access data which depends on the schema version
     virtual DbResult _OnDbOpened(OpenParams const& params) { return BE_SQLITE_OK; }
 
     //! override to perform processing when Db is closed
@@ -2370,13 +2448,13 @@ protected:
     //! whether the file version matches what the opening API expects.
     //!
     //! Subclasses have to override this method to perform the profile version check when the file is opened.
-    //! See Db::OpenBeSQLiteDb for the <b>backwards compatibility rules</b> that subclasses have to implement
+    //! See Db::OpenBeSQLiteDb for the <b>compatibility rules</b> that subclasses have to implement
     //! in this method.
     //!
     //! ####Developer Checklist
     //! When a profile needs to be modified,
     //! 1. the profile version needs to be incremented according to the
-    //! <b>backwards compatibility rules</b> mentioned above. This means concretely:
+    //! <b>compatibility rules</b> mentioned above. This means concretely:
     //!     - If older versions of the software can still work with the file without any restrictions:
     //!       @b increment the @ref ProfileVersion::GetSub2 "Sub2" version digit.
     //!     - If older versions of the software can only open the file in read-only mode:
@@ -2384,20 +2462,23 @@ protected:
     //!     - If older versions of the software can no longer work with the file:
     //!       @b increment either the @ref ProfileVersion::GetMajor "Major" or the @ref ProfileVersion::GetMinor "Minor"
     //!       version digit.
-    //! 2. a new auto-upgrade step needs to be implemented. It auto-upgrades a file from the version prior to your change to
+    //! 2. a new upgrade step needs to be implemented. It upgrades a file from the version prior to your change to
     //!    the new one.
-    //!     - If it is not possible to implement auto-upgrade for this profile modification, set the <b>Minimum auto-upgrade
+    //!     - If it is not possible to implement upgrade for this profile modification, set the <b>Minimum upgrade
     //!       profile version</b> to the version prior to your change.
     //!
-    //! @param[in] params Open parameters
-    //! @return Code indicating success or error.
-    BE_SQLITE_EXPORT virtual DbResult _VerifyProfileVersion(OpenParams const& params);
-    BE_SQLITE_EXPORT virtual DbResult _OnBeforeVerifyProfileVersion() { return BE_SQLITE_OK; }
-    BE_SQLITE_EXPORT virtual DbResult _OnAfterVerifyProfileVersion() { return BE_SQLITE_OK; }
+    //! @return Profile state
+    BE_SQLITE_EXPORT virtual ProfileState _CheckProfileVersion() const;
+    virtual DbResult _OnBeforeProfileUpgrade() { return BE_SQLITE_OK; }
+    BE_SQLITE_EXPORT virtual DbResult _UpgradeProfile();
+    virtual DbResult _OnAfterProfileUpgrade() { return BE_SQLITE_OK; }
     virtual DbResult _OnDbAttached(Utf8CP filename, Utf8CP dbAlias) const { return BE_SQLITE_OK; }
     virtual DbResult _OnDbDetached(Utf8CP dbAlias) const { return BE_SQLITE_OK; }
     virtual int _OnAddFunction(DbFunction& func) const {return 0;}
     virtual void _OnRemoveFunction(DbFunction& func) const {}
+
+    BE_SQLITE_EXPORT static DbResult ProfileStateToDbResult(ProfileState);
+    BE_SQLITE_EXPORT static ProfileState MergeProfileStates(ProfileState const& lhs, ProfileState const& rhs);
 
     friend struct Statement;
     friend struct Savepoint;
@@ -2458,46 +2539,24 @@ public:
     //! Open an existing BeSQLite::Db file.
     //!
     //! ### Backwards Compatibility Contract
-    //! When opening a file, %BeSQLite performs a version check on the file to see whether the current version of the software
+    //! When opening a file, the profile version of the file is checked to see whether the current version of the software
     //! can open it or not. If it cannot be opened, a respective error code is returned from this method.
     //!
     //! The version check is performed for @b every %Bentley SQLite profile the file contains. Only if all profiles
     //! in the file succeed the test, the file is eventually opened. Example profiles are the @b %Bim or the @b %ECDb profile
     //! (see also @ref ECDbFile "ECDb versus Bim profile").
     //!
-    //! #### Auto-upgrade of older files
-    //! Each profile defines a version threshold, the so-called <b>minimum auto-upgradeable profile version</b>, up to which the
-    //! file's profile is being auto-upgraded when opening it.
+    //! If a client attempts to open a @b newer file and the profile version differs from the expected
+    //! - in its major or minor digit: the file cannot be opened. ::BE_SQLITE_ERROR_ProfileTooNew is returned.
+    //! - in its sub1 digit: the file can only be opened read-only. ::BE_SQLITE_ERROR_ProfileTooNewForReadWrite is returned.
+    //! - in its sub2 digit: the file is fully compatible. ::BE_SQLITE_OK is returned.
     //!
-    //! For the auto-upgrade the software attempts to re-open the file in read-write mode, if it wasn't already.
-    //! If it was unable to obtain a write lock on the file, the auto-upgrade fails.
+    //! If a client attempts to open an @b older file and the profile version differs from the expected
+    //! - in its major or minor digit: the file cannot be opened. ::BE_SQLITE_ERROR_ProfileTooOld is returned.
+    //! - in its sub1 digit: the file can only be opened read-only. ::BE_SQLITE_ERROR_ProfileTooOldForReadWrite is returned.
+    //! - in its sub2 digit: the file is fully compatible. ::BE_SQLITE_OK is returned.
     //!
-    //! @note After a file was auto-upgraded you might not be able to use it with older versions of the software. So you
-    //! should keep a copy of the file, if you need to use the file with older versions.
-    //!
-    //! #### Compatibility Rules
-    //! For a <b>given profile</b> the compatibility rules are as follows.
-    //!
-    //! If a client attempts to open a file with a profile
-    //! - @b older than the <b>minimum auto-upgradeable profile version</b>, the file cannot be opened and
-    //! ::BE_SQLITE_ERROR_ProfileTooOld is returned
-    //! - @b newer than the <b>minimum auto-upgradeable profile version</b> but @b older than the <b>profile version
-    //! expected by the software</b>, the software attempts to <b>auto-upgrade</b> the file's profile.<br>
-    //! ::BE_SQLITE_OK is returned if the auto-upgrade succeeded, ::BE_SQLITE_ERROR_ProfileUpgradeFailed is returned
-    //! if the auto-upgrade failed.<br>
-    //! If no auto-upgrade exists for the profile and the profile's @ref ProfileVersion::GetMajor "Major" and
-    //! @ref ProfileVersion::GetMinor "Minor" version digits are
-    //!     - equal to the expected profile version, the profile is compatible without restriction
-    //!     - less than the expected profile version, the file cannot be opened and ::BE_SQLITE_ERROR_ProfileTooOld is returned.
-    //! - @b equal to the version expected by the software, the profile is obviously compatible.
-    //! - @b newer than the version expected by the software and
-    //!     - if file profile's @ref ProfileVersion::GetSub2 "Sub2" version digit is @b newer than expected, the profile is compatible
-    //!     without restriction
-    //!     - if file profile's @ref ProfileVersion::GetSub1 "Sub1" version digit is @b newer than expected, file can only be
-    //!     opened read-only. Therefore ::BE_SQLITE_OK is returned if client requested file to be opened read-only.
-    //!     ::BE_SQLITE_ERROR_ProfileTooNewForReadWrite is returned otherwise.
-    //!     - if file profile's @ref ProfileVersion::GetMajor "Major" or @ref ProfileVersion::GetMinor "Minor" version digit are
-    //!     @b newer, the file cannot be opened and ::BE_SQLITE_ERROR_ProfileTooNew is returned.
+    //! @note If the file is older and can be upgraded, pass ProfileUpgradeOptions::Upgrade to the open params.
     //!
     //! @note A Db can have an expiration date and time. See #IsExpired
     //!
@@ -2508,6 +2567,24 @@ public:
 
     //! @copydoc Db::OpenBeSQLiteDb(Utf8CP, OpenParams const&)
     DbResult OpenBeSQLiteDb(BeFileNameCR dbName, OpenParams const& openParams) {return OpenBeSQLiteDb(dbName.GetNameUtf8().c_str(),openParams);}
+
+    ProfileState CheckProfileVersion() const { return _CheckProfileVersion(); }
+
+    //! Checks a file's profile compatibility to be opened with the current version of the profile's API.
+    //!
+    //! @see Db::OpenBeSQLiteDb for the compatibility contract for Bentley SQLite profiles.
+    //! @param[in]  expectedProfileVersion Profile version expected by the API that tries to open the file.
+    //! @param[in]  actualProfileVersion Profile version of the file to be opened
+    //! @param[in]  minimumUpgradableProfileVersion Minimum profile version of the file for which the API can auto-upgrade
+    //!             the file to the latest version. The version's Sub1 and Sub2 digits must be 0.
+    //! @param[in]  profileName Name of the profile for logging purposes.
+    //! @return     BE_SQLITE_OK if profile can be opened in the requested mode, i.e. the compatibility contract is matched.
+    //!             BE_SQLITE_Error_ProfileTooOld if file's profile is too old to be opened by this API.
+    //!             This error code is also returned if the file is old but not too old to be auto-upgraded.
+    //!             Check @p fileIsAutoUpgradable to tell whether the file is auto-upgradeable and not.
+    //!             BE_SQLITE_Error_ProfileTooNew if file's profile is too new to be opened by this API.
+    //!             BE_SQLITE_Error_ProfileTooNewForReadWrite if file's profile is too new to be opened read-write, i.e. @p openModeIsReadonly is false
+    BE_SQLITE_EXPORT static ProfileState CheckProfileVersion(ProfileVersion const& expectedProfileVersion, ProfileVersion const& actualProfileVersion, ProfileVersion const& minimumUpgradableProfileVersion, Utf8CP profileName);
 
     //! Create a new BeSQLite::Db database file, or upgrade an existing SQLite file to be a BeSQLite::Db.
     //! This will open or create the physical file, and then create the default BeSQLite::Db tables and properties.
@@ -2823,10 +2900,7 @@ public:
     //! @param[in] createAppData A function object taking no arguments and returning a Db::AppData*, to be invoked if the specified key does not yet exist.
     //! @return The existing or newly-added Db::AppData*
     //! @note This function is thread-safe and avoids race conditions between FindAppData() and AddAppData().
-    template<typename T> AppData* FindOrAddAppData(AppData::Key const& key, T createAppData) const
-        {
-        return m_appData.FindOrAdd(key, createAppData);
-        }
+    template<typename T> AppData* FindOrAddAppData(AppData::Key const& key, T createAppData) const { return m_appData.FindOrAdd(key, createAppData); }
 
     //! Dump statement results to stdout (for debugging purposes, only, e.g. to examine data in a temp table)
     BE_SQLITE_EXPORT void DumpSqlResults(Utf8CP sql);
@@ -2876,28 +2950,6 @@ public:
 
     BE_SQLITE_EXPORT bool IsSettingProperty(Utf8CP space, Utf8CP name, uint64_t id, uint64_t subId) const;
     Savepoint* GetDefaultTransaction() const {return (m_dbFile != nullptr) ? &m_dbFile->m_defaultTxn : nullptr;}
-
-    //! Checks a file's profile compatibility to be opened with the current version of the profile's API.
-    //!
-    //! @see Db::OpenBeSQLiteDb for the compatibility contract for Bentley SQLite profiles.
-    //! @param[out] fileIsAutoUpgradable Returns true if the file's profile version indicates that it is old, but auto-upgradeable.
-    //!             false otherwise.
-    //!             This method does @b not perform auto-upgrades. The out parameter just indicates to calling code
-    //!             whether it has to perform the auto-upgrade or not.
-    //! @param[in]  expectedProfileVersion Profile version expected by the API that tries to open the file.
-    //! @param[in]  actualProfileVersion Profile version of the file to be opened
-    //! @param[in]  minimumUpgradableProfileVersion Minimum profile version of the file for which the API can auto-upgrade
-    //!             the file to the latest version. The version's Sub1 and Sub2 digits must be 0.
-    //! @param[in]  openModeIsReadonly true if the file is or is going to be opened in read-only mode. false if
-    //!             the file is or is going to be opened in read-write mode.
-    //! @param[in]  profileName Name of the profile for logging purposes.
-    //! @return     BE_SQLITE_OK if profile can be opened in the requested mode, i.e. the compatibility contract is matched.
-    //!             BE_SQLITE_Error_ProfileTooOld if file's profile is too old to be opened by this API.
-    //!             This error code is also returned if the file is old but not too old to be auto-upgraded.
-    //!             Check @p fileIsAutoUpgradable to tell whether the file is auto-upgradeable and not.
-    //!             BE_SQLITE_Error_ProfileTooNew if file's profile is too new to be opened by this API.
-    //!             BE_SQLITE_Error_ProfileTooNewForReadWrite if file's profile is too new to be opened read-write, i.e. @p openModeIsReadonly is false
-    BE_SQLITE_EXPORT static DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, ProfileVersion const& expectedProfileVersion, ProfileVersion const& actualProfileVersion, ProfileVersion const& minimumUpgradableProfileVersion, bool openModeIsReadonly, Utf8CP profileName);
 
     //! Check if the Db is at or beyond its expiration date.
     //! @see QueryExpirationDate, CreateParams::SetExpirationDate

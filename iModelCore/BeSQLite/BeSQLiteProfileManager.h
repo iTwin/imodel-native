@@ -32,21 +32,23 @@ private:
     static void GetUpgraderSequence(std::vector<std::unique_ptr<BeSQLiteProfileUpgrader>>&, ProfileVersion const& currentProfileVersion);
 
     public:
+        static ProfileState CheckProfileVersion(DbCR);
+
         //! Upgrades the BeSQLite profile in the specified BeSQLite file to the latest version (if the file's profile
         //! is not up-to-date).
         //! @param[in] db BeSQLite file handle to upgrade
         //! @return BE_SQLITE_OK if successful. Error code otherwise.
-        static DbResult UpgradeProfile(DbR db, Db::OpenParams const& params);
+        static DbResult UpgradeProfile(DbR db);
 
         //! Reads the version of the BeSQLite profile of the given BeSQLite file
         //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
         //! BeSQLite file, i.e. does not have the BeSQLite profile
-        static DbResult ReadProfileVersion(ProfileVersion& profileVersion, DbR db);
+        static DbResult ReadProfileVersion(ProfileVersion& profileVersion, DbCR);
 
         //! Saves the software's expected profile version in the specified BeSQLite file.
         //! @param[in] db BeSQLite file handle to save profile version to
         //! @return BE_SQLITE_OK if successful. Error code otherwise.
-        static DbResult AssignProfileVersion(DbR db);
+        static DbResult AssignProfileVersion(DbR);
     };
 
 //=======================================================================================
