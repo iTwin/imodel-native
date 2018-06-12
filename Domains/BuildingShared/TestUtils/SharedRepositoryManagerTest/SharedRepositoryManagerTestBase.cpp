@@ -46,7 +46,7 @@ void SharedRepositoryManagerTestBase::CreateSeedDb(WCharCP seedFileName, void(*R
     dgnDbPtr = DgnDbTestUtils::CreateSeedDb(seedFileName);
     ASSERT_TRUE(dgnDbPtr.IsValid());
 
-    dgnDbPtr->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
+    dgnDbPtr->SetAsBriefcase(BeBriefcaseId(2));
     dgnDbPtr->GeoLocation().SetProjectExtents(AxisAlignedBox3d(DPoint3d::From(-500.0, -500.0, 0.0), DPoint3d::From(500.0, 500.0, 500.0)));
 
     dgnDbPtr->SaveChanges();
@@ -114,4 +114,4 @@ L10N::SqlangFiles SharedRepositoryManagerTestBase::_GetApplicationSqlangs()
 
     BeFileName sqlangDbPath = BeFileName(documentsRoot).AppendToPath(L"../sqlang/DgnClientFx_pseudo.sqlang.db3");
     return L10N::SqlangFiles(sqlangDbPath);
-    }
+}

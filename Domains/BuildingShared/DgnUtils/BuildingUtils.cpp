@@ -341,7 +341,7 @@ CategorySelectorPtr  BuildingUtils::CreateFloorViewCategorySelector (DgnDbR db)
 
     CategorySelector catSel (db.GetDictionaryModel (), FLOOR_VIEW_CATEGORY_SELECTOR_NAME);
     catSel.SetCategories (categories);
-
+    BuildingLocks_LockElementForOperation(catSel, BeSQLite::DbOpcode::Insert, "Insert floor view definition");
     auto insertedElement = db.Elements ().Insert (catSel);
     if (insertedElement.IsValid ())
         {
@@ -383,7 +383,7 @@ DisplayStyle3dPtr  BuildingUtils::CreateFloorView3dDisplayStyle (DgnDbR db)
     dstyle.SetSkyBoxEnabled (false);
     dstyle.SetGroundPlaneEnabled (false);
     SetDisplayStyleOverrides(dstyle);
-
+    BuildingLocks_LockElementForOperation(dstyle, BeSQLite::DbOpcode::Insert, "Insert");
     auto insertedElement = db.Elements ().Insert (dstyle);
     if (insertedElement.IsValid ())
         {
