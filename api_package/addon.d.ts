@@ -48,6 +48,7 @@ declare class NativeSQLiteStatement {
   constructor();
   prepare(db: NativeSQLiteDb, sql: string): StatusCodeWithMessage<DbResult>;
   reset(): void;
+  clearBindings(): void;
   dispose(): void;
   step(): DbResult;
   bindValues(values: any | any[]): DbResult;
