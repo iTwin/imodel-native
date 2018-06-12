@@ -206,7 +206,7 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
         Db::OpenParams openParamUpdate(READWRITE);
 
 #ifndef VANCOUVER_API
-        openParamUpdate.m_forProfileUpgrade = true;
+        openParamUpdate.SetProfileUpgradeOptions(Db::ProfileUpgradeOptions::Upgrade);
 #endif
 
         result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
