@@ -24,6 +24,8 @@ struct GridsTestFixtureBase : BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::SharedRepo
     {
     public:   
         virtual void RegisterDomains() override;
+        virtual BeFileName GetGivenProjectPath() override;
+        virtual void CopyFile(BeFileName projectPath) override;
         static void SetUpTestCase();
     };
 
