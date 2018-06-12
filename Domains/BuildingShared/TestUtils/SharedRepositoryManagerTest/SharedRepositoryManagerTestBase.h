@@ -13,13 +13,14 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 struct SharedRepositoryManagerTestBase : BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::SharedRepositoryManagerTest
     {
         protected:
-            static BeFileName GetSeedProjectPath();
+            static BeFileName BuildProjectPath(WCharCP seedFileName);
         public:
-            static void CreateSeedDb(WCharCP seedFileName, void (*RegisterDomainFunction)());
+            static void CreateSeedDb(WCharCP seedFileName, WCharCP appendedPath, void (*RegisterDomainFunction)());
             virtual void RegisterDomains() = 0;
+            virtual BeFileName GetGivenProjectPath() = 0;
+            virtual void CopyFile(BeFileName projectPath) = 0;
             virtual void SetUp() override;
             virtual void TearDown() override;
-            BeFileName GetProjectPath() const;
             BeSQLite::L10N::SqlangFiles _GetApplicationSqlangs() override;
 
     };
