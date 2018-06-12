@@ -838,10 +838,12 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     }
 
     ASSERT_EQ(BE_SQLITE_OK, OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+    {
+    ScopedDisableFailOnAssertion failOnAssertion;
     ASSERT_EQ(BE_SQLITE_ERROR, AttachCache()) << "Non-ECDb file with same path exists";
+    }
     assertCache(m_ecdb, false, "Attach failed because non-ECDb file with same path exists");
     CloseECDb();
-
     //create non-Change ECDb file
     {
     ASSERT_EQ(BeFileNameStatus::Success, cachePath.BeDeleteFile());
