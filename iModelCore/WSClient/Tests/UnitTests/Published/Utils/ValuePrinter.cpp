@@ -225,7 +225,6 @@ std::ostream& operator << (std::ostream &o, DbResult value)
         TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_BadDbProfile),
         TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_InvalidProfileVersion),
         TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_ProfileUpgradeFailed),
-        TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite),
         TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_ProfileTooOld),
         TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_ProfileTooNewForReadWrite),
         TO_VALUE_STRING_PAIR(BE_SQLITE_ERROR_ProfileTooNew),
