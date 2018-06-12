@@ -377,6 +377,20 @@ bool                               ScalableMeshGroup::_AddClip(const DPoint3d* p
      }
 
 
+ bool                               ScalableMeshGroup::_AddClip(const ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+ {
+
+
+     return false;
+ }
+
+ bool                               ScalableMeshGroup::_ModifyClip(const ClipVectorPtr& clip, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+ {
+
+
+     return false;
+ }
+
 bool                               ScalableMeshGroup::_RemoveClip(uint64_t clipID)
     {
     for (auto& member : m_members)

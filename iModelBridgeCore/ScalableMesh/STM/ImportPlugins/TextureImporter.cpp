@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/TextureImporter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -262,10 +262,10 @@ class TextureFileSourceCreator : public LocalFileSourceCreatorBase
 
     virtual bool                    _Supports                              (const LocalFileSourceRef&   pi_rSourceRef) const override
         {
-        try
-            {
-            HFCPtr<HFCURL> urlPtr;
+        HFCPtr<HFCURL> urlPtr;
 
+        try
+            {            
             if (!BeFileName::IsUrl(pi_rSourceRef.GetPathCStr()))                
                 urlPtr = HFCURL::Instanciate(WString(L"file://") + pi_rSourceRef.GetPathCStr());
             else
@@ -275,13 +275,20 @@ class TextureFileSourceCreator : public LocalFileSourceCreatorBase
 
             if (foundCreatorP == nullptr)
                 return false;
-                        
+            }
+        catch (const HFCException&)
+            {
+            return false;
+            }
+             
+        try
+            {           
             HUTDEMRasterXYZPointsExtractor extractor(urlPtr->GetURL(), GetPoolInstance(), false);
 
             return false;
             }
         catch (const HFCException&)
-            {
+            { //Not a DEM raster, thus a valid raster for texturing.
             return true;
             }
         }

@@ -97,7 +97,7 @@ inline bool IsClosedFeature(ISMStore::FeatureType type)
     DTMFeatureType dtmType = (DTMFeatureType)type;
     return dtmType == DTMFeatureType::Hole || dtmType == DTMFeatureType::Island || dtmType == DTMFeatureType::Void || dtmType == DTMFeatureType::BreakVoid ||
         dtmType == DTMFeatureType::Polygon || dtmType == DTMFeatureType::Region || dtmType == DTMFeatureType::Contour || dtmType == DTMFeatureType::Hull ||
-        dtmType == DTMFeatureType::DrapeVoid;
+        dtmType == DTMFeatureType::TinHull || dtmType == DTMFeatureType::DrapeVoid;
     }
 
 inline bool IsClosedPolygon(const bvector<DPoint3d>& vec)
@@ -308,7 +308,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void                TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
     void                TextureFromRasterRecursive(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 
-    BENTLEY_SM_EXPORT void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types);
+    BENTLEY_SM_EXPORT void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types, bool shouldIgnoreOpenFeatures);
 
     BENTLEY_SM_EXPORT size_t                AddFeatureDefinitionSingleNode(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
     size_t                AddFeatureDefinitionUnconditional(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
@@ -1029,7 +1029,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         SharedTextureManager m_texMgr;
 
+        
         std::vector<std::future<bool>> m_textureWorkerTasks;
+        WorkerThreadPoolPtr            m_texturingThreadPoolPtr;
+
         bvector < RefCountedPtr<EditOperation> > m_edits;
 #if 0
         SMMeshIndex<POINT, EXTENT>* m_smTerrain;

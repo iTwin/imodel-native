@@ -395,7 +395,12 @@ public:
             }
             else
             {
-                scNode = m_scMesh->AddNode(scParentNode, node.nodeExtent, status);
+                SMStatus smStatus;
+                scNode = m_scMesh->AddNode(scParentNode, node.nodeExtent, smStatus);
+                if (smStatus == S_ERROR)
+                    status = ERROR;
+                else
+                    status = SUCCESS;
             }
 
             // We handle errors differently depending on whether the node extent is empty or not

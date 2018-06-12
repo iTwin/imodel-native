@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMSQLiteStore.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -99,6 +99,89 @@ void SMSQLiteClipDefinitionExtOps::LoadClipWithParameters(bvector<DPoint3d>& cli
 
     LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
     }
+
+void SMSQLiteClipDefinitionExtOps::StoreClipWithParameters(const ClipVectorPtr& clipData, uint64_t id, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+{
+    bvector<DPoint3d> clipDataPoly;
+    if (clipData == nullptr) return;
+    for (auto& primitive : *clipData)
+    {
+        primitive->ParseClipPlanes();
+        auto cPlaneSet = primitive->GetMaskOrClipPlanes();
+        if (nullptr == cPlaneSet)
+            continue;
+        for (auto& convexPlane : *cPlaneSet)
+        {
+            for (auto&plane : convexPlane)
+            {
+                auto p = plane.GetDPlane3d();
+                clipDataPoly.push_back(p.origin);
+                clipDataPoly.push_back(p.normal);
+            }
+        }
+        DPoint3d limitPt = DPoint3d::From(DBL_MAX, primitive->ClipZHigh() ? primitive->GetZHigh() : 0, primitive->ClipZLow() ? primitive->GetZLow() : 0);
+        clipDataPoly.push_back(limitPt);
+    }
+
+    HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+
+    pi_uncompressedPacket.SetBuffer(const_cast<DPoint3d*>(clipDataPoly.data()), clipDataPoly.size() * sizeof(DPoint3d));
+    pi_uncompressedPacket.SetDataSize(clipDataPoly.size() * sizeof(DPoint3d));
+    WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket);
+
+    size_t uncompressedSize = clipDataPoly.size() * sizeof(DPoint3d);
+    bvector<uint8_t> data;
+    data.resize(pi_compressedPacket.GetDataSize());
+    memcpy(&data[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
+
+    int64_t clipId = id;
+    m_smSQLiteFile->StoreClipPolygon(clipId, data, uncompressedSize, geom, type, isActive);
+}
+
+void SMSQLiteClipDefinitionExtOps::LoadClipWithParameters(ClipVectorPtr& clipData, uint64_t id, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive)
+{
+    bvector<uint8_t> data;
+    size_t uncompressedSize;
+    m_smSQLiteFile->GetClipPolygon(id, data, uncompressedSize, geom, type, isActive);
+
+    HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+    pi_compressedPacket.SetBuffer(&data[0], data.size());
+    pi_compressedPacket.SetDataSize(data.size());
+
+    bvector<DPoint3d> clipDataPoly;
+    clipDataPoly.resize(uncompressedSize / sizeof(DPoint3d));
+    if (!clipDataPoly.empty())
+        pi_uncompressedPacket.SetBuffer(clipDataPoly.data(), clipDataPoly.size() * sizeof(DPoint3d));
+    pi_uncompressedPacket.SetBufferOwnership(false);
+
+
+    LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
+
+    clipData = ClipVector::Create();
+    bvector<ClipPlane> planesVec;
+    for (size_t i = 0; i < clipDataPoly.size(); i+=2)
+    {
+        if (clipDataPoly[i].x == DBL_MAX)
+        {
+            ClipPlaneSet planeSet(planesVec.data(), planesVec.size());
+            ClipPrimitivePtr primP = ClipPrimitive::CreateFromClipPlanes(planeSet);
+            if (type != SMNonDestructiveClipType::Boundary)
+                primP->SetIsMask(true);
+            if(clipDataPoly[i].z != 0)
+                primP->SetZLow(clipDataPoly[i].z);
+            if (clipDataPoly[i].y != 0)
+                primP->SetZHigh(clipDataPoly[i].y);
+            clipData->push_back(primP);
+            planesVec.clear();
+        }
+        else
+        {
+            DPoint3d pt = clipDataPoly[i];
+            DVec3d normal = DVec3d::From(clipDataPoly[i + 1]);
+            planesVec.push_back(ClipPlane(normal, pt));
+        }
+    }
+}
 
 
 void SMSQLiteClipDefinitionExtOps::GetAllPolys(bvector<bvector<DPoint3d>>& polys)

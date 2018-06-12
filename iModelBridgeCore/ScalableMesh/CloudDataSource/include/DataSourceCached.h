@@ -41,6 +41,7 @@ public:
 
     void                            setCachingEnabled       (bool enabled);
     bool                            getCachingEnabled       (void);
+    void                            setForceWriteToCache    (void);
 
     DataSourceStatus                open                    (const DataSourceURL & sourceURL, DataSourceMode sourceMode);
     DataSourceStatus                close                   (void);

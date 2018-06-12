@@ -43,8 +43,12 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     uint64_t AddClip(const DPoint3d* clip, size_t clipSize);
 
     void AddClipWithParameters(uint64_t clipID, const DPoint3d* pts, size_t ptsSize, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive);
+
+    void AddClipWithParameters(uint64_t clipID, const ClipVectorPtr& clip, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive);
         
-    void ModifyClip(uint64_t id, const DPoint3d* clip, size_t clipSize);        
+    void ModifyClip(uint64_t id, const DPoint3d* clip, size_t clipSize);
+
+    void ModifyClip(uint64_t id, const ClipVectorPtr& clip, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive);
 
     void DeleteClip(uint64_t id);
         
@@ -55,6 +59,8 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     void GetClip(uint64_t id, bvector<DPoint3d>& clip);
 
     BENTLEY_SM_EXPORT void GetClipWithParameters(uint64_t id, bvector<DPoint3d>& clip, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive);
+
+    BENTLEY_SM_EXPORT void GetClipWithParameters(uint64_t id, ClipVectorPtr& clip, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive);
         
     uint64_t AddSkirts(const bvector<bvector<DPoint3d>>& skirts);
         

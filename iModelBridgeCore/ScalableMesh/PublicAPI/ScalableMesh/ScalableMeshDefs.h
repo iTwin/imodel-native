@@ -148,6 +148,7 @@ enum SMStatus
     S_ERROR_NOT_FOUND,
     S_ERROR_DOES_NOT_FIT_MATHEMATICAL_DOMAIN,
 	S_ERROR_CANCELED_BY_USER,
+    S_WARNING_NODE_NOT_FOUND,
     S_QTY,
     };
 
@@ -162,6 +163,7 @@ enum class SMClipGeometryType
     {
     Polygon = 0,
     ComplexPolygon,
+    BoundedVolume,
     Qty
     };
 

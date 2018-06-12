@@ -44,35 +44,41 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             {
             public:
 
-                enum ServerLocation { LOCAL, RDS, AZURE };
+                enum ServerLocation { LOCAL, RDS, AZURE, HTTP_SERVER};
                 enum CommMethod { FILE, CURL, WASTORAGE };
                 enum DataType { CESIUM3DTILES, SMCESIUM3DTILES, SMGROUPS };
 
             public:
                 SMStreamingSettings() {};
-                SMStreamingSettings(const Json::Value& fileName);
+                SMStreamingSettings(WString url);
                 SMStreamingSettings(const SMStreamingSettings& settings)
                     : m_location(settings.m_location),
                       m_commMethod(settings.m_commMethod),
                       m_dataType(settings.m_dataType),
                       m_public(settings.m_public),
                       m_isPublishing(settings.m_isPublishing),
+                      m_isStubFile(settings.m_isStubFile),
+                      m_isValid(settings.m_isValid),
                       m_guid(settings.m_guid),
+                      m_projectID(settings.m_projectID),
                       m_serverID(settings.m_serverID),
                       m_url(settings.m_url)
                     {}
 
-            bool IsLocal()            const   { return m_location == LOCAL; }
-            bool IsPublic()           const   { return m_public; }
-            bool IsUsingCURL()        const   { return m_commMethod == CURL; }
-            bool IsUsingWAStorage()   const   { return m_commMethod == WASTORAGE; }
-            bool IsDataFromLocal()    const   { return m_location == LOCAL; }
-            bool IsDataFromRDS()      const   { return m_location == RDS; }
-            bool IsDataFromAzure()    const   { return m_location == AZURE; }
-            bool IsPublishing()       const   { return m_isPublishing; }
-            bool IsCesium3DTiles()    const   { return m_dataType == CESIUM3DTILES; }
-            bool IsSMCesium3DTiles()  const   { return m_dataType == SMCESIUM3DTILES; }
-            bool IsGCSStringSet()     const   { return m_isGCSSet; }
+            bool IsLocal()                  const   { return m_location == LOCAL; }
+            bool IsPublic()                 const   { return m_public; }
+            bool IsUsingCURL()              const   { return m_commMethod == CURL; }
+            bool IsUsingWAStorage()         const   { return m_commMethod == WASTORAGE; }
+            bool IsDataFromLocal()          const   { return m_location == LOCAL; }
+            bool IsDataFromRDS()            const   { return m_location == RDS; }
+            bool IsDataFromAzure()          const   { return m_location == AZURE; }
+            bool IsDataFromHTTPServerAddress()  const   { return m_location == HTTP_SERVER; }
+            bool IsPublishing()             const   { return m_isPublishing; }
+            bool IsCesium3DTiles()          const   { return m_dataType == CESIUM3DTILES; }
+            bool IsStubFile()               const   { return m_isStubFile; }
+            bool IsValid()                  const   { return m_isValid; }
+            bool IsSMCesium3DTiles()        const   { return m_dataType == SMCESIUM3DTILES; }
+            bool IsGCSStringSet()           const   { return m_isGCSSet; }
 
             WString GetServerID() const
                 {
@@ -87,6 +93,11 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             Utf8String GetUtf8GUID() const
                 {
                 return m_guid;
+                }
+
+            Utf8String GetUtf8ProjectID() const
+                {
+                return m_projectID;
                 }
 
             WString GetURL() const
@@ -122,12 +133,20 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             DataType m_dataType = CESIUM3DTILES;
             bool m_public = false;
             bool m_isPublishing = false;
+            bool m_isStubFile = false;
             bool m_isGCSSet = false;
+            bool m_isValid = true;
             uint64_t   m_smID;
             Utf8String m_guid;
+            Utf8String m_projectID;
             Utf8String m_serverID;
             Utf8String m_url;
             Utf8String m_gcs;
+
+            private:
+
+                void ParseUrl(const WString url);
+
             };
         typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMStreamingSettings> SMStreamingSettingsPtr;
 
@@ -374,9 +393,9 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
     public:
 
-        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroupPtr nodeGroup = nullptr, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool isPublishing = false, SMNodeGroupPtr nodeGroup = nullptr, bool compress = true);
 
-        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup = nullptr, bool isPublishing = false, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, const Json::Value& header, Transform& transform, SMNodeGroupPtr nodeGroup = nullptr, bool isPublishing = false, bool compress = true);
         
         virtual ~SMStreamingNodeDataStore();
 
@@ -459,7 +478,7 @@ template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public
 
         StreamingTextureBlock& GetTexture(HPMBlockID blockID) const;
             
-        StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, SMIndexNodeHeader<EXTENT>* nodeHeader);
+        StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const DataSource::SessionName &session, const WString& url, SMIndexNodeHeader<EXTENT>* nodeHeader);
 
         virtual bool DestroyBlock(HPMBlockID blockID) override;            
                         

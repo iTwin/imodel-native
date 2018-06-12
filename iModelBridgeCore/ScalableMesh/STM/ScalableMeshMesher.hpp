@@ -52,7 +52,7 @@ extern bool s_useSpecialTriangulationOnGrids;
  -----------------------------------------------------------------------------*/
 bool firstTile = false;
 
-int draw(DTMFeatureType dtmFeatureType, int numTriangles, int numMeshPts, DPoint3d *meshPtsP, DPoint3d *meshVectorsP, int numMeshFaces, long *meshFacesP, void *userP);
+//#define SM_LOG_FEATURE_HULL 1
 
 template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXTENT>::Mesh(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const
     {
@@ -65,7 +65,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
     //LOGSTRING_NODE_INFO_W(node, LOG_PATH_STR_W)
 #endif
 		//LOG_SET_PATH("c:\\work\\tmp\\")
-		//LOG_SET_PATH_W("c:\\work\\tmp\\")
+		//LOG_SET_PATH_W("c:\\work\\2018q1\\test\\")
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
 
@@ -2102,7 +2102,7 @@ if (stitchedPoints.size() != 0 &&!isColinear)// return false; //nothing to stitc
     }
     bvector<bvector<DPoint3d>> features;
     bvector<DTMFeatureType> types;
-    node->ReadFeatureDefinitions(features, types);
+    node->ReadFeatureDefinitions(features, types, false);
 
     assert(node->m_nodeHeader.m_nbFaceIndexes == 0 || newNodePointData != nullptr);
     

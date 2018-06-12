@@ -6,7 +6,7 @@
 |       $Date: 2015/07/14 09:22:17 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once

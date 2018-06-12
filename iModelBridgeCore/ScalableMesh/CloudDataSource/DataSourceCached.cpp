@@ -1,12 +1,13 @@
 #include "stdafx.h"
 #include "DataSourceCached.h"
 #include "DataSourceAccount.h"
+#include <Bentley/BeFileName.h>
 
 
 DataSourceCached::DataSourceCached(DataSourceAccount * account, const SessionName &session) : Super(account, session)
 {
                                                             // Initially caching is disabled by default
-    setCachingEnabled(false);
+    setCachingEnabled(account->getCacheAccount() != nullptr);
                                                             // NEEDS_WORK_SM - Write to cache by default even if caching is disabled?
     setWriteToCache(false);
                                                             // Initially no cache DataSource
@@ -43,7 +44,7 @@ DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *d
             DataSourceName dataSourceName(getName());
             dataSourceName += L"-Cache";
 
-            DataSource::SessionName   sessionName;
+            DataSource::SessionName   sessionName (getSessionName());
 
             if ((dataSource = cacheAccount->createDataSource(dataSourceName, sessionName)) == nullptr)
                 {
@@ -53,6 +54,9 @@ DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *d
             setCacheDataSource(dataSource);
             }
     }
+
+    if (dataSource == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Create_DataSource);
 
     if ((dataSource->open(getCacheURL(), DataSourceMode_Read)).isFailed())
         return statusNotFound;
@@ -98,10 +102,13 @@ void DataSourceCached::setWriteToCache(bool write)
 
 bool DataSourceCached::getWriteToCache(void)
 {
-
-
     return writeCache;
 }
+
+void DataSourceCached::setForceWriteToCache(void)
+    {
+    writeCache = true;
+    }
 
 void DataSourceCached::setCacheURL(const DataSourceURL &url)
 {
@@ -133,8 +140,19 @@ DataSourceStatus DataSourceCached::open(const DataSourceURL & sourceURL, DataSou
                                                             // Get this DataSource's account
         if (getAccount())
         {
+            DataSourceURL url = sourceURL;
+            if (BeFileName::IsUrl(url.c_str()))
+                {
+                auto directoryPath = DataSourceURL(BeFileName::GetDirectoryName(url.c_str()).c_str());
+                directoryPath.findAndReplace(std::wstring(DATA_SOURCE_URL_SEPARATOR_STR), std::wstring(L"-"));
+                directoryPath.findAndReplace(std::wstring(DATA_SOURCE_URL_WINDOWS_DEVICE_SEPARATOR_STR), std::wstring(L"-"));
+
+                auto filename = BeFileName::GetFileNameAndExtension(url.c_str());
+                url = directoryPath + L"/" + DataSourceURL(filename.c_str());
+                }
+            url = getSessionName().getSessionKey() + L"/" + url;
                                                             // Generate the full URL of the cache file
-            if ((status = getAccount()->getFormattedCacheURL(sourceURL, fullCacheURL)).isFailed())
+            if ((status = getAccount()->getFormattedCacheURL(url, fullCacheURL)).isFailed())
                 return status;
                                                             // Set the full cache URL
             setCacheURL(fullCacheURL);
@@ -164,6 +182,7 @@ DataSourceStatus DataSourceCached::close(void)
         {
             if ((status = writeToCache(getBuffer()->getExternalBuffer(), getBuffer()->getExternalBufferSize())).isFailed())
                 return status;
+            setWriteToCache(false);
         }
     }
                                                             // Return OK
@@ -180,6 +199,7 @@ DataSourceStatus DataSourceCached::read(Buffer *dest, DataSize destSize, DataSiz
                                                             // Try reading from the cache
         if (readFromCache(dest, destSize, readSize, size).isOK())
         {
+            m_isFromCache = true;
                                                             // If read, return OK
             return status;
         }
@@ -196,7 +216,7 @@ DataSourceStatus DataSourceCached::read(Buffer *dest, DataSize destSize, DataSiz
         setWriteToCache(false);
                                                             // Write to cache [Note: This could be on separate thread in future]
         if ((status = writeToCache(dest, readSize)).isFailed())
-            return status;
+            return DataSourceStatus();                      // Not a big deal if writing to cache has failed
     }
                                                             // Return status
     return status;

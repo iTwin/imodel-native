@@ -18,16 +18,16 @@ DataSourceStatus DataSourceAccountCached::getFormattedCacheURL(const DataSourceU
     DataSourceURL    dataPath;
     DataSourceURL    dataPathCollapsed;
                                                             // <ServiceName>
-    dataPath = getServiceName();
+    //dataPath = getServiceName();
                                                             // <AccountName>
-    dataPath.append(getAccountName());
+    dataPath = getAccountName();
                                                             // <SourceURL>
     dataPath.append(getPrefixPath());
     dataPath.append(sourceURL);
                                                             // Format path as a single cache file name
-    dataPath.collapseDirectories(dataPathCollapsed);
+    //dataPath.collapseDirectories(dataPathCollapsed);
 
-    cacheURL = dataPathCollapsed;
+    cacheURL = dataPath;
 
     return DataSourceStatus();
 }

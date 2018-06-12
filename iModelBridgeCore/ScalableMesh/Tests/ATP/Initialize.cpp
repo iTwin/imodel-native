@@ -193,6 +193,7 @@ struct ExeAdmin : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshAdmin
         {
         return 1; //Product ID for internal application.        
         }    
+
     };
 
 struct ExeHost : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshLib::Host

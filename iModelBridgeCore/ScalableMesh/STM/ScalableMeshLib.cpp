@@ -77,8 +77,6 @@ STMAdmin& ScalableMeshLib::Host::_SupplySTMAdmin()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RegisterPODImportPlugin();
-
 
 //=======================================================================================
 // @bsiclass
@@ -353,7 +351,6 @@ class BingAuthenticationCallback : public HFCAuthenticationCallback, public RefC
 
 typedef RefCountedPtr<BingAuthenticationCallback> BingAuthenticationCallbackPtr;
 
-
 //=======================================================================================
 // @bsiclass                                                    Raphael.Lemieux 09/2017
 //=======================================================================================
@@ -439,8 +436,17 @@ bool BingAuthenticationCallback::GetAuthentication(HFCAuthentication* pio_Authen
     }
 
 
-static BingAuthenticationCallbackPtr s_bingAuthCallback;
+#ifdef VANCOUVER_API
 
+    #if defined(__BENTLEYSTM_BUILD__) && defined(__BENTLEYSTMIMPORT_BUILD__) 
+        void RegisterPODImportPlugin();
+    #else
+        RegisterPODImportPluginFP ScalableMeshLib::s_PODImportRegisterFP = nullptr;        
+    #endif
+
+#endif
+
+static BingAuthenticationCallbackPtr s_bingAuthCallback;
 
 void ScalableMeshLib::Host::Initialize()
     {
@@ -453,8 +459,25 @@ void ScalableMeshLib::Host::Initialize()
     m_smPaths = new bmap<WString, IScalableMesh*>();
     InitializeProgressiveQueries();
 
+#ifdef VANCOUVER_API
+
+#if defined(__BENTLEYSTM_BUILD__) && defined(__BENTLEYSTMIMPORT_BUILD__) 
+
+    RegisterPODImportPlugin();
+
+#else
+       
+    if (ScalableMeshLib::GetPodRegister() != nullptr)
+        {
+        (*ScalableMeshLib::GetPodRegister())();
+        }
+#endif
+    
+#else
     //NEEDS_WORK_SM_POD_B0200
     //RegisterPODImportPlugin();
+#endif
+    
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
@@ -526,7 +549,8 @@ void             ScalableMeshLib::Host::RemoveRegisteredScalableMesh(const WStri
 
 void ScalableMeshLib::Host::RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref)
     {
-    m_smPaths->insert(make_bpair(path, ref.get()));
+    if (!m_smPaths->insert(make_bpair(path, ref.get())).second)
+        BeAssert(!"Path already exists");
     }
 
 /*======================================================================+
@@ -629,6 +653,26 @@ ScalableMeshLib::Host& ScalableMeshLib::GetHost()
     return *t_scalableTerrainModelHost;
     }
 
+
+#if defined(__BENTLEYSTM_BUILD__) && !defined(__BENTLEYSTMIMPORT_BUILD__)     
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                 05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+RegisterPODImportPluginFP ScalableMeshLib::GetPodRegister()
+    {
+    return s_PODImportRegisterFP;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                 05/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScalableMeshLib::SetPodRegister(RegisterPODImportPluginFP podRegisterFP)
+    {
+    s_PODImportRegisterFP = podRegisterFP;
+    }
+
+#endif
 
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
