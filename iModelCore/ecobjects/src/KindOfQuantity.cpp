@@ -192,26 +192,6 @@ bvector<ECFormatCP> const KindOfQuantity::GetReferencedFormats() const
     return formats;
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
-Utf8String KindOfQuantity::GetPresentationUnitDescriptor() const
-    {
-    Utf8String descriptor = "";
-
-    bool first = true;
-    for(NamedFormatCR format : m_presentationFormats)
-        {
-        if (!first)
-            descriptor += ";";
-
-        descriptor.append(format.GetName());
-        first = false;
-        }
-
-    return descriptor;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -1511,8 +1511,6 @@ public:
         {return AddPresentationFormatSingleUnitOverride(parent, precisionOverride, inputUnitOverride, labelOverride, true);}
     //! Gets the default presentation format of this KindOfQuantity.
     NamedFormatCP GetDefaultPresentationFormat() const {return HasPresentationFormats() ? &m_presentationFormats[0] : GetOrCreateCachedPersistenceFormat();}
-    //! Returns a string containing all the format strings of all the presentation formats.
-    ECOBJECTS_EXPORT Utf8String GetPresentationUnitDescriptor() const;
 
     //! Adds NamedFormat to this KoQ's list of presentation formats. If the format has any units,
     //! they must be compatible with the persistence unit and each other.
