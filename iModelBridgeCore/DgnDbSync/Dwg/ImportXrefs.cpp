@@ -236,6 +236,8 @@ BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xr
             // the nested block name should be propagated into the root file
             m_prefixInRootFile = xrefBlock.GetName().GetWCharCP ();
             m_blockIdInRootFile = xrefBlock.GetObjectId ();
+            // will add DgnModels resolved from xref inserts
+            m_dgnModels.clear ();
             return  BSISUCCESS;
             }
 
@@ -246,6 +248,7 @@ BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xr
     m_savedPath.clear ();
     m_prefixInRootFile.clear ();
     m_blockIdInRootFile.SetNull ();
+    m_dgnModels.clear ();
 
     return  BSIERROR;
     }

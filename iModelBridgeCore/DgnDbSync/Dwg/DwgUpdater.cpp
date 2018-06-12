@@ -466,7 +466,7 @@ bool UpdaterChangeDetector::_ShouldSkipFile (DwgImporter& importer, DwgDbDatabas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedModelMapping const& modelMap)
+bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedModelMapping const& modelMap, DwgDbDatabaseCP xrefDwg)
     {
     if (!modelMap.IsValid())
         {
@@ -488,7 +488,7 @@ bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedMod
     if (m_newlyDiscoveredModels.find(entryId) != m_newlyDiscoveredModels.end())
         return  false;
 
-    // model is not new, check the file of the object(for an xref it's the insert entity):
+    // model is not new, check the file of the object((for an xref it's the insert entity):
     DwgDbDatabasePtr    dwg = modelMap.GetModelInstanceId().GetDatabase ();
     if (dwg.IsNull())
         {
@@ -498,6 +498,10 @@ bool UpdaterChangeDetector::_ShouldSkipModel (DwgImporter& importer, ResolvedMod
 
     if (!this->_ShouldSkipFile(importer, *dwg))
         return false;
+
+    // for an xRef, also check the xRef DWG file, in addition to the above DWG that owns the insert entity:
+    if (nullptr != xrefDwg && !this->_ShouldSkipFile(importer, *xrefDwg))
+        return  false;
 
     // skip this model
     m_dwgModelsSkipped.insert (entryId);
