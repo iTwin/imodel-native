@@ -71,6 +71,7 @@ struct CurlHttpRequest
         static uint64_t GetNextNumber();
         static Utf8String GetDebugStatusString(ConnectionStatus status, HttpStatus httpStatus);
 
+        static CURLcode CurlSslCtxCallback(CURL* curl, void* sslctx, CurlHttpRequest* request);
         static size_t CurlWriteHeaderCallback(void* buffer, size_t size, size_t count, CurlHttpRequest* request);
         static size_t CurlWriteDataCallback(void* buffer, size_t size, size_t count, CurlHttpRequest* request);
         static size_t CurlReadDataCallback(void* buffer, size_t size, size_t count, CurlHttpRequest* request);

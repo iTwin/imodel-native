@@ -16,8 +16,12 @@
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/HttpProxy.h>
 
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+
 #include "CurlTaskRunner.h"
 #include "../WebLogging.h"
+#include "../TrustManager.h"
 
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
@@ -261,6 +265,41 @@ RequestCR CurlHttpRequest::GetHttpRequest() const
 uint64_t CurlHttpRequest::GetNumber() const
     {
     return m_number;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+CURLcode CurlHttpRequest::CurlSslCtxCallback(CURL *curl, void *sslctx, CurlHttpRequest* request)
+    {
+    LOG.tracev("* #%lld Adding system certificates to SSL CTX", request->GetNumber());
+
+    std::shared_ptr<bvector<X509*>> certs = TrustManager::GetSystemTrustedCertificates();
+    if (nullptr == certs)
+        return CURLE_ABORTED_BY_CALLBACK;
+
+    X509_STORE* store = nullptr;
+    store = SSL_CTX_get_cert_store((SSL_CTX *) sslctx);
+    if (nullptr == store)
+        return CURLE_ABORTED_BY_CALLBACK;
+
+    for (X509* cert : *certs)
+        {
+        if (X509_STORE_add_cert(store, cert))
+            continue;
+
+        unsigned long error = ERR_peek_last_error();
+        ERR_clear_error();
+
+        if (ERR_GET_LIB(error) == ERR_LIB_X509 && ERR_GET_REASON(error) == X509_R_CERT_ALREADY_IN_HASH_TABLE)
+            continue;
+
+        char buffer[256];
+        ERR_error_string_n(error, buffer, sizeof(buffer));
+        LOG.errorv("* #%lld Error adding certificate to SSL CTX : %s", request->GetNumber(), buffer);
+        }
+
+    return CURLE_OK;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -552,11 +591,25 @@ BentleyStatus CurlHttpRequest::SetupCurl ()
         auto info = curl_version_info(CURLVERSION_NOW);
         if (nullptr != info && nullptr != info->ssl_version && nullptr != strstr(info->ssl_version, "OpenSSL"))
             {
-            BeFileName caBundlePath = HttpClient::GetAssetsDirectoryPath();
-            caBundlePath.AppendToPath(L"http").AppendToPath(L"cabundle.pem");
-            
-            BeAssert(caBundlePath.DoesPathExist() && "Make sure 'http/cabundle.pem' file is delivered to your application root and HttpClient::Initialize() was called.");
-            curl_easy_setopt(m_curl, CURLOPT_CAINFO, caBundlePath.GetNameUtf8().c_str());
+            if (TrustManager::CanUseSystemTrustedCertificates())
+                {
+                if (nullptr == TrustManager::GetSystemTrustedCertificates())
+                    {
+                    LOG.errorv("* #%lld Failed to get system trusted certificates", GetNumber());
+                    SetPrematureError(ConnectionStatus::CertificateError);
+                    return ERROR;
+                    }
+                curl_easy_setopt(m_curl, CURLOPT_SSL_CTX_FUNCTION, CurlSslCtxCallback);
+                curl_easy_setopt(m_curl, CURLOPT_SSL_CTX_DATA, this);
+                }
+            else
+                {
+                BeFileName caBundlePath = HttpClient::GetAssetsDirectoryPath();
+                caBundlePath.AppendToPath(L"http").AppendToPath(L"cabundle.pem");
+
+                BeAssert(caBundlePath.DoesPathExist() && "Make sure 'http/cabundle.pem' file is delivered to your application root and HttpClient::Initialize() was called.");
+                curl_easy_setopt(m_curl, CURLOPT_CAINFO, caBundlePath.GetNameUtf8().c_str());
+                }
             }
         }
     else

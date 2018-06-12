@@ -18,6 +18,7 @@
 
 #include "WebLogging.h"
 #include "ApplicationEvents.h"
+#include "TrustManager.h"
 
 USING_NAMESPACE_BENTLEY_HTTP
 
@@ -29,6 +30,14 @@ bool s_isFullLoggingEnabled = true;
 #else
 bool s_isFullLoggingEnabled = false;
 #endif
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpClient::InitializePlatform(void* arg)
+    {
+    TrustManager::Initialize(arg);
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Mathieu.Marchand                10/2017

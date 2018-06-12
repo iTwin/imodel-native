@@ -44,6 +44,12 @@ public:
     //! @param[in] customHandler - custom handler to be used for requests
     BEHTTP_EXPORT HttpClient(IHttpHeaderProviderPtr defaultHeadersProvider = nullptr, IHttpHandlerPtr customHandler = nullptr);
     
+    //! Initialize platform specific HTTP framework elements. Call once when starting up application.
+    //! [Android] - Required for SSL support. Initialize with JNIEnv*
+    //! [Windows/iOS/etc.] - Not required, does nothing.
+    //! @param[in] initialization argument
+    BEHTTP_EXPORT static void InitializePlatform(void* arg);
+
     // Initialize HttpClient before using any function related to http requests 
     BEHTTP_EXPORT static void Initialize(const Options& options);
 

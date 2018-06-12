@@ -1,0 +1,25 @@
+/*--------------------------------------------------------------------------------------+
+ |
+ |     $Source: BeHttp/TrustManager.h $
+ |
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+ |
+ +--------------------------------------------------------------------------------------*/
+
+#include <Bentley/WString.h>
+#include <openssl/x509.h>
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     Vincas.Razma    06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct TrustManager
+    {
+    private:
+        static std::shared_ptr<bvector<bvector<Byte>>> ReadSystemTrustedCertificatesBinary();
+        static std::shared_ptr<bvector<X509*>> ReadSystemTrustedCertificatesX509();
+
+    public:
+        static void Initialize(void* arg);
+        static bool CanUseSystemTrustedCertificates();
+        static std::shared_ptr<bvector<X509*>> GetSystemTrustedCertificates();
+    };

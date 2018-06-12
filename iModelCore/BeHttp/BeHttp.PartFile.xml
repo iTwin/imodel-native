@@ -54,6 +54,14 @@
         <SubPart PartName="BeHttp-Xliffs"/>
     </Part>
 
+    <Part Name="BeHttpMavenArchive" BentleyBuildMakeFile="nonport/android/BeHttpMavenArchive.mke" OnlyPlatforms="Android*">
+        <Bindings>
+            <Directory SourceName="Delivery/MavenArchive/com/bentley/android/BeHttp"
+                       ProductDirectoryName="MavenDependencies" ProductSubDirectory="com/bentley/android/BeHttp"
+                       SubPartDirectory="MavenDependencies/com/bentley/android/BeHttp" />
+        </Bindings>
+    </Part>
+
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
