@@ -120,9 +120,13 @@ void Converter::SheetsConvertModelAndViews(ResolvedModelMapping const& v8mm, Vie
 
     v8model.FillSections(DgnV8Api::DgnModelSections::Model);
 
+    uint32_t        preElementsConverted = m_elementsConverted;
     DoConvertDrawingElementsInSheetModel(v8mm);
     if (WasAborted())
         return;
+    
+    if (preElementsConverted == m_elementsConverted)
+        m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
 
     //  Now that we know levels and styles ...
 

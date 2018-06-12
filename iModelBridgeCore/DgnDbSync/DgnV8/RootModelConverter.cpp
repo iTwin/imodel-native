@@ -754,7 +754,11 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
         }
 
     if (GetChangeDetector()._AreContentsOfModelUnChanged(*this, v8mm))
+        {
+        m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
         return;
+        }
+
 
     DgnV8Api::DgnModel& v8Model = v8mm.GetV8Model();
 
@@ -765,8 +769,13 @@ void RootModelConverter::ConvertElementsInModel(ResolvedModelMapping const& v8mm
 
     m_currIdPolicy = GetIdPolicyFromAppData(*v8Model.GetDgnFileP());
 
+    uint32_t        preElementsConverted = m_elementsConverted;
+    
     ConvertElementList(v8Model.GetControlElementsP(), v8mm);
     ConvertElementList(v8Model.GetGraphicElementsP(), v8mm);
+
+    if (preElementsConverted == m_elementsConverted)
+        m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
     }
 
 /*---------------------------------------------------------------------------------**//**

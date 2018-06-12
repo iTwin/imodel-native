@@ -134,6 +134,7 @@ public:
     DWGDB_EXPORT int        GetLength () const;
     DWGDB_EXPORT int        Find (WCharCP chars) const;
     DWGDB_EXPORT bool       IsEmpty () const;
+    DWGDB_EXPORT bool       IsAscii () const;
     DWGDB_EXPORT bool       EqualsI (WCharCP other) const;
     DWGDB_EXPORT bool       StartsWithI (WCharCP suffix) const;
     DWGDB_EXPORT void       Empty ();

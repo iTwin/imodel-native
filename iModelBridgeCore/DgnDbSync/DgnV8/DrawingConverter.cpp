@@ -247,10 +247,25 @@ static void processModelIndex(bvector<DgnV8FileP>& filesToSearch, bvector<DgnV8F
         {
         for (auto v8File : filesToSearchThisTime)
             {
+            // The callback may create copies of model which invalidates the iterator - so iterate through a temporary list of indices.
+            bvector<DgnV8Api::ModelIndexItem const*> indexItems;
+            bset <DgnV8Api::ModelIndexItem const*> originals;
+    
             for (DgnV8Api::ModelIndexItem const& item : v8File->GetModelIndex())
                 {
-                cb(*v8File, item);
+                indexItems.push_back(&item);
+                originals.insert(&item);
                 }
+
+            // First process the items that were originally in the index.
+            for (auto& pItem : indexItems)      
+                cb(*v8File, *pItem);
+
+            /// Then process any items that were added in the original pass.
+            for (DgnV8Api::ModelIndexItem const& item : v8File->GetModelIndex())
+                if (originals.find(&item) == originals.end())
+                    cb(*v8File, item);
+
             }
 
         filesToSearchThisTime.clear();
@@ -978,46 +993,6 @@ void _DrawShape3d (int numPoints, Bentley::DPoint3dCP points, bool filled, Bentl
     }
 public:
 
-#ifdef NOTNOW
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool AttachedModelAndChildrenAreUnchanged(DgnV8Api::DgnAttachment const& attachment, bool isProxy, SyncInfo::T_V8ElementSourceSet& unchangedChildren)
-    {
-    if (nullptr == attachment.GetDgnModelP())
-        return true;                // ????
-        
-    auto        modelMapping = m_converter._FindFirstModelMappedTo(*attachment.GetDgnModelP());
-    if (!modelMapping.IsValid())
-        {
-        BeAssert(false);
-        return false;
-        }
-
-    if (!isProxy && !m_converter.GetChangeDetector()._AreContentsOfModelUnChanged(m_converter, modelMapping))
-        return false;
-
-    if (nullptr != attachment.GetDgnModelP()->GetDgnAttachmentsCP())
-        {
-        for (auto child : *attachment.GetDgnModelP()->GetDgnAttachmentsCP())
-            {
-            if (nullptr != child->GetDgnModelP())
-                {
-                DgnV8Api::EditElementHandle         childAttachEh(child->GetElementId(), attachment.GetDgnModelP());
-                SyncInfo::V8ElementMapping          elementMapping;
-
-                if (!isProxy && (IsElementChanged(elementMapping, childAttachEh) ||
-                                !AttachedModelAndChildrenAreUnchanged(*child, isProxy, unchangedChildren)))
-                    return false;
-
-                unchangedChildren.insert(elementMapping);
-                }
-            }
-        }
-    return true;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1623,7 +1598,8 @@ void Converter::DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm)
     bool isThisIndependentDrawing = !ConverterMadeCopyMarker::IsFoundOn(v8ParentModel);
 
     createProxyGraphics(*this, v8ParentModel, fakeVp, isThisIndependentDrawing /* If independent generate proxy for rendered views */);
-    createOrUpdateDrawingGraphics(*this, v8ParentModel, v8mm, fakeVp, isThisIndependentDrawing /* If independent merge proxy for rendered views */);
+    if (!createOrUpdateDrawingGraphics(*this, v8ParentModel, v8mm, fakeVp, isThisIndependentDrawing /* If independent merge proxy for rendered views */))
+        m_unchangedModels.insert(v8mm.GetDgnModel().GetModelId());
 
     //  Convert all views of this model
     for (DgnV8Api::ViewGroupPtr const& vg : v8ParentModel.GetDgnFileP()->GetViewGroups())
@@ -1644,6 +1620,7 @@ void Converter::CreateSheetExtractionAttachments(ResolvedModelMapping const& v8S
     FakeViewport            fakeVp(*viewInfo);
     
     if (nullptr != attachments)
+        {
         for (auto attachment : *attachments)
             {
             if (attachment->Is3d() && !_UseRenderedViewAttachmentFor(*attachment) && nullptr != attachment->GetDgnModelP())             // NEEDS_WORK -- rendered attachment.
@@ -1655,6 +1632,7 @@ void Converter::CreateSheetExtractionAttachments(ResolvedModelMapping const& v8S
                 createOrUpdateDrawingGraphics(*this, *attachment, createdDrawing, fakeVp, false);
                 }
             }
+        }
     }
 
 

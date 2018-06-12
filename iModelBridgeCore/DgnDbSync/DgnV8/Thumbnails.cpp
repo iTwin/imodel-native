@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Thumbnails.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -110,6 +110,54 @@ ThumbnailConfig::ThumbnailConfig(Converter::Config& config)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::ThumbnailUpdateRequired(ViewDefinition const& view)
+    {
+    if (!view.HasThumbnail())
+        return true;
+
+    auto    view2d  = view.ToView2d();
+    if (nullptr != view2d)
+        {
+        if (m_unchangedModels.find(view2d->GetBaseModelId()) == m_unchangedModels.end())
+            return true;
+
+        if (view.IsSheetView())
+            {
+            auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
+            stmt->BindId(1, view2d->GetBaseModelId());
+            while (BE_SQLITE_ROW == stmt->Step())
+                {
+                auto attachId = stmt->GetValueId<DgnElementId>(0);
+                auto attach = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachId);
+                if (attach.IsValid())
+                    {
+                    auto attachedView = m_dgndb->Elements().Get<ViewDefinition>(attach->GetAttachedViewId());
+                    if (attachedView.IsValid() && ThumbnailUpdateRequired(*attachedView))
+                        return true;
+                    }
+                }
+            }
+        return false;
+        }
+    auto    spatialView  = view.ToSpatialView();
+    if (nullptr != spatialView)
+        {
+        auto modelSelector = m_dgndb->Elements().Get<ModelSelector>(spatialView->GetModelSelectorId());
+
+        if (modelSelector.IsValid())
+            for (auto& model : modelSelector->GetModels())
+                if (m_unchangedModels.find(model) == m_unchangedModels.end())
+                    return true;
+
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Converter::GenerateThumbnails()
@@ -136,6 +184,9 @@ BentleyStatus Converter::GenerateThumbnails()
             continue;
 
         if ((!wantSpatial && view->IsSpatialView()) || (!wantDrawing && view->IsDrawingView()))
+            continue;
+    
+        if (IsUpdating() && !ThumbnailUpdateRequired (*view))
             continue;
 
         BeDuration timeout = BeDuration::FromSeconds(m_config.GetOptionValueDouble("ThumbnailTimeout", 30));
