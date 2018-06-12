@@ -47,7 +47,7 @@ public:
     //! Initialize platform specific HTTP framework elements. Call once when starting up application.
     //! [Android] - Required for SSL support. Initialize with JNIEnv*
     //! [Windows/iOS/etc.] - Not required, does nothing.
-    //! @param[in] initialization argument
+    //! @param[in] arg initialization argument
     BEHTTP_EXPORT static void InitializePlatform(void* arg);
 
     // Initialize HttpClient before using any function related to http requests 
