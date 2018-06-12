@@ -10,6 +10,8 @@ BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 struct ClassificationSystemsTestsBase : BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::SharedRepositoryManagerTestBase
     {
         virtual void RegisterDomains() override;
+        virtual BeFileName GetGivenProjectPath() override;
+        virtual void CopyFile(BeFileName projectPath) override;
         static void SetUpTestCase();
     };
 
