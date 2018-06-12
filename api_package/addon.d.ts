@@ -50,5 +50,6 @@ declare class NativeSQLiteStatement {
   reset(): void;
   dispose(): void;
   step(): DbResult;
+  bindValues(values: any | any[]): DbResult;
   getRow(): any;
 }

@@ -41,6 +41,13 @@
     }                                                                                                   \
     int32_t var = info[i].As<Napi::Number>().Int32Value();
 
+#define REQUIRE_ARGUMENT_ANY_OBJ(i, var, retval)                                     \
+    if (info.Length() <= (i))                                                        \
+    {                                                                                \
+        THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be an object", retval) \
+    }                                                                                \
+    Napi::Object var = info[i].As<Napi::Object>();
+
 #define REQUIRE_ARGUMENT_OBJ(i, T, var, retval)                                                  \
     if (info.Length() <= (i) || !T::InstanceOf(info[i]))                                         \
     {                                                                                            \
@@ -56,26 +63,27 @@
         return retval;                               \
     }
 
+#define THROW_EXCEPTION_AND_RETURN(str, retval) \
+    {                                           \
+        THROW_JS_ERROR(str)                     \
+        return retval;                          \
+    }
+
+#define THROW_JS_ERROR(str) Napi::Error::New(Env(), str).ThrowAsJavaScriptException();
+
 #define RETURN_IF_HAD_EXCEPTION     \
     if (Env().IsExceptionPending()) \
         return Env().Undefined();
 
+//=======================================================================================
+// Namespace IModelBank
+//=======================================================================================
 namespace IModelBank
 {
 static BeFileName s_addonDllDir;
-static IModelBank::JsInterop::T_AssertHandler s_assertHandler;
 static intptr_t s_mainThreadId;
 static Napi::Env *s_env;
 static Napi::ObjectReference s_logger;
-
-/*---------------------------------------------------------------------------------**/ /**
-* @bsimethod                                    Sam.Wilson                      06/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void throwJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
-{
-    if (JsInterop::IsMainThread())
-        JsInterop::ThrowJsException(Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str());
-}
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Sam.Wilson                      02/18
@@ -109,26 +117,109 @@ static Napi::Object createErrorObject0(STATUSTYPE errCode, Utf8CP msg, Napi::Env
     return error;
 }
 
-} // namespace IModelBank
+//=======================================================================================
+// SQLite <-> JavaScript data conversion
+//! @bsiclass
+//=======================================================================================
+struct ConversionUtils
+{
+    // Get a SQLite Statement column value as a JS value
+    static Napi::Value GetValue(Statement &stmt, int i, Napi::Env env)
+    {
+        switch (stmt.GetColumnType(i))
+        {
+        case DbValueType::IntegerVal:
+            return Napi::Number::New(env, stmt.GetValueInt(i));
+        case DbValueType::FloatVal:
+            return Napi::Number::New(env, stmt.GetValueDouble(i));
+        case DbValueType::TextVal:
+            return Napi::String::New(env, stmt.GetValueText(i));
+        case DbValueType::NullVal:
+            return env.Null();
+        case DbValueType::BlobVal:
+        {
+            auto abuf = Napi::ArrayBuffer::New(env, stmt.GetColumnBytes(i));
+            memcpy(abuf.Data(), stmt.GetValueBlob(i), stmt.GetColumnBytes(i));
+            return abuf;
+        }
 
-using namespace IModelBank;
+        default:
+            BeAssert(false);
+            return env.Undefined();
+        }
+    }
+
+    // Bind a JS value to a SQLite Statement parameter
+    static BentleyStatus BindValue(Statement &stmt, int i, Napi::Value value)
+    {
+        BentleyStatus status = BSISUCCESS;
+        switch (value.Type())
+        {
+        case napi_undefined:
+        case napi_null:
+            stmt.BindNull(i);
+            break;
+        case napi_boolean:
+            stmt.BindInt(i, value.ToBoolean().Value());
+            break;
+        case napi_number:
+            stmt.BindDouble(i, value.ToNumber().DoubleValue());
+            break;
+
+        case napi_string:
+        case napi_symbol:
+            stmt.BindText(i, value.ToString().Utf8Value().c_str(), Statement::MakeCopy::Yes);
+            break;
+        // case napi_object :
+        // case napi_function :
+        // case napi_external :
+        default:
+            BeAssert(false);
+            status = BSIERROR;
+        }
+        return status;
+    }
+};
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static void throwJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
+{
+    Utf8PrintfString formattedMessage("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
+    if (BeThreadUtilities::GetCurrentThreadId() == s_mainThreadId)
+        Napi::Error::New(*s_env, formattedMessage.c_str()).ThrowAsJavaScriptException();
+    else
+        JsInterop::LogMessage("iModelBank", NativeLogging::SEVERITY::LOG_ERROR, formattedMessage.c_str());
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/18
 //---------------------------------------------------------------------------------------
-void JsInterop::Initialize(BeFileNameCR addonDllDir, T_AssertHandler assertHandler)
+static void initialize(BeFileNameCR addonDllDir)
 {
     s_addonDllDir = addonDllDir;
-    s_assertHandler = assertHandler;
 
     static std::once_flag s_initFlag;
     std::call_once(s_initFlag, []() {
         BeFileName tempDir;
         Desktop::FileSystem::BeGetTempPath(tempDir);
         BeSQLiteLib::Initialize(tempDir);
-        InitLogging();
+        JsInterop::InitLogging();
+        BeAssertFunctions::SetBeAssertHandler(throwJsExceptionOnAssert);
+#ifdef _WIN32
+        static bool s_quietAsserts = true;
+        if (s_quietAsserts)
+            _set_error_mode(_OUT_TO_STDERR);
+        else
+            _set_error_mode(_OUT_TO_MSGBOX);
+#endif
     });
 }
+
+} // namespace IModelBank
+
+using namespace IModelBank;
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Sam.Wilson                      06/18
@@ -148,7 +239,6 @@ void IModelBank::JsInterop::ThrowJsException(Utf8CP msg)
 
 namespace IModelBank
 {
-
 //=======================================================================================
 // Projects the Db class into JS
 //! @bsiclass
@@ -297,43 +387,53 @@ struct NativeSQLiteStatement : Napi::ObjectWrap<NativeSQLiteStatement>
         return Napi::Number::New(Env(), (int)rc);
     }
 
+    Napi::Value BindValues(const Napi::CallbackInfo &info)
+    {
+        m_stmt->ClearBindings();
+
+        REQUIRE_ARGUMENT_ANY_OBJ(0, values, Env().Undefined());
+        if (values.IsArray())
+        {
+            auto array = values.As<Napi::Array>();
+            for (int i = 0, n = array.Length(); i < n; ++i)
+            {
+                auto status = ConversionUtils::BindValue(*m_stmt, i + 1, array.Get(i)); // (Note that SQLite parameter indices are 1-based)
+                if (BSISUCCESS != status)
+                {
+                    THROW_TYPE_EXCEPTION_AND_RETURN(Utf8PrintfString("Bad parameter type: %d", i).c_str(), Env().Undefined());
+                }
+            }
+        }
+        else
+        {
+            auto propNames = values.GetPropertyNames();
+            for (int iPropName = 0, nPropNames = propNames.Length(); iPropName < nPropNames; ++iPropName)
+            {
+                auto propName = propNames.Get(iPropName).ToString();
+                Utf8String paramName(":");
+                paramName.append(propName.Utf8Value().c_str());
+                int iCol = m_stmt->GetParameterIndex(paramName.c_str());
+                if (iCol == 0)
+                {
+                    THROW_EXCEPTION_AND_RETURN(Utf8PrintfString("Named parameter not found in statement: %s", propName.Utf8Value().c_str()).c_str(), Env().Undefined());
+                }
+                auto status = ConversionUtils::BindValue(*m_stmt, iCol, values.Get(propName));
+                if (BSISUCCESS != status)
+                {
+                    THROW_TYPE_EXCEPTION_AND_RETURN(Utf8PrintfString("Bad parameter type: %s", propName.Utf8Value().c_str()).c_str(), Env().Undefined());
+                }
+            }
+        }
+        return Napi::Number::New(Env(), (int)BE_SQLITE_OK);
+    }
+
     Napi::Value GetRow(const Napi::CallbackInfo &info)
     {
         auto row = Napi::Object::New(Env());
 
         for (int i = 0, n = m_stmt->GetColumnCount(); i < n; ++i)
         {
-            auto propName = m_stmt->GetColumnName(i);
-
-            switch (m_stmt->GetColumnType(i))
-            {
-            case DbValueType::IntegerVal:
-                row[propName] = Napi::Number::New(Env(), m_stmt->GetValueInt(i));
-                break;
-
-            case DbValueType::FloatVal:
-                row[propName] = Napi::Number::New(Env(), m_stmt->GetValueDouble(i));
-                break;
-
-            case DbValueType::TextVal:
-                row[propName] = Napi::String::New(Env(), m_stmt->GetValueText(i));
-                break;
-
-            case DbValueType::NullVal:
-                row[propName] = Env().Null();
-                break;
-
-            case DbValueType::BlobVal:
-            {
-                auto abuf = Napi::ArrayBuffer::New(Env(), m_stmt->GetColumnBytes(i));
-                memcpy(abuf.Data(), m_stmt->GetValueBlob(i), m_stmt->GetColumnBytes(i));
-                row[propName] = abuf;
-                break;
-            }
-
-            default:
-                BeAssert(false);
-            }
+            row[m_stmt->GetColumnName(i)] = ConversionUtils::GetValue(*m_stmt, i, Env());
         }
 
         return row;
@@ -345,7 +445,7 @@ struct NativeSQLiteStatement : Napi::ObjectWrap<NativeSQLiteStatement>
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "NativeSQLiteStatement", {InstanceMethod("prepare", &NativeSQLiteStatement::Prepare), InstanceMethod("reset", &NativeSQLiteStatement::Reset), InstanceMethod("dispose", &NativeSQLiteStatement::Dispose), InstanceMethod("step", &NativeSQLiteStatement::Step), InstanceMethod("getRow", &NativeSQLiteStatement::GetRow)});
+        Napi::Function t = DefineClass(env, "NativeSQLiteStatement", {InstanceMethod("bindValues", &NativeSQLiteStatement::BindValues), InstanceMethod("prepare", &NativeSQLiteStatement::Prepare), InstanceMethod("reset", &NativeSQLiteStatement::Reset), InstanceMethod("dispose", &NativeSQLiteStatement::Dispose), InstanceMethod("step", &NativeSQLiteStatement::Step), InstanceMethod("getRow", &NativeSQLiteStatement::GetRow)});
 
         exports.Set("NativeSQLiteStatement", t);
 
@@ -372,7 +472,7 @@ static Napi::Object iModelBankRegisterModule(Napi::Env env, Napi::Object exports
 
     s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
 
-    IModelBank::JsInterop::Initialize(addondir, IModelBank::throwJsExceptionOnAssert);
+    IModelBank::initialize(addondir);
 
     IModelBank::NativeSQLiteDb::Init(env, exports);
     IModelBank::NativeSQLiteStatement::Init(env, exports);

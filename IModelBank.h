@@ -23,10 +23,6 @@ namespace IModelBank
 //=======================================================================================
 struct JsInterop
 {
-    typedef std::function<void(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType)> T_AssertHandler;
-
-    static void Initialize(BeFileNameCR, T_AssertHandler assertHandler);
-
     static bool IsMainThread();
 
     static void ThrowJsException(Utf8CP msg);
