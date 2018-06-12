@@ -61,6 +61,8 @@ public:
     static BeSQLite::DbResult OpenDgnDb(DgnDbPtr &, BeFileNameCR dbname, DgnDb::OpenMode mode);
     static void CloseDgnDb(DgnDbR dgndb);
     static DgnDbStatus GetECClassMetaData(JsonValueR results, DgnDbR db, Utf8CP schema, Utf8CP ecclass);
+    static DgnDbStatus GetSchemaItem(JsonValueR results, DgnDbR db, Utf8CP schemaName, Utf8CP itemName);
+    static DgnDbStatus GetSchema(JsonValueR results, DgnDbR db, Utf8CP name);
     static DgnDbStatus GetElement(JsonValueR results, DgnDbR db, Json::Value const &inOpts);
     static DgnDbStatus InsertElement(JsonValueR results, DgnDbR db, Json::Value &props);
     static DgnDbStatus UpdateElement(DgnDbR db, Json::Value &props);
