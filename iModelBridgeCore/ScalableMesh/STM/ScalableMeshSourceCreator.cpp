@@ -75,8 +75,6 @@ size_t nGraphPins =0;
 size_t nGraphReleases = 0;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-#define SM_ONE_SPLIT_THRESHOLD 10000
-#define SM_BIG_SPLIT_THRESHOLD 5000000
 
 
 bool canCreateFile(const WChar* fileName)

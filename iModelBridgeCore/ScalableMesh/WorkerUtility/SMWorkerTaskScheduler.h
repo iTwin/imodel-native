@@ -24,6 +24,8 @@ struct TaskScheduler
     
         BeFileName m_taskFolderName;
 
+        IScalableMeshSourceCreatorWorkerPtr m_sourceCreatorWorkerPtr;
+
         bool ParseWorkerTaskType(BeXmlNodeP pXmlTaskNode, WorkerTaskType& t);
 
         bool ProcessTask(FILE* file);

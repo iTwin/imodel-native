@@ -21,6 +21,15 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+
+#ifndef SM_ONE_SPLIT_THRESHOLD
+    #define SM_ONE_SPLIT_THRESHOLD 10000
+#endif 
+
+#ifndef SM_BIG_SPLIT_THRESHOLD
+    #define SM_BIG_SPLIT_THRESHOLD 5000000
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Elenie.Godzaridis   07/2015

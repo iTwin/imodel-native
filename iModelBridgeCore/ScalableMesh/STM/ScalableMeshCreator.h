@@ -32,6 +32,7 @@
 #include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/IScalableMeshCreator.h>
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
+#include <ScalableMesh/IScalableMeshSourceCreatorWorker.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include "ScalableMeshProgress.h"
 
@@ -115,6 +116,7 @@ struct IScalableMeshCreator::Impl
     private :
         
         friend struct                       IScalableMeshCreator;
+        friend struct                       IScalableMeshSourceCreatorWorker::Impl;
         friend struct                       IScalableMeshSourceCreator::Impl;
         friend struct                       IScalableMeshNodeCreator::Impl;
 

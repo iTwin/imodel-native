@@ -17,6 +17,7 @@
 #include <ScalableMesh\IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshPolicy.h>
 #include <ScalableMesh\IScalableMeshSourceCreator.h>
+#include <ScalableMesh\IScalableMeshSourceCreatorWorker.h>
 
 #include "SMWorkerDefinitions.h"
 
@@ -593,7 +594,13 @@ bool ParseSourceSubNodes(IDTMSourceCollection& sourceCollection, BeXmlNodeP pXml
 #endif
 
             creatorPtr->SaveToFile();
-            creatorPtr = nullptr;
+            creatorPtr = nullptr;            
+            
+            assert(m_sourceCreatorWorkerPtr.IsValid() == false);
+            
+            m_sourceCreatorWorkerPtr = IScalableMeshSourceCreatorWorker::GetFor(smFileName.c_str(), status);
+                        
+            status = m_sourceCreatorWorkerPtr->CreateMeshTasks();
 
 /*
 smFileName
@@ -614,7 +621,12 @@ smFileName
 
     void TaskScheduler::PerformMeshTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
         {
+       
+        assert(m_sourceCreatorWorkerPtr.IsValid() == true)
 
+        StatusInt status = m_sourceCreatorWorkerPtr->ProcessMeshTask(pXmlTaskNode);
+
+        assert(status == SUCCESS);
         }
 
     void TaskScheduler::PerformStitchTask(BeXmlNodeP pXmlTaskNode/*, pResultFile*/)
