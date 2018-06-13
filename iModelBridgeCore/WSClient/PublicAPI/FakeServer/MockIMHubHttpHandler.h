@@ -24,8 +24,7 @@ struct MockIMSHttpHandler : public Http::IHttpHandler
         OnResponseCallback m_onAnyRequestCallback;
 
     public:
-       
-        FAKESERVER_EXPORT MockIMSHttpHandler();
+        FAKESERVER_EXPORT MockIMSHttpHandler() {}
         virtual ~MockIMSHttpHandler() {}
         FAKESERVER_EXPORT virtual Tasks::AsyncTaskPtr<Http::Response> _PerformRequest(Http::RequestCR request) override;
     };

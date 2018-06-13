@@ -12,9 +12,9 @@ FakeServerMkiSourceDir = $(FakeServerSourceDirectory)FakeServer/
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-FakeServerMkiHeaders =  $(FakeServerMkiPublicApiDir)MockIMHubHttpHandler.h 	\
-						$(FakeServerMkiPublicApiDir)RequestHandler.h 		\
-						$(FakeServerMkiPublicApiDir)FakeServer.h
+FakeServerMkiHeaders =  $(FakeServerMkiPublicApiDir)MockIMHubHttpHandler.h  \
+                        $(FakeServerMkiPublicApiDir)RequestHandler.h        \
+                        $(FakeServerMkiPublicApiDir)FakeServer.h
 
 #--------------------------------------------------------------------------------------
 #   Compile

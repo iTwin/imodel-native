@@ -9,8 +9,6 @@
 #ENABLE_CPP_CX_EXTENSIONS = 1
 %include mdl.mki
 
-
-
 #--------------------------------------------------------------------------------------
 #   Building the WebServicesCache library
 #--------------------------------------------------------------------------------------
@@ -26,7 +24,7 @@ LLVMCommonCompOpts + -Wno-unknown-pragmas
 
 FakeServerSourceDirectory       = $(_MakeFilePath)
 FakeServerPublicApiDirectory    = $(_MakeFilePath)PublicAPI/
-BuildContextLibsDirectory  		= $(BuildContext)SubParts/Libs/
+BuildContextLibsDirectory       = $(BuildContext)SubParts/Libs/
 
 o = $(OutputRootDir)build/WSClient/FakeServer/
 always:
@@ -71,6 +69,7 @@ LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)DgnPlatform$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext)
-LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext) $(BuildContextLibsDirectory)$(libprefix)BentleyGeom$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BentleyGeom$(stlibext)
 
 %include $(sharedMki)LinkLibrary.mki
