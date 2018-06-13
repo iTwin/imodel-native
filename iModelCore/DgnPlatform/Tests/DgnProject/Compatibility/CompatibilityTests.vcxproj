@@ -24,6 +24,7 @@
   <ItemGroup>
     <ClInclude Include="CompatibilityTestFixture.h" />
     <ClInclude Include="CompatibilityTests.h" />
+    <ClInclude Include="ProfileManager.h" />
     <ClInclude Include="Profiles.h" />
     <ClInclude Include="TestHelper.h" />
     <ClInclude Include="TestIModelCreators.h" />

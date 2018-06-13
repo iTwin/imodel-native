@@ -8,7 +8,7 @@
 #pragma once
 
 #include "CompatibilityTests.h"
-#include "ProfileManager.h"
+#include "Profiles.h"
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeTest.h>
@@ -25,7 +25,7 @@ USING_NAMESPACE_BENTLEY_DGN
 Profile::Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name) : m_type(type), m_versionPropertySpec("SchemaVersion", nameSpace), m_name(name)
     {
     BeTest::GetHost().GetOutputRoot(m_profileSeedFolder);
-    m_profileSeedFolder.PopDir().AppendToPath(L"SeedData").AppendUtf8(m_name);
+    m_profileSeedFolder.PopDir().AppendSeparator().AppendToPath(L"SeedData").AppendSeparator().AppendUtf8(m_name);
     }
 
 
@@ -111,7 +111,7 @@ BeFileName Profile::GetPathForNewTestFile(Utf8CP testFileName) const
     path.AppendToPath(BeFileName(GetExpectedVersion().ToString()));
     for (ProfileVersion const& includedProfileVersion : m_expectedIncludedProfileVersions)
         {
-        path.AppendString(L"_").AppendToPath(BeFileName(includedProfileVersion.ToString()));
+        path.AppendString(L"_").AppendUtf8(includedProfileVersion.ToString().c_str());
         }
 
     path.AppendToPath(BeFileName(testFileName));
@@ -159,7 +159,7 @@ BentleyStatus ECDbProfile::_Init() const
 
     m_expectedVersion = ReadProfileVersion(db);
 
-    m_expectedIncludedProfileVersions.push_back(ProfileManager::Get().GetProfile(ProfileType::BeDb).GetExpectedVersion());
+    m_expectedIncludedProfileVersions.push_back(BeDbProfile::Get().GetExpectedVersion());
     return !m_expectedVersion.IsEmpty() ? SUCCESS : ERROR;
     }
 
@@ -218,8 +218,8 @@ BentleyStatus DgnDbProfile::_Init() const
 
     m_expectedVersion = ReadProfileVersion(*db);
 
-    m_expectedIncludedProfileVersions.push_back(ProfileManager::Get().GetProfile(ProfileType::BeDb).GetExpectedVersion());
-    m_expectedIncludedProfileVersions.push_back(ProfileManager::Get().GetProfile(ProfileType::ECDb).GetExpectedVersion());
+    m_expectedIncludedProfileVersions.push_back(BeDbProfile::Get().GetExpectedVersion());
+    m_expectedIncludedProfileVersions.push_back(ECDbProfile::Get().GetExpectedVersion());
 
     return !m_expectedVersion.IsEmpty() ? SUCCESS : ERROR;
     }

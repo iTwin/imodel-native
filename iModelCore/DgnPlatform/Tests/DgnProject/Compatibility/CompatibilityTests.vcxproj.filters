@@ -21,5 +21,6 @@
     <ClInclude Include="TestHelper.h" />
     <ClInclude Include="CompatibilityTests.h" />
     <ClInclude Include="Profiles.h" />
+    <ClInclude Include="ProfileManager.h" />
   </ItemGroup>
 </Project>
