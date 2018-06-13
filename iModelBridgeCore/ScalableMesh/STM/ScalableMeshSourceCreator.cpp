@@ -258,7 +258,15 @@ IScalableMeshSourceCreator::IScalableMeshSourceCreator(Impl* implP)
 
 
 IScalableMeshSourceCreator::~IScalableMeshSourceCreator()
-    {}
+    {
+    //Since ScalableMeshCreator::~Impl is implemented in another DLL and its implementation is hidden the code below is require to ensure that the destructors of the 
+    //Impl classes inheriting from ScalableMeshCreator::Impl are called.
+    if (m_implP.get() != nullptr)
+        {
+        IScalableMeshSourceCreator::Impl* impl = (IScalableMeshSourceCreator::Impl*)m_implP.release();
+        delete impl;
+        }
+    }
 
 bool IScalableMeshSourceCreator::AreAllSourcesReachable() const
     {
@@ -343,7 +351,7 @@ IScalableMeshSourceCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
     m_extent(DRange2d::NullRange())
     {
     InitSources();
-    }
+    }   
 
 IScalableMeshSourceCreator::Impl::~Impl()
     {

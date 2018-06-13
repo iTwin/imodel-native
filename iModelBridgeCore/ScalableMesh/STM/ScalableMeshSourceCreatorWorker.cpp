@@ -64,7 +64,7 @@ IScalableMeshSourceCreatorWorkerPtr IScalableMeshSourceCreatorWorker::GetFor(con
 
     RegisterDelayedImporters();
 
-    IScalableMeshSourceCreatorWorkerPtr pCreatorWorker = new IScalableMeshSourceCreatorWorker(new Impl(scmPtr));
+    IScalableMeshSourceCreatorWorkerPtr pCreatorWorker = new IScalableMeshSourceCreatorWorker(new IScalableMeshSourceCreatorWorker::Impl(scmPtr));
 
     status = pCreatorWorker->m_implP->LoadFromFile();
     if (BSISUCCESS != status)
@@ -79,21 +79,42 @@ IScalableMeshSourceCreatorWorker::IScalableMeshSourceCreatorWorker(Impl* implP)
     }
 
 IScalableMeshSourceCreatorWorker::~IScalableMeshSourceCreatorWorker()
-    {
+    {  
+    //Since ScalableMeshCreator::~Impl is implemented in another DLL and its implementation is hidden the code below is require to ensure that the destructors of the 
+    //Impl classes inheriting from ScalableMeshCreator::Impl are called.
+    if (m_implP.get() != nullptr)
+        { 
+        IScalableMeshSourceCreatorWorker::Impl* impl = (IScalableMeshSourceCreatorWorker::Impl*)m_implP.release();
+        delete impl;
+        }
     }
 
 IScalableMeshSourceCreatorWorker::Impl::Impl(const WChar* scmFileName)
-    : IScalableMeshSourceCreator::Impl(scmFileName)
+    : IScalableMeshSourceCreator::Impl(scmFileName) 
     {    
     }
 
 IScalableMeshSourceCreatorWorker::Impl::Impl(const IScalableMeshPtr& scmPtr)
     : IScalableMeshSourceCreator::Impl(scmPtr)
-    {    
+    {      
     }
 
 IScalableMeshSourceCreatorWorker::Impl::~Impl()
     {    
+    m_pDataIndex = nullptr;
+    }
+
+HFCPtr<MeshIndexType> IScalableMeshSourceCreatorWorker::Impl::GetDataIndex()
+    {
+    if (m_pDataIndex.GetPtr() == nullptr)
+        {       
+        StatusInt status = IScalableMeshCreator::Impl::CreateDataIndex(m_pDataIndex, true, SM_ONE_SPLIT_THRESHOLD);
+
+        assert(m_pDataIndex.GetPtr() != nullptr);   
+        assert(status == SUCCESS);
+        }
+
+    return m_pDataIndex;
     }
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateMeshTasks()
@@ -102,17 +123,13 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateMeshTasks()
 
     taskDirectory = taskDirectory.GetDirectoryName();
 
-    assert(m_pDataIndex.GetPtr() == nullptr);
-    
-    StatusInt status = IScalableMeshCreator::Impl::CreateDataIndex(m_pDataIndex, true, SM_ONE_SPLIT_THRESHOLD);
-
-    assert(status == SUCCESS);
+    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());                
 
     bvector<uint64_t> nodesToMesh;
 
     wchar_t stringBuffer[100000];
 
-    m_pDataIndex->Mesh(&nodesToMesh);
+    pDataIndex->Mesh(&nodesToMesh);
 
     for (auto& nodeId : nodesToMesh)
         { 
@@ -158,27 +175,28 @@ StatusInt IScalableMeshSourceCreatorWorker::Impl::CreateMeshTasks()
 
 StatusInt IScalableMeshSourceCreatorWorker::Impl::ProcessMeshTask(BeXmlNodeP pXmlTaskNode)
     {
-    assert(Utf8String(pXmlTaskNode->GetName()).CompareTo("tile") == 0);
+    BeXmlNodeP pChildNode = pXmlTaskNode->GetFirstChild();
 
+    assert(pChildNode != nullptr);
+    assert(Utf8String(pChildNode->GetName()).CompareTo("tile") == 0);
+    
     uint64_t tileId;
 
-    BeXmlStatus xmlStatus = pXmlTaskNode->GetAttributeUInt64Value(tileId, "id");
-
+    BeXmlStatus xmlStatus = pChildNode->GetAttributeUInt64Value(tileId, "id");    
     assert(xmlStatus == BEXML_Success);
+    assert(pChildNode->GetNextSibling() == nullptr);
 
-    assert(m_pDataIndex.GetPtr() != nullptr);
-
-    m_pDataIndex->GetMesher2_5d();
-
+    HFCPtr<MeshIndexType> pDataIndex(GetDataIndex());
+    
     HPMBlockID blockID(tileId);    
 
-    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)m_pDataIndex->CreateNewNode(blockID, false).GetPtr());
+    HFCPtr<SMMeshIndexNode<DPoint3d, DRange3d>> meshNode((SMMeshIndexNode<DPoint3d, DRange3d>*)pDataIndex->CreateNewNode(blockID, false).GetPtr());
 
     meshNode->Load();
 
     assert(!meshNode->m_nodeHeader.m_arePoints3d);
 
-    bool isMeshed = m_pDataIndex->GetMesher2_5d()->Mesh(meshNode);
+    bool isMeshed = pDataIndex->GetMesher2_5d()->Mesh(meshNode);
 
     if (isMeshed)
         {

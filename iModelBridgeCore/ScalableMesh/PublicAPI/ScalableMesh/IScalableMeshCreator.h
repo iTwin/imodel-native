@@ -58,7 +58,8 @@ private:
 /*__PUBLISH_SECTION_END__*/        
     friend struct                       IScalableMeshSourceCreator;
     friend struct                       IScalableMeshSourceCreatorWorker;
-    friend struct                       IScalableMeshNodeCreator;
+    friend struct                       IScalableMeshNodeCreator;    
+
         struct                              Impl;
         std::auto_ptr<Impl>                 m_implP;               
                 
@@ -161,3 +162,5 @@ public:
 BENTLEY_SM_EXPORT Import::SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString& stmPath);
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+
+

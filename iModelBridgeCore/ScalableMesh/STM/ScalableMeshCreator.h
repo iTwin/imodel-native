@@ -203,7 +203,7 @@ struct IScalableMeshCreator::Impl
         BENTLEY_SM_EXPORT explicit                            Impl                           (const WChar*                          scmFileName);
         BENTLEY_SM_EXPORT explicit                            Impl                           (const IScalableMeshPtr&                        iDTMFilePtr);
 
-        BENTLEY_SM_EXPORT                                    ~Impl                          ();
+        BENTLEY_SM_EXPORT                                     ~Impl                          ();
 
         BENTLEY_SM_EXPORT const GeoCoords::GCS&               GetGCS                         () const;
 

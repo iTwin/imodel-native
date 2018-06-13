@@ -30,6 +30,9 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
 
         HFCPtr<MeshIndexType> m_pDataIndex;
 
+
+        HFCPtr<MeshIndexType> GetDataIndex();
+
       
     protected:
 
@@ -39,7 +42,7 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
         explicit                            Impl(const WChar*            scmFileName);
         explicit                            Impl(const IScalableMeshPtr& iDTMFilePtr);
 
-        ~Impl();
+        virtual                             ~Impl();
 
         StatusInt                    CreateMeshTasks();
 

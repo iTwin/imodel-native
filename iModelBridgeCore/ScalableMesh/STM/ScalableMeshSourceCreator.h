@@ -121,7 +121,7 @@ struct IScalableMeshSourceCreator::Impl : public IScalableMeshCreator::Impl, pub
         explicit                            Impl(const WChar*                          scmFileName);
         explicit                            Impl(const IScalableMeshPtr&                        iDTMFilePtr);
 
-        ~Impl();
+        virtual ~Impl();
 
         StatusInt                           LoadSources(SMSQLiteFilePtr& smSQLiteFile);
 
