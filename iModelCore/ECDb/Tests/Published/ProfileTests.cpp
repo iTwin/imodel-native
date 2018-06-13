@@ -197,9 +197,7 @@ TEST_F(ECDbTestFixture, CheckECDbProfileVersion)
 
         ProfileState const& expectedProfileState = testVersion.second;
         ProfileState actualProfileState = m_ecdb.CheckProfileVersion();
-        EXPECT_EQ((int) expectedProfileState.GetState(), (int) actualProfileState.GetState()) << schemaVersionJson.c_str();
-        EXPECT_EQ((int) expectedProfileState.GetCanOpen(), (int) actualProfileState.GetCanOpen()) << schemaVersionJson.c_str();
-        EXPECT_EQ(expectedProfileState.IsUpgradable(), actualProfileState.IsUpgradable()) << schemaVersionJson.c_str();
+        EXPECT_EQ(expectedProfileState, actualProfileState) << schemaVersionJson.c_str();
         }
 
     m_ecdb.AbandonChanges();
