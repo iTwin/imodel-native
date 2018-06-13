@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "CompatibilityTestFixture.h"
-#include "ProfileManager.h"
+#include "Profiles.h"
 #include "TestECDbCreators.h"
 #include "TestHelper.h"
 
@@ -18,7 +18,6 @@ USING_NAMESPACE_BENTLEY_EC
 struct ECDbCompatibilityTestFixture : CompatibilityTestFixture
     {
     protected:
-        Profile& Profile() const { return ProfileManager::Get().GetProfile(ProfileType::ECDb); }
         DbResult OpenTestFile(ECDb& ecdb, TestFile const& testFile) { return ecdb.OpenBeSQLiteDb(testFile.GetPath(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade)); }
 
         void SetUp() override { ASSERT_EQ(SUCCESS, TestECDbCreation::Run()); }
@@ -29,7 +28,7 @@ struct ECDbCompatibilityTestFixture : CompatibilityTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
     {
-    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_EMPTY))
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EMPTY))
         {
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
@@ -107,7 +106,7 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, PreEC32Enums)
     {
-    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_PREEC32ENUMS))
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_PREEC32ENUMS))
         {
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
@@ -141,7 +140,7 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32Enums)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, EC32Enums)
     {
-    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_EC32ENUMS))
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EC32ENUMS))
         {
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
@@ -175,7 +174,7 @@ TEST_F(ECDbCompatibilityTestFixture, EC32Enums)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
     {
-    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_PREEC32KOQS))
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_PREEC32KOQS))
         {
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();
@@ -196,7 +195,7 @@ TEST_F(ECDbCompatibilityTestFixture, PreEC32KindOfQuantities)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbCompatibilityTestFixture, EC32KindOfQuantities)
     {
-    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTECDB_EC32KOQS))
+    for (TestFile const& testFile : ECDbProfile::Get().GetAllVersionsOfTestFile(TESTECDB_EC32KOQS))
         {
         ECDb ecdb;
         ASSERT_EQ(BE_SQLITE_OK, OpenTestFile(ecdb, testFile)) << testFile.ToString();

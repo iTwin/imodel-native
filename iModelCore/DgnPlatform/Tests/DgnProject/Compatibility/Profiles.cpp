@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Compatibility/ProfileManager.cpp $
+|  $Source: Tests/DgnProject/Compatibility/Profiles.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -22,10 +22,10 @@ USING_NAMESPACE_BENTLEY_DGN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-Profile::Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name, BeFileNameCR seedFolder) : m_type(type), m_versionPropertySpec("SchemaVersion", nameSpace), m_name(name)
+Profile::Profile(ProfileType type, Utf8CP nameSpace, Utf8CP name) : m_type(type), m_versionPropertySpec("SchemaVersion", nameSpace), m_name(name)
     {
-    m_profileSeedFolder = seedFolder;
-    m_profileSeedFolder.AppendSeparator().AppendUtf8(m_name);
+    BeTest::GetHost().GetOutputRoot(m_profileSeedFolder);
+    m_profileSeedFolder.PopDir().AppendToPath(L"SeedData").AppendUtf8(m_name);
     }
 
 
@@ -130,24 +130,11 @@ ProfileVersion Profile::ReadProfileVersion(Db const& db) const
     return ProfileVersion(profileVersionJson.c_str());
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-ProfileType Profile::ParseProfileType(Utf8CP str)
-    {
-    if (BeStringUtilities::StricmpAscii(PROFILE_NAME_BEDB, str) == 0)
-        return ProfileType::BeDb;
-
-    if (BeStringUtilities::StricmpAscii(PROFILE_NAME_ECDB, str) == 0)
-        return ProfileType::ECDb;
-
-    if (BeStringUtilities::StricmpAscii(PROFILE_NAME_DGNDB, str) == 0)
-        return ProfileType::DgnDb;
-
-    BeAssert(false && "Unknown profile name");
-    return ProfileType::BeDb;
-    }
-
+ECDbProfile const* ECDbProfile::s_singleton = nullptr;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
@@ -179,6 +166,11 @@ BentleyStatus ECDbProfile::_Init() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
 //+---------------+---------------+---------------+---------------+---------------+------
+BeDbProfile const* BeDbProfile::s_singleton = nullptr;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan                        03/18
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus BeDbProfile::_Init() const
     {
     BeFileName temporaryDir;
@@ -192,6 +184,11 @@ BentleyStatus BeDbProfile::_Init() const
     m_expectedVersion = ReadProfileVersion(db);
     return !m_expectedVersion.IsEmpty() ? SUCCESS : ERROR;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan                        03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+DgnDbProfile const* DgnDbProfile::s_singleton = nullptr;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan                        03/18
@@ -248,35 +245,4 @@ Utf8String TestFile::ToString() const
         versionString.Sprintf(PROFILE_NAME_BEDB " %s", m_bedbVersion.ToString().c_str());
 
     return Utf8PrintfString("%s | %s | %s", m_name.c_str(), versionString.c_str(), m_path.GetNameUtf8().c_str());
-    }
-
-//=====================================ProfileManager====================================
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-ProfileManager* ProfileManager::s_singleton = new ProfileManager();
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 06/18
-//+---------------+---------------+---------------+---------------+---------------+------
-ProfileManager::ProfileManager()
-    {
-    BeTest::GetHost().GetOutputRoot(m_testSeedFolder);
-    m_testSeedFolder.PopDir().AppendSeparator().append(L"SeedData");
-
-    m_profiles[ProfileType::BeDb] = BeDbProfile::Create(m_testSeedFolder);
-    m_profiles[ProfileType::ECDb] = ECDbProfile::Create(m_testSeedFolder);
-    m_profiles[ProfileType::DgnDb] = DgnDbProfile::Create(m_testSeedFolder);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Affan.Khan                        03/18
-//+---------------+---------------+---------------+---------------+---------------+------
-Profile& ProfileManager::GetProfile(ProfileType type) const
-    {
-    auto it = m_profiles.find(type);
-    BeAssert(it != m_profiles.end() && "Unhandled ProfileType value. Update the code");
-    return *it->second;
     }

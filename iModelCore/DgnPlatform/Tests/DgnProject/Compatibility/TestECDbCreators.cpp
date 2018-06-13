@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestECDbCreators.h"
-#include "ProfileManager.h"
+#include "Profiles.h"
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                    06/18
@@ -31,7 +31,7 @@ BentleyStatus TestECDbCreation::Run()
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult TestECDbCreator::CreateNewTestFile(ECDbR ecdb, Utf8CP fileName)
     {
-    BeFileName filePath = ProfileManager::Get().GetProfile(ProfileType::ECDb).GetPathForNewTestFile(fileName);
+    BeFileName filePath = ECDbProfile::Get().GetPathForNewTestFile(fileName);
     BeFileName folder = filePath.GetDirectoryName();
     if (!folder.DoesPathExist())
         {
