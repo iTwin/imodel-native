@@ -299,6 +299,10 @@ BentleyStatus AddTextureJson(TextureMappingCR mapping, Json::Value& matJson)
         json["format"] = static_cast<uint32_t>(img.GetFormat());
         json["bufferView"] = name;
         json["isGlyph"] = texture.IsGlyph();
+
+        auto dimensions = texture.GetDimensions();
+        json["width"] = dimensions.width;
+        json["height"] = dimensions.height;
         }
 
     auto const& params = mapping.GetParams();
