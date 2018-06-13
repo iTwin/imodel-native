@@ -27,30 +27,32 @@ struct IScalableMeshSourceCreatorWorker::Impl : public IScalableMeshSourceCreato
     {
     private:
 
-
         HFCPtr<MeshIndexType> m_pDataIndex;
-
 
         HFCPtr<MeshIndexType> GetDataIndex();
 
+        void GetTaskPlanFileName(BeFileName& taskPlanFileName);
+
+        StatusInt CreateFilterTasks(uint32_t resolutionInd);
+
+        StatusInt CreateStitchTasks(uint32_t resolutionInd);
+
       
     protected:
-
     
-
     public:
         explicit                            Impl(const WChar*            scmFileName);
         explicit                            Impl(const IScalableMeshPtr& iDTMFilePtr);
 
         virtual                             ~Impl();
-
+        
         StatusInt                    CreateMeshTasks();
 
-        StatusInt                    ProcessMeshTask(BeXmlNodeP pXmlTaskNode);
+        StatusInt                    CreateTaskPlan();
 
-            
+        StatusInt                    ExecuteNextTaskInTaskPlan();
 
-
+        StatusInt                    ProcessMeshTask(BeXmlNodeP pXmlTaskNode);         
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

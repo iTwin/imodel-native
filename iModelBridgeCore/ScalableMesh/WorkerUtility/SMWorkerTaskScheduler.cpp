@@ -331,6 +331,9 @@ void TaskScheduler::Start()
         //! Move to the next directory entry
         BENTLEYDLL_EXPORT StatusInt ToNext();
 */            
+
+    
+    
     bool isThereTaskAvaialble = true;
 
     while (isThereTaskAvaialble)

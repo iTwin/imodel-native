@@ -21,6 +21,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct IScalableMeshSourceCreatorWorker;
 typedef RefCountedPtr<IScalableMeshSourceCreatorWorker>            IScalableMeshSourceCreatorWorkerPtr;
 
+#define SUCCESS_TASK_PLAN_COMPLETE SUCCESS + 1
 
 //This is the creator interface to use when providing a series of source files to import data to the Scalable Mesh. All details of indexing, etc are handled
 //automatically. At the moment, it is not possible to import data from source files and also manually create nodes in the index.
@@ -46,7 +47,11 @@ struct IScalableMeshSourceCreatorWorker : public IScalableMeshSourceCreator
         BENTLEY_SM_IMPORT_EXPORT static IScalableMeshSourceCreatorWorkerPtr GetFor(const IScalableMeshPtr&     scmPtr,
                                                                              StatusInt&                  status);
         
+        BENTLEY_SM_IMPORT_EXPORT StatusInt                    CreateTaskPlan() const;
+
         BENTLEY_SM_IMPORT_EXPORT StatusInt                    CreateMeshTasks() const;
+
+        BENTLEY_SM_IMPORT_EXPORT StatusInt                    ExecuteNextTaskInTaskPlan() const;
 
         BENTLEY_SM_IMPORT_EXPORT StatusInt                    ProcessMeshTask(BeXmlNodeP pXmlTaskNode) const;
         
