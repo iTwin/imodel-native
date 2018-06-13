@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_CLASSIFICATIONSYSTEMS
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 
-#define PROJECT_SEED_NAME       L"BuildingTests/BuildingTestSeed.bim"
+#define PROJECT_SEED_NAME       L"BuildingTests/ClassificationTestSeed.bim"
 #define PROJECT_DEFAULT_NAME    L"BuildingTests/Default.bim"
 #define PROJECT_TEMP_FOLDER     L"BuildingTests"
 
