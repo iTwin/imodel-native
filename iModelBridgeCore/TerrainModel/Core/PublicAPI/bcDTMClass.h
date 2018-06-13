@@ -34,7 +34,7 @@
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
-#if WINDOWS
+#if _WIN32
 #pragma warning(push)
 #pragma warning(disable:4263)
 #pragma warning(disable:4264)
@@ -1330,7 +1330,7 @@ struct BcDTMFeatureEnumerator : RefCountedBase
         int             _ResetScanContextForTin (DTMFeatureType newfeatureType, bool newScan);
     };
 
-#if WINDOWS
+#if _WIN32
 #pragma warning(pop)
 #endif
 //__PUBLISH_SECTION_START__

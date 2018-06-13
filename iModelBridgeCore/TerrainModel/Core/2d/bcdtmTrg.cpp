@@ -24,7 +24,7 @@ BENTLEYDTM_Public void bcdtmObject_updateLastModifiedTime
  BC_DTM_OBJ *dtmP
 )
 {
-#if WINDOWS
+#if _WIN32
     #if _WIN32
         _time32(&dtmP->modifiedTime);
     #else     

@@ -298,9 +298,11 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
 ** Process Each String Section
 */
  lineNum = 0 ;
+ volatile long lineL = lineNum;
  for( p3dP = stringPtsP + 1 ; p3dP < stringPtsP + numStringPts ; ++p3dP )
    {
     ++lineNum ;
+	lineL = lineNum;
     xls = (p3dP-1)->x ; yls = (p3dP-1)->y ;
     xle =  p3dP->x    ; yle = p3dP->y     ;
 /*

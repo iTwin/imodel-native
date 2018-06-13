@@ -9,7 +9,7 @@
 #include "DTMEvars.h"
 #include "bcdtminlines.h" 
 
-#if WINDOWS
+#if _WIN32
 #pragma float_control(precise, on, push)
 #endif
 /*-------------------------------------------------------------------+
