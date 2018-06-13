@@ -62,7 +62,7 @@ struct KnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
 struct IModelJsTileAdmin : DgnPlatformLib::Host::TileAdmin
 {
     bool _WantCachedHiResTiles(DgnDbR) const override { return true; }
-    bool _WantEmbedMaterials(DgnDbR) const override { return true; }
+    bool _WantEmbedMaterials() const override { return true; }
     bool _WantWaitOnSave(DgnDbR) const override { return true; }
 };
 
