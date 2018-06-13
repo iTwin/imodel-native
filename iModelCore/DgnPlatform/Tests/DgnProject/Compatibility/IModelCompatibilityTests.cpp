@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "CompatibilityTestFixture.h"
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
-#include "ProfileManager.h"
+#include "Profiles.h"
 #include "TestIModelCreators.h"
 #include "TestHelper.h"
 
@@ -20,8 +20,6 @@ struct IModelCompatibilityTestFixture : CompatibilityTestFixture
     {
     protected:
         ScopedDgnHost m_host;
-
-        Profile& Profile() const { return ProfileManager::Get().GetProfile(ProfileType::DgnDb); }
 
         DgnDbPtr OpenTestFile(DbResult* stat, TestFile const& testFile)
             {
@@ -38,7 +36,7 @@ struct IModelCompatibilityTestFixture : CompatibilityTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
     {
-    for (TestFile const& testFile : Profile().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
         {
         DbResult stat = BE_SQLITE_ERROR;
         DgnDbPtr bim = OpenTestFile(&stat, testFile);

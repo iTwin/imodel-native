@@ -9,6 +9,7 @@
     <ClCompile Include="IModelCompatibilityTests.cpp" />
     <ClCompile Include="TestHelper.cpp" />
     <ClCompile Include="ProfileManager.cpp" />
+    <ClCompile Include="Profiles.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\..\..\DgnPlatform.PartFile.xml" />
@@ -18,7 +19,8 @@
     <ClInclude Include="TestECDbCreators.h" />
     <ClInclude Include="TestIModelCreators.h" />
     <ClInclude Include="TestHelper.h" />
-    <ClInclude Include="ProfileManager.h" />
     <ClInclude Include="CompatibilityTests.h" />
+    <ClInclude Include="Profiles.h" />
+    <ClInclude Include="ProfileManager.h" />
   </ItemGroup>
 </Project>
