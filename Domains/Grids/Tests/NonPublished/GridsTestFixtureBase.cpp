@@ -21,7 +21,7 @@ USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BUILDING_SHARED
 
-#define PROJECT_SEED_NAME       L"BuildingTests/BuildingTestSeed.bim"
+#define PROJECT_SEED_NAME       L"BuildingTests/GridsTestSeed.bim"
 #define PROJECT_DEFAULT_NAME    L"BuildingTests/Default.bim"
 #define PROJECT_TEMP_FOLDER     L"BuildingTests"
 
