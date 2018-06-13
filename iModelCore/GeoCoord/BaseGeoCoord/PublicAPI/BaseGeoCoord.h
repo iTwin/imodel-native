@@ -1636,6 +1636,18 @@ BaseGCSCR        compareTo
 ) const;
 
 /*---------------------------------------------------------------------------------**//**
+* Compares this coordinate system with the argument and returns true if they are equal.
+* This method differs from the IsEquivalent method as it requires that all fileds including
+* name, description, source, projection method, unit etc be identical.
+* @param    compareTo IN     The BaseGCS to compare to.
+* @bsimethod                                                    Alain.Robert   2018/06
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED bool              IsEqual
+(
+BaseGCSCR        compareTo
+) const;
+
+/*---------------------------------------------------------------------------------**//**
 * Compares this coordinate system with the argument and returns true if they have equivalent
 *  projection, parameters, datum, and ellipsoid.
 * @param[in]    compareTo   The BaseGCS to compare to.
