@@ -1177,8 +1177,11 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
                         continue;
                         }
 
+                    // cache the mapped model in the xref holder:
+                    m_loadedXrefFiles.back().AddDgnModel (model->GetModelId());
+
                     // give the updater a chance to cache skipped models as we may not see xref inserts during importing phase:
-                    changeDetector._ShouldSkipModel (*this, modelMap);
+                    changeDetector._ShouldSkipModel (*this, modelMap, xref.GetDatabaseP());
 
                     if (!hasPushedReferencesSubject && parentSubject.IsValid())
                         {

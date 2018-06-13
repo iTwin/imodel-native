@@ -251,6 +251,57 @@ BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgD
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          06/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    DwgImporter::ShouldSkipAllXrefs (ResolvedModelMapping const& ownerModel, DwgDbObjectIdCR ownerSpaceId)
+    {
+    // check all xRef's attached to the modelspace or a paperspace and return true if none is changed.
+    if (!this->IsUpdating())
+        return  false;
+
+    bool isModelspace = ownerSpaceId == m_modelspaceId;
+
+    // walk through all xref's we have cached
+    for (auto xref : m_loadedXrefFiles)
+        {
+        DwgDbDatabaseCP xrefDwg = nullptr;
+        if (isModelspace)
+            {
+            // lookup modelspace xref cache
+            for (auto xrefModelId : m_modelspaceXrefs)
+                {
+                if (xref.HasDgnModel(xrefModelId))
+                    {
+                    xrefDwg = xref.GetDatabaseP ();
+                    break;
+                    }
+                }
+            }
+        else
+            {
+            // lookup paperspace xref cache:
+            for (auto layoutXref : m_paperspaceXrefs)
+                {
+                if (ownerSpaceId == layoutXref.GetPaperSpaceId())
+                    {
+                    xrefDwg = xref.GetDatabaseP ();
+                    break;
+                    }
+                }
+            }
+        if (nullptr == xrefDwg)
+            continue;
+
+        // if an xref is detected to have been changed, do NOT skip the owner model:
+        if (!this->_GetChangeDetector()._ShouldSkipModel(*this, ownerModel, xrefDwg))
+            return  false;
+        }
+
+    // either no xRef is attached, or no change is detected in any xref file, we can skip the owner space.
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::_ImportLayouts ()
@@ -307,12 +358,16 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
 
             if (changeDetector._ShouldSkipModel(*this, entry))
                 {
-                // before we skip this layout, record its viewport as seen:
-                DwgDbObjectIdArray  ids;
-                DwgDbLayoutPtr  layout (block->GetLayoutId(), DwgDbOpenMode::ForRead);
-                if (layout.OpenStatus() == DwgDbStatus::Success && layout->GetViewports(ids) > 0)
-                    changeDetector._OnViewSeen (*this, this->GetSyncInfo().FindView(ids.front(), DwgSyncInfo::View::Type::PaperspaceViewport));
-                continue;
+                // no entity change is detected in this layout - check all xRef files attached to it:
+                if (this->ShouldSkipAllXrefs(entry, modelId))
+                    {
+                    // before we skip this layout, record its viewport as seen:
+                    DwgDbObjectIdArray  ids;
+                    DwgDbLayoutPtr  layout (block->GetLayoutId(), DwgDbOpenMode::ForRead);
+                    if (layout.OpenStatus() == DwgDbStatus::Success && layout->GetViewports(ids) > 0)
+                        changeDetector._OnViewSeen (*this, this->GetSyncInfo().FindView(ids.front(), DwgSyncInfo::View::Type::PaperspaceViewport));
+                    continue;
+                    }
                 }
 
             // don't import an empty layout:
